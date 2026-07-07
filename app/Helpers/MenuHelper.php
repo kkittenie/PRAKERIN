@@ -46,6 +46,21 @@ class MenuHelper
                     ['name' => '404 Error', 'path' => '/error-404', 'pro' => false]
                 ],
             ],
+            [
+                'name' => 'Manajemen Akses',
+                'icon' => 'task',
+                'subItems' => [
+                    ['name' => 'Kelola Role', 'path' => '/roles'],
+                ],
+            ],
+            [
+                'name' => 'Manajemen Akses',
+                'icon' => 'task',
+                'subItems' => [
+                    ['name' => 'Kelola Pengguna', 'path' => '/users'],
+                    ['name' => 'Kelola Role', 'path' => '/roles'],
+                ],
+            ],
         ];
     }
 

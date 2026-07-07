@@ -1,0 +1,43 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+
+class PermissionSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $modules = [
+            'dashboard', 'user', 'role', 'kategori_produk', 'produk', 'stok', 'produksi', 'pegawai', 'member', 'promo', 'transaksi', 'laporan', 'activity_log',
+        ];
+        $actions = ['lihat', 'tambah', 'edit', 'hapus'];
+
+        foreach ($modules as $module) {
+            foreach ($actions as $action) {
+                Permission::firstOrCreate([
+                    'name' => "${action}_{$module}",
+                    'guard_name' => 'web',
+                ]);
+            }
+        }
+
+        $admin = Role::firstOrCreate(['name' => 'Admin']);
+        $kasir = Role::firstOrCreate(['name' => 'Kasir']);
+
+        //all akses buat admin
+        $admin->SyncPermissions(Permission::all());
+
+        $kasir->SyncPermissions([
+            'lihat_dashboard',
+            'lihat_transaksi', 'tambah_transaksi',
+            'lihat_member', 'tambah_member', 'edit_member',
+        ]);
+    }
+}
