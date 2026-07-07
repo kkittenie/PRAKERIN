@@ -22,7 +22,7 @@ class PermissionSeeder extends Seeder
         foreach ($modules as $module) {
             foreach ($actions as $action) {
                 Permission::firstOrCreate([
-                    'name' => "${action}_{$module}",
+                    'name' => "{$action}_{$module}",
                     'guard_name' => 'web',
                 ]);
             }
@@ -30,6 +30,7 @@ class PermissionSeeder extends Seeder
 
         $admin = Role::firstOrCreate(['name' => 'Admin']);
         $kasir = Role::firstOrCreate(['name' => 'Kasir']);
+        $pegawai = Role::firstOrCreate(['name' => 'Pegawai']);
 
         //all akses buat admin
         $admin->SyncPermissions(Permission::all());
@@ -38,6 +39,10 @@ class PermissionSeeder extends Seeder
             'lihat_dashboard',
             'lihat_transaksi', 'tambah_transaksi',
             'lihat_member', 'tambah_member', 'edit_member',
+        ]);
+
+        $pegawai->SyncPermissions([
+            'lihat_dashboard',
         ]);
     }
 }

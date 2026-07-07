@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
             ['username' => 'admin'],
             [
                 'name' => 'Admin',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('admin'),
             ]
         );
         $admin->assignRole('Admin');
@@ -23,9 +23,18 @@ class UserSeeder extends Seeder
             ['username' => 'kasir'],
             [
                 'name' => 'Kasir',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('kasir'),
             ]
         );
         $kasir->assignRole('Kasir');
+
+        $pegawai = User::firstOrCreate(
+            ['username' => 'pegawai'],
+            [
+                'name' => 'Pegawai',
+                'password' => Hash::make('pegawai'),
+            ]
+        );
+        $pegawai->assignRole('Pegawai');
     }
 }

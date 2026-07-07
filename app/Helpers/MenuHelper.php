@@ -50,13 +50,6 @@ class MenuHelper
                 'name' => 'Manajemen Akses',
                 'icon' => 'task',
                 'subItems' => [
-                    ['name' => 'Kelola Role', 'path' => '/roles'],
-                ],
-            ],
-            [
-                'name' => 'Manajemen Akses',
-                'icon' => 'task',
-                'subItems' => [
                     ['name' => 'Kelola Pengguna', 'path' => '/users'],
                     ['name' => 'Kelola Role', 'path' => '/roles'],
                 ],

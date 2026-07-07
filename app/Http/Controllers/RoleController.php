@@ -57,6 +57,7 @@ class RoleController extends Controller
      */
     public function edit(string $id)
     {
+        $role = Role::findOrFail($id);
         $permissions = Permission::all()->groupBy(fn($p) => explode('_', $p->name, 2)[1] ?? 'lainnya');
         $rolePermissions = $role->permissions->pluck('name')->toArray();
 
@@ -73,12 +74,15 @@ class RoleController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        request->validate([
-            'nama' => 'required|string|unique:roles,name,' . $role->id,
+        $role = Role::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|unique:roles,name,' . $role->id,
+            'permissions' => 'array',
         ]);
 
         $role->update(['name' => $request->name]);
-        $role->SyncPermissions($request->permissions ?? []);
+        $role->syncPermissions($request->permissions ?? []);
 
         activity()->log("Mengubah role: {$role->name}");
 
@@ -90,7 +94,9 @@ class RoleController extends Controller
      */
     public function destroy(string $id)
     {
-        if (in_array($role->name, ['Admin', 'Kasir'])) {
+        $role = Role::findOrFail($id);
+
+        if (in_array($role->name, ['Admin', 'Kasir', 'Pegawai'])) {
             return back()->with('error', 'Role bawaan tidak bisa dihapus');
         }
 
