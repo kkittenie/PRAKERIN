@@ -50,7 +50,7 @@ class User extends Authenticatable
         ];
     }
 
-    protected static function getActivitylogOptions(): LogOptions
+    public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logOnly(['name', 'username'])

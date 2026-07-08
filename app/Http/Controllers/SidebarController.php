@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 class SidebarController extends Controller
 {
     public function getMenuData()
@@ -186,6 +184,10 @@ class SidebarController extends Controller
             ],
         ];
 
-        return view('components.sidebar', compact('menuGroups'));
+        activity()
+            ->causedBy(auth()->user())
+            ->log('Mengambil data menu sidebar');
+
+        return view('layouts.sidebar', compact('menuGroups'));
     }
 }

@@ -39,7 +39,12 @@ class RoleController extends Controller
         $role = Role::create(['name' => $request->name]);
         $role->SyncPermissions($request->permissions ?? []);
 
-        activity()->log("Membuat role: {$role->name}");
+        activity()
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'role' => $role->name,
+            ])
+            ->log('Admin menambahkan role');
 
         return redirect()->route('roles.index')->with('success', 'Role berhasil dibuat');
     }
@@ -84,7 +89,12 @@ class RoleController extends Controller
         $role->update(['name' => $request->name]);
         $role->syncPermissions($request->permissions ?? []);
 
-        activity()->log("Mengubah role: {$role->name}");
+        activity()
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'role' => $role->name,
+            ])
+            ->log('Admin mengupdate role');
 
         return redirect()->route('roles.index')->with('success', 'Role berhasil diupdate');
     }
@@ -99,6 +109,13 @@ class RoleController extends Controller
         if (in_array($role->name, ['Admin', 'Kasir', 'Pegawai'])) {
             return back()->with('error', 'Role bawaan tidak bisa dihapus');
         }
+
+        activity()
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'role' => $role->name,
+            ])
+            ->log('Admin menghapus role');
 
         $role->delete();
         return back()->with('success', 'Role dihapus');
