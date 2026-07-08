@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\KategoriProdukController;
 
 // halaman yang butuh login
 Route::middleware(['auth'])->group(function () {
@@ -13,6 +14,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('users', UserController::class)
     ->middleware('permission:lihat_user|tambah_user|edit_user|hapus_user');
+
+    Route::resource('kategori-produk', KategoriProdukController::class);
 
     // dashboard
     Route::get('/', function () {
