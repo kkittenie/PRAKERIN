@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\KategoriProdukController;
+use App\Http\Controllers\ProdukController;
 
 // halaman yang butuh login
 Route::middleware(['auth'])->group(function () {
@@ -16,6 +17,8 @@ Route::middleware(['auth'])->group(function () {
     ->middleware('permission:lihat_user|tambah_user|edit_user|hapus_user');
 
     Route::resource('kategori-produk', KategoriProdukController::class);
+
+    Route::resource('produk', ProdukController::class);
 
     // dashboard
     Route::get('/', function () {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use App\Models\KategoriProduk;
 
 class KategoriProdukController extends Controller
@@ -29,7 +30,7 @@ class KategoriProdukController extends Controller
      */
     public function create()
     {
-        return view('kategori_produk.create');
+        return view('pages.kategori-produk.create');
     }
 
     /**
@@ -37,17 +38,15 @@ class KategoriProdukController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-        'nama_kategori' => 'required|unique:kategori_produks,nama_kategori|max:100',
+        $validated = $request->validate([
+            'nama_kategori' => 'required|string|max:100|unique:kategori_produks,nama_kategori',
         ]);
 
-        KategoriProduk::create([
-            'nama_kategori' => $request->nama_kategori,
-        ]);
+        KategoriProduk::create($validated);
 
         return redirect()
             ->route('kategori-produk.index')
-            ->with('success', 'Kategori berhasil ditambahkan.');
+            ->with('success', 'Kategori produk berhasil ditambahkan.');
     }
 
     /**
@@ -63,7 +62,7 @@ class KategoriProdukController extends Controller
      */
     public function edit(KategoriProduk $kategori_produk)
     {
-        return view('kategori_produk.edit', compact('kategori_produk'));
+        return view('pages.kategori-produk.edit', compact('kategori_produk'));
     }
 
     /**
@@ -71,17 +70,21 @@ class KategoriProdukController extends Controller
      */
     public function update(Request $request, KategoriProduk $kategori_produk)
     {
-        $request->validate([
-        'nama_kategori' => 'required|max:100|unique:kategori_produks,nama_kategori,' . $kategori_produk->id,
+        $validated = $request->validate([
+        'nama_kategori' => [
+            'required',
+            'string',
+            'max:100',
+            Rule::unique('kategori_produks', 'nama_kategori')
+                ->ignore($kategori_produk->id),
+        ],
         ]);
 
-        $kategori_produk->update([
-            'nama_kategori' => $request->nama_kategori,
-        ]);
+        $kategori_produk->update($validated);
 
         return redirect()
             ->route('kategori-produk.index')
-            ->with('success', 'Kategori berhasil diubah.');
+            ->with('success', 'Kategori produk berhasil diperbarui.');
     }
 
     /**
@@ -89,10 +92,18 @@ class KategoriProdukController extends Controller
      */
     public function destroy(KategoriProduk $kategori_produk)
     {
-            $kategori_produk->delete();
+         if ($kategori_produk->produk()->exists()) {
 
-            return redirect()
-                ->route('kategori-produk.index')
-                ->with('success', 'Kategori berhasil dihapus.');
+        return redirect()
+            ->route('kategori-produk.index')
+            ->with('error', 'Kategori tidak dapat dihapus karena masih digunakan oleh produk.');
+
+    }
+
+    $kategori_produk->delete();
+
+    return redirect()
+        ->route('kategori-produk.index')
+        ->with('success', 'Kategori berhasil dihapus.');
     }
 }

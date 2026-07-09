@@ -4,15 +4,29 @@
 
 <x-common.page-breadcrumb pageTitle="Kategori Produk" />
 
+@if(session('success'))
+    <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+        {{ session('error') }}
+    </div>
+@endif
+
 <div class="space-y-6">
 
     <x-common.component-card title="Data Kategori Produk">
 
         <div class="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
 
-            <div class="relative">
+        <form method="GET" action="{{ route('kategori-produk.index') }}" id="searchForm">            
+        <div class="relative">
                 <input
                     type="text"
+                    id="search"
                     name="search"
                     value="{{ request('search') }}"
                     placeholder="Cari kategori..."
@@ -32,9 +46,10 @@
                             d="M21 21l-4.3-4.3m0 0A7 7 0 1110 3a7 7 0 016.7 13.7z"/>
 
                     </svg>
-
                 </span>
             </div>
+        </form>
+            
 
             <a href="{{ route('kategori-produk.create') }}"
             class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-white hover:bg-brand-600">
@@ -193,5 +208,31 @@
     </x-common.component-card>
 
 </div>
+
+<script>
+let timer;
+
+const searchInput = document.getElementById('search');
+const searchForm = document.getElementById('searchForm');
+
+searchInput.addEventListener('keyup', function () {
+    clearTimeout(timer);
+
+    timer = setTimeout(() => {
+        searchForm.submit();
+    }, 400);
+});
+
+window.addEventListener('load', function () {
+    if (searchInput.value !== '') {
+        searchInput.focus();
+
+        searchInput.setSelectionRange(
+            searchInput.value.length,
+            searchInput.value.length
+        );
+    }
+});
+</script>
 
 @endsection
