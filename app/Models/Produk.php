@@ -26,8 +26,8 @@ class Produk extends Model
         return $this->belongsTo(KategoriProduk::class, 'kategori_id');
     }
 
-    // public function produksi()
-    // {
-    //     return $this->hasMany(Produksi::class, 'produk_id');
-    // }
+    public function produksi()
+    {
+        return $this->hasMany(Produksi::class);
+    }
 }

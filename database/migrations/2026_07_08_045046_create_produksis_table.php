@@ -16,11 +16,13 @@ return new class extends Migration
             $table->date('tanggal');
             $table->foreignId('produk_id')
                 ->constrained('produks')
-                ->cascadeOnDelete();
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
             $table->integer('jumlah_hasil');
             $table->foreignId('user_id')
                 ->constrained('users')
-                ->cascadeOnDelete();
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
             $table->text('keterangan')->nullable();
             $table->timestamps();
         });

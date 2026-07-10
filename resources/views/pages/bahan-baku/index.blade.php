@@ -29,7 +29,7 @@
                     id="search"
                     name="search"
                     value="{{ request('search') }}"
-                    placeholder="Cari Bahan Baku..."
+                    placeholder="Cari bahan baku..."
                     class="w-80 rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-brand-500 focus:ring-brand-500">
 
                 <span class="absolute left-3 top-2.5 text-gray-400">
@@ -84,9 +84,11 @@
 
                     <th class="py-4 text-left text-sm font-semibold text-gray-700">No</th>
 
-                    <th class="py-4 text-left text-sm font-semibold text-gray-700">Nama Kategori</th>
+                    <th class="py-4 text-left text-sm font-semibold text-gray-700">Nama Bahan Baku</th>
 
-                    <th class="py-4 text-center text-sm font-semibold text-gray-700">Jumlah Produk</th>
+                    <th class="py-4 text-center text-sm font-semibold text-gray-700">Satuan</th>
+
+                    <th class="py-4 text-center text-sm font-semibold text-gray-700">Stok</th>
 
                     <th class="py-4 text-center text-sm font-semibold text-gray-700">Aksi</th>
 
@@ -96,17 +98,17 @@
 
                 <tbody>
 
-                    @forelse($kategori as $item)
+                    @forelse($bahanBaku as $item)
 
                     <tr class="border-b hover:bg-gray-50 transition duration-200">
 
                         <td class="py-4">
-                            {{ $kategori->firstItem() + $loop->index }}
+                            {{ $bahanBaku->firstItem() + $loop->index }}
                         </td>
 
                         <td class="py-4">
 
-                            {{ $item->nama_kategori }}
+                            {{ $item->nama_bahan }}
 
                         </td>
 
@@ -114,16 +116,38 @@
 
                             <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
 
-                                {{ $item->produk_count }}
+                                {{ $item->satuan }}
 
                             </span>
+
+                        </td>
+
+                        <td class="py-4 text-center">
+
+                        @if($item->stok <= $item->stok_minimum)
+
+                            <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-red-700 text-sm font-medium">
+                                {{ rtrim(rtrim(number_format($item->stok, 2, '.', ''), '0'), '.') }}
+                            </span>
+
+                        @else
+
+                            <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-green-700 text-sm font-medium">
+                                {{ rtrim(rtrim(number_format($item->stok, 2, '.', ''), '0'), '.') }}
+                            </span>
+
+                        @endif
+
+                        <div class="text-xs text-gray-400 mt-1">
+                            Min {{ rtrim(rtrim(number_format($item->stok_minimum, 2, '.', ''), '0'), '.') }}
+                        </div>
 
                         </td>
 
                         <td class="py-4 text-center space-x-2">
 
                             <a
-                                href="{{ route('kategori-produk.edit',$item->id) }}"
+                                href="{{ route('bahan-baku.edit',$item->id) }}"
                                 class="text-yellow-500">
 
                                 Edit
@@ -131,7 +155,7 @@
                             </a>
 
                             <form
-                                action="{{ route('kategori-produk.destroy',$item->id) }}"
+                                action="{{ route('bahan-baku.destroy',$item->id) }}"
                                 method="POST"
                                 class="inline">
 
@@ -175,7 +199,7 @@
 
                     <p class="mt-3 font-medium text-gray-500">
 
-                    Belum ada Bahan Baku
+                    Belum ada bahan baku
 
                     </p>
 
@@ -201,7 +225,7 @@
 
         <div class="mt-6">
 
-            {{ $kategori->withQueryString()->links() }}
+            {{ $bahanBaku->withQueryString()->links() }}
 
         </div>
 

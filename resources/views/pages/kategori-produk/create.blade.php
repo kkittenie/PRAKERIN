@@ -22,7 +22,7 @@
                     type="text"
                     name="nama_kategori"
                     value="{{ old('nama_kategori') }}"
-                    placeholder="Contoh: Makanan"
+                    placeholder="Isi Kategori"
                     class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                 @error('nama_kategori')

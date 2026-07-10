@@ -17,6 +17,6 @@ class BahanBaku extends Model
 
     public function detailProduksi()
     {
-        return $this->hasMany(ProduksiBahanBaku::class, 'bahan_baku_id');
+        return $this->hasMany(ProduksiBahanBaku::class,'bahan_baku_id');
     }
 }

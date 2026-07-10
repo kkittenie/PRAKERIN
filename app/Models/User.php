@@ -57,4 +57,9 @@ class User extends Authenticatable
             ->logOnlyDirty()
             ->useLogName('user');
     }
+
+    public function produksis()
+    {
+        return $this->hasMany(Produksi::class);
+    }
 }

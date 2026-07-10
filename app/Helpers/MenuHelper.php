@@ -62,8 +62,6 @@ class MenuHelper
                     ['name' => 'Produk', 'path' => '/produk'],
                     ['name' => 'Bahan Baku', 'path' => '/bahan-baku'],
                     ['name' => 'Produksi', 'path' => '/produksi'],
-                    ['name' => 'Produksi Bahan Baku', 'path' => '/produksi-bahan-baku']
-
                 ],
             ],
         ];

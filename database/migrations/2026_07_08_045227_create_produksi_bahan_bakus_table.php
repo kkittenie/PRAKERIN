@@ -18,7 +18,8 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->foreignId('bahan_baku_id')
                 ->constrained('bahan_bakus')
-                ->cascadeOnDelete();
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
             $table->decimal('jumlah_terpakai', 10, 2);
             $table->timestamps();
         });
