@@ -15,8 +15,11 @@ use App\Models\Produksi;
 // halaman yang butuh login
 Route::middleware(['auth'])->group(function () {
 
+    // Dashboard Utama (Beranda)
+    Route::get('/', [LaporanController::class, 'laporanPenjualan'])->name('dashboard');
+
     // Transaksi Kasir (POS)
-    Route::get('/', [TransaksiKasirController::class, 'indeks'])->name('transaksi.indeks');
+    Route::get('/transaksi', [TransaksiKasirController::class, 'indeks'])->name('transaksi.indeks');
     Route::post('/transaksi/tahan', [TransaksiKasirController::class, 'simpanDitahan'])->name('transaksi.tahan');
     Route::get('/transaksi/daftar-ditahan', [TransaksiKasirController::class, 'ambilDitahan'])->name('transaksi.daftar-ditahan');
     Route::post('/transaksi/pulihkan/{id}', [TransaksiKasirController::class, 'pulihkanDitahan'])->name('transaksi.pulihkan');

@@ -131,8 +131,10 @@ class LaporanController extends Controller
             $daftarTahun = [(int) date('Y')];
         }
 
+        $title = $request->is('/') ? 'Beranda Dashboard' : 'Laporan Penjualan';
+
         return view('pages.laporan.laporan-penjualan', [
-            'title' => 'Laporan Penjualan',
+            'title' => $title,
             'periode' => $periode,
             'tahun' => $tahun,
             'totalHariIni' => $totalHariIni,
