@@ -30,7 +30,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-gray-900">Kasir POS - Penjualan</h1>
+                    <h1 class="text-xl font-bold tracking-tight text-gray-900">Kasir POS - Transaksi</h1>
                     <p class="text-xs text-gray-500">Aplikasi Kasir Toko Pastry Modern</p>
                 </div>
             </div>

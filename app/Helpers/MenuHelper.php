@@ -9,9 +9,9 @@ class MenuHelper
         return [
             [
                 'icon' => 'dashboard',
-                'name' => 'Dashboard',
+                'name' => 'Beranda',
                 'subItems' => [
-                    ['name' => 'Penjualan', 'path' => '/'],
+                    ['name' => 'Transaksi', 'path' => '/'],
                 ],
             ],
             [
