@@ -12,11 +12,11 @@
 
 <div>
 
-<p class="text-sm text-gray-500">
+<p class="text-sm text-gray-500 dark:text-gray-400">
 Tanggal Produksi
 </p>
 
-<p class="font-semibold">
+<p class="font-semibold text-gray-800 dark:text-white">
 {{ \Carbon\Carbon::parse($produksi->tanggal)->format('d-m-Y') }}
 </p>
 
@@ -24,11 +24,11 @@ Tanggal Produksi
 
 <div>
 
-<p class="text-sm text-gray-500">
+<p class="text-sm text-gray-500 dark:text-gray-400">
 Produk
 </p>
 
-<p class="font-semibold">
+<p class="font-semibold text-gray-800 dark:text-white">
 {{ $produksi->produk->nama_produk }}
 </p>
 
@@ -36,11 +36,11 @@ Produk
 
 <div>
 
-<p class="text-sm text-gray-500">
+<p class="text-sm text-gray-500 dark:text-gray-400">
 Jumlah Hasil
 </p>
 
-<p class="font-semibold text-green-600">
+<p class="font-semibold text-green-600 dark:text-green-400">
 {{ $produksi->jumlah_hasil }}
 </p>
 
@@ -48,11 +48,11 @@ Jumlah Hasil
 
 <div>
 
-<p class="text-sm text-gray-500">
+<p class="text-sm text-gray-500 dark:text-gray-400">
 Dibuat Oleh
 </p>
 
-<p class="font-semibold">
+<p class="font-semibold text-gray-800 dark:text-white">
 {{ $produksi->user->name }}
 </p>
 
@@ -60,11 +60,11 @@ Dibuat Oleh
 
 <div class="md:col-span-2">
 
-<p class="text-sm text-gray-500">
+<p class="text-sm text-gray-500 dark:text-gray-400">
 Keterangan
 </p>
 
-<p>
+<p class="text-gray-800 dark:text-gray-200">
 
 {{ $produksi->keterangan ?: '-' }}
 
@@ -84,17 +84,17 @@ Keterangan
 
 <thead>
 
-<tr class="border-b bg-gray-50">
+<tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
 
-<th class="py-4 text-left text-sm font-semibold text-gray-700">
+<th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
 No
 </th>
 
-<th class="py-4 text-left text-sm font-semibold text-gray-700">
+<th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
 Nama Bahan
 </th>
 
-<th class="py-4 text-center text-sm font-semibold text-gray-700">
+<th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
 Jumlah Dipakai
 </th>
 
@@ -106,7 +106,7 @@ Jumlah Dipakai
 
 @foreach($produksi->detailBahan as $item)
 
-<tr class="border-b">
+<tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
 
 <td class="py-4">
 
@@ -141,7 +141,7 @@ Jumlah Dipakai
 
 <a
 href="{{ route('produksi.index') }}"
-class="rounded-lg border px-5 py-2">
+class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
 
 Kembali
 

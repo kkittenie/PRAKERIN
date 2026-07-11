@@ -16,13 +16,13 @@
 
                 {{-- Kategori --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Kategori Produk <span class="text-red-500">*</span>
                     </label>
 
                     <select
                         name="kategori_id"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                         <option value="">Pilih Kategori</option>
 
@@ -43,7 +43,7 @@
 
                 {{-- Kode Produk --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Kode Produk
                     </label>
 
@@ -51,7 +51,7 @@
                         type="text"
                         name="kode_produk"
                         value="{{ old('kode_produk') }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('kode_produk')
                         <small class="text-red-500">{{ $message }}</small>
@@ -60,7 +60,7 @@
 
                 {{-- Nama Produk --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Nama Produk
                     </label>
 
@@ -68,7 +68,7 @@
                         type="text"
                         name="nama_produk"
                         value="{{ old('nama_produk') }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('nama_produk')
                         <small class="text-red-500">{{ $message }}</small>
@@ -77,7 +77,7 @@
 
                 {{-- Harga Jual --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Harga Jual
                     </label>
 
@@ -85,7 +85,7 @@
                         type="number"
                         name="harga_jual"
                         value="{{ old('harga_jual') }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('harga_jual')
                         <small class="text-red-500">{{ $message }}</small>
@@ -94,7 +94,7 @@
 
                 {{-- Harga Modal --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Harga Modal
                     </label>
 
@@ -102,7 +102,7 @@
                         type="number"
                         name="harga_modal"
                         value="{{ old('harga_modal') }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                    
                         @error('harga_modal')
                         <small class="text-red-500">{{ $message }}</small>
@@ -111,7 +111,7 @@
 
                 {{-- Stok --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Stok Awal
                     </label>
 
@@ -119,7 +119,7 @@
                         type="number"
                         name="stok"
                         value="{{ old('stok',0) }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                    
                         @error('stok')
                         <small class="text-red-500">{{ $message }}</small>
@@ -128,7 +128,7 @@
 
                 {{-- Stok Minimum --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Stok Minimum
                     </label>
 
@@ -136,7 +136,7 @@
                         type="number"
                         name="stok_minimum"
                         value="{{ old('stok_minimum',0) }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                     
                         @error('stok_minimum')
                         <small class="text-red-500">{{ $message }}</small>
@@ -145,13 +145,13 @@
 
                 {{-- Status Aktif --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Status Aktif
                     </label>
 
                     <select
                         name="status_aktif"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                         <option value="1">Aktif</option>
                         <option value="0">Tidak Aktif</option>
@@ -161,13 +161,13 @@
 
                 {{-- Status Ketersediaan --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Status Ketersediaan
                     </label>
 
                     <select
                         name="status_ketersediaan"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                         <option value="stok_ada">Stok Ada</option>
                         <option value="pesan_dulu">Pesan Dulu</option>
@@ -177,14 +177,14 @@
 
                 {{-- Foto --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Foto Produk
                     </label>
 
                     <input
                         type="file"
                         name="foto"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                    
                         @error('foto')
                         <small class="text-red-500">{{ $message }}</small>
@@ -197,7 +197,7 @@
 
                 <a
                     href="{{ route('produk.index') }}"
-                    class="rounded-lg border px-5 py-2">
+                    class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
 
                     Batal
 

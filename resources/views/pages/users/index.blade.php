@@ -13,10 +13,10 @@
     </div>
 
     @if (session('success'))
-        <div class="mx-6 mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
+        <div class="mx-6 mt-4 rounded-lg bg-green-50 dark:bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">{{ session('success') }}</div>
     @endif
     @if (session('error'))
-        <div class="mx-6 mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ session('error') }}</div>
+        <div class="mx-6 mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">{{ session('error') }}</div>
     @endif
 
     <div class="overflow-x-auto p-6">
@@ -36,7 +36,7 @@
                     <td class="py-3 text-gray-600 dark:text-gray-400">{{ $user->username }}</td>
                     <td class="py-3">
                         @foreach ($user->roles as $role)
-                            <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-600">{{ $role->name }}</span>
+                            <span class="rounded-full bg-brand-50 dark:bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-600 dark:text-brand-400">{{ $role->name }}</span>
                         @endforeach
                     </td>
                     <td class="py-3 text-right">

@@ -16,7 +16,7 @@
 
     {{-- Tanggal --}}
     <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700">
+        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
             Tanggal Produksi
         </label>
 
@@ -24,7 +24,7 @@
             type="date"
             name="tanggal"
             value="{{ old('tanggal', date('Y-m-d')) }}"
-            class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
       
             @error('tanggal')
             <small class="text-red-500">{{ $message }}</small>
@@ -34,13 +34,13 @@
     {{-- Produk --}}
     <div>
 
-        <label class="mb-2 block text-sm font-medium text-gray-700">
+        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
             Produk
         </label>
 
         <select
             name="produk_id"
-            class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500 @error('produk_id') border-red-500 @enderror">
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 @error('produk_id') border-red-500 @enderror">
          
             <option value="">Pilih Produk</option>
 
@@ -66,9 +66,9 @@
 
 </div>
 
-<hr class="my-8">
+<hr class="my-8 border-gray-200 dark:border-gray-800">
 
-<h4 class="font-semibold text-lg mb-4">
+<h4 class="font-semibold text-lg mb-4 text-gray-850 dark:text-white">
 
 Pengambilan Bahan Baku
 
@@ -80,21 +80,21 @@ Pengambilan Bahan Baku
 
 <thead>
 
-<tr class="border-b bg-gray-50">
+<tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
 
-<th class="py-4 text-left text-sm font-semibold text-gray-700">
+<th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
 
 Bahan Baku
 
 </th>
 
-<th class="py-4 text-center text-sm font-semibold text-gray-700">
+<th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
 
 Stok
 
 </th>
 
-<th class="py-4 text-center text-sm font-semibold text-gray-700">
+<th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
 
 Dipakai
 
@@ -108,7 +108,7 @@ Dipakai
 
 @foreach($bahanBaku as $item)
 
-<tr class="border-b">
+<tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
 
 <td class="py-4">
 
@@ -137,7 +137,7 @@ step="0.01"
 min="0"
 value="{{ old('jumlah_terpakai.'.$loop->index,0) }}"
 name="jumlah_terpakai[]"
-class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border-brand-500 focus:ring-brand-500">
+class="w-28 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-center focus:border-brand-500 focus:ring-brand-500">
 
 </td>
 
@@ -151,13 +151,13 @@ class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border
 
 </div>
 
-    <hr class="my-8">
+    <hr class="my-8 border-gray-200 dark:border-gray-800">
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         <div>
 
-        <label class="mb-2 block text-sm font-medium text-gray-700">
+        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
 
         Jumlah Hasil Produksi
 
@@ -168,7 +168,7 @@ class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border
         name="jumlah_hasil"
         value="{{ old('jumlah_hasil') }}"
         min="1"
-        class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
         @error('jumlah_hasil')
         <small class="text-red-500">{{ $message }}</small>
@@ -178,7 +178,7 @@ class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border
 
         <div>
 
-        <label class="mb-2 block text-sm font-medium text-gray-700">
+        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
 
         Keterangan
 
@@ -187,7 +187,7 @@ class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border
         <textarea
         name="keterangan"
         rows="3"
-        class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">{{ old('keterangan') }}</textarea>
+        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">{{ old('keterangan') }}</textarea>
 
         @error('keterangan')
         <small class="text-red-500">{{ $message }}</small>
@@ -200,7 +200,7 @@ class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border
 
 <a
 href="{{ route('produksi.index') }}"
-class="rounded-lg border px-5 py-2">
+class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
 
 Batal
 

@@ -8,7 +8,7 @@
 @endphp
 
 <aside id="sidebar"
-    class="fixed flex flex-col mt-0 top-0 px-5 left-0 bg-white text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200"
+    class="fixed flex flex-col mt-0 top-0 px-5 left-0 bg-white text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-800"
     x-data="{
         openSubmenus: {},
         init() {
@@ -62,16 +62,15 @@
     <div class="pt-8 pb-7 flex"
         :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ?
         'xl:justify-center' :
-        'justify-start'">
-        <a href="/">
-            <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" width="150" height="40" />
-            <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                class="hidden" src="/images/logo/logo-dark.svg" alt="Logo" width="150"
-                height="40" />
-            <img x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen"
-                src="/images/logo/logo-icon.svg" alt="Logo" width="32" height="32" />
-
+        'justify-start px-6'">
+        <a href="/" class="flex items-center gap-3">
+            <div x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen" class="flex items-center gap-3">
+                <span class="text-3xl">🥨</span>
+                <span class="font-black text-2xl tracking-wider text-gray-900 dark:text-white">BakePOS</span>
+            </div>
+            <div x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen" class="text-3xl text-center w-full">
+                🥨
+            </div>
         </a>
     </div>
 

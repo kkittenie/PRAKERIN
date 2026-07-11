@@ -14,7 +14,7 @@
 
             <div class="mb-6">
 
-                <label class="mb-2 block text-sm font-medium text-gray-700">
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Nama Kategori
                 </label>
 
@@ -23,7 +23,7 @@
                     name="nama_kategori"
                     value="{{ old('nama_kategori') }}"
                     placeholder="Isi Kategori"
-                    class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400">
 
                 @error('nama_kategori')
                     <p class="mt-2 text-sm text-red-500">
@@ -36,7 +36,7 @@
             <div class="flex justify-end gap-3">
 
                 <a href="{{ route('kategori-produk.index') }}"
-                   class="rounded-lg border border-gray-300 px-5 py-2 hover:bg-gray-100">
+                   class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
                     Batal
                 </a>
 

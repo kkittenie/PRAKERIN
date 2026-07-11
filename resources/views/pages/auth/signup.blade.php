@@ -153,11 +153,12 @@
                     <!-- ===== Common Grid Shape Start ===== -->
                     <x-common.common-grid-shape />
                     <div class="flex max-w-xs flex-col items-center">
-                        <a href="/" class="mb-4 block">
-                            <img src="./images/logo/auth-logo.svg" alt="Logo" />
+                        <a href="/" class="mb-4 block flex items-center gap-2.5">
+                            <span class="text-4xl">🥨</span>
+                            <span class="font-black text-3xl tracking-wider text-white">BakePOS</span>
                         </a>
                         <p class="text-center text-gray-400">
-                            Free and Open-Source Tailwind CSS Admin Dashboard Template
+                            Smart Bakery Management.
                         </p>
                     </div>
                 </div>

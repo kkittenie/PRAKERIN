@@ -9,24 +9,9 @@ class MenuHelper
         return [
             [
                 'icon' => 'dashboard',
-                'name' => 'Beranda',
+                'name' => 'Dashboard',
                 'subItems' => [
-                    ['name' => 'Dashboard', 'path' => '/'],
-                ],
-            ],
-            [
-                'icon' => 'ecommerce',
-                'name' => 'Transaksi POS',
-                'subItems' => [
-                    ['name' => 'Kasir POS', 'path' => '/transaksi'],
-                ],
-            ],
-            [
-                'name' => 'Laporan',
-                'icon' => 'laporan',
-                'subItems' => [
-                    ['name' => 'Histori Transaksi', 'path' => '/histori-transaksi'],
-                    ['name' => 'Laporan Penjualan', 'path' => '/laporan-penjualan'],
+                    ['name' => 'Penjualan', 'path' => '/'],
                 ],
             ],
             [
@@ -45,6 +30,21 @@ class MenuHelper
                     ['name' => 'Produk', 'path' => '/produk'],
                     ['name' => 'Bahan Baku', 'path' => '/bahan-baku'],
                     ['name' => 'Produksi', 'path' => '/produksi'],
+                ],
+            ],
+            [
+                'icon' => 'ecommerce',
+                'name' => 'Transaksi POS',
+                'subItems' => [
+                    ['name' => 'Kasir POS', 'path' => '/transaksi'],
+                ],
+            ],
+            [
+                'name' => 'Laporan',
+                'icon' => 'laporan',
+                'subItems' => [
+                    ['name' => 'Histori Transaksi', 'path' => '/histori-transaksi'],
+                    ['name' => 'Laporan Penjualan', 'path' => '/laporan-penjualan'],
                 ],
             ],
         ];

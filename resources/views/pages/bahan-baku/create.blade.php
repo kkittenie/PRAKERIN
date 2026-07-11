@@ -16,7 +16,7 @@
 
                 {{-- Nama Bahan --}}
                 <div class="md:col-span-2">
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Nama Bahan <span class="text-red-500">*</span>
                     </label>
 
@@ -24,7 +24,7 @@
                         type="text"
                         name="nama_bahan"
                         value="{{ old('nama_bahan') }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('nama_bahan')
                         <small class="text-red-500">{{ $message }}</small>
@@ -33,13 +33,13 @@
 
                 {{-- Satuan --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Satuan <span class="text-red-500">*</span>
                     </label>
 
                     <select
                         name="satuan"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                         <option value="">Pilih Satuan</option>
                         <option value="kg" {{ old('satuan')=='kg' ? 'selected':'' }}>Kg</option>
@@ -57,7 +57,7 @@
 
                 {{-- Stok --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Stok
                     </label>
 
@@ -66,7 +66,7 @@
                         step="0.01"
                         name="stok"
                         value="{{ old('stok',0) }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('stok')
                         <small class="text-red-500">{{ $message }}</small>
@@ -75,7 +75,7 @@
 
                 {{-- Stok Minimum --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Stok Minimum
                     </label>
 
@@ -84,7 +84,7 @@
                         step="0.01"
                         name="stok_minimum"
                         value="{{ old('stok_minimum',0) }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('stok_minimum')
                         <small class="text-red-500">{{ $message }}</small>
@@ -97,7 +97,7 @@
 
                 <a
                     href="{{ route('bahan-baku.index') }}"
-                    class="rounded-lg border px-5 py-2">
+                    class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
 
                     Batal
 

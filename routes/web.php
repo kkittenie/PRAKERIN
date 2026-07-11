@@ -10,13 +10,14 @@ use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\BahanBakuController;
 use App\Http\Controllers\ProduksiController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\DashboardController;
 use App\Models\Produksi;
 
 // halaman yang butuh login
 Route::middleware(['auth'])->group(function () {
 
     // Dashboard Utama (Beranda)
-    Route::get('/', [LaporanController::class, 'laporanPenjualan'])->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     // Transaksi Kasir (POS)
     Route::get('/transaksi', [TransaksiKasirController::class, 'indeks'])->name('transaksi.indeks');

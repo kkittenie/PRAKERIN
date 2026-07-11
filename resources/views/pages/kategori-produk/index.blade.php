@@ -5,13 +5,13 @@
 <x-common.page-breadcrumb pageTitle="Kategori Produk" />
 
 @if(session('success'))
-    <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+    <div class="mb-4 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-500/10 px-4 py-3 text-green-700 dark:text-green-400">
         {{ session('success') }}
     </div>
 @endif
 
 @if(session('error'))
-    <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+    <div class="mb-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-red-700 dark:text-red-400">
         {{ session('error') }}
     </div>
 @endif
@@ -30,7 +30,7 @@
                     name="search"
                     value="{{ request('search') }}"
                     placeholder="Cari kategori..."
-                    class="w-80 rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-brand-500 focus:ring-brand-500">
+                    class="w-80 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2 pl-10 pr-4 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400">
 
                 <span class="absolute left-3 top-2.5 text-gray-400">
 
@@ -80,15 +80,15 @@
 
                 <thead>
 
-                    <tr class="border-b bg-gray-50">
+                    <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
 
-                    <th class="py-4 text-left text-sm font-semibold text-gray-700">No</th>
+                    <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
 
-                    <th class="py-4 text-left text-sm font-semibold text-gray-700">Nama Kategori</th>
+                    <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Kategori</th>
 
-                    <th class="py-4 text-center text-sm font-semibold text-gray-700">Jumlah Produk</th>
+                    <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Jumlah Produk</th>
 
-                    <th class="py-4 text-center text-sm font-semibold text-gray-700">Aksi</th>
+                    <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Aksi</th>
 
                     </tr>
 
@@ -98,7 +98,7 @@
 
                     @forelse($kategori as $item)
 
-                    <tr class="border-b hover:bg-gray-50 transition duration-200">
+                    <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition duration-200 text-gray-700 dark:text-gray-300">
 
                         <td class="py-4">
                             {{ $kategori->firstItem() + $loop->index }}
@@ -112,7 +112,7 @@
 
                         <td class="py-4 text-center">
 
-                            <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
+                            <span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-500/10 px-3 py-1 text-sm font-medium text-blue-700 dark:text-blue-400">
 
                                 {{ $item->produk_count }}
 
@@ -161,7 +161,7 @@
                     <div class="flex flex-col items-center">
 
                     <svg xmlns="http://www.w3.org/2000/svg"
-                    class="w-14 h-14 text-gray-300"
+                    class="w-14 h-14 text-gray-300 dark:text-gray-600"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -173,7 +173,7 @@
 
                     </svg>
 
-                    <p class="mt-3 font-medium text-gray-500">
+                    <p class="mt-3 font-medium text-gray-500 dark:text-gray-400">
 
                     Belum ada kategori produk
 
