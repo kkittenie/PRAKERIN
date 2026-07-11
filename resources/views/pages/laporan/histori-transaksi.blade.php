@@ -4,6 +4,21 @@
     <x-common.page-breadcrumb pageTitle="Histori Transaksi" />
 
     <div x-data="historiTransaksi()" class="space-y-6">
+        <!-- Toast Notifikasi -->
+        <div class="fixed top-5 right-5 z-99999 flex flex-col gap-2">
+            <template x-for="toast in toasts" :key="toast.id">
+                <div :class="{
+                        'bg-green-600': toast.tipe === 'sukses',
+                        'bg-red-600': toast.tipe === 'error',
+                        'bg-blue-600': toast.tipe === 'info'
+                     }" 
+                     class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] transform transition-all duration-300 animate-slide-in">
+                    <span class="font-semibold text-lg" x-text="toast.tipe === 'sukses' ? '✓' : '⚠'"></span>
+                    <span class="text-sm" x-text="toast.pesan"></span>
+                </div>
+            </template>
+        </div>
+
         {{-- Header & Filter --}}
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-6">
             <div class="flex flex-col lg:flex-row lg:items-end gap-4">
@@ -212,6 +227,25 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Footer --}}
+                <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 rounded-b-2xl" x-show="detailData">
+                    <button @click="cetakStruk('pelanggan')"
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition flex items-center gap-1.5 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                        <span>Cetak Struk</span>
+                    </button>
+                    <button @click="cetakStruk('dapur')"
+                            class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-sm transition flex items-center gap-1.5 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                        <span>Order Dapur</span>
+                    </button>
+                    <button @click="modalDetail = false"
+                            class="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg text-sm transition border border-gray-200 dark:border-gray-700">
+                        Tutup
+                    </button>
+                </div>
+
                 {{-- Loading --}}
                 <div class="p-12 flex items-center justify-center bg-white dark:bg-gray-900" x-show="loadingDetail">
                     <svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -231,6 +265,15 @@ function historiTransaksi() {
         modalDetail: false,
         detailData: null,
         loadingDetail: false,
+        toasts: [],
+
+        tambahToast(pesan, tipe = 'sukses') {
+            const id = Date.now();
+            this.toasts.push({ id, pesan, tipe });
+            setTimeout(() => {
+                this.toasts = this.toasts.filter(t => t.id !== id);
+            }, 3000);
+        },
 
         async lihatDetail(id) {
             this.modalDetail = true;
@@ -254,6 +297,108 @@ function historiTransaksi() {
             const d = new Date(tanggal);
             return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         },
+
+        cetakStruk(jenis) {
+            if (!this.detailData) return;
+            const d = this.detailData;
+            const toko = 'Crumb & Co.';
+            const alamat = 'Melrose Avenue, Los Angeles';
+            let html = '';
+
+            const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
+            const formatTanggalLocal = (tanggal) => {
+                if (!tanggal) return '-';
+                const date = new Date(tanggal);
+                return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            };
+
+            const subtotal = Number(d.subtotal || 0);
+            const diskon = Number(d.diskon || 0);
+            const pajak = Number(d.pajak || 0);
+            const totalBayar = Number(d.total_bayar || 0);
+            const diterima = Number(d.jumlah_diterima || 0);
+            const kembalian = Number(d.kembalian || 0);
+
+            const diskonPersen = subtotal > 0 ? Math.round((diskon / subtotal) * 100) : 0;
+            const pajakPersen = (subtotal - diskon) > 0 ? Math.round((pajak / (subtotal - diskon)) * 100) : 0;
+
+            if (jenis === 'pelanggan') {
+                html = `
+                <div style="font-family:'Courier New',monospace;width:300px;margin:auto;padding:20px;font-size:12px;">
+                    <div style="text-align:center;border-bottom:1px dashed #000;padding-bottom:10px;margin-bottom:10px;">
+                        <h2 style="margin:0;font-size:16px;">${toko}</h2>
+                        <p style="margin:4px 0 0 0;font-size:11px;">${alamat}</p>
+                    </div>
+                    <div style="margin-bottom:8px;font-size:11px;">
+                        <div>No: <strong>${d.kode_transaksi}</strong></div>
+                        <div>Tgl: ${formatTanggalLocal(d.created_at)}</div>
+                        <div>Pelanggan: <strong>${d.nama_pembeli || 'Pelanggan Umum'}</strong></div>
+                        <div style="text-transform: capitalize;">Bayar: ${d.metode_pembayaran}</div>
+                    </div>
+                    <div style="border-top:1px dashed #000;border-bottom:1px dashed #000;padding:8px 0;">
+                        ${(d.detail_transaksi || []).map((item, i) => `
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                <span>${i+1}. ${item.nama_produk}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px;padding-left:16px;color:#555;">
+                                <span>${item.jumlah} x ${formatRupiah(item.harga_satuan)}</span>
+                                <span>${formatRupiah(item.subtotal)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="padding:8px 0;border-bottom:1px dashed #000;">
+                        <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><span>${formatRupiah(subtotal)}</span></div>
+                        ${diskon > 0 ? `<div style="display:flex;justify-content:space-between;"><span>Diskon (${diskonPersen}%)</span><span>-${formatRupiah(diskon)}</span></div>` : ''}
+                        ${pajak > 0 ? `<div style="display:flex;justify-content:space-between;"><span>Pajak (${pajakPersen}%)</span><span>${formatRupiah(pajak)}</span></div>` : ''}
+                        <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:14px;margin-top:6px;"><span>TOTAL</span><span>${formatRupiah(totalBayar)}</span></div>
+                    </div>
+                    <div style="padding:8px 0;border-bottom:1px dashed #000;">
+                        <div style="display:flex;justify-content:space-between;"><span>Diterima</span><span>${formatRupiah(diterima)}</span></div>
+                        <div style="display:flex;justify-content:space-between;font-weight:bold;"><span>Kembalian</span><span>${formatRupiah(kembalian)}</span></div>
+                    </div>
+                    <div style="text-align:center;padding-top:12px;font-size:11px;color:#666;">
+                        <p style="margin:0;">Terima kasih sudah mampir! 🌷</p>
+                        <p style="margin:4px 0 0 0;">Semoga harimu semanis pastry kami
+                        ( ˶ˆᗜˆ˵ ) ♡</p>
+                    </div>
+                </div>`;
+            } else {
+                const itemsDapur = (d.detail_transaksi || []).filter(item => item.produk?.status_ketersediaan === 'pesan_dulu');
+                if (itemsDapur.length === 0) {
+                    this.tambahToast('Tidak ada item Pre-Order (Pesan Dulu) untuk dapur.', 'info');
+                    return;
+                }
+                html = `
+                <div style="font-family:'Courier New',monospace;width:300px;margin:auto;padding:20px;font-size:12px;">
+                    <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:10px;">
+                        <h2 style="margin:0;font-size:18px;letter-spacing:2px;">🍳 ORDER DAPUR</h2>
+                    </div>
+                    <div style="margin-bottom:10px;font-size:12px;">
+                        <div>No: <strong>${d.kode_transaksi}</strong></div>
+                        <div>Tgl: ${formatTanggalLocal(d.created_at)}</div>
+                        <div>Pelanggan: <strong style="font-size:14px;">${d.nama_pembeli || 'Pelanggan Umum'}</strong></div>
+                    </div>
+                    <div style="border-top:2px solid #000;border-bottom:2px solid #000;padding:10px 0;">
+                        ${itemsDapur.map((item, i) => `
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:14px;">
+                                <span><strong>${i+1}. ${item.nama_produk}</strong></span>
+                                <span style="background:#000;color:#fff;padding:2px 10px;border-radius:4px;font-weight:bold;font-size:16px;">x${item.jumlah}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${d.catatan ? `<div style="padding:8px 0;border-bottom:1px dashed #000;"><strong>📝 Catatan:</strong> ${d.catatan}</div>` : ''}
+                    <div style="text-align:center;padding-top:12px;font-size:11px;color:#666;">
+                        <p style="margin:0;">Dicetak: ${formatTanggalLocal(new Date())}</p>
+                    </div>
+                </div>`;
+            }
+
+            const win = window.open('', '_blank', 'width=400,height=700');
+            win.document.write(`<html><head><title>Struk ${jenis === 'pelanggan' ? 'Pelanggan' : 'Dapur'}</title></head><body style="margin:0;padding:0;">${html}</body></html>`);
+            win.document.close();
+            win.focus();
+            setTimeout(() => win.print(), 500);
+        }
     }
 }
 </script>

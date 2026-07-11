@@ -31,7 +31,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Kasir POS - Transaksi</h1>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Aplikasi Kasir Toko Pastry Modern</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Kelola Penjualan Mudah</p>
                 </div>
             </div>
             <div class="flex items-center gap-3 w-full sm:w-auto">
@@ -328,7 +328,7 @@
 
     <!-- ========== MODAL: DAFTAR PESANAN DITAHAN ========== -->
     <div x-show="modalDitahanTerbuka" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-9999 p-4" x-transition>
-        <div @click.away="modalDitahanTerbuka = false" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
             <div class="bg-slate-900 dark:bg-gray-950 text-white p-5 flex items-center justify-between">
                 <div><h3 class="font-extrabold text-base">Daftar Pesanan Ditahan</h3><p class="text-slate-400 dark:text-gray-400 text-xs mt-0.5">Pesanan yang ditunda pemrosesannya.</p></div>
                 <button @click="modalDitahanTerbuka = false" class="text-slate-400 hover:text-white transition font-bold text-lg">&times;</button>
@@ -341,14 +341,14 @@
                     </div>
                 </template>
                 <template x-for="pesanan in daftarDitahan" :key="pesanan.id">
-                    <div class="border border-gray-100 dark:border-gray-800 rounded-lg p-4 bg-gray-50 dark:bg-gray-850/40 flex items-center justify-between gap-4">
+                    <div class="border border-gray-100 dark:border-gray-800 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between gap-4">
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">
                                 <span class="font-extrabold text-sm text-gray-900 dark:text-white" x-text="pesanan.nama_pembeli"></span>
                                 <span class="text-xxs text-gray-400 dark:text-gray-500" x-text="formatTanggal(pesanan.created_at)"></span>
                             </div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Item: <span class="font-semibold text-gray-700 dark:text-gray-350" x-text="pesanan.item_pesanan.map(i => i.nama_produk + ' (' + i.jumlah + ')').join(', ')"></span></p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" x-show="pesanan.catatan">Catatan: <span class="italic text-gray-600 dark:text-gray-450" x-text="pesanan.catatan"></span></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Item: <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="pesanan.item_pesanan.map(i => i.nama_produk + ' (' + i.jumlah + ')').join(', ')"></span></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" x-show="pesanan.catatan">Catatan: <span class="italic text-gray-600 dark:text-gray-400" x-text="pesanan.catatan"></span></p>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
                             <span class="font-extrabold text-sm text-indigo-700 dark:text-indigo-400 mr-2" x-text="formatRupiah(pesanan.total)"></span>
@@ -413,6 +413,21 @@
         </div>
     </div>
 
+    <!-- ========== MODAL: KONFIRMASI HAPUS PESANAN DITAHAN ========== -->
+    <div x-show="modalKonfirmasiHapusTerbuka" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4" x-transition x-cloak>
+        <div @click.away="modalKonfirmasiHapusTerbuka = false; modalDitahanTerbuka = true" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+            <div class="p-6 text-center">
+                <div class="w-14 h-14 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">⚠</div>
+                <h3 class="font-extrabold text-gray-900 dark:text-white text-base">Hapus Pesanan Ditahan?</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Pesanan yang dihapus tidak dapat dipulihkan kembali.</p>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3">
+                <button @click="modalKonfirmasiHapusTerbuka = false; modalDitahanTerbuka = true" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-bold text-xs rounded-lg transition text-gray-700 dark:text-gray-300">Batal</button>
+                <button @click="eksekusiHapusPesananDitahan()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Hapus</button>
+            </div>
+        </div>
+    </div>
+
 </div>
 @endsection
 
@@ -448,6 +463,8 @@ function aplikasiKasir() {
         modalDitahanTerbuka: false,
         modalPembeliTerbuka: false,
         modalSuksesTerbuka: false,
+        modalKonfirmasiHapusTerbuka: false,
+        idPesananAkanDihapus: null,
 
         // Data sukses (untuk struk)
         suksesData: {
@@ -591,10 +608,26 @@ function aplikasiKasir() {
         },
 
         hapusPesananDitahan(id) {
-            if (!confirm('Hapus pesanan ditahan ini?')) return;
+            this.idPesananAkanDihapus = id;
+            this.modalKonfirmasiHapusTerbuka = true;
+        },
+
+        eksekusiHapusPesananDitahan() {
+            if (!this.idPesananAkanDihapus) return;
+            const id = this.idPesananAkanDihapus;
             fetch(`/transaksi/hapus-ditahan/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" } })
             .then(r => r.json())
-            .then(r => { if (r.status === 'success') { this.tambahToast('Pesanan dihapus.', 'info'); this.ambilDaftarDitahanDariServer(); } else this.tambahToast(r.pesan, 'error'); });
+            .then(r => { 
+                if (r.status === 'success') { 
+                    this.tambahToast('Pesanan dihapus.', 'info'); 
+                    this.ambilDaftarDitahanDariServer(); 
+                } else {
+                    this.tambahToast(r.pesan, 'error'); 
+                }
+                this.modalKonfirmasiHapusTerbuka = false;
+                this.modalDitahanTerbuka = true;
+                this.idPesananAkanDihapus = null;
+            });
         },
 
         // Pembayaran Final
@@ -688,8 +721,9 @@ function aplikasiKasir() {
                         <div style="display:flex;justify-content:space-between;font-weight:bold;"><span>Kembalian</span><span>${this.formatRupiah(d.kembalian)}</span></div>
                     </div>
                     <div style="text-align:center;padding-top:12px;font-size:11px;color:#666;">
-                        <p style="margin:0;">Terima kasih atas kunjungan Anda!</p>
-                        <p style="margin:4px 0 0 0;">Selamat menikmati ☕</p>
+                        <p style="margin:0;">Terima kasih sudah mampir! 🌷</p>
+                        <p style="margin:4px 0 0 0;">Semoga harimu semanis pastry kami
+                        ( ˶ˆᗜˆ˵ ) ♡</p>
                     </div>
                 </div>`;
             } else {

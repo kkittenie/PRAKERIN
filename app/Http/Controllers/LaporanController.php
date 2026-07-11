@@ -47,7 +47,7 @@ class LaporanController extends Controller
      */
     public function detailTransaksi($id)
     {
-        $transaksi = Transaksi::with('detailTransaksi')->findOrFail($id);
+        $transaksi = Transaksi::with('detailTransaksi.produk')->findOrFail($id);
 
         return response()->json([
             'status' => 'success',

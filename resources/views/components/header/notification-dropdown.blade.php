@@ -7,8 +7,8 @@
     
     // Add held orders
     foreach ($pesananDitahan as $item) {
-        $dataMeja = json_decode($item->data_pesanan, true);
-        $totalItems = count($dataMeja['keranjang'] ?? []);
+        $itemPesanan = is_array($item->item_pesanan) ? $item->item_pesanan : json_decode($item->item_pesanan, true) ?? [];
+        $totalItems = array_sum(array_column($itemPesanan, 'jumlah'));
         $notificationsList[] = [
             'type' => 'Transaksi Ditahan',
             'title' => 'Pesanan Ditahan',
