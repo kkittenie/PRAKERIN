@@ -55,21 +55,42 @@
             
             <!-- Kiri: Produk -->
             <div class="col-span-12 lg:col-span-8 flex flex-col gap-6">
-                <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                    <button @click="kategoriTerpilih = 'semua'" :class="kategoriTerpilih === 'semua' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white hover:bg-gray-100 text-gray-600 border border-gray-100'" class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap">Semua Produk</button>
-                    <template x-for="kategori in daftarKategori" :key="kategori.id">
-                        <button @click="kategoriTerpilih = kategori.id" :class="kategoriTerpilih === kategori.id ? 'bg-indigo-600 text-white shadow-md' : 'bg-white hover:bg-gray-100 text-gray-600 border border-gray-100'" class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap" x-text="kategori.nama_kategori"></button>
-                    </template>
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                            <button @click="kategoriTerpilih = 'semua'" :class="kategoriTerpilih === 'semua' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white hover:bg-gray-100 text-gray-600 border border-gray-100'" class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap">Semua Produk</button>
+                            <template x-for="kategori in daftarKategori" :key="kategori.id">
+                                <button @click="kategoriTerpilih = kategori.id" :class="kategoriTerpilih === kategori.id ? 'bg-indigo-600 text-white shadow-md' : 'bg-white hover:bg-gray-100 text-gray-600 border border-gray-100'" class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap" x-text="kategori.nama_kategori"></button>
+                            </template>
+                        </div>
+
+                        <!-- Filter Status Ketersediaan -->
+                        <div class="flex items-center gap-1 bg-white p-1 rounded-lg border border-gray-100 shrink-0">
+                            <button @click="filterKetersediaan = 'semua'" :class="filterKetersediaan === 'semua' ? 'bg-slate-900 text-white shadow-xs' : 'bg-transparent text-gray-500 hover:bg-gray-50'" class="px-3 py-1.5 rounded-md text-xs font-bold transition">Semua</button>
+                            <button @click="filterKetersediaan = 'stok_ada'" :class="filterKetersediaan === 'stok_ada' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-transparent text-gray-500 hover:bg-gray-50'" class="px-3 py-1.5 rounded-md text-xs font-bold transition">Ready Stock</button>
+                            <button @click="filterKetersediaan = 'pesan_dulu'" :class="filterKetersediaan === 'pesan_dulu' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-500 hover:bg-gray-50'" class="px-3 py-1.5 rounded-md text-xs font-bold transition">Pre-Order</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                     <template x-for="produk in produkTersaring" :key="produk.id">
                         <div class="bg-white rounded-xl border border-gray-100 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
-                            <div x-show="produk.stok <= 0" class="absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center p-2 text-center">
+                            <div x-show="produk.status_ketersediaan !== 'pesan_dulu' && produk.stok <= 0" class="absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center p-2 text-center">
                                 <span class="bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full text-xs">Habis</span>
                             </div>
                             <div class="aspect-square bg-gray-100 relative overflow-hidden">
                                 <img :src="produk.foto ? '/' + produk.foto : '/images/logo/logo-icon.svg'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Produk">
-                                <div class="absolute bottom-2 right-2 bg-slate-900/75 text-white text-xs font-semibold px-2 py-0.5 rounded">Stok: <span x-text="produk.stok"></span></div>
+                                <div class="absolute top-2 left-2 z-5">
+                                    <template x-if="produk.status_ketersediaan === 'stok_ada'">
+                                        <span class="bg-emerald-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Ready</span>
+                                    </template>
+                                    <template x-if="produk.status_ketersediaan === 'pesan_dulu'">
+                                        <span class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Pre-Order</span>
+                                    </template>
+                                </div>
+                                <div class="absolute bottom-2 right-2 bg-slate-900/75 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                                    <span x-text="produk.status_ketersediaan === 'pesan_dulu' ? 'Pre-Order' : 'Stok: ' + produk.stok"></span>
+                                </div>
                             </div>
                             <div class="p-4 flex-1 flex flex-col justify-between gap-3">
                                 <div>
@@ -79,7 +100,7 @@
                                 </div>
                                 <div class="flex items-center justify-between mt-auto pt-2 border-t border-gray-50">
                                     <span class="font-bold text-indigo-700 text-sm" x-text="formatRupiah(produk.harga_jual)"></span>
-                                    <button @click="tambahKeKeranjang(produk)" :disabled="produk.stok <= 0" class="p-2 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-lg transition disabled:bg-gray-100 disabled:text-gray-400">
+                                    <button @click="tambahKeKeranjang(produk)" :disabled="produk.status_ketersediaan !== 'pesan_dulu' && produk.stok <= 0" class="p-2 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-lg transition disabled:bg-gray-100 disabled:text-gray-400">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
                                     </button>
                                 </div>
@@ -400,6 +421,7 @@ function aplikasiKasir() {
         daftarKategori: @json($daftarKategori),
         kataKunciPencarian: '',
         kategoriTerpilih: 'semua',
+        filterKetersediaan: 'semua',
 
         // Keranjang
         keranjang: [],
@@ -450,7 +472,8 @@ function aplikasiKasir() {
             return this.daftarProduk.filter(p => {
                 const cocokKategori = this.kategoriTerpilih === 'semua' || p.kategori_id === this.kategoriTerpilih;
                 const cocokCari = p.nama_produk.toLowerCase().includes(this.kataKunciPencarian.toLowerCase()) || p.kode_produk.toLowerCase().includes(this.kataKunciPencarian.toLowerCase());
-                return cocokKategori && cocokCari;
+                const cocokKetersediaan = this.filterKetersediaan === 'semua' || p.status_ketersediaan === this.filterKetersediaan;
+                return cocokKategori && cocokCari && cocokKetersediaan;
             });
         },
 
@@ -479,12 +502,12 @@ function aplikasiKasir() {
         tambahKeKeranjang(produk) {
             const ada = this.keranjang.find(i => i.produk_id === produk.id);
             const qty = ada ? ada.jumlah : 0;
-            if (produk.stok <= qty) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; }
+            if (produk.status_ketersediaan !== 'pesan_dulu' && produk.stok <= qty) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; }
             if (ada) { ada.jumlah++; }
-            else { this.keranjang.push({ produk_id: produk.id, nama_produk: produk.nama_produk, harga_jual: parseFloat(produk.harga_jual), foto: produk.foto, jumlah: 1, stok: produk.stok }); }
+            else { this.keranjang.push({ produk_id: produk.id, nama_produk: produk.nama_produk, harga_jual: parseFloat(produk.harga_jual), foto: produk.foto, jumlah: 1, stok: produk.stok, status_ketersediaan: produk.status_ketersediaan }); }
             this.tambahToast('Produk ditambahkan.', 'sukses');
         },
-        tambahJumlah(item) { if (item.stok <= item.jumlah) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; } item.jumlah++; },
+        tambahJumlah(item) { if (item.status_ketersediaan !== 'pesan_dulu' && item.stok <= item.jumlah) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; } item.jumlah++; },
         kurangiJumlah(item) { if (item.jumlah > 1) item.jumlah--; else this.hapusItem(item); },
         hapusItem(item) { this.keranjang = this.keranjang.filter(i => i.produk_id !== item.produk_id); this.tambahToast('Item dihapus.', 'info'); },
 
@@ -666,6 +689,11 @@ function aplikasiKasir() {
                     </div>
                 </div>`;
             } else {
+                const itemsDapur = d.keranjang.filter(item => item.status_ketersediaan === 'pesan_dulu');
+                if (itemsDapur.length === 0) {
+                    this.tambahToast('Tidak ada item Pre-Order (Pesan Dulu) untuk dapur.', 'info');
+                    return;
+                }
                 html = `
                 <div style="font-family:'Courier New',monospace;width:300px;margin:auto;padding:20px;font-size:12px;">
                     <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:10px;">
@@ -677,7 +705,7 @@ function aplikasiKasir() {
                         <div>Pelanggan: <strong style="font-size:14px;">${d.nama_pembeli}</strong></div>
                     </div>
                     <div style="border-top:2px solid #000;border-bottom:2px solid #000;padding:10px 0;">
-                        ${d.keranjang.map((item, i) => `
+                        ${itemsDapur.map((item, i) => `
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:14px;">
                                 <span><strong>${i+1}. ${item.nama_produk}</strong></span>
                                 <span style="background:#000;color:#fff;padding:2px 10px;border-radius:4px;font-weight:bold;font-size:16px;">x${item.jumlah}</span>
