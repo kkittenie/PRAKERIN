@@ -9,6 +9,7 @@ use App\Http\Controllers\KategoriProdukController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\BahanBakuController;
 use App\Http\Controllers\ProduksiController;
+use App\Http\Controllers\LaporanController;
 use App\Models\Produksi;
 
 // halaman yang butuh login
@@ -21,6 +22,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/transaksi/pulihkan/{id}', [TransaksiKasirController::class, 'pulihkanDitahan'])->name('transaksi.pulihkan');
     Route::delete('/transaksi/hapus-ditahan/{id}', [TransaksiKasirController::class, 'hapusDitahan'])->name('transaksi.hapus-ditahan');
     Route::post('/transaksi/bayar', [TransaksiKasirController::class, 'bayar'])->name('transaksi.bayar');
+
+    // Laporan
+    Route::get('/histori-transaksi', [LaporanController::class, 'historiTransaksi'])->name('histori-transaksi');
+    Route::get('/histori-transaksi/{id}/detail', [LaporanController::class, 'detailTransaksi'])->name('histori-transaksi.detail');
+    Route::get('/laporan-penjualan', [LaporanController::class, 'laporanPenjualan'])->name('laporan-penjualan');
+
 
     Route::resource('roles', RoleController::class)
     ->middleware('permission:lihat_role|tambah_role|edit_role|hapus_role');
