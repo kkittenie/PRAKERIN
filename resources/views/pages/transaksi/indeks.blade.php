@@ -1,0 +1,945 @@
+@extends('layouts.app')
+
+@section('content')
+<div x-data="aplikasiKasir()" x-init="inisialisasi()" class="bg-gray-50 min-h-screen text-gray-800 -m-4 md:-m-6 p-4 md:p-6" x-cloak>
+    
+    <!-- Toast Notifikasi Premium -->
+    <div class="fixed top-5 right-5 z-99999 flex flex-col gap-2">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div :class="{
+                    'bg-green-600': toast.tipe === 'sukses',
+                    'bg-red-600': toast.tipe === 'error',
+                    'bg-blue-600': toast.tipe === 'info'
+                 }" 
+                 class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] transform transition-all duration-300 animate-slide-in">
+                <span class="font-semibold text-lg" x-text="toast.tipe === 'sukses' ? '✓' : '⚠'"></span>
+                <span class="text-sm" x-text="toast.pesan"></span>
+            </div>
+        </template>
+    </div>
+
+    <!-- Tampilan 1: Kasir POS (Beranda Transaksi) -->
+    <div x-show="halamanAktif === 'beranda'" class="flex flex-col gap-6">
+        
+        <!-- Header Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-xs border border-gray-100">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-gray-900">Bagisto POS - Penjualan</h1>
+                    <p class="text-xs text-gray-500">Aplikasi Kasir Toko Pastry Modern</p>
+                </div>
+            </div>
+
+            <!-- Bagian Pencarian & Aksi -->
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <div class="relative flex-1 sm:w-80">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </span>
+                    <input type="text" x-model="kataKunciPencarian" placeholder="Cari nama atau kode produk..." 
+                           class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-gray-50 focus:bg-white transition-all">
+                </div>
+                
+                <button @click="bukaModalDaftarDitahan()" 
+                        class="relative flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-lg border border-indigo-100 transition text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Daftar Ditahan</span>
+                    <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xxs font-bold px-2 py-0.5 rounded-full" 
+                          x-show="totalDitahan > 0" x-text="totalDitahan"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Layout Utama: Grid Produk (Kiri) & Detail Keranjang (Kanan) -->
+        <div class="grid grid-cols-12 gap-6 items-start">
+            
+            <!-- Sisi Kiri: Produk & Kategori -->
+            <div class="col-span-12 lg:col-span-8 flex flex-col gap-6">
+                <!-- Navigasi Kategori -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                    <button @click="kategoriTerpilih = 'semua'"
+                            :class="kategoriTerpilih === 'semua' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white hover:bg-gray-100 text-gray-600 border border-gray-100'"
+                            class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap">
+                        Semua Produk
+                    </button>
+                    <template x-for="kategori in daftarKategori" :key="kategori.id">
+                        <button @click="kategoriTerpilih = kategori.id"
+                                :class="kategoriTerpilih === kategori.id ? 'bg-indigo-600 text-white shadow-md' : 'bg-white hover:bg-gray-100 text-gray-600 border border-gray-100'"
+                                class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap"
+                                x-text="kategori.nama_kategori">
+                        </button>
+                    </template>
+                </div>
+
+                <!-- Grid Produk -->
+                <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <template x-for="produk in produkTersaring" :key="produk.id">
+                        <div class="bg-white rounded-xl border border-gray-100 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
+                            <!-- Indikator Stok Habis -->
+                            <div x-show="produk.stok <= 0" class="absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center p-2 text-center">
+                                <span class="bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full text-xs">Habis</span>
+                            </div>
+
+                            <!-- Gambar Produk -->
+                            <div class="aspect-square bg-gray-100 relative overflow-hidden">
+                                <img :src="produk.foto ? '/' + produk.foto : '/images/logo/logo-icon.svg'" 
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                     alt="Gambar Produk">
+                                <div class="absolute bottom-2 right-2 bg-slate-900/75 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                                    Stok: <span x-text="produk.stok"></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Konten Card -->
+                            <div class="p-4 flex-1 flex flex-col justify-between gap-3">
+                                <div>
+                                    <p class="text-xxs font-bold text-indigo-600 uppercase tracking-wider" x-text="produk.kategori?.nama_kategori || 'Pastry'"></p>
+                                    <h3 class="font-bold text-gray-900 text-sm mt-0.5 line-clamp-2" x-text="produk.nama_produk"></h3>
+                                    <p class="text-xs text-gray-400" x-text="produk.kode_produk"></p>
+                                </div>
+                                <div class="flex items-center justify-between mt-auto pt-2 border-t border-gray-50">
+                                    <span class="font-bold text-indigo-700 text-sm" x-text="formatRupiah(produk.harga_jual)"></span>
+                                    <button @click="tambahKeKeranjang(produk)" 
+                                            :disabled="produk.stok <= 0"
+                                            class="p-2 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-lg transition disabled:bg-gray-100 disabled:text-gray-400">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Sisi Kanan: Detail Keranjang Transaksi -->
+            <div class="col-span-12 lg:col-span-4 bg-white rounded-xl border border-gray-100 shadow-xs flex flex-col">
+                
+                <!-- Pembeli Selector -->
+                <div class="p-4 border-b border-gray-100 bg-gray-50/50 rounded-t-xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-xs font-bold uppercase text-gray-400 tracking-wider">Informasi Pembeli</label>
+                        <button @click="ubahPembeli()" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">Ubah</button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center rounded-full" 
+                             x-text="pembeli.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()"></div>
+                        <div class="overflow-hidden">
+                            <h4 class="font-bold text-gray-900 text-sm truncate" x-text="pembeli"></h4>
+                            <p class="text-xs text-gray-500 truncate" x-text="pembeliEmail || 'pembeli@contoh.com'"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daftar Keranjang -->
+                <div class="p-4 border-b border-gray-100 max-h-[350px] overflow-y-auto flex-1 flex flex-col gap-3 min-h-[150px]">
+                    <!-- Jika Keranjang Kosong -->
+                    <div x-show="keranjang.length === 0" class="flex-1 flex flex-col items-center justify-center py-8 text-center">
+                        <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <p class="text-gray-400 text-xs font-semibold">Keranjang masih kosong</p>
+                    </div>
+
+                    <!-- Item List -->
+                    <template x-for="item in keranjang" :key="item.produk_id">
+                        <div class="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg border border-gray-100 relative group">
+                            <div class="w-12 h-12 rounded overflow-hidden bg-white border border-gray-100 shrink-0">
+                                <img :src="item.foto ? '/' + item.foto : '/images/logo/logo-icon.svg'" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h5 class="font-bold text-gray-900 text-xs truncate" x-text="item.nama_produk"></h5>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-xxs font-bold text-indigo-700" x-text="formatRupiah(item.harga_jual)"></span>
+                                    <span class="text-xxs text-gray-400">Total: <span class="font-semibold text-gray-700" x-text="formatRupiah(item.harga_jual * item.jumlah)"></span></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Counter Quantity -->
+                            <div class="flex items-center border border-gray-200 rounded-md bg-white shrink-0">
+                                <button @click="kurangiJumlah(item)" class="px-2 py-0.5 hover:bg-gray-100 text-gray-500 font-bold transition text-xs">-</button>
+                                <span class="px-2 text-xs font-bold text-gray-800" x-text="item.jumlah"></span>
+                                <button @click="tambahJumlah(item)" class="px-2 py-0.5 hover:bg-gray-100 text-gray-500 font-bold transition text-xs">+</button>
+                            </div>
+
+                            <!-- Tombol Hapus -->
+                            <button @click="hapusItem(item)" class="p-1 hover:bg-red-50 text-red-500 rounded-md transition hover:text-red-700 ml-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Input Catatan & Diskon Tambahan -->
+                <div class="p-4 border-b border-gray-100 bg-gray-50/20 flex flex-col gap-2">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xxs font-bold text-gray-400 uppercase tracking-wider block mb-1">Diskon (Rp)</label>
+                            <input type="number" x-model.number="diskon" min="0" placeholder="0" 
+                                   class="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="text-xxs font-bold text-gray-400 uppercase tracking-wider block mb-1">Pajak (%)</label>
+                            <input type="number" x-model.number="pajakPersen" min="0" placeholder="10" 
+                                   class="w-full px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xxs font-bold text-gray-400 uppercase tracking-wider block mb-1">Catatan Tambahan</label>
+                        <input type="text" x-model="catatan" placeholder="Catatan pesanan..." 
+                               class="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Rincian Biaya -->
+                <div class="p-4 flex flex-col gap-2.5">
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+                        <span>Subtotal</span>
+                        <span class="font-semibold text-gray-800" x-text="formatRupiah(subtotal)"></span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-gray-500" x-show="diskon > 0">
+                        <span>Diskon</span>
+                        <span class="font-semibold text-red-600" x-text="'-' + formatRupiah(diskon)"></span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-gray-500" x-show="pajak > 0">
+                        <span>Pajak (<span x-text="pajakPersen"></span>%)</span>
+                        <span class="font-semibold text-gray-800" x-text="formatRupiah(pajak)"></span>
+                    </div>
+                    <div class="flex items-center justify-between pt-2.5 border-t border-gray-100">
+                        <span class="font-bold text-gray-900 text-sm">Total Tagihan</span>
+                        <span class="font-black text-indigo-700 text-lg" x-text="formatRupiah(totalTagihan)"></span>
+                    </div>
+                </div>
+
+                <!-- Tombol Aksi Bawah -->
+                <div class="p-4 pt-0 grid grid-cols-3 gap-3">
+                    <button @click="tahanOrderan()" 
+                            :disabled="keranjang.length === 0"
+                            class="col-span-1 py-3 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>Tahan</span>
+                    </button>
+                    <button @click="lanjutKePembayaran()" 
+                            :disabled="keranjang.length === 0"
+                            class="col-span-2 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition shadow-md hover:shadow-lg text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span>Proses Bayar</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Tampilan 2: Layar Detail Pembayaran -->
+    <div x-show="halamanAktif === 'pembayaran'" class="flex flex-col gap-6" x-transition>
+        
+        <!-- Header Pembayaran -->
+        <div class="flex items-center justify-between bg-white p-4 rounded-xl shadow-xs border border-gray-100">
+            <button @click="halamanAktif = 'beranda'" 
+                    class="flex items-center gap-2 text-indigo-700 hover:text-indigo-900 font-bold transition text-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Kembali Ke Kasir</span>
+            </button>
+            <h2 class="font-extrabold text-lg text-gray-900">Layar Pembayaran Kasir</h2>
+            <div class="w-24"></div> <!-- Spacer -->
+        </div>
+
+        <div class="grid grid-cols-12 gap-6 items-start">
+            
+            <!-- Kiri: Numpad & Input Nominal Uang Diterima -->
+            <div class="col-span-12 lg:col-span-7 flex flex-col gap-6">
+                <!-- Info Status Kembalian -->
+                <div class="grid grid-cols-3 gap-4 bg-white p-5 rounded-xl border border-gray-100 shadow-xs">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-xxs font-bold text-gray-400 uppercase tracking-wider">Total Tagihan</span>
+                        <span class="text-lg font-black text-gray-900" x-text="formatRupiah(totalTagihan)"></span>
+                    </div>
+                    <div class="flex flex-col gap-1 border-x border-gray-100 px-4">
+                        <span class="text-xxs font-bold text-gray-400 uppercase tracking-wider">Uang Diterima</span>
+                        <span class="text-lg font-black text-green-600" x-text="formatRupiah(jumlahDiterimaNum)"></span>
+                    </div>
+                    <div class="flex flex-col gap-1 pl-2">
+                        <span class="text-xxs font-bold text-gray-400 uppercase tracking-wider">Kembalian</span>
+                        <span class="text-lg font-black" :class="kembalianNum >= 0 ? 'text-blue-600' : 'text-red-500'" x-text="formatRupiah(kembalianNum)"></span>
+                    </div>
+                </div>
+
+                <!-- Metode Pembayaran & Input Numpad -->
+                <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-xs flex flex-col gap-6">
+                    <!-- Tabs Metode Pembayaran -->
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-3">Metode Pembayaran</label>
+                        <div class="flex gap-4">
+                            <button @click="metodePembayaran = 'Tunai'"
+                                    :class="metodePembayaran === 'Tunai' ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                                    class="flex-1 py-3 px-5 rounded-xl font-bold tracking-wide transition text-sm">
+                                TUNAI (CASH)
+                            </button>
+                            <button @click="metodePembayaran = 'Kartu'"
+                                    :class="metodePembayaran === 'Kartu' ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                                    class="flex-1 py-3 px-5 rounded-xl font-bold tracking-wide transition text-sm">
+                                KARTU (CARD/DEBIT)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Input Nominal Box -->
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Input Uang Tunai Diterima (Rp)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 font-black text-gray-400 text-lg">Rp</span>
+                            <input type="text" x-model="jumlahDiterima" readonly
+                                   class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-right font-black text-2xl text-slate-800 tracking-wide focus:outline-none">
+                        </div>
+                        
+                        <!-- Pilihan Cepat Uang Pas / Nominal Bulat -->
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <button @click="setJumlahDiterimaCepat(totalTagihan)" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-xs transition">Uang Pas</button>
+                            <button @click="tambahNominalCepat(20000)" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg text-xs transition">+Rp20k</button>
+                            <button @click="tambahNominalCepat(50000)" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg text-xs transition">+Rp50k</button>
+                            <button @click="tambahNominalCepat(100000)" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg text-xs transition">+Rp100k</button>
+                        </div>
+                    </div>
+
+                    <!-- Keyboard Numpad -->
+                    <div class="grid grid-cols-3 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <!-- Baris 1 -->
+                        <button @click="tekanNumpad('1')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">1</button>
+                        <button @click="tekanNumpad('2')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">2</button>
+                        <button @click="tekanNumpad('3')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">3</button>
+
+                        <!-- Baris 2 -->
+                        <button @click="tekanNumpad('4')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">4</button>
+                        <button @click="tekanNumpad('5')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">5</button>
+                        <button @click="tekanNumpad('6')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">6</button>
+
+                        <!-- Baris 3 -->
+                        <button @click="tekanNumpad('7')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">7</button>
+                        <button @click="tekanNumpad('8')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">8</button>
+                        <button @click="tekanNumpad('9')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">9</button>
+
+                        <!-- Baris 4 -->
+                        <button @click="tekanNumpad('00')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">00</button>
+                        <button @click="tekanNumpad('0')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">0</button>
+                        <button @click="hapusKarakterNumpad()" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-xl rounded-lg shadow-xxs active:scale-95 transition flex items-center justify-center">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" />
+                            </svg>
+                        </button>
+
+                        <!-- Baris 5 -->
+                        <button @click="tekanNumpad('.')" class="py-4 bg-white hover:bg-gray-100 border border-gray-200 text-gray-800 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">.</button>
+                        <button @click="halamanAktif = 'beranda'" class="col-span-2 py-4 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-base rounded-lg active:scale-95 transition text-center flex items-center justify-center">
+                            Batal (Cancel)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kanan: Detail Transaksi / Rincian Keranjang -->
+            <div class="col-span-12 lg:col-span-5 bg-white rounded-xl border border-gray-100 shadow-xs p-6 flex flex-col gap-6">
+                <div>
+                    <h3 class="font-extrabold text-gray-900 text-lg mb-1">Rincian Belanja</h3>
+                    <p class="text-xs text-gray-500">Pelanggan: <span class="font-bold text-gray-800" x-text="pembeli"></span></p>
+                </div>
+
+                <!-- List Item Ringkas -->
+                <div class="border-y border-gray-100 py-4 flex flex-col gap-3 max-h-[300px] overflow-y-auto">
+                    <template x-for="item in keranjang" :key="item.produk_id">
+                        <div class="flex justify-between items-start gap-4">
+                            <div class="min-w-0 flex-1">
+                                <p class="font-bold text-xs text-gray-900" x-text="item.nama_produk"></p>
+                                <p class="text-xxs text-gray-400"><span x-text="item.jumlah"></span> x <span x-text="formatRupiah(item.harga_jual)"></span></p>
+                            </div>
+                            <span class="font-bold text-xs text-gray-700 shrink-0" x-text="formatRupiah(item.harga_jual * item.jumlah)"></span>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Rincian Biaya -->
+                <div class="flex flex-col gap-2 text-xs">
+                    <div class="flex justify-between text-gray-500">
+                        <span>Subtotal</span>
+                        <span class="font-semibold text-gray-800" x-text="formatRupiah(subtotal)"></span>
+                    </div>
+                    <div class="flex justify-between text-red-600" x-show="diskon > 0">
+                        <span>Diskon</span>
+                        <span class="font-semibold" x-text="'-' + formatRupiah(diskon)"></span>
+                    </div>
+                    <div class="flex justify-between text-gray-500" x-show="pajak > 0">
+                        <span>Pajak (<span x-text="pajakPersen"></span>%)</span>
+                        <span class="font-semibold text-gray-800" x-text="formatRupiah(pajak)"></span>
+                    </div>
+                    <div class="flex justify-between pt-3 border-t border-gray-100 font-extrabold text-sm text-gray-900">
+                        <span>Total Pembayaran</span>
+                        <span class="text-indigo-700 text-base" x-text="formatRupiah(totalTagihan)"></span>
+                    </div>
+                </div>
+
+                <!-- Tombol Konfirmasi Transaksi Final -->
+                <button @click="selesaikanPembayaran()" 
+                        :disabled="kembalianNum < 0"
+                        class="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition shadow-md hover:shadow-lg text-sm flex items-center justify-center gap-2 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Konfirmasi Pembayaran</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: Daftar Pesanan Ditahan (Hold Orders) -->
+    <div x-show="modalDitahanTerbuka" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-9999 p-4" x-transition>
+        <div @click.away="modalDitahanTerbuka = false" class="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden transform transition-all duration-300">
+            <!-- Header Modal -->
+            <div class="bg-slate-900 text-white p-5 flex items-center justify-between">
+                <div>
+                    <h3 class="font-extrabold text-base">Daftar Pesanan Ditahan</h3>
+                    <p class="text-slate-400 text-xs mt-0.5">Daftar pesanan pembeli yang ditunda.</p>
+                </div>
+                <button @click="modalDitahanTerbuka = false" class="text-slate-400 hover:text-white transition font-bold text-lg">&times;</button>
+            </div>
+
+            <!-- List Pesanan Ditahan -->
+            <div class="p-6 max-h-[400px] overflow-y-auto flex flex-col gap-4">
+                <template x-if="daftarDitahan.length === 0">
+                    <div class="text-center py-10">
+                        <svg class="w-16 h-16 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <p class="text-gray-400 font-semibold text-sm">Tidak ada pesanan yang sedang ditahan.</p>
+                    </div>
+                </template>
+                
+                <template x-for="pesanan in daftarDitahan" :key="pesanan.id">
+                    <div class="border border-gray-100 rounded-lg p-4 bg-gray-50 flex items-center justify-between gap-4">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="font-extrabold text-sm text-gray-900" x-text="pesanan.nama_pembeli"></span>
+                                <span class="text-xxs text-gray-400" x-text="formatTanggal(pesanan.created_at)"></span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Item: <span class="font-semibold text-gray-700" x-text="pesanan.item_pesanan.map(i => i.nama_produk + ' (' + i.jumlah + ')').join(', ')"></span>
+                            </p>
+                            <p class="text-xs text-gray-500 mt-0.5" x-show="pesanan.catatan">
+                                Catatan: <span class="italic text-gray-600" x-text="pesanan.catatan"></span>
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="font-extrabold text-sm text-indigo-700 mr-2" x-text="formatRupiah(pesanan.total)"></span>
+                            <button @click="pulihkanPesanan(pesanan.id)" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition shadow-xs">
+                                Pulihkan
+                            </button>
+                            <button @click="hapusPesananDitahan(pesanan.id)" class="p-2 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            
+            <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-end">
+                <button @click="modalDitahanTerbuka = false" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-lg transition text-gray-700">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Dialog Mengubah Informasi Pembeli -->
+    <div x-show="modalPembeliTerbuka" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-9999 p-4" x-transition>
+        <div @click.away="modalPembeliTerbuka = false" class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform transition-all duration-300">
+            <div class="bg-slate-900 text-white p-5">
+                <h3 class="font-extrabold text-base">Informasi Pembeli</h3>
+                <p class="text-slate-400 text-xs mt-0.5">Atur nama & email untuk pesanan ini.</p>
+            </div>
+            <div class="p-6 flex flex-col gap-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-600 block mb-1">Nama Pembeli</label>
+                    <input type="text" x-model="inputNamaPembeli" placeholder="Contoh: Wilson Fisk" 
+                           class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-600 block mb-1">Email Pembeli</label>
+                    <input type="email" x-model="inputEmailPembeli" placeholder="Contoh: customer1@example.com" 
+                           class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+            <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-end gap-2">
+                <button @click="modalPembeliTerbuka = false" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-lg transition text-gray-700">Batal</button>
+                <button @click="simpanPembeli()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Sukses Transaksi / Receipt Minimalis -->
+    <div x-show="modalSuksesTerbuka" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-9999 p-4" x-transition>
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all duration-300 p-6 flex flex-col items-center text-center gap-6">
+            <!-- Icon Checklist -->
+            <div class="w-16 h-16 bg-green-100 text-green-600 font-bold flex items-center justify-center rounded-full text-3xl animate-bounce">
+                ✓
+            </div>
+            
+            <div>
+                <h3 class="font-extrabold text-gray-900 text-lg">Pembayaran Sukses!</h3>
+                <p class="text-xs text-gray-500 mt-1">Transaksi Anda telah berhasil dicatat.</p>
+                <span class="inline-block mt-3 px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 font-mono text-xs rounded-full font-bold" x-text="suksesData.kode_transaksi"></span>
+            </div>
+
+            <!-- Rincian Kembalian -->
+            <div class="w-full bg-gray-50 rounded-xl p-4 border border-gray-100 flex flex-col gap-2 text-xs">
+                <div class="flex justify-between text-gray-500">
+                    <span>Total Pembayaran</span>
+                    <span class="font-semibold text-gray-800" x-text="formatRupiah(suksesData.total_bayar)"></span>
+                </div>
+                <div class="flex justify-between text-gray-500">
+                    <span>Uang Diterima</span>
+                    <span class="font-semibold text-gray-800" x-text="formatRupiah(suksesData.jumlah_diterima)"></span>
+                </div>
+                <div class="flex justify-between pt-2 border-t border-gray-100 font-extrabold text-sm">
+                    <span>Uang Kembalian</span>
+                    <span class="text-green-600" x-text="formatRupiah(suksesData.kembalian)"></span>
+                </div>
+            </div>
+
+            <button @click="tutupModalSukses()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition shadow-md hover:shadow-lg text-sm">
+                Transaksi Baru
+            </button>
+        </div>
+    </div>
+
+</div>
+@endsection
+
+@push('scripts')
+<script>
+function aplikasiKasir() {
+    return {
+        // State Halaman
+        halamanAktif: 'beranda', // 'beranda', 'pembayaran'
+        
+        // Data master dari database (Laravel)
+        daftarProduk: @json($daftarProduk),
+        daftarKategori: @json($daftarKategori),
+        
+        // State Pencarian & Kategori
+        kataKunciPencarian: '',
+        kategoriTerpilih: 'semua',
+
+        // State Keranjang Belanja
+        keranjang: [],
+        pembeli: 'Pelanggan Umum',
+        pembeliEmail: '',
+        catatan: '',
+        diskon: '',
+        pajakPersen: 10,
+
+        // State Input Pembeli (Modal)
+        inputNamaPembeli: '',
+        inputEmailPembeli: '',
+
+        // State Numpad & Pembayaran
+        jumlahDiterima: '',
+        metodePembayaran: 'Tunai',
+
+        // State Daftar Ditahan
+        daftarDitahan: @json($daftarDitahan),
+
+        // Modals
+        modalDitahanTerbuka: false,
+        modalPembeliTerbuka: false,
+        modalSuksesTerbuka: false,
+
+        // Data Transaksi Sukses
+        suksesData: {
+            kode_transaksi: '',
+            total_bayar: 0,
+            jumlah_diterima: 0,
+            kembalian: 0
+        },
+
+        // Toast Messages
+        toasts: [],
+        toastIdCounter: 0,
+
+        // Inisialisasi awal
+        inisialisasi() {
+            // Sinkronisasi data awal jika diperlukan
+        },
+
+        // Filter produk berdasarkan kategori dan pencarian kata kunci
+        get produkTersaring() {
+            return this.daftarProduk.filter(produk => {
+                const cocokKategori = this.kategoriTerpilih === 'semua' || produk.kategori_id === this.kategoriTerpilih;
+                const cocokPencarian = produk.nama_produk.toLowerCase().includes(this.kataKunciPencarian.toLowerCase()) ||
+                                      produk.kode_produk.toLowerCase().includes(this.kataKunciPencarian.toLowerCase());
+                return cocokKategori && cocokPencarian;
+            });
+        },
+
+        // Getters Rincian Biaya
+        get subtotal() {
+            return this.keranjang.reduce((sum, item) => sum + (item.harga_jual * item.jumlah), 0);
+        },
+
+        get pajak() {
+            const base = this.subtotal - (this.diskon || 0);
+            return Math.max(0, Math.round(base * (this.pajakPersen / 100)));
+        },
+
+        get totalTagihan() {
+            const base = this.subtotal - (this.diskon || 0);
+            return Math.max(0, base + this.pajak);
+        },
+
+        get jumlahDiterimaNum() {
+            return parseFloat(this.jumlahDiterima) || 0;
+        },
+
+        get kembalianNum() {
+            return this.jumlahDiterimaNum - this.totalTagihan;
+        },
+
+        get totalDitahan() {
+            return this.daftarDitahan.length;
+        },
+
+        // Tambahkan produk ke keranjang
+        tambahKeKeranjang(produk) {
+            const itemAda = this.keranjang.find(item => item.produk_id === produk.id);
+            
+            // Cek ketersediaan stok
+            const qtySaatIni = itemAda ? itemAda.jumlah : 0;
+            if (produk.stok <= qtySaatIni) {
+                this.tambahToast('Stok tidak mencukupi untuk menambah produk ini!', 'error');
+                return;
+            }
+
+            if (itemAda) {
+                itemAda.jumlah++;
+            } else {
+                this.keranjang.push({
+                    produk_id: produk.id,
+                    nama_produk: produk.nama_produk,
+                    harga_jual: parseFloat(produk.harga_jual),
+                    foto: produk.foto,
+                    jumlah: 1,
+                    stok: produk.stok
+                });
+            }
+            this.tambahToast('Produk ditambahkan ke keranjang.', 'sukses');
+        },
+
+        tambahJumlah(item) {
+            if (item.stok <= item.jumlah) {
+                this.tambahToast('Stok produk tidak mencukupi!', 'error');
+                return;
+            }
+            item.jumlah++;
+        },
+
+        kurangiJumlah(item) {
+            if (item.jumlah > 1) {
+                item.jumlah--;
+            } else {
+                this.hapusItem(item);
+            }
+        },
+
+        hapusItem(item) {
+            this.keranjang = this.keranjang.filter(i => i.produk_id !== item.produk_id);
+            this.tambahToast('Item dihapus dari keranjang.', 'info');
+        },
+
+        // Pembeli selector modal
+        ubahPembeli() {
+            this.inputNamaPembeli = this.pembeli === 'Pelanggan Umum' ? '' : this.pembeli;
+            this.inputEmailPembeli = this.pembeliEmail;
+            this.modalPembeliTerbuka = true;
+        },
+
+        simpanPembeli() {
+            this.pembeli = this.inputNamaPembeli.trim() || 'Pelanggan Umum';
+            this.pembeliEmail = this.inputEmailPembeli.trim();
+            this.modalPembeliTerbuka = false;
+            this.tambahToast('Informasi pembeli diperbarui.', 'sukses');
+        },
+
+        // Numpad handler
+        tekanNumpad(key) {
+            if (this.jumlahDiterima === '' && (key === '0' || key === '00')) return;
+            this.jumlahDiterima += key;
+        },
+
+        hapusKarakterNumpad() {
+            this.jumlahDiterima = this.jumlahDiterima.slice(0, -1);
+        },
+
+        bersihkanNumpad() {
+            this.jumlahDiterima = '';
+        },
+
+        setJumlahDiterimaCepat(nominal) {
+            this.jumlahDiterima = Math.round(nominal).toString();
+        },
+
+        tambahNominalCepat(nominal) {
+            const current = parseFloat(this.jumlahDiterima) || 0;
+            this.jumlahDiterima = (current + nominal).toString();
+        },
+
+        // Beralih ke halaman pembayaran
+        lanjutKePembayaran() {
+            if (this.keranjang.length === 0) {
+                this.tambahToast('Keranjang masih kosong!', 'error');
+                return;
+            }
+            this.jumlahDiterima = '';
+            this.halamanAktif = 'pembayaran';
+        },
+
+        // Hold order / Menahan pesanan
+        tahanOrderan() {
+            if (this.keranjang.length === 0) return;
+            
+            fetch("{{ route('transaksi.tahan') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({
+                    nama_pembeli: this.pembeli,
+                    email_pembeli: this.pembeliEmail || null,
+                    item_pesanan: this.keranjang,
+                    subtotal: this.subtotal,
+                    pajak: this.pajak,
+                    diskon: this.diskon || 0,
+                    total: this.totalTagihan,
+                    catatan: this.catatan || null
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    this.tambahToast('Pesanan berhasil ditahan.', 'sukses');
+                    this.bersihkanKeranjang();
+                    this.ambilDaftarDitahanDariServer();
+                } else {
+                    this.tambahToast(res.pesan, 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                this.tambahToast('Koneksi internet bermasalah atau server error.', 'error');
+            });
+        },
+
+        bukaModalDaftarDitahan() {
+            this.ambilDaftarDitahanDariServer();
+            this.modalDitahanTerbuka = true;
+        },
+
+        ambilDaftarDitahanDariServer() {
+            fetch("{{ route('transaksi.daftar-ditahan') }}")
+                .then(res => res.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        this.daftarDitahan = res.data;
+                    }
+                });
+        },
+
+        pulihkanPesanan(id) {
+            fetch(`/transaksi/pulihkan/${id}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                }
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    const data = res.data;
+                    this.keranjang = data.item_pesanan;
+                    this.pembeli = data.nama_pembeli;
+                    this.pembeliEmail = data.email_pembeli || '';
+                    this.catatan = data.catatan || '';
+                    this.diskon = data.diskon;
+                    this.subtotalVal = data.subtotal;
+                    
+                    this.modalDitahanTerbuka = false;
+                    this.tambahToast('Pesanan ditahan berhasil dipulihkan.', 'sukses');
+                    this.ambilDaftarDitahanDariServer();
+                } else {
+                    this.tambahToast(res.pesan, 'error');
+                }
+            });
+        },
+
+        hapusPesananDitahan(id) {
+            if(!confirm('Apakah Anda yakin ingin menghapus pesanan ditahan ini?')) return;
+
+            fetch(`/transaksi/hapus-ditahan/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                }
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    this.tambahToast('Pesanan ditahan berhasil dihapus.', 'info');
+                    this.ambilDaftarDitahanDariServer();
+                } else {
+                    this.tambahToast(res.pesan, 'error');
+                }
+            });
+        },
+
+        // Transaksi Konfirmasi Final (Confirm Payment)
+        selesaikanPembayaran() {
+            if (this.kembalianNum < 0) {
+                this.tambahToast('Jumlah uang yang diterima kurang!', 'error');
+                return;
+            }
+
+            fetch("{{ route('transaksi.bayar') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({
+                    nama_pembeli: this.pembeli,
+                    item_pesanan: this.keranjang,
+                    subtotal: this.subtotal,
+                    pajak: this.pajak,
+                    diskon: this.diskon || 0,
+                    total_bayar: this.totalTagihan,
+                    jumlah_diterima: this.jumlahDiterimaNum,
+                    kembalian: this.kembalianNum,
+                    metode_pembayaran: this.metodePembayaran
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    // Update stok lokal agar sesuai
+                    this.keranjang.forEach(item => {
+                        const prod = this.daftarProduk.find(p => p.id === item.produk_id);
+                        if (prod) {
+                            prod.stok -= item.jumlah;
+                        }
+                    });
+
+                    // Siapkan data modal sukses
+                    this.suksesData = {
+                        kode_transaksi: res.kode_transaksi,
+                        total_bayar: this.totalTagihan,
+                        jumlah_diterima: this.jumlahDiterimaNum,
+                        kembalian: this.kembalianNum
+                    };
+                    
+                    this.modalSuksesTerbuka = true;
+                    this.bersihkanKeranjang();
+                    this.halamanAktif = 'beranda';
+                } else {
+                    this.tambahToast(res.pesan, 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                this.tambahToast('Gagal memproses transaksi. Periksa kembali stok produk!', 'error');
+            });
+        },
+
+        tutupModalSukses() {
+            this.modalSuksesTerbuka = false;
+        },
+
+        bersihkanKeranjang() {
+            this.keranjang = [];
+            this.pembeli = 'Pelanggan Umum';
+            this.pembeliEmail = '';
+            this.catatan = '';
+            this.diskon = '';
+            this.pajakPersen = 10;
+            this.jumlahDiterima = '';
+        },
+
+        // Format Uang Rupiah (Rp)
+        formatRupiah(value) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        },
+
+        // Format tanggal buatan sendiri
+        formatTanggal(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return new Date(dateString).toLocaleDateString('id-ID', options);
+        },
+
+        // Toast alert system
+        tambahToast(pesan, tipe = 'info') {
+            const id = this.toastIdCounter++;
+            this.toasts.push({ id, pesan, tipe });
+            setTimeout(() => {
+                this.toasts = this.toasts.filter(t => t.id !== id);
+            }, 3000);
+        }
+    }
+}
+</script>
+<style>
+/* CSS khusus untuk visual lebih memukau */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+[x-cloak] { display: none !important; }
+@keyframes slide-in {
+    from {
+        transform: translateY(1rem);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+.animate-slide-in {
+    animation: slide-in 0.2s ease-out forwards;
+}
+.text-xxs {
+    font-size: 0.65rem;
+}
+</style>
+@endsection

@@ -4,20 +4,24 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\TransaksiKasirController;
 
 // halaman yang butuh login
 Route::middleware(['auth'])->group(function () {
+
+    // Transaksi Kasir (POS)
+    Route::get('/', [TransaksiKasirController::class, 'indeks'])->name('transaksi.indeks');
+    Route::post('/transaksi/tahan', [TransaksiKasirController::class, 'simpanDitahan'])->name('transaksi.tahan');
+    Route::get('/transaksi/daftar-ditahan', [TransaksiKasirController::class, 'ambilDitahan'])->name('transaksi.daftar-ditahan');
+    Route::post('/transaksi/pulihkan/{id}', [TransaksiKasirController::class, 'pulihkanDitahan'])->name('transaksi.pulihkan');
+    Route::delete('/transaksi/hapus-ditahan/{id}', [TransaksiKasirController::class, 'hapusDitahan'])->name('transaksi.hapus-ditahan');
+    Route::post('/transaksi/bayar', [TransaksiKasirController::class, 'bayar'])->name('transaksi.bayar');
 
     Route::resource('roles', RoleController::class)
     ->middleware('permission:lihat_role|tambah_role|edit_role|hapus_role');
 
     Route::resource('users', UserController::class)
     ->middleware('permission:lihat_user|tambah_user|edit_user|hapus_user');
-
-    // dashboard
-    Route::get('/', function () {
-        return view('pages.dashboard.ecommerce', ['title' => 'E-commerce Dashboard']);
-    })->name('dashboard');
 
     // calendar
     Route::get('/calendar', function () {
