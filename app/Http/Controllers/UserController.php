@@ -47,7 +47,14 @@ class UserController extends Controller
 
         $user->assignRole($request->role);
 
-        activity()->log("Menambah user: {$user->name}");
+        activity()
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'username' => $user->username,
+                'nama' => $user->name,
+            ])
+            ->log('Admin menambahkan user');
 
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan');
     }
@@ -65,6 +72,7 @@ class UserController extends Controller
      */
     public function edit(string $id)
     {
+        $user = User::findOrFail($id);
         $roles = Role::all();
         $userRole = $user->roles->pluck('name')->first();
 
@@ -81,6 +89,8 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $user = User::findOrFail($id);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'required|string|unique:users,username,' . $user->id,
@@ -97,7 +107,14 @@ class UserController extends Controller
 
         $user->syncRoles([$request->role]);
 
-        activity()->log("Mengubah user: {$user->name}");
+        activity()
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'username' => $user->username,
+                'nama' => $user->name,
+            ])
+            ->log('Admin mengubah data user');
 
         return redirect()->route('users.index')->with('success', 'User berhasil diupdate');
     }
@@ -110,6 +127,15 @@ class UserController extends Controller
             if ($user->id === auth()->id()) {
                 return back()->with('error', 'Tidak bisa menghapus akun sendiri');
             }
+
+            activity()
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'username' => $user->username,
+                'nama' => $user->name,
+            ])
+            ->log('Admin menghapus user');
 
             $user->delete();
             return back()->with('success', 'User dihapus');

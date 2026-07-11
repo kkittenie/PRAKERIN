@@ -5,6 +5,11 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TransaksiKasirController;
+use App\Http\Controllers\KategoriProdukController;
+use App\Http\Controllers\ProdukController;
+use App\Http\Controllers\BahanBakuController;
+use App\Http\Controllers\ProduksiController;
+use App\Models\Produksi;
 
 // halaman yang butuh login
 Route::middleware(['auth'])->group(function () {
@@ -23,6 +28,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('users', UserController::class)
     ->middleware('permission:lihat_user|tambah_user|edit_user|hapus_user');
 
+    Route::resource('kategori-produk', KategoriProdukController::class);
+
+    Route::resource('produk', ProdukController::class);
+
+    Route::resource('bahan-baku', BahanBakuController::class);
+
+    Route::resource('produksi', ProduksiController::class);
     // calendar
     Route::get('/calendar', function () {
         return view('pages.calender', ['title' => 'Calendar']);

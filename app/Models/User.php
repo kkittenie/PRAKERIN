@@ -50,11 +50,16 @@ class User extends Authenticatable
         ];
     }
 
-    protected static function getActivitylogOptions(): LogOptions
+    public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->logOnly(['name', 'username'])
             ->logOnlyDirty()
             ->useLogName('user');
+    }
+
+    public function produksis()
+    {
+        return $this->hasMany(Produksi::class);
     }
 }
