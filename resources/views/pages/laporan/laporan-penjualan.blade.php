@@ -80,9 +80,8 @@
                             Tahun
                         </a>
                     </div>
-                    @if($periode === 'bulan')
                     <form method="GET" action="{{ route('laporan-penjualan') }}">
-                        <input type="hidden" name="periode" value="bulan">
+                        <input type="hidden" name="periode" value="{{ $periode }}">
                         <select name="tahun" onchange="this.form.submit()"
                                 class="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent cursor-pointer">
                             @foreach($daftarTahun as $thn)
@@ -90,7 +89,6 @@
                             @endforeach
                         </select>
                     </form>
-                    @endif
                 </div>
             </div>
             <div id="chartPenjualan" class="min-h-[350px] w-full"></div>

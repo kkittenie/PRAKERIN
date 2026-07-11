@@ -83,9 +83,15 @@ class LaporanController extends Controller
         $labelGrafik = [];
 
         if ($periode === 'minggu') {
-            // 7 hari terakhir
+            // 7 hari terakhir berdasarkan tahun terpilih (tanggal dan bulan saat ini, tahun disesuaikan)
+            $tanggalAcuan = Carbon::now()->year($tahun);
+            // Jika tahun terpilih adalah tahun saat ini, gunakan waktu sekarang asli
+            if ($tahun == date('Y')) {
+                $tanggalAcuan = Carbon::now();
+            }
+
             for ($i = 6; $i >= 0; $i--) {
-                $tanggal = Carbon::today()->subDays($i);
+                $tanggal = (clone $tanggalAcuan)->subDays($i);
                 $labelGrafik[] = $tanggal->translatedFormat('D, d M');
                 $dataGrafik[] = (int) Transaksi::whereDate('created_at', $tanggal)->sum('total_bayar');
             }
@@ -99,9 +105,9 @@ class LaporanController extends Controller
                     ->sum('total_bayar');
             }
         } elseif ($periode === 'tahun') {
-            // 5 tahun terakhir
+            // 5 tahun terakhir sampai tahun terpilih
             for ($i = 4; $i >= 0; $i--) {
-                $thn = (int) date('Y') - $i;
+                $thn = (int) $tahun - $i;
                 $labelGrafik[] = (string) $thn;
                 $dataGrafik[] = (int) Transaksi::whereYear('created_at', $thn)->sum('total_bayar');
             }
