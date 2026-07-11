@@ -61,7 +61,7 @@ class LaporanController extends Controller
     public function laporanPenjualan(Request $request)
     {
         $periode = $request->get('periode', 'bulan'); // minggu, bulan, tahun
-        $tahun = $request->get('tahun', date('Y'));
+        $tahun = (int) $request->get('tahun', date('Y'));
 
         // Statistik ringkasan
         $hariIni = Carbon::today();
