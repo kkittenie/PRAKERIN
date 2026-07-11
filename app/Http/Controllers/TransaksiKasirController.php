@@ -13,9 +13,6 @@ use Illuminate\Support\Facades\Log;
 
 class TransaksiKasirController extends Controller
 {
-    /**
-     * Menampilkan halaman utama transaksi kasir (POS)
-     */
     public function indeks()
     {
         try {
@@ -25,7 +22,6 @@ class TransaksiKasirController extends Controller
 
             $daftarKategori = KategoriProduk::all();
             
-            // Ambil daftar pesanan yang sedang ditahan untuk dipulihkan jika perlu
             $daftarDitahan = PesananDitahan::orderBy('created_at', 'desc')->get();
 
             return view('pages.transaksi.indeks', [
@@ -40,15 +36,11 @@ class TransaksiKasirController extends Controller
         }
     }
 
-    /**
-     * Menyimpan transaksi aktif ke daftar pesanan ditahan (Hold Order)
-     */
     public function simpanDitahan(Request $request)
     {
         try {
             $validated = $request->validate([
                 'nama_pembeli' => 'nullable|string|max:255',
-                'email_pembeli' => 'nullable|email|max:255',
                 'item_pesanan' => 'required|array',
                 'subtotal' => 'required|numeric',
                 'pajak' => 'required|numeric',
@@ -61,7 +53,7 @@ class TransaksiKasirController extends Controller
             
             $pesanan = PesananDitahan::create([
                 'nama_pembeli' => $namaPembeli,
-                'email_pembeli' => $validated['email_pembeli'],
+
                 'item_pesanan' => $validated['item_pesanan'],
                 'subtotal' => $validated['subtotal'],
                 'pajak' => $validated['pajak'],
@@ -84,9 +76,6 @@ class TransaksiKasirController extends Controller
         }
     }
 
-    /**
-     * Mengambil seluruh daftar pesanan ditahan (Hold Orders)
-     */
     public function ambilDitahan()
     {
         try {
@@ -104,15 +93,11 @@ class TransaksiKasirController extends Controller
         }
     }
 
-    /**
-     * Memulihkan / mengambil pesanan ditahan untuk diaktifkan kembali di kasir
-     */
     public function pulihkanDitahan($id)
     {
         try {
             $pesanan = PesananDitahan::findOrFail($id);
             
-            // Hapus dari tabel ditahan karena akan diproses kembali di kasir
             $pesanan->delete();
 
             return response()->json([
@@ -129,9 +114,6 @@ class TransaksiKasirController extends Controller
         }
     }
 
-    /**
-     * Menghapus pesanan ditahan dari daftar
-     */
     public function hapusDitahan($id)
     {
         try {
@@ -151,9 +133,6 @@ class TransaksiKasirController extends Controller
         }
     }
 
-    /**
-     * Memproses pembayaran (menyimpan transaksi final, mengurangi stok produk)
-     */
     public function bayar(Request $request)
     {
         DB::beginTransaction();
@@ -173,7 +152,6 @@ class TransaksiKasirController extends Controller
             // Buat kode transaksi unik
             $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
 
-            // Simpan transaksi utama
             $transaksi = Transaksi::create([
                 'kode_transaksi' => $kodeTransaksi,
                 'nama_pembeli' => $validated['nama_pembeli'] ?? 'Pelanggan Umum',
@@ -186,25 +164,22 @@ class TransaksiKasirController extends Controller
                 'metode_pembayaran' => $validated['metode_pembayaran'],
             ]);
 
-            // Simpan detail transaksi dan kurangi stok
             foreach ($validated['item_pesanan'] as $item) {
                 $produk = Produk::findOrFail($item['produk_id']);
                 
-                // Cek ketersediaan stok
                 if ($produk->stok < $item['jumlah']) {
                     throw new \Exception("Stok untuk produk '{$produk->nama_produk}' tidak mencukupi (Tersedia: {$produk->stok}, Diminta: {$item['jumlah']})");
                 }
 
-                // Kurangi stok produk
                 $produk->decrement('stok', $item['jumlah']);
 
                 DetailTransaksi::create([
                     'transaksi_id' => $transaksi->id,
                     'produk_id' => $produk->id,
                     'nama_produk' => $produk->nama_produk,
-                    'harga_satuan' => $item['harga_satuan'],
+                    'harga_satuan' => $item['harga_jual'],
                     'jumlah' => $item['jumlah'],
-                    'subtotal' => $item['harga_satuan'] * $item['jumlah'],
+                    'subtotal' => $item['harga_jual'] * $item['jumlah'],
                 ]);
             }
 

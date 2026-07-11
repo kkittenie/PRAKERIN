@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\Storage;
 
 class ProdukController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         $search = $request->search;
@@ -28,9 +25,6 @@ class ProdukController extends Controller
         return view('pages.produk.index', compact('produk', 'search'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $kategori = KategoriProduk::orderBy('nama_kategori')->get();
@@ -38,9 +32,6 @@ class ProdukController extends Controller
         return view('pages.produk.create', compact('kategori'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -70,17 +61,11 @@ class ProdukController extends Controller
             ->with('success', 'Produk berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Produk $produk)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Produk $produk)
     {
         $kategori = KategoriProduk::orderBy('nama_kategori')->get();
@@ -88,9 +73,6 @@ class ProdukController extends Controller
         return view('pages.produk.edit', compact('produk', 'kategori'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Produk $produk)
     {
         $validated = $request->validate([
@@ -131,9 +113,6 @@ class ProdukController extends Controller
             ->with('success', 'Produk berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Produk $produk)
     {
          if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {

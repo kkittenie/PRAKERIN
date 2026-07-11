@@ -8,9 +8,6 @@ use Illuminate\Validation\Rule;
 
 class BahanBakuController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
             $search = $request->search;
@@ -27,17 +24,11 @@ class BahanBakuController extends Controller
             );
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return view('pages.bahan-baku.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -54,25 +45,16 @@ class BahanBakuController extends Controller
             ->with('success', 'Bahan baku berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(BahanBaku $bahan_baku)
     {
         return view('pages.bahan-baku.edit', compact('bahan_baku'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, BahanBaku $bahan_baku)
     {
         $validated = $request->validate([
@@ -95,9 +77,6 @@ class BahanBakuController extends Controller
             ->with('success', 'Bahan baku berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(BahanBaku $bahan_baku)
     {
          $bahan_baku->delete();

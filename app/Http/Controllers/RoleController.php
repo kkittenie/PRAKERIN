@@ -8,27 +8,18 @@ use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $roles = Role::withCount('permissions')->get();
         return view('pages.roles.index', ['title' => 'Kelola Role', 'roles' => $roles]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $permissions = Permission::all()->groupBy(fn($p) => explode('_', $p->name, 2)[1] ?? 'lainnya');
         return view('pages.roles.create', ['title' => 'Tambah Role', 'permissions' => $permissions]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -49,17 +40,11 @@ class RoleController extends Controller
         return redirect()->route('roles.index')->with('success', 'Role berhasil dibuat');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         $role = Role::findOrFail($id);
@@ -74,9 +59,6 @@ class RoleController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $role = Role::findOrFail($id);
@@ -99,9 +81,6 @@ class RoleController extends Controller
         return redirect()->route('roles.index')->with('success', 'Role berhasil diupdate');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $role = Role::findOrFail($id);

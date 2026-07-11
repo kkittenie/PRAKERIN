@@ -8,9 +8,6 @@ use App\Models\KategoriProduk;
 
 class KategoriProdukController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         $search = $request->search;
@@ -25,17 +22,11 @@ class KategoriProdukController extends Controller
         return view('pages.kategori-produk.index', compact('kategori', 'search'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return view('pages.kategori-produk.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -49,25 +40,16 @@ class KategoriProdukController extends Controller
             ->with('success', 'Kategori produk berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(KategoriProduk $kategori_produk)
     {
         return view('pages.kategori-produk.edit', compact('kategori_produk'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, KategoriProduk $kategori_produk)
     {
         $validated = $request->validate([
@@ -87,9 +69,6 @@ class KategoriProdukController extends Controller
             ->with('success', 'Kategori produk berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(KategoriProduk $kategori_produk)
     {
          if ($kategori_produk->produk()->exists()) {
