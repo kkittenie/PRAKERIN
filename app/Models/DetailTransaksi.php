@@ -14,6 +14,7 @@ class DetailTransaksi extends Model
         'nama_produk',
         'harga_satuan',
         'jumlah',
+        'catatan',
         'subtotal',
     ];
 

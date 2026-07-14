@@ -28,6 +28,7 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'Kategori Produk', 'path' => '/kategori-produk'],
                     ['name' => 'Produk', 'path' => '/produk'],
+                    ['name' => 'Promo Produk', 'path' => '/promo'],
                     ['name' => 'Bahan Baku', 'path' => '/bahan-baku'],
                     ['name' => 'Produksi', 'path' => '/produksi'],
                 ],

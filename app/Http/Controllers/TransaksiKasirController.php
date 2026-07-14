@@ -16,7 +16,7 @@ class TransaksiKasirController extends Controller
     public function indeks()
     {
         try {
-            $daftarProduk = Produk::with('kategori')
+            $daftarProduk = Produk::with(['kategori', 'promos'])
                 ->where('status_aktif', true)
                 ->get();
 
@@ -179,6 +179,7 @@ class TransaksiKasirController extends Controller
                     'nama_produk' => $produk->nama_produk,
                     'harga_satuan' => $item['harga_jual'],
                     'jumlah' => $item['jumlah'],
+                    'catatan' => $item['catatan'] ?? null,
                     'subtotal' => $item['harga_jual'] * $item['jumlah'],
                 ]);
             }

@@ -11,6 +11,7 @@ use App\Http\Controllers\BahanBakuController;
 use App\Http\Controllers\ProduksiController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PromoController;
 use App\Models\Produksi;
 
 // halaman yang butuh login
@@ -46,6 +47,14 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('bahan-baku', BahanBakuController::class);
 
     Route::resource('produksi', ProduksiController::class);
+
+    // Promo Produk (menggunakan fungsi Bahasa Indonesia)
+    Route::get('/promo', [PromoController::class, 'indeks'])->name('promo.index');
+    Route::get('/promo/tambah', [PromoController::class, 'tambah'])->name('promo.create');
+    Route::post('/promo', [PromoController::class, 'simpan'])->name('promo.store');
+    Route::get('/promo/{id}/ubah', [PromoController::class, 'ubah'])->name('promo.edit');
+    Route::put('/promo/{id}', [PromoController::class, 'perbarui'])->name('promo.update');
+    Route::delete('/promo/{id}', [PromoController::class, 'hapus'])->name('promo.destroy');
     // calendar
     Route::get('/calendar', function () {
         return view('pages.calender', ['title' => 'Calendar']);

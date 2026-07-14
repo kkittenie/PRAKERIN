@@ -21,6 +21,11 @@ class Produk extends Model
         'status_ketersediaan',
     ];
 
+    protected $appends = [
+        'promo_aktif',
+        'harga_diskon'
+    ];
+
     public function kategori()
     {
         return $this->belongsTo(KategoriProduk::class, 'kategori_id');
@@ -29,5 +34,35 @@ class Produk extends Model
     public function produksi()
     {
         return $this->hasMany(Produksi::class);
+    }
+
+    public function promos()
+    {
+        return $this->belongsToMany(Promo::class, 'promo_produk', 'produk_id', 'promo_id')->withTimestamps();
+    }
+
+    public function getPromoAktifAttribute()
+    {
+        $now = now();
+        if ($this->relationLoaded('promos')) {
+            return $this->promos->first(function ($promo) use ($now) {
+                return $promo->mulai_berlaku <= $now && $promo->selesai_berlaku >= $now;
+            });
+        }
+
+        return $this->promos()
+            ->where('mulai_berlaku', '<=', $now)
+            ->where('selesai_berlaku', '>=', $now)
+            ->first();
+    }
+
+    public function getHargaDiskonAttribute()
+    {
+        $promo = $this->promo_aktif;
+        if ($promo) {
+            $diskon = ($promo->persentase / 100) * $this->harga_jual;
+            return max(0, $this->harga_jual - $diskon);
+        }
+        return $this->harga_jual;
     }
 }

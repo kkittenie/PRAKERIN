@@ -187,7 +187,10 @@
                                 <tbody class="divide-y divide-gray-50 dark:divide-gray-850">
                                     <template x-for="item in detailData?.detail_transaksi || []" :key="item.id">
                                         <tr class="text-gray-750 dark:text-gray-300 hover:bg-gray-55 dark:hover:bg-gray-850">
-                                            <td class="px-4 py-3 font-medium text-gray-800 dark:text-white" x-text="item.nama_produk"></td>
+                                            <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">
+                                                <span x-text="item.nama_produk"></span>
+                                                <div x-show="item.catatan" class="text-xxs text-amber-600 dark:text-amber-400 font-medium italic mt-0.5" x-text="'Catatan: ' + item.catatan"></div>
+                                            </td>
                                             <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400" x-text="'Rp ' + Number(item.harga_satuan).toLocaleString('id-ID')"></td>
                                             <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400" x-text="item.jumlah"></td>
                                             <td class="px-4 py-3 text-right font-semibold text-gray-800 dark:text-white" x-text="'Rp ' + Number(item.subtotal).toLocaleString('id-ID')"></td>
@@ -340,6 +343,7 @@ function historiTransaksi() {
                             <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                                 <span>${i+1}. ${item.nama_produk}</span>
                             </div>
+                            ${item.catatan ? `<div style="padding-left:16px;font-style:italic;color:#666;font-size:10px;margin-bottom:4px;">* Catatan: ${item.catatan}</div>` : ''}
                             <div style="display:flex;justify-content:space-between;margin-bottom:6px;padding-left:16px;color:#555;">
                                 <span>${item.jumlah} x ${formatRupiah(item.harga_satuan)}</span>
                                 <span>${formatRupiah(item.subtotal)}</span>
@@ -384,6 +388,7 @@ function historiTransaksi() {
                                 <span><strong>${i+1}. ${item.nama_produk}</strong></span>
                                 <span style="background:#000;color:#fff;padding:2px 10px;border-radius:4px;font-weight:bold;font-size:16px;">x${item.jumlah}</span>
                             </div>
+                            ${item.catatan ? `<div style="padding-left:16px;font-style:italic;color:#555;font-size:11px;margin-top:-6px;margin-bottom:8px;">* Catatan: ${item.catatan}</div>` : ''}
                         `).join('')}
                     </div>
                     ${d.catatan ? `<div style="padding:8px 0;border-bottom:1px dashed #000;"><strong>📝 Catatan:</strong> ${d.catatan}</div>` : ''}
