@@ -192,13 +192,9 @@
                     </template>
                 </div>
 
-                <!-- Diskon & Pajak -->
+                <!-- Pajak -->
                 <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50/20 dark:bg-gray-800/10 flex flex-col gap-1.5 shrink-0">
                     <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="text-xxs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">Diskon (%)</label>
-                            <input type="number" x-model.number="diskonPersen" min="0" max="100" placeholder="0" class="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        </div>
                         <div>
                             <label class="text-xxs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">Pajak (%)</label>
                             <input type="number" x-model.number="pajakPersen" min="0" placeholder="10" class="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
