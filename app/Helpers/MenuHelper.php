@@ -20,6 +20,7 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'Kelola Pengguna', 'path' => '/users'],
                     ['name' => 'Kelola Role', 'path' => '/roles'],
+                    ['name' => 'Kelola Pegawai', 'path' => '/pegawai'],
                 ],
             ],
             [

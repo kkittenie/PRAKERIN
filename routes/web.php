@@ -12,6 +12,7 @@ use App\Http\Controllers\ProduksiController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PromoController;
+use App\Http\Controllers\PegawaiController;
 use App\Models\Produksi;
 
 // halaman yang butuh login
@@ -47,6 +48,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('bahan-baku', BahanBakuController::class);
 
     Route::resource('produksi', ProduksiController::class);
+
+    Route::resource('pegawai', PegawaiController::class);
 
     // Promo Produk (menggunakan fungsi Bahasa Indonesia)
     Route::get('/promo', [PromoController::class, 'indeks'])->name('promo.index');
