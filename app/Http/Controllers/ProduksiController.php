@@ -76,7 +76,8 @@ class ProduksiController extends Controller
         }
 
     try {
-        DB::transaction(function () use ($request) {
+        $produksi = null;
+        DB::transaction(function () use ($request, &$produksi) {
 
             $produksi = Produksi::create([
                 'tanggal' => $request->tanggal,
@@ -116,6 +117,17 @@ class ProduksiController extends Controller
             $produk->increment('stok', $request->jumlah_hasil);
 
         });
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($produksi)
+            ->withProperties([
+                'produk_id' => $request->produk_id,
+                'jumlah_hasil' => $request->jumlah_hasil,
+                'bahan_baku_id' => $request->bahan_baku_id,
+                'jumlah_terpakai' => $request->jumlah_terpakai,
+            ])
+            ->log('Admin menambahkan produksi');
 
         return redirect()
             ->route('produksi.index')

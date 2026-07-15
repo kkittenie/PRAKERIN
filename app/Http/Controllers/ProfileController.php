@@ -28,6 +28,15 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($request->user())
+            ->withProperties([
+                'user' => $request->user()->name,
+                'email' => $request->user()->email,
+            ])
+            ->log('Admin memperbarui profil');
+
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
@@ -38,6 +47,15 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        activity()
+            ->causedBy($user)
+            ->performedOn($user)
+            ->withProperties([
+                'user' => $user->name,
+                'email' => $user->email,
+            ])
+            ->log('Admin menghapus akun');
 
         Auth::logout();
 

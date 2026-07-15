@@ -62,6 +62,15 @@ class TransaksiKasirController extends Controller
                 'catatan' => $validated['catatan'],
             ]);
 
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($pesanan)
+                ->withProperties([
+                    'pesanan_id' => $pesanan->id,
+                    'nama_pembeli' => $pesanan->nama_pembeli,
+                ])
+                ->log('Admin menahan pesanan');
+
             return response()->json([
                 'status' => 'success',
                 'pesan' => 'Pesanan berhasil ditahan.',
@@ -97,6 +106,15 @@ class TransaksiKasirController extends Controller
     {
         try {
             $pesanan = PesananDitahan::findOrFail($id);
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($pesanan)
+                ->withProperties([
+                    'pesanan_id' => $pesanan->id,
+                    'nama_pembeli' => $pesanan->nama_pembeli,
+                ])
+                ->log('Admin memulihkan pesanan ditahan');
             
             $pesanan->delete();
 
@@ -118,6 +136,16 @@ class TransaksiKasirController extends Controller
     {
         try {
             $pesanan = PesananDitahan::findOrFail($id);
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($pesanan)
+                ->withProperties([
+                    'pesanan_id' => $pesanan->id,
+                    'nama_pembeli' => $pesanan->nama_pembeli,
+                ])
+                ->log('Admin menghapus pesanan ditahan');
+
             $pesanan->delete();
 
             return response()->json([
@@ -185,6 +213,16 @@ class TransaksiKasirController extends Controller
             }
 
             DB::commit();
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($transaksi)
+                ->withProperties([
+                    'transaksi_id' => $transaksi->id,
+                    'kode_transaksi' => $kodeTransaksi,
+                    'nama_pembeli' => $transaksi->nama_pembeli,
+                ])
+                ->log('Admin menyelesaikan transaksi');
 
             return response()->json([
                 'status' => 'success',

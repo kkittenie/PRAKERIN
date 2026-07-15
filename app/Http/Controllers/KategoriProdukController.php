@@ -33,7 +33,15 @@ class KategoriProdukController extends Controller
             'nama_kategori' => 'required|string|max:100|unique:kategori_produks,nama_kategori',
         ]);
 
-        KategoriProduk::create($validated);
+        $kategori = KategoriProduk::create($validated);
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($kategori)
+            ->withProperties([
+                'nama_kategori' => $validated['nama_kategori'],
+            ])
+            ->log('Admin menambahkan kategori produk');
 
         return redirect()
             ->route('kategori-produk.index')
@@ -64,6 +72,14 @@ class KategoriProdukController extends Controller
 
         $kategori_produk->update($validated);
 
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($kategori_produk)
+            ->withProperties([
+                'nama_kategori' => $validated['nama_kategori'],
+            ])
+            ->log('Admin memperbarui kategori produk');
+
         return redirect()
             ->route('kategori-produk.index')
             ->with('success', 'Kategori produk berhasil diperbarui.');
@@ -78,6 +94,14 @@ class KategoriProdukController extends Controller
             ->with('error', 'Kategori tidak dapat dihapus karena masih digunakan oleh produk.');
 
     }
+
+    activity()
+        ->causedBy(auth()->user())
+        ->performedOn($kategori_produk)
+        ->withProperties([
+            'nama_kategori' => $kategori_produk->nama_kategori,
+        ])
+        ->log('Admin menghapus kategori produk');
 
     $kategori_produk->delete();
 

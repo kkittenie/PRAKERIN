@@ -184,10 +184,6 @@ class SidebarController extends Controller
             ],
         ];
 
-        activity()
-            ->causedBy(auth()->user())
-            ->log('Mengambil data menu sidebar');
-
         return view('layouts.sidebar', compact('menuGroups'));
     }
 }

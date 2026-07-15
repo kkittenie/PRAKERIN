@@ -28,12 +28,14 @@ class RoleController extends Controller
         ]);
 
         $role = Role::create(['name' => $request->name]);
-        $role->SyncPermissions($request->permissions ?? []);
+        $role->syncPermissions($request->permissions ?? []);
 
         activity()
             ->causedBy(auth()->user())
+            ->performedOn($role)
             ->withProperties([
                 'role' => $role->name,
+                'permissions' => $request->permissions ?? [],
             ])
             ->log('Admin menambahkan role');
 
@@ -73,8 +75,10 @@ class RoleController extends Controller
 
         activity()
             ->causedBy(auth()->user())
+            ->performedOn($role)
             ->withProperties([
                 'role' => $role->name,
+                'permissions' => $request->permissions ?? [],
             ])
             ->log('Admin mengupdate role');
 
@@ -91,8 +95,10 @@ class RoleController extends Controller
 
         activity()
             ->causedBy(auth()->user())
+            ->performedOn($role)
             ->withProperties([
                 'role' => $role->name,
+                'permissions' => $role->permissions->pluck('name')->toArray(),
             ])
             ->log('Admin menghapus role');
 
