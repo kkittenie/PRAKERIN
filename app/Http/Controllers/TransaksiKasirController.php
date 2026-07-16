@@ -24,11 +24,14 @@ class TransaksiKasirController extends Controller
             
             $daftarDitahan = PesananDitahan::orderBy('created_at', 'desc')->get();
 
+            $daftarMember = \App\Models\Member::orderBy('nama')->get();
+
             return view('pages.transaksi.indeks', [
                 'title' => 'Transaksi Kasir',
                 'daftarProduk' => $daftarProduk,
                 'daftarKategori' => $daftarKategori,
                 'daftarDitahan' => $daftarDitahan,
+                'daftarMember' => $daftarMember,
             ]);
         } catch (\Exception $e) {
             Log::error('Error pada indeks TransaksiKasirController: ' . $e->getMessage());
@@ -167,6 +170,7 @@ class TransaksiKasirController extends Controller
         try {
             $validated = $request->validate([
                 'nama_pembeli' => 'nullable|string|max:255',
+                'member_id' => 'nullable|exists:members,id',
                 'item_pesanan' => 'required|array',
                 'subtotal' => 'required|numeric',
                 'pajak' => 'required|numeric',
@@ -183,6 +187,7 @@ class TransaksiKasirController extends Controller
             $transaksi = Transaksi::create([
                 'kode_transaksi' => $kodeTransaksi,
                 'nama_pembeli' => $validated['nama_pembeli'] ?? 'Pelanggan Umum',
+                'member_id' => $validated['member_id'] ?? null,
                 'subtotal' => $validated['subtotal'],
                 'pajak' => $validated['pajak'],
                 'diskon' => $validated['diskon'],
@@ -210,8 +215,16 @@ class TransaksiKasirController extends Controller
                     'catatan' => $item['catatan'] ?? null,
                     'subtotal' => $item['harga_jual'] * $item['jumlah'],
                 ]);
+
             }
 
+                if (!empty($validated['member_id']) &&  $validated['total_bayar'] > 50000) {
+                    $member = \App\Models\Member::find($validated['member_id']);
+                    if ($member) {
+                        $member->increment('poin', 100);
+                    }
+                }
+            
             DB::commit();
 
             activity()
