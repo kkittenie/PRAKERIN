@@ -32,6 +32,13 @@ class MemberController extends Controller
         $request->validate([
             'nama' => 'required|string|max:255',
             'no_hp' => 'required|string|max:20|unique:members,no_hp',
+        ], [
+            'nama.required' => 'Nama wajib diisi.',
+            'nama.string' => 'Nama harus berupa teks.',
+            'nama.max' => 'Nama maksimal 255 karakter.',
+            'no_hp.required' => 'Nomor HP wajib diisi.',
+            'no_hp.max' => 'Nomor HP maksimal 20 karakter.',
+            'no_hp.unique' => 'Nomor HP sudah digunakan.',
         ]);
 
         $member = Member::create([

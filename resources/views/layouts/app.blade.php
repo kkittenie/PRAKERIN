@@ -87,6 +87,8 @@
             }
         })();
     </script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
 </head>
 
@@ -127,6 +129,36 @@
         </div>
 
     </div>
+
+    @if (session('success') || session('error'))
+        <!-- Global Toast Alert -->
+        <div id="global-toast" class="fixed top-5 right-5 z-99999 transform transition-all duration-300 translate-y-4 opacity-0 pointer-events-none">
+            <div class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] pointer-events-auto {{ session('success') ? 'bg-green-600' : 'bg-red-600' }}">
+                <span class="font-semibold text-lg">{{ session('success') ? '✓' : '⚠' }}</span>
+                <span class="text-sm">{{ session('success') ?? session('error') }}</span>
+            </div>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const toast = document.getElementById('global-toast');
+                if (toast) {
+                    // Slide in
+                    setTimeout(() => {
+                        toast.classList.remove('translate-y-4', 'opacity-0');
+                        toast.classList.add('translate-y-0', 'opacity-100');
+                    }, 100);
+                    // Slide out and remove
+                    setTimeout(() => {
+                        toast.classList.remove('translate-y-0', 'opacity-100');
+                        toast.classList.add('translate-y-4', 'opacity-0');
+                        setTimeout(() => {
+                            toast.remove();
+                        }, 300);
+                    }, 3500);
+                }
+            });
+        </script>
+    @endif
 
 </body>
 

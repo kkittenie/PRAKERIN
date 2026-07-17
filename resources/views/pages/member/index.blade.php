@@ -12,10 +12,6 @@
         @endcan
     </div>
 
-    @if (session('success'))
-        <div class="mx-6 mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{{ session('success') }}</div>
-    @endif
-
     <div class="overflow-x-auto p-6">
         <table class="w-full text-left text-sm">
             <thead>
@@ -34,8 +30,14 @@
                     <td class="py-3 text-gray-600 dark:text-gray-400">{{ $member->no_hp }}</td>
                     <td class="py-3 text-gray-600 dark:text-gray-400">{{ $member->poin }}</td>
                     <td class="py-3">
-                        <span class="rounded-full px-3 py-1 text-xs font-medium
-                            {{ $member->level === 'Gold' ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-600' }}">
+                        @php
+                            $levelClasses = match($member->level) {
+                                'Gold'   => 'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
+                                'Silver' => 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-300',
+                                default  => 'bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400',
+                            };
+                        @endphp
+                        <span class="rounded-full px-3 py-1 text-xs font-medium {{ $levelClasses }}">
                             {{ $member->level }}
                         </span>
                     </td>
@@ -44,10 +46,9 @@
                         <a href="{{ route('member.edit', $member) }}" class="text-brand-500 hover:underline">Edit</a>
                         @endcan
                         @can('hapus_member')
-                        <form action="{{ route('member.destroy', $member) }}" method="POST" class="inline"
-                            onsubmit="return confirm('Yakin hapus member ini?')">
+                        <form action="{{ route('member.destroy', $member) }}" method="POST" class="inline delete-form">
                             @csrf @method('DELETE')
-                            <button type="submit" class="ml-3 text-red-500 hover:underline">Hapus</button>
+                            <button type="button" class="ml-3 text-red-500 hover:underline delete-btn" data-name="{{ $member->nama }}">Hapus</button>
                         </form>
                         @endcan
                     </td>
@@ -57,4 +58,36 @@
         </table>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Confirm Delete Member
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const form = this.closest('.delete-form');
+                const memberName = this.getAttribute('data-name');
+
+                Swal.fire({
+                    title: 'Hapus Member?',
+                    text: `Apakah Anda yakin ingin menghapus member "${memberName}"? Tindakan ini tidak dapat dibatalkan!`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal',
+                    background: document.documentElement.classList.contains('dark') ? '#111827' : '#ffffff',
+                    color: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#1f2937'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    });
+</script>
+@endpush
 @endsection

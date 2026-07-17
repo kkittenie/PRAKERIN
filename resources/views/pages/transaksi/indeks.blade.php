@@ -201,17 +201,113 @@
     </div>
 
     <!-- Pilih Member -->
-    <div class="p-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
+    <div class="p-3 border-b border-gray-100 dark:border-gray-800 shrink-0"
+        x-data="{
+            cariMember: '',
+            dropdownTerbuka: false,
+            get memberTersaring() {
+                if (!this.cariMember.trim()) return $data.daftarMember;
+                const q = this.cariMember.toLowerCase();
+                return $data.daftarMember.filter(m =>
+                    m.nama.toLowerCase().includes(q) || m.no_hp.includes(q)
+                );
+            },
+            pilihMemberItem(member) {
+                $data.memberIdTerpilih = member.id;
+                $data.memberTerpilih = member;
+                if ($data.namaPembeli.trim() === '') {
+                    $data.namaPembeli = member.nama;
+                }
+                this.cariMember = '';
+                this.dropdownTerbuka = false;
+            },
+            hapusMember() {
+                $data.memberIdTerpilih = '';
+                $data.memberTerpilih = null;
+                this.cariMember = '';
+            },
+            getLevelColor(level) {
+                if (level === 'Gold') return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400';
+                if (level === 'Silver') return 'bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300';
+                return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400';
+            }
+        }"
+        @click.outside="dropdownTerbuka = false">
         <label class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-2">Member (Opsional)</label>
-        <select x-model="memberIdTerpilih" @change="pilihMember()"
-            class="w-full px-3 py-2 text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
-            <option value="">Tanpa Member (Pelanggan Umum)</option>
-            <template x-for="member in daftarMember" :key="member.id">
-                <option :value="member.id" x-text="member.nama + ' - ' + member.no_hp + ' (' + member.poin + ' poin, ' + member.level + ')'"></option>
-            </template>
-        </select>
+
+        <!-- Jika member sudah terpilih -->
+        <template x-if="$data.memberTerpilih">
+            <div class="flex items-center gap-2 px-3 py-2 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/25 rounded-lg">
+                <div class="w-7 h-7 bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full shrink-0"
+                    x-text="$data.memberTerpilih.nama.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()"></div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-gray-900 dark:text-white truncate" x-text="$data.memberTerpilih.nama"></p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400" x-text="$data.memberTerpilih.no_hp + ' · ' + $data.memberTerpilih.poin + ' poin'"></p>
+                </div>
+                <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold shrink-0"
+                    :class="getLevelColor($data.memberTerpilih.level)"
+                    x-text="$data.memberTerpilih.level"></span>
+                <button @click="hapusMember()" class="p-1 hover:bg-red-100 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 rounded-md transition shrink-0" title="Hapus member">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+        </template>
+
+        <!-- Input pencarian jika belum pilih member -->
+        <template x-if="!$data.memberTerpilih">
+            <div class="relative">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-gray-400 dark:text-gray-500">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </span>
+                    <input type="text" x-model="cariMember"
+                        @focus="dropdownTerbuka = true"
+                        @input="dropdownTerbuka = true"
+                        placeholder="Cari nama atau no. HP member..."
+                        class="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 transition placeholder:text-gray-400 dark:placeholder:text-gray-600">
+                </div>
+
+                <!-- Dropdown hasil pencarian -->
+                <div x-show="dropdownTerbuka" x-transition.opacity.duration.150ms
+                    class="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto custom-scrollbar">
+
+                    <!-- Tanpa Member -->
+                    <button @click="hapusMember(); dropdownTerbuka = false"
+                        class="w-full px-3 py-2 text-left text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+                        <span>Tanpa Member (Pelanggan Umum)</span>
+                    </button>
+
+                    <div class="border-t border-gray-100 dark:border-gray-800"></div>
+
+                    <!-- Hasil pencarian member -->
+                    <template x-for="member in memberTersaring" :key="member.id">
+                        <button @click="pilihMemberItem(member)"
+                            class="w-full px-3 py-2 text-left hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition flex items-center gap-2.5">
+                            <div class="w-7 h-7 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] font-bold flex items-center justify-center rounded-full shrink-0"
+                                x-text="member.nama.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()"></div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-semibold text-gray-800 dark:text-white truncate" x-text="member.nama"></p>
+                                <p class="text-[10px] text-gray-400 dark:text-gray-500" x-text="member.no_hp + ' · ' + member.poin + ' poin'"></p>
+                            </div>
+                            <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold shrink-0"
+                                :class="getLevelColor(member.level)"
+                                x-text="member.level"></span>
+                        </button>
+                    </template>
+
+                    <!-- Tidak ditemukan -->
+                    <template x-if="memberTersaring.length === 0 && cariMember.trim() !== ''">
+                        <div class="px-3 py-4 text-center">
+                            <p class="text-xs text-gray-400 dark:text-gray-500">Tidak ada member ditemukan</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+
         <template x-if="akanDapatPoin">
-            <p class="text-xxs text-emerald-600 dark:text-emerald-400 font-bold mt-1.5">🎉 Transaksi ini dapat +100 poin buat member</p>
+            <p class="text-xxs text-emerald-600 dark:text-emerald-400 font-bold mt-1.5">🎁 Bonus poin masuk! +<span x-text="poinDiperoleh"></span> poin untuk member ✨</p>
         </template>
     </div>
 
@@ -821,8 +917,11 @@
             get totalTagihan() {
                 return Math.max(0, this.subtotal - this.nilaiDiskon + this.pajak);
             },
+            get poinDiperoleh() {
+                return Math.floor(this.totalTagihan / 100000) * 100;
+            },
             get akanDapatPoin() {
-                return this.memberTerpilih && this.totalTagihan > 50000;
+                return this.memberTerpilih && this.totalTagihan >= 100000;
             },
             get jumlahDiterimaNum() {
                 if (this.metodePembayaran === 'QRIS') {

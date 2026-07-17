@@ -218,10 +218,11 @@ class TransaksiKasirController extends Controller
 
             }
 
-                if (!empty($validated['member_id']) &&  $validated['total_bayar'] > 50000) {
+                if (!empty($validated['member_id']) && $validated['total_bayar'] >= 100000) {
                     $member = \App\Models\Member::find($validated['member_id']);
                     if ($member) {
-                        $member->increment('poin', 100);
+                        $poinDiperoleh = floor($validated['total_bayar'] / 100000) * 100;
+                        $member->increment('poin', (int) $poinDiperoleh);
                     }
                 }
             

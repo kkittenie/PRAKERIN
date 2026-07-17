@@ -12,9 +12,19 @@ class Member extends Model
 
     protected $fillable = ['nama', 'no_hp', 'poin'];
 
+    protected $appends = ['level'];
+
     public function getLevelAttribute(): string
     {
-        return $this->poin >= 500 ? 'Gold' : 'Silver';
+        if ($this->poin >= 500) {
+            return 'Gold';
+        }
+
+        if ($this->poin >= 300) {
+            return 'Silver';
+        }
+
+        return 'Bronze';
     }
 
     public function transaksi()
