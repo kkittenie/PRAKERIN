@@ -31,7 +31,12 @@ class AuthenticatedSessionController extends Controller
         $user = Auth::user();
 
         activity()
-            ->causedBy(auth()->user())
+            ->causedBy($user)
+            ->performedOn($user)
+            ->withProperties([
+                'user' => $user->name,
+                'email' => $user->email,
+            ])
             ->log('Login ke sistem');
 
         return redirect()->intended(route('dashboard', absolute: false));
@@ -42,8 +47,15 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+
+        $user = Auth::user();
         activity()
-            ->causedBy(auth()->user())
+            ->causedBy($user)
+            ->performedOn($user)
+            ->withProperties([
+                'user' => $user->name,
+                'email' => $user->email,
+            ])
             ->log('Logout dari sistem');
 
         Auth::guard('web')->logout();

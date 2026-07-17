@@ -11,6 +11,7 @@ class Transaksi extends Model
     protected $fillable = [
         'kode_transaksi',
         'nama_pembeli',
+        'member_id',
         'subtotal',
         'pajak',
         'diskon',
@@ -19,6 +20,11 @@ class Transaksi extends Model
         'kembalian',
         'metode_pembayaran',
     ];
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class);
+    }
 
     public function detailTransaksi()
     {

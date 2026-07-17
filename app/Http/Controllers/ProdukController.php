@@ -54,7 +54,19 @@ class ProdukController extends Controller
             $validated['foto'] = $request->file('foto')->store('produk', 'public');
         }
 
-        Produk::create($validated);
+        $produk = Produk::create($validated);
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($produk)
+            ->withProperties([
+                'kode_produk' => $validated['kode_produk'],
+                'nama_produk' => $validated['nama_produk'],
+                'kategori_id' => $validated['kategori_id'],
+                'harga_jual' => $validated['harga_jual'],
+                'stok' => $validated['stok'],
+            ])
+            ->log('menambahkan produk');
 
         return redirect()
             ->route('produk.index')
@@ -108,6 +120,18 @@ class ProdukController extends Controller
 
         $produk->update($validated);
 
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($produk)
+            ->withProperties([
+                'kode_produk' => $validated['kode_produk'],
+                'nama_produk' => $validated['nama_produk'],
+                'kategori_id' => $validated['kategori_id'],
+                'harga_jual' => $validated['harga_jual'],
+                'stok' => $validated['stok'],
+            ])
+            ->log('memperbarui produk');
+
         return redirect()
             ->route('produk.index')
             ->with('success', 'Produk berhasil diperbarui.');
@@ -118,6 +142,18 @@ class ProdukController extends Controller
          if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
         Storage::disk('public')->delete($produk->foto);
         }
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($produk)
+            ->withProperties([
+                'kode_produk' => $produk->kode_produk,
+                'nama_produk' => $produk->nama_produk,
+                'kategori_id' => $produk->kategori_id,
+                'harga_jual' => $produk->harga_jual,
+                'stok' => $produk->stok,
+            ])
+            ->log('menghapus produk');
 
         $produk->delete();
 

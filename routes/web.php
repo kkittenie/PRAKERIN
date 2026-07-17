@@ -12,49 +12,75 @@ use App\Http\Controllers\ProduksiController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PromoController;
-use App\Models\Produksi;
+use App\Http\Controllers\PegawaiController;
+use App\Http\Controllers\MemberController;
 
-// halaman yang butuh login
 Route::middleware(['auth'])->group(function () {
 
     // Dashboard Utama (Beranda)
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])
+        ->middleware('permission:lihat_dashboard')
+        ->name('dashboard');
 
     // Transaksi Kasir (POS)
-    Route::get('/transaksi', [TransaksiKasirController::class, 'indeks'])->name('transaksi.indeks');
-    Route::post('/transaksi/tahan', [TransaksiKasirController::class, 'simpanDitahan'])->name('transaksi.tahan');
-    Route::get('/transaksi/daftar-ditahan', [TransaksiKasirController::class, 'ambilDitahan'])->name('transaksi.daftar-ditahan');
-    Route::post('/transaksi/pulihkan/{id}', [TransaksiKasirController::class, 'pulihkanDitahan'])->name('transaksi.pulihkan');
-    Route::delete('/transaksi/hapus-ditahan/{id}', [TransaksiKasirController::class, 'hapusDitahan'])->name('transaksi.hapus-ditahan');
-    Route::post('/transaksi/bayar', [TransaksiKasirController::class, 'bayar'])->name('transaksi.bayar');
+    Route::middleware('permission:lihat_transaksi')->group(function () {
+        Route::get('/transaksi', [TransaksiKasirController::class, 'indeks'])->name('transaksi.indeks');
+        Route::get('/transaksi/daftar-ditahan', [TransaksiKasirController::class, 'ambilDitahan'])->name('transaksi.daftar-ditahan');
+    });
+    Route::middleware('permission:tambah_transaksi')->group(function () {
+        Route::post('/transaksi/tahan', [TransaksiKasirController::class, 'simpanDitahan'])->name('transaksi.tahan');
+        Route::post('/transaksi/pulihkan/{id}', [TransaksiKasirController::class, 'pulihkanDitahan'])->name('transaksi.pulihkan');
+        Route::delete('/transaksi/hapus-ditahan/{id}', [TransaksiKasirController::class, 'hapusDitahan'])->name('transaksi.hapus-ditahan');
+        Route::post('/transaksi/bayar', [TransaksiKasirController::class, 'bayar'])->name('transaksi.bayar');
+    });
 
     // Laporan
-    Route::get('/histori-transaksi', [LaporanController::class, 'historiTransaksi'])->name('histori-transaksi');
-    Route::get('/histori-transaksi/{id}/detail', [LaporanController::class, 'detailTransaksi'])->name('histori-transaksi.detail');
-    Route::get('/laporan-penjualan', [LaporanController::class, 'laporanPenjualan'])->name('laporan-penjualan');
-
+    Route::middleware('permission:lihat_laporan')->group(function () {
+        Route::get('/histori-transaksi', [LaporanController::class, 'historiTransaksi'])->name('histori-transaksi');
+        Route::get('/histori-transaksi/{id}/detail', [LaporanController::class, 'detailTransaksi'])->name('histori-transaksi.detail');
+        Route::get('/laporan-penjualan', [LaporanController::class, 'laporanPenjualan'])->name('laporan-penjualan');
+    });
 
     Route::resource('roles', RoleController::class)
-    ->middleware('permission:lihat_role|tambah_role|edit_role|hapus_role');
+        ->middleware('permission:lihat_role|tambah_role|edit_role|hapus_role');
 
     Route::resource('users', UserController::class)
-    ->middleware('permission:lihat_user|tambah_user|edit_user|hapus_user');
+        ->middleware('permission:lihat_user|tambah_user|edit_user|hapus_user');
 
-    Route::resource('kategori-produk', KategoriProdukController::class);
+    Route::resource('kategori-produk', KategoriProdukController::class)
+        ->middleware('permission:lihat_kategori_produk|tambah_kategori_produk|edit_kategori_produk|hapus_kategori_produk');
 
-    Route::resource('produk', ProdukController::class);
+    Route::resource('produk', ProdukController::class)
+        ->middleware('permission:lihat_produk|tambah_produk|edit_produk|hapus_produk');
 
-    Route::resource('bahan-baku', BahanBakuController::class);
+    Route::resource('bahan-baku', BahanBakuController::class)
+        ->middleware('permission:lihat_stok|tambah_stok|edit_stok|hapus_stok');
 
-    Route::resource('produksi', ProduksiController::class);
+    Route::resource('produksi', ProduksiController::class)
+        ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
 
-    // Promo Produk (menggunakan fungsi Bahasa Indonesia)
-    Route::get('/promo', [PromoController::class, 'indeks'])->name('promo.index');
-    Route::get('/promo/tambah', [PromoController::class, 'tambah'])->name('promo.create');
-    Route::post('/promo', [PromoController::class, 'simpan'])->name('promo.store');
-    Route::get('/promo/{id}/ubah', [PromoController::class, 'ubah'])->name('promo.edit');
-    Route::put('/promo/{id}', [PromoController::class, 'perbarui'])->name('promo.update');
-    Route::delete('/promo/{id}', [PromoController::class, 'hapus'])->name('promo.destroy');
+    Route::resource('pegawai', PegawaiController::class)
+        ->middleware('permission:lihat_pegawai|tambah_pegawai|edit_pegawai|hapus_pegawai');
+
+    Route::resource('member', MemberController::class)
+        ->middleware('permission:lihat_member|tambah_member|edit_member|hapus_member');
+
+    // Promo Produk
+    Route::middleware('permission:lihat_promo')->group(function () {
+        Route::get('/promo', [PromoController::class, 'indeks'])->name('promo.index');
+        Route::get('/promo/{id}/ubah', [PromoController::class, 'ubah'])->name('promo.edit');
+    });
+    Route::middleware('permission:tambah_promo')->group(function () {
+        Route::get('/promo/tambah', [PromoController::class, 'tambah'])->name('promo.create');
+        Route::post('/promo', [PromoController::class, 'simpan'])->name('promo.store');
+    });
+    Route::middleware('permission:edit_promo')->group(function () {
+        Route::put('/promo/{id}', [PromoController::class, 'perbarui'])->name('promo.update');
+    });
+    Route::middleware('permission:hapus_promo')->group(function () {
+        Route::delete('/promo/{id}', [PromoController::class, 'hapus'])->name('promo.destroy');
+    });
+
     // calendar
     Route::get('/calendar', function () {
         return view('pages.calender', ['title' => 'Calendar']);
@@ -75,7 +101,6 @@ Route::middleware(['auth'])->group(function () {
         return view('pages.tables.basic-tables', ['title' => 'Basic Tables']);
     })->name('basic-tables');
 
-    // pages
     Route::get('/blank', function () {
         return view('pages.blank', ['title' => 'Blank']);
     })->name('blank');
@@ -84,7 +109,6 @@ Route::middleware(['auth'])->group(function () {
         return view('pages.errors.error-404', ['title' => 'Error 404']);
     })->name('error-404');
 
-    // chart pages
     Route::get('/line-chart', function () {
         return view('pages.chart.line-chart', ['title' => 'Line Chart']);
     })->name('line-chart');
@@ -93,7 +117,6 @@ Route::middleware(['auth'])->group(function () {
         return view('pages.chart.bar-chart', ['title' => 'Bar Chart']);
     })->name('bar-chart');
 
-    // ui elements pages
     Route::get('/alerts', function () {
         return view('pages.ui-elements.alerts', ['title' => 'Alerts']);
     })->name('alerts');

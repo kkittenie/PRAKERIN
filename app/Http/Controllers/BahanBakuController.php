@@ -38,7 +38,18 @@ class BahanBakuController extends Controller
             'stok_minimum' => 'required|numeric|min:0',
         ]);
 
-        BahanBaku::create($validated);
+        $bahanBaku = BahanBaku::create($validated);
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($bahanBaku)
+            ->withProperties([
+                'nama_bahan' => $validated['nama_bahan'],
+                'satuan' => $validated['satuan'],
+                'stok' => $validated['stok'],
+                'stok_minimum' => $validated['stok_minimum'],
+            ])
+            ->log('menambahkan bahan baku');
 
         return redirect()
             ->route('bahan-baku.index')
@@ -72,6 +83,17 @@ class BahanBakuController extends Controller
 
         $bahan_baku->update($validated);
 
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($bahan_baku)
+            ->withProperties([
+                'nama_bahan' => $validated['nama_bahan'],
+                'satuan' => $validated['satuan'],
+                'stok' => $validated['stok'],
+                'stok_minimum' => $validated['stok_minimum'],
+            ])
+            ->log('memperbarui bahan baku');
+
         return redirect()
             ->route('bahan-baku.index')
             ->with('success', 'Bahan baku berhasil diperbarui.');
@@ -79,6 +101,19 @@ class BahanBakuController extends Controller
 
     public function destroy(BahanBaku $bahan_baku)
     {
+        $user = auth()->user();
+
+        activity()
+            ->causedBy($user)
+            ->performedOn($bahan_baku)
+            ->withProperties([
+                'nama_bahan' => $bahan_baku->nama_bahan,
+                'satuan' => $bahan_baku->satuan,
+                'stok' => $bahan_baku->stok,
+                'stok_minimum' => $bahan_baku->stok_minimum,
+            ])
+            ->log('menghapus bahan baku');
+            
          $bahan_baku->delete();
 
         return redirect()

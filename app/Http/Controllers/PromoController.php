@@ -60,6 +60,16 @@ class PromoController extends Controller
 
             $promo->produks()->sync($validated['produk_ids']);
 
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($promo)
+                ->withProperties([
+                    'promo' => $promo->nama_promo,
+                    'persentase' => $promo->persentase,
+                    'produks' => $validated['produk_ids'],
+                ])
+                ->log('menambahkan promo');
+
             return redirect()
                 ->route('promo.index')
                 ->with('success', 'Promo berhasil ditambahkan.');
@@ -108,6 +118,16 @@ class PromoController extends Controller
 
             $promo->produks()->sync($validated['produk_ids']);
 
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($promo)
+                ->withProperties([
+                    'promo' => $promo->nama_promo,
+                    'persentase' => $promo->persentase,
+                    'produks' => $validated['produk_ids'],
+                ])
+                ->log('memperbarui promo');
+
             return redirect()
                 ->route('promo.index')
                 ->with('success', 'Promo berhasil diperbarui.');
@@ -123,6 +143,17 @@ class PromoController extends Controller
     {
         try {
             $promo = Promo::findOrFail($id);
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($promo)
+                ->withProperties([
+                    'promo' => $promo->nama_promo,
+                    'persentase' => $promo->persentase,
+                    'produks' => $promo->produks->pluck('id')->toArray(),
+                ])
+                ->log('menghapus promo');
+
             $promo->produks()->detach();
             $promo->delete();
 
