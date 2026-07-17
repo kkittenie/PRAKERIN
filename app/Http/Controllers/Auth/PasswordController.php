@@ -33,7 +33,7 @@ class PasswordController extends Controller
                 'user' => $user->name,
                 'email' => $user->email,
             ])
-            ->log('Admin memperbarui password');
+            ->log('memperbarui password');
 
         return back()->with('status', 'password-updated');
     }

@@ -72,7 +72,7 @@ class TransaksiKasirController extends Controller
                     'pesanan_id' => $pesanan->id,
                     'nama_pembeli' => $pesanan->nama_pembeli,
                 ])
-                ->log('Admin menahan pesanan');
+                ->log('menahan pesanan');
 
             return response()->json([
                 'status' => 'success',
@@ -117,7 +117,7 @@ class TransaksiKasirController extends Controller
                     'pesanan_id' => $pesanan->id,
                     'nama_pembeli' => $pesanan->nama_pembeli,
                 ])
-                ->log('Admin memulihkan pesanan ditahan');
+                ->log('memulihkan pesanan ditahan');
             
             $pesanan->delete();
 
@@ -147,7 +147,7 @@ class TransaksiKasirController extends Controller
                     'pesanan_id' => $pesanan->id,
                     'nama_pembeli' => $pesanan->nama_pembeli,
                 ])
-                ->log('Admin menghapus pesanan ditahan');
+                ->log('menghapus pesanan ditahan');
 
             $pesanan->delete();
 
@@ -235,7 +235,7 @@ class TransaksiKasirController extends Controller
                     'kode_transaksi' => $kodeTransaksi,
                     'nama_pembeli' => $transaksi->nama_pembeli,
                 ])
-                ->log('Admin menyelesaikan transaksi');
+                ->log('menyelesaikan transaksi');
 
             return response()->json([
                 'status' => 'success',

@@ -66,7 +66,7 @@ class ProdukController extends Controller
                 'harga_jual' => $validated['harga_jual'],
                 'stok' => $validated['stok'],
             ])
-            ->log('Admin menambahkan produk');
+            ->log('menambahkan produk');
 
         return redirect()
             ->route('produk.index')
@@ -130,7 +130,7 @@ class ProdukController extends Controller
                 'harga_jual' => $validated['harga_jual'],
                 'stok' => $validated['stok'],
             ])
-            ->log('Admin memperbarui produk');
+            ->log('memperbarui produk');
 
         return redirect()
             ->route('produk.index')
@@ -153,7 +153,7 @@ class ProdukController extends Controller
                 'harga_jual' => $produk->harga_jual,
                 'stok' => $produk->stok,
             ])
-            ->log('Admin menghapus produk');
+            ->log('menghapus produk');
 
         $produk->delete();
 

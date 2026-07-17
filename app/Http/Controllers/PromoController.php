@@ -68,7 +68,7 @@ class PromoController extends Controller
                     'persentase' => $promo->persentase,
                     'produks' => $validated['produk_ids'],
                 ])
-                ->log('Admin menambahkan promo');
+                ->log('menambahkan promo');
 
             return redirect()
                 ->route('promo.index')
@@ -126,7 +126,7 @@ class PromoController extends Controller
                     'persentase' => $promo->persentase,
                     'produks' => $validated['produk_ids'],
                 ])
-                ->log('Admin memperbarui promo');
+                ->log('memperbarui promo');
 
             return redirect()
                 ->route('promo.index')
@@ -152,7 +152,7 @@ class PromoController extends Controller
                     'persentase' => $promo->persentase,
                     'produks' => $promo->produks->pluck('id')->toArray(),
                 ])
-                ->log('Admin menghapus promo');
+                ->log('menghapus promo');
 
             $promo->produks()->detach();
             $promo->delete();

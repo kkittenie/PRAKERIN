@@ -54,7 +54,7 @@ class UserController extends Controller
                 'username' => $user->username,
                 'nama' => $user->name,
             ])
-            ->log('Admin menambahkan user');
+            ->log('menambahkan user');
 
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan');
     }
@@ -114,7 +114,7 @@ class UserController extends Controller
                 'username' => $user->username,
                 'nama' => $user->name,
             ])
-            ->log('Admin mengubah data user');
+            ->log('mengubah data user');
 
         return redirect()->route('users.index')->with('success', 'User berhasil diupdate');
     }
@@ -135,7 +135,7 @@ class UserController extends Controller
                 'username' => $user->username,
                 'nama' => $user->name,
             ])
-            ->log('Admin menghapus user');
+            ->log('menghapus user');
 
             $user->delete();
             return back()->with('success', 'User dihapus');

@@ -127,7 +127,7 @@ class ProduksiController extends Controller
                 'bahan_baku_id' => $request->bahan_baku_id,
                 'jumlah_terpakai' => $request->jumlah_terpakai,
             ])
-            ->log('Admin menambahkan produksi');
+            ->log('menambahkan produksi');
 
         return redirect()
             ->route('produksi.index')

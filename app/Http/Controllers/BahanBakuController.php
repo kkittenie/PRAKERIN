@@ -49,7 +49,7 @@ class BahanBakuController extends Controller
                 'stok' => $validated['stok'],
                 'stok_minimum' => $validated['stok_minimum'],
             ])
-            ->log('Admin menambahkan bahan baku');
+            ->log('menambahkan bahan baku');
 
         return redirect()
             ->route('bahan-baku.index')
@@ -92,7 +92,7 @@ class BahanBakuController extends Controller
                 'stok' => $validated['stok'],
                 'stok_minimum' => $validated['stok_minimum'],
             ])
-            ->log('Admin memperbarui bahan baku');
+            ->log('memperbarui bahan baku');
 
         return redirect()
             ->route('bahan-baku.index')
@@ -112,7 +112,7 @@ class BahanBakuController extends Controller
                 'stok' => $bahan_baku->stok,
                 'stok_minimum' => $bahan_baku->stok_minimum,
             ])
-            ->log('Admin menghapus bahan baku');
+            ->log('menghapus bahan baku');
             
          $bahan_baku->delete();
 

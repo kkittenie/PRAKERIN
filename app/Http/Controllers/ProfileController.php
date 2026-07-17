@@ -35,7 +35,7 @@ class ProfileController extends Controller
                 'user' => $request->user()->name,
                 'email' => $request->user()->email,
             ])
-            ->log('Admin memperbarui profil');
+            ->log('memperbarui profil');
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
@@ -55,7 +55,7 @@ class ProfileController extends Controller
                 'user' => $user->name,
                 'email' => $user->email,
             ])
-            ->log('Admin menghapus akun');
+            ->log('menghapus akun');
 
         Auth::logout();
 

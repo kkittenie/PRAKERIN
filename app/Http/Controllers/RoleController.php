@@ -37,7 +37,7 @@ class RoleController extends Controller
                 'role' => $role->name,
                 'permissions' => $request->permissions ?? [],
             ])
-            ->log('Admin menambahkan role');
+            ->log('menambahkan role');
 
         return redirect()->route('roles.index')->with('success', 'Role berhasil dibuat');
     }
@@ -80,7 +80,7 @@ class RoleController extends Controller
                 'role' => $role->name,
                 'permissions' => $request->permissions ?? [],
             ])
-            ->log('Admin mengupdate role');
+            ->log('mengupdate role');
 
         return redirect()->route('roles.index')->with('success', 'Role berhasil diupdate');
     }
@@ -100,7 +100,7 @@ class RoleController extends Controller
                 'role' => $role->name,
                 'permissions' => $role->permissions->pluck('name')->toArray(),
             ])
-            ->log('Admin menghapus role');
+            ->log('menghapus role');
 
         $role->delete();
         return back()->with('success', 'Role dihapus');

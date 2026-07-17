@@ -41,7 +41,7 @@ class KategoriProdukController extends Controller
             ->withProperties([
                 'nama_kategori' => $validated['nama_kategori'],
             ])
-            ->log('Admin menambahkan kategori produk');
+            ->log('menambahkan kategori produk');
 
         return redirect()
             ->route('kategori-produk.index')
@@ -78,7 +78,7 @@ class KategoriProdukController extends Controller
             ->withProperties([
                 'nama_kategori' => $validated['nama_kategori'],
             ])
-            ->log('Admin memperbarui kategori produk');
+            ->log('memperbarui kategori produk');
 
         return redirect()
             ->route('kategori-produk.index')
@@ -101,7 +101,7 @@ class KategoriProdukController extends Controller
         ->withProperties([
             'nama_kategori' => $kategori_produk->nama_kategori,
         ])
-        ->log('Admin menghapus kategori produk');
+        ->log('menghapus kategori produk');
 
     $kategori_produk->delete();
 
