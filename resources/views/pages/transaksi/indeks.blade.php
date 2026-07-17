@@ -801,8 +801,8 @@ function aplikasiKasir() {
         // Cetak struk
         cetakStruk(jenis) {
             const d = this.suksesData;
-            const toko = 'Toko Pastry Modern';
-            const alamat = 'Jl. Contoh No. 123';
+            const toko = 'Crumb & Co.';
+            const alamat = 'Melrose Avenue, Los Angeles';
             let html = '';
 
             if (jenis === 'pelanggan') {
