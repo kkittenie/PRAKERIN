@@ -10,7 +10,7 @@
     <!-- User Button -->
     <button class="flex items-center text-gray-700 dark:text-gray-300" @click.prevent="toggleDropdown()" type="button">
         <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=465fff&color=ffffff" alt="{{ auth()->user()->name }}" />
+            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=a0704a&color=ffffff" alt="{{ auth()->user()->name }}" />
         </span>
 
         <span class="block mr-1 font-medium text-theme-sm text-gray-800 dark:text-gray-200">{{ auth()->user()->name }}</span>

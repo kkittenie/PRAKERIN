@@ -10,7 +10,7 @@
                 <div :class="{
                         'bg-green-600': toast.tipe === 'sukses',
                         'bg-red-600': toast.tipe === 'error',
-                        'bg-blue-600': toast.tipe === 'info'
+                        'bg-amber-700': toast.tipe === 'info'
                      }" 
                      class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] transform transition-all duration-300 animate-slide-in">
                     <span class="font-semibold text-lg" x-text="toast.tipe === 'sukses' ? '✓' : '⚠'"></span>
@@ -30,21 +30,21 @@
                     <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cari</label>
                         <input type="text" name="cari" value="{{ request('cari') }}" placeholder="Kode / Nama pembeli..."
-                               class="w-full md:w-56 px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition">
+                               class="w-full md:w-56 px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition">
                     </div>
                     <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Dari Tanggal</label>
                         <input type="date" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"
-                               class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-850 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition">
+                               class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-850 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition">
                     </div>
                     <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sampai Tanggal</label>
                         <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}"
-                               class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-850 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition">
+                               class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-850 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition">
                     </div>
                     <div class="flex gap-2 justify-end mt-2 md:mt-0">
                         <button type="submit"
-                                class="flex-1 md:flex-initial px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition shadow-sm whitespace-nowrap">
+                                class="flex-1 md:flex-initial px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg text-sm transition shadow-sm whitespace-nowrap">
                             <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             Cari
                         </button>
@@ -75,9 +75,9 @@
                     </thead>
                     <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
                         @forelse ($transaksiList as $trx)
-                        <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-colors">
+                        <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition-colors">
                             <td class="px-6 py-4">
-                                <span class="font-mono text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-md">{{ $trx->kode_transaksi }}</span>
+                                <span class="font-mono text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">{{ $trx->kode_transaksi }}</span>
                             </td>
                             <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200">{{ $trx->nama_pembeli }}</td>
                             <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ $trx->created_at->format('d M Y, H:i') }}</td>
@@ -86,13 +86,13 @@
                             <td class="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">Rp {{ number_format($trx->total_bayar, 0, ',', '.') }}</td>
                             <td class="px-6 py-4 text-center">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
-                                    {{ $trx->metode_pembayaran === 'tunai' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400' }}">
+                                    {{ $trx->metode_pembayaran === 'tunai' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400' }}">
                                     {{ ucfirst($trx->metode_pembayaran) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <button @click="lihatDetail({{ $trx->id }})"
-                                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-semibold rounded-lg text-xs transition">
+                                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-semibold rounded-lg text-xs transition">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                     Detail
                                 </button>
@@ -137,7 +137,7 @@
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100">
                 {{-- Header --}}
-                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-indigo-50 to-white dark:from-indigo-950/20 dark:to-gray-900">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-amber-50 to-white dark:from-amber-950/20 dark:to-gray-900">
                     <div>
                         <h3 class="text-lg font-bold text-gray-800 dark:text-white">Detail Transaksi</h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400 font-mono" x-text="detailData?.kode_transaksi"></p>
@@ -202,7 +202,7 @@
                     </div>
 
                     {{-- Total --}}
-                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-50 dark:border-indigo-950/30 rounded-xl p-5 space-y-2">
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-50 dark:border-amber-950/30 rounded-xl p-5 space-y-2">
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-650 dark:text-gray-400">Subtotal</span>
                             <span class="font-medium text-gray-800 dark:text-white" x-text="'Rp ' + Number(detailData?.subtotal || 0).toLocaleString('id-ID')"></span>
@@ -218,7 +218,7 @@
                         <hr class="border-gray-200 dark:border-gray-800">
                         <div class="flex justify-between text-base">
                             <span class="font-bold text-gray-800 dark:text-white">Total Bayar</span>
-                            <span class="font-bold text-indigo-700 dark:text-indigo-400 text-lg" x-text="'Rp ' + Number(detailData?.total_bayar || 0).toLocaleString('id-ID')"></span>
+                            <span class="font-bold text-amber-700 dark:text-amber-400 text-lg" x-text="'Rp ' + Number(detailData?.total_bayar || 0).toLocaleString('id-ID')"></span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-650 dark:text-gray-400">Diterima</span>
@@ -234,7 +234,7 @@
                 {{-- Footer --}}
                 <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 rounded-b-2xl" x-show="detailData">
                     <button @click="cetakStruk('pelanggan')"
-                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition flex items-center gap-1.5 shadow-sm">
+                            class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-sm transition flex items-center gap-1.5 shadow-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                         <span>Cetak Struk</span>
                     </button>
@@ -251,7 +251,7 @@
 
                 {{-- Loading --}}
                 <div class="p-12 flex items-center justify-center bg-white dark:bg-gray-900" x-show="loadingDetail">
-                    <svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg class="animate-spin h-8 w-8 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>

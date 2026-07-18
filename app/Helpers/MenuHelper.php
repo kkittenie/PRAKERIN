@@ -36,9 +36,9 @@ class MenuHelper
             ],
             [
                 'icon' => 'ecommerce',
-                'name' => 'Transaksi POS',
+                'name' => 'Transaksi',
                 'subItems' => [
-                    ['name' => 'Kasir POS', 'path' => '/transaksi', 'permission' => 'lihat_transaksi'],
+                    ['name' => 'Kasir', 'path' => '/transaksi', 'permission' => 'lihat_transaksi'],
                     ['name' => 'Member', 'path' => '/member', 'permission' => 'lihat_member'],
                 ],
             ],

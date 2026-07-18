@@ -25,11 +25,11 @@
 
             {{-- Bulan Ini --}}
             <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-4 sm:p-5 relative overflow-hidden group hover:shadow-md transition-shadow">
-                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-500/10 dark:to-indigo-500/5 rounded-bl-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-500/10 dark:to-amber-500/5 rounded-bl-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
                 <div class="relative">
                     <div class="flex items-center gap-2 mb-3">
-                        <div class="w-9 h-9 bg-indigo-100 dark:bg-indigo-500/15 rounded-xl flex items-center justify-center shrink-0">
-                            <svg class="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        <div class="w-9 h-9 bg-amber-100 dark:bg-amber-500/15 rounded-xl flex items-center justify-center shrink-0">
+                            <svg class="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         </div>
                         <div>
                             <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Bulan Ini</p>
@@ -42,11 +42,11 @@
 
             {{-- Tahun Ini --}}
             <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-4 sm:p-5 relative overflow-hidden group hover:shadow-md transition-shadow">
-                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-500/10 dark:to-purple-500/5 rounded-bl-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-500/10 dark:to-orange-500/5 rounded-bl-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
                 <div class="relative">
                     <div class="flex items-center gap-2 mb-3">
-                        <div class="w-9 h-9 bg-purple-100 dark:bg-purple-500/15 rounded-xl flex items-center justify-center shrink-0">
-                            <svg class="w-4.5 h-4.5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                        <div class="w-9 h-9 bg-orange-100 dark:bg-orange-500/15 rounded-xl flex items-center justify-center shrink-0">
+                            <svg class="w-4.5 h-4.5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
                         </div>
                         <div>
                             <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Tahun Ini</p>
@@ -68,22 +68,22 @@
                 <div class="flex flex-wrap items-center gap-3">
                     <div class="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                         <a href="{{ route('laporan-penjualan', ['periode' => 'minggu']) }}"
-                           class="px-4 py-2 text-sm font-semibold transition {{ $periode === 'minggu' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                           class="px-4 py-2 text-sm font-semibold transition {{ $periode === 'minggu' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
                             Minggu
                         </a>
                         <a href="{{ route('laporan-penjualan', ['periode' => 'bulan', 'tahun' => $tahun]) }}"
-                           class="px-4 py-2 text-sm font-semibold transition border-x border-gray-200 dark:border-gray-700 {{ $periode === 'bulan' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                           class="px-4 py-2 text-sm font-semibold transition border-x border-gray-200 dark:border-gray-700 {{ $periode === 'bulan' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
                             Bulan
                         </a>
                         <a href="{{ route('laporan-penjualan', ['periode' => 'tahun']) }}"
-                           class="px-4 py-2 text-sm font-semibold transition {{ $periode === 'tahun' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                           class="px-4 py-2 text-sm font-semibold transition {{ $periode === 'tahun' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
                             Tahun
                         </a>
                     </div>
                     <form method="GET" action="{{ route('laporan-penjualan') }}">
                         <input type="hidden" name="periode" value="{{ $periode }}">
                         <select name="tahun" onchange="this.form.submit()"
-                                class="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-gray-50 dark:bg-gray-800 text-gray-850 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent cursor-pointer">
+                                class="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-gray-50 dark:bg-gray-800 text-gray-850 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent cursor-pointer">
                             @foreach($daftarTahun as $thn)
                                 <option value="{{ $thn }}" {{ $tahun == $thn ? 'selected' : '' }}>{{ $thn }}</option>
                             @endforeach
@@ -112,7 +112,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
                         @forelse($produkTerlaris as $index => $produk)
-                        <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-colors">
+                        <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition-colors">
                             <td class="px-6 py-4">
                                 @if($index < 3)
                                     <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold
@@ -125,7 +125,7 @@
                             </td>
                             <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200">{{ $produk->nama_produk }}</td>
                             <td class="px-6 py-4 text-right">
-                                <span class="inline-flex items-center gap-1 text-indigo-700 dark:text-indigo-400 font-semibold">
+                                <span class="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold">
                                     {{ number_format($produk->total_terjual, 0, ',', '.') }}
                                     <span class="text-gray-400 dark:text-gray-500 text-xs font-normal">pcs</span>
                                 </span>

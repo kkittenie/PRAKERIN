@@ -148,7 +148,7 @@
 
     <a
     href="{{ route('produksi.show',$item->id) }}"
-    class="text-blue-600">
+    class="text-amber-700">
 
     Detail
 

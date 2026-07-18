@@ -112,7 +112,7 @@
 
                         <td class="py-4 text-center">
 
-                            <span class="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-500/10 px-3 py-1 text-sm font-medium text-blue-700 dark:text-blue-400">
+                            <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-400">
 
                                 {{ $item->produk_count }}
 

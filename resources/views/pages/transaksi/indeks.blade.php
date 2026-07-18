@@ -11,7 +11,7 @@
             <div :class="{
                     'bg-green-600': toast.tipe === 'sukses',
                     'bg-red-600': toast.tipe === 'error',
-                    'bg-blue-600': toast.tipe === 'info'
+                    'bg-amber-700': toast.tipe === 'info'
                  }"
                 class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] transform transition-all duration-300 animate-slide-in">
                 <span class="font-semibold text-lg" x-text="toast.tipe === 'sukses' ? '✓' : '⚠'"></span>
@@ -27,7 +27,7 @@
         <div
             class="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-xl shadow-xs border border-gray-100 dark:border-gray-800 shrink-0">
             <div class="flex items-center gap-3">
-                <div class="bg-indigo-600 text-white p-2.5 rounded-lg">
+                <div class="bg-amber-600 text-white p-2.5 rounded-lg">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -48,10 +48,10 @@
                         </svg>
                     </span>
                     <input type="text" x-model="kataKunciPencarian" placeholder="Cari nama atau kode produk..."
-                        class="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-900 dark:text-white transition-all">
+                        class="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-900 dark:text-white transition-all">
                 </div>
                 <button @click="bukaModalDaftarDitahan()"
-                    class="relative flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-semibold rounded-lg border border-indigo-100 dark:border-indigo-500/25 transition text-sm">
+                    class="relative flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-semibold rounded-lg border border-amber-100 dark:border-amber-500/25 transition text-sm">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -73,12 +73,12 @@
                     <div class="flex flex-wrap items-center justify-between gap-4">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
                             <button @click="kategoriTerpilih = 'semua'"
-                                :class="kategoriTerpilih === 'semua' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800'"
+                                :class="kategoriTerpilih === 'semua' ? 'bg-amber-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800'"
                                 class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap">Semua
                                 Produk</button>
                             <template x-for="kategori in daftarKategori" :key="kategori.id">
                                 <button @click="kategoriTerpilih = kategori.id"
-                                    :class="kategoriTerpilih === kategori.id ? 'bg-indigo-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800'"
+                                    :class="kategoriTerpilih === kategori.id ? 'bg-amber-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800'"
                                     class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap"
                                     x-text="kategori.nama_kategori"></button>
                             </template>
@@ -136,7 +136,7 @@
                                 </div>
                                 <div class="p-4 flex-1 flex flex-col justify-between gap-3">
                                     <div>
-                                        <p class="text-xxs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider"
+                                        <p class="text-xxs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider"
                                             x-text="produk.kategori?.nama_kategori || 'Pastry'"></p>
                                         <h3 class="font-bold text-gray-900 dark:text-white text-sm mt-0.5 line-clamp-2"
                                             x-text="produk.nama_produk"></h3>
@@ -155,11 +155,11 @@
                                             </div>
                                         </template>
                                         <div class="flex items-center justify-between">
-                                            <span class="font-bold text-indigo-700 dark:text-indigo-400 text-sm"
+                                            <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                 x-text="formatRupiah(produk.promo_aktif ? produk.harga_diskon : produk.harga_jual)"></span>
                                             <button @click="tambahKeKeranjang(produk)"
                                                 :disabled="produk.status_ketersediaan !== 'pesan_dulu' && produk.stok <= 0"
-                                                class="p-2 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-600 dark:hover:bg-indigo-600 text-indigo-600 dark:text-indigo-400 hover:text-white rounded-lg transition disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600">
+                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -186,9 +186,9 @@
         <div class="flex items-center gap-3">
             <template x-if="namaPembeli.trim() !== ''">
                 <div class="flex items-center gap-3 w-full">
-                    <div class="w-10 h-10 bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center rounded-full shrink-0" x-text="namaPembeli.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()"></div>
+                    <div class="w-10 h-10 bg-amber-100 text-amber-700 font-bold flex items-center justify-center rounded-full shrink-0" x-text="namaPembeli.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()"></div>
                     <h4 class="font-bold text-gray-900 dark:text-white text-sm truncate flex-1" x-text="namaPembeli"></h4>
-                    <button @click="bukaModalPembeli()" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition shrink-0">Ubah</button>
+                    <button @click="bukaModalPembeli()" class="text-xs font-bold text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition shrink-0">Ubah</button>
                 </div>
             </template>
             <template x-if="namaPembeli.trim() === ''">
@@ -237,8 +237,8 @@
 
         <!-- Jika member sudah terpilih -->
         <template x-if="$data.memberTerpilih">
-            <div class="flex items-center gap-2 px-3 py-2 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/25 rounded-lg">
-                <div class="w-7 h-7 bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full shrink-0"
+            <div class="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 rounded-lg">
+                <div class="w-7 h-7 bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full shrink-0"
                     x-text="$data.memberTerpilih.nama.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()"></div>
                 <div class="flex-1 min-w-0">
                     <p class="text-xs font-bold text-gray-900 dark:text-white truncate" x-text="$data.memberTerpilih.nama"></p>
@@ -264,7 +264,7 @@
                         @focus="dropdownTerbuka = true"
                         @input="dropdownTerbuka = true"
                         placeholder="Cari nama atau no. HP member..."
-                        class="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 transition placeholder:text-gray-400 dark:placeholder:text-gray-600">
+                        class="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500 transition placeholder:text-gray-400 dark:placeholder:text-gray-600">
                 </div>
 
                 <!-- Dropdown hasil pencarian -->
@@ -283,7 +283,7 @@
                     <!-- Hasil pencarian member -->
                     <template x-for="member in memberTersaring" :key="member.id">
                         <button @click="pilihMemberItem(member)"
-                            class="w-full px-3 py-2 text-left hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition flex items-center gap-2.5">
+                            class="w-full px-3 py-2 text-left hover:bg-amber-50 dark:hover:bg-amber-500/10 transition flex items-center gap-2.5">
                             <div class="w-7 h-7 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] font-bold flex items-center justify-center rounded-full shrink-0"
                                 x-text="member.nama.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()"></div>
                             <div class="flex-1 min-w-0">
@@ -327,7 +327,7 @@
                         <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate" x-text="item.nama_produk"></h5>
                         <div class="flex flex-col gap-0.5 mt-1">
                             <div class="flex items-center gap-1.5">
-                                <span class="text-xxs font-bold text-indigo-700 dark:text-indigo-400" x-text="formatRupiah(item.harga_jual)"></span>
+                                <span class="text-xxs font-bold text-amber-700 dark:text-amber-400" x-text="formatRupiah(item.harga_jual)"></span>
                                 <template x-if="item.promo_aktif">
                                     <span class="text-[10px] text-gray-400 line-through" x-text="formatRupiah(item.harga_jual_asli)"></span>
                                 </template>
@@ -349,7 +349,7 @@
                 </div>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-gray-400 dark:text-gray-500 text-[10px]">📝</span>
-                    <input type="text" x-model="item.catatan" placeholder="Catatan item (cth: Less sugar, extra hot)" class="w-full pl-6 pr-2 py-1 text-[10px] border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition">
+                    <input type="text" x-model="item.catatan" placeholder="Catatan item (cth: Less sugar, extra hot)" class="w-full pl-6 pr-2 py-1 text-[10px] border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded focus:outline-none focus:ring-1 focus:ring-amber-500 transition">
                 </div>
             </div>
         </template>
@@ -360,7 +360,7 @@
         <div class="grid grid-cols-2 gap-3">
             <div>
                 <label class="text-xxs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">Pajak (%)</label>
-                <input type="number" x-model.number="pajakPersen" min="0" placeholder="10" class="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <input type="number" x-model.number="pajakPersen" min="0" placeholder="10" class="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500">
             </div>
         </div>
     </div>
@@ -381,7 +381,7 @@
         </div>
         <div class="flex items-center justify-between pt-2.5 border-t border-gray-100 dark:border-gray-800">
             <span class="font-bold text-gray-900 dark:text-white text-sm">Total Tagihan</span>
-            <span class="font-black text-indigo-700 dark:text-indigo-400 text-lg" x-text="formatRupiah(totalTagihan)"></span>
+            <span class="font-black text-amber-700 dark:text-amber-400 text-lg" x-text="formatRupiah(totalTagihan)"></span>
         </div>
     </div>
 
@@ -405,7 +405,7 @@
     <div
         class="flex items-center justify-between bg-white dark:bg-gray-900 p-4 rounded-xl shadow-xs border border-gray-100 dark:border-gray-800">
         <button @click="halamanAktif = 'beranda'"
-            class="flex items-center gap-2 text-indigo-700 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-bold transition text-sm">
+            class="flex items-center gap-2 text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 font-bold transition text-sm">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
             </svg>
@@ -436,7 +436,7 @@
                     <span
                         class="text-xxs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Kembalian</span>
                     <span class="text-lg font-black"
-                        :class="kembalianNum >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-500 dark:text-red-400'"
+                        :class="kembalianNum >= 0 ? 'text-amber-700 dark:text-amber-400' : 'text-red-500 dark:text-red-400'"
                         x-text="formatRupiah(kembalianNum)"></span>
                 </div>
             </div>
@@ -449,11 +449,11 @@
                         Pembayaran</label>
                     <div class="flex gap-4">
                         <button @click="metodePembayaran = 'Tunai'"
-                            :class="metodePembayaran === 'Tunai' ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
+                            :class="metodePembayaran === 'Tunai' ? 'bg-amber-600 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
                             class="flex-1 py-3 px-5 rounded-xl font-bold tracking-wide transition text-sm">TUNAI
                             (CASH)</button>
                         <button @click="metodePembayaran = 'QRIS'"
-                            :class="metodePembayaran === 'QRIS' ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
+                            :class="metodePembayaran === 'QRIS' ? 'bg-amber-600 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
                             class="flex-1 py-3 px-5 rounded-xl font-bold tracking-wide transition text-sm">QRIS (QR
                             CODE)</button>
                     </div>
@@ -473,7 +473,7 @@
                         </div>
                         <div class="flex flex-wrap gap-2 mt-3">
                             <button @click="setJumlahDiterimaCepat(totalTagihan)"
-                                class="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold rounded-lg text-xs transition">Uang
+                                class="px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold rounded-lg text-xs transition">Uang
                                 Pas</button>
                             <button @click="tambahNominalCepat(20000)"
                                 class="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-lg text-xs transition">+Rp20k</button>
@@ -528,23 +528,23 @@
                 <div x-show="metodePembayaran === 'QRIS'"
                     class="flex flex-col items-center justify-center text-center gap-5 py-4" x-transition>
                     <div
-                        class="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-500/20 flex flex-col items-center gap-4">
+                        class="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-6 rounded-2xl border border-amber-100 dark:border-amber-500/20 flex flex-col items-center gap-4">
                         <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100">
-                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&color=1e1b4b&data=' + encodeURIComponent('00020101021226380010co.bakepos0114123456789012345204581153033605408' + totalTagihan + '.005802ID5907BakePOS6007Jakarta6304')"
+                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&color=5a3c27&data=' + encodeURIComponent('00020101021226380010co.bakepos0114123456789012345204581153033605408' + totalTagihan + '.005802ID5907BakePOS6007Jakarta6304')"
                                 class="w-44 h-44" alt="QRIS QR Code">
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="text-xs font-black text-gray-800 dark:text-white tracking-wider">🥨
                                 BakePOS</span>
                             <span
-                                class="px-2 py-0.5 bg-indigo-600 text-white font-black text-[9px] rounded uppercase tracking-widest">QRIS</span>
+                                class="px-2 py-0.5 bg-amber-600 text-white font-black text-[9px] rounded uppercase tracking-widest">QRIS</span>
                         </div>
                     </div>
                     <div class="max-w-xs">
                         <h4 class="font-extrabold text-gray-950 dark:text-white text-base">Scan QRIS Untuk Bayar</h4>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Silakan tunjukkan QR
                             Code di atas kepada pelanggan. Total pembayaran sebesar <span
-                                class="font-bold text-indigo-600 dark:text-indigo-400"
+                                class="font-bold text-amber-600 dark:text-amber-400"
                                 x-text="formatRupiah(totalTagihan)"></span>.</p>
                     </div>
                     <button @click="halamanAktif = 'beranda'"
@@ -594,7 +594,7 @@
                         class="font-semibold text-gray-800 dark:text-white" x-text="formatRupiah(pajak)"></span></div>
                 <div
                     class="flex justify-between pt-3 border-t border-gray-100 dark:border-gray-800 font-extrabold text-sm text-gray-900 dark:text-white">
-                    <span>Total Pembayaran</span><span class="text-indigo-700 dark:text-indigo-400 text-base"
+                    <span>Total Pembayaran</span><span class="text-amber-700 dark:text-amber-400 text-base"
                         x-text="formatRupiah(totalTagihan)"></span>
                 </div>
             </div>
@@ -652,10 +652,10 @@
                         </p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
-                        <span class="font-extrabold text-sm text-indigo-700 dark:text-indigo-400 mr-2"
+                        <span class="font-extrabold text-sm text-amber-700 dark:text-amber-400 mr-2"
                             x-text="formatRupiah(pesanan.total)"></span>
                         <button @click="pulihkanPesanan(pesanan.id)"
-                            class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Pulihkan</button>
+                            class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Pulihkan</button>
                         <button @click="hapusPesananDitahan(pesanan.id)"
                             class="p-2 bg-red-50 dark:bg-red-500/10 hover:bg-red-600 text-red-600 dark:text-red-400 rounded-lg transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -688,7 +688,7 @@
                     class="text-red-500">*</span></label>
             <input type="text" x-model="inputNamaPembeli" @keydown.enter="simpanPembeli()"
                 placeholder="Contoh: Budi Santoso"
-                class="w-full px-3 py-2 border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-850 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                class="w-full px-3 py-2 border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-850 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 autofocus>
         </div>
         <div
@@ -696,7 +696,7 @@
             <button @click="modalPembeliTerbuka = false"
                 class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-bold text-xs rounded-lg transition text-gray-700 dark:text-gray-300">Batal</button>
             <button @click="simpanPembeli()"
-                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Simpan</button>
+                class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Simpan</button>
         </div>
     </div>
 </div>
@@ -713,7 +713,7 @@
             <h3 class="font-extrabold text-gray-900 dark:text-white text-lg">Pembayaran Sukses!</h3>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Transaksi telah berhasil dicatat.</p>
             <span
-                class="inline-block mt-3 px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20 font-mono text-xs rounded-full font-bold"
+                class="inline-block mt-3 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20 font-mono text-xs rounded-full font-bold"
                 x-text="suksesData.kode_transaksi"></span>
         </div>
         <div
@@ -732,7 +732,7 @@
         <!-- Tombol Cetak Struk -->
         <div class="w-full grid grid-cols-2 gap-3">
             <button @click="cetakStruk('pelanggan')"
-                class="py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                class="py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />

@@ -17,7 +17,7 @@
 
     $variants = [
         'light' => [
-            'primary' => 'bg-blue-50 text-blue-500',
+            'primary' => 'bg-amber-50 text-amber-500',
             'success' => 'bg-green-50 text-green-600',
             'error' => 'bg-red-50 text-red-600',
             'warning' => 'bg-yellow-50 text-yellow-600',
@@ -26,7 +26,7 @@
             'dark' => 'bg-gray-500 text-white',
         ],
         'solid' => [
-            'primary' => 'bg-blue-500 text-white',
+            'primary' => 'bg-amber-500 text-white',
             'success' => 'bg-green-500 text-white',
             'error' => 'bg-red-500 text-white',
             'warning' => 'bg-yellow-500 text-white',
