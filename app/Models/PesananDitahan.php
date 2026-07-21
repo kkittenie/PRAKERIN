@@ -17,9 +17,15 @@ class PesananDitahan extends Model
         'diskon',
         'total',
         'catatan',
+        'transaksi_id',
     ];
 
     protected $casts = [
         'item_pesanan' => 'array',
     ];
+
+    public function transaksi()
+    {
+        return $this->belongsTo(Transaksi::class, 'transaksi_id');
+    }
 }

@@ -32,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/transaksi/pulihkan/{id}', [TransaksiKasirController::class, 'pulihkanDitahan'])->name('transaksi.pulihkan');
         Route::delete('/transaksi/hapus-ditahan/{id}', [TransaksiKasirController::class, 'hapusDitahan'])->name('transaksi.hapus-ditahan');
         Route::post('/transaksi/bayar', [TransaksiKasirController::class, 'bayar'])->name('transaksi.bayar');
+        Route::post('/transaksi/lunaskan/{id}', [TransaksiKasirController::class, 'lunaskanDitahan'])->name('transaksi.lunaskan');
     });
 
     // Laporan

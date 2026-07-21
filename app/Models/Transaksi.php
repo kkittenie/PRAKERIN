@@ -19,6 +19,7 @@ class Transaksi extends Model
         'jumlah_diterima',
         'kembalian',
         'metode_pembayaran',
+        'status_pembayaran',
     ];
 
     public function member()
@@ -29,5 +30,10 @@ class Transaksi extends Model
     public function detailTransaksi()
     {
         return $this->hasMany(DetailTransaksi::class, 'transaksi_id');
+    }
+
+    public function pesananDitahan()
+    {
+        return $this->hasOne(PesananDitahan::class, 'transaksi_id');
     }
 }

@@ -65,18 +65,18 @@ class LaporanController extends Controller
 
         // Statistik ringkasan
         $hariIni = Carbon::today();
-        $totalHariIni = Transaksi::whereDate('created_at', $hariIni)->sum('total_bayar');
-        $jumlahTransaksiHariIni = Transaksi::whereDate('created_at', $hariIni)->count();
+        $totalHariIni = Transaksi::where('status_pembayaran', 'Lunas')->whereDate('created_at', $hariIni)->sum('total_bayar');
+        $jumlahTransaksiHariIni = Transaksi::where('status_pembayaran', 'Lunas')->whereDate('created_at', $hariIni)->count();
 
-        $totalBulanIni = Transaksi::whereMonth('created_at', $hariIni->month)
+        $totalBulanIni = Transaksi::where('status_pembayaran', 'Lunas')->whereMonth('created_at', $hariIni->month)
             ->whereYear('created_at', $hariIni->year)
             ->sum('total_bayar');
-        $jumlahTransaksiBulanIni = Transaksi::whereMonth('created_at', $hariIni->month)
+        $jumlahTransaksiBulanIni = Transaksi::where('status_pembayaran', 'Lunas')->whereMonth('created_at', $hariIni->month)
             ->whereYear('created_at', $hariIni->year)
             ->count();
 
-        $totalTahunIni = Transaksi::whereYear('created_at', $hariIni->year)->sum('total_bayar');
-        $jumlahTransaksiTahunIni = Transaksi::whereYear('created_at', $hariIni->year)->count();
+        $totalTahunIni = Transaksi::where('status_pembayaran', 'Lunas')->whereYear('created_at', $hariIni->year)->sum('total_bayar');
+        $jumlahTransaksiTahunIni = Transaksi::where('status_pembayaran', 'Lunas')->whereYear('created_at', $hariIni->year)->count();
 
         // Data grafik berdasarkan periode
         $dataGrafik = [];
@@ -93,14 +93,14 @@ class LaporanController extends Controller
             for ($i = 6; $i >= 0; $i--) {
                 $tanggal = (clone $tanggalAcuan)->subDays($i);
                 $labelGrafik[] = $tanggal->translatedFormat('D, d M');
-                $dataGrafik[] = (int) Transaksi::whereDate('created_at', $tanggal)->sum('total_bayar');
+                $dataGrafik[] = (int) Transaksi::where('status_pembayaran', 'Lunas')->whereDate('created_at', $tanggal)->sum('total_bayar');
             }
         } elseif ($periode === 'bulan') {
             // 12 bulan di tahun yang dipilih
             $namaBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
             for ($i = 1; $i <= 12; $i++) {
                 $labelGrafik[] = $namaBulan[$i - 1];
-                $dataGrafik[] = (int) Transaksi::whereMonth('created_at', $i)
+                $dataGrafik[] = (int) Transaksi::where('status_pembayaran', 'Lunas')->whereMonth('created_at', $i)
                     ->whereYear('created_at', $tahun)
                     ->sum('total_bayar');
             }
@@ -109,7 +109,7 @@ class LaporanController extends Controller
             for ($i = 4; $i >= 0; $i--) {
                 $thn = (int) $tahun - $i;
                 $labelGrafik[] = (string) $thn;
-                $dataGrafik[] = (int) Transaksi::whereYear('created_at', $thn)->sum('total_bayar');
+                $dataGrafik[] = (int) Transaksi::where('status_pembayaran', 'Lunas')->whereYear('created_at', $thn)->sum('total_bayar');
             }
         }
 

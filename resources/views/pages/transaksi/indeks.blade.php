@@ -404,7 +404,7 @@
 <div x-show="halamanAktif === 'pembayaran'" class="flex flex-col gap-6" x-transition>
     <div
         class="flex items-center justify-between bg-white dark:bg-gray-900 p-4 rounded-xl shadow-xs border border-gray-100 dark:border-gray-800">
-        <button @click="halamanAktif = 'beranda'"
+        <button @click="kembaliKeKasir()"
             class="flex items-center gap-2 text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 font-bold transition text-sm">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
@@ -519,7 +519,7 @@
                         </button>
                         <button @click="jumlahDiterima = ''"
                             class="py-4 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 border border-gray-200 dark:border-gray-800 text-red-600 dark:text-red-400 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">C</button>
-                        <button @click="halamanAktif = 'beranda'"
+                        <button @click="kembaliKeKasir()"
                             class="col-span-2 py-4 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-slate-800 dark:text-gray-300 font-bold text-base rounded-lg active:scale-95 transition text-center">Batal</button>
                     </div>
                 </div>
@@ -547,7 +547,7 @@
                                 class="font-bold text-amber-600 dark:text-amber-400"
                                 x-text="formatRupiah(totalTagihan)"></span>.</p>
                     </div>
-                    <button @click="halamanAktif = 'beranda'"
+                    <button @click="kembaliKeKasir()"
                         class="w-full max-w-xs py-3 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-slate-800 dark:text-gray-300 font-bold text-xs rounded-xl active:scale-95 transition text-center">Batal</button>
                 </div>
             </div>
@@ -613,16 +613,16 @@
 <div x-show="modalDitahanTerbuka"
     class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-9999 p-4" x-transition>
     <div
-        class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+        class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-3xl overflow-hidden border border-gray-100 dark:border-gray-800">
         <div class="bg-slate-900 dark:bg-gray-950 text-white p-5 flex items-center justify-between">
             <div>
-                <h3 class="font-extrabold text-base">Daftar Pesanan Ditahan</h3>
-                <p class="text-slate-400 dark:text-gray-400 text-xs mt-0.5">Pesanan yang ditunda pemrosesannya.</p>
+                <h3 class="font-extrabold text-base">Daftar Pesanan Ditahan / Kredit</h3>
+                <p class="text-slate-400 dark:text-gray-400 text-xs mt-0.5">Pesanan belum lunas yang menunggu pembayaran.</p>
             </div>
             <button @click="modalDitahanTerbuka = false"
                 class="text-slate-400 hover:text-white transition font-bold text-lg">&times;</button>
         </div>
-        <div class="p-6 max-h-[400px] overflow-y-auto flex flex-col gap-4">
+        <div class="p-6 max-h-[450px] overflow-y-auto flex flex-col gap-4 custom-scrollbar">
             <template x-if="daftarDitahan.length === 0">
                 <div class="text-center py-10">
                     <svg class="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-3" fill="none"
@@ -635,29 +635,47 @@
             </template>
             <template x-for="pesanan in daftarDitahan" :key="pesanan.id">
                 <div
-                    class="border border-gray-100 dark:border-gray-800 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between gap-4">
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-2">
-                            <span class="font-extrabold text-sm text-gray-900 dark:text-white"
-                                x-text="pesanan.nama_pembeli"></span>
-                            <span class="text-xxs text-gray-400 dark:text-gray-500"
-                                x-text="formatTanggal(pesanan.created_at)"></span>
+                    class="border border-gray-100 dark:border-gray-800 rounded-xl p-4 bg-gray-50 dark:bg-gray-800/40 flex flex-col gap-3">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-extrabold text-sm text-gray-900 dark:text-white"
+                                    x-text="pesanan.nama_pembeli"></span>
+                                <span class="px-2 py-0.5 bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full">Belum Lunas</span>
+                                <template x-if="pesanan.transaksi">
+                                    <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[10px] font-mono rounded-full" x-text="pesanan.transaksi.kode_transaksi"></span>
+                                </template>
+                            </div>
+                            <p class="text-xxs text-gray-400 dark:text-gray-500 mt-0.5" x-text="formatTanggal(pesanan.created_at)"></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Item: <span
+                                    class="font-semibold text-gray-700 dark:text-gray-300"
+                                    x-text="pesanan.item_pesanan.map(i => i.nama_produk + ' (' + i.jumlah + ')').join(', ')"></span>
+                            </p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" x-show="pesanan.catatan">Catatan:
+                                <span class="italic text-gray-600 dark:text-gray-400" x-text="pesanan.catatan"></span>
+                            </p>
                         </div>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Item: <span
-                                class="font-semibold text-gray-700 dark:text-gray-300"
-                                x-text="pesanan.item_pesanan.map(i => i.nama_produk + ' (' + i.jumlah + ')').join(', ')"></span>
-                        </p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" x-show="pesanan.catatan">Catatan:
-                            <span class="italic text-gray-600 dark:text-gray-400" x-text="pesanan.catatan"></span>
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <span class="font-extrabold text-sm text-amber-700 dark:text-amber-400 mr-2"
+                        <span class="font-extrabold text-sm text-amber-700 dark:text-amber-400 shrink-0"
                             x-text="formatRupiah(pesanan.total)"></span>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap border-t border-gray-100 dark:border-gray-800 pt-3">
+                        <button @click="cetakOrderDapurDitahan(pesanan)"
+                            class="px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            Cetak Order Dapur
+                        </button>
+                        <button @click="mulaiLunaskan(pesanan)"
+                            class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-lg transition shadow-xs flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                            Lunaskan
+                        </button>
                         <button @click="pulihkanPesanan(pesanan.id)"
-                            class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Pulihkan</button>
+                            class="px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                            Pulihkan
+                        </button>
                         <button @click="hapusPesananDitahan(pesanan.id)"
-                            class="p-2 bg-red-50 dark:bg-red-500/10 hover:bg-red-600 text-red-600 dark:text-red-400 rounded-lg transition">
+                            class="p-1.5 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 rounded-lg transition ml-auto" title="Hapus pesanan">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -710,47 +728,76 @@
             class="w-16 h-16 bg-green-100 dark:bg-green-500/10 text-green-600 dark:text-green-400 font-bold flex items-center justify-center rounded-full text-3xl animate-bounce">
             ✓</div>
         <div>
-            <h3 class="font-extrabold text-gray-900 dark:text-white text-lg">Pembayaran Sukses!</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Transaksi telah berhasil dicatat.</p>
+            <template x-if="suksesData.status_pembayaran === 'Lunas'">
+                <div>
+                    <h3 class="font-extrabold text-gray-900 dark:text-white text-lg">Pembayaran Sukses!</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Transaksi telah berhasil dicatat.</p>
+                </div>
+            </template>
+            <template x-if="suksesData.status_pembayaran === 'Belum Lunas'">
+                <div>
+                    <h3 class="font-extrabold text-gray-900 dark:text-white text-lg">Pesanan Berhasil Ditahan!</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Pesanan tercatat sebagai kredit. Cetak order dapur di bawah.</p>
+                </div>
+            </template>
             <span
                 class="inline-block mt-3 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20 font-mono text-xs rounded-full font-bold"
                 x-text="suksesData.kode_transaksi"></span>
+            <template x-if="suksesData.status_pembayaran === 'Belum Lunas'">
+                <span class="inline-block ml-1 px-2 py-0.5 bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full">Belum Lunas</span>
+            </template>
         </div>
-        <div
-            class="w-full bg-gray-50 dark:bg-gray-950 rounded-xl p-4 border border-gray-100 dark:border-gray-800 flex flex-col gap-2 text-xs">
-            <div class="flex justify-between text-gray-500 dark:text-gray-400"><span>Total Pembayaran</span><span
-                    class="font-semibold text-gray-800 dark:text-white"
-                    x-text="formatRupiah(suksesData.total_bayar)"></span></div>
-            <div class="flex justify-between text-gray-500 dark:text-gray-400"><span>Uang Diterima</span><span
-                    class="font-semibold text-gray-800 dark:text-white"
-                    x-text="formatRupiah(suksesData.jumlah_diterima)"></span></div>
-            <div class="flex justify-between pt-2 border-t border-gray-100 dark:border-gray-800 font-extrabold text-sm">
-                <span>Uang Kembalian</span><span class="text-green-600 dark:text-green-400"
-                    x-text="formatRupiah(suksesData.kembalian)"></span>
+        <template x-if="suksesData.status_pembayaran === 'Lunas'">
+            <div class="w-full bg-gray-50 dark:bg-gray-950 rounded-xl p-4 border border-gray-100 dark:border-gray-800 flex flex-col gap-2 text-xs">
+                <div class="flex justify-between text-gray-500 dark:text-gray-400"><span>Total Pembayaran</span><span
+                        class="font-semibold text-gray-800 dark:text-white"
+                        x-text="formatRupiah(suksesData.total_bayar)"></span></div>
+                <div class="flex justify-between text-gray-500 dark:text-gray-400"><span>Uang Diterima</span><span
+                        class="font-semibold text-gray-800 dark:text-white"
+                        x-text="formatRupiah(suksesData.jumlah_diterima)"></span></div>
+                <div class="flex justify-between pt-2 border-t border-gray-100 dark:border-gray-800 font-extrabold text-sm">
+                    <span>Uang Kembalian</span><span class="text-green-600 dark:text-green-400"
+                        x-text="formatRupiah(suksesData.kembalian)"></span>
+                </div>
             </div>
-        </div>
+        </template>
+        <template x-if="suksesData.status_pembayaran === 'Belum Lunas'">
+            <div class="w-full bg-amber-50 dark:bg-amber-500/5 rounded-xl p-4 border border-amber-200 dark:border-amber-500/20 flex flex-col gap-2 text-xs">
+                <div class="flex justify-between text-gray-600 dark:text-gray-300"><span>Total Tagihan</span><span
+                        class="font-bold text-amber-700 dark:text-amber-400"
+                        x-text="formatRupiah(suksesData.total_bayar)"></span></div>
+                <div class="flex justify-between text-gray-500 dark:text-gray-400"><span>Status</span><span
+                        class="font-bold text-red-600 dark:text-red-400">Belum Lunas</span></div>
+            </div>
+        </template>
         <!-- Tombol Cetak Struk -->
-        <div class="w-full grid grid-cols-2 gap-3">
-            <button @click="cetakStruk('pelanggan')"
-                class="py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Struk Pelanggan
-            </button>
-            <button @click="cetakStruk('dapur')"
-                class="py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Order Dapur
-            </button>
+        <div class="w-full flex flex-col gap-3">
+            <template x-if="suksesData.status_pembayaran === 'Lunas'">
+                <div class="grid grid-cols-2 gap-3">
+                    <button @click="cetakStruk('pelanggan')"
+                        class="py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Struk Pelanggan
+                    </button>
+                    <button @click="cetakStruk('dapur')"
+                        class="py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Order Dapur
+                    </button>
+                </div>
+            </template>
+            <template x-if="suksesData.status_pembayaran === 'Belum Lunas'">
+            </template>
         </div>
         <button @click="tutupModalSukses()"
-            class="w-full py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl transition text-sm">Transaksi
-            Baru</button>
+            class="w-full py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl transition text-sm"
+            x-text="suksesData.status_pembayaran === 'Lunas' ? 'Transaksi Baru' : 'Kembali'"></button>
     </div>
 </div>
 
@@ -834,8 +881,11 @@
                 pajak: 0,
                 metode_pembayaran: 'Tunai',
                 catatan: '',
-                tanggal: ''
+                tanggal: '',
+                status_pembayaran: ''
             },
+
+            pesananSedangDilunaskan: null,
 
             toasts: [],
             toastIdCounter: 0,
@@ -1006,11 +1056,29 @@
                 if (this.keranjang.length === 0) return;
                 if (this.namaPembeli.trim() === '') { this.tambahToast('Nama pembeli harus diisi terlebih dahulu!', 'error'); this.bukaModalPembeli(); return; }
 
+                const dataStruk = {
+                    nama_pembeli: this.namaPembeli,
+                    keranjang: JSON.parse(JSON.stringify(this.keranjang)),
+                    subtotal: this.subtotal,
+                    diskon_persen: this.diskonPersen || 0,
+                    nilai_diskon: this.nilaiDiskon,
+                    pajak_persen: this.pajakPersen,
+                    pajak: this.pajak,
+                    total_bayar: this.totalTagihan,
+                    jumlah_diterima: 0,
+                    kembalian: 0,
+                    metode_pembayaran: 'Belum Bayar',
+                    status_pembayaran: 'Belum Lunas',
+                    catatan: this.catatan || '',
+                    tanggal: new Date().toLocaleString('id-ID')
+                };
+
                 fetch("{{ route('transaksi.tahan') }}", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
                     body: JSON.stringify({
                         nama_pembeli: this.namaPembeli,
+                        member_id: this.memberIdTerpilih || null,
                         item_pesanan: this.keranjang,
                         subtotal: this.subtotal,
                         pajak: this.pajak,
@@ -1021,7 +1089,20 @@
                 })
                     .then(r => r.json())
                     .then(r => {
-                        if (r.status === 'success') { this.tambahToast('Pesanan ditahan.', 'sukses'); this.bersihkanKeranjang(); this.ambilDaftarDitahanDariServer(); }
+                        if (r.status === 'success') {
+                            // Kurangi stok di frontend UI segera setelah berhasil ditahan
+                            this.keranjang.forEach(item => {
+                                const p = this.daftarProduk.find(x => x.id === item.produk_id);
+                                if (p && p.status_ketersediaan !== 'pesan_dulu') {
+                                    p.stok -= item.jumlah;
+                                }
+                            });
+                            this.tambahToast('Pesanan ditahan.', 'sukses');
+                            this.suksesData = { ...dataStruk, kode_transaksi: r.kode_transaksi };
+                            this.modalSuksesTerbuka = true;
+                            this.bersihkanKeranjang();
+                            this.ambilDaftarDitahanDariServer();
+                        }
                         else this.tambahToast(r.pesan, 'error');
                     })
                     .catch(() => this.tambahToast('Gagal menahan pesanan.', 'error'));
@@ -1044,8 +1125,21 @@
                             this.catatan = d.catatan || '';
                             this.diskonPersen = d.diskon || '';
                             this.modalDitahanTerbuka = false;
+
+                            // Kembalikan stok di frontend UI saat pesanan dipulihkan
+                            if (d.item_pesanan) {
+                                d.item_pesanan.forEach(item => {
+                                    const p = this.daftarProduk.find(x => x.id === item.produk_id);
+                                    if (p && p.status_ketersediaan !== 'pesan_dulu') {
+                                        p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
+                                    }
+                                });
+                            }
+
+                            this.pesananSedangDilunaskan = null;
                             this.tambahToast('Pesanan dipulihkan.', 'sukses');
                             this.ambilDaftarDitahanDariServer();
+                            this.halamanAktif = 'beranda';
                         } else this.tambahToast(r.pesan, 'error');
                     });
             },
@@ -1058,10 +1152,20 @@
             eksekusiHapusPesananDitahan() {
                 if (!this.idPesananAkanDihapus) return;
                 const id = this.idPesananAkanDihapus;
+                const pesanan = this.daftarDitahan.find(p => p.id === id);
                 fetch(`/transaksi/hapus-ditahan/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" } })
                     .then(r => r.json())
                     .then(r => {
                         if (r.status === 'success') {
+                            // Kembalikan stok di frontend UI saat pesanan ditahan dihapus
+                            if (pesanan && pesanan.item_pesanan) {
+                                pesanan.item_pesanan.forEach(item => {
+                                    const p = this.daftarProduk.find(x => x.id === item.produk_id);
+                                    if (p && p.status_ketersediaan !== 'pesan_dulu') {
+                                        p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
+                                    }
+                                });
+                            }
                             this.tambahToast('Pesanan dihapus.', 'info');
                             this.ambilDaftarDitahanDariServer();
                         } else {
@@ -1071,6 +1175,14 @@
                         this.modalDitahanTerbuka = true;
                         this.idPesananAkanDihapus = null;
                     });
+            },
+
+            kembaliKeKasir() {
+                if (this.pesananSedangDilunaskan) {
+                    this.pulihkanPesanan(this.pesananSedangDilunaskan.id);
+                } else {
+                    this.halamanAktif = 'beranda';
+                }
             },
 
             // Pembayaran Final
@@ -1091,36 +1203,62 @@
                     kembalian: this.kembalianNum,
                     metode_pembayaran: this.metodePembayaran,
                     catatan: this.catatan,
-                    tanggal: new Date().toLocaleString('id-ID')
+                    tanggal: new Date().toLocaleString('id-ID'),
+                    status_pembayaran: 'Lunas'
                 };
 
-                fetch("{{ route('transaksi.bayar') }}", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
-                    body: JSON.stringify({
-                        nama_pembeli: this.namaPembeli,
-                        member_id: this.memberIdTerpilih || null,
-                        item_pesanan: this.keranjang,
-                        subtotal: this.subtotal,
-                        pajak: this.pajak,
-                        diskon: this.nilaiDiskon,
-                        total_bayar: this.totalTagihan,
-                        jumlah_diterima: this.jumlahDiterimaNum,
-                        kembalian: this.kembalianNum,
-                        metode_pembayaran: this.metodePembayaran
+                if (this.pesananSedangDilunaskan) {
+                    fetch(`/transaksi/lunaskan/${this.pesananSedangDilunaskan.id}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
+                        body: JSON.stringify({
+                            jumlah_diterima: this.jumlahDiterimaNum,
+                            kembalian: this.kembalianNum,
+                            metode_pembayaran: this.metodePembayaran,
+                            member_id: this.memberIdTerpilih || null
+                        })
                     })
-                })
-                    .then(r => r.json())
-                    .then(r => {
-                        if (r.status === 'success') {
-                            this.keranjang.forEach(item => { const p = this.daftarProduk.find(x => x.id === item.produk_id); if (p) p.stok -= item.jumlah; });
-                            this.suksesData = { ...dataStruk, kode_transaksi: r.kode_transaksi };
-                            this.modalSuksesTerbuka = true;
-                            this.bersihkanKeranjang();
-                            this.halamanAktif = 'beranda';
-                        } else this.tambahToast(r.pesan, 'error');
+                        .then(r => r.json())
+                        .then(r => {
+                            if (r.status === 'success') {
+                                this.suksesData = { ...dataStruk, kode_transaksi: r.kode_transaksi };
+                                this.modalSuksesTerbuka = true;
+                                this.bersihkanKeranjang();
+                                this.pesananSedangDilunaskan = null;
+                                this.halamanAktif = 'beranda';
+                                this.ambilDaftarDitahanDariServer();
+                            } else this.tambahToast(r.pesan, 'error');
+                        })
+                        .catch(() => this.tambahToast('Gagal melunaskan transaksi!', 'error'));
+                } else {
+                    fetch("{{ route('transaksi.bayar') }}", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
+                        body: JSON.stringify({
+                            nama_pembeli: this.namaPembeli,
+                            member_id: this.memberIdTerpilih || null,
+                            item_pesanan: this.keranjang,
+                            subtotal: this.subtotal,
+                            pajak: this.pajak,
+                            diskon: this.nilaiDiskon,
+                            total_bayar: this.totalTagihan,
+                            jumlah_diterima: this.jumlahDiterimaNum,
+                            kembalian: this.kembalianNum,
+                            metode_pembayaran: this.metodePembayaran
+                        })
                     })
-                    .catch(() => this.tambahToast('Gagal memproses transaksi!', 'error'));
+                        .then(r => r.json())
+                        .then(r => {
+                            if (r.status === 'success') {
+                                this.keranjang.forEach(item => { const p = this.daftarProduk.find(x => x.id === item.produk_id); if (p) p.stok -= item.jumlah; });
+                                this.suksesData = { ...dataStruk, kode_transaksi: r.kode_transaksi };
+                                this.modalSuksesTerbuka = true;
+                                this.bersihkanKeranjang();
+                                this.halamanAktif = 'beranda';
+                            } else this.tambahToast(r.pesan, 'error');
+                        })
+                        .catch(() => this.tambahToast('Gagal memproses transaksi!', 'error'));
+                }
             },
 
         // Cetak struk
@@ -1172,9 +1310,11 @@
                     </div>
                 </div>`;
                 } else {
-                    const itemsDapur = d.keranjang.filter(item => item.status_ketersediaan === 'pesan_dulu');
+                    const itemsDapur = d.status_pembayaran === 'Belum Lunas'
+                        ? d.keranjang
+                        : d.keranjang.filter(item => item.status_ketersediaan === 'pesan_dulu');
                     if (itemsDapur.length === 0) {
-                        this.tambahToast('Tidak ada item Pre-Order (Pesan Dulu) untuk dapur.', 'info');
+                        this.tambahToast('Tidak ada item untuk dicetak ke dapur.', 'info');
                         return;
                     }
                     html = `
@@ -1211,6 +1351,46 @@
             },
 
             tutupModalSukses() { this.modalSuksesTerbuka = false; },
+
+            mulaiLunaskan(pesanan) {
+                this.pesananSedangDilunaskan = pesanan;
+                this.keranjang = JSON.parse(JSON.stringify(pesanan.item_pesanan));
+                this.namaPembeli = pesanan.nama_pembeli;
+                this.diskonPersen = pesanan.diskon || '';
+                this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 10;
+                this.catatan = pesanan.catatan || '';
+                if (pesanan.transaksi && pesanan.transaksi.member_id) {
+                    this.memberIdTerpilih = pesanan.transaksi.member_id;
+                    this.memberTerpilih = this.daftarMember.find(m => m.id == this.memberIdTerpilih);
+                } else {
+                    this.memberIdTerpilih = '';
+                    this.memberTerpilih = null;
+                }
+                this.modalDitahanTerbuka = false;
+                this.jumlahDiterima = '';
+                this.halamanAktif = 'pembayaran';
+            },
+
+            cetakOrderDapurDitahan(pesanan) {
+                this.suksesData = {
+                    nama_pembeli: pesanan.nama_pembeli,
+                    keranjang: JSON.parse(JSON.stringify(pesanan.item_pesanan)),
+                    subtotal: pesanan.subtotal,
+                    diskon_persen: pesanan.diskon || 0,
+                    nilai_diskon: pesanan.diskon ? Math.round(pesanan.subtotal * (pesanan.diskon / 100)) : 0,
+                    pajak_persen: pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 10,
+                    pajak: pesanan.pajak,
+                    total_bayar: pesanan.total,
+                    jumlah_diterima: 0,
+                    kembalian: 0,
+                    metode_pembayaran: 'Belum Bayar',
+                    status_pembayaran: 'Belum Lunas',
+                    catatan: pesanan.catatan || '',
+                    tanggal: new Date(pesanan.created_at).toLocaleString('id-ID'),
+                    kode_transaksi: pesanan.transaksi ? pesanan.transaksi.kode_transaksi : ''
+                };
+                this.cetakStruk('dapur');
+            },
 
             bersihkanKeranjang() {
                 this.keranjang = [];
