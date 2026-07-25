@@ -304,105 +304,16 @@ function historiTransaksi() {
         cetakStruk(jenis) {
             if (!this.detailData) return;
             const d = this.detailData;
-            const toko = 'Crumb & Co.';
-            const alamat = 'Melrose Avenue, Los Angeles';
-            let html = '';
 
-            const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
-            const formatTanggalLocal = (tanggal) => {
-                if (!tanggal) return '-';
-                const date = new Date(tanggal);
-                return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-            };
-
-            const subtotal = Number(d.subtotal || 0);
-            const diskon = Number(d.diskon || 0);
-            const pajak = Number(d.pajak || 0);
-            const totalBayar = Number(d.total_bayar || 0);
-            const diterima = Number(d.jumlah_diterima || 0);
-            const kembalian = Number(d.kembalian || 0);
-
-            const diskonPersen = subtotal > 0 ? Math.round((diskon / subtotal) * 100) : 0;
-            const pajakPersen = (subtotal - diskon) > 0 ? Math.round((pajak / (subtotal - diskon)) * 100) : 0;
-
-            if (jenis === 'pelanggan') {
-                html = `
-                <div style="font-family:'Courier New',monospace;width:300px;margin:auto;padding:20px;font-size:12px;">
-                    <div style="text-align:center;border-bottom:1px dashed #000;padding-bottom:10px;margin-bottom:10px;">
-                        <h2 style="margin:0;font-size:16px;">${toko}</h2>
-                        <p style="margin:4px 0 0 0;font-size:11px;">${alamat}</p>
-                    </div>
-                    <div style="margin-bottom:8px;font-size:11px;">
-                        <div>No: <strong>${d.kode_transaksi}</strong></div>
-                        <div>Tgl: ${formatTanggalLocal(d.created_at)}</div>
-                        <div>Pelanggan: <strong>${d.nama_pembeli || 'Pelanggan Umum'}</strong></div>
-                        <div style="text-transform: capitalize;">Bayar: ${d.metode_pembayaran}</div>
-                    </div>
-                    <div style="border-top:1px dashed #000;border-bottom:1px dashed #000;padding:8px 0;">
-                        ${(d.detail_transaksi || []).map((item, i) => `
-                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                                <span>${i+1}. ${item.nama_produk}</span>
-                            </div>
-                            ${item.catatan ? `<div style="padding-left:16px;font-style:italic;color:#666;font-size:10px;margin-bottom:4px;">* Catatan: ${item.catatan}</div>` : ''}
-                            <div style="display:flex;justify-content:space-between;margin-bottom:6px;padding-left:16px;color:#555;">
-                                <span>${item.jumlah} x ${formatRupiah(item.harga_satuan)}</span>
-                                <span>${formatRupiah(item.subtotal)}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div style="padding:8px 0;border-bottom:1px dashed #000;">
-                        <div style="display:flex;justify-content:space-between;"><span>Subtotal</span><span>${formatRupiah(subtotal)}</span></div>
-                        ${diskon > 0 ? `<div style="display:flex;justify-content:space-between;"><span>Diskon (${diskonPersen}%)</span><span>-${formatRupiah(diskon)}</span></div>` : ''}
-                        ${pajak > 0 ? `<div style="display:flex;justify-content:space-between;"><span>Pajak (${pajakPersen}%)</span><span>${formatRupiah(pajak)}</span></div>` : ''}
-                        <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:14px;margin-top:6px;"><span>TOTAL</span><span>${formatRupiah(totalBayar)}</span></div>
-                    </div>
-                    <div style="padding:8px 0;border-bottom:1px dashed #000;">
-                        <div style="display:flex;justify-content:space-between;"><span>Diterima</span><span>${formatRupiah(diterima)}</span></div>
-                        <div style="display:flex;justify-content:space-between;font-weight:bold;"><span>Kembalian</span><span>${formatRupiah(kembalian)}</span></div>
-                    </div>
-                    <div style="text-align:center;padding-top:12px;font-size:11px;color:#666;">
-                        <p style="margin:0;">Terima kasih sudah mampir! 🌷</p>
-                        <p style="margin:4px 0 0 0;">Semoga harimu semanis pastry kami
-                        ( ˶ˆᗜˆ˵ ) ♡</p>
-                    </div>
-                </div>`;
-            } else {
+            if (jenis === 'dapur') {
                 const itemsDapur = (d.detail_transaksi || []).filter(item => item.produk?.status_ketersediaan === 'pesan_dulu');
                 if (itemsDapur.length === 0) {
                     this.tambahToast('Tidak ada item Pre-Order (Pesan Dulu) untuk dapur.', 'info');
                     return;
                 }
-                html = `
-                <div style="font-family:'Courier New',monospace;width:300px;margin:auto;padding:20px;font-size:12px;">
-                    <div style="text-align:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:10px;">
-                        <h2 style="margin:0;font-size:18px;letter-spacing:2px;">🍳 ORDER DAPUR</h2>
-                    </div>
-                    <div style="margin-bottom:10px;font-size:12px;">
-                        <div>No: <strong>${d.kode_transaksi}</strong></div>
-                        <div>Tgl: ${formatTanggalLocal(d.created_at)}</div>
-                        <div>Pelanggan: <strong style="font-size:14px;">${d.nama_pembeli || 'Pelanggan Umum'}</strong></div>
-                    </div>
-                    <div style="border-top:2px solid #000;border-bottom:2px solid #000;padding:10px 0;">
-                        ${itemsDapur.map((item, i) => `
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:14px;">
-                                <span><strong>${i+1}. ${item.nama_produk}</strong></span>
-                                <span style="background:#000;color:#fff;padding:2px 10px;border-radius:4px;font-weight:bold;font-size:16px;">x${item.jumlah}</span>
-                            </div>
-                            ${item.catatan ? `<div style="padding-left:16px;font-style:italic;color:#555;font-size:11px;margin-top:-6px;margin-bottom:8px;">* Catatan: ${item.catatan}</div>` : ''}
-                        `).join('')}
-                    </div>
-                    ${d.catatan ? `<div style="padding:8px 0;border-bottom:1px dashed #000;"><strong>📝 Catatan:</strong> ${d.catatan}</div>` : ''}
-                    <div style="text-align:center;padding-top:12px;font-size:11px;color:#666;">
-                        <p style="margin:0;">Dicetak: ${formatTanggalLocal(new Date())}</p>
-                    </div>
-                </div>`;
             }
 
-            const win = window.open('', '_blank', 'width=400,height=700');
-            win.document.write(`<html><head><title>Struk ${jenis === 'pelanggan' ? 'Pelanggan' : 'Dapur'}</title></head><body style="margin:0;padding:0;">${html}</body></html>`);
-            win.document.close();
-            win.focus();
-            setTimeout(() => win.print(), 500);
+            window.open(`/transaksi/cetak/${d.kode_transaksi}?jenis=${jenis}&print=true`, '_blank', 'width=400,height=700');
         }
     }
 }

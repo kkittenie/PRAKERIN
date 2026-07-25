@@ -26,6 +26,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('permission:lihat_transaksi')->group(function () {
         Route::get('/transaksi', [TransaksiKasirController::class, 'indeks'])->name('transaksi.indeks');
         Route::get('/transaksi/daftar-ditahan', [TransaksiKasirController::class, 'ambilDitahan'])->name('transaksi.daftar-ditahan');
+        Route::get('/transaksi/cetak/{kode_transaksi}', [TransaksiKasirController::class, 'cetak'])->name('transaksi.cetak');
     });
     Route::middleware('permission:tambah_transaksi')->group(function () {
         Route::post('/transaksi/tahan', [TransaksiKasirController::class, 'simpanDitahan'])->name('transaksi.tahan');

@@ -414,4 +414,20 @@ class TransaksiKasirController extends Controller
             ], 500);
         }
     }
+
+    public function cetak(Request $request, $kodeTransaksi)
+    {
+        try {
+            $transaksi = Transaksi::with(['detailTransaksi.produk', 'member'])->where('kode_transaksi', $kodeTransaksi)->firstOrFail();
+            $jenis = $request->get('jenis', 'pelanggan');
+
+            return view('pages.transaksi.cetak', [
+                'transaksi' => $transaksi,
+                'jenis' => $jenis,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error pada cetak TransaksiKasirController: ' . $e->getMessage());
+            abort(404, 'Transaksi tidak ditemukan.');
+        }
+    }
 }
