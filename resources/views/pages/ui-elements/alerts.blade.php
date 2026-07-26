@@ -132,7 +132,7 @@
                         Your payment of <strong class="text-gray-900">$99.00</strong> has been processed successfully.
                     </p>
                     <div class="text-sm text-gray-500">
-                        <p><strong>Order ID:</strong> #BakePOS-0014</p>
+                        <p><strong>Order ID:</strong> #Saisho-0014</p>
                         <p><strong>Transaction ID:</strong> TXN-1234567890</p>
                     </div>
                     <a href="/orders" class="inline-block mt-3 text-sm font-medium text-green-600 underline hover:text-green-700">

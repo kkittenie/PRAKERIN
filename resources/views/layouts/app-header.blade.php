@@ -51,7 +51,7 @@
             <!-- Logo (mobile only) -->
             <a href="/" class="xl:hidden flex items-center gap-2">
                 <span class="text-2xl">🥨</span>
-                <span class="font-extrabold text-lg tracking-wider text-gray-900 dark:text-white">BakePOS</span>
+                <span class="font-extrabold text-lg tracking-wider text-gray-900 dark:text-white">Saisho POS</span>
             </a>
 
             <!-- Application Menu Toggle (mobile only) -->
@@ -89,6 +89,9 @@
 
                 <!-- Notification Dropdown -->
                 <x-header.notification-dropdown />
+
+                <!-- Printer Settings Dropdown -->
+                <x-header.settings-dropdown />
             </div>
 
             <!-- User Dropdown -->

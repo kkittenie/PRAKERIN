@@ -100,7 +100,7 @@
                     <div class="flex max-w-xs flex-col items-center">
                         <a href="/" class="mb-4 block flex items-center gap-2.5">
                             <span class="text-4xl">🥨</span>
-                            <span class="font-black text-3xl tracking-wider text-white">BakePOS</span>
+                            <span class="font-black text-3xl tracking-wider text-white">Saisho POS</span>
                         </a>
                         <p class="text-center text-gray-400">
                             Smart Bakery Management.

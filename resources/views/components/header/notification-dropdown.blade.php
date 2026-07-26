@@ -1,6 +1,7 @@
 {{-- Notification Dropdown Component --}}
 @php
-    $lowStockBahan = \App\Models\BahanBaku::whereColumn('stok', '<', 'stok_minimum')->get();
+    $lowStockProduk = \App\Models\Produk::where('status_aktif', true)->whereColumn('stok', '<=', 'stok_minimum')->get();
+    $lowStockBahan = \App\Models\BahanBaku::whereColumn('stok', '<=', 'stok_minimum')->get();
     $pesananDitahan = \App\Models\PesananDitahan::orderBy('created_at', 'desc')->limit(5)->get();
     
     $notificationsList = [];
@@ -19,17 +20,30 @@
             'url' => route('transaksi.indeks'),
         ];
     }
+
+    // Add low stock products
+    foreach ($lowStockProduk as $produk) {
+        $notificationsList[] = [
+            'type' => 'Stok Produk Menipis',
+            'title' => 'Stok Produk Menipis',
+            'desc' => 'Produk "' . $produk->nama_produk . '" sisa ' . $produk->stok . ' pcs (minimum ' . $produk->stok_minimum . ' pcs).',
+            'time' => $produk->updated_at->diffForHumans(),
+            'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>',
+            'color' => 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400',
+            'url' => route('produk.index'),
+        ];
+    }
     
     // Add low stock raw materials
     foreach ($lowStockBahan as $bahan) {
         $notificationsList[] = [
-            'type' => 'Stok Menipis',
+            'type' => 'Stok Bahan Menipis',
             'title' => 'Bahan Baku Menipis',
-            'desc' => 'Stok ' . $bahan->nama_bahan . ' sisa ' . $bahan->stok . ' ' . $bahan->satuan . ' (minimum ' . $bahan->stok_minimum . ').',
+            'desc' => 'Bahan "' . $bahan->nama_bahan . '" sisa ' . rtrim(rtrim(number_format($bahan->stok, 2, '.', ''), '0'), '.') . ' ' . $bahan->satuan . ' (minimum ' . rtrim(rtrim(number_format($bahan->stok_minimum, 2, '.', ''), '0'), '.') . ' ' . $bahan->satuan . ').',
             'time' => $bahan->updated_at->diffForHumans(),
             'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>',
             'color' => 'bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400',
-            'url' => route('transaksi.indeks'),
+            'url' => route('bahan-baku.index'),
         ];
     }
     

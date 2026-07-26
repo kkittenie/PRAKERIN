@@ -99,6 +99,13 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // ===== NOTIFIKASI STOK MENIPIS =====
+        $lowStockProduk = \App\Models\Produk::where('status_aktif', true)
+            ->whereColumn('stok', '<=', 'stok_minimum')
+            ->get();
+        $lowStockBahan = \App\Models\BahanBaku::whereColumn('stok', '<=', 'stok_minimum')
+            ->get();
+
         return view('pages.dashboard.beranda', [
             'title' => 'Rekap Penjualan',
             'pendapatanHariIni' => $pendapatanHariIni,
@@ -117,6 +124,8 @@ class DashboardController extends Controller
             'dataPendapatanHarian' => $dataPendapatanHarian,
             'produkTerlaris' => $produkTerlaris,
             'transaksiTerbaru' => $transaksiTerbaru,
+            'lowStockProduk' => $lowStockProduk,
+            'lowStockBahan' => $lowStockBahan,
         ]);
     }
 }

@@ -66,7 +66,7 @@
         <a href="/" class="flex items-center gap-3">
             <div x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen" class="flex items-center gap-3">
                 <span class="text-3xl">🥨</span>
-                <span class="font-black text-2xl tracking-wider text-gray-900 dark:text-white">BakePOS</span>
+                <span class="font-black text-2xl tracking-wider text-gray-900 dark:text-white">Saisho POS</span>
             </div>
             <div x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen" class="text-3xl text-center w-full">
                 🥨

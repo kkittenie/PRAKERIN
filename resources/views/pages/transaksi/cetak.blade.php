@@ -68,8 +68,8 @@
 <div class="struk-container">
     @if ($jenis === 'pelanggan')
         @php
-            $toko = 'Crumb & Co.';
-            $alamat = 'Melrose Avenue, Los Angeles';
+            $toko = 'Saisho Cake & Bakery';
+            $alamat = 'Jl. Kemboja No.1, Kedungjaya, Kec. Kedawung, Kabupaten Cirebon';
             $subtotal = (float) $transaksi->subtotal;
             $diskon = (float) $transaksi->diskon;
             $diskonPersen = $subtotal > 0 ? round(($diskon / $subtotal) * 100) : 0;
@@ -180,12 +180,31 @@
 </div>
 
 <script>
-    window.onload = function() {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('print') === 'true') {
-            window.print();
-        }
+document.addEventListener('DOMContentLoaded', function () {
+
+    console.log(typeof Android);
+
+    if(window.Android){
+        console.log("Android bridge ketemu");
+
+        let printers = Android.getPairedPrinters();
+
+        console.log(printers);
     }
+
+});
 </script>
+
+
+<script>
+window.onload = function() {
+    const params = new URLSearchParams(window.location.search);
+
+    if(params.get('print') === 'true'){
+        window.print();
+    }
+}
+</script>
+
 </body>
 </html>

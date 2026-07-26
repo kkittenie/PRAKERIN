@@ -68,7 +68,7 @@
         <div class="grid grid-cols-12 gap-4 items-stretch flex-1 min-h-0 lg:overflow-hidden">
 
             <!-- Kiri: Produk -->
-            <div class="col-span-12 lg:col-span-8 flex flex-col gap-4 h-full lg:overflow-hidden min-h-0">
+            <div class="col-span-12 lg:col-span-8 flex flex-col gap-4 lg:max-h-[calc(100vh-200px)] lg:overflow-hidden min-h-0">
                 <div class="flex flex-col gap-4 shrink-0">
                     <div class="flex flex-wrap items-center justify-between gap-4">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -129,9 +129,10 @@
                                         </template>
                                     </div>
                                     <div
-                                        class="absolute bottom-2 right-2 bg-slate-900/75 dark:bg-gray-950/75 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                                        class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
+                                        :class="produk.status_ketersediaan !== 'pesan_dulu' && produk.stok > 0 && produk.stok <= produk.stok_minimum ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'">
                                         <span
-                                            x-text="produk.status_ketersediaan === 'pesan_dulu' ? 'Pre-Order' : 'Stok: ' + produk.stok"></span>
+                                            x-text="produk.status_ketersediaan === 'pesan_dulu' ? 'Pre-Order' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok)"></span>
                                     </div>
                                 </div>
                                 <div class="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -462,65 +463,40 @@
                 <!-- Mode Tunai -->
                 <div x-show="metodePembayaran === 'Tunai'" class="flex flex-col gap-6" x-transition>
                     <div>
-                        <label
-                            class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-2">Input
-                            Uang Diterima (Rp)</label>
-                        <div class="relative">
-                            <span
-                                class="absolute inset-y-0 left-0 flex items-center pl-4 font-black text-gray-400 text-lg">Rp</span>
-                            <input type="text" :value="jumlahDiterimaTampilan" readonly
-                                class="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-right font-black text-2xl text-slate-800 dark:text-white tracking-wide focus:outline-none">
+                        <div class="flex items-center justify-between mb-2">
+                            <label
+                                class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Input
+                                Uang Diterima (Rp)</label>
                         </div>
-                        <div class="flex flex-wrap gap-2 mt-3">
+                        <div class="relative flex items-center">
+                            <span
+                                class="absolute inset-y-0 left-0 flex items-center pl-4 font-black text-gray-400 text-lg pointer-events-none select-none">Rp</span>
+                            <input x-ref="inputJumlahDiterima"
+                                type="text"
+                                inputmode="numeric"
+                                pattern="[0-9]*"
+                                :value="jumlahDiterimaTampilan"
+                                @input="handleInputJumlahDiterima($event)"
+                                @keydown.enter.prevent="if (kembalianNum >= 0) selesaikanPembayaran()"
+                                placeholder="0"
+                                class="w-full pl-12 pr-10 py-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-right font-black text-2xl text-slate-800 dark:text-white tracking-wide focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition">
+                            <button type="button" x-show="jumlahDiterima !== ''" @click="jumlahDiterima = ''; $nextTick(() => $refs.inputJumlahDiterima.focus())" title="Hapus input" class="absolute right-3 text-gray-400 hover:text-red-500 transition p-1">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 mt-3">
                             <button @click="setJumlahDiterimaCepat(totalTagihan)"
-                                class="px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold rounded-lg text-xs transition">Uang
+                                class="px-3.5 py-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold rounded-lg text-xs transition border border-amber-200/50 dark:border-amber-500/20">Uang
                                 Pas</button>
                             <button @click="tambahNominalCepat(20000)"
-                                class="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-lg text-xs transition">+Rp20k</button>
+                                class="px-3.5 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-lg text-xs transition border border-gray-200/50 dark:border-gray-700/50">+Rp20k</button>
                             <button @click="tambahNominalCepat(50000)"
-                                class="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-lg text-xs transition">+Rp50k</button>
+                                class="px-3.5 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-lg text-xs transition border border-gray-200/50 dark:border-gray-700/50">+Rp50k</button>
                             <button @click="tambahNominalCepat(100000)"
-                                class="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-lg text-xs transition">+Rp100k</button>
+                                class="px-3.5 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-lg text-xs transition border border-gray-200/50 dark:border-gray-700/50">+Rp100k</button>
+                            <button @click="jumlahDiterima = ''; $nextTick(() => $refs.inputJumlahDiterima.focus())"
+                                class="px-3.5 py-2 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold rounded-lg text-xs transition border border-red-200/50 dark:border-red-500/20 ml-auto">Reset</button>
                         </div>
-                    </div>
-
-                    <!-- Numpad -->
-                    <div
-                        class="grid grid-cols-3 gap-3 bg-gray-50 dark:bg-gray-950 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
-                        <button @click="tekanNumpad('1')"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">1</button>
-                        <button @click="tekanNumpad('2')"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">2</button>
-                        <button @click="tekanNumpad('3')"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">3</button>
-                        <button @click="tekanNumpad('4')"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">4</button>
-                        <button @click="tekanNumpad('5')"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">5</button>
-                        <button @click="tekanNumpad('6')"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">6</button>
-                        <button @click="tekanNumpad('7')"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">7</button>
-                        <button @click="tekanNumpad('8')"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">8</button>
-                        <button @click="tekanNumpad('9')"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">9</button>
-                        <button @click="tekanNumpad('000')"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">000</button>
-                        <button @click="tekanNumpad('0')"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">0</button>
-                        <button @click="hapusKarakterNumpad()"
-                            class="py-4 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 text-gray-800 dark:text-white font-bold text-xl rounded-lg shadow-xxs active:scale-95 transition flex items-center justify-center">
-                            <svg class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" />
-                            </svg>
-                        </button>
-                        <button @click="jumlahDiterima = ''"
-                            class="py-4 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 border border-gray-200 dark:border-gray-800 text-red-600 dark:text-red-400 font-extrabold text-xl rounded-lg shadow-xxs active:scale-95 transition">C</button>
-                        <button @click="kembaliKeKasir()"
-                            class="col-span-2 py-4 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-slate-800 dark:text-gray-300 font-bold text-base rounded-lg active:scale-95 transition text-center">Batal</button>
                     </div>
                 </div>
 
@@ -530,12 +506,12 @@
                     <div
                         class="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-6 rounded-2xl border border-amber-100 dark:border-amber-500/20 flex flex-col items-center gap-4">
                         <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100">
-                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&color=5a3c27&data=' + encodeURIComponent('00020101021226380010co.bakepos0114123456789012345204581153033605408' + totalTagihan + '.005802ID5907BakePOS6007Jakarta6304')"
+                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&color=5a3c27&data=' + encodeURIComponent('00020101021226380010co.saishos0114123456789012345204581153033605408' + totalTagihan + '.005802ID5907saishoS6007Jakarta6304')"
                                 class="w-44 h-44" alt="QRIS QR Code">
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="text-xs font-black text-gray-800 dark:text-white tracking-wider">🥨
-                                BakePOS</span>
+                                Saisho</span>
                             <span
                                 class="px-2 py-0.5 bg-amber-600 text-white font-black text-[9px] rounded uppercase tracking-widest">QRIS</span>
                         </div>
@@ -894,10 +870,10 @@
 
             get qrisPayload() {
                 // Base QRIS format for static/dynamic merchant
-                const baseMerchant = "00020101021226380010co.bakepos0115936000020012345520458125303360";
+                const baseMerchant = "00020101021226380010co.saishos0115936000020012345520458125303360";
                 const amtStr = this.totalTagihan.toString();
                 const amtPart = "54" + amtStr.length.toString().padStart(2, '0') + amtStr;
-                const rest = "5802ID5907BakePOS6007Jakarta6304";
+                const rest = "5802ID5907saishoS6007Jakarta6304";
                 const payloadWithoutCrc = baseMerchant + amtPart + rest;
 
                 // Calculate CRC-16 CCITT
@@ -1037,11 +1013,20 @@
                 }
             },
 
-            // Numpad
-            tekanNumpad(key) { if (this.jumlahDiterima === '' && (key === '0' || key === '00' || key === '000')) return; this.jumlahDiterima += key; },
-            hapusKarakterNumpad() { this.jumlahDiterima = this.jumlahDiterima.slice(0, -1); },
-            setJumlahDiterimaCepat(n) { this.jumlahDiterima = Math.round(n).toString(); },
-            tambahNominalCepat(n) { this.jumlahDiterima = ((parseFloat(this.jumlahDiterima) || 0) + n).toString(); },
+            // Input Pembayaran
+            handleInputJumlahDiterima(e) {
+                const rawDigits = e.target.value.replace(/\D/g, '').replace(/^0+/, '');
+                this.jumlahDiterima = rawDigits;
+                e.target.value = this.jumlahDiterimaTampilan;
+            },
+            setJumlahDiterimaCepat(n) {
+                this.jumlahDiterima = Math.round(n).toString();
+                this.$nextTick(() => { if (this.$refs.inputJumlahDiterima) this.$refs.inputJumlahDiterima.focus(); });
+            },
+            tambahNominalCepat(n) {
+                this.jumlahDiterima = ((parseFloat(this.jumlahDiterima) || 0) + n).toString();
+                this.$nextTick(() => { if (this.$refs.inputJumlahDiterima) this.$refs.inputJumlahDiterima.focus(); });
+            },
 
             // Ke pembayaran
             lanjutKePembayaran() {
@@ -1049,6 +1034,7 @@
                 if (this.namaPembeli.trim() === '') { this.tambahToast('Nama pembeli harus diisi terlebih dahulu!', 'error'); this.bukaModalPembeli(); return; }
                 this.jumlahDiterima = '';
                 this.halamanAktif = 'pembayaran';
+                this.$nextTick(() => { if (this.$refs.inputJumlahDiterima) this.$refs.inputJumlahDiterima.focus(); });
             },
 
             // Hold Order
@@ -1301,6 +1287,7 @@
                 this.modalDitahanTerbuka = false;
                 this.jumlahDiterima = '';
                 this.halamanAktif = 'pembayaran';
+                this.$nextTick(() => { if (this.$refs.inputJumlahDiterima) this.$refs.inputJumlahDiterima.focus(); });
             },
 
             cetakOrderDapurDitahan(pesanan) {

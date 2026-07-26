@@ -3,6 +3,38 @@
 @section('content')
     <x-common.page-breadcrumb pageTitle="Rekap Penjualan" />
 
+    @if(($lowStockProduk && $lowStockProduk->count() > 0) || ($lowStockBahan && $lowStockBahan->count() > 0))
+        <div class="mb-6 p-4 rounded-2xl border border-red-200 dark:border-red-500/20 bg-red-50/80 dark:bg-red-500/10 backdrop-blur-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start md:items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0 mt-0.5 md:mt-0 font-bold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-red-900 dark:text-red-300">Peringatan Stok Menipis!</h4>
+                    <p class="text-xs text-red-700 dark:text-red-400 mt-0.5">
+                        Terdapat
+                        @if($lowStockProduk && $lowStockProduk->count() > 0)
+                            <span class="font-bold">{{ $lowStockProduk->count() }} produk</span>
+                        @endif
+                        @if($lowStockProduk && $lowStockProduk->count() > 0 && $lowStockBahan && $lowStockBahan->count() > 0) dan @endif
+                        @if($lowStockBahan && $lowStockBahan->count() > 0)
+                            <span class="font-bold">{{ $lowStockBahan->count() }} bahan baku</span>
+                        @endif
+                        yang mencapai atau di bawah stok minimum.
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 self-end md:self-auto">
+                @if($lowStockProduk && $lowStockProduk->count() > 0)
+                    <a href="{{ route('produk.index') }}" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition shadow-xs">Cek Produk</a>
+                @endif
+                @if($lowStockBahan && $lowStockBahan->count() > 0)
+                    <a href="{{ route('bahan-baku.index') }}" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition shadow-xs">Cek Bahan Baku</a>
+                @endif
+            </div>
+        </div>
+    @endif
+
     <div class="grid grid-cols-12 gap-4 md:gap-6">
 
         {{-- ===== KOLOM KIRI: METRICS + BAR CHART ===== --}}
