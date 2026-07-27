@@ -53,7 +53,20 @@ class ProduksiController extends Controller
             'keterangan' => 'nullable|string',
 
             'bahan_baku_id' => 'required|array|min:1',
-            'jumlah_terpakai.*' => 'required|numeric|min:0',
+
+            'bahan_baku_id.*' => [
+                'required',
+                'distinct',
+                'exists:bahan_bakus,id',
+            ],
+            
+            'jumlah_terpakai' => 'required|array|min:1',
+
+            'jumlah_terpakai.*' => [
+                'required',
+                'numeric',
+                'gt:0',
+            ],
         ]);
 
         $adaBahan = false;
@@ -95,7 +108,7 @@ class ProduksiController extends Controller
                     continue;
                 }
 
-                $bahan = BahanBaku::findOrFail($id);
+                $bahan = BahanBaku::lockForUpdate()->findOrFail($id);
 
                 if ($bahan->stok < $pakai) {
                     throw new Exception(

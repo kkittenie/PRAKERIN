@@ -14,6 +14,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\TransaksiBahanBakuController;
 
 Route::middleware(['auth'])->group(function () {
 
@@ -66,6 +67,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('member', MemberController::class)
         ->middleware('permission:lihat_member|tambah_member|edit_member|hapus_member');
+
+    Route::resource('transaksi-bahan-baku', TransaksiBahanBakuController::class)
+        ->only(['index', 'create', 'store', 'show',])
+        ->middleware('permission:lihat_stok|tambah_stok');
 
     // Promo Produk
     Route::middleware('permission:lihat_promo')->group(function () {
