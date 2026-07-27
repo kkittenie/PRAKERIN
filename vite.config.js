@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     server: {
         cors: true,
+        hmr: {
+            host: '10.83.157.101',
+        },
     },
 
     plugins: [

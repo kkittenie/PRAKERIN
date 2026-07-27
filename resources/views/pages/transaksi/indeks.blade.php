@@ -638,7 +638,7 @@
                         <button @click="cetakOrderDapurDitahan(pesanan)"
                             class="px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                            Cetak Order Dapur
+                            Cetak Tiket Produksi
                         </button>
                         <button @click="mulaiLunaskan(pesanan)"
                             class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-lg transition shadow-xs flex items-center gap-1.5">
@@ -713,7 +713,7 @@
             <template x-if="suksesData.status_pembayaran === 'Belum Lunas'">
                 <div>
                     <h3 class="font-extrabold text-gray-900 dark:text-white text-lg">Pesanan Berhasil Ditahan!</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Pesanan tercatat sebagai kredit. Cetak order dapur di bawah.</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Pesanan tercatat sebagai kredit. Cetak tiket produksi di bawah.</p>
                 </div>
             </template>
             <span
@@ -764,7 +764,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
-                        Order Dapur
+                        Tiket Produksi
                     </button>
                 </div>
             </template>
