@@ -155,7 +155,7 @@
                         :class="isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'"></span>
                     <span class="text-sm font-bold"
                         :class="isConnected ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'"
-                        x-text="isConnected ? 'Connected' : 'Not Connected'"></span>
+                        x-text="isConnected ? 'Terhubung' : 'Tidak Terhubung'"></span>
                 </div>
             </div>
 
@@ -220,7 +220,7 @@
                         </svg>
                     </template>
 
-                    <span x-text="isConnecting ? 'Menyambungkan...' : (isConnected ? 'Disconnect' : 'Connect')"></span>
+                    <span x-text="isConnecting ? 'Menyambungkan...' : (isConnected ? 'Putuskan' : 'Sambungkan')"></span>
                 </button>
             </div>
         </div>

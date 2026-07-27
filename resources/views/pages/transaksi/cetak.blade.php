@@ -321,7 +321,7 @@
             @endphp
             <div class="text-center border-bottom-dashed" style="padding-bottom:10px; margin-bottom:10px;">
                 <h2 style="margin:0; font-size:16px; font-weight:700;">SAISHO CAKE & BAKERY</h2>
-                <p style="margin:4px 0 0 0; font-size:12px; font-weight:700; letter-spacing:1px;">ORDER DAPUR</p>
+                <p style="margin:4px 0 0 0; font-size:12px; font-weight:700; letter-spacing:1px;">TIKET PRODUKSI</p>
             </div>
             <div class="margin-bottom-md" style="font-size:11px;">
                 <div>No: <strong>{{ $transaksi->kode_transaksi }}</strong></div>
