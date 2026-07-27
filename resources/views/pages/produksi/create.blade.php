@@ -17,7 +17,7 @@
     {{-- Tanggal --}}
     <div>
         <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
-            Tanggal Produksi
+            Tanggal Produksi <span class="text-red-500">*</span>
         </label>
 
         <input
@@ -35,7 +35,7 @@
     <div>
 
         <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
-            Produk
+            Produk <span class="text-red-500">*</span>
         </label>
 
         <select
@@ -74,82 +74,34 @@ Pengambilan Bahan Baku
 
 </h4>
 
-<div class="overflow-x-auto">
+<div id="bahan-container" class="space-y-4">
 
-<table class="w-full">
-
-<thead>
-
-<tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-
-<th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-
-Bahan Baku
-
-</th>
-
-<th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-
-Stok
-
-</th>
-
-<th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-
-Dipakai
-
-</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-@foreach($bahanBaku as $item)
-
-<tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
-
-<td class="py-4">
-
-{{ $item->nama_bahan }}
-
-</td>
-
-<td class="text-center">
-
-{{ $item->stok }}
-
-{{ $item->satuan }}
-
-</td>
-
-<td class="text-center">
-
-<input
-type="hidden"
-name="bahan_baku_id[]"
-value="{{ $item->id }}">
-
-<input
-type="number"
-step="0.01"
-min="0"
-value="{{ old('jumlah_terpakai.'.$loop->index,0) }}"
-name="jumlah_terpakai[]"
-class="w-28 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-center focus:border-brand-500 focus:ring-brand-500">
-
-</td>
-
-</tr>
-
-@endforeach
-
-</tbody>
-
-</table>
+    {{-- Bahan baku yang dipilih akan muncul di sini --}}
 
 </div>
+
+<button
+    type="button"
+    id="btn-tambah-bahan"
+    class="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-white hover:bg-brand-600">
+
+    <svg xmlns="http://www.w3.org/2000/svg"
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24">
+
+        <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"/>
+
+    </svg>
+
+    Tambah Bahan Baku
+
+</button>
 
     <hr class="my-8 border-gray-200 dark:border-gray-800">
 
@@ -159,7 +111,7 @@ class="w-28 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark
 
         <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
 
-        Jumlah Hasil Produksi
+        Jumlah Hasil Produksi <span class="text-red-500">*</span>
 
         </label>
 
@@ -219,5 +171,226 @@ class="rounded-lg bg-brand-500 px-5 py-2 text-white">
 </x-common.component-card>
 
 </div>
+
+<script>
+    const daftarBahanBaku = @json($bahanBaku);
+</script>
+
+<script>
+
+let bahanTerpilih = [];
+
+const container = document.getElementById('bahan-container');
+const tombolTambah = document.getElementById('btn-tambah-bahan');
+
+tombolTambah.addEventListener('click', function () {
+
+    const id = Date.now();
+
+    const div = document.createElement('div');
+
+    div.className =
+        'relative rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800';
+
+    div.innerHTML = `
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div class="md:col-span-2">
+
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Cari Bahan Baku
+                </label>
+
+                <input
+                    type="text"
+                    class="input-search-bahan w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3"
+                    placeholder="Ketik nama bahan baku..."
+                    autocomplete="off">
+
+                <div
+                    class="hasil-search absolute z-50 mt-1 hidden w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                </div>
+
+                <input
+                    type="hidden"
+                    name="bahan_baku_id[]"
+                    class="input-id-bahan">
+
+            </div>
+
+            <div>
+
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Jumlah Dipakai
+                </label>
+
+                <div class="flex items-center gap-2">
+
+                    <input
+                        type="number"
+                        name="jumlah_terpakai[]"
+                        step="0.01"
+                        min="0"
+                        value="0"
+                        class="input-jumlah w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3">
+
+                    <span class="satuan-bahan text-sm text-gray-500">
+                        -
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="mt-3 flex items-center justify-between">
+
+            <div class="info-stok text-sm text-gray-500">
+                Pilih bahan baku terlebih dahulu
+            </div>
+
+            <button
+                type="button"
+                class="btn-hapus-bahan text-sm text-red-600 hover:text-red-800">
+
+                Hapus
+
+            </button>
+
+        </div>
+    `;
+
+    container.appendChild(div);
+
+    aktifkanSearch(div);
+
+});
+
+function aktifkanSearch(element) {
+
+    const inputSearch =
+        element.querySelector('.input-search-bahan');
+
+    const hasilSearch =
+        element.querySelector('.hasil-search');
+
+    const inputId =
+        element.querySelector('.input-id-bahan');
+
+    const satuan =
+        element.querySelector('.satuan-bahan');
+
+    const infoStok =
+        element.querySelector('.info-stok');
+
+    inputSearch.addEventListener('input', function () {
+
+        const keyword = this.value.toLowerCase();
+
+        if (keyword.length === 0) {
+
+            hasilSearch.classList.add('hidden');
+
+            return;
+
+        }
+
+        const hasil = daftarBahanBaku.filter(function (bahan) {
+
+            return bahan.nama_bahan
+                .toLowerCase()
+                .includes(keyword);
+
+        });
+
+        hasilSearch.innerHTML = '';
+
+        if (hasil.length === 0) {
+
+            hasilSearch.innerHTML = `
+                <div class="p-3 text-sm text-gray-500">
+                    Bahan baku tidak ditemukan
+                </div>
+            `;
+
+        } else {
+
+            hasil.forEach(function (bahan) {
+
+                const item = document.createElement('button');
+
+                item.type = 'button';
+
+                item.className =
+                    'block w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700';
+
+                item.innerHTML = `
+                    <div class="font-medium text-gray-800 dark:text-white">
+                        ${bahan.nama_bahan}
+                    </div>
+
+                    <div class="text-xs text-gray-500">
+                        Stok: ${bahan.stok} ${bahan.satuan}
+                    </div>
+                `;
+
+                item.addEventListener('click', function () {
+
+                    pilihBahan(
+                        bahan,
+                        inputSearch,
+                        hasilSearch,
+                        inputId,
+                        satuan,
+                        infoStok
+                    );
+
+                });
+
+                hasilSearch.appendChild(item);
+
+            });
+
+        }
+
+        hasilSearch.classList.remove('hidden');
+
+    });
+
+    element
+        .querySelector('.btn-hapus-bahan')
+        .addEventListener('click', function () {
+
+            element.remove();
+
+        });
+
+}
+
+function pilihBahan(
+    bahan,
+    inputSearch,
+    hasilSearch,
+    inputId,
+    satuan,
+    infoStok
+) {
+
+    inputSearch.value = bahan.nama_bahan;
+
+    inputId.value = bahan.id;
+
+    satuan.textContent = bahan.satuan;
+
+    infoStok.innerHTML =
+        `Stok tersedia: <strong>${bahan.stok} ${bahan.satuan}</strong>`;
+
+    hasilSearch.classList.add('hidden');
+
+}
+
+</script>
 
 @endsection

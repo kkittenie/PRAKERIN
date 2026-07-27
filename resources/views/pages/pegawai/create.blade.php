@@ -17,7 +17,7 @@
                 {{-- Nama Pegawai --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Nama Pegawai
+                        Nama Pegawai <span class="text-red-500">*</span>
                     </label>
 
                     <input type="text" name="nama" value="{{ old('nama') }}"
@@ -31,7 +31,7 @@
                 {{-- Nomor HP --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Nomor HP
+                        Nomor HP <span class="text-red-500">*</span>
                     </label>
 
                     <input type="tel" name="no_hp" value="{{ old('no_hp') }}"
@@ -45,7 +45,7 @@
                 {{-- Username --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Username (buat login)
+                        Username
                     </label>
                     <input type="text" name="username" value="{{ old('username') }}"
                         class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
@@ -65,7 +65,7 @@
                 {{-- Jabatan --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Jabatan
+                        Jabatan <span class="text-red-500">*</span>
                     </label>
 
                     <select name="jabatan"
@@ -96,7 +96,7 @@
                 {{-- Tanggal Masuk --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Tanggal Masuk
+                        Tanggal Masuk <span class="text-red-500">*</span>
                     </label>
 
                     <input type="date" name="tanggal_masuk" value="{{ old('tanggal_masuk') }}" max="{{ date('Y-m-d') }}"
@@ -110,7 +110,7 @@
                 {{-- Alamat --}}
                 <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Alamat
+                        Alamat <span class="text-red-500">*</span>
                     </label>
 
                     <textarea name="alamat" rows="3"

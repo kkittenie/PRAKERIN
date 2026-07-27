@@ -44,7 +44,7 @@
                 {{-- Kode Produk --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Kode Produk
+                        Kode Produk <span class="text-red-500">*</span>
                     </label>
 
                     <input
@@ -61,7 +61,7 @@
                 {{-- Nama Produk --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Nama Produk
+                        Nama Produk <span class="text-red-500">*</span>
                     </label>
 
                     <input
@@ -78,7 +78,7 @@
                 {{-- Harga Jual --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Harga Jual
+                        Harga Jual <span class="text-red-500">*</span>
                     </label>
 
                     <input
@@ -95,7 +95,7 @@
                 {{-- Harga Modal --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Harga Modal
+                        Harga Modal <span class="text-red-500">*</span>
                     </label>
 
                     <input

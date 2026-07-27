@@ -30,6 +30,7 @@ class MenuHelper
                     ['name' => 'Kategori Produk', 'path' => '/kategori-produk', 'permission' => 'lihat_kategori_produk'],
                     ['name' => 'Produk', 'path' => '/produk', 'permission' => 'lihat_produk'],
                     ['name' => 'Bahan Baku', 'path' => '/bahan-baku', 'permission' => 'lihat_stok'],
+                    ['name' => 'Transaksi Bahan Baku', 'path' => '/transaksi-bahan-baku', 'permission' => 'lihat_stok'],
                     ['name' => 'Produksi', 'path' => '/produksi', 'permission' => 'lihat_produksi'],
                     ['name' => 'Promo Produk', 'path' => '/promo', 'permission' => 'lihat_promo'],
                 ],
