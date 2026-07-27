@@ -149,15 +149,6 @@
                 </li>
             @endforelse
         </ul>
-
-        <!-- View All Button -->
-        <a
-            href="{{ route('transaksi.indeks') }}"
-            class="mt-3 flex justify-center rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-theme-sm font-medium text-gray-700 dark:text-gray-300 shadow-theme-xs hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-white transition-colors"
-            @click="dropdownOpen = false"
-        >
-            Buka Kasir POS
-        </a>
     </div>
     <!-- Dropdown End -->
 </div>
