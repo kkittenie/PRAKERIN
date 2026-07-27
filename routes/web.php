@@ -15,6 +15,7 @@ use App\Http\Controllers\PromoController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\TransaksiBahanBakuController;
+use App\Http\Controllers\ActivityLogController;
 
 Route::middleware(['auth'])->group(function () {
 
@@ -147,6 +148,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/videos', function () {
         return view('pages.ui-elements.videos', ['title' => 'Videos']);
     })->name('videos');
+
+    // Activity Log
+    Route::middleware('permission:lihat_activity_log')->group(function () {
+        Route::get('/activity-Log', [ActivityLogController::class, 'index'])->name('activity-log');
+    });
 });
 
 require __DIR__.'/auth.php';
