@@ -15,7 +15,12 @@ class UserController extends Controller
     public function index()
     {
         $users = User::with('roles')->get();
-        return view('pages.users.index', ['title' => 'Kelola Pengguna', 'users' => $users]);
+
+        $grouped = $users->groupBy(function ($user) {
+            return $user->roles->pluck('name')->first() ?? 'Tanpa Role';
+        });
+
+        return view('pages.users.index', ['title' => 'Kelola Pengguna', 'grouped' => $grouped]);
     }
 
     /**
