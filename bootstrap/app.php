@@ -31,6 +31,6 @@ return Application::configure(basePath: dirname(__DIR__))
                     'method' => request()->method(),
                     'user' => auth()->id(),
                 ])
-                ->log('error');
+                ->log('problem pada bagian ' . request()->path());
         });
     })->create();
