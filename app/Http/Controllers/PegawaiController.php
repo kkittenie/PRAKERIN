@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pegawai;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 
 class PegawaiController extends Controller
@@ -51,21 +54,38 @@ class PegawaiController extends Controller
             'jabatan' => 'required|in:Admin,Kasir,Pegawai',
             'tanggal_masuk' => 'required|date',
             'status_aktif' => 'required|boolean',
+            'username' => 'required|string|max:255|unique:users,username',
+            'password' => 'required|min:6',
         ]);
 
-        Pegawai::create([
-        'nama' => $request->nama,
-        'no_hp' => $request->no_hp,
-        'alamat' => $request->alamat,
-        'jabatan' => $request->jabatan,
-        'tanggal_masuk' => $request->tanggal_masuk,
-        'status_aktif' => $request->status_aktif,
-        'user_id' => Auth::id(),
-        ]);
+        DB::transaction(function () use ($request) {
+            $user = User::create([
+                'name' => $request->nama,
+                'username' => $request->username,
+                'password' => Hash::make($request->password),
+            ]);
+            $user->assignRole($request->jabatan);
+
+            Pegawai::create([
+                'nama' => $request->nama,
+                'no_hp' => $request->no_hp,
+                'alamat' => $request->alamat,
+                'jabatan' => $request->jabatan,
+                'tanggal_masuk' => $request->tanggal_masuk,
+                'status_aktif' => $request->status_aktif,
+                'user_id' => $user->id,
+            ]);
+
+            activity()
+                ->performedOn($user)
+                ->causedBy(auth()->user())
+                ->withProperties(['username' => $user->username, 'nama' => $user->name])
+                ->log('menambahkan pegawai & akun');
+        });
 
         return redirect()
             ->route('pegawai.index')
-            ->with('success', 'Data pegawai berhasil ditambahkan.');
+            ->with('success', 'Data pegawai & akun login berhasil ditambahkan.');
     }
 
     /**
@@ -81,10 +101,8 @@ class PegawaiController extends Controller
      */
     public function edit(Pegawai $pegawai)
     {
-        return view(
-            'pages.pegawai.edit',
-            compact('pegawai')
-        );
+        $pegawai->load('user');
+        return view('pages.pegawai.edit', compact('pegawai'));
     }
 
     /**
@@ -99,16 +117,30 @@ class PegawaiController extends Controller
             'jabatan' => 'required|in:Admin,Kasir,Pegawai',
             'tanggal_masuk' => 'required|date',
             'status_aktif' => 'required|boolean',
+            'username' => 'required|string|max:255|unique:users,username,' . optional($pegawai->user)->id,
+            'password' => 'nullable|min:6',
         ]);
 
-        $pegawai->update([
-            'nama' => $request->nama,
-            'no_hp' => $request->no_hp,
-            'alamat' => $request->alamat,
-            'jabatan' => $request->jabatan,
-            'tanggal_masuk' => $request->tanggal_masuk,
-            'status_aktif' => $request->status_aktif,
-        ]);
+        DB::transaction(function () use ($request, $pegawai) {
+            $pegawai->update([
+                'nama' => $request->nama,
+                'no_hp' => $request->no_hp,
+                'alamat' => $request->alamat,
+                'jabatan' => $request->jabatan,
+                'tanggal_masuk' => $request->tanggal_masuk,
+                'status_aktif' => $request->status_aktif,
+            ]);
+
+            if ($pegawai->user) {
+                $pegawai->user->name = $request->nama;
+                $pegawai->user->username = $request->username;
+                if ($request->filled('password')) {
+                    $pegawai->user->password = Hash::make($request->password);
+                }
+                $pegawai->user->save();
+                $pegawai->user->syncRoles([$request->jabatan]);
+            }
+        });
 
         return redirect()
             ->route('pegawai.index')

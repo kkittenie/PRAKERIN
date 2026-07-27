@@ -6,166 +6,174 @@
 
 <div class="space-y-6">
 
-<x-common.component-card title="Form Edit Pegawai">
+    <x-common.component-card title="Form Edit Pegawai">
 
-<form action="{{ route('pegawai.update', $pegawai->id) }}" method="POST">
+        <form action="{{ route('pegawai.update', $pegawai->id) }}" method="POST">
 
-@csrf
-@method('PUT')
+            @csrf
+            @method('PUT')
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-    {{-- Nama Pegawai --}}
-    <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Nama Pegawai
-        </label>
+                {{-- Nama Pegawai --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        Nama Pegawai
+                    </label>
 
-        <input
-            type="text"
-            name="nama"
-            value="{{ old('nama', $pegawai->nama) }}"
-            class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
+                    <input type="text" name="nama" value="{{ old('nama', $pegawai->nama) }}"
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
 
-        @error('nama')
-            <small class="text-red-500">{{ $message }}</small>
-        @enderror
-    </div>
+                    @error('nama')
+                    <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
 
-    {{-- Nomor HP --}}
-    <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Nomor HP
-        </label>
+                {{-- Nomor HP --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        Nomor HP
+                    </label>
 
-        <input
-            type="tel"
-            name="no_hp"
-            value="{{ old('no_hp', $pegawai->no_hp) }}"
-            class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
+                    <input type="tel" name="no_hp" value="{{ old('no_hp', $pegawai->no_hp) }}"
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
 
-        @error('no_hp')
-            <small class="text-red-500">{{ $message }}</small>
-        @enderror
-    </div>
+                    @error('no_hp')
+                    <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
 
-    {{-- Jabatan --}}
-    <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Jabatan
-        </label>
+                {{-- Username --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        Username (buat login)
+                    </label>
+                    <input type="text" name="username" value="{{ old('username', optional($pegawai->user)->username) }}"
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
+                    @error('username')<small class="text-red-500">{{ $message }}</small>@enderror
+                </div>
 
-        <select
-            name="jabatan"
-            class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900">
+                {{-- Password --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        Password baru (kosongkan kalau tidak diganti)
+                    </label>
+                    <input type="password" name="password"
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
+                    @error('password')<small class="text-red-500">{{ $message }}</small>@enderror
+                </div>
 
-            <option value="" class="dark:bg-gray-900">Pilih Jabatan</option>
+                {{-- Jabatan --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        Jabatan
+                    </label>
 
-            <option value="Admin" {{ old('jabatan', $pegawai->jabatan) == 'Admin' ? 'selected' : '' }} class="dark:bg-gray-900">
-                Admin
-            </option>
+                    <select name="jabatan"
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900">
 
-            <option value="Kasir" {{ old('jabatan', $pegawai->jabatan) == 'Kasir' ? 'selected' : '' }} class="dark:bg-gray-900">
-                Kasir
-            </option>
+                        <option value="" class="dark:bg-gray-900">Pilih Jabatan</option>
 
-            <option value="Pegawai" {{ old('jabatan', $pegawai->jabatan) == 'Pegawai' ? 'selected' : '' }} class="dark:bg-gray-900">
-                Pegawai
-            </option>
+                        <option value="Admin" {{ old('jabatan', $pegawai->jabatan) == 'Admin' ? 'selected' : '' }}
+                            class="dark:bg-gray-900">
+                            Admin
+                        </option>
 
-        </select>
+                        <option value="Kasir" {{ old('jabatan', $pegawai->jabatan) == 'Kasir' ? 'selected' : '' }}
+                            class="dark:bg-gray-900">
+                            Kasir
+                        </option>
 
-        @error('jabatan')
-            <small class="text-red-500">{{ $message }}</small>
-        @enderror
-    </div>
+                        <option value="Pegawai" {{ old('jabatan', $pegawai->jabatan) == 'Pegawai' ? 'selected' : '' }}
+                            class="dark:bg-gray-900">
+                            Pegawai
+                        </option>
 
-    {{-- Tanggal Masuk --}}
-    <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Tanggal Masuk
-        </label>
+                    </select>
 
-        <input
-            type="date"
-            name="tanggal_masuk"
-            value="{{ old('tanggal_masuk', $pegawai->tanggal_masuk) }}"
-            max="{{ date('Y-m-d') }}"
-            class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
+                    @error('jabatan')
+                    <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
 
-        @error('tanggal_masuk')
-            <small class="text-red-500">{{ $message }}</small>
-        @enderror
-    </div>
+                {{-- Tanggal Masuk --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        Tanggal Masuk
+                    </label>
 
-    {{-- Alamat --}}
-    <div class="md:col-span-2">
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Alamat
-        </label>
+                    <input type="date" name="tanggal_masuk" value="{{ old('tanggal_masuk', $pegawai->tanggal_masuk) }}"
+                        max="{{ date('Y-m-d') }}"
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
 
-        <textarea
-            name="alamat"
-            rows="3"
-            class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('alamat', $pegawai->alamat) }}</textarea>
+                    @error('tanggal_masuk')
+                    <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
 
-        @error('alamat')
-            <small class="text-red-500">{{ $message }}</small>
-        @enderror
-    </div>
+                {{-- Alamat --}}
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        Alamat
+                    </label>
 
-    {{-- Status --}}
-    <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Status Aktif
-        </label>
+                    <textarea name="alamat" rows="3"
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('alamat', $pegawai->alamat) }}</textarea>
 
-        <select
-            name="status_aktif"
-            class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-855 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900">
+                    @error('alamat')
+                    <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
 
-            <option value="1"
-                {{ old('status_aktif', $pegawai->status_aktif) == 1 ? 'selected' : '' }} class="dark:bg-gray-900">
-                Aktif
-            </option>
+                {{-- Status --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        Status Aktif
+                    </label>
 
-            <option value="0"
-                {{ old('status_aktif', $pegawai->status_aktif) == 0 ? 'selected' : '' }} class="dark:bg-gray-900">
-                Tidak Aktif
-            </option>
+                    <select name="status_aktif"
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-855 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900">
 
-        </select>
+                        <option value="1" {{ old('status_aktif', $pegawai->status_aktif) == 1 ? 'selected' : '' }}
+                            class="dark:bg-gray-900">
+                            Aktif
+                        </option>
 
-        @error('status_aktif')
-            <small class="text-red-500">{{ $message }}</small>
-        @enderror
-    </div>
+                        <option value="0" {{ old('status_aktif', $pegawai->status_aktif) == 0 ? 'selected' : '' }}
+                            class="dark:bg-gray-900">
+                            Tidak Aktif
+                        </option>
 
-</div>
+                    </select>
 
-<div class="mt-8 flex justify-end gap-3">
+                    @error('status_aktif')
+                    <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
 
-<a
-href="{{ route('pegawai.index') }}"
-class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-750 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
+            </div>
 
-Batal
+            <div class="mt-8 flex justify-end gap-3">
 
-</a>
+                <a href="{{ route('pegawai.index') }}"
+                    class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-750 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
 
-<button
-type="submit"
-class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600">
+                    Batal
 
-Update Pegawai
+                </a>
 
-</button>
+                <button type="submit"
+                    class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600">
 
-</div>
+                    Update Pegawai
 
-</form>
+                </button>
 
-</x-common.component-card>
+            </div>
+
+        </form>
+
+    </x-common.component-card>
 
 </div>
 
