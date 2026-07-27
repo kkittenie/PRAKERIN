@@ -52,6 +52,16 @@
                     @error('username')<small class="text-red-500">{{ $message }}</small>@enderror
                 </div>
 
+                {{-- Email --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        Email (opsional)
+                    </label>
+                    <input type="email" name="email" value="{{ old('email') }}"
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
+                    @error('email')<small class="text-red-500">{{ $message }}</small>@enderror
+                </div>
+
                 {{-- Password --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">

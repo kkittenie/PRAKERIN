@@ -20,6 +20,13 @@
     </div>
 
     <div class="mb-5">
+        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Email (opsional)</label>
+        <input type="email" name="email" value="{{ old('email') }}"
+        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm dark:border-gray-700 dark:text-white/90" />
+        @error('email')<p class="mt-1 text-sm text-red-500">{{ $message }}</p>@enderror
+    </div>
+
+    <div class="mb-5">
         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Password</label>
         <input type="password" name="password" required
             class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm dark:border-gray-700 dark:text-white/90" />
