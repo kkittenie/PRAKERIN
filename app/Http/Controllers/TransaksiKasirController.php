@@ -10,6 +10,8 @@ use App\Models\DetailTransaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Models\PengaturanMember;
+use App\Models\Member;
 
 class TransaksiKasirController extends Controller
 {
@@ -398,6 +400,24 @@ class TransaksiKasirController extends Controller
                 'status_pembayaran' => 'Lunas',
             ]);
 
+            //hitung poin member
+            if ($transaksi->member_id) {
+                $pengaturan = PengaturanMember::where('aktif', true)->first();
+
+                if ($pengaturan) {
+                    $kelipatan = floor(
+                        $transaksi->total_bayar / $pengaturan->minimal_belanja
+                    );
+                    $poin = $kelipatan * $pengaturan->poin;
+                    if ($poin > 0) {
+                        $member = Member::find($transaksi->member_id);
+                        if ($member) {
+                            $member->increment('poin', $poin);
+                        }
+                    }
+                }
+            }
+
             foreach ($validated['item_pesanan'] as $item) {
                 $produk = Produk::findOrFail($item['produk_id']);
                 
@@ -419,13 +439,13 @@ class TransaksiKasirController extends Controller
 
             }
 
-                if (!empty($validated['member_id']) && $validated['total_bayar'] >= 100000) {
-                    $member = \App\Models\Member::find($validated['member_id']);
-                    if ($member) {
-                        $poinDiperoleh = floor($validated['total_bayar'] / 100000) * 100;
-                        $member->increment('poin', (int) $poinDiperoleh);
-                    }
-                }
+                // if (!empty($validated['member_id']) && $validated['total_bayar'] >= 100000) {
+                //     $member = \App\Models\Member::find($validated['member_id']);
+                //     if ($member) {
+                //         $poinDiperoleh = floor($validated['total_bayar'] / 100000) * 100;
+                //         $member->increment('poin', (int) $poinDiperoleh);
+                //     }
+                // }
             
             DB::commit();
 

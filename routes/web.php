@@ -16,6 +16,7 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\TransaksiBahanBakuController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\PengaturanMemberController;
 
 Route::middleware(['auth'])->group(function () {
 
@@ -149,6 +150,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/videos', function () {
         return view('pages.ui-elements.videos', ['title' => 'Videos']);
     })->name('videos');
+
+    // permision edit member
+    Route::middleware('permission:edit_member')->group(function () {
+        Route::get('/pengaturan-member', [PengaturanMemberController::class, 'edit'])->name('pengaturan-member.edit');
+        Route::put('/pengaturan-member', [PengaturanMemberController::class, 'update'])->name('pengaturan-member.update');
+    });
 
     // Activity Log
     Route::middleware('permission:lihat_activity_log')->group(function () {
