@@ -2,7 +2,7 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Edit Profil" />
+<x-common.page-breadcrumb pageTitle="Edit Profil" parentTitle="Profil Saya" :parentUrl="route('profile')" />
 
 <div class="space-y-6">
 
@@ -40,7 +40,7 @@
 
                 <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Email <span class="text-xs text-gray-400">(opsional — isi kalau mau bisa login pakai email juga)</span>
+                        Email <span class="text-xs text-gray-400"></span>
                     </label>
                     <input type="email" name="email" value="{{ old('email', $user->email) }}"
                         class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">

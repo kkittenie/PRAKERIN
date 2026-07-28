@@ -20,14 +20,15 @@
 
 <x-common.component-card title="Data Pegawai">
 
-<div class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+<div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
 
 <form
     method="GET"
     action="{{ route('pegawai.index') }}"
-    id="searchForm">
+    id="searchForm"
+    class="w-full sm:w-auto">
 
-    <div class="relative">
+    <div class="relative w-full">
 
         <input
             type="text"
@@ -35,9 +36,9 @@
             name="search"
             value="{{ request('search') }}"
             placeholder="Cari pegawai..."
-            class="w-80 rounded-lg border border-gray-300 bg-transparent py-2 pl-10 pr-4 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-800 dark:text-white/90 dark:placeholder-gray-500">
+            class="w-full sm:w-80 rounded-xl border border-gray-300 bg-transparent py-2.5 pl-10 pr-4 text-sm text-gray-800 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-800 dark:text-white/90 dark:placeholder-gray-500">
 
-        <span class="absolute left-3 top-2.5 text-gray-400">
+        <span class="absolute left-3 top-3 text-gray-400">
 
             <svg xmlns="http://www.w3.org/2000/svg"
                 class="h-5 w-5"
@@ -61,7 +62,7 @@
 
 <a
     href="{{ route('pegawai.create') }}"
-    class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-white hover:bg-brand-600">
+    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white px-5 py-2.5 font-semibold text-sm transition shadow-xs">
 
     <svg xmlns="http://www.w3.org/2000/svg"
         class="h-5 w-5"
@@ -77,7 +78,7 @@
 
     </svg>
 
-    Tambah Pegawai
+    <span>Tambah Pegawai</span>
 
 </a>
 

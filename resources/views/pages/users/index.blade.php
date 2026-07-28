@@ -1,14 +1,18 @@
 @extends('layouts.app')
 
 @section('content')
+<x-common.page-breadcrumb pageTitle="Kelola Pengguna" />
 <div x-data="{ openRole: null }" class="flex flex-col gap-4">
 
-    <div class="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Kelola Pengguna</h3>
         @can('tambah_user')
         <a href="{{ route('users.create') }}"
-            class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600">
-            + Tambah Pengguna
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white px-5 py-2.5 font-semibold text-sm transition shadow-xs">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            <span>Tambah Pengguna</span>
         </a>
         @endcan
     </div>

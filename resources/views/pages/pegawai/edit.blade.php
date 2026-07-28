@@ -2,7 +2,7 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Edit Pegawai" />
+<x-common.page-breadcrumb pageTitle="Edit Pegawai" parentTitle="Pegawai" :parentUrl="route('pegawai.index')" />
 
 <div class="space-y-6">
 
@@ -46,7 +46,7 @@
                 {{-- Username --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Username (buat login)
+                        Username
                     </label>
                     <input type="text" name="username" value="{{ old('username', optional($pegawai->user)->username) }}"
                         class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
@@ -56,7 +56,7 @@
                 {{-- Email --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Email (opsional)
+                        Email
                     </label>
                     <input type="email" name="email" value="{{ old('email', optional($pegawai->user)->email) }}"
                         class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
