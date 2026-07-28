@@ -2,7 +2,7 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Tambah Promo Baru" />
+<x-common.page-breadcrumb pageTitle="Tambah Promo Baru" parentTitle="Promo Produk" :parentUrl="route('promo.index')" />
 
 <div class="space-y-6">
 

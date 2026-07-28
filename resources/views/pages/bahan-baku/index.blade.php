@@ -20,58 +20,46 @@
 
     <x-common.component-card title="Data Bahan Baku">
 
-        <div class="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
+            <form method="GET" action="{{ route('bahan-baku.index') }}" id="searchForm" class="w-full sm:w-auto">            
+                <div class="relative w-full">
+                    <input
+                        type="text"
+                        id="search"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Cari bahan baku..."
+                        class="w-full sm:w-80 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2.5 pl-10 pr-4 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 text-sm">
 
-        <form method="GET" action="{{ route('bahan-baku.index') }}" id="searchForm">            
-        <div class="relative">
-                <input
-                    type="text"
-                    id="search"
-                    name="search"
-                    value="{{ request('search') }}"
-                    placeholder="Cari bahan baku..."
-                    class="w-80 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2 pl-10 pr-4 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400">
-
-                <span class="absolute left-3 top-2.5 text-gray-400">
-
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor">
-
-                        <path stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M21 21l-4.3-4.3m0 0A7 7 0 1110 3a7 7 0 016.7 13.7z"/>
-
-                    </svg>
-                </span>
-            </div>
-        </form>
-            
+                    <span class="absolute left-3 top-3 text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M21 21l-4.3-4.3m0 0A7 7 0 1110 3a7 7 0 016.7 13.7z"/>
+                        </svg>
+                    </span>
+                </div>
+            </form>
 
             <a href="{{ route('bahan-baku.create') }}"
-            class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-white hover:bg-brand-600">
-
-            <svg xmlns="http://www.w3.org/2000/svg"
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24">
-
-            <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4"/>
-
-            </svg>
-
-            Tambah Bahan Baku
-
+                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white px-5 py-2.5 font-semibold text-sm transition shadow-xs">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"/>
+                </svg>
+                <span>Tambah Bahan Baku</span>
             </a>
-
         </div>
 
 <!-- Unified Responsive Table -->
@@ -98,11 +86,11 @@
                 <td class="py-3.5 hidden sm:table-cell text-gray-500">{{ $bahanBaku->firstItem() + $loop->index }}</td>
                 <td class="py-3.5 font-semibold text-gray-900 dark:text-white">
                     {{ $item->nama_bahan }}
-                    <div class="md:hidden text-[11px] text-gray-400 font-normal mt-0.5">{{ $item->satuan }}</div>
+                    <div class="md:hidden text-[11px] text-gray-400 font-normal mt-0.5">{{ optional($item->satuan)->nama ?? '-' }}</div>
                 </td>
                 <td class="py-3.5 hidden md:table-cell text-center">
                     <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-400">
-                        {{ $item->satuan }}
+                        {{ optional($item->satuan)->nama ?? '-' }}
                     </span>
                 </td>
                 <td class="py-3.5 text-center">
@@ -131,7 +119,7 @@
             <tr x-show="open" x-cloak x-transition class="bg-amber-50/40 dark:bg-amber-950/20 text-xs">
                 <td colspan="6" class="p-3.5">
                     <div class="grid grid-cols-2 gap-2.5 text-gray-600 dark:text-gray-300">
-                        <div><span class="text-gray-400">Satuan:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->satuan }}</span></div>
+                        <div><span class="text-gray-400">Satuan:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ optional($item->satuan)->nama ?? '-' }}</span></div>
                         <div><span class="text-gray-400">Stok Minimum:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ rtrim(rtrim(number_format($item->stok_minimum, 2, '.', ''), '0'), '.') }}</span></div>
                     </div>
                 </td>

@@ -2,7 +2,7 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Tambah Bahan Baku" />
+<x-common.page-breadcrumb pageTitle="Tambah Bahan Baku" parentTitle="Bahan Baku" :parentUrl="route('bahan-baku.index')" />
 
 <div class="space-y-6">
 
@@ -31,29 +31,33 @@
                     @enderror
                 </div>
 
-                {{-- Satuan --}}
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Satuan <span class="text-red-500">*</span>
-                    </label>
+        {{-- Satuan --}}
+        <div>
+            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Satuan <span class="text-red-500">*</span>
+            </label>
 
-                    <select
-                        name="satuan"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+            <select
+                id="satuan_id"
+                name="satuan_id"
+                class="w-full">
 
-                        <option value="">Pilih Satuan</option>
-                        <option value="kg" {{ old('satuan')=='kg' ? 'selected':'' }}>Kg</option>
-                        <option value="gram" {{ old('satuan')=='gram' ? 'selected':'' }}>Gram</option>
-                        <option value="liter" {{ old('satuan')=='liter' ? 'selected':'' }}>Liter</option>
-                        <option value="ml" {{ old('satuan')=='ml' ? 'selected':'' }}>mL</option>
-                        <option value="pcs" {{ old('satuan')=='pcs' ? 'selected':'' }}>Pcs</option>
+                <option value="">Pilih atau ketik satuan...</option>
 
-                    </select>
+                @foreach($satuan as $item)
+                    <option
+                        value="{{ $item->id }}"
+                        {{ old('satuan_id') == $item->id ? 'selected' : '' }}>
+                        {{ $item->nama }}
+                    </option>
+                @endforeach
 
-                    @error('satuan')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
+            </select>
+
+            @error('satuan_id')
+                <small class="text-red-500">{{ $message }}</small>
+            @enderror
+        </div>
 
                 {{-- Stok --}}
                 <div>
@@ -118,4 +122,65 @@
 
 </div>
 
+<script>
+new TomSelect("#satuan_id", {
+    create: function(input, callback) {
+
+        fetch("{{ route('satuan.storeAjax') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+            },
+            body: JSON.stringify({
+                nama: input
+            })
+        })
+        .then(response => response.json())
+        .then(async response => {
+
+            const json = await response.json();
+
+            if(!response.ok){
+                alert(json.message);
+                callback();
+                return;
+            }
+
+            callback({
+                value: json.data.id,
+                text: json.data.nama
+            });
+
+        })
+        .catch(error => {
+
+            alert("Satuan gagal ditambahkan");
+
+            callback();
+
+        });
+    },
+
+    persist: false,
+    maxItems: 1,
+    createOnBlur: true,
+    placeholder: "Pilih atau ketik satuan..."
+});
+</script>
+
 @endsection
+
+<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js">
+
+new TomSelect("#satuan_id",{
+    create:true,
+    persist:false,
+    maxItems:1,
+    createOnBlur:true,
+});
+
+</script>
+

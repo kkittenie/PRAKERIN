@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<x-common.page-breadcrumb pageTitle="Edit Pengguna" parentTitle="Kelola Pengguna" :parentUrl="route('users.index')" />
 <form method="POST" action="{{ route('users.update', $user) }}"
     class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
     @csrf

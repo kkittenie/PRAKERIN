@@ -10,7 +10,7 @@ class BahanBaku extends Model
 
     protected $fillable = [
         'nama_bahan',
-        'satuan',
+        'satuan_id',
         'stok',
         'stok_minimum',
     ];
@@ -27,5 +27,11 @@ class BahanBaku extends Model
             'bahan_baku_id'
         );
     }
+
+    public function satuan()
+    {
+        return $this->belongsTo(Satuan::class, 'satuan_id');
+    }
+
 
 }

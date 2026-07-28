@@ -23,7 +23,7 @@
                             Masuk
                         </h1>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
-                            Masukkan Username dan Password untuk masuk ke sistem.
+                            Masukkan Username atau Email dan Password untuk masuk ke sistem.
                         </p>
                     </div>
 
@@ -34,9 +34,9 @@
                                 <!-- Username -->
                                 <div>
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        Username<span class="text-error-500">*</span>
+                                        Username / Email<span class="text-error-500">*</span>
                                     </label>
-                                    <input type="text" id="username" name="username" placeholder="Username" value="{{ old('username') }}" required autofocus
+                                    <input type="text" id="username" name="username" placeholder="Username atau Email" value="{{ old('username') }}" required autofocus
                                         class="dark:bg-gray-900 dark:border-gray-800 dark:text-white shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden" />
                                     @error('username')
                                         <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span>
