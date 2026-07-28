@@ -2,7 +2,7 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Edit Profil" parentTitle="Profil Saya" :parentUrl="route('profile')" />
+<x-common.page-breadcrumb pageTitle="Edit Profil" parentTitle="Profil Saya" :parentUrl="route('profile.edit')" />
 
 <div class="space-y-6">
 
