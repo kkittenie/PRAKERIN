@@ -212,7 +212,8 @@
                     </a>
                 </div>
 
-                <div class="max-w-full overflow-x-auto custom-scrollbar">
+                <!-- Desktop Table View -->
+                <div class="hidden sm:block max-w-full overflow-x-auto custom-scrollbar">
                     <table class="min-w-full">
                         <thead>
                             <tr class="border-t border-gray-100 dark:border-gray-800">
@@ -259,6 +260,29 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="block sm:hidden divide-y divide-gray-100 dark:divide-gray-800">
+                    @forelse($produkTerlaris as $index => $produk)
+                    <div class="py-3 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0
+                                {{ $index === 0 ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' : ($index === 1 ? 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400' : ($index === 2 ? 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500')) }}">
+                                {{ $index + 1 }}
+                            </span>
+                            <div class="min-w-0">
+                                <p class="font-bold text-gray-800 dark:text-white text-xs truncate">{{ $produk->nama_produk }}</p>
+                                <p class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">{{ number_format($produk->total_terjual, 0, ',', '.') }} pcs</p>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <p class="font-extrabold text-gray-900 dark:text-white text-xs">Rp {{ number_format($produk->total_pendapatan, 0, ',', '.') }}</p>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="py-6 text-center text-xs text-gray-400">Belum ada data penjualan.</div>
+                    @endforelse
                 </div>
             </div>
         </div>

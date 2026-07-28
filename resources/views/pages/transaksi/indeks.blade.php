@@ -165,7 +165,7 @@
                                             <div class="flex flex-wrap items-center gap-1.5">
                                                 <span
                                                     class="text-xxs font-extrabold px-1.5 py-0.5 bg-rose-100 dark:bg-rose-500/10 text-rose-600 dark:text-rose-450 rounded animate-pulse"
-                                                    x-text="'-' + Math.round(produk.promo_aktif.persentase) + '%'"></span>
+                                                    x-text="produk.promo_aktif.jenis_potongan === 'nominal' ? ('-Rp ' + Math.round(produk.promo_aktif.nominal_potongan/1000) + 'rb') : ('-' + Math.round(produk.promo_aktif.persentase) + '%')"></span>
                                                 <span class="text-xs text-gray-450 dark:text-gray-500 line-through"
                                                     x-text="formatRupiah(produk.harga_jual)"></span>
                                             </div>
@@ -363,15 +363,12 @@
                         <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate" x-text="item.nama_produk"></h5>
                         <div class="flex flex-col gap-0.5 mt-1">
                             <div class="flex items-center gap-1.5">
-                                <span class="text-xxs font-bold text-amber-700 dark:text-amber-400" x-text="formatRupiah(item.harga_jual)"></span>
+                                <span class="text-xxs font-bold text-amber-700 dark:text-amber-400" x-text="formatRupiah(item.harga_jual_asli)"></span>
                                 <template x-if="item.promo_aktif">
-                                    <span class="text-[10px] text-gray-400 line-through" x-text="formatRupiah(item.harga_jual_asli)"></span>
-                                </template>
-                                <template x-if="item.promo_aktif">
-                                    <span class="text-[9px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-1 rounded" x-text="Math.round(item.promo_aktif.persentase) + '%'"></span>
+                                    <span class="text-[9px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-1 rounded" x-text="item.promo_aktif.jenis_potongan === 'nominal' ? ('Promo Rp ' + Math.round(item.promo_aktif.nominal_potongan/1000) + 'rb') : ('Promo ' + Math.round(item.promo_aktif.persentase) + '%')"></span>
                                 </template>
                             </div>
-                            <span class="text-xxs text-gray-400 dark:text-gray-500">Total: <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="formatRupiah(item.harga_jual * item.jumlah)"></span></span>
+                            <span class="text-xxs text-gray-400 dark:text-gray-500">Total: <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="formatRupiah(item.harga_jual_asli * item.jumlah)"></span></span>
                         </div>
                     </div>
                     <div class="flex items-center border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 shrink-0">
@@ -580,16 +577,16 @@
                             <p class="font-bold text-xs text-gray-900 dark:text-white" x-text="item.nama_produk"></p>
                             <p class="text-xxs text-gray-400 dark:text-gray-500">
                                 <span x-text="item.jumlah"></span> x <span
-                                    x-text="formatRupiah(item.harga_jual)"></span>
+                                    x-text="formatRupiah(item.harga_jual_asli)"></span>
                                 <template x-if="item.promo_aktif">
                                     <span
                                         class="text-[9px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-1 rounded ml-1"
-                                        x-text="Math.round(item.promo_aktif.persentase) + '%'"></span>
+                                        x-text="item.promo_aktif.jenis_potongan === 'nominal' ? ('Promo Rp ' + Math.round(item.promo_aktif.nominal_potongan/1000) + 'rb') : ('Promo ' + Math.round(item.promo_aktif.persentase) + '%')"></span>
                                 </template>
                             </p>
                         </div>
                         <span class="font-bold text-xs text-gray-700 dark:text-gray-300 shrink-0"
-                            x-text="formatRupiah(item.harga_jual * item.jumlah)"></span>
+                            x-text="formatRupiah(item.harga_jual_asli * item.jumlah)"></span>
                     </div>
                 </template>
             </div>
@@ -597,9 +594,14 @@
                 <div class="flex justify-between text-gray-500 dark:text-gray-400"><span>Subtotal</span><span
                         class="font-semibold text-gray-800 dark:text-white" x-text="formatRupiah(subtotal)"></span>
                 </div>
-                <div class="flex justify-between text-red-600 dark:text-red-400" x-show="nilaiDiskon > 0"><span>Diskon
-                        (<span x-text="diskonPersen"></span>%)</span><span class="font-semibold"
-                        x-text="'-' + formatRupiah(nilaiDiskon)"></span></div>
+                <div class="flex justify-between text-rose-600 dark:text-rose-400" x-show="diskonPromo > 0">
+                    <span>Diskon Promo <template x-if="activePromoInfo.nama"><span class="text-xs font-bold text-rose-500">(<span x-text="activePromoInfo.nama"></span>)</span></template></span>
+                    <span class="font-semibold" x-text="'-' + formatRupiah(diskonPromo)"></span>
+                </div>
+                <div class="flex justify-between text-red-600 dark:text-red-400" x-show="diskonPersen > 0">
+                    <span>Diskon Tambahan (<span x-text="diskonPersen"></span>%)</span>
+                    <span class="font-semibold" x-text="'-' + formatRupiah(Math.round(subtotalGross * ((diskonPersen || 0) / 100)))"></span>
+                </div>
                 <div class="flex justify-between text-gray-500 dark:text-gray-400" x-show="pajak > 0"><span>Pajak (<span
                             x-text="pajakPersen"></span>%)</span><span
                         class="font-semibold text-gray-800 dark:text-white" x-text="formatRupiah(pajak)"></span></div>
@@ -981,12 +983,70 @@
                 return list.slice(start, start + perPage);
             },
 
+            get activePromoInfo() {
+                if (this.keranjang.length === 0) return { diskon: 0, promo: null, nama: '' };
+
+                const promoMap = new Map();
+                this.keranjang.forEach(item => {
+                    if (item.promo_aktif) {
+                        promoMap.set(item.promo_aktif.id, item.promo_aktif);
+                    }
+                });
+
+                if (promoMap.size === 0) return { diskon: 0, promo: null, nama: '' };
+
+                let bestDiskon = 0;
+                let bestPromo = null;
+
+                const totalSubtotal = this.subtotalGross;
+
+                promoMap.forEach(promo => {
+                    const minPembelian = parseFloat(promo.min_pembelian || 0);
+
+                    const subtotalPromoItems = this.keranjang
+                        .filter(i => i.promo_aktif && i.promo_aktif.id === promo.id)
+                        .reduce((s, i) => s + (i.harga_jual_asli * i.jumlah), 0);
+
+                    if (minPembelian === 0 || totalSubtotal >= minPembelian || subtotalPromoItems >= minPembelian) {
+                        let hitungDiskon = 0;
+                        if (promo.jenis_potongan === 'nominal') {
+                            hitungDiskon = parseFloat(promo.nominal_potongan || 0);
+                        } else {
+                            const persentase = parseFloat(promo.persentase || 0);
+                            hitungDiskon = (persentase / 100) * subtotalPromoItems;
+                        }
+
+                        if (hitungDiskon > bestDiskon) {
+                            bestDiskon = hitungDiskon;
+                            bestPromo = promo;
+                        }
+                    }
+                });
+
+                return {
+                    diskon: Math.round(bestDiskon),
+                    promo: bestPromo,
+                    nama: bestPromo ? bestPromo.nama_promo : ''
+                };
+            },
+
+            get subtotalGross() {
+                return this.keranjang.reduce((s, i) => s + (i.harga_jual_asli * i.jumlah), 0);
+            },
+
             get subtotal() {
-                return this.keranjang.reduce((s, i) => s + (i.harga_jual * i.jumlah), 0);
+                return this.subtotalGross;
             },
+
+            get diskonPromo() {
+                return this.activePromoInfo.diskon;
+            },
+
             get nilaiDiskon() {
-                return Math.round(this.subtotal * ((this.diskonPersen || 0) / 100));
+                const diskonManual = Math.round(this.subtotalGross * ((this.diskonPersen || 0) / 100));
+                return this.diskonPromo + diskonManual;
             },
+
             get pajak() {
                 const base = this.subtotal - this.nilaiDiskon;
                 return Math.max(0, Math.round(base * (this.pajakPersen / 100)));
@@ -1025,12 +1085,12 @@
                 if (produk.status_ketersediaan !== 'pesan_dulu' && produk.stok <= qty) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; }
                 if (ada) { ada.jumlah++; }
                 else {
-                    const hargaFinal = produk.promo_aktif ? parseFloat(produk.harga_diskon) : parseFloat(produk.harga_jual);
+                    const hargaAsli = parseFloat(produk.harga_jual);
                     this.keranjang.push({
                         produk_id: produk.id,
                         nama_produk: produk.nama_produk,
-                        harga_jual: hargaFinal,
-                        harga_jual_asli: parseFloat(produk.harga_jual),
+                        harga_jual: hargaAsli,
+                        harga_jual_asli: hargaAsli,
                         promo_aktif: produk.promo_aktif,
                         foto: produk.foto,
                         jumlah: 1,

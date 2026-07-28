@@ -100,20 +100,21 @@
                 <h3 class="text-lg font-bold text-gray-800 dark:text-white">🏆 Produk Terlaris</h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400">10 produk dengan penjualan tertinggi sepanjang waktu</p>
             </div>
+            <!-- Unified Responsive Table -->
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
-                            <th class="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider w-12">#</th>
-                            <th class="text-left px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Nama Produk</th>
-                            <th class="text-right px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Total Terjual</th>
-                            <th class="text-right px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Total Pendapatan</th>
+                            <th class="text-left px-4 sm:px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider w-12">#</th>
+                            <th class="text-left px-4 sm:px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Nama Produk</th>
+                            <th class="text-right px-4 sm:px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Total Terjual</th>
+                            <th class="text-right px-4 sm:px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden sm:table-cell">Total Pendapatan</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
                         @forelse($produkTerlaris as $index => $produk)
                         <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition-colors">
-                            <td class="px-6 py-4">
+                            <td class="px-4 sm:px-6 py-4">
                                 @if($index < 3)
                                     <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold
                                         {{ $index === 0 ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' : ($index === 1 ? 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400' : 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400') }}">
@@ -123,14 +124,17 @@
                                     <span class="text-gray-400 dark:text-gray-500 font-medium pl-2">{{ $index + 1 }}</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200">{{ $produk->nama_produk }}</td>
-                            <td class="px-6 py-4 text-right">
+                            <td class="px-4 sm:px-6 py-4 font-medium text-gray-800 dark:text-gray-200">
+                                {{ $produk->nama_produk }}
+                                <div class="sm:hidden text-[11px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">Rp {{ number_format($produk->total_pendapatan, 0, ',', '.') }}</div>
+                            </td>
+                            <td class="px-4 sm:px-6 py-4 text-right">
                                 <span class="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold">
                                     {{ number_format($produk->total_terjual, 0, ',', '.') }}
                                     <span class="text-gray-400 dark:text-gray-500 text-xs font-normal">pcs</span>
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">Rp {{ number_format($produk->total_pendapatan, 0, ',', '.') }}</td>
+                            <td class="px-4 sm:px-6 py-4 text-right font-bold text-gray-900 dark:text-white hidden sm:table-cell">Rp {{ number_format($produk->total_pendapatan, 0, ',', '.') }}</td>
                         </tr>
                         @empty
                         <tr>

@@ -94,142 +94,66 @@ Tambah Transaksi
 </div>
 
 
+<!-- Unified Responsive Table -->
 <div class="overflow-x-auto">
-
-<table class="w-full">
-
+<table class="w-full text-sm">
 <thead>
-
 <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-
-<th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-No
-</th>
-
-<th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-Tanggal
-</th>
-
-<th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-Bahan Baku
-</th>
-
-<th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-Jumlah
-</th>
-
-<th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-Total Harga
-</th>
-
-<th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-Supplier
-</th>
-
-<th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-Aksi
-</th>
-
+<th class="py-4 px-2 sm:hidden w-8 text-center"></th>
+<th class="py-4 hidden sm:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
+<th class="py-4 hidden md:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Tanggal</th>
+<th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Bahan Baku</th>
+<th class="py-4 hidden lg:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Jumlah</th>
+<th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Total Harga</th>
+<th class="py-4 hidden md:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Supplier</th>
+<th class="py-4 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">Aksi</th>
 </tr>
-
 </thead>
-
-
-<tbody>
-
 @forelse($transaksi as $item)
-
-<tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-300">
-
-<td class="py-4">
-
-{{ $transaksi->firstItem() + $loop->index }}
-
+<tbody x-data="{ open: false }" class="divide-y divide-gray-100 dark:divide-gray-800 border-b border-gray-100 dark:border-gray-800">
+<tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition text-gray-700 dark:text-gray-300">
+<td class="py-3.5 px-2 sm:hidden text-center">
+    <button @click="open = !open" type="button" class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center text-xs font-bold transition-transform duration-200" :class="open ? 'rotate-90 bg-amber-500 text-white' : ''">
+        <span x-text="open ? '−' : '+'"></span>
+    </button>
 </td>
-
-
-<td>
-
-{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}
-
+<td class="py-3.5 hidden sm:table-cell text-gray-500">{{ $transaksi->firstItem() + $loop->index }}</td>
+<td class="py-3.5 hidden md:table-cell">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td>
+<td class="py-3.5 font-semibold text-gray-900 dark:text-white">
+    {{ $item->bahanBaku->nama_bahan }}
+    <div class="md:hidden text-[11px] text-gray-400 font-normal mt-0.5">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</div>
 </td>
-
-
-<td>
-
-{{ $item->bahanBaku->nama_bahan }}
-
-</td>
-
-
-<td class="text-center">
-
-<span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-3 py-1 text-green-700 dark:text-green-400">
-
-{{ number_format($item->jumlah, 2, ',', '.') }}
-
-{{ $item->bahanBaku->satuan }}
-
+<td class="py-3.5 hidden lg:table-cell text-center">
+<span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-3 py-1 text-green-700 dark:text-green-400 text-xs font-bold">
+{{ number_format($item->jumlah, 2, ',', '.') }} {{ $item->bahanBaku->satuan }}
 </span>
-
 </td>
-
-
-<td>
-
-Rp {{ number_format(
-    $item->total_harga,
-    0,
-    ',',
-    '.'
-) }}
-
+<td class="py-3.5 font-bold text-amber-700 dark:text-amber-400">Rp {{ number_format($item->total_harga, 0, ',', '.') }}</td>
+<td class="py-3.5 hidden md:table-cell">{{ $item->supplier ?: '-' }}</td>
+<td class="py-3.5 text-right">
+<a href="{{ route('transaksi-bahan-baku.show', $item->id) }}" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">Detail</a>
 </td>
-
-
-<td>
-
-{{ $item->supplier ?: '-' }}
-
-</td>
-
-
-<td class="text-center">
-
-<a
-    href="{{ route('transaksi-bahan-baku.show', $item->id) }}"
-    class="text-amber-700"
->
-
-Detail
-
-</a>
-
-</td>
-
 </tr>
-
-@empty
-
-<tr>
-
-<td
-    colspan="7"
-    class="py-10 text-center text-gray-500 dark:text-gray-400"
->
-
-Belum ada transaksi bahan baku.
-
+<!-- Expandable child row -->
+<tr x-show="open" x-cloak x-transition class="bg-amber-50/40 dark:bg-amber-950/20 text-xs">
+<td colspan="8" class="p-3.5">
+    <div class="grid grid-cols-2 gap-2.5 text-gray-600 dark:text-gray-300">
+        <div><span class="text-gray-400">Tanggal:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</span></div>
+        <div><span class="text-gray-400">Jumlah:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ number_format($item->jumlah, 2, ',', '.') }} {{ $item->bahanBaku->satuan }}</span></div>
+        <div><span class="text-gray-400">Supplier:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->supplier ?: '-' }}</span></div>
+        <div><span class="text-gray-400">Total Harga:</span> <span class="font-bold text-amber-700 dark:text-amber-400">Rp {{ number_format($item->total_harga, 0, ',', '.') }}</span></div>
+    </div>
 </td>
-
 </tr>
-
-@endforelse
-
 </tbody>
-
+@empty
+<tbody>
+<tr>
+<td colspan="8" class="py-10 text-center text-gray-500 dark:text-gray-400">Belum ada transaksi bahan baku.</td>
+</tr>
+</tbody>
+@endforelse
 </table>
-
 </div>
 
 

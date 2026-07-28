@@ -44,18 +44,26 @@ class PromoController extends Controller
         try {
             $validated = $request->validate([
                 'nama_promo' => 'required|string|max:255',
-                'persentase' => 'required|numeric|min:0|max:100',
+                'jenis_potongan' => 'required|in:persentase,nominal',
+                'persentase' => 'nullable|required_if:jenis_potongan,persentase|numeric|min:0|max:100',
+                'nominal_potongan' => 'nullable|required_if:jenis_potongan,nominal|numeric|min:0',
+                'min_pembelian' => 'nullable|numeric|min:0',
+                'status_aktif' => 'nullable|boolean',
                 'mulai_berlaku' => 'required|date',
-                'selesai_berlaku' => 'required|date|after_or_equal:mulai_berlaku',
+                'selesai_berlaku' => 'nullable|date|after_or_equal:mulai_berlaku',
                 'produk_ids' => 'required|array',
                 'produk_ids.*' => 'exists:produks,id',
             ]);
 
             $promo = Promo::create([
                 'nama_promo' => $validated['nama_promo'],
-                'persentase' => $validated['persentase'],
+                'jenis_potongan' => $validated['jenis_potongan'],
+                'persentase' => $validated['jenis_potongan'] === 'persentase' ? ($validated['persentase'] ?? 0) : 0,
+                'nominal_potongan' => $validated['jenis_potongan'] === 'nominal' ? ($validated['nominal_potongan'] ?? 0) : 0,
+                'min_pembelian' => $validated['min_pembelian'] ?? 0,
+                'status_aktif' => $request->has('status_aktif') ? (bool)$request->status_aktif : true,
                 'mulai_berlaku' => $validated['mulai_berlaku'],
-                'selesai_berlaku' => $validated['selesai_berlaku'],
+                'selesai_berlaku' => $validated['selesai_berlaku'] ?? null,
             ]);
 
             $promo->produks()->sync($validated['produk_ids']);
@@ -65,7 +73,8 @@ class PromoController extends Controller
                 ->performedOn($promo)
                 ->withProperties([
                     'promo' => $promo->nama_promo,
-                    'persentase' => $promo->persentase,
+                    'jenis_potongan' => $promo->jenis_potongan,
+                    'potongan' => $promo->jenis_potongan === 'nominal' ? $promo->nominal_potongan : $promo->persentase,
                     'produks' => $validated['produk_ids'],
                 ])
                 ->log('menambahkan promo');
@@ -102,18 +111,26 @@ class PromoController extends Controller
 
             $validated = $request->validate([
                 'nama_promo' => 'required|string|max:255',
-                'persentase' => 'required|numeric|min:0|max:100',
+                'jenis_potongan' => 'required|in:persentase,nominal',
+                'persentase' => 'nullable|required_if:jenis_potongan,persentase|numeric|min:0|max:100',
+                'nominal_potongan' => 'nullable|required_if:jenis_potongan,nominal|numeric|min:0',
+                'min_pembelian' => 'nullable|numeric|min:0',
+                'status_aktif' => 'nullable|boolean',
                 'mulai_berlaku' => 'required|date',
-                'selesai_berlaku' => 'required|date|after_or_equal:mulai_berlaku',
+                'selesai_berlaku' => 'nullable|date|after_or_equal:mulai_berlaku',
                 'produk_ids' => 'required|array',
                 'produk_ids.*' => 'exists:produks,id',
             ]);
 
             $promo->update([
                 'nama_promo' => $validated['nama_promo'],
-                'persentase' => $validated['persentase'],
+                'jenis_potongan' => $validated['jenis_potongan'],
+                'persentase' => $validated['jenis_potongan'] === 'persentase' ? ($validated['persentase'] ?? 0) : 0,
+                'nominal_potongan' => $validated['jenis_potongan'] === 'nominal' ? ($validated['nominal_potongan'] ?? 0) : 0,
+                'min_pembelian' => $validated['min_pembelian'] ?? 0,
+                'status_aktif' => $request->has('status_aktif') ? (bool)$request->status_aktif : false,
                 'mulai_berlaku' => $validated['mulai_berlaku'],
-                'selesai_berlaku' => $validated['selesai_berlaku'],
+                'selesai_berlaku' => $validated['selesai_berlaku'] ?? null,
             ]);
 
             $promo->produks()->sync($validated['produk_ids']);
@@ -123,7 +140,8 @@ class PromoController extends Controller
                 ->performedOn($promo)
                 ->withProperties([
                     'promo' => $promo->nama_promo,
-                    'persentase' => $promo->persentase,
+                    'jenis_potongan' => $promo->jenis_potongan,
+                    'potongan' => $promo->jenis_potongan === 'nominal' ? $promo->nominal_potongan : $promo->persentase,
                     'produks' => $validated['produk_ids'],
                 ])
                 ->log('memperbarui promo');
@@ -136,6 +154,31 @@ class PromoController extends Controller
         } catch (\Exception $e) {
             Log::error('Error pada perbarui PromoController: ' . $e->getMessage());
             return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui promo.');
+        }
+    }
+
+    public function toggleStatus($id)
+    {
+        try {
+            $promo = Promo::findOrFail($id);
+            $promo->status_aktif = !$promo->status_aktif;
+            $promo->save();
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($promo)
+                ->withProperties([
+                    'promo' => $promo->nama_promo,
+                    'status_aktif' => $promo->status_aktif,
+                ])
+                ->log('mengubah status promo');
+
+            return redirect()
+                ->route('promo.index')
+                ->with('success', 'Status promo "' . $promo->nama_promo . '"' . ($promo->status_aktif ? ' berhasil diaktifkan.' : ' berhasil dinonaktifkan.'));
+        } catch (\Exception $e) {
+            Log::error('Error pada toggleStatus PromoController: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat mengubah status promo.');
         }
     }
 

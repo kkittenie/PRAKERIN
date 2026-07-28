@@ -84,6 +84,7 @@ Route::middleware(['auth'])->group(function () {
     });
     Route::middleware('permission:edit_promo')->group(function () {
         Route::put('/promo/{id}', [PromoController::class, 'perbarui'])->name('promo.update');
+        Route::patch('/promo/{id}/toggle-status', [PromoController::class, 'toggleStatus'])->name('promo.toggle-status');
     });
     Route::middleware('permission:hapus_promo')->group(function () {
         Route::delete('/promo/{id}', [PromoController::class, 'hapus'])->name('promo.destroy');

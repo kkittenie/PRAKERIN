@@ -74,130 +74,43 @@
 
         </div>
 
-        <div class="overflow-x-auto">
-
-            <table class="w-full">
-
-                <thead>
-
-                    <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-
-                    <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
-
-                    <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Kategori</th>
-
-                    <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Jumlah Produk</th>
-
-                    <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Aksi</th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    @forelse($kategori as $item)
-
-                    <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition duration-200 text-gray-700 dark:text-gray-300">
-
-                        <td class="py-4">
-                            {{ $kategori->firstItem() + $loop->index }}
-                        </td>
-
-                        <td class="py-4">
-
-                            {{ $item->nama_kategori }}
-
-                        </td>
-
-                        <td class="py-4 text-center">
-
-                            <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-400">
-
-                                {{ $item->produk_count }}
-
-                            </span>
-
-                        </td>
-
-                        <td class="py-4 text-center space-x-2">
-
-                            <a
-                                href="{{ route('kategori-produk.edit',$item->id) }}"
-                                class="text-yellow-500">
-
-                                Edit
-
-                            </a>
-
-                            <form
-                                action="{{ route('kategori-produk.destroy',$item->id) }}"
-                                method="POST"
-                                class="inline">
-
-                                @csrf
-                                @method('DELETE')
-
-                                <button
-                                    onclick="return confirm('Yakin ingin menghapus?')"
-                                    class="text-red-600">
-
-                                    Hapus
-
-                                </button>
-
-                            </form>
-
-                        </td>
-
-                    </tr>
-
-                    @empty
-
-                    <tr>
-
-                    <td colspan="4" class="py-10">
-
-                    <div class="flex flex-col items-center">
-
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                    class="w-14 h-14 text-gray-300 dark:text-gray-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor">
-
-                    <path stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                    d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4m16 0H4"/>
-
-                    </svg>
-
-                    <p class="mt-3 font-medium text-gray-500 dark:text-gray-400">
-
-                    Belum ada kategori produk
-
-                    </p>
-
-                    <p class="text-sm text-gray-400">
-
-                    Silakan klik tombol Tambah Kategori
-
-                    </p>
-
-                    </div>
-
-                    </td>
-
-                    </tr>
-
-                    @endforelse
-
-                </tbody>
-
-            </table>
-
-        </div>
+<!-- Unified Responsive Table -->
+<div class="overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+            <th class="py-4 hidden sm:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
+            <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Kategori</th>
+            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Jumlah Produk</th>
+            <th class="py-4 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($kategori as $item)
+            <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition duration-200 text-gray-700 dark:text-gray-300">
+                <td class="py-4 hidden sm:table-cell">{{ $kategori->firstItem() + $loop->index }}</td>
+                <td class="py-4 font-semibold text-gray-900 dark:text-white">{{ $item->nama_kategori }}</td>
+                <td class="py-4 text-center">
+                    <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-400">
+                        {{ $item->produk_count }}
+                    </span>
+                </td>
+                <td class="py-4 text-right space-x-1.5 whitespace-nowrap">
+                    <a href="{{ route('kategori-produk.edit',$item->id) }}" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">Edit</a>
+                    <form action="{{ route('kategori-produk.destroy',$item->id) }}" method="POST" class="inline">
+                        @csrf @method('DELETE')
+                        <button onclick="return confirm('Yakin ingin menghapus?')" class="text-red-500 font-semibold hover:underline text-xs sm:text-sm">Hapus</button>
+                    </form>
+                </td>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="4" class="py-10 text-center text-gray-500 dark:text-gray-400">Belum ada kategori produk</td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
 
         <div class="mt-6">
 

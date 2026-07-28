@@ -59,56 +59,78 @@
 
         {{-- Tabel Transaksi --}}
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <!-- Unified Responsive Table -->
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
-                            <th class="text-left px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Kode Transaksi</th>
-                            <th class="text-left px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Pembeli</th>
-                            <th class="text-left px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Tanggal</th>
-                            <th class="text-right px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Subtotal</th>
-                            <th class="text-right px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Diskon</th>
-                            <th class="text-right px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Total Bayar</th>
-                            <th class="text-center px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Metode</th>
-                            <th class="text-center px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Aksi</th>
+                            <th class="px-2 py-4 sm:hidden w-8 text-center"></th>
+                            <th class="text-left px-4 sm:px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Kode Transaksi</th>
+                            <th class="text-left px-4 sm:px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden sm:table-cell">Pembeli</th>
+                            <th class="text-left px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden lg:table-cell">Tanggal</th>
+                            <th class="text-right px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden lg:table-cell">Subtotal</th>
+                            <th class="text-right px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden xl:table-cell">Diskon</th>
+                            <th class="text-right px-4 sm:px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Total Bayar</th>
+                            <th class="text-center px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden md:table-cell">Metode</th>
+                            <th class="text-right px-4 sm:px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
-                        @forelse ($transaksiList as $trx)
+                    @forelse ($transaksiList as $trx)
+                    <tbody x-data="{ open: false }" class="divide-y divide-gray-50 dark:divide-gray-800 border-b border-gray-100 dark:border-gray-800">
                         <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition-colors">
-                            <td class="px-6 py-4">
-                                <span class="font-mono text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">{{ $trx->kode_transaksi }}</span>
+                            <td class="px-2 py-3.5 sm:hidden text-center">
+                                <button @click="open = !open" type="button" class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center text-xs font-bold transition-transform duration-200" :class="open ? 'rotate-90 bg-amber-500 text-white' : ''">
+                                    <span x-text="open ? '−' : '+'"></span>
+                                </button>
                             </td>
-                            <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200">{{ $trx->nama_pembeli }}</td>
-                            <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ $trx->created_at->format('d M Y, H:i') }}</td>
-                            <td class="px-6 py-4 text-right text-gray-700 dark:text-gray-300">Rp {{ number_format($trx->subtotal, 0, ',', '.') }}</td>
-                            <td class="px-6 py-4 text-right text-orange-650 dark:text-orange-400">Rp {{ number_format($trx->diskon, 0, ',', '.') }}</td>
-                            <td class="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">Rp {{ number_format($trx->total_bayar, 0, ',', '.') }}</td>
-                            <td class="px-6 py-4 text-center">
+                            <td class="px-4 sm:px-6 py-3.5">
+                                <span class="font-mono text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">{{ $trx->kode_transaksi }}</span>
+                                <div class="sm:hidden text-[11px] text-gray-500 font-normal mt-1">{{ $trx->nama_pembeli }}</div>
+                            </td>
+                            <td class="px-4 sm:px-6 py-3.5 font-medium text-gray-800 dark:text-gray-200 hidden sm:table-cell">{{ $trx->nama_pembeli }}</td>
+                            <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ $trx->created_at->format('d M Y, H:i') }}</td>
+                            <td class="px-6 py-3.5 text-right text-gray-700 dark:text-gray-300 hidden lg:table-cell">Rp {{ number_format($trx->subtotal, 0, ',', '.') }}</td>
+                            <td class="px-6 py-3.5 text-right text-orange-650 dark:text-orange-400 hidden xl:table-cell">Rp {{ number_format($trx->diskon, 0, ',', '.') }}</td>
+                            <td class="px-4 sm:px-6 py-3.5 text-right font-bold text-gray-900 dark:text-white">Rp {{ number_format($trx->total_bayar, 0, ',', '.') }}</td>
+                            <td class="px-6 py-3.5 text-center hidden md:table-cell">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
                                     {{ $trx->metode_pembayaran === 'tunai' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400' }}">
                                     {{ ucfirst($trx->metode_pembayaran) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-center">
+                            <td class="px-4 sm:px-6 py-3.5 text-right">
                                 <button @click="lihatDetail({{ $trx->id }})"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-semibold rounded-lg text-xs transition">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                     Detail
                                 </button>
                             </td>
                         </tr>
-                        @empty
+                        <!-- Expandable child row -->
+                        <tr x-show="open" x-cloak x-transition class="bg-amber-50/50 dark:bg-amber-950/30 text-xs">
+                            <td colspan="9" class="p-3.5">
+                                <div class="grid grid-cols-2 gap-2.5 text-gray-600 dark:text-gray-300">
+                                    <div><span class="text-gray-400">Pembeli:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $trx->nama_pembeli }}</span></div>
+                                    <div><span class="text-gray-400">Tanggal:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $trx->created_at->format('d M Y, H:i') }}</span></div>
+                                    <div><span class="text-gray-400">Subtotal:</span> <span class="font-semibold text-gray-800 dark:text-white">Rp {{ number_format($trx->subtotal, 0, ',', '.') }}</span></div>
+                                    <div><span class="text-gray-400">Diskon:</span> <span class="font-semibold text-orange-600 dark:text-orange-400">Rp {{ number_format($trx->diskon, 0, ',', '.') }}</span></div>
+                                    <div><span class="text-gray-400">Metode:</span> <span class="font-semibold text-gray-800 dark:text-white capitalize">{{ $trx->metode_pembayaran }}</span></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                    @empty
+                    <tbody>
                         <tr>
-                            <td colspan="8" class="px-6 py-16 text-center text-gray-400 dark:text-gray-500">
+                            <td colspan="9" class="px-6 py-16 text-center text-gray-400 dark:text-gray-500">
                                 <div class="flex flex-col items-center gap-3">
                                     <svg class="w-16 h-16 text-gray-200 dark:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                     <p class="text-gray-400 dark:text-gray-500 font-medium">Belum ada transaksi.</p>
                                 </div>
                             </td>
                         </tr>
-                        @endforelse
                     </tbody>
+                    @endforelse
                 </table>
             </div>
 
@@ -175,29 +197,48 @@
                     <div>
                         <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Item Pesanan</h4>
                         <div class="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="bg-gray-50 dark:bg-gray-800/50">
-                                        <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Produk</th>
-                                        <th class="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Harga</th>
-                                        <th class="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Qty</th>
-                                        <th class="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-50 dark:divide-gray-850">
-                                    <template x-for="item in detailData?.detail_transaksi || []" :key="item.id">
-                                        <tr class="text-gray-750 dark:text-gray-300 hover:bg-gray-55 dark:hover:bg-gray-850">
-                                            <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">
-                                                <span x-text="item.nama_produk"></span>
-                                                <div x-show="item.catatan" class="text-xxs text-amber-600 dark:text-amber-400 font-medium italic mt-0.5" x-text="'Catatan: ' + item.catatan"></div>
-                                            </td>
-                                            <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400" x-text="'Rp ' + Number(item.harga_satuan).toLocaleString('id-ID')"></td>
-                                            <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400" x-text="item.jumlah"></td>
-                                            <td class="px-4 py-3 text-right font-semibold text-gray-800 dark:text-white" x-text="'Rp ' + Number(item.subtotal).toLocaleString('id-ID')"></td>
+                            <!-- Desktop Table View -->
+                            <div class="hidden sm:block">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="bg-gray-50 dark:bg-gray-800/50">
+                                            <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Produk</th>
+                                            <th class="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Harga</th>
+                                            <th class="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Qty</th>
+                                            <th class="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Subtotal</th>
                                         </tr>
-                                    </template>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-50 dark:divide-gray-850">
+                                        <template x-for="item in detailData?.detail_transaksi || []" :key="item.id">
+                                            <tr class="text-gray-750 dark:text-gray-300 hover:bg-gray-55 dark:hover:bg-gray-850">
+                                                <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">
+                                                    <span x-text="item.nama_produk"></span>
+                                                    <div x-show="item.catatan" class="text-xxs text-amber-600 dark:text-amber-400 font-medium italic mt-0.5" x-text="'Catatan: ' + item.catatan"></div>
+                                                </td>
+                                                <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400" x-text="'Rp ' + Number(item.harga_satuan).toLocaleString('id-ID')"></td>
+                                                <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400" x-text="item.jumlah"></td>
+                                                <td class="px-4 py-3 text-right font-semibold text-gray-800 dark:text-white" x-text="'Rp ' + Number(item.subtotal).toLocaleString('id-ID')"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Mobile Card View -->
+                            <div class="block sm:hidden divide-y divide-gray-100 dark:divide-gray-800 p-3">
+                                <template x-for="item in detailData?.detail_transaksi || []" :key="item.id">
+                                    <div class="py-2.5 space-y-1">
+                                        <div class="flex justify-between items-start gap-2">
+                                            <span class="font-bold text-gray-800 dark:text-white text-xs" x-text="item.nama_produk"></span>
+                                            <span class="font-bold text-amber-700 dark:text-amber-400 text-xs" x-text="'Rp ' + Number(item.subtotal).toLocaleString('id-ID')"></span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-[11px] text-gray-500 dark:text-gray-400">
+                                            <span x-text="item.jumlah + ' x Rp ' + Number(item.harga_satuan).toLocaleString('id-ID')"></span>
+                                        </div>
+                                        <div x-show="item.catatan" class="text-xxs text-amber-600 dark:text-amber-400 font-medium italic" x-text="'Catatan: ' + item.catatan"></div>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
 

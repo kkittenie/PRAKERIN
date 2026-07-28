@@ -44,15 +44,34 @@ class Produk extends Model
     public function getPromoAktifAttribute()
     {
         $now = now();
+        $isPromoBerlaku = function ($promo) use ($now) {
+            if (!$promo->status_aktif) return false;
+            if ($promo->mulai_berlaku > $now) return false;
+            if ($promo->selesai_berlaku && $promo->selesai_berlaku < $now) return false;
+            return true;
+        };
+
         if ($this->relationLoaded('promos')) {
-            return $this->promos->first(function ($promo) use ($now) {
-                return $promo->mulai_berlaku <= $now && $promo->selesai_berlaku >= $now;
-            });
+            return $this->promos->filter($isPromoBerlaku)->sortByDesc(function ($p) {
+                return $p->jenis_potongan === 'nominal'
+                    ? $p->nominal_potongan
+                    : (($p->persentase ?? 0) / 100 * $this->harga_jual);
+            })->first();
         }
 
         return $this->promos()
+            ->where('status_aktif', true)
             ->where('mulai_berlaku', '<=', $now)
-            ->where('selesai_berlaku', '>=', $now)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('selesai_berlaku')
+                  ->orWhere('selesai_berlaku', '>=', $now);
+            })
+            ->get()
+            ->sortByDesc(function ($p) {
+                return $p->jenis_potongan === 'nominal'
+                    ? $p->nominal_potongan
+                    : (($p->persentase ?? 0) / 100 * $this->harga_jual);
+            })
             ->first();
     }
 
@@ -60,7 +79,11 @@ class Produk extends Model
     {
         $promo = $this->promo_aktif;
         if ($promo) {
-            $diskon = ($promo->persentase / 100) * $this->harga_jual;
+            if ($promo->jenis_potongan === 'nominal') {
+                $diskon = $promo->nominal_potongan;
+            } else {
+                $diskon = (($promo->persentase ?? 0) / 100) * $this->harga_jual;
+            }
             return max(0, $this->harga_jual - $diskon);
         }
         return $this->harga_jual;

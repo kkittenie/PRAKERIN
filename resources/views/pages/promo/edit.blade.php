@@ -4,17 +4,22 @@
 
 <x-common.page-breadcrumb pageTitle="Edit Promo" />
 
-@if(session('error'))
-    <div class="mb-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-red-700 dark:text-red-400">
-        {{ session('error') }}
-    </div>
-@endif
-
 <div class="space-y-6">
 
     <x-common.component-card title="Form Edit Promo">
 
-        <form action="{{ route('promo.update', $promo->id) }}" method="POST">
+        <form action="{{ route('promo.update', $promo->id) }}" method="POST" x-data="{
+            jenisPotongan: '{{ old('jenis_potongan', $promo->jenis_potongan ?? 'persentase') }}',
+            nominalDisplay: '{{ old('nominal_potongan', $promo->nominal_potongan) ? number_format(old('nominal_potongan', $promo->nominal_potongan), 0, ',', '.') : '' }}',
+            minPembelianDisplay: '{{ old('min_pembelian', $promo->min_pembelian) ? number_format(old('min_pembelian', $promo->min_pembelian), 0, ',', '.') : '0' }}',
+            formatRupiahInput(val) {
+                let number = (val || '').toString().replace(/\D/g, '');
+                return number ? new Intl.NumberFormat('id-ID').format(number) : '';
+            },
+            getRawNumber(val) {
+                return (val || '').toString().replace(/\D/g, '') || '0';
+            }
+        }">
             @csrf
             @method('PUT')
 
@@ -37,21 +42,85 @@
                     @enderror
                 </div>
 
-                {{-- Persentase Diskon --}}
+                {{-- Jenis Potongan --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Persentase Diskon (%) <span class="text-red-500">*</span>
+                        Jenis Potongan Diskon <span class="text-red-500">*</span>
                     </label>
-                    <input
-                        type="number"
-                        name="persentase"
-                        min="0"
-                        max="100"
-                        value="{{ old('persentase', $promo->persentase) }}"
-                        placeholder="Contoh: 15"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
-                        required>
-                    @error('persentase')
+                    <div class="flex gap-4 items-center h-12">
+                        <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 font-medium">
+                            <input type="radio" name="jenis_potongan" value="persentase" x-model="jenisPotongan" class="text-brand-500 focus:ring-brand-500">
+                            Persentase (%)
+                        </label>
+                        <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 font-medium">
+                            <input type="radio" name="jenis_potongan" value="nominal" x-model="jenisPotongan" class="text-brand-500 focus:ring-brand-500">
+                            Nominal Rupiah (Rp)
+                        </label>
+                    </div>
+                    @error('jenis_potongan')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
+                {{-- Nilai Potongan Diskon --}}
+                <div>
+                    <div x-show="jenisPotongan === 'persentase'">
+                        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Persentase Diskon (%) <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="number"
+                            name="persentase"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value="{{ old('persentase', $promo->persentase) }}"
+                            placeholder="Contoh: 15"
+                            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
+                            :required="jenisPotongan === 'persentase'">
+                        @error('persentase')
+                            <small class="text-red-500">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <div x-show="jenisPotongan === 'nominal'" x-cloak>
+                        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Nominal Diskon (Rp) <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3 text-gray-500 font-bold text-sm">Rp</span>
+                            <input
+                                type="text"
+                                x-model="nominalDisplay"
+                                @input="nominalDisplay = formatRupiahInput($event.target.value)"
+                                placeholder="5.000"
+                                class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-12 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 font-semibold"
+                                :required="jenisPotongan === 'nominal'">
+                            <input type="hidden" name="nominal_potongan" :value="getRawNumber(nominalDisplay)">
+                        </div>
+                        @error('nominal_potongan')
+                            <small class="text-red-500">{{ $message }}</small>
+                        @enderror
+                    </div>
+                </div>
+
+                {{-- Minimum Pembelian --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Minimum Pembelian (Rp)
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3 text-gray-500 font-bold text-sm">Rp</span>
+                        <input
+                            type="text"
+                            x-model="minPembelianDisplay"
+                            @input="minPembelianDisplay = formatRupiahInput($event.target.value)"
+                            placeholder="50.000 (Isi 0 jika tidak ada minimum)"
+                            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-12 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 font-semibold">
+                        <input type="hidden" name="min_pembelian" :value="getRawNumber(minPembelianDisplay)">
+                    </div>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Minimal total belanja agar promo bisa digunakan (0 = Tanpa Minimum)</span>
+                    @error('min_pembelian')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>
@@ -75,15 +144,35 @@
                 {{-- Tanggal Selesai --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Selesai Berlaku <span class="text-red-500">*</span>
+                        Selesai Berlaku <span class="text-xs text-gray-400 font-normal"></span>
                     </label>
                     <input
                         type="datetime-local"
                         name="selesai_berlaku"
                         value="{{ old('selesai_berlaku', $promo->selesai_berlaku ? $promo->selesai_berlaku->format('Y-m-d\TH:i') : '') }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
-                        required>
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Kosongkan jika promo berlaku selamanya</span>
                     @error('selesai_berlaku')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
+                {{-- Status Aktif Promo --}}
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Status Promo
+                    </label>
+                    <label class="flex items-center gap-3 h-12 cursor-pointer">
+                        <input type="hidden" name="status_aktif" value="0">
+                        <input
+                            type="checkbox"
+                            name="status_aktif"
+                            value="1"
+                            class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                            {{ old('status_aktif', $promo->status_aktif ? '1' : '0') == '1' ? 'checked' : '' }}>
+                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Promo Aktif</span>
+                    </label>
+                    @error('status_aktif')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>

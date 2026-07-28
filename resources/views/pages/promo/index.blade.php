@@ -4,18 +4,6 @@
 
 <x-common.page-breadcrumb pageTitle="Promo Produk" />
 
-@if(session('success'))
-    <div class="mb-4 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-500/10 px-4 py-3 text-green-700 dark:text-green-400">
-        {{ session('success') }}
-    </div>
-@endif
-
-@if(session('error'))
-    <div class="mb-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-red-700 dark:text-red-400">
-        {{ session('error') }}
-    </div>
-@endif
-
 <div class="space-y-6">
 
     <x-common.component-card title="Data Promo">
@@ -65,106 +53,118 @@
 
         </div>
 
-        <div class="overflow-x-auto">
+<!-- Unified Responsive Table -->
+<div class="overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                <th class="py-3.5 px-2 sm:hidden w-7 text-center"></th>
+                <th class="py-3.5 px-3 hidden sm:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
+                <th class="py-3.5 px-2 sm:px-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Promo</th>
+                <th class="py-3.5 px-2 sm:px-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Potongan</th>
+                <th class="py-3.5 px-3 hidden md:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Min. Pembelian</th>
+                <th class="py-3.5 px-3 hidden lg:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Mulai</th>
+                <th class="py-3.5 px-3 hidden lg:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Selesai</th>
+                <th class="py-3.5 px-3 hidden md:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Jumlah Produk</th>
+                <th class="py-3.5 px-3 hidden sm:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
+                <th class="py-3.5 px-2 sm:px-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">Aksi</th>
+            </tr>
+        </thead>
+        @forelse($promo as $item)
+        @php
+            $now = now();
+            if (!$item->status_aktif) {
+                $status = 'Nonaktif';
+                $badgeColor = 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400';
+            } elseif ($now < $item->mulai_berlaku) {
+                $status = 'Belum Mulai';
+                $badgeColor = 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400';
+            } elseif ($item->selesai_berlaku && $now > $item->selesai_berlaku) {
+                $status = 'Kedaluwarsa';
+                $badgeColor = 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400';
+            } else {
+                $status = 'Aktif';
+                $badgeColor = 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400';
+            }
 
-            <table class="w-full">
-
-                <thead>
-                    <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                        <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
-                        <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Promo</th>
-                        <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Persentase</th>
-                        <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Mulai</th>
-                        <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Selesai</th>
-                        <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Jumlah Produk</th>
-                        <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
-                        <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Aksi</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @forelse($promo as $item)
-                    @php
-                        $now = now();
-                        if ($now < $item->mulai_berlaku) {
-                            $status = 'Belum Mulai';
-                            $badgeColor = 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400';
-                        } elseif ($now >= $item->mulai_berlaku && $now <= $item->selesai_berlaku) {
-                            $status = 'Aktif';
-                            $badgeColor = 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400';
-                        } else {
-                            $status = 'Kedaluwarsa';
-                            $badgeColor = 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400';
-                        }
-                    @endphp
-                    <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition duration-200 text-gray-700 dark:text-gray-300">
-                        <td class="py-4">
-                            {{ $promo->firstItem() + $loop->index }}
-                        </td>
-                        <td class="py-4 font-semibold">
-                            {{ $item->nama_promo }}
-                        </td>
-                        <td class="py-4 text-center text-brand-600 dark:text-brand-400 font-bold">
-                            {{ number_format($item->persentase, 0) }}%
-                        </td>
-                        <td class="py-4 text-center text-xs">
-                            {{ $item->mulai_berlaku->format('d M Y H:i') }}
-                        </td>
-                        <td class="py-4 text-center text-xs">
-                            {{ $item->selesai_berlaku->format('d M Y H:i') }}
-                        </td>
-                        <td class="py-4 text-center">
-                            <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-400">
-                                {{ $item->produks_count }} Produk
-                            </span>
-                        </td>
-                        <td class="py-4 text-center">
-                            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $badgeColor }}">
-                                {{ $status }}
-                            </span>
-                        </td>
-                        <td class="py-4 text-center space-x-2">
-                            <a href="{{ route('promo.edit', $item->id) }}" class="text-yellow-500 hover:text-yellow-600 font-medium">
-                                Edit
-                            </a>
-                            <form action="{{ route('promo.destroy', $item->id) }}" method="POST" class="inline">
-                                @csrf
-                                @method('DELETE')
-                                <button onclick="return confirm('Yakin ingin menghapus promo ini?')" class="text-red-600 hover:text-red-700 font-medium bg-transparent border-none cursor-pointer">
-                                    Hapus
+            $diskonText = $item->jenis_potongan === 'nominal'
+                ? 'Rp ' . number_format($item->nominal_potongan, 0, ',', '.')
+                : number_format($item->persentase, 0) . '%';
+        @endphp
+        <tbody x-data="{ open: false }" class="divide-y divide-gray-100 dark:divide-gray-800 border-b border-gray-100 dark:border-gray-800">
+            <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition duration-200 text-gray-700 dark:text-gray-300">
+                <td class="py-3.5 px-2 sm:hidden text-center">
+                    <button @click="open = !open" type="button" class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center text-xs font-bold transition-transform duration-200" :class="open ? 'rotate-90 bg-amber-500 text-white' : ''">
+                        <span x-text="open ? '−' : '+'"></span>
+                    </button>
+                </td>
+                <td class="py-3.5 px-3 hidden sm:table-cell text-gray-500">{{ $promo->firstItem() + $loop->index }}</td>
+                <td class="py-3.5 px-2 sm:px-3 font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">
+                    {{ $item->nama_promo }}
+                </td>
+                <td class="py-3.5 px-2 sm:px-3 text-center text-brand-600 dark:text-brand-400 font-bold text-xs sm:text-sm whitespace-nowrap">{{ $diskonText }}</td>
+                <td class="py-3.5 px-3 hidden md:table-cell text-center text-xs">
+                    {{ $item->min_pembelian > 0 ? 'Rp ' . number_format($item->min_pembelian, 0, ',', '.') : '-' }}
+                </td>
+                <td class="py-3.5 px-3 hidden lg:table-cell text-center text-xs">{{ $item->mulai_berlaku ? $item->mulai_berlaku->format('d M Y H:i') : '-' }}</td>
+                <td class="py-3.5 px-3 hidden lg:table-cell text-center text-xs">
+                    @if($item->selesai_berlaku)
+                        {{ $item->selesai_berlaku->format('d M Y H:i') }}
+                    @else
+                        <span class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">Selamanya</span>
+                    @endif
+                </td>
+                <td class="py-3.5 px-3 hidden md:table-cell text-center">
+                    <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-400">
+                        {{ $item->produks_count }} Produk
+                    </span>
+                </td>
+                <td class="py-3.5 px-3 hidden sm:table-cell text-center">
+                    <form action="{{ route('promo.toggle-status', $item->id) }}" method="POST" class="inline">
+                        @csrf @method('PATCH')
+                        <button type="submit" title="Klik untuk mengaktifkan/menonaktifkan promo" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer hover:opacity-80 transition {{ $badgeColor }}">
+                            {{ $status }}
+                        </button>
+                    </form>
+                </td>
+                <td class="py-3.5 px-2 sm:px-3 text-right space-x-1 whitespace-nowrap">
+                    <a href="{{ route('promo.edit', $item->id) }}" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">Edit</a>
+                    <form action="{{ route('promo.destroy', $item->id) }}" method="POST" class="inline">
+                        @csrf @method('DELETE')
+                        <button onclick="return confirm('Yakin ingin menghapus promo ini?')" class="text-red-500 font-semibold hover:underline text-xs sm:text-sm">Hapus</button>
+                    </form>
+                </td>
+            </tr>
+            <!-- Expandable child row -->
+            <tr x-show="open" x-cloak x-transition class="bg-amber-50/50 dark:bg-amber-950/30 text-xs">
+                <td colspan="10" class="p-4">
+                    <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300">
+                        <div>
+                            <span class="text-gray-400 block text-[11px]">Status</span>
+                            <form action="{{ route('promo.toggle-status', $item->id) }}" method="POST" class="inline">
+                                @csrf @method('PATCH')
+                                <button type="submit" class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $badgeColor }} mt-0.5">
+                                    {{ $status }}
                                 </button>
                             </form>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="8" class="py-10">
-                            <div class="flex flex-col items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="w-14 h-14 text-gray-300 dark:text-gray-600"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="1.5"
-                                        d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <p class="mt-3 font-medium text-gray-500 dark:text-gray-400">
-                                    Belum ada data promo
-                                </p>
-                                <p class="text-sm text-gray-400">
-                                    Silakan klik tombol Tambah Promo
-                                </p>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-
-            </table>
-
-        </div>
+                        </div>
+                        <div><span class="text-gray-400 block text-[11px]">Min. Pembelian</span> <span class="font-bold text-gray-800 dark:text-white">{{ $item->min_pembelian > 0 ? 'Rp ' . number_format($item->min_pembelian, 0, ',', '.') : '-' }}</span></div>
+                        <div><span class="text-gray-400 block text-[11px]">Jumlah Produk</span> <span class="font-bold text-amber-700 dark:text-amber-400">{{ $item->produks_count }} Produk</span></div>
+                        <div><span class="text-gray-400 block text-[11px]">Periode Mulai</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->mulai_berlaku ? $item->mulai_berlaku->format('d M Y H:i') : '-' }}</span></div>
+                        <div><span class="text-gray-400 block text-[11px]">Periode Selesai</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->selesai_berlaku ? $item->selesai_berlaku->format('d M Y H:i') : 'Selamanya' }}</span></div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+        @empty
+        <tbody>
+            <tr>
+                <td colspan="10" class="py-10 text-center text-gray-500 dark:text-gray-400">Belum ada data promo</td>
+            </tr>
+        </tbody>
+        @endforelse
+    </table>
+</div>
 
         <div class="mt-6">
             {{ $promo->withQueryString()->links() }}

@@ -73,268 +73,108 @@
 
     </div>
 
-    <div class="overflow-x-auto">
-
-        <table class="w-full">
-
-            <thead>
-            <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-
-                <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
-
-                <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Foto
-                </th>
-
-                <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Kode Produk
-                </th>
-
-                <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Nama Produk
-                </th>
-
-                <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Kategori
-                </th>
-
-                <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Harga
-                </th>
-
-                <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Stok
-                </th>
-
-                <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Status
-                </th>
-
-                <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Ketersediaan
-                </th>
-
-                <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Aksi
-                </th>
-
+<div class="overflow-x-auto">
+    <table class="w-full text-left text-sm">
+        <thead>
+            <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300">
+                <th class="py-3 px-2 sm:hidden w-7 text-center"></th>
+                <th class="py-3 px-3 hidden sm:table-cell w-12 text-center">No</th>
+                <th class="py-3 px-3 hidden sm:table-cell text-center">Foto</th>
+                <th class="py-3 px-2 sm:px-3">Nama Produk</th>
+                <th class="py-3 px-3 hidden lg:table-cell">Kode</th>
+                <th class="py-3 px-3 hidden md:table-cell">Kategori</th>
+                <th class="py-3 px-2 sm:px-3 text-right">Harga</th>
+                <th class="py-3 px-3 hidden sm:table-cell text-center">Stok</th>
+                <th class="py-3 px-3 hidden md:table-cell text-center">Status</th>
+                <th class="py-3 px-3 hidden lg:table-cell text-center">Ketersediaan</th>
+                <th class="py-3 px-2 sm:px-3 text-right">Aksi</th>
             </tr>
-            </thead>
-
-            <tbody>
-
-            @forelse($produk as $item)
-
-            <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition text-gray-700 dark:text-gray-300">
-
-                {{-- No --}}
-                <td class="py-4">
-                    {{ $produk->firstItem() + $loop->index }}
-                </td>
-
-                {{-- Foto --}}
-                <td class="py-4 text-center">
-
-                @if($item->foto)
-
-                <img
-                src="{{ asset('storage/'.$item->foto) }}"
-                class="w-14 h-14 rounded-lg object-cover border mx-auto">
-
-                @else
-
-                <div class="w-14 h-14 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 text-xs mx-auto">
-
-                -
-
-                </div>
-
-                @endif
-
-                </td>
-
-                {{-- Kode --}}
-                <td class="py-4 font-medium">
-                    {{ $item->kode_produk }}
-                </td>
-
-                {{-- Nama --}}
-                <td class="py-4">
-                    {{ $item->nama_produk }}
-                </td>
-
-                {{-- Kategori --}}
-                <td class="py-4">
-                    {{ $item->kategori->nama_kategori ?? '-' }}
-                </td>
-
-                {{-- Harga --}}
-                <td class="py-4 text-right font-medium">
-
-                Rp {{ number_format($item->harga_jual,0,',','.') }}
-
-                </td>
-
-                {{-- Stok --}}
-                <td class="py-4 text-center">
-
-                @if($item->stok <= $item->stok_minimum)
-
-                <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-red-700 text-sm font-medium">
-
-                {{ $item->stok }}
-
-                </span>
-
-                @else
-
-                <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-green-700 text-sm font-medium">
-
-                {{ $item->stok }}
-
-                </span>
-
-                @endif
-
-                <div class="text-xs text-gray-400 mt-1">
-
-                Min {{ $item->stok_minimum }}
-
-                </div>
-
-                </td>
-
-                {{-- Status --}}
-                <td class="py-4 text-center">
-
-                @if($item->status_aktif)
-
-                <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-green-700 text-sm">
-
-                Aktif
-
-                </span>
-
-                @else
-
-                <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-red-700 text-sm">
-
-                Tidak Aktif
-
-                </span>
-
-                @endif
-
-                </td>
-
-                {{-- Ketersediaan --}}
-                <td class="py-4 text-center">
-
-                @if($item->status_ketersediaan=='stok_ada')
-
-                <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-green-700 text-sm">
-
-                Stok Ada
-
-                </span>
-
-                @else
-
-                <span class="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-yellow-700 text-sm">
-
-                Pesan Dulu
-
-                </span>
-
-                @endif
-
-                </td>
-
-                {{-- Aksi --}}
-                <td class="py-4 text-center space-x-2">
-
-                <a
-                href="{{ route('produk.edit',$item->id) }}"
-                class="text-yellow-500">
-
-                Edit
-
-                </a>
-
-                    <form action="{{ route('produk.destroy',$item->id) }}"
-                        method="POST"
-                        class="inline">
-
-                        @csrf
-                        @method('DELETE')
-
-                    <button
-                    type="submit"
-                    onclick="return confirm('Yakin ingin menghapus produk ini?')"
-                    class="text-red-500">
-
-                    Hapus
-
+        </thead>
+        @forelse($produk as $item)
+        <tbody x-data="{ open: false }" class="divide-y divide-gray-100 dark:divide-gray-800 border-b border-gray-100 dark:border-gray-800">
+            <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition text-gray-700 dark:text-gray-300">
+                <td class="py-3 px-2 sm:hidden text-center">
+                    <button @click="open = !open" type="button" class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center text-xs font-bold transition-transform duration-200" :class="open ? 'rotate-90 bg-amber-500 text-white' : ''">
+                        <span x-text="open ? '−' : '+'"></span>
                     </button>
-
-                    </form>
-
                 </td>
-
+                <td class="py-3 px-3 hidden sm:table-cell text-center text-gray-500">{{ $produk->firstItem() + $loop->index }}</td>
+                <td class="py-3 px-3 hidden sm:table-cell text-center">
+                    @if($item->foto)
+                    <img src="{{ asset('storage/'.$item->foto) }}" class="w-10 h-10 rounded-lg object-cover border mx-auto">
+                    @else
+                    <div class="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 text-xs mx-auto">-</div>
+                    @endif
+                </td>
+                <td class="py-3 px-2 sm:px-3 font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">
+                    {{ $item->nama_produk }}
+                    <div class="sm:hidden text-[10px] text-gray-400 font-normal mt-0.5">{{ $item->kategori->nama_kategori ?? '-' }}</div>
+                </td>
+                <td class="py-3 px-3 hidden lg:table-cell font-mono text-xs">{{ $item->kode_produk }}</td>
+                <td class="py-3 px-3 hidden md:table-cell">{{ $item->kategori->nama_kategori ?? '-' }}</td>
+                <td class="py-3 px-2 sm:px-3 text-right font-bold text-amber-700 dark:text-amber-400 text-xs sm:text-sm whitespace-nowrap">Rp {{ number_format($item->harga_jual,0,',','.') }}</td>
+                <td class="py-3 px-3 hidden sm:table-cell text-center">
+                    @if($item->stok <= $item->stok_minimum)
+                    <span class="inline-flex rounded-full bg-red-100 dark:bg-red-500/10 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:text-red-400">{{ $item->stok }}</span>
+                    @else
+                    <span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-2.5 py-0.5 text-xs font-bold text-green-700 dark:text-green-400">{{ $item->stok }}</span>
+                    @endif
+                    <div class="text-[10px] text-gray-400 mt-0.5">Min {{ $item->stok_minimum }}</div>
+                </td>
+                <td class="py-3 px-3 hidden md:table-cell text-center">
+                    @if($item->status_aktif)
+                    <span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-2 py-0.5 text-xs text-green-700 dark:text-green-400">Aktif</span>
+                    @else
+                    <span class="inline-flex rounded-full bg-red-100 dark:bg-red-500/10 px-2 py-0.5 text-xs text-red-700 dark:text-red-400">Off</span>
+                    @endif
+                </td>
+                <td class="py-3 px-3 hidden lg:table-cell text-center">
+                    @if($item->status_ketersediaan=='stok_ada')
+                    <span class="inline-flex rounded-full bg-emerald-100 dark:bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">Ready</span>
+                    @else
+                    <span class="inline-flex rounded-full bg-amber-100 dark:bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400">Pre-Order</span>
+                    @endif
+                </td>
+                <td class="py-3 px-2 sm:px-3 text-right space-x-1 whitespace-nowrap">
+                    <a href="{{ route('produk.edit',$item->id) }}" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">Edit</a>
+                    <form action="{{ route('produk.destroy',$item->id) }}" method="POST" class="inline">
+                        @csrf @method('DELETE')
+                        <button type="submit" onclick="return confirm('Yakin ingin menghapus produk ini?')" class="text-red-500 font-semibold hover:underline text-xs sm:text-sm">Hapus</button>
+                    </form>
+                </td>
             </tr>
 
-            @empty
-
+            <!-- Dropdown Row for Hidden Mobile Columns -->
+            <tr x-show="open" x-cloak x-transition class="bg-amber-50/50 dark:bg-amber-950/30 text-xs">
+                <td colspan="11" class="p-4">
+                    <div class="flex flex-col sm:flex-row gap-4 items-start">
+                        @if($item->foto)
+                        <img src="{{ asset('storage/'.$item->foto) }}" class="w-16 h-16 rounded-xl object-cover border border-amber-200 dark:border-amber-800 shrink-0">
+                        @endif
+                        <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300 w-full">
+                            <div><span class="text-gray-400 block text-[11px]">Kode Produk</span> <span class="font-mono font-bold text-gray-800 dark:text-white">{{ $item->kode_produk }}</span></div>
+                            <div><span class="text-gray-400 block text-[11px]">Kategori</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->kategori->nama_kategori ?? '-' }}</span></div>
+                            <div><span class="text-gray-400 block text-[11px]">Stok</span> <span class="font-bold {{ $item->stok <= $item->stok_minimum ? 'text-red-600' : 'text-green-600' }}">{{ $item->stok }}</span> <span class="text-gray-400 text-[10px]">(Min: {{ $item->stok_minimum }})</span></div>
+                            <div><span class="text-gray-400 block text-[11px]">Status</span> <span class="font-semibold {{ $item->status_aktif ? 'text-green-600' : 'text-red-600' }}">{{ $item->status_aktif ? 'Aktif' : 'Tidak Aktif' }}</span></div>
+                            <div class="col-span-2"><span class="text-gray-400 block text-[11px]">Ketersediaan</span> <span class="font-semibold {{ $item->status_ketersediaan == 'stok_ada' ? 'text-emerald-600' : 'text-amber-600' }}">{{ $item->status_ketersediaan == 'stok_ada' ? 'Stok Ada (Ready)' : 'Pesan Dulu (Pre-Order)' }}</span></div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+        @empty
+        <tbody>
             <tr>
-
-            <td colspan="10" class="py-10">
-
-            <div class="flex flex-col items-center">
-
-            <svg xmlns="http://www.w3.org/2000/svg"
-            class="w-14 h-14 text-gray-300 dark:text-gray-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor">
-
-            <path stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.5"
-            d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4m16 0H4"/>
-
-            </svg>
-
-            <p class="mt-3 font-medium text-gray-500">
-
-            Belum ada produk
-
-            </p>
-
-            <p class="text-sm text-gray-400">
-
-            Silakan klik tombol Tambah Produk
-
-            </p>
-
-            </div>
-
-            </td>
-
+                <td colspan="11" class="py-10 text-center text-gray-500 dark:text-gray-400">Belum ada produk</td>
             </tr>
+        </tbody>
+        @endforelse
+    </table>
+</div>
 
-            @endforelse
-
-            </tbody>
-
-        </table>
-
-        <div class="mt-6">
-
-            {{ $produk->withQueryString()->links() }}
-
-        </div>
-
-    </div>
+<div class="mt-6">
+    {{ $produk->withQueryString()->links() }}
+</div>
 
 </x-common.component-card>
 

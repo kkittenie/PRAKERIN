@@ -49,18 +49,18 @@
                     </thead>
                     <tbody>
                         @foreach ($usersInRole as $user)
-                        <tr class="border-b border-gray-100 dark:border-gray-800">
+                        <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition">
                             <td class="py-3 font-medium text-gray-800 dark:text-white/90">{{ $user->name }}</td>
                             <td class="py-3 text-gray-600 dark:text-gray-400">{{ $user->username }}</td>
-                            <td class="py-3 text-right">
+                            <td class="py-3 text-right space-x-1.5 whitespace-nowrap">
                                 @can('edit_user')
-                                <a href="{{ route('users.edit', $user) }}" class="text-brand-500 hover:underline">Edit</a>
+                                <a href="{{ route('users.edit', $user) }}" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">Edit</a>
                                 @endcan
                                 @can('hapus_user')
                                 <form action="{{ route('users.destroy', $user) }}" method="POST" class="inline"
                                     onsubmit="return confirm('Yakin hapus pengguna ini?')">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="ml-3 text-red-500 hover:underline">Hapus</button>
+                                    <button type="submit" class="text-red-500 font-semibold hover:underline text-xs sm:text-sm">Hapus</button>
                                 </form>
                                 @endcan
                             </td>
