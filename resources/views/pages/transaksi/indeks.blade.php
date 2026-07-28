@@ -47,7 +47,7 @@
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </span>
-                    <input type="text" x-model="kataKunciPencarian" placeholder="Cari nama atau kode produk..."
+                    <input type="text" x-model="kataKunciPencarian" @input="halamanProduk = 1" placeholder="Cari nama atau kode produk..."
                         class="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-900 dark:text-white transition-all">
                 </div>
                 <button @click="bukaModalDaftarDitahan()"
@@ -72,33 +72,48 @@
                 <div class="flex flex-col gap-4 shrink-0">
                     <div class="flex flex-wrap items-center justify-between gap-4">
                         <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                            <button @click="kategoriTerpilih = 'semua'"
+                            <button @click="kategoriTerpilih = 'semua'; halamanProduk = 1"
                                 :class="kategoriTerpilih === 'semua' ? 'bg-amber-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800'"
                                 class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap">Semua
                                 Produk</button>
                             <template x-for="kategori in daftarKategori" :key="kategori.id">
-                                <button @click="kategoriTerpilih = kategori.id"
+                                <button @click="kategoriTerpilih = kategori.id; halamanProduk = 1"
                                     :class="kategoriTerpilih === kategori.id ? 'bg-amber-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800'"
                                     class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap"
                                     x-text="kategori.nama_kategori"></button>
                             </template>
                         </div>
 
-                        <!-- Filter Status Ketersediaan -->
-                        <div
-                            class="flex items-center gap-1 bg-white dark:bg-gray-900 p-1 rounded-lg border border-gray-100 dark:border-gray-800 shrink-0">
-                            <button @click="filterKetersediaan = 'semua'"
-                                :class="filterKetersediaan === 'semua' ? 'bg-slate-900 dark:bg-gray-800 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'"
-                                class="px-3 py-1.5 rounded-md text-xs font-bold transition">Semua</button>
-                            <button @click="filterKetersediaan = 'stok_ada'"
-                                :class="filterKetersediaan === 'stok_ada' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                class="px-3 py-1.5 rounded-md text-xs font-bold transition">Ready Stock</button>
-                            <button @click="filterKetersediaan = 'pesan_dulu'"
-                                :class="filterKetersediaan === 'pesan_dulu' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                class="px-3 py-1.5 rounded-md text-xs font-bold transition">Pre-Order</button>
-                            <button @click="filterKetersediaan = 'promo'"
-                                :class="filterKetersediaan === 'promo' ? 'bg-rose-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                class="px-3 py-1.5 rounded-md text-xs font-bold transition">Promo %</button>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <!-- Items per page selector -->
+                            <div class="flex items-center gap-1.5 bg-white dark:bg-gray-900 px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-800 text-xs font-medium text-gray-600 dark:text-gray-400 shrink-0">
+                                <span>Tampilkan:</span>
+                                <select x-model="itemsPerPage" @change="halamanProduk = 1"
+                                    class="bg-transparent font-bold text-amber-600 dark:text-amber-400 focus:outline-none cursor-pointer">
+                                    <option value="5">5</option>
+                                    <option value="10">10</option>
+                                    <option value="15">15</option>
+                                    <option value="20">20</option>
+                                    <option value="semua">Semua</option>
+                                </select>
+                            </div>
+
+                            <!-- Filter Status Ketersediaan -->
+                            <div
+                                class="flex items-center gap-1 bg-white dark:bg-gray-900 p-1 rounded-lg border border-gray-100 dark:border-gray-800 shrink-0">
+                                <button @click="filterKetersediaan = 'semua'; halamanProduk = 1"
+                                    :class="filterKetersediaan === 'semua' ? 'bg-slate-900 dark:bg-gray-800 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Semua</button>
+                                <button @click="filterKetersediaan = 'stok_ada'; halamanProduk = 1"
+                                    :class="filterKetersediaan === 'stok_ada' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Ready Stock</button>
+                                <button @click="filterKetersediaan = 'pesan_dulu'; halamanProduk = 1"
+                                    :class="filterKetersediaan === 'pesan_dulu' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Pre-Order</button>
+                                <button @click="filterKetersediaan = 'promo'; halamanProduk = 1"
+                                    :class="filterKetersediaan === 'promo' ? 'bg-rose-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Promo %</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -172,6 +187,26 @@
                                 </div>
                             </div>
                         </template>
+                    </div>
+                </div>
+
+                <!-- Product Pagination Bar -->
+                <div x-show="itemsPerPage !== 'semua' && totalHalamanProduk > 1" class="flex flex-wrap items-center justify-between bg-white dark:bg-gray-900 px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-800 shrink-0 text-xs gap-2">
+                    <span class="text-gray-500 dark:text-gray-400">
+                        Menampilkan <span class="font-bold text-gray-800 dark:text-white" x-text="((halamanProduk - 1) * parseInt(itemsPerPage)) + 1"></span> -
+                        <span class="font-bold text-gray-800 dark:text-white" x-text="Math.min(halamanProduk * parseInt(itemsPerPage), semuaProdukTersaring.length)"></span> dari
+                        <span class="font-bold text-gray-800 dark:text-white" x-text="semuaProdukTersaring.length"></span> produk
+                    </span>
+                    <div class="flex items-center gap-1.5">
+                        <button @click="if(halamanProduk > 1) halamanProduk--" :disabled="halamanProduk <= 1"
+                            class="px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed font-semibold transition text-gray-700 dark:text-gray-300">
+                            &laquo; Prev
+                        </button>
+                        <span class="px-2 font-bold text-amber-600 dark:text-amber-400" x-text="halamanProduk + ' / ' + totalHalamanProduk"></span>
+                        <button @click="if(halamanProduk < totalHalamanProduk) halamanProduk++" :disabled="halamanProduk >= totalHalamanProduk"
+                            class="px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed font-semibold transition text-gray-700 dark:text-gray-300">
+                            Next &raquo;
+                        </button>
                     </div>
                 </div>
             </div>
@@ -815,6 +850,8 @@
             kataKunciPencarian: '',
             kategoriTerpilih: 'semua',
             filterKetersediaan: 'semua',
+            itemsPerPage: '10',
+            halamanProduk: 1,
 
             // Keranjang
             keranjang: [],
@@ -823,7 +860,7 @@
             memberTerpilih: null,
             catatan: '',
             diskonPersen: '',
-            pajakPersen: 10,
+            pajakPersen: 5,
 
             // Input pembeli modal
             inputNamaPembeli: '',
@@ -912,7 +949,7 @@
                 return '/images/logo/logo-icon.svg';
             },
 
-            get produkTersaring() {
+            get semuaProdukTersaring() {
                 return this.daftarProduk.filter(p => {
                     const cocokKategori = this.kategoriTerpilih === 'semua' || p.kategori_id === this.kategoriTerpilih;
                     const cocokCari = p.nama_produk.toLowerCase().includes(this.kataKunciPencarian.toLowerCase()) || p.kode_produk.toLowerCase().includes(this.kataKunciPencarian.toLowerCase());
@@ -928,6 +965,20 @@
 
                     return cocokKategori && cocokCari && cocokKetersediaan;
                 });
+            },
+
+            get totalHalamanProduk() {
+                if (this.itemsPerPage === 'semua') return 1;
+                const perPage = parseInt(this.itemsPerPage) || 10;
+                return Math.max(1, Math.ceil(this.semuaProdukTersaring.length / perPage));
+            },
+
+            get produkTersaring() {
+                const list = this.semuaProdukTersaring;
+                if (this.itemsPerPage === 'semua') return list;
+                const perPage = parseInt(this.itemsPerPage) || 10;
+                const start = (this.halamanProduk - 1) * perPage;
+                return list.slice(start, start + perPage);
             },
 
             get subtotal() {
@@ -1275,7 +1326,7 @@
                 this.keranjang = JSON.parse(JSON.stringify(pesanan.item_pesanan));
                 this.namaPembeli = pesanan.nama_pembeli;
                 this.diskonPersen = pesanan.diskon || '';
-                this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 10;
+                this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 5;
                 this.catatan = pesanan.catatan || '';
                 if (pesanan.transaksi && pesanan.transaksi.member_id) {
                     this.memberIdTerpilih = pesanan.transaksi.member_id;
@@ -1297,7 +1348,7 @@
                     subtotal: pesanan.subtotal,
                     diskon_persen: pesanan.diskon || 0,
                     nilai_diskon: pesanan.diskon ? Math.round(pesanan.subtotal * (pesanan.diskon / 100)) : 0,
-                    pajak_persen: pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 10,
+                    pajak_persen: pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 5,
                     pajak: pesanan.pajak,
                     total_bayar: pesanan.total,
                     jumlah_diterima: 0,
@@ -1316,7 +1367,7 @@
                 this.namaPembeli = '';
                 this.catatan = '';
                 this.diskonPersen = '';
-                this.pajakPersen = 10;
+                this.pajakPersen = 5;
                 this.jumlahDiterima = '';
                 this.memberIdTerpilih = '';
                 this.memberTerpilih = null;
