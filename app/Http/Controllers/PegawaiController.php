@@ -55,7 +55,7 @@ class PegawaiController extends Controller
             'tanggal_masuk' => 'required|date',
             'status_aktif' => 'required|boolean',
             'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'nullable|email|unique:users,email',
+            'email' => 'required|nullable|email|unique:users,email',
             'password' => 'required|min:6',
         ]);
 
@@ -120,7 +120,7 @@ class PegawaiController extends Controller
             'tanggal_masuk' => 'required|date',
             'status_aktif' => 'required|boolean',
             'username' => 'required|string|max:255|unique:users,username,' . optional($pegawai->user)->id,
-            'email' => 'nullable|email|unique:users,email,' . optional($pegawai->user)->id,
+            'email' => 'required|nullable|email|unique:users,email,' . optional($pegawai->user)->id,
             'password' => 'nullable|min:6',
         ]);
 
