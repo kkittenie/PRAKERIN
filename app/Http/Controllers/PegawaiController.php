@@ -55,6 +55,7 @@ class PegawaiController extends Controller
             'tanggal_masuk' => 'required|date',
             'status_aktif' => 'required|boolean',
             'username' => 'required|string|max:255|unique:users,username',
+            'email' => 'nullable|email|unique:users,email',
             'password' => 'required|min:6',
         ]);
 
@@ -62,6 +63,7 @@ class PegawaiController extends Controller
             $user = User::create([
                 'name' => $request->nama,
                 'username' => $request->username,
+                'email' => $request->email,
                 'password' => Hash::make($request->password),
             ]);
             $user->assignRole($request->jabatan);
@@ -118,6 +120,7 @@ class PegawaiController extends Controller
             'tanggal_masuk' => 'required|date',
             'status_aktif' => 'required|boolean',
             'username' => 'required|string|max:255|unique:users,username,' . optional($pegawai->user)->id,
+            'email' => 'nullable|email|unique:users,email,' . optional($pegawai->user)->id,
             'password' => 'nullable|min:6',
         ]);
 

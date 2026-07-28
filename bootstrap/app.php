@@ -21,5 +21,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->report(function(Throwable $e) {
+            activity()
+                ->withProperties([
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'url' => request()->fullUrl(),
+                    'method' => request()->method(),
+                    'user' => auth()->id(),
+                ])
+                ->log('problem pada bagian ' . request()->path());
+        });
     })->create();

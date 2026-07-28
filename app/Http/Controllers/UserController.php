@@ -40,6 +40,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'required|string|unique:users,username',
+            'email' => 'nullable|email|unique:users,email',
             'password' => 'required|min:6',
             'role' => 'required|exists:roles,name',
         ]);
@@ -47,6 +48,7 @@ class UserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'username' => $request->username,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
@@ -56,10 +58,10 @@ class UserController extends Controller
             ->performedOn($user)
             ->causedBy(auth()->user())
             ->withProperties([
-                'username' => $user->username,
-                'nama' => $user->name,
+            'username' => $user->username,
+            'nama' => $user->name,
             ])
-            ->log('menambahkan user');
+                ->log('menambahkan user');
 
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan');
     }
@@ -99,12 +101,14 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'required|string|unique:users,username,' . $user->id,
+            'email' => 'nullable|email|unique:users,email,' . $user->id,
             'role' => 'required|exists:roles,name',
             'password' => 'nullable|min:6',
         ]);
 
         $user->name = $request->name;
         $user->username = $request->username;
+        $user->email = $request->email;
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
         }
@@ -119,7 +123,7 @@ class UserController extends Controller
                 'username' => $user->username,
                 'nama' => $user->name,
             ])
-            ->log('mengubah data user');
+                ->log('mengubah data user');
 
         return redirect()->route('users.index')->with('success', 'User berhasil diupdate');
     }
