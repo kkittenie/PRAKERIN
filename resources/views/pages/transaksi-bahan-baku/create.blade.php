@@ -2,7 +2,7 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Tambah Transaksi Bahan Baku" />
+<x-common.page-breadcrumb pageTitle="Tambah Transaksi Bahan Baku" parentTitle="Transaksi Bahan Baku" :parentUrl="route('transaksi-bahan-baku.index')" />
 
 @if(session('success'))
 

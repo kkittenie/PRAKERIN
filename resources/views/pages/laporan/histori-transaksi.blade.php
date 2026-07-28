@@ -26,20 +26,39 @@
                     <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-1">Riwayat Transaksi</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Lihat semua transaksi yang telah selesai.</p>
                 </div>
-                <form method="GET" action="{{ route('histori-transaksi') }}" class="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full md:w-auto">
+                <form method="GET" action="{{ route('histori-transaksi') }}"
+                      x-data="{
+                          tanggalMulai: '{{ request('tanggal_mulai') }}',
+                          tanggalSelesai: '{{ request('tanggal_selesai') }}',
+                          onMulaiChange() {
+                              if (this.tanggalSelesai && this.tanggalSelesai < this.tanggalMulai) {
+                                  this.tanggalSelesai = this.tanggalMulai;
+                              }
+                          }
+                      }"
+                      class="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full md:w-auto flex-wrap">
                     <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cari</label>
                         <input type="text" name="cari" value="{{ request('cari') }}" placeholder="Kode / Nama pembeli..."
                                class="w-full md:w-56 px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition">
                     </div>
                     <div class="flex-1 md:flex-initial">
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
+                        <select name="status"
+                                class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition">
+                            <option value="semua" {{ request('status', 'semua') === 'semua' ? 'selected' : '' }}>Semua Status</option>
+                            <option value="lunas" {{ request('status') === 'lunas' ? 'selected' : '' }}>Lunas</option>
+                            <option value="belum_bayar" {{ request('status') === 'belum_bayar' || request('status') === 'belum_lunas' ? 'selected' : '' }}>Belum Bayar</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Dari Tanggal</label>
-                        <input type="date" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"
+                        <input type="date" name="tanggal_mulai" x-model="tanggalMulai" @change="onMulaiChange()"
                                class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-850 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition">
                     </div>
                     <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sampai Tanggal</label>
-                        <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}"
+                        <input type="date" name="tanggal_selesai" x-model="tanggalSelesai" :min="tanggalMulai"
                                class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-850 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition">
                     </div>
                     <div class="flex gap-2 justify-end mt-2 md:mt-0">
@@ -68,6 +87,7 @@
                             <th class="text-left px-4 sm:px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Kode Transaksi</th>
                             <th class="text-left px-4 sm:px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden sm:table-cell">Pembeli</th>
                             <th class="text-left px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden lg:table-cell">Tanggal</th>
+                            <th class="text-center px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden md:table-cell">Status</th>
                             <th class="text-right px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden lg:table-cell">Subtotal</th>
                             <th class="text-right px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden xl:table-cell">Diskon</th>
                             <th class="text-right px-4 sm:px-6 py-4 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Total Bayar</th>
@@ -89,6 +109,19 @@
                             </td>
                             <td class="px-4 sm:px-6 py-3.5 font-medium text-gray-800 dark:text-gray-200 hidden sm:table-cell">{{ $trx->nama_pembeli }}</td>
                             <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 hidden lg:table-cell">{{ $trx->created_at->format('d M Y, H:i') }}</td>
+                            <td class="px-6 py-3.5 text-center hidden md:table-cell">
+                                @if(strtolower($trx->status_pembayaran) === 'lunas')
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                                        Lunas
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.414L11 9.586V6z" clip-rule="evenodd" /></svg>
+                                        Belum Bayar
+                                    </span>
+                                @endif
+                            </td>
                             <td class="px-6 py-3.5 text-right text-gray-700 dark:text-gray-300 hidden lg:table-cell">Rp {{ number_format($trx->subtotal, 0, ',', '.') }}</td>
                             <td class="px-6 py-3.5 text-right text-orange-650 dark:text-orange-400 hidden xl:table-cell">Rp {{ number_format($trx->diskon, 0, ',', '.') }}</td>
                             <td class="px-4 sm:px-6 py-3.5 text-right font-bold text-gray-900 dark:text-white">Rp {{ number_format($trx->total_bayar, 0, ',', '.') }}</td>
@@ -108,13 +141,21 @@
                         </tr>
                         <!-- Expandable child row -->
                         <tr x-show="open" x-cloak x-transition class="bg-amber-50/50 dark:bg-amber-950/30 text-xs">
-                            <td colspan="9" class="p-3.5">
+                            <td colspan="10" class="p-3.5">
                                 <div class="grid grid-cols-2 gap-2.5 text-gray-600 dark:text-gray-300">
                                     <div><span class="text-gray-400">Pembeli:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $trx->nama_pembeli }}</span></div>
                                     <div><span class="text-gray-400">Tanggal:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $trx->created_at->format('d M Y, H:i') }}</span></div>
                                     <div><span class="text-gray-400">Subtotal:</span> <span class="font-semibold text-gray-800 dark:text-white">Rp {{ number_format($trx->subtotal, 0, ',', '.') }}</span></div>
                                     <div><span class="text-gray-400">Diskon:</span> <span class="font-semibold text-orange-600 dark:text-orange-400">Rp {{ number_format($trx->diskon, 0, ',', '.') }}</span></div>
                                     <div><span class="text-gray-400">Metode:</span> <span class="font-semibold text-gray-800 dark:text-white capitalize">{{ $trx->metode_pembayaran }}</span></div>
+                                    <div>
+                                        <span class="text-gray-400">Status:</span>
+                                        @if(strtolower($trx->status_pembayaran) === 'lunas')
+                                            <span class="font-semibold text-green-600 dark:text-green-400">Lunas</span>
+                                        @else
+                                            <span class="font-semibold text-red-600 dark:text-red-400">Belum Bayar</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -122,7 +163,7 @@
                     @empty
                     <tbody>
                         <tr>
-                            <td colspan="9" class="px-6 py-16 text-center text-gray-400 dark:text-gray-500">
+                            <td colspan="10" class="px-6 py-16 text-center text-gray-400 dark:text-gray-500">
                                 <div class="flex flex-col items-center gap-3">
                                     <svg class="w-16 h-16 text-gray-200 dark:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                     <p class="text-gray-400 dark:text-gray-500 font-medium">Belum ada transaksi.</p>
@@ -186,10 +227,18 @@
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl p-4">
                             <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Status</p>
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 w-fit">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                                Selesai
-                            </span>
+                            <template x-if="detailData?.status_pembayaran?.toLowerCase() === 'lunas'">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 w-fit">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                                    Lunas
+                                </span>
+                            </template>
+                            <template x-if="detailData?.status_pembayaran?.toLowerCase() !== 'lunas'">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 w-fit">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.414L11 9.586V6z" clip-rule="evenodd" /></svg>
+                                    Belum Bayar
+                                </span>
+                            </template>
                         </div>
                     </div>
 

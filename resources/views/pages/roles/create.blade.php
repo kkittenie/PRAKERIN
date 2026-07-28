@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<x-common.page-breadcrumb pageTitle="Tambah Role" parentTitle="Kelola Role" :parentUrl="route('roles.index')" />
 <form method="POST" action="{{ route('roles.store') }}"
     class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
     @csrf

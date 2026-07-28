@@ -31,7 +31,21 @@ class LaporanController extends Controller
             $query->whereDate('created_at', '>=', $request->tanggal_mulai);
         }
         if ($request->filled('tanggal_selesai')) {
-            $query->whereDate('created_at', '<=', $request->tanggal_selesai);
+            $tglSelesai = $request->tanggal_selesai;
+            if ($request->filled('tanggal_mulai') && $tglSelesai < $request->tanggal_mulai) {
+                $tglSelesai = $request->tanggal_mulai;
+            }
+            $query->whereDate('created_at', '<=', $tglSelesai);
+        }
+
+        // Filter berdasarkan status pembayaran
+        if ($request->filled('status') && $request->status !== 'semua') {
+            $status = strtolower($request->status);
+            if ($status === 'lunas') {
+                $query->whereRaw('LOWER(status_pembayaran) = ?', ['lunas']);
+            } elseif (in_array($status, ['belum_bayar', 'belum_lunas'])) {
+                $query->whereRaw('LOWER(status_pembayaran) LIKE ?', ['%belum%']);
+            }
         }
 
         $transaksiList = $query->paginate(15)->withQueryString();

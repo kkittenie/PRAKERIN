@@ -112,7 +112,7 @@
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Pre-Order</button>
                                 <button @click="filterKetersediaan = 'promo'; halamanProduk = 1"
                                     :class="filterKetersediaan === 'promo' ? 'bg-rose-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Promo %</button>
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Promo</button>
                             </div>
                         </div>
                     </div>
@@ -193,8 +193,7 @@
                 <!-- Product Pagination Bar -->
                 <div x-show="itemsPerPage !== 'semua' && totalHalamanProduk > 1" class="flex flex-wrap items-center justify-between bg-white dark:bg-gray-900 px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-800 shrink-0 text-xs gap-2">
                     <span class="text-gray-500 dark:text-gray-400">
-                        Menampilkan <span class="font-bold text-gray-800 dark:text-white" x-text="((halamanProduk - 1) * parseInt(itemsPerPage)) + 1"></span> -
-                        <span class="font-bold text-gray-800 dark:text-white" x-text="Math.min(halamanProduk * parseInt(itemsPerPage), semuaProdukTersaring.length)"></span> dari
+                        Menampilkan <span class="font-bold text-gray-800 dark:text-white" x-text="produkDitampilkan.length"></span> dari
                         <span class="font-bold text-gray-800 dark:text-white" x-text="semuaProdukTersaring.length"></span> produk
                     </span>
                     <div class="flex items-center gap-1.5">
@@ -629,7 +628,7 @@
         class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-3xl overflow-hidden border border-gray-100 dark:border-gray-800">
         <div class="bg-slate-900 dark:bg-gray-950 text-white p-5 flex items-center justify-between">
             <div>
-                <h3 class="font-extrabold text-base">Daftar Pesanan Ditahan / Kredit</h3>
+                <h3 class="font-extrabold text-base">Daftar Pesanan Ditahan</h3>
                 <p class="text-slate-400 dark:text-gray-400 text-xs mt-0.5">Pesanan belum lunas yang menunggu pembayaran.</p>
             </div>
             <button @click="modalDitahanTerbuka = false"
@@ -672,10 +671,15 @@
                             x-text="formatRupiah(pesanan.total)"></span>
                     </div>
                     <div class="flex items-center gap-2 flex-wrap border-t border-gray-100 dark:border-gray-800 pt-3">
-                        <button @click="cetakOrderDapurDitahan(pesanan)"
+                        <button @click="cetakStrukDitahan(pesanan, 'pelanggan')"
+                            class="px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            Struk
+                        </button>
+                        <button @click="cetakStrukDitahan(pesanan, 'dapur')"
                             class="px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                            Cetak Tiket Produksi
+                            Tiket Produksi
                         </button>
                         <button @click="mulaiLunaskan(pesanan)"
                             class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-lg transition shadow-xs flex items-center gap-1.5">
@@ -785,28 +789,24 @@
         </template>
         <!-- Tombol Cetak Struk -->
         <div class="w-full flex flex-col gap-3">
-            <template x-if="suksesData.status_pembayaran === 'Lunas'">
-                <div class="grid grid-cols-2 gap-3">
-                    <button @click="cetakStruk('pelanggan')"
-                        class="py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                        </svg>
-                        Struk Pelanggan
-                    </button>
-                    <button @click="cetakStruk('dapur')"
-                        class="py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                        </svg>
-                        Tiket Produksi
-                    </button>
-                </div>
-            </template>
-            <template x-if="suksesData.status_pembayaran === 'Belum Lunas'">
-            </template>
+            <div class="grid grid-cols-2 gap-3">
+                <button @click="cetakStruk('pelanggan')"
+                    class="py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Struk Pelanggan</span>
+                </button>
+                <button @click="cetakStruk('dapur')"
+                    class="py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Tiket Produksi</span>
+                </button>
+            </div>
         </div>
         <button @click="tutupModalSukses()"
             class="w-full py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl transition text-sm"
@@ -1401,7 +1401,7 @@
                 this.$nextTick(() => { if (this.$refs.inputJumlahDiterima) this.$refs.inputJumlahDiterima.focus(); });
             },
 
-            cetakOrderDapurDitahan(pesanan) {
+            cetakStrukDitahan(pesanan, jenis = 'dapur') {
                 this.suksesData = {
                     nama_pembeli: pesanan.nama_pembeli,
                     keranjang: JSON.parse(JSON.stringify(pesanan.item_pesanan)),
@@ -1419,7 +1419,7 @@
                     tanggal: new Date(pesanan.created_at).toLocaleString('id-ID'),
                     kode_transaksi: pesanan.transaksi ? pesanan.transaksi.kode_transaksi : ''
                 };
-                this.cetakStruk('dapur');
+                this.cetakStruk(jenis);
             },
 
             bersihkanKeranjang() {
