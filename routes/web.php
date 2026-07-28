@@ -16,11 +16,8 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\TransaksiBahanBakuController;
 use App\Http\Controllers\ActivityLogController;
-<<<<<<< HEAD
 use App\Http\Controllers\PengaturanMemberController;
-=======
 use App\Http\Controllers\SatuanController;
->>>>>>> 0e4f7f4a789d65703022f61dadecc8c0336cbd94
 
 Route::middleware(['auth'])->group(function () {
 
