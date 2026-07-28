@@ -98,11 +98,11 @@
                 <td class="py-3.5 hidden sm:table-cell text-gray-500">{{ $bahanBaku->firstItem() + $loop->index }}</td>
                 <td class="py-3.5 font-semibold text-gray-900 dark:text-white">
                     {{ $item->nama_bahan }}
-                    <div class="md:hidden text-[11px] text-gray-400 font-normal mt-0.5">{{ $item->satuan }}</div>
+                    <div class="md:hidden text-[11px] text-gray-400 font-normal mt-0.5">{{ optional($item->satuan)->nama ?? '-' }}</div>
                 </td>
                 <td class="py-3.5 hidden md:table-cell text-center">
                     <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-400">
-                        {{ $item->satuan }}
+                        {{ optional($item->satuan)->nama ?? '-' }}
                     </span>
                 </td>
                 <td class="py-3.5 text-center">
@@ -131,7 +131,7 @@
             <tr x-show="open" x-cloak x-transition class="bg-amber-50/40 dark:bg-amber-950/20 text-xs">
                 <td colspan="6" class="p-3.5">
                     <div class="grid grid-cols-2 gap-2.5 text-gray-600 dark:text-gray-300">
-                        <div><span class="text-gray-400">Satuan:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->satuan }}</span></div>
+                        <div><span class="text-gray-400">Satuan:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ optional($item->satuan)->nama ?? '-' }}</span></div>
                         <div><span class="text-gray-400">Stok Minimum:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ rtrim(rtrim(number_format($item->stok_minimum, 2, '.', ''), '0'), '.') }}</span></div>
                     </div>
                 </td>

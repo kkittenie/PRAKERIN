@@ -16,6 +16,7 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\TransaksiBahanBakuController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\SatuanController;
 
 Route::middleware(['auth'])->group(function () {
 
@@ -72,6 +73,14 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('transaksi-bahan-baku', TransaksiBahanBakuController::class)
         ->only(['index', 'create', 'store', 'show',])
         ->middleware('permission:lihat_stok|tambah_stok');
+
+    Route::resource('satuan', SatuanController::class)
+        ->middleware('permission:lihat_satuan|tambah_satuan|edit_satuan|hapus_satuan');
+
+    Route::post('/satuan/ajax', [SatuanController::class, 'storeAjax'])
+        ->name('satuan.storeAjax')
+        ->middleware('permission:tambah_satuan');
+
 
     // Promo Produk
     Route::middleware('permission:lihat_promo')->group(function () {

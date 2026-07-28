@@ -8,7 +8,7 @@
 
     <x-common.component-card title="Form Tambah Bahan Baku">
 
-        <form action="{{ route('bahan-baku.update', $bahan_baku->id) }}" method="POST">
+        <form action="{{ route('bahan-baku.update', $bahanBaku->id) }}" method="POST">
             @csrf
             @method('PUT')
 
@@ -23,7 +23,7 @@
                     <input
                         type="text"
                         name="nama_bahan"
-                        value="{{ old('nama_bahan', $bahan_baku->nama_bahan) }}"
+                        value="{{ old('nama_bahan', $bahanBaku->nama_bahan) }}"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('nama_bahan')
@@ -32,27 +32,28 @@
                 </div>
 
                 {{-- Satuan --}}
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Satuan <span class="text-red-500">*</span>
-                    </label>
+                <div class="flex gap-2">
 
                     <select
-                        name="satuan"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        id="satuan_id"
+                        name="satuan_id"
+                        class="flex-1 rounded-lg border">
 
-                        <option value="">Pilih Satuan</option>
-                        <option value="kg" {{ old('satuan')=='kg' ? 'selected':'' }}>Kg</option>
-                        <option value="gram" {{ old('satuan')=='gram' ? 'selected':'' }}>Gram</option>
-                        <option value="liter" {{ old('satuan')=='liter' ? 'selected':'' }}>Liter</option>
-                        <option value="ml" {{ old('satuan')=='ml' ? 'selected':'' }}>mL</option>
-                        <option value="pcs" {{ old('satuan')=='pcs' ? 'selected':'' }}>Pcs</option>
+                        @foreach($satuan as $item)
+                            <option value="{{ $item->id }}">
+                                {{ $item->nama }}
+                            </option>
+                        @endforeach
 
                     </select>
 
-                    @error('satuan')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
+                    <button
+                        type="button"
+                        id="btnTambahSatuan"
+                        class="w-12 rounded-lg bg-brand-500 text-white text-xl">
+                        +
+                    </button>
+
                 </div>
 
                 {{-- Stok --}}
@@ -65,7 +66,7 @@
                         type="number"
                         step="0.01"
                         name="stok"
-                        value="{{ old('stok', $bahan_baku->stok) }}"
+                        value="{{ old('stok', $bahanBaku->stok) }}"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('stok')
@@ -83,7 +84,7 @@
                         type="number"
                         step="0.01"
                         name="stok_minimum"
-                        value="{{ old('stok_minimum', $bahan_baku->stok_minimum) }}"
+                        value="{{ old('stok_minimum', $bahanBaku->stok_minimum) }}"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('stok_minimum')
