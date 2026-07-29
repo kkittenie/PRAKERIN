@@ -2,139 +2,152 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Tambah Aturan Member" />
+<x-common.page-breadcrumb pageTitle="Tambah Aturan Member" parentTitle="Pengaturan Member" :parentUrl="route('pengaturan-member.index')" />
 
-<div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+<div class="space-y-6">
 
-    <form action="{{ route('pengaturan-member.store') }}" method="POST">
-        @csrf
+    <x-common.component-card title="Form Tambah Aturan Member">
 
-        <div class="p-6 space-y-6">
+        <form action="{{ route('pengaturan-member.store') }}" method="POST" x-data="{
+            belanjaDisplay: '{{ old('minimal_belanja') ? number_format(old('minimal_belanja'), 0, ',', '.') : '' }}',
+            formatRupiahInput(val) {
+                let number = (val || '').toString().replace(/\D/g, '');
+                return number ? new Intl.NumberFormat('id-ID').format(number) : '';
+            },
+            getRawNumber(val) {
+                return (val || '').toString().replace(/\D/g, '') || '0';
+            }
+        }">
+            @csrf
 
-            {{-- Nama Aturan --}}
-            <div>
-                <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Nama Aturan
-                </label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
-                <input
-                    type="text"
-                    name="nama_aturan"
-                    class="w-full rounded-xl border border-amber-200 bg-amber-50/40
-                           px-4 py-2.5
-                           text-gray-800 dark:text-white
-                           placeholder-gray-400
-                           focus:border-amber-500 focus:ring-2 focus:ring-amber-200
-                           dark:bg-gray-900 dark:border-gray-700
-                           transition duration-200"
-                    required>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {{-- Nama Aturan --}}
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Nama Pengaturan <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="nama_aturan"
+                        value="{{ old('nama_aturan') }}"
+                        placeholder="Contoh: Poin Belanja Harian, Poin Member Silver"
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
+                        required>
+                    @error('nama_aturan')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
 
                 {{-- Minimal Belanja --}}
                 <div>
-                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Belanja Setiap (Rp)
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Belanja Setiap (Rp) <span class="text-red-500">*</span>
                     </label>
-
-                    <input
-                        type="number"
-                        name="minimal_belanja"
-                        class="w-full rounded-xl border border-amber-200 bg-amber-50/40
-                               px-4 py-2.5
-                               text-gray-800 dark:text-white
-                               focus:border-amber-500 focus:ring-2 focus:ring-amber-200
-                               dark:bg-gray-900 dark:border-gray-700
-                               transition duration-200"
-                        required>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3 text-gray-500 font-bold text-sm">Rp</span>
+                        <input
+                            type="text"
+                            x-model="belanjaDisplay"
+                            @input="belanjaDisplay = formatRupiahInput($event.target.value)"
+                            placeholder="50.000"
+                            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-12 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 font-semibold"
+                            required>
+                        <input type="hidden" name="minimal_belanja" :value="getRawNumber(belanjaDisplay)">
+                    </div>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Kelipatan belanja agar member mendapat poin</span>
+                    @error('minimal_belanja')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
                 </div>
 
                 {{-- Poin --}}
                 <div>
-                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Poin Didapat
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Poin Didapat <span class="text-red-500">*</span>
                     </label>
-
                     <input
                         type="number"
                         name="poin"
-                        class="w-full rounded-xl border border-amber-200 bg-amber-50/40
-                               px-4 py-2.5
-                               text-gray-800 dark:text-white
-                               focus:border-amber-500 focus:ring-2 focus:ring-amber-200
-                               dark:bg-gray-900 dark:border-gray-700
-                               transition duration-200"
+                        min="0"
+                        value="{{ old('poin') }}"
+                        placeholder="Contoh: 1"
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
                         required>
+                    @error('poin')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
                 </div>
 
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                {{-- Mulai --}}
+                {{-- Tanggal Mulai --}}
                 <div>
-                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Mulai Berlaku
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Mulai Berlaku <span class="text-red-500">*</span>
                     </label>
-
                     <input
                         type="datetime-local"
                         name="mulai_berlaku"
-                        class="w-full rounded-xl border border-amber-200 bg-amber-50/40
-                               px-4 py-2.5
-                               text-gray-800 dark:text-white
-                               focus:border-amber-500 focus:ring-2 focus:ring-amber-200
-                               dark:bg-gray-900 dark:border-gray-700
-                               transition duration-200"
+                        value="{{ old('mulai_berlaku', now()->format('Y-m-d\TH:i')) }}"
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
                         required>
+                    @error('mulai_berlaku')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
                 </div>
 
-                {{-- Selesai --}}
+                {{-- Tanggal Selesai --}}
                 <div>
-                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Selesai Berlaku
                     </label>
-
                     <input
                         type="datetime-local"
                         name="selesai_berlaku"
-                        class="w-full rounded-xl border border-amber-200 bg-amber-50/40
-                               px-4 py-2.5
-                               text-gray-800 dark:text-white
-                               focus:border-amber-500 focus:ring-2 focus:ring-amber-200
-                               dark:bg-gray-900 dark:border-gray-700
-                               transition duration-200">
+                        value="{{ old('selesai_berlaku') }}"
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Kosongkan jika aturan berlaku selamanya</span>
+                    @error('selesai_berlaku')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
+                {{-- Status Aktif --}}
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Status Aturan
+                    </label>
+                    <label class="flex items-center gap-3 h-12 cursor-pointer">
+                        <input type="hidden" name="status_aktif" value="0">
+                        <input
+                            type="checkbox"
+                            name="status_aktif"
+                            value="1"
+                            class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                            {{ old('status_aktif', '1') == '1' ? 'checked' : '' }}>
+                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Aturan Aktif</span>
+                    </label>
+                    @error('status_aktif')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
                 </div>
 
             </div>
 
-        </div>
+            {{-- Tombol Aksi --}}
+            <div class="flex justify-end gap-3">
+                <a href="{{ route('pengaturan-member.index') }}"
+                   class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
+                    Batal
+                </a>
+                <button type="submit"
+                    class="rounded-lg bg-brand-500 px-5 py-2 text-white hover:bg-brand-600">
+                    Simpan
+                </button>
+            </div>
 
-        <div class="flex justify-end gap-3 p-6 border-t border-gray-100 dark:border-gray-800">
+        </form>
 
-            <a href="{{ route('pengaturan-member.index') }}"
-               class="px-5 py-2.5 rounded-xl
-                      border border-amber-200
-                      bg-amber-50 hover:bg-amber-100
-                      text-amber-800 font-medium
-                      transition
-                      dark:bg-gray-800 dark:border-gray-700 dark:text-white">
-                Batal
-            </a>
-
-            <button
-                type="submit"
-                class="px-5 py-2.5 rounded-xl
-                       bg-amber-700 hover:bg-amber-800
-                       text-white font-semibold
-                       transition shadow-sm">
-                Simpan
-            </button>
-
-        </div>
-
-    </form>
+    </x-common.component-card>
 
 </div>
 

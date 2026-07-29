@@ -18,8 +18,8 @@ class MenuHelper
                 'name' => 'Manajemen Akses',
                 'icon' => 'manajemen-akses',
                 'subItems' => [
-                    ['name' => 'Kelola Pengguna', 'path' => '/users', 'permission' => 'lihat_user'],
                     ['name' => 'Kelola Role', 'path' => '/roles', 'permission' => 'lihat_role'],
+                    ['name' => 'Kelola Pengguna', 'path' => '/users', 'permission' => 'lihat_user'],
                     ['name' => 'Kelola Pegawai', 'path' => '/pegawai', 'permission' => 'lihat_pegawai'],
                 ],
             ],
@@ -29,20 +29,20 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'Kategori Produk', 'path' => '/kategori-produk', 'permission' => 'lihat_kategori_produk'],
                     ['name' => 'Produk', 'path' => '/produk', 'permission' => 'lihat_produk'],
+                    ['name' => 'Satuan', 'path' => '/satuan', 'permission' => 'lihat_satuan'],
                     ['name' => 'Bahan Baku', 'path' => '/bahan-baku', 'permission' => 'lihat_stok'],
                     ['name' => 'Transaksi Bahan Baku', 'path' => '/transaksi-bahan-baku', 'permission' => 'lihat_stok'],
                     ['name' => 'Produksi', 'path' => '/produksi', 'permission' => 'lihat_produksi'],
                     ['name' => 'Promo Produk', 'path' => '/promo', 'permission' => 'lihat_promo'],
-                    ['name' => 'Satuan', 'path' => '/satuan', 'permission' => 'lihat_satuan'],
                 ],
             ],
             [
                 'icon' => 'ecommerce',
                 'name' => 'Transaksi',
                 'subItems' => [
-                    ['name' => 'Kasir', 'path' => '/transaksi', 'permission' => 'lihat_transaksi'],
-                    ['name' => 'Member', 'path' => '/member', 'permission' => 'lihat_member'],
                     ['name' => 'Pengaturan Member', 'path' => '/pengaturan-member', 'permission' => 'lihat_member'],
+                    ['name' => 'Member', 'path' => '/member', 'permission' => 'lihat_member'],
+                    ['name' => 'Kasir', 'path' => '/transaksi', 'permission' => 'lihat_transaksi'],
                 ],
             ],
             [
