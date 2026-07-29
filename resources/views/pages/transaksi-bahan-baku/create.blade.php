@@ -83,30 +83,21 @@
 
         <select
             name="bahan_baku_id"
+            id="bahanBakuSelect"
             required
             class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         >
-
-            <option value="">
-
-                Pilih Bahan Baku
-
-            </option>
-
+            <option value="">Pilih Bahan Baku</option>
 
             @foreach($bahanBaku as $item)
-
                 <option
                     value="{{ $item->id }}"
+                    data-satuan="{{ $item->satuan?->nama ?? '-' }}"
                     {{ old('bahan_baku_id') == $item->id ? 'selected' : '' }}
                 >
-
                     {{ $item->nama_bahan }}
-
                 </option>
-
             @endforeach
-
         </select>
 
         @error('bahan_baku_id')
@@ -119,36 +110,31 @@
 
     </div>
 
-
     {{-- Jumlah --}}
     <div>
-
         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-
-            Jumlah
-
-            <span class="text-red-500">*</span>
-
+            Jumlah <span class="text-red-500">*</span>
         </label>
 
-        <input
-            type="number"
-            name="jumlah"
-            step="0.01"
-            min="0.01"
-            value="{{ old('jumlah') }}"
-            required
-            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-        >
+        <div class="flex gap-2">
+            <input
+                type="number"
+                name="jumlah"
+                step="0.01"
+                min="0.01"
+                value="{{ old('jumlah') }}"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            >
+
+            <span id="satuanJumlah" class="flex min-w-[64px] items-center justify-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                -
+            </span>
+        </div>
 
         @error('jumlah')
-
-            <p class="mt-1 text-sm text-red-500">
-                {{ $message }}
-            </p>
-
+            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
         @enderror
-
     </div>
 
 
@@ -331,6 +317,16 @@ function hitungTotal()
 
 }
 
+const bahanBakuSelect = document.getElementById('bahanBakuSelect');
+const satuanJumlah = document.getElementById('satuanJumlah');
+
+function tampilkanSatuan() {
+    const selected = bahanBakuSelect.options[bahanBakuSelect.selectedIndex];
+    satuanJumlah.textContent = (selected && selected.dataset.satuan) ? selected.dataset.satuan : '-';
+}
+
+bahanBakuSelect.addEventListener('change', tampilkanSatuan);
+window.addEventListener('load', tampilkanSatuan);
 
 inputJumlah.addEventListener(
     'input',

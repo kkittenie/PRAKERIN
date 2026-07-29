@@ -48,9 +48,14 @@ class ProduksiController extends Controller
     {
         $request->validate([
             'tanggal' => 'required|date',
+            'jam_produksi' => 'required|date_format:H:i',
             'produk_id' => 'required|exists:produks,id',
             'jumlah_hasil' => 'required|integer|min:1',
             'keterangan' => 'nullable|string',
+
+            'kadaluarsa_tipe' => 'required|in:tanggal,jam',
+            'kadaluarsa_tanggal' => 'required_if:kadaluarsa_tipe,tanggal|nullable|date|after_or_equal:tanggal',
+            'kadaluarsa_jam' => 'required_if:kadaluarsa_tipe,jam|nullable|integer|min:1',
 
             'bahan_baku_id' => 'required|array|min:1',
 
@@ -92,13 +97,17 @@ class ProduksiController extends Controller
         $produksi = null;
         DB::transaction(function () use ($request, &$produksi) {
 
-            $produksi = Produksi::create([
-                'tanggal' => $request->tanggal,
-                'produk_id' => $request->produk_id,
-                'jumlah_hasil' => $request->jumlah_hasil,
-                'user_id' => Auth::id(),
-                'keterangan' => $request->keterangan,
-            ]);
+        $produksi = Produksi::create([
+            'tanggal' => $request->tanggal,
+            'jam_produksi' => $request->jam_produksi,
+            'produk_id' => $request->produk_id,
+            'jumlah_hasil' => $request->jumlah_hasil,
+            'user_id' => Auth::id(),
+            'keterangan' => $request->keterangan,
+            'kadaluarsa_tipe' => $request->kadaluarsa_tipe,
+            'kadaluarsa_tanggal' => $request->kadaluarsa_tipe === 'tanggal' ? $request->kadaluarsa_tanggal : null,
+            'kadaluarsa_jam' => $request->kadaluarsa_tipe === 'jam' ? $request->kadaluarsa_jam : null,
+        ]);
 
             foreach ($request->bahan_baku_id as $i => $id) {
 
@@ -159,7 +168,7 @@ class ProduksiController extends Controller
         $produksi->load([
             'produk',
             'user',
-            'detailBahan.bahanBaku'
+            'detailBahan.bahanBaku.satuan'
         ]);
 
         return view(

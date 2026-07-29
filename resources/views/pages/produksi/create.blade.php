@@ -14,7 +14,7 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-    {{-- Tanggal --}}
+   {{-- Tanggal --}}
     <div>
         <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
             Tanggal Produksi <span class="text-red-500">*</span>
@@ -25,8 +25,25 @@
             name="tanggal"
             value="{{ old('tanggal', date('Y-m-d')) }}"
             class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-      
-            @error('tanggal')
+
+        @error('tanggal')
+            <small class="text-red-500">{{ $message }}</small>
+        @enderror
+    </div>
+
+    {{-- Jam Produksi --}}
+    <div>
+        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+            Jam Produksi <span class="text-red-500">*</span>
+        </label>
+
+        <input
+            type="time"
+            name="jam_produksi"
+            value="{{ old('jam_produksi', date('H:i')) }}"
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+
+        @error('jam_produksi')
             <small class="text-red-500">{{ $message }}</small>
         @enderror
     </div>
@@ -62,6 +79,55 @@
             <small class="text-red-500">{{ $message }}</small>
         @enderror
 
+    </div>
+
+    {{-- Tipe Kadaluarsa --}}
+    <div class="md:col-span-2">
+        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+            Kadaluarsa Berdasarkan <span class="text-red-500">*</span>
+        </label>
+
+        <div class="mb-3 flex gap-6">
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <input type="radio" name="kadaluarsa_tipe" value="tanggal" id="tipeTanggal"
+                    {{ old('kadaluarsa_tipe', 'tanggal') == 'tanggal' ? 'checked' : '' }}>
+                Tanggal
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <input type="radio" name="kadaluarsa_tipe" value="jam" id="tipeJam"
+                    {{ old('kadaluarsa_tipe') == 'jam' ? 'checked' : '' }}>
+                Jam (dari waktu produksi)
+            </label>
+        </div>
+
+        <div id="inputKadaluarsaTanggal">
+            <input
+                type="date"
+                name="kadaluarsa_tanggal"
+                value="{{ old('kadaluarsa_tanggal') }}"
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+
+            @error('kadaluarsa_tanggal')
+                <small class="text-red-500">{{ $message }}</small>
+            @enderror
+        </div>
+
+        <div id="inputKadaluarsaJam" class="hidden">
+            <div class="flex items-center gap-2">
+                <input
+                    type="number"
+                    name="kadaluarsa_jam"
+                    min="1"
+                    placeholder="Contoh: 24"
+                    value="{{ old('kadaluarsa_jam') }}"
+                    class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                <span class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">jam</span>
+            </div>
+
+            @error('kadaluarsa_jam')
+                <small class="text-red-500">{{ $message }}</small>
+            @enderror
+        </div>
     </div>
 
 </div>
@@ -390,6 +456,25 @@ function pilihBahan(
     hasilSearch.classList.add('hidden');
 
 }
+
+    const tipeTanggal = document.getElementById('tipeTanggal');
+    const tipeJam = document.getElementById('tipeJam');
+    const inputTanggal = document.getElementById('inputKadaluarsaTanggal');
+    const inputJam = document.getElementById('inputKadaluarsaJam');
+
+    function toggleKadaluarsa() {
+        if (tipeJam.checked) {
+            inputTanggal.classList.add('hidden');
+            inputJam.classList.remove('hidden');
+        } else {
+            inputTanggal.classList.remove('hidden');
+            inputJam.classList.add('hidden');
+        }
+    }
+
+    tipeTanggal.addEventListener('change', toggleKadaluarsa);
+    tipeJam.addEventListener('change', toggleKadaluarsa);
+    window.addEventListener('load', toggleKadaluarsa);
 
 </script>
 

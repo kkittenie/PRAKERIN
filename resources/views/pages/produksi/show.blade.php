@@ -25,6 +25,36 @@ Tanggal Produksi
 <div>
 
 <p class="text-sm text-gray-500 dark:text-gray-400">
+Jam Produksi
+</p>
+
+<p class="font-semibold text-gray-800 dark:text-white">
+{{ $produksi->jam_produksi ? \Carbon\Carbon::parse($produksi->jam_produksi)->format('H:i') : '-' }}
+</p>
+
+</div>
+
+<div>
+
+<p class="text-sm text-gray-500 dark:text-gray-400">
+Kadaluarsa
+</p>
+
+<p class="font-semibold text-red-600 dark:text-red-400">
+@if($produksi->kadaluarsa_tipe === 'jam')
+    {{ $produksi->kadaluarsa_jam }} jam setelah produksi
+@elseif($produksi->kadaluarsa_tanggal)
+    {{ \Carbon\Carbon::parse($produksi->kadaluarsa_tanggal)->format('d-m-Y') }}
+@else
+    -
+@endif
+</p>
+
+</div>
+
+<div>
+
+<p class="text-sm text-gray-500 dark:text-gray-400">
 Produk
 </p>
 
@@ -93,7 +123,7 @@ Keterangan
 <tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
 <td class="py-4">{{ $loop->iteration }}</td>
 <td class="font-medium text-gray-800 dark:text-white">{{ $item->bahanBaku->nama_bahan }}</td>
-<td class="text-center font-bold text-amber-700 dark:text-amber-400">{{ $item->jumlah_terpakai }} {{ $item->bahanBaku->satuan }}</td>
+<td class="text-center font-bold text-amber-700 dark:text-amber-400">{{ $item->jumlah_terpakai }} {{ $item->bahanBaku->satuan?->nama ?? '-' }}</td>
 </tr>
 @endforeach
 </tbody>
@@ -106,7 +136,7 @@ Keterangan
 <div class="py-3 flex items-center justify-between">
     <span class="font-bold text-gray-800 dark:text-white text-sm">{{ $item->bahanBaku->nama_bahan }}</span>
     <span class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
-        {{ $item->jumlah_terpakai }} {{ $item->bahanBaku->satuan }}
+        {{ $item->jumlah_terpakai }} {{ $item->bahanBaku->satuan?->nama ?? '-' }}
     </span>
 </div>
 @endforeach

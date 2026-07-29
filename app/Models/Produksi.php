@@ -10,10 +10,14 @@ class Produksi extends Model
 
     protected $fillable = [
         'tanggal',
+        'jam_produksi',
         'produk_id',
         'jumlah_hasil',
         'user_id',
         'keterangan',
+        'kadaluarsa_tipe',
+        'kadaluarsa_tanggal',
+        'kadaluarsa_jam',
     ];
 
     public function produk()

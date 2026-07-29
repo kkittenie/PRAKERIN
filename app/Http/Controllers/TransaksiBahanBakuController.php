@@ -62,7 +62,7 @@ class TransaksiBahanBakuController extends Controller
 
     public function create()
     {
-        $bahanBaku = BahanBaku::orderBy(
+        $bahanBaku = BahanBaku::with('satuan')->orderBy(
             'nama_bahan'
         )->get();
 
