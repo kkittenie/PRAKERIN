@@ -81,7 +81,7 @@
                 $status = 'Kedaluwarsa';
                 $badgeColor = 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400';
             } else {
-                $status = 'Aktif';
+                $status = 'status_aktif';
                 $badgeColor = 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400';
             }
 

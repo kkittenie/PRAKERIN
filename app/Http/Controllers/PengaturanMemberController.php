@@ -7,47 +7,130 @@ use App\Models\PengaturanMember;
 
 class PengaturanMemberController extends Controller
 {
-    public function edit()
+    public function index(Request $request)
     {
-        $pengaturan = PengaturanMember::first();
+        $query = PengaturanMember::query();
 
-        if (!$pengaturan) {
-            $pengaturan = PengaturanMember::create([
-                'aktif' => true,
-                'minimal_belanja' => 10000,
-                'poin' => 10,
-            ]);
+        if ($request->filled('search')) {
+            $query->where('nama_aturan', 'like', '%' . $request->search . '%');
         }
 
-        return view('pages.pengaturan-member.edit', compact('pengaturan'));
+        $pengaturanMember = $query
+            ->latest()
+            ->paginate(10);
+        
+        return view('pages.pengaturan-member.index', compact('pengaturanMember'));
     }
 
-    public function update(Request $request)
+    public function create()
+    {
+        return view('pages.pengaturan-member.create');
+    }
+
+    public function store(Request $request)
     {
         $request->validate([
-            'aktif' => 'required|boolean',
-            'minimal_belanja' => 'required|integer|min:1',
+            'nama_aturan' => 'required|string|max:255',
+            'minimal_belanja' => 'required|numeric|min:1',
             'poin' => 'required|integer|min:1',
-        ]); 
+            'mulai_berlaku' => 'required|date',
+            'selesai_berlaku' => 'nullable|date|after_or_equal:mulai_berlaku',
+        ]);
 
-        $pengaturan = PengaturanMember::first();
-
-        $pengaturan->update([
-            'aktif' => $request->input('aktif'),
-            'minimal_belanja' => $request->input('minimal_belanja'),
-            'poin' => $request->input('poin'),
+        $pengaturanMember = PengaturanMember::create([
+            'nama_aturan' => $request->nama_aturan,
+            'minimal_belanja' => $request->minimal_belanja,
+            'poin' => $request->poin,
+            'mulai_berlaku' => $request->mulai_berlaku,
+            'selesai_berlaku' => $request->selesai_berlaku,
+            'status_aktif' => true, // Set status aktif ke true secara default
         ]);
 
         activity()
             ->causedBy(auth()->user())
-            ->performedOn($pengaturan)
-            ->withProperties([
-                'aktif' => $request->input('aktif'),
-                'minimal_belanja' => $request->input('minimal_belanja'),
-                'poin' => $request->input('poin'),
-            ])
-            ->log('Pengaturan Member diperbarui');
+            ->performedOn($pengaturanMember)
+            ->withProperties($pengaturanMember->toArray())
+            ->log('Menambahkan pengaturan member baru: ' . $pengaturanMember->nama_aturan);
 
-        return back()->with('success', 'Pengaturan Member berhasil diperbarui.');
+
+        return redirect()
+            ->route('pengaturan-member.index')
+            ->with('success', 'Pengaturan member berhasil ditambahkan.');
+    }
+
+    public function edit(PengaturanMember $pengaturanMember, $id)
+    {
+        $pengaturanMember = PengaturanMember::findOrFail($id);
+        return view('pages.pengaturan-member.edit', compact('pengaturanMember'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'nama_aturan' => 'required|string|max:255',
+            'minimal_belanja' => 'required|numeric|min:1',
+            'poin' => 'required|integer|min:1',
+            'mulai_berlaku' => 'required|date',
+            'selesai_berlaku' => 'nullable|date|after_or_equal:mulai_berlaku',
+        ]);
+
+        $pengaturanMember = PengaturanMember::findOrFail($id);
+
+        $pengaturanMember->update([
+            'nama_aturan' => $request->nama_aturan,
+            'minimal_belanja' => $request->minimal_belanja,
+            'poin' => $request->poin,
+            'mulai_berlaku' => $request->mulai_berlaku,
+            'selesai_berlaku' => $request->selesai_berlaku,
+        ]);
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($pengaturanMember)
+            ->withProperties($pengaturanMember->toArray())
+            ->log('Memperbarui pengaturan member: ' . $pengaturanMember->nama_aturan);
+
+        return redirect()
+            ->route('pengaturan-member.index')
+            ->with('success', 'Pengaturan member berhasil diperbarui.');
+    }
+
+    public function destroy(PengaturanMember $pengaturanMember, $id)
+    {
+        $pengaturanMember = Pengaturanmember::findOrFail($id);
+
+        $namaAturan = $pengaturanMember->nama_aturan; // Simpan nama aturan sebelum dihapus
+        $pengaturanMember->delete();
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($pengaturanMember)
+            ->withProperties($pengaturanMember->toArray())
+            ->log('Menghapus pengaturan member: ' . $pengaturanMember->nama_aturan);
+
+        return back()->with('success', 'Pengaturan member berhasil dihapus.');
+    }
+
+    public function toggleStatus(PengaturanMember $pengaturanMember, $id)
+    {
+        $pengaturanMember = PengaturanMember::findOrFail($id);
+
+        $pengaturanMember->status_aktif = ! $pengaturanMember->status_aktif;
+        $pengaturanMember->save();
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($pengaturanMember)
+            ->withProperties([
+                'status_aktif' => $pengaturanMember->status_aktif,
+            ])
+            ->log(
+                'Mengubah status pengaturan member: ' .
+                $pengaturanMember->nama_aturan .
+                ' menjadi ' .
+                ($pengaturanMember->status_aktif ? 'Aktif' : 'Nonaktif')
+            );
+
+        return back()->with('success', 'Status pengaturan member berhasil diubah.');
     }
 }

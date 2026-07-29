@@ -160,10 +160,34 @@ Route::middleware(['auth'])->group(function () {
         return view('pages.ui-elements.videos', ['title' => 'Videos']);
     })->name('videos');
 
-    // permision edit member
+    // pengaturan member
+    Route::middleware('permission:lihat_member')->group(function () {
+        Route::get('/pengaturan-member', [PengaturanMemberController::class, 'index'])
+            ->name('pengaturan-member.index');
+    });
+
+    Route::middleware('permission:tambah_member')->group(function () {
+        Route::get('/pengaturan-member/tambah', [PengaturanMemberController::class, 'create'])
+            ->name('pengaturan-member.create');
+
+        Route::post('/pengaturan-member', [PengaturanMemberController::class, 'store'])
+            ->name('pengaturan-member.store');
+    });
+
     Route::middleware('permission:edit_member')->group(function () {
-        Route::get('/pengaturan-member', [PengaturanMemberController::class, 'edit'])->name('pengaturan-member.edit');
-        Route::put('/pengaturan-member', [PengaturanMemberController::class, 'update'])->name('pengaturan-member.update');
+        Route::get('/pengaturan-member/{id}/ubah', [PengaturanMemberController::class, 'edit'])
+            ->name('pengaturan-member.edit');
+
+        Route::put('/pengaturan-member/{id}', [PengaturanMemberController::class, 'update'])
+            ->name('pengaturan-member.update');
+
+        Route::patch('/pengaturan-member/{id}/toggle-status', [PengaturanMemberController::class, 'toggleStatus'])
+            ->name('pengaturan-member.toggle-status');
+    });
+
+    Route::middleware('permission:hapus_member')->group(function () {
+        Route::delete('/pengaturan-member/{id}', [PengaturanMemberController::class, 'destroy'])
+            ->name('pengaturan-member.destroy');
     });
 
     // Activity Log

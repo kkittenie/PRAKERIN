@@ -402,7 +402,7 @@ class TransaksiKasirController extends Controller
 
             //hitung poin member
             if ($transaksi->member_id) {
-                $pengaturan = PengaturanMember::where('aktif', true)->first();
+                $pengaturan = PengaturanMember::where('status_aktif', true)->first();
 
                 if ($pengaturan) {
                     $kelipatan = floor(

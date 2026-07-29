@@ -11,18 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pengaturan_members', function (Blueprint $table) {
+        Schema::create('pengaturan_member', function (Blueprint $table) {
             $table->id();
-
-            //apakah sistem masih aktif atau tidak
-            $table->boolean('aktif')->default(true);
-
-            //jumlah belanja minimal
-            $table->integer('minimal_belanja');
-
-            //poin yang didapatkan
+            $table->string('nama_aturan');
+            $table->bigInteger('minimal_belanja');
             $table->integer('poin');
-
+            $table->timestamp('mulai_berlaku');
+            $table->timestamp('selesai_berlaku')->nullable();
+            $table->boolean('status_aktif')->default(true);
             $table->timestamps();
         });
     }
@@ -32,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pengaturan_members');
+        Schema::dropIfExists('pengaturan_member');
     }
 };

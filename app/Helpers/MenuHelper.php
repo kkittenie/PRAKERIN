@@ -42,7 +42,7 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'Kasir', 'path' => '/transaksi', 'permission' => 'lihat_transaksi'],
                     ['name' => 'Member', 'path' => '/member', 'permission' => 'lihat_member'],
-                    ['name' => 'Pengaturan Member', 'path' => '/pengaturan-member', 'permission' => 'edit_member'],
+                    ['name' => 'Pengaturan Member', 'path' => '/pengaturan-member', 'permission' => 'lihat_member'],
                 ],
             ],
             [

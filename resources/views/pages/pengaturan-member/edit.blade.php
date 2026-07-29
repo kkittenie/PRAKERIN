@@ -2,97 +2,140 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Pengaturan Member" />
+<x-common.page-breadcrumb pageTitle="Edit Aturan Member" />
 
 <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
 
-    {{-- Header --}}
-    <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Pengaturan Sistem Poin Member
-        </h3>
-    </div>
-
-    <form action="{{ route('pengaturan-member.update') }}" method="POST">
+    <form action="{{ route('pengaturan-member.update', $pengaturanMember->id) }}" method="POST">
         @csrf
         @method('PUT')
 
         <div class="p-6 space-y-6">
 
-            {{-- Status --}}
+            {{-- Nama Aturan --}}
             <div>
-                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Status Sistem
-                </label>
-
-                <select
-                    name="aktif"
-                    class="w-full rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
-
-                    <option value="1" {{ $pengaturan->aktif ? 'selected' : '' }}>
-                        Aktif
-                    </option>
-
-                    <option value="0" {{ !$pengaturan->aktif ? 'selected' : '' }}>
-                        Nonaktif
-                    </option>
-
-                </select>
-            </div>
-
-            {{-- Minimal Belanja --}}
-            <div>
-                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Minimal Belanja (Rp)
+                <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Nama Aturan
                 </label>
 
                 <input
-                    type="number"
-                    name="minimal_belanja"
-                    value="{{ old('minimal_belanja',$pengaturan->minimal_belanja) }}"
-                    class="w-full rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
+                    type="text"
+                    name="nama_aturan"
+                    value="{{ old('nama_aturan', $pengaturanMember->nama_aturan) }}"
+                    class="w-full rounded-xl border border-amber-200 bg-amber-50/40
+                           px-4 py-2.5
+                           text-gray-800 dark:text-white
+                           focus:border-amber-500 focus:ring-2 focus:ring-amber-200
+                           dark:bg-gray-900 dark:border-gray-700
+                           transition duration-200"
+                    required>
             </div>
 
-            {{-- Poin --}}
-            <div>
-                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Poin
-                </label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                <input
-                    type="number"
-                    name="poin"
-                    value="{{ old('poin',$pengaturan->poin) }}"
-                    class="w-full rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
+                {{-- Minimal Belanja --}}
+                <div>
+                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Belanja Setiap (Rp)
+                    </label>
+
+                    <input
+                        type="number"
+                        name="minimal_belanja"
+                        value="{{ old('minimal_belanja', $pengaturanMember->minimal_belanja) }}"
+                        class="w-full rounded-xl border border-amber-200 bg-amber-50/40
+                               px-4 py-2.5
+                               text-gray-800 dark:text-white
+                               focus:border-amber-500 focus:ring-2 focus:ring-amber-200
+                               dark:bg-gray-900 dark:border-gray-700
+                               transition duration-200"
+                        required>
+                </div>
+
+                {{-- Poin --}}
+                <div>
+                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Poin Didapat
+                    </label>
+
+                    <input
+                        type="number"
+                        name="poin"
+                        value="{{ old('poin', $pengaturanMember->poin) }}"
+                        class="w-full rounded-xl border border-amber-200 bg-amber-50/40
+                               px-4 py-2.5
+                               text-gray-800 dark:text-white
+                               focus:border-amber-500 focus:ring-2 focus:ring-amber-200
+                               dark:bg-gray-900 dark:border-gray-700
+                               transition duration-200"
+                        required>
+                </div>
+
             </div>
 
-            {{-- Preview --}}
-            <div class="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-700 dark:bg-amber-500/10 p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                <h4 class="font-semibold text-amber-700 dark:text-amber-400 mb-2">
-                    Preview Sistem
-                </h4>
+                {{-- Mulai Berlaku --}}
+                <div>
+                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Mulai Berlaku
+                    </label>
 
-                <p class="text-sm text-gray-700 dark:text-gray-300">
-                    Setiap belanja
-                    <b>Rp{{ number_format($pengaturan->minimal_belanja,0,',','.') }}</b>
-                    mendapatkan
-                    <b>{{ $pengaturan->poin }} poin</b>.
-                </p>
+                    <input
+                        type="datetime-local"
+                        name="mulai_berlaku"
+                        value="{{ $pengaturanMember->mulai_berlaku ? $pengaturanMember->mulai_berlaku->format('Y-m-d\TH:i') : '' }}"
+                        class="w-full rounded-xl border border-amber-200 bg-amber-50/40
+                               px-4 py-2.5
+                               text-gray-800 dark:text-white
+                               focus:border-amber-500 focus:ring-2 focus:ring-amber-200
+                               dark:bg-gray-900 dark:border-gray-700
+                               transition duration-200"
+                        required>
+                </div>
+
+                {{-- Selesai Berlaku --}}
+                <div>
+                    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Selesai Berlaku
+                    </label>
+
+                    <input
+                        type="datetime-local"
+                        name="selesai_berlaku"
+                        value="{{ $pengaturanMember->selesai_berlaku ? $pengaturanMember->selesai_berlaku->format('Y-m-d\TH:i') : '' }}"
+                        class="w-full rounded-xl border border-amber-200 bg-amber-50/40
+                               px-4 py-2.5
+                               text-gray-800 dark:text-white
+                               focus:border-amber-500 focus:ring-2 focus:ring-amber-200
+                               dark:bg-gray-900 dark:border-gray-700
+                               transition duration-200">
+                </div>
 
             </div>
 
         </div>
 
-        {{-- Footer --}}
-        <div class="flex justify-end p-6 border-t border-gray-100 dark:border-gray-800">
+        <div class="flex justify-end gap-3 p-6 border-t border-gray-100 dark:border-gray-800">
+
+            <a href="{{ route('pengaturan-member.index') }}"
+               class="px-5 py-2.5 rounded-xl
+                      border border-amber-200
+                      bg-amber-50 hover:bg-amber-100
+                      text-amber-800 font-medium
+                      transition
+                      dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+                Batal
+            </a>
 
             <button
                 type="submit"
-                class="inline-flex items-center gap-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white px-5 py-2.5 font-semibold text-sm transition">
-
-                Simpan Pengaturan
-
+                class="px-5 py-2.5 rounded-xl
+                       bg-amber-700 hover:bg-amber-800
+                       text-white font-semibold
+                       shadow-sm
+                       transition">
+                Perbarui
             </button>
 
         </div>
