@@ -38,11 +38,19 @@ class BahanBakuController extends Controller
 
     public function store(Request $request)
     {
+        $satuan = Satuan::find($request->satuan_id);
+
+        $aturanBulat = function ($attribute, $value, $fail) use ($satuan) {
+            if ($satuan && $satuan->tipe === 'bulat' && floor($value) != $value) {
+                $fail("Nilai harus bilangan bulat untuk satuan {$satuan->nama} (tidak boleh desimal).");
+            }
+        };
+
         $validated = $request->validate([
             'nama_bahan'   => 'required|string|max:100|unique:bahan_bakus,nama_bahan',
             'satuan_id'    => 'required|exists:satuans,id',
-            'stok'         => 'required|numeric|min:0',
-            'stok_minimum' => 'required|numeric|min:0',
+            'stok'         => ['required', 'numeric', 'min:0', $aturanBulat],
+            'stok_minimum' => ['required', 'numeric', 'min:0', $aturanBulat],
         ]);
 
         $bahanBaku = BahanBaku::create($validated);
@@ -80,6 +88,14 @@ class BahanBakuController extends Controller
 
     public function update(Request $request, BahanBaku $bahan_baku)
     {
+        $satuan = Satuan::find($request->satuan_id);
+
+        $aturanBulat = function ($attribute, $value, $fail) use ($satuan) {
+            if ($satuan && $satuan->tipe === 'bulat' && floor($value) != $value) {
+                $fail("Nilai harus bilangan bulat untuk satuan {$satuan->nama} (tidak boleh desimal).");
+            }
+        };
+
         $validated = $request->validate([
             'nama_bahan' => [
                 'required',
@@ -89,8 +105,8 @@ class BahanBakuController extends Controller
                     ->ignore($bahan_baku->id),
             ],
             'satuan_id'    => 'required|exists:satuans,id',
-            'stok'         => 'required|numeric|min:0',
-            'stok_minimum' => 'required|numeric|min:0',
+            'stok'         => ['required', 'numeric', 'min:0', $aturanBulat],
+            'stok_minimum' => ['required', 'numeric', 'min:0', $aturanBulat],
         ]);
 
         $bahan_baku->update($validated);
@@ -113,6 +129,12 @@ class BahanBakuController extends Controller
 
     public function destroy(BahanBaku $bahan_baku)
     {
+        if ($bahan_baku->transaksi()->exists() || $bahan_baku->detailProduksi()->exists()) {
+            return redirect()
+                ->route('bahan-baku.index')
+                ->with('error', "Bahan baku \"{$bahan_baku->nama_bahan}\" tidak bisa dihapus karena sudah punya riwayat transaksi/produksi.");
+        }
+
         activity()
             ->causedBy(auth()->user())
             ->performedOn($bahan_baku)
