@@ -56,7 +56,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>Daftar Ditahan</span>
+                    <span>Daftar Belum Bayar</span>
                     <span
                         class="absolute -top-2 -right-2 bg-red-500 text-white text-xxs font-bold px-2 py-0.5 rounded-full"
                         x-show="totalDitahan > 0" x-text="totalDitahan"></span>
@@ -421,7 +421,7 @@
     <div class="px-3 pb-3 pt-0 grid grid-cols-3 gap-2 shrink-0">
         <button @click="tahanOrderan()" :disabled="keranjang.length === 0" class="col-span-1 py-3 px-2 bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-bold rounded-xl transition text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span>Tahan</span>
+            <span>Bayar Nanti</span>
         </button>
         <button @click="lanjutKePembayaran()" :disabled="keranjang.length === 0" class="col-span-2 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition shadow-md hover:shadow-lg text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             <span>Proses Bayar</span>
@@ -621,18 +621,16 @@
     </div>
 </div>
 
-<!-- ========== MODAL: DAFTAR PESANAN DITAHAN ========== -->
+<!-- ========== MODAL: DAFTAR PESANAN BELUM BAYAR ========== -->
 <div x-show="modalDitahanTerbuka"
     class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-9999 p-4" x-transition>
     <div
         class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-3xl overflow-hidden border border-gray-100 dark:border-gray-800">
-        <div class="bg-slate-900 dark:bg-gray-950 text-white p-5 flex items-center justify-between">
+        <div class="bg-amber-800 dark:bg-amber-900 text-white p-5 flex items-center justify-between">
             <div>
-                <h3 class="font-extrabold text-base">Daftar Pesanan Ditahan</h3>
-                <p class="text-slate-400 dark:text-gray-400 text-xs mt-0.5">Pesanan belum lunas yang menunggu pembayaran.</p>
+                <h3 class="font-extrabold text-base">Daftar Pesanan Belum Bayar</h3>
+                <p class="text-white text-xs mt-0.5">Pesanan belum lunas yang menunggu pembayaran.</p>
             </div>
-            <button @click="modalDitahanTerbuka = false"
-                class="text-slate-400 hover:text-white transition font-bold text-lg">&times;</button>
         </div>
         <div class="p-6 max-h-[450px] overflow-y-auto flex flex-col gap-4 custom-scrollbar">
             <template x-if="daftarDitahan.length === 0">
@@ -642,7 +640,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                             d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
-                    <p class="text-gray-400 dark:text-gray-500 font-semibold text-sm">Tidak ada pesanan ditahan.</p>
+                    <p class="text-gray-400 dark:text-gray-500 font-semibold text-sm">Tidak ada pesanan yang belum dibayar.</p>
                 </div>
             </template>
             <template x-for="pesanan in daftarDitahan" :key="pesanan.id">
@@ -689,7 +687,7 @@
                         <button @click="pulihkanPesanan(pesanan.id)"
                             class="px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                            Pulihkan
+                            Lanjutkan Pesanan
                         </button>
                         <button @click="hapusPesananDitahan(pesanan.id)"
                             class="p-1.5 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 rounded-lg transition ml-auto" title="Hapus pesanan">
@@ -753,8 +751,8 @@
             </template>
             <template x-if="suksesData.status_pembayaran === 'Belum Lunas'">
                 <div>
-                    <h3 class="font-extrabold text-gray-900 dark:text-white text-lg">Pesanan Berhasil Ditahan!</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Pesanan tercatat sebagai kredit. Cetak tiket produksi di bawah.</p>
+                    <h3 class="font-extrabold text-gray-900 dark:text-white text-lg">Pesanan disimpan</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Pesanan tercatat sebagai "Belum Dibayar". Cetak tiket produksi di bawah.</p>
                 </div>
             </template>
             <span
@@ -824,7 +822,7 @@
             <div
                 class="w-14 h-14 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
                 ⚠</div>
-            <h3 class="font-extrabold text-gray-900 dark:text-white text-base">Hapus Pesanan Ditahan?</h3>
+            <h3 class="font-extrabold text-gray-900 dark:text-white text-base">Hapus Pesanan Belum Bayar?</h3>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Pesanan yang dihapus tidak dapat dipulihkan
                 kembali.</p>
         </div>
@@ -1194,7 +1192,7 @@
                                     p.stok -= item.jumlah;
                                 }
                             });
-                            this.tambahToast('Pesanan ditahan.', 'sukses');
+                            this.tambahToast('Pesanan disimpan.', 'sukses');
                             this.suksesData = { ...dataStruk, kode_transaksi: r.kode_transaksi };
                             this.modalSuksesTerbuka = true;
                             this.bersihkanKeranjang();
@@ -1234,7 +1232,7 @@
                             }
 
                             this.pesananSedangDilunaskan = null;
-                            this.tambahToast('Pesanan dipulihkan.', 'sukses');
+                            this.tambahToast('Pesanan dilanjutkan.', 'sukses');
                             this.ambilDaftarDitahanDariServer();
                             this.halamanAktif = 'beranda';
                         } else this.tambahToast(r.pesan, 'error');
