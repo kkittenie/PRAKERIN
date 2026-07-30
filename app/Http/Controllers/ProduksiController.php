@@ -16,6 +16,8 @@ class ProduksiController extends Controller
     public function index(Request $request)
     {
             $search = $request->search;
+            $periode = $request->periode ?? 'harian';
+            $tanggalRefInput = $request->tanggal_ref;
 
             $produksi = Produksi::with(['produk','user'])
                 ->when($search, function ($query) use ($search) {
