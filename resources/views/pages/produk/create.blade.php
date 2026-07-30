@@ -170,9 +170,13 @@
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                         <option value="stok_ada">Stok Ada</option>
-                        <option value="pesan_dulu">Pesan Dulu</option>
+                        <option value="perlu_diproduksi">Perlu Diproduksi</option>
 
                     </select>
+
+                    <small class="text-gray-400">
+                        Otomatis menjadi "Perlu Diproduksi" jika stok awal 0.
+                    </small>
                 </div>
 
                 {{-- Foto --}}

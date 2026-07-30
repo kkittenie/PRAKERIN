@@ -7,7 +7,7 @@
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigtoin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <style>
@@ -187,6 +187,15 @@
         .margin-bottom-lg {
             margin-bottom: 10px;
         }
+        .label-produksi {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            border: 1px solid #000;
+            padding: 0 3px;
+            margin-left: 4px;
+            border-radius: 3px;
+        }
 
         @media print {
             @page {
@@ -260,10 +269,13 @@
                 <div>Pelanggan: <strong>{{ $transaksi->nama_pembeli ?? 'Pelanggan Umum' }}</strong></div>
                 <div style="text-transform: capitalize;">Bayar: {{ $transaksi->metode_pembayaran }}</div>
             </div>
+            {{-- Invoice pelanggan mencetak SEMUA item tanpa membedakan status produksi --}}
             <div class="border-top-dashed border-bottom-dashed" style="padding:8px 0;">
                 @foreach ($transaksi->detailTransaksi as $index => $item)
                     <div class="item-row margin-bottom-sm">
-                        <span class="item-name">{{ $index + 1 }}. {{ $item->nama_produk }}</span>
+                        <span class="item-name">
+                            {{ $index + 1 }}. {{ $item->nama_produk }}
+                        </span>
                     </div>
                     @if ($item->catatan)
                         <div style="padding-left:16px; font-style:italic; color:#666; font-size:10px; margin-bottom:4px;">* Catatan: {{ $item->catatan }}</div>
@@ -311,13 +323,13 @@
             </div>
         @elseif ($jenis === 'dapur')
             @php
-                if ($transaksi->status_pembayaran === 'Belum Lunas') {
-                    $itemsDapur = $transaksi->detailTransaksi;
-                } else {
-                    $itemsDapur = $transaksi->detailTransaksi->filter(function ($item) {
-                        return $item->produk && $item->produk->status_ketersediaan === 'pesan_dulu';
-                    });
-                }
+                // Tiket dapur/produksi HANYA mencetak item berstatus
+                // "Perlu Diproduksi" (snapshot butuh_produksi yang disimpan
+                // saat transaksi dibuat), berlaku sama baik untuk transaksi
+                // Lunas maupun Belum Lunas.
+                $itemsDapur = $transaksi->detailTransaksi->filter(function ($item) {
+                    return (bool) $item->butuh_produksi;
+                })->values();
             @endphp
             <div class="text-center border-bottom-dashed" style="padding-bottom:10px; margin-bottom:10px;">
                 <h2 style="margin:0; font-size:16px; font-weight:700;">SAISHO CAKE & BAKERY</h2>
@@ -406,6 +418,7 @@
         $struk .= "Bayar: " . ucfirst($transaksi->metode_pembayaran) . "\n";
         $struk .= $dividerDashed;
 
+        // Invoice pelanggan mencetak SEMUA item tanpa membedakan status produksi
         foreach ($transaksi->detailTransaksi as $index => $item) {
             $no = ($index + 1) . ". ";
             $namaFull = $no . $item->nama_produk;
@@ -437,14 +450,11 @@
         $struk .= "   Thanks for stopping by! ^^\n";
 
     } else {
-        // DAPUR
-        if ($transaksi->status_pembayaran === 'Belum Lunas') {
-            $itemsDapur = $transaksi->detailTransaksi;
-        } else {
-            $itemsDapur = $transaksi->detailTransaksi->filter(function ($item) {
-                return $item->produk && $item->produk->status_ketersediaan === 'pesan_dulu';
-            });
-        }
+        // DAPUR: hanya item butuh_produksi (snapshot saat transaksi dibuat),
+        // berlaku sama untuk transaksi Lunas maupun Belum Lunas.
+        $itemsDapur = $transaksi->detailTransaksi->filter(function ($item) {
+            return (bool) $item->butuh_produksi;
+        })->values();
 
         $struk .= "      SAISHO CAKE & BAKERY\n";
         $struk .= "         TIKET PRODUKSI\n";
@@ -471,6 +481,10 @@
                 $struk .= "  * Catatan: " . $item->catatan . "\n";
             }
             $idx++;
+        }
+
+        if ($itemsDapur->isEmpty()) {
+            $struk .= "Tidak ada item untuk dapur\n";
         }
 
         if ($transaksi->pesananDitahan && $transaksi->pesananDitahan->catatan) {

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\BahanBaku;
+use App\Models\Satuan;
 use Illuminate\Database\Seeder;
 
 class BahanBakuSeeder extends Seeder
@@ -12,6 +13,13 @@ class BahanBakuSeeder extends Seeder
      */
     public function run(): void
     {
+        // Ambil semua satuan sekali di awal, index berdasarkan kolom `nama` (huruf kecil semua)
+        // -- sesuai kolom yang dipakai SatuanSeeder -- supaya tidak sensitif huruf besar/kecil
+        // dan tidak bergantung pada urutan ID.
+        $satuans = Satuan::all()->keyBy(function ($satuan) {
+            return strtolower($satuan->nama);
+        });
+
         $bahanBakus = [
             [
                 'nama_bahan' => 'Tepung Terigu Protein Tinggi',
@@ -39,13 +47,13 @@ class BahanBakuSeeder extends Seeder
             ],
             [
                 'nama_bahan' => 'Ragi Instan',
-                'satuan' => 'gr',
+                'satuan' => 'gram',
                 'stok' => 5000.00,
                 'stok_minimum' => 1000.00,
             ],
             [
                 'nama_bahan' => 'Garam',
-                'satuan' => 'gr',
+                'satuan' => 'gram',
                 'stok' => 2000.00,
                 'stok_minimum' => 500.00,
             ],
@@ -57,7 +65,7 @@ class BahanBakuSeeder extends Seeder
             ],
             [
                 'nama_bahan' => 'Telur Ayam',
-                'satuan' => 'butir',
+                'satuan' => 'pcs',
                 'stok' => 150.00,
                 'stok_minimum' => 30.00,
             ],
@@ -75,7 +83,7 @@ class BahanBakuSeeder extends Seeder
             ],
             [
                 'nama_bahan' => 'Selai Blueberry',
-                'satuan' => 'gr',
+                'satuan' => 'gram',
                 'stok' => 3000.00,
                 'stok_minimum' => 500.00,
             ],
@@ -88,6 +96,21 @@ class BahanBakuSeeder extends Seeder
         ];
 
         foreach ($bahanBakus as $bahan) {
+            $namaSatuan = strtolower($bahan['satuan']);
+            unset($bahan['satuan']);
+
+            $satuan = $satuans->get($namaSatuan);
+
+            if (! $satuan) {
+                $this->command?->warn(
+                    "Satuan '{$namaSatuan}' tidak ditemukan di tabel satuans, '{$bahan['nama_bahan']}' dilewati."
+                );
+
+                continue;
+            }
+
+            $bahan['satuan_id'] = $satuan->id;
+
             BahanBaku::updateOrCreate(
                 ['nama_bahan' => $bahan['nama_bahan']],
                 $bahan

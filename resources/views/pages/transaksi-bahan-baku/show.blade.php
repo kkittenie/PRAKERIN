@@ -53,14 +53,12 @@
 
                 <p class="font-semibold text-green-600 dark:text-green-400">
 
-                    {{ number_format(
+                    {{ \App\Models\Satuan::formatAngka(
                         $transaksiBahanBaku->jumlah,
-                        2,
-                        ',',
-                        '.'
+                        $transaksiBahanBaku->bahanBaku->satuan?->tipe
                     ) }}
 
-                    {{ $transaksiBahanBaku->bahanBaku->satuan }}
+                    {{ $transaksiBahanBaku->bahanBaku->satuan?->nama }}
 
                 </p>
 

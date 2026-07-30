@@ -38,7 +38,7 @@ class ProduksiController extends Controller
     {
             $produk = Produk::orderBy('nama_produk')->get();
 
-            $bahanBaku = BahanBaku::orderBy('nama_bahan')->get();
+            $bahanBaku = BahanBaku::with('satuan')->orderBy('nama_bahan')->get();
 
             return view(
                 'pages.produksi.create',
@@ -73,6 +73,23 @@ class ProduksiController extends Controller
                 'required',
                 'numeric',
                 'gt:0',
+                function ($attribute, $value, $fail) use ($request) {
+
+                    preg_match('/\d+/', $attribute, $match);
+                    $index = $match[0] ?? null;
+
+                    $bahanId = $request->bahan_baku_id[$index] ?? null;
+
+                    if (!$bahanId) {
+                        return;
+                    }
+
+                    $bahan = BahanBaku::with('satuan')->find($bahanId);
+
+                    if ($bahan && $bahan->satuan?->tipe === 'bulat' && floor($value) != $value) {
+                        $fail("Jumlah dipakai untuk {$bahan->nama_bahan} harus bilangan bulat (satuan {$bahan->satuan->nama}, tidak boleh desimal).");
+                    }
+                },
             ],
         ]);
 

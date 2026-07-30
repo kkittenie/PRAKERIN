@@ -45,10 +45,15 @@ class ProdukController extends Controller
         'status_aktif' => 'required|boolean',
         'status_ketersediaan' => [
             'required',
-            Rule::in(['stok_ada', 'pesan_dulu']),
+            Rule::in(['stok_ada', 'perlu_diproduksi']),
         ],
         'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
+
+        // Stok yang habis (0) otomatis diset "Perlu Diproduksi", bukan pre-order.
+        $validated['status_ketersediaan'] = $validated['stok'] <= 0
+            ? 'perlu_diproduksi'
+            : 'stok_ada';
 
         if ($request->hasFile('foto')) {
             $validated['foto'] = $request->file('foto')->store('produk', 'public');
@@ -102,10 +107,14 @@ class ProdukController extends Controller
             'status_aktif' => 'required|boolean',
             'status_ketersediaan' => [
                 'required',
-                Rule::in(['stok_ada', 'pesan_dulu']),
+                Rule::in(['stok_ada', 'perlu_diproduksi']),
             ],
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
+
+        $validated['status_ketersediaan'] = $validated['stok'] <= 0
+            ? 'perlu_diproduksi'
+            : 'stok_ada';
 
         if ($request->hasFile('foto')) {
 

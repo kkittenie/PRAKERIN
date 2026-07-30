@@ -398,7 +398,7 @@ function historiTransaksi() {
             if (jenis === 'dapur') {
                 const itemsDapur = (d.detail_transaksi || []).filter(item => item.produk?.status_ketersediaan === 'pesan_dulu');
                 if (itemsDapur.length === 0) {
-                    this.tambahToast('Tidak ada item Pre-Order (Pesan Dulu) untuk dapur.', 'info');
+                    this.tambahToast('Tidak ada item yang perlu diproduksi oleh dapur.', 'info');
                     return;
                 }
             }

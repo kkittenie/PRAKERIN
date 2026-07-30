@@ -56,7 +56,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>Daftar Ditahan</span>
+                    <span>Daftar Belum Bayar</span>
                     <span
                         class="absolute -top-2 -right-2 bg-red-500 text-white text-xxs font-bold px-2 py-0.5 rounded-full"
                         x-show="totalDitahan > 0" x-text="totalDitahan"></span>
@@ -107,9 +107,9 @@
                                 <button @click="filterKetersediaan = 'stok_ada'; halamanProduk = 1"
                                     :class="filterKetersediaan === 'stok_ada' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Ready Stock</button>
-                                <button @click="filterKetersediaan = 'pesan_dulu'; halamanProduk = 1"
-                                    :class="filterKetersediaan === 'pesan_dulu' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Pre-Order</button>
+                                <button @click="filterKetersediaan = 'perlu_diproduksi'; halamanProduk = 1"
+                                    :class="filterKetersediaan === 'perlu_diproduksi' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Perlu Diproduksi</button>
                                 <button @click="filterKetersediaan = 'promo'; halamanProduk = 1"
                                     :class="filterKetersediaan === 'promo' ? 'bg-rose-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Promo</button>
@@ -120,34 +120,36 @@
 
                 <!-- Scrollable grid wrapper -->
                 <div class="flex-1 lg:overflow-y-auto pr-1 min-h-0 custom-scrollbar">
-                    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
+                    <div x-show="produkTersaring.length === 0" class="h-full flex flex-col items-center justify-center py-16 text-center">
+                        <svg class="w-14 h-14 text-gray-300 dark:text-gray-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <p class="text-gray-400 dark:text-gray-500 font-semibold text-sm">Tidak ada produk</p>
+                    </div>
+                    <div x-show="produkTersaring.length > 0" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
                         <template x-for="produk in produkTersaring" :key="produk.id">
                             <div
                                 class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
-                                <div x-show="produk.status_ketersediaan !== 'pesan_dulu' && produk.stok <= 0"
-                                    class="absolute inset-0 bg-white/80 dark:bg-gray-900/80 z-10 flex flex-col items-center justify-center p-2 text-center">
-                                    <span
-                                        class="bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 font-bold px-3 py-1 rounded-full text-xs">Habis</span>
-                                </div>
                                 <div class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden">
-                                    <img :src="getFotoUrl(produk.foto, produk.nama_produk)"
+                                    <img :src="getFotoUrl(produk.foto)"
+                                        x-on:error="handleFotoError($event)"
                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                         alt="Produk">
                                     <div class="absolute top-2 left-2 z-5">
-                                        <template x-if="produk.status_ketersediaan === 'stok_ada'">
+                                        <template x-if="!butuhProduksi(produk)">
                                             <span
                                                 class="bg-emerald-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Ready</span>
                                         </template>
-                                        <template x-if="produk.status_ketersediaan === 'pesan_dulu'">
+                                        <template x-if="butuhProduksi(produk)">
                                             <span
-                                                class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Pre-Order</span>
+                                                class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu Diproduksi</span>
                                         </template>
                                     </div>
                                     <div
                                         class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
-                                        :class="produk.status_ketersediaan !== 'pesan_dulu' && produk.stok > 0 && produk.stok <= produk.stok_minimum ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'">
+                                        :class="!butuhProduksi(produk) && produk.stok > 0 && produk.stok <= produk.stok_minimum ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'">
                                         <span
-                                            x-text="produk.status_ketersediaan === 'pesan_dulu' ? 'Pre-Order' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok)"></span>
+                                            x-text="butuhProduksi(produk) ? 'Perlu Diproduksi' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok)"></span>
                                     </div>
                                 </div>
                                 <div class="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -174,8 +176,8 @@
                                             <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                 x-text="formatRupiah(produk.promo_aktif ? produk.harga_diskon : produk.harga_jual)"></span>
                                             <button @click="tambahKeKeranjang(produk)"
-                                                :disabled="produk.status_ketersediaan !== 'pesan_dulu' && produk.stok <= 0"
-                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600">
+                                                title="Tambah ke keranjang"
+                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -352,14 +354,22 @@
             <svg class="w-12 h-12 text-gray-300 dark:text-gray-700 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
             <p class="text-gray-400 dark:text-gray-500 text-xs font-semibold">Keranjang masih kosong</p>
         </div>
-        <template x-for="item in keranjang" :key="item.produk_id">
+        <template x-for="item in keranjang" :key="item.key">
             <div class="flex flex-col gap-2 bg-gray-50 dark:bg-gray-800/40 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded overflow-hidden bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shrink-0">
-                        <img :src="getFotoUrl(item.foto, item.nama_produk)" class="w-full h-full object-cover">
+                        <img :src="getFotoUrl(item.foto)" x-on:error="handleFotoError($event)" class="w-full h-full object-cover">
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate" x-text="item.nama_produk"></h5>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate" x-text="item.nama_produk"></h5>
+                            <template x-if="itemButuhProduksi(item)">
+                                <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/25">Perlu Diproduksi</span>
+                            </template>
+                            <template x-if="!itemButuhProduksi(item)">
+                                <span class="shrink-0 text-[9px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/25">Ready Stock</span>
+                            </template>
+                        </div>
                         <div class="flex flex-col gap-0.5 mt-1">
                             <div class="flex items-center gap-1.5">
                                 <span class="text-xxs font-bold text-amber-700 dark:text-amber-400" x-text="formatRupiah(item.harga_jual_asli)"></span>
@@ -421,7 +431,7 @@
     <div class="px-3 pb-3 pt-0 grid grid-cols-3 gap-2 shrink-0">
         <button @click="tahanOrderan()" :disabled="keranjang.length === 0" class="col-span-1 py-3 px-2 bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-bold rounded-xl transition text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span>Tahan</span>
+            <span>Bayar Nanti</span>
         </button>
         <button @click="lanjutKePembayaran()" :disabled="keranjang.length === 0" class="col-span-2 py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition shadow-md hover:shadow-lg text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             <span>Proses Bayar</span>
@@ -570,10 +580,18 @@
             </div>
             <div
                 class="border-y border-gray-100 dark:border-gray-800 py-4 flex flex-col gap-3 max-h-[300px] overflow-y-auto">
-                <template x-for="item in keranjang" :key="item.produk_id">
+                <template x-for="item in keranjang" :key="item.key">
                     <div class="flex justify-between items-start gap-4">
                         <div class="min-w-0 flex-1">
-                            <p class="font-bold text-xs text-gray-900 dark:text-white" x-text="item.nama_produk"></p>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <p class="font-bold text-xs text-gray-900 dark:text-white" x-text="item.nama_produk"></p>
+                                <template x-if="itemButuhProduksi(item)">
+                                    <span class="text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/25">Perlu Diproduksi</span>
+                                </template>
+                                <template x-if="!itemButuhProduksi(item)">
+                                    <span class="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/25">Ready Stock</span>
+                                </template>
+                            </div>
                             <p class="text-xxs text-gray-400 dark:text-gray-500">
                                 <span x-text="item.jumlah"></span> x <span
                                     x-text="formatRupiah(item.harga_jual_asli)"></span>
@@ -621,18 +639,16 @@
     </div>
 </div>
 
-<!-- ========== MODAL: DAFTAR PESANAN DITAHAN ========== -->
+<!-- ========== MODAL: DAFTAR PESANAN BELUM BAYAR ========== -->
 <div x-show="modalDitahanTerbuka"
     class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-9999 p-4" x-transition>
     <div
         class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-3xl overflow-hidden border border-gray-100 dark:border-gray-800">
-        <div class="bg-slate-900 dark:bg-gray-950 text-white p-5 flex items-center justify-between">
+        <div class="bg-amber-800 dark:bg-amber-900 text-white p-5 flex items-center justify-between">
             <div>
-                <h3 class="font-extrabold text-base">Daftar Pesanan Ditahan</h3>
-                <p class="text-slate-400 dark:text-gray-400 text-xs mt-0.5">Pesanan belum lunas yang menunggu pembayaran.</p>
+                <h3 class="font-extrabold text-base">Daftar Pesanan Belum Bayar</h3>
+                <p class="text-white text-xs mt-0.5">Pesanan belum lunas yang menunggu pembayaran.</p>
             </div>
-            <button @click="modalDitahanTerbuka = false"
-                class="text-slate-400 hover:text-white transition font-bold text-lg">&times;</button>
         </div>
         <div class="p-6 max-h-[450px] overflow-y-auto flex flex-col gap-4 custom-scrollbar">
             <template x-if="daftarDitahan.length === 0">
@@ -642,7 +658,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                             d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
-                    <p class="text-gray-400 dark:text-gray-500 font-semibold text-sm">Tidak ada pesanan ditahan.</p>
+                    <p class="text-gray-400 dark:text-gray-500 font-semibold text-sm">Tidak ada pesanan yang belum dibayar.</p>
                 </div>
             </template>
             <template x-for="pesanan in daftarDitahan" :key="pesanan.id">
@@ -689,7 +705,7 @@
                         <button @click="pulihkanPesanan(pesanan.id)"
                             class="px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                            Pulihkan
+                            Lanjutkan Pesanan
                         </button>
                         <button @click="hapusPesananDitahan(pesanan.id)"
                             class="p-1.5 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 rounded-lg transition ml-auto" title="Hapus pesanan">
@@ -714,9 +730,9 @@
     class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-9999 p-4" x-transition>
     <div @click.away="modalPembeliTerbuka = false"
         class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800">
-        <div class="bg-slate-900 dark:bg-gray-950 text-white p-5">
+        <div class="bg-amber-800 dark:bg-amber-900 text-white p-5">
             <h3 class="font-extrabold text-base">Nama Pembeli</h3>
-            <p class="text-slate-400 dark:text-gray-400 text-xs mt-0.5">Masukkan nama pembeli untuk pesanan ini.</p>
+            <p class="text-white text-xs mt-0.5">Masukkan nama pembeli untuk pesanan ini.</p>
         </div>
         <div class="p-6">
             <label class="text-xs font-bold text-gray-600 dark:text-gray-400 block mb-1">Nama Pembeli <span
@@ -753,8 +769,8 @@
             </template>
             <template x-if="suksesData.status_pembayaran === 'Belum Lunas'">
                 <div>
-                    <h3 class="font-extrabold text-gray-900 dark:text-white text-lg">Pesanan Berhasil Ditahan!</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Pesanan tercatat sebagai kredit. Cetak tiket produksi di bawah.</p>
+                    <h3 class="font-extrabold text-gray-900 dark:text-white text-lg">Pesanan disimpan</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Pesanan tercatat sebagai "Belum Dibayar". Cetak tiket produksi di bawah.</p>
                 </div>
             </template>
             <span
@@ -824,7 +840,7 @@
             <div
                 class="w-14 h-14 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
                 ⚠</div>
-            <h3 class="font-extrabold text-gray-900 dark:text-white text-base">Hapus Pesanan Ditahan?</h3>
+            <h3 class="font-extrabold text-gray-900 dark:text-white text-base">Hapus Pesanan Belum Bayar?</h3>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Pesanan yang dihapus tidak dapat dipulihkan
                 kembali.</p>
         </div>
@@ -931,24 +947,75 @@
                 return payloadWithoutCrc + crcHex;
             },
 
-            getFotoUrl(foto, nama) {
+            // Ambil URL foto produk langsung dari database (kolom `foto`),
+            // sama seperti halaman Produk yang pakai asset($item->foto).
+            // Kalau foto tidak ada, pakai placeholder logo (bukan tebakan gambar dari internet).
+            getFotoUrl(foto) {
                 if (foto) {
                     if (foto.startsWith('http://') || foto.startsWith('https://')) return foto;
-                    if (foto.startsWith('storage/')) return '/' + foto;
-                    return '/storage/' + foto;
+                    return '/' + foto.replace(/^\/+/, '');
                 }
-                const n = (nama || '').toLowerCase();
-                if (n.includes('croissant')) return 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&auto=format&fit=crop';
-                if (n.includes('danish')) return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&auto=format&fit=crop';
-                if (n.includes('cheese tart') || n.includes('tartlet')) return 'https://images.unsplash.com/photo-1519869325930-281384150729?w=400&auto=format&fit=crop';
-                if (n.includes('fudge cake') || n.includes('forest cake') || n.includes('velvet cake') || n.includes('birthday cake') || n.includes('tiramisu')) {
-                    return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&auto=format&fit=crop';
-                }
-                if (n.includes('cinnamon roll')) return 'https://images.unsplash.com/photo-1509365465985-25d11c17e812?w=400&auto=format&fit=crop';
-                if (n.includes('bun') || n.includes('boule') || n.includes('bread')) return 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop';
-                if (n.includes('cookie')) return 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400&auto=format&fit=crop';
-                if (n.includes('macaron')) return 'https://images.unsplash.com/photo-1569864358642-9d1684040f43?w=400&auto=format&fit=crop';
                 return '/images/logo/logo-icon.svg';
+            },
+
+            // Jika file foto di storage tidak ditemukan (404) atau gagal dimuat,
+            // otomatis fallback ke placeholder logo supaya tidak tampil gambar rusak.
+            handleFotoError(event) {
+                event.target.onerror = null;
+                event.target.src = '/images/logo/logo-icon.svg';
+            },
+
+            // ================== ALUR KETERSEDIAAN PRODUK ==================
+            // Sebuah PRODUK (dilihat dari kartu produk / status global) dianggap
+            // "Perlu Diproduksi" jika:
+            // 1) admin memang menandainya manual sebagai 'perlu_diproduksi', ATAU
+            // 2) stoknya sudah habis (<= 0).
+            // Ini dipakai untuk badge & filter di grid produk.
+            butuhProduksi(produk) {
+                return produk.status_ketersediaan === 'perlu_diproduksi' || parseFloat(produk.stok) <= 0;
+            },
+
+            // Versi untuk item yang sudah ada di keranjang / pesanan ditahan.
+            // Item keranjang menyimpan flag `butuh_produksi` sebagai snapshot per
+            // BARIS (bukan per produk), karena satu produk bisa terbagi jadi 2
+            // baris: "Ready Stock" dan "Perlu Diproduksi", saat jumlah yang
+            // diminta melebihi stok yang tersedia. Fallback ke status_ketersediaan
+            // untuk data lama yang belum punya flag ini.
+            itemButuhProduksi(item) {
+                if (typeof item.butuh_produksi !== 'undefined' && item.butuh_produksi !== null) {
+                    return !!item.butuh_produksi;
+                }
+                return item.status_ketersediaan === 'perlu_diproduksi';
+            },
+
+            // Bangun satu baris keranjang baru. `key` unik per produk+status
+            // supaya "Ready Stock" dan "Perlu Diproduksi" untuk produk yang
+            // sama bisa hidup berdampingan sebagai 2 baris terpisah.
+            buatItemKeranjang(produk, jumlah, perluProduksi) {
+                const hargaAsli = parseFloat(produk.harga_jual);
+                return {
+                    key: produk.id + '_' + (perluProduksi ? 'produksi' : 'ready'),
+                    produk_id: produk.id,
+                    nama_produk: produk.nama_produk,
+                    harga_jual: hargaAsli,
+                    harga_jual_asli: hargaAsli,
+                    promo_aktif: produk.promo_aktif,
+                    foto: produk.foto,
+                    jumlah: jumlah,
+                    stok: produk.stok,
+                    status_ketersediaan: produk.status_ketersediaan,
+                    butuh_produksi: perluProduksi,
+                    catatan: ''
+                };
+            },
+
+            // Pastikan setiap item punya `key` unik. Dipakai saat memuat ulang
+            // item_pesanan dari server (data lama mungkin belum punya `key`).
+            normalisasiItemKeranjang(items) {
+                return (items || []).map(item => ({
+                    ...item,
+                    key: item.key || (item.produk_id + '_' + (item.butuh_produksi ? 'produksi' : 'ready'))
+                }));
             },
 
             get semuaProdukTersaring() {
@@ -961,8 +1028,10 @@
                         cocokKetersediaan = true;
                     } else if (this.filterKetersediaan === 'promo') {
                         cocokKetersediaan = p.promo_aktif !== null;
-                    } else {
-                        cocokKetersediaan = p.status_ketersediaan === this.filterKetersediaan;
+                    } else if (this.filterKetersediaan === 'perlu_diproduksi') {
+                        cocokKetersediaan = this.butuhProduksi(p);
+                    } else if (this.filterKetersediaan === 'stok_ada') {
+                        cocokKetersediaan = !this.butuhProduksi(p);
                     }
 
                     return cocokKategori && cocokCari && cocokKetersediaan;
@@ -981,6 +1050,10 @@
                 const perPage = parseInt(this.itemsPerPage) || 10;
                 const start = (this.halamanProduk - 1) * perPage;
                 return list.slice(start, start + perPage);
+            },
+
+            get produkDitampilkan() {
+                return this.produkTersaring;
             },
 
             get activePromoInfo() {
@@ -1079,31 +1152,82 @@
             },
 
             // Keranjang
+            // Sebuah produk boleh terbagi jadi 2 baris keranjang: "Ready Stock"
+            // (sejumlah stok yang masih tersedia) dan "Perlu Diproduksi"
+            // (sisanya, begitu stok habis). Kasir TIDAK ditolak menambah lebih
+            // dari stok yang ada - kelebihannya otomatis dialihkan ke baris
+            // "Perlu Diproduksi" dengan toast keterangan yang berbeda.
             tambahKeKeranjang(produk) {
-                const ada = this.keranjang.find(i => i.produk_id === produk.id);
-                const qty = ada ? ada.jumlah : 0;
-                if (produk.status_ketersediaan !== 'pesan_dulu' && produk.stok <= qty) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; }
-                if (ada) { ada.jumlah++; }
-                else {
-                    const hargaAsli = parseFloat(produk.harga_jual);
-                    this.keranjang.push({
-                        produk_id: produk.id,
-                        nama_produk: produk.nama_produk,
-                        harga_jual: hargaAsli,
-                        harga_jual_asli: hargaAsli,
-                        promo_aktif: produk.promo_aktif,
-                        foto: produk.foto,
-                        jumlah: 1,
-                        stok: produk.stok,
-                        status_ketersediaan: produk.status_ketersediaan,
-                        catatan: ''
-                    });
+                // Produk yang ditandai MANUAL sebagai 'perlu_diproduksi' oleh
+                // admin selalu masuk ke satu baris "Perlu Diproduksi" saja,
+                // tanpa batas, tanpa displit (override berlaku untuk seluruh
+                // produk).
+                const manualProduksi = produk.status_ketersediaan === 'perlu_diproduksi';
+
+                if (manualProduksi) {
+                    const item = this.keranjang.find(i => i.produk_id === produk.id && i.butuh_produksi);
+                    if (item) {
+                        item.jumlah++;
+                    } else {
+                        this.keranjang.push(this.buatItemKeranjang(produk, 1, true));
+                    }
+                    this.tambahToast('Produk ditambahkan (Perlu Diproduksi).', 'sukses');
+                    return;
                 }
-                this.tambahToast('Produk ditambahkan.', 'sukses');
+
+                // Produk otomatis (status berdasar stok): cek berapa slot "ready
+                // stock" yang masih tersisa dibanding yang sudah ada di keranjang.
+                const readyItem = this.keranjang.find(i => i.produk_id === produk.id && !i.butuh_produksi);
+                const stokTersedia = parseFloat(produk.stok) || 0;
+                const sudahReady = readyItem ? readyItem.jumlah : 0;
+
+                if (sudahReady < stokTersedia) {
+                    // Masih ada slot ready stock untuk 1 unit ini.
+                    if (readyItem) {
+                        readyItem.jumlah++;
+                    } else {
+                        this.keranjang.push(this.buatItemKeranjang(produk, 1, false));
+                    }
+                    this.tambahToast('Produk ditambahkan.', 'sukses');
+                } else {
+                    // Slot ready stock sudah penuh/habis, unit ini otomatis masuk
+                    // ke baris "Perlu Diproduksi" (baris terpisah dari Ready Stock).
+                    const produksiItem = this.keranjang.find(i => i.produk_id === produk.id && i.butuh_produksi);
+                    if (produksiItem) {
+                        produksiItem.jumlah++;
+                    } else {
+                        this.keranjang.push(this.buatItemKeranjang(produk, 1, true));
+                    }
+                    this.tambahToast('Produk ditambahkan (Perlu Diproduksi).', 'sukses');
+                }
             },
-            tambahJumlah(item) { if (item.status_ketersediaan !== 'pesan_dulu' && item.stok <= item.jumlah) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; } item.jumlah++; },
+            tambahJumlah(item) {
+                const produk = this.daftarProduk.find(p => p.id === item.produk_id);
+
+                // Baris "Perlu Diproduksi" boleh ditambah bebas tanpa batas stok.
+                if (!produk || item.butuh_produksi) {
+                    item.jumlah++;
+                    return;
+                }
+
+                // Baris "Ready Stock": cek dulu apakah masih ada slot stok tersisa
+                // untuk baris ini. Kalau sudah penuh, kelebihannya dialihkan ke
+                // baris "Perlu Diproduksi" (bukan menolak penambahan).
+                const stokTersedia = parseFloat(produk.stok) || 0;
+                if (item.jumlah < stokTersedia) {
+                    item.jumlah++;
+                } else {
+                    const produksiItem = this.keranjang.find(i => i.produk_id === produk.id && i.butuh_produksi);
+                    if (produksiItem) {
+                        produksiItem.jumlah++;
+                    } else {
+                        this.keranjang.push(this.buatItemKeranjang(produk, 1, true));
+                    }
+                    this.tambahToast('Stok sudah habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                }
+            },
             kurangiJumlah(item) { if (item.jumlah > 1) item.jumlah--; else this.hapusItem(item); },
-            hapusItem(item) { this.keranjang = this.keranjang.filter(i => i.produk_id !== item.produk_id); this.tambahToast('Item dihapus.', 'info'); },
+            hapusItem(item) { this.keranjang = this.keranjang.filter(i => i.key !== item.key); this.tambahToast('Item dihapus.', 'info'); },
 
             // Pembeli
             bukaModalPembeli() {
@@ -1188,13 +1312,14 @@
                     .then(r => {
                         if (r.status === 'success') {
                             // Kurangi stok di frontend UI segera setelah berhasil ditahan
+                            // (hanya untuk item yang bukan "Perlu Diproduksi")
                             this.keranjang.forEach(item => {
                                 const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                if (p && p.status_ketersediaan !== 'pesan_dulu') {
+                                if (p && !this.itemButuhProduksi(item)) {
                                     p.stok -= item.jumlah;
                                 }
                             });
-                            this.tambahToast('Pesanan ditahan.', 'sukses');
+                            this.tambahToast('Pesanan disimpan.', 'sukses');
                             this.suksesData = { ...dataStruk, kode_transaksi: r.kode_transaksi };
                             this.modalSuksesTerbuka = true;
                             this.bersihkanKeranjang();
@@ -1217,24 +1342,25 @@
                     .then(r => {
                         if (r.status === 'success') {
                             const d = r.data;
-                            this.keranjang = d.item_pesanan;
+                            this.keranjang = this.normalisasiItemKeranjang(d.item_pesanan);
                             this.namaPembeli = d.nama_pembeli;
                             this.catatan = d.catatan || '';
                             this.diskonPersen = d.diskon || '';
                             this.modalDitahanTerbuka = false;
 
                             // Kembalikan stok di frontend UI saat pesanan dipulihkan
+                            // (hanya untuk item yang bukan "Perlu Diproduksi")
                             if (d.item_pesanan) {
                                 d.item_pesanan.forEach(item => {
                                     const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                    if (p && p.status_ketersediaan !== 'pesan_dulu') {
+                                    if (p && !this.itemButuhProduksi(item)) {
                                         p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
                                     }
                                 });
                             }
 
                             this.pesananSedangDilunaskan = null;
-                            this.tambahToast('Pesanan dipulihkan.', 'sukses');
+                            this.tambahToast('Pesanan dilanjutkan.', 'sukses');
                             this.ambilDaftarDitahanDariServer();
                             this.halamanAktif = 'beranda';
                         } else this.tambahToast(r.pesan, 'error');
@@ -1255,10 +1381,11 @@
                     .then(r => {
                         if (r.status === 'success') {
                             // Kembalikan stok di frontend UI saat pesanan ditahan dihapus
+                            // (hanya untuk item yang bukan "Perlu Diproduksi")
                             if (pesanan && pesanan.item_pesanan) {
                                 pesanan.item_pesanan.forEach(item => {
                                     const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                    if (p && p.status_ketersediaan !== 'pesan_dulu') {
+                                    if (p && !this.itemButuhProduksi(item)) {
                                         p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
                                     }
                                 });
@@ -1347,7 +1474,12 @@
                         .then(r => r.json())
                         .then(r => {
                             if (r.status === 'success') {
-                                this.keranjang.forEach(item => { const p = this.daftarProduk.find(x => x.id === item.produk_id); if (p) p.stok -= item.jumlah; });
+                                // Kurangi stok di frontend UI hanya untuk item yang bukan
+                                // "Perlu Diproduksi" (server juga tidak menguranginya).
+                                this.keranjang.forEach(item => {
+                                    const p = this.daftarProduk.find(x => x.id === item.produk_id);
+                                    if (p && !this.itemButuhProduksi(item)) p.stok -= item.jumlah;
+                                });
                                 this.suksesData = { ...dataStruk, kode_transaksi: r.kode_transaksi };
                                 this.modalSuksesTerbuka = true;
                                 this.bersihkanKeranjang();
@@ -1367,9 +1499,9 @@
             }
 
             if (jenis === 'dapur') {
-                const itemsDapur = d.status_pembayaran === 'Belum Lunas'
-                    ? d.keranjang
-                    : d.keranjang.filter(item => item.status_ketersediaan === 'pesan_dulu');
+                // Tiket dapur/produksi HANYA untuk item berstatus "Perlu Diproduksi",
+                // berlaku sama baik untuk transaksi Lunas maupun Belum Lunas.
+                const itemsDapur = d.keranjang.filter(item => this.itemButuhProduksi(item));
                 if (itemsDapur.length === 0) {
                     this.tambahToast('Tidak ada item untuk dicetak ke dapur.', 'info');
                     return;
@@ -1383,7 +1515,7 @@
 
             mulaiLunaskan(pesanan) {
                 this.pesananSedangDilunaskan = pesanan;
-                this.keranjang = JSON.parse(JSON.stringify(pesanan.item_pesanan));
+                this.keranjang = this.normalisasiItemKeranjang(JSON.parse(JSON.stringify(pesanan.item_pesanan)));
                 this.namaPembeli = pesanan.nama_pembeli;
                 this.diskonPersen = pesanan.diskon || '';
                 this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 5;

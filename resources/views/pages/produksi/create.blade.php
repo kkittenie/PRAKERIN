@@ -351,6 +351,9 @@ function aktifkanSearch(element) {
     const infoStok =
         element.querySelector('.info-stok');
 
+    const inputJumlah =
+        element.querySelector('.input-jumlah');
+
     inputSearch.addEventListener('input', function () {
 
         const keyword = this.value.toLowerCase();
@@ -398,7 +401,7 @@ function aktifkanSearch(element) {
                     </div>
 
                     <div class="text-xs text-gray-500">
-                        Stok: ${bahan.stok} ${bahan.satuan}
+                        Stok: ${formatStok(bahan.stok, bahan.satuan ? bahan.satuan.tipe : 'desimal')} ${bahan.satuan ? bahan.satuan.nama : '-'}
                     </div>
                 `;
 
@@ -410,7 +413,8 @@ function aktifkanSearch(element) {
                         hasilSearch,
                         inputId,
                         satuan,
-                        infoStok
+                        infoStok,
+                        inputJumlah
                     );
 
                 });
@@ -435,27 +439,39 @@ function aktifkanSearch(element) {
 
 }
 
-function pilihBahan(
-    bahan,
-    inputSearch,
-    hasilSearch,
-    inputId,
-    satuan,
-    infoStok
-) {
+        function formatStok(stok, tipe) {
+            const angka = parseFloat(stok) || 0;
+            return (tipe === 'bulat') ? Math.round(angka) : parseFloat(angka.toFixed(2));
+        }
 
-    inputSearch.value = bahan.nama_bahan;
+        function pilihBahan(
+            bahan,
+            inputSearch,
+            hasilSearch,
+            inputId,
+            satuan,
+            infoStok,
+            inputJumlah
+        ) {
 
-    inputId.value = bahan.id;
+            const namaSatuan = bahan.satuan ? bahan.satuan.nama : '-';
+            const tipeSatuan = bahan.satuan ? bahan.satuan.tipe : 'desimal';
 
-    satuan.textContent = bahan.satuan;
+            inputSearch.value = bahan.nama_bahan;
 
-    infoStok.innerHTML =
-        `Stok tersedia: <strong>${bahan.stok} ${bahan.satuan}</strong>`;
+            inputId.value = bahan.id;
 
-    hasilSearch.classList.add('hidden');
+            satuan.textContent = namaSatuan;
 
-}
+            infoStok.innerHTML =`Stok tersedia: <strong>${formatStok(bahan.stok, tipeSatuan)} ${namaSatuan}</strong>`;
+
+            if (inputJumlah) {
+                inputJumlah.step = (tipeSatuan === 'bulat') ? '1' : '0.01';
+            }
+
+            hasilSearch.classList.add('hidden');
+
+        }
 
     const tipeTanggal = document.getElementById('tipeTanggal');
     const tipeJam = document.getElementById('tipeJam');

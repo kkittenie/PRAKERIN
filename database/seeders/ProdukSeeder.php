@@ -29,6 +29,10 @@ class ProdukSeeder extends Seeder
         }
 
         // 2. Seed Products
+        // Catatan: 'foto' di sini berisi path relatif terhadap folder public/,
+        // sesuai file yang ada di public/images/product/. Ini BEDA dengan foto
+        // hasil upload lewat form (yang tersimpan di storage/app/public/produk/).
+        // Accessor getFotoUrlAttribute() di model Produk yang menangani perbedaan ini.
         $products = [
             // Croissant & Danish
             [
@@ -41,6 +45,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
+                'foto' => 'images/product/butter-croissant.jpeg',
             ],
             [
                 'kategori_id' => $categoryModels['Croissant & Danish']->id,
@@ -52,6 +57,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 4,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
+                'foto' => 'images/product/chocolate-croissant.jpeg',
             ],
             [
                 'kategori_id' => $categoryModels['Croissant & Danish']->id,
@@ -63,6 +69,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 3,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
+                'foto' => 'images/product/almond-croissant.jpeg',
             ],
             [
                 'kategori_id' => $categoryModels['Croissant & Danish']->id,
@@ -74,6 +81,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 2,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
+                'foto' => 'images/product/blueberry-danish.jpeg',
             ],
 
             // Cake & Tart
@@ -87,6 +95,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 2,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
+                'foto' => 'images/product/strawberry-cheese-tart.jpeg',
             ],
             [
                 'kategori_id' => $categoryModels['Cake & Tart']->id,
@@ -98,6 +107,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 2,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
+                'foto' => 'images/product/chocolate-fudge-cake.jpeg',
             ],
 
             // Bread & Bun
@@ -111,6 +121,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 3,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
+                'foto' => 'images/product/cinnamon-roll.jpeg',
             ],
             [
                 'kategori_id' => $categoryModels['Bread & Bun']->id,
@@ -122,6 +133,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
+                'foto' => 'images/product/soft-milk-bun.jpeg',
             ],
 
             // Cookies & Sweet Treats
@@ -135,106 +147,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-            ],
-            [
-                'kategori_id' => $categoryModels['Cookies & Sweet Treats']->id,
-                'kode_produk' => 'PST-SW002',
-                'nama_produk' => 'Macaron Assorted (Box of 6)',
-                'harga_jual' => 75000.00,
-                'harga_modal' => 38000.00,
-                'stok' => 10,
-                'stok_minimum' => 2,
-                'status_aktif' => true,
-                'status_ketersediaan' => 'pesan_dulu',
-            ],
-            // 8 Produk Pre-Order (Pesan Dulu)
-            [
-                'kategori_id' => $categoryModels['Cake & Tart']->id,
-                'kode_produk' => 'PST-PO001',
-                'nama_produk' => 'Custom Birthday Cake (Diameter 16cm)',
-                'harga_jual' => 250000.00,
-                'harga_modal' => 120000.00,
-                'stok' => 5,
-                'stok_minimum' => 0,
-                'status_aktif' => true,
-                'status_ketersediaan' => 'pesan_dulu',
-            ],
-            [
-                'kategori_id' => $categoryModels['Cake & Tart']->id,
-                'kode_produk' => 'PST-PO002',
-                'nama_produk' => 'Black Forest Cake (Whole)',
-                'harga_jual' => 300000.00,
-                'harga_modal' => 150000.00,
-                'stok' => 3,
-                'stok_minimum' => 0,
-                'status_aktif' => true,
-                'status_ketersediaan' => 'pesan_dulu',
-            ],
-            [
-                'kategori_id' => $categoryModels['Cake & Tart']->id,
-                'kode_produk' => 'PST-PO003',
-                'nama_produk' => 'Red Velvet Cake (Whole)',
-                'harga_jual' => 320000.00,
-                'harga_modal' => 160000.00,
-                'stok' => 3,
-                'stok_minimum' => 0,
-                'status_aktif' => true,
-                'status_ketersediaan' => 'pesan_dulu',
-            ],
-            [
-                'kategori_id' => $categoryModels['Cake & Tart']->id,
-                'kode_produk' => 'PST-PO004',
-                'nama_produk' => 'Tiramisu Cake (Whole)',
-                'harga_jual' => 280000.00,
-                'harga_modal' => 140000.00,
-                'stok' => 4,
-                'stok_minimum' => 0,
-                'status_aktif' => true,
-                'status_ketersediaan' => 'pesan_dulu',
-            ],
-            [
-                'kategori_id' => $categoryModels['Cake & Tart']->id,
-                'kode_produk' => 'PST-PO005',
-                'nama_produk' => 'Fruit Tartlet Party Size (Large)',
-                'harga_jual' => 180000.00,
-                'harga_modal' => 90000.00,
-                'stok' => 5,
-                'stok_minimum' => 0,
-                'status_aktif' => true,
-                'status_ketersediaan' => 'pesan_dulu',
-            ],
-            [
-                'kategori_id' => $categoryModels['Croissant & Danish']->id,
-                'kode_produk' => 'PST-PO006',
-                'nama_produk' => 'Croissant Party Platter (Pack of 12)',
-                'harga_jual' => 190000.00,
-                'harga_modal' => 95000.00,
-                'stok' => 8,
-                'stok_minimum' => 0,
-                'status_aktif' => true,
-                'status_ketersediaan' => 'pesan_dulu',
-            ],
-            [
-                'kategori_id' => $categoryModels['Bread & Bun']->id,
-                'kode_produk' => 'PST-PO007',
-                'nama_produk' => 'Sourdough Boule (Large Size)',
-                'harga_jual' => 45000.00,
-                'harga_modal' => 20000.00,
-                'stok' => 10,
-                'stok_minimum' => 0,
-                'status_aktif' => true,
-                'status_ketersediaan' => 'pesan_dulu',
-            ],
-            [
-                'kategori_id' => $categoryModels['Cookies & Sweet Treats']->id,
-                'kode_produk' => 'PST-PO008',
-                'nama_produk' => 'Macaron Premium Tower (36 Pcs)',
-                'harga_jual' => 380000.00,
-                'harga_modal' => 180000.00,
-                'stok' => 2,
-                'stok_minimum' => 0,
-                'status_aktif' => true,
-                'status_ketersediaan' => 'pesan_dulu',
+                'foto' => 'images/product/chocolate-chip-cookies.jpeg',
             ],
         ];
 

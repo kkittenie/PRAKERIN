@@ -90,7 +90,7 @@
                 <td class="py-3 px-3 hidden sm:table-cell text-center text-gray-500">{{ $produk->firstItem() + $loop->index }}</td>
                 <td class="py-3 px-3 hidden sm:table-cell text-center">
                     @if($item->foto)
-                    <img src="{{ asset('storage/'.$item->foto) }}" class="w-10 h-10 rounded-lg object-cover border mx-auto">
+                    <img src="{{ asset($item->foto) }}" class="w-10 h-10 rounded-lg object-cover border mx-auto">
                     @else
                     <div class="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 text-xs mx-auto">-</div>
                     @endif
@@ -118,10 +118,10 @@
                     @endif
                 </td>
                 <td class="py-3 px-3 hidden lg:table-cell text-center">
-                    @if($item->status_ketersediaan=='stok_ada')
-                    <span class="inline-flex rounded-full bg-emerald-100 dark:bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">Ready</span>
+                    @if($item->stok <= 0 || $item->status_ketersediaan=='perlu_diproduksi')
+                    <span class="inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-xs text-orange-700 dark:text-orange-400">Perlu Diproduksi</span>
                     @else
-                    <span class="inline-flex rounded-full bg-amber-100 dark:bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400">Pre-Order</span>
+                    <span class="inline-flex rounded-full bg-emerald-100 dark:bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">Ready</span>
                     @endif
                 </td>
                 <td class="py-3 px-2 sm:px-3 text-right space-x-1 whitespace-nowrap">
@@ -138,14 +138,21 @@
                 <td colspan="11" class="p-4">
                     <div class="flex flex-col sm:flex-row gap-4 items-start">
                         @if($item->foto)
-                        <img src="{{ asset('storage/'.$item->foto) }}" class="w-16 h-16 rounded-xl object-cover border border-amber-200 dark:border-amber-800 shrink-0">
+                        <img src="{{ asset($item->foto) }}" class="w-16 h-16 rounded-xl object-cover border border-amber-200 dark:border-amber-800 shrink-0">
                         @endif
                         <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300 w-full">
                             <div><span class="text-gray-400 block text-[11px]">Kode Produk</span> <span class="font-mono font-bold text-gray-800 dark:text-white">{{ $item->kode_produk }}</span></div>
                             <div><span class="text-gray-400 block text-[11px]">Kategori</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->kategori->nama_kategori ?? '-' }}</span></div>
                             <div><span class="text-gray-400 block text-[11px]">Stok</span> <span class="font-bold {{ $item->stok <= $item->stok_minimum ? 'text-red-600' : 'text-green-600' }}">{{ $item->stok }}</span> <span class="text-gray-400 text-[10px]">(Min: {{ $item->stok_minimum }})</span></div>
                             <div><span class="text-gray-400 block text-[11px]">Status</span> <span class="font-semibold {{ $item->status_aktif ? 'text-green-600' : 'text-red-600' }}">{{ $item->status_aktif ? 'status_aktif' : 'Tidak Aktif' }}</span></div>
-                            <div class="col-span-2"><span class="text-gray-400 block text-[11px]">Ketersediaan</span> <span class="font-semibold {{ $item->status_ketersediaan == 'stok_ada' ? 'text-emerald-600' : 'text-amber-600' }}">{{ $item->status_ketersediaan == 'stok_ada' ? 'Stok Ada (Ready)' : 'Pesan Dulu (Pre-Order)' }}</span></div>
+                            <div class="col-span-2">
+                                <span class="text-gray-400 block text-[11px]">Ketersediaan</span>
+                                @if($item->stok <= 0 || $item->status_ketersediaan=='perlu_diproduksi')
+                                <span class="font-semibold text-orange-600">Perlu Diproduksi</span>
+                                @else
+                                <span class="font-semibold text-emerald-600">Stok Ada (Ready)</span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </td>

@@ -123,7 +123,7 @@ Keterangan
 <tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
 <td class="py-4">{{ $loop->iteration }}</td>
 <td class="font-medium text-gray-800 dark:text-white">{{ $item->bahanBaku->nama_bahan }}</td>
-<td class="text-center font-bold text-amber-700 dark:text-amber-400">{{ $item->jumlah_terpakai }} {{ $item->bahanBaku->satuan?->nama ?? '-' }}</td>
+<td class="text-center font-bold text-amber-700 dark:text-amber-400">{{ \App\Models\Satuan::formatAngka($item->jumlah_terpakai, $item->bahanBaku->satuan?->tipe) }} {{ $item->bahanBaku->satuan?->nama ?? '-' }}</td>
 </tr>
 @endforeach
 </tbody>
@@ -136,7 +136,7 @@ Keterangan
 <div class="py-3 flex items-center justify-between">
     <span class="font-bold text-gray-800 dark:text-white text-sm">{{ $item->bahanBaku->nama_bahan }}</span>
     <span class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
-        {{ $item->jumlah_terpakai }} {{ $item->bahanBaku->satuan?->nama ?? '-' }}
+        {{ \App\Models\Satuan::formatAngka($item->jumlah_terpakai, $item->bahanBaku->satuan?->tipe) }} {{ $item->bahanBaku->satuan?->nama ?? '-' }}
     </span>
 </div>
 @endforeach
