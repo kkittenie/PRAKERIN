@@ -62,6 +62,16 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('bahan-baku', BahanBakuController::class)
         ->middleware('permission:lihat_stok|tambah_stok|edit_stok|hapus_stok');
 
+    // Laporan Produksi
+    Route::middleware('permission:laporan_produksi')->group(function () {
+
+        Route::get('/produksi/pdf', [ProduksiController::class, 'pdf'])
+            ->name('produksi.pdf');
+
+        Route::get('/produksi/excel', [ProduksiController::class, 'excel'])
+            ->name('produksi.excel');
+    });
+
     Route::resource('produksi', ProduksiController::class)
         ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
 

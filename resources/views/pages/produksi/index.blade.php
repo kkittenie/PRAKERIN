@@ -96,12 +96,32 @@
                 Menampilkan data bulan <strong>{{ $tanggalRef->translatedFormat('F Y') }}</strong>
             @endif
         </span>
+    <div class="ml-auto flex items-center gap-2">
 
-        {{-- TODO (teman): taruh tombol "Cetak PDF" & "Export Excel" di sini.
-             Gunakan query filter yang sama (periode, tanggal_ref, search) supaya hasil cetak/export
-             mengikuti data yang lagi difilter di halaman ini. Data lengkap (Jam, Kadaluarsa,
-             dan detail Bahan Baku Digunakan) sudah tersedia lewat relasi $item->detailBahan.bahanBaku.satuan
-             dan accessor $item->kadaluarsa_label — tinggal dipakai di template PDF/Excel-nya. --}}
+        <a href="{{ route('produksi.pdf', [
+            'periode' => $periode,
+            'tanggal_ref' => $periode == 'harian'
+                ? $tanggalRef->toDateString()
+                : ($periode == 'mingguan'
+                    ? $tanggalRef->format('o-\WW')
+                    : $tanggalRef->format('Y-m')),
+            'search' => $search,
+            ]) }}"
+        class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition">
+            📄 Cetak PDF
+    </a>
+
+        <a href="{{ route('produksi.excel', [
+            'periode' => $periode,
+            'tanggal_ref' => request('tanggal_ref') ?? $tanggalRef->toDateString(),
+            'search' => $search,
+        ]) }}"
+        class="inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition">
+            📊 Export CSV
+        </a>
+
+    </div>
+
     </div>
 </div>
 

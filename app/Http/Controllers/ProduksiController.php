@@ -9,6 +9,8 @@ use App\Models\ProduksiBahanBaku;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Exception;
 
 class ProduksiController extends Controller
@@ -242,6 +244,146 @@ class ProduksiController extends Controller
             'pages.produksi.show',
             compact('produksi')
         );
+    }
+
+    public function pdf(Request $request)
+    {
+        // sementara ambil semua dulu buat ngetes
+        $produksi = Produksi::with([
+            'produk',
+            'user',
+            'detailBahan.bahanBaku.satuan'
+        ])->get();
+
+        $pdf = Pdf::loadView(
+            'pages.produksi.pdf',
+            compact('produksi')
+        );
+
+        return $pdf->stream('laporan-produksi.pdf');
+    }
+
+    public function excel(Request $request)
+    {
+        $search = $request->search;
+        $periode = $request->periode ?? 'harian';
+        $tanggalRefInput = $request->tanggal_ref;
+
+        switch ($periode) {
+            case 'mingguan':
+                if ($tanggalRefInput && preg_match('/^(\d{4})-W(\d{2})$/', $tanggalRefInput, $m)) {
+                    $tanggalRef = Carbon::now()->setISODate((int) $m[1], (int) $m[2]);
+                } else {
+                    $tanggalRef = Carbon::now();
+                }
+                break;
+
+            case 'bulanan':
+                $tanggalRef = $tanggalRefInput
+                    ? Carbon::parse($tanggalRefInput . '-01')
+                    : Carbon::now();
+                break;
+
+            default:
+                $tanggalRef = $tanggalRefInput
+                    ? Carbon::parse($tanggalRefInput)
+                    : Carbon::today();
+                $periode = 'harian';
+                break;
+        }
+
+        $produksi = Produksi::with([
+                'produk',
+                'user',
+                'detailBahan.bahanBaku.satuan'
+            ])
+            ->when($search, function ($query) use ($search) {
+                $query->whereHas('produk', function ($q) use ($search) {
+                    $q->where('nama_produk', 'like', "%{$search}%");
+                });
+            })
+            ->when($periode === 'harian', function ($query) use ($tanggalRef) {
+                $query->whereDate('tanggal', $tanggalRef);
+            })
+            ->when($periode === 'mingguan', function ($query) use ($tanggalRef) {
+                $query->whereBetween('tanggal', [
+                    $tanggalRef->copy()->startOfWeek(),
+                    $tanggalRef->copy()->endOfWeek(),
+                ]);
+            })
+            ->when($periode === 'bulanan', function ($query) use ($tanggalRef) {
+                $query->whereYear('tanggal', $tanggalRef->year)
+                      ->whereMonth('tanggal', $tanggalRef->month);
+            })
+            ->get();
+
+        $filename = 'laporan-produksi-' . now()->format('YmdHis') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        return response()->stream(function () use ($produksi) {
+
+            $file = fopen('php://output', 'w');
+
+            // UTF-8 BOM supaya Excel tidak rusak karakter
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            fputcsv($file, [
+                'Tanggal Produksi',
+                'Jam Produksi',
+                'Kadaluarsa',
+                'Produk',
+                'Jumlah Hasil',
+                'Dibuat Oleh',
+                'Keterangan',
+                'Nama Bahan',
+                'Jumlah Dipakai',
+            ]);
+
+            foreach ($produksi as $item) {
+
+                if ($item->detailBahan->isEmpty()) {
+
+                    fputcsv($file, [
+                        $item->tanggal,
+                        $item->jam_produksi,
+                        $item->kadaluarsa_label,
+                        $item->produk->nama_produk,
+                        $item->jumlah_hasil,
+                        $item->user->name,
+                        $item->keterangan,
+                        '-',
+                        '-',
+                    ]);
+
+                } else {
+
+                    foreach ($item->detailBahan as $detail) {
+
+                        fputcsv($file, [
+                            $item->tanggal,
+                            $item->jam_produksi,
+                            $item->kadaluarsa_label,
+                            $item->produk->nama_produk,
+                            $item->jumlah_hasil,
+                            $item->user->name,
+                            $item->keterangan,
+                            $detail->bahanBaku->nama_bahan,
+                            $detail->jumlah_terpakai . ' ' . ($detail->bahanBaku->satuan->nama ?? ''),
+                        ]);
+
+                    }
+
+                }
+
+            }
+
+            fclose($file);
+
+        }, 200, $headers);
     }
 
     public function edit(Produksi $produksi)
