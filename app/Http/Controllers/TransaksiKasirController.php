@@ -133,7 +133,7 @@ class TransaksiKasirController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'pesan' => 'Pesanan berhasil ditahan.',
+                'pesan' => 'Pesanan berhasil masuk ke daftar Belum Dibayar.',
                 'data' => $pesanan->load('transaksi'),
                 'kode_transaksi' => $kodeTransaksi,
             ]);
@@ -213,7 +213,7 @@ class TransaksiKasirController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'pesan' => 'Pesanan berhasil dipulihkan.',
+                'pesan' => 'Pesanan berhasil dilanjutkan.',
                 'data' => $pesanan
             ]);
         } catch (\Exception $e) {
