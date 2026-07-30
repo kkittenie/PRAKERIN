@@ -180,12 +180,16 @@
                         Stok Ada
                         </option>
 
-                        <option value="pesan_dulu"
-                        {{ old('status_ketersediaan',$produk->status_ketersediaan)=='pesan_dulu' ? 'selected':'' }}>
-                        Pesan Dulu
+                        <option value="perlu_diproduksi"
+                        {{ old('status_ketersediaan',$produk->status_ketersediaan)=='perlu_diproduksi' ? 'selected':'' }}>
+                        Perlu Diproduksi
                         </option>
 
                     </select>
+
+                    <small class="text-gray-400">
+                        Otomatis menjadi "Perlu Diproduksi" jika stok 0.
+                    </small>
                 </div>
 
                 {{-- Foto --}}

@@ -107,9 +107,9 @@
                                 <button @click="filterKetersediaan = 'stok_ada'; halamanProduk = 1"
                                     :class="filterKetersediaan === 'stok_ada' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Ready Stock</button>
-                                <button @click="filterKetersediaan = 'pesan_dulu'; halamanProduk = 1"
-                                    :class="filterKetersediaan === 'pesan_dulu' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Pre-Order</button>
+                                <button @click="filterKetersediaan = 'perlu_diproduksi'; halamanProduk = 1"
+                                    :class="filterKetersediaan === 'perlu_diproduksi' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Perlu Diproduksi</button>
                                 <button @click="filterKetersediaan = 'promo'; halamanProduk = 1"
                                     :class="filterKetersediaan === 'promo' ? 'bg-rose-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Promo</button>
@@ -120,17 +120,24 @@
 
                 <!-- Scrollable grid wrapper -->
                 <div class="flex-1 lg:overflow-y-auto pr-1 min-h-0 custom-scrollbar">
-                    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
+                    <div x-show="produkTersaring.length === 0" class="h-full flex flex-col items-center justify-center py-16 text-center">
+                        <svg class="w-14 h-14 text-gray-300 dark:text-gray-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <p class="text-gray-400 dark:text-gray-500 font-semibold text-sm">Tidak ada produk</p>
+                    </div>
+                    <div x-show="produkTersaring.length > 0" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
                         <template x-for="produk in produkTersaring" :key="produk.id">
                             <div
                                 class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
-                                <div x-show="produk.status_ketersediaan !== 'pesan_dulu' && produk.stok <= 0"
+                                <div x-show="produk.status_ketersediaan !== 'perlu_diproduksi' && produk.stok <= 0"
                                     class="absolute inset-0 bg-white/80 dark:bg-gray-900/80 z-10 flex flex-col items-center justify-center p-2 text-center">
                                     <span
                                         class="bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 font-bold px-3 py-1 rounded-full text-xs">Habis</span>
                                 </div>
                                 <div class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden">
-                                    <img :src="getFotoUrl(produk.foto, produk.nama_produk)"
+                                    <img :src="getFotoUrl(produk.foto)"
+                                        x-on:error="handleFotoError($event)"
                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                         alt="Produk">
                                     <div class="absolute top-2 left-2 z-5">
@@ -138,16 +145,16 @@
                                             <span
                                                 class="bg-emerald-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Ready</span>
                                         </template>
-                                        <template x-if="produk.status_ketersediaan === 'pesan_dulu'">
+                                        <template x-if="produk.status_ketersediaan === 'perlu_diproduksi'">
                                             <span
-                                                class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Pre-Order</span>
+                                                class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu Diproduksi</span>
                                         </template>
                                     </div>
                                     <div
                                         class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
-                                        :class="produk.status_ketersediaan !== 'pesan_dulu' && produk.stok > 0 && produk.stok <= produk.stok_minimum ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'">
+                                        :class="produk.status_ketersediaan !== 'perlu_diproduksi' && produk.stok > 0 && produk.stok <= produk.stok_minimum ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'">
                                         <span
-                                            x-text="produk.status_ketersediaan === 'pesan_dulu' ? 'Pre-Order' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok)"></span>
+                                            x-text="produk.status_ketersediaan === 'perlu_diproduksi' ? 'Perlu Diproduksi' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok)"></span>
                                     </div>
                                 </div>
                                 <div class="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -174,7 +181,7 @@
                                             <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                 x-text="formatRupiah(produk.promo_aktif ? produk.harga_diskon : produk.harga_jual)"></span>
                                             <button @click="tambahKeKeranjang(produk)"
-                                                :disabled="produk.status_ketersediaan !== 'pesan_dulu' && produk.stok <= 0"
+                                                :disabled="produk.status_ketersediaan !== 'perlu_diproduksi' && produk.stok <= 0"
                                                 class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
@@ -356,7 +363,7 @@
             <div class="flex flex-col gap-2 bg-gray-50 dark:bg-gray-800/40 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded overflow-hidden bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shrink-0">
-                        <img :src="getFotoUrl(item.foto, item.nama_produk)" class="w-full h-full object-cover">
+                        <img :src="getFotoUrl(item.foto)" x-on:error="handleFotoError($event)" class="w-full h-full object-cover">
                     </div>
                     <div class="flex-1 min-w-0">
                         <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate" x-text="item.nama_produk"></h5>
@@ -712,9 +719,9 @@
     class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-9999 p-4" x-transition>
     <div @click.away="modalPembeliTerbuka = false"
         class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800">
-        <div class="bg-slate-900 dark:bg-gray-950 text-white p-5">
+        <div class="bg-amber-800 dark:bg-amber-900 text-white p-5">
             <h3 class="font-extrabold text-base">Nama Pembeli</h3>
-            <p class="text-slate-400 dark:text-gray-400 text-xs mt-0.5">Masukkan nama pembeli untuk pesanan ini.</p>
+            <p class="text-white text-xs mt-0.5">Masukkan nama pembeli untuk pesanan ini.</p>
         </div>
         <div class="p-6">
             <label class="text-xs font-bold text-gray-600 dark:text-gray-400 block mb-1">Nama Pembeli <span
@@ -929,24 +936,22 @@
                 return payloadWithoutCrc + crcHex;
             },
 
-            getFotoUrl(foto, nama) {
+            // Ambil URL foto produk langsung dari database (kolom `foto`),
+            // sama seperti halaman Produk yang pakai asset($item->foto).
+            // Kalau foto tidak ada, pakai placeholder logo (bukan tebakan gambar dari internet).
+            getFotoUrl(foto) {
                 if (foto) {
                     if (foto.startsWith('http://') || foto.startsWith('https://')) return foto;
-                    if (foto.startsWith('storage/')) return '/' + foto;
-                    return '/storage/' + foto;
+                    return '/' + foto.replace(/^\/+/, '');
                 }
-                const n = (nama || '').toLowerCase();
-                if (n.includes('croissant')) return 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&auto=format&fit=crop';
-                if (n.includes('danish')) return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&auto=format&fit=crop';
-                if (n.includes('cheese tart') || n.includes('tartlet')) return 'https://images.unsplash.com/photo-1519869325930-281384150729?w=400&auto=format&fit=crop';
-                if (n.includes('fudge cake') || n.includes('forest cake') || n.includes('velvet cake') || n.includes('birthday cake') || n.includes('tiramisu')) {
-                    return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&auto=format&fit=crop';
-                }
-                if (n.includes('cinnamon roll')) return 'https://images.unsplash.com/photo-1509365465985-25d11c17e812?w=400&auto=format&fit=crop';
-                if (n.includes('bun') || n.includes('boule') || n.includes('bread')) return 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop';
-                if (n.includes('cookie')) return 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400&auto=format&fit=crop';
-                if (n.includes('macaron')) return 'https://images.unsplash.com/photo-1569864358642-9d1684040f43?w=400&auto=format&fit=crop';
                 return '/images/logo/logo-icon.svg';
+            },
+
+            // Jika file foto di storage tidak ditemukan (404) atau gagal dimuat,
+            // otomatis fallback ke placeholder logo supaya tidak tampil gambar rusak.
+            handleFotoError(event) {
+                event.target.onerror = null;
+                event.target.src = '/images/logo/logo-icon.svg';
             },
 
             get semuaProdukTersaring() {
@@ -1080,7 +1085,7 @@
             tambahKeKeranjang(produk) {
                 const ada = this.keranjang.find(i => i.produk_id === produk.id);
                 const qty = ada ? ada.jumlah : 0;
-                if (produk.status_ketersediaan !== 'pesan_dulu' && produk.stok <= qty) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; }
+                if (produk.status_ketersediaan !== 'perlu_diproduksi' && produk.stok <= qty) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; }
                 if (ada) { ada.jumlah++; }
                 else {
                     const hargaAsli = parseFloat(produk.harga_jual);
@@ -1099,7 +1104,7 @@
                 }
                 this.tambahToast('Produk ditambahkan.', 'sukses');
             },
-            tambahJumlah(item) { if (item.status_ketersediaan !== 'pesan_dulu' && item.stok <= item.jumlah) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; } item.jumlah++; },
+            tambahJumlah(item) { if (item.status_ketersediaan !== 'perlu_diproduksi' && item.stok <= item.jumlah) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; } item.jumlah++; },
             kurangiJumlah(item) { if (item.jumlah > 1) item.jumlah--; else this.hapusItem(item); },
             hapusItem(item) { this.keranjang = this.keranjang.filter(i => i.produk_id !== item.produk_id); this.tambahToast('Item dihapus.', 'info'); },
 
@@ -1188,7 +1193,7 @@
                             // Kurangi stok di frontend UI segera setelah berhasil ditahan
                             this.keranjang.forEach(item => {
                                 const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                if (p && p.status_ketersediaan !== 'pesan_dulu') {
+                                if (p && p.status_ketersediaan !== 'perlu_diproduksi') {
                                     p.stok -= item.jumlah;
                                 }
                             });
@@ -1225,7 +1230,7 @@
                             if (d.item_pesanan) {
                                 d.item_pesanan.forEach(item => {
                                     const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                    if (p && p.status_ketersediaan !== 'pesan_dulu') {
+                                    if (p && p.status_ketersediaan !== 'perlu_diproduksi') {
                                         p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
                                     }
                                 });
@@ -1256,7 +1261,7 @@
                             if (pesanan && pesanan.item_pesanan) {
                                 pesanan.item_pesanan.forEach(item => {
                                     const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                    if (p && p.status_ketersediaan !== 'pesan_dulu') {
+                                    if (p && p.status_ketersediaan !== 'perlu_diproduksi') {
                                         p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
                                     }
                                 });
@@ -1367,7 +1372,7 @@
             if (jenis === 'dapur') {
                 const itemsDapur = d.status_pembayaran === 'Belum Lunas'
                     ? d.keranjang
-                    : d.keranjang.filter(item => item.status_ketersediaan === 'pesan_dulu');
+                    : d.keranjang.filter(item => item.status_ketersediaan === 'perlu_diproduksi');
                 if (itemsDapur.length === 0) {
                     this.tambahToast('Tidak ada item untuk dicetak ke dapur.', 'info');
                     return;
