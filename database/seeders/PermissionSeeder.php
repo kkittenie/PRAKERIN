@@ -33,15 +33,15 @@ class PermissionSeeder extends Seeder
         $pegawai = Role::firstOrCreate(['name' => 'Pegawai']);
 
         //all akses buat admin
-        $admin->SyncPermissions(Permission::all());
+        $admin->syncPermissions(Permission::all());
 
-        $kasir->SyncPermissions([
+        $kasir->syncPermissions([
             'lihat_dashboard',
             'lihat_transaksi', 'tambah_transaksi',
             'lihat_member', 'tambah_member', 'edit_member',
         ]);
 
-        $pegawai->SyncPermissions([
+        $pegawai->syncPermissions([
             'lihat_dashboard',
         ]);
     }

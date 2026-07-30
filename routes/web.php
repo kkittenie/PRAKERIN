@@ -63,7 +63,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:lihat_stok|tambah_stok|edit_stok|hapus_stok');
 
     // Laporan Produksi
-    Route::middleware('permission:laporan_produksi')->group(function () {
+    Route::middleware('permission:lihat_laporan')->group(function () {
 
         Route::get('/produksi/pdf', [ProduksiController::class, 'pdf'])
             ->name('produksi.pdf');
@@ -206,4 +206,4 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
