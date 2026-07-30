@@ -130,31 +130,26 @@
                         <template x-for="produk in produkTersaring" :key="produk.id">
                             <div
                                 class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
-                                <div x-show="produk.status_ketersediaan !== 'perlu_diproduksi' && produk.stok <= 0"
-                                    class="absolute inset-0 bg-white/80 dark:bg-gray-900/80 z-10 flex flex-col items-center justify-center p-2 text-center">
-                                    <span
-                                        class="bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 font-bold px-3 py-1 rounded-full text-xs">Habis</span>
-                                </div>
                                 <div class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden">
                                     <img :src="getFotoUrl(produk.foto)"
                                         x-on:error="handleFotoError($event)"
                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                         alt="Produk">
                                     <div class="absolute top-2 left-2 z-5">
-                                        <template x-if="produk.status_ketersediaan === 'stok_ada'">
+                                        <template x-if="!butuhProduksi(produk)">
                                             <span
                                                 class="bg-emerald-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Ready</span>
                                         </template>
-                                        <template x-if="produk.status_ketersediaan === 'perlu_diproduksi'">
+                                        <template x-if="butuhProduksi(produk)">
                                             <span
                                                 class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu Diproduksi</span>
                                         </template>
                                     </div>
                                     <div
                                         class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
-                                        :class="produk.status_ketersediaan !== 'perlu_diproduksi' && produk.stok > 0 && produk.stok <= produk.stok_minimum ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'">
+                                        :class="!butuhProduksi(produk) && produk.stok > 0 && produk.stok <= produk.stok_minimum ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'">
                                         <span
-                                            x-text="produk.status_ketersediaan === 'perlu_diproduksi' ? 'Perlu Diproduksi' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok)"></span>
+                                            x-text="butuhProduksi(produk) ? 'Perlu Diproduksi' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok)"></span>
                                     </div>
                                 </div>
                                 <div class="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -181,8 +176,8 @@
                                             <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                 x-text="formatRupiah(produk.promo_aktif ? produk.harga_diskon : produk.harga_jual)"></span>
                                             <button @click="tambahKeKeranjang(produk)"
-                                                :disabled="produk.status_ketersediaan !== 'perlu_diproduksi' && produk.stok <= 0"
-                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600">
+                                                title="Tambah ke keranjang"
+                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -359,14 +354,22 @@
             <svg class="w-12 h-12 text-gray-300 dark:text-gray-700 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
             <p class="text-gray-400 dark:text-gray-500 text-xs font-semibold">Keranjang masih kosong</p>
         </div>
-        <template x-for="item in keranjang" :key="item.produk_id">
+        <template x-for="item in keranjang" :key="item.key">
             <div class="flex flex-col gap-2 bg-gray-50 dark:bg-gray-800/40 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded overflow-hidden bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shrink-0">
                         <img :src="getFotoUrl(item.foto)" x-on:error="handleFotoError($event)" class="w-full h-full object-cover">
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate" x-text="item.nama_produk"></h5>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate" x-text="item.nama_produk"></h5>
+                            <template x-if="itemButuhProduksi(item)">
+                                <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/25">Perlu Diproduksi</span>
+                            </template>
+                            <template x-if="!itemButuhProduksi(item)">
+                                <span class="shrink-0 text-[9px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/25">Ready Stock</span>
+                            </template>
+                        </div>
                         <div class="flex flex-col gap-0.5 mt-1">
                             <div class="flex items-center gap-1.5">
                                 <span class="text-xxs font-bold text-amber-700 dark:text-amber-400" x-text="formatRupiah(item.harga_jual_asli)"></span>
@@ -577,10 +580,18 @@
             </div>
             <div
                 class="border-y border-gray-100 dark:border-gray-800 py-4 flex flex-col gap-3 max-h-[300px] overflow-y-auto">
-                <template x-for="item in keranjang" :key="item.produk_id">
+                <template x-for="item in keranjang" :key="item.key">
                     <div class="flex justify-between items-start gap-4">
                         <div class="min-w-0 flex-1">
-                            <p class="font-bold text-xs text-gray-900 dark:text-white" x-text="item.nama_produk"></p>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <p class="font-bold text-xs text-gray-900 dark:text-white" x-text="item.nama_produk"></p>
+                                <template x-if="itemButuhProduksi(item)">
+                                    <span class="text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/25">Perlu Diproduksi</span>
+                                </template>
+                                <template x-if="!itemButuhProduksi(item)">
+                                    <span class="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/25">Ready Stock</span>
+                                </template>
+                            </div>
                             <p class="text-xxs text-gray-400 dark:text-gray-500">
                                 <span x-text="item.jumlah"></span> x <span
                                     x-text="formatRupiah(item.harga_jual_asli)"></span>
@@ -954,6 +965,59 @@
                 event.target.src = '/images/logo/logo-icon.svg';
             },
 
+            // ================== ALUR KETERSEDIAAN PRODUK ==================
+            // Sebuah PRODUK (dilihat dari kartu produk / status global) dianggap
+            // "Perlu Diproduksi" jika:
+            // 1) admin memang menandainya manual sebagai 'perlu_diproduksi', ATAU
+            // 2) stoknya sudah habis (<= 0).
+            // Ini dipakai untuk badge & filter di grid produk.
+            butuhProduksi(produk) {
+                return produk.status_ketersediaan === 'perlu_diproduksi' || parseFloat(produk.stok) <= 0;
+            },
+
+            // Versi untuk item yang sudah ada di keranjang / pesanan ditahan.
+            // Item keranjang menyimpan flag `butuh_produksi` sebagai snapshot per
+            // BARIS (bukan per produk), karena satu produk bisa terbagi jadi 2
+            // baris: "Ready Stock" dan "Perlu Diproduksi", saat jumlah yang
+            // diminta melebihi stok yang tersedia. Fallback ke status_ketersediaan
+            // untuk data lama yang belum punya flag ini.
+            itemButuhProduksi(item) {
+                if (typeof item.butuh_produksi !== 'undefined' && item.butuh_produksi !== null) {
+                    return !!item.butuh_produksi;
+                }
+                return item.status_ketersediaan === 'perlu_diproduksi';
+            },
+
+            // Bangun satu baris keranjang baru. `key` unik per produk+status
+            // supaya "Ready Stock" dan "Perlu Diproduksi" untuk produk yang
+            // sama bisa hidup berdampingan sebagai 2 baris terpisah.
+            buatItemKeranjang(produk, jumlah, perluProduksi) {
+                const hargaAsli = parseFloat(produk.harga_jual);
+                return {
+                    key: produk.id + '_' + (perluProduksi ? 'produksi' : 'ready'),
+                    produk_id: produk.id,
+                    nama_produk: produk.nama_produk,
+                    harga_jual: hargaAsli,
+                    harga_jual_asli: hargaAsli,
+                    promo_aktif: produk.promo_aktif,
+                    foto: produk.foto,
+                    jumlah: jumlah,
+                    stok: produk.stok,
+                    status_ketersediaan: produk.status_ketersediaan,
+                    butuh_produksi: perluProduksi,
+                    catatan: ''
+                };
+            },
+
+            // Pastikan setiap item punya `key` unik. Dipakai saat memuat ulang
+            // item_pesanan dari server (data lama mungkin belum punya `key`).
+            normalisasiItemKeranjang(items) {
+                return (items || []).map(item => ({
+                    ...item,
+                    key: item.key || (item.produk_id + '_' + (item.butuh_produksi ? 'produksi' : 'ready'))
+                }));
+            },
+
             get semuaProdukTersaring() {
                 return this.daftarProduk.filter(p => {
                     const cocokKategori = this.kategoriTerpilih === 'semua' || p.kategori_id === this.kategoriTerpilih;
@@ -964,8 +1028,10 @@
                         cocokKetersediaan = true;
                     } else if (this.filterKetersediaan === 'promo') {
                         cocokKetersediaan = p.promo_aktif !== null;
-                    } else {
-                        cocokKetersediaan = p.status_ketersediaan === this.filterKetersediaan;
+                    } else if (this.filterKetersediaan === 'perlu_diproduksi') {
+                        cocokKetersediaan = this.butuhProduksi(p);
+                    } else if (this.filterKetersediaan === 'stok_ada') {
+                        cocokKetersediaan = !this.butuhProduksi(p);
                     }
 
                     return cocokKategori && cocokCari && cocokKetersediaan;
@@ -984,6 +1050,10 @@
                 const perPage = parseInt(this.itemsPerPage) || 10;
                 const start = (this.halamanProduk - 1) * perPage;
                 return list.slice(start, start + perPage);
+            },
+
+            get produkDitampilkan() {
+                return this.produkTersaring;
             },
 
             get activePromoInfo() {
@@ -1082,31 +1152,82 @@
             },
 
             // Keranjang
+            // Sebuah produk boleh terbagi jadi 2 baris keranjang: "Ready Stock"
+            // (sejumlah stok yang masih tersedia) dan "Perlu Diproduksi"
+            // (sisanya, begitu stok habis). Kasir TIDAK ditolak menambah lebih
+            // dari stok yang ada - kelebihannya otomatis dialihkan ke baris
+            // "Perlu Diproduksi" dengan toast keterangan yang berbeda.
             tambahKeKeranjang(produk) {
-                const ada = this.keranjang.find(i => i.produk_id === produk.id);
-                const qty = ada ? ada.jumlah : 0;
-                if (produk.status_ketersediaan !== 'perlu_diproduksi' && produk.stok <= qty) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; }
-                if (ada) { ada.jumlah++; }
-                else {
-                    const hargaAsli = parseFloat(produk.harga_jual);
-                    this.keranjang.push({
-                        produk_id: produk.id,
-                        nama_produk: produk.nama_produk,
-                        harga_jual: hargaAsli,
-                        harga_jual_asli: hargaAsli,
-                        promo_aktif: produk.promo_aktif,
-                        foto: produk.foto,
-                        jumlah: 1,
-                        stok: produk.stok,
-                        status_ketersediaan: produk.status_ketersediaan,
-                        catatan: ''
-                    });
+                // Produk yang ditandai MANUAL sebagai 'perlu_diproduksi' oleh
+                // admin selalu masuk ke satu baris "Perlu Diproduksi" saja,
+                // tanpa batas, tanpa displit (override berlaku untuk seluruh
+                // produk).
+                const manualProduksi = produk.status_ketersediaan === 'perlu_diproduksi';
+
+                if (manualProduksi) {
+                    const item = this.keranjang.find(i => i.produk_id === produk.id && i.butuh_produksi);
+                    if (item) {
+                        item.jumlah++;
+                    } else {
+                        this.keranjang.push(this.buatItemKeranjang(produk, 1, true));
+                    }
+                    this.tambahToast('Produk ditambahkan (Perlu Diproduksi).', 'sukses');
+                    return;
                 }
-                this.tambahToast('Produk ditambahkan.', 'sukses');
+
+                // Produk otomatis (status berdasar stok): cek berapa slot "ready
+                // stock" yang masih tersisa dibanding yang sudah ada di keranjang.
+                const readyItem = this.keranjang.find(i => i.produk_id === produk.id && !i.butuh_produksi);
+                const stokTersedia = parseFloat(produk.stok) || 0;
+                const sudahReady = readyItem ? readyItem.jumlah : 0;
+
+                if (sudahReady < stokTersedia) {
+                    // Masih ada slot ready stock untuk 1 unit ini.
+                    if (readyItem) {
+                        readyItem.jumlah++;
+                    } else {
+                        this.keranjang.push(this.buatItemKeranjang(produk, 1, false));
+                    }
+                    this.tambahToast('Produk ditambahkan.', 'sukses');
+                } else {
+                    // Slot ready stock sudah penuh/habis, unit ini otomatis masuk
+                    // ke baris "Perlu Diproduksi" (baris terpisah dari Ready Stock).
+                    const produksiItem = this.keranjang.find(i => i.produk_id === produk.id && i.butuh_produksi);
+                    if (produksiItem) {
+                        produksiItem.jumlah++;
+                    } else {
+                        this.keranjang.push(this.buatItemKeranjang(produk, 1, true));
+                    }
+                    this.tambahToast('Produk ditambahkan (Perlu Diproduksi).', 'sukses');
+                }
             },
-            tambahJumlah(item) { if (item.status_ketersediaan !== 'perlu_diproduksi' && item.stok <= item.jumlah) { this.tambahToast('Stok tidak mencukupi!', 'error'); return; } item.jumlah++; },
+            tambahJumlah(item) {
+                const produk = this.daftarProduk.find(p => p.id === item.produk_id);
+
+                // Baris "Perlu Diproduksi" boleh ditambah bebas tanpa batas stok.
+                if (!produk || item.butuh_produksi) {
+                    item.jumlah++;
+                    return;
+                }
+
+                // Baris "Ready Stock": cek dulu apakah masih ada slot stok tersisa
+                // untuk baris ini. Kalau sudah penuh, kelebihannya dialihkan ke
+                // baris "Perlu Diproduksi" (bukan menolak penambahan).
+                const stokTersedia = parseFloat(produk.stok) || 0;
+                if (item.jumlah < stokTersedia) {
+                    item.jumlah++;
+                } else {
+                    const produksiItem = this.keranjang.find(i => i.produk_id === produk.id && i.butuh_produksi);
+                    if (produksiItem) {
+                        produksiItem.jumlah++;
+                    } else {
+                        this.keranjang.push(this.buatItemKeranjang(produk, 1, true));
+                    }
+                    this.tambahToast('Stok sudah habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                }
+            },
             kurangiJumlah(item) { if (item.jumlah > 1) item.jumlah--; else this.hapusItem(item); },
-            hapusItem(item) { this.keranjang = this.keranjang.filter(i => i.produk_id !== item.produk_id); this.tambahToast('Item dihapus.', 'info'); },
+            hapusItem(item) { this.keranjang = this.keranjang.filter(i => i.key !== item.key); this.tambahToast('Item dihapus.', 'info'); },
 
             // Pembeli
             bukaModalPembeli() {
@@ -1191,9 +1312,10 @@
                     .then(r => {
                         if (r.status === 'success') {
                             // Kurangi stok di frontend UI segera setelah berhasil ditahan
+                            // (hanya untuk item yang bukan "Perlu Diproduksi")
                             this.keranjang.forEach(item => {
                                 const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                if (p && p.status_ketersediaan !== 'perlu_diproduksi') {
+                                if (p && !this.itemButuhProduksi(item)) {
                                     p.stok -= item.jumlah;
                                 }
                             });
@@ -1220,17 +1342,18 @@
                     .then(r => {
                         if (r.status === 'success') {
                             const d = r.data;
-                            this.keranjang = d.item_pesanan;
+                            this.keranjang = this.normalisasiItemKeranjang(d.item_pesanan);
                             this.namaPembeli = d.nama_pembeli;
                             this.catatan = d.catatan || '';
                             this.diskonPersen = d.diskon || '';
                             this.modalDitahanTerbuka = false;
 
                             // Kembalikan stok di frontend UI saat pesanan dipulihkan
+                            // (hanya untuk item yang bukan "Perlu Diproduksi")
                             if (d.item_pesanan) {
                                 d.item_pesanan.forEach(item => {
                                     const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                    if (p && p.status_ketersediaan !== 'perlu_diproduksi') {
+                                    if (p && !this.itemButuhProduksi(item)) {
                                         p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
                                     }
                                 });
@@ -1258,10 +1381,11 @@
                     .then(r => {
                         if (r.status === 'success') {
                             // Kembalikan stok di frontend UI saat pesanan ditahan dihapus
+                            // (hanya untuk item yang bukan "Perlu Diproduksi")
                             if (pesanan && pesanan.item_pesanan) {
                                 pesanan.item_pesanan.forEach(item => {
                                     const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                    if (p && p.status_ketersediaan !== 'perlu_diproduksi') {
+                                    if (p && !this.itemButuhProduksi(item)) {
                                         p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
                                     }
                                 });
@@ -1350,7 +1474,12 @@
                         .then(r => r.json())
                         .then(r => {
                             if (r.status === 'success') {
-                                this.keranjang.forEach(item => { const p = this.daftarProduk.find(x => x.id === item.produk_id); if (p) p.stok -= item.jumlah; });
+                                // Kurangi stok di frontend UI hanya untuk item yang bukan
+                                // "Perlu Diproduksi" (server juga tidak menguranginya).
+                                this.keranjang.forEach(item => {
+                                    const p = this.daftarProduk.find(x => x.id === item.produk_id);
+                                    if (p && !this.itemButuhProduksi(item)) p.stok -= item.jumlah;
+                                });
                                 this.suksesData = { ...dataStruk, kode_transaksi: r.kode_transaksi };
                                 this.modalSuksesTerbuka = true;
                                 this.bersihkanKeranjang();
@@ -1370,9 +1499,9 @@
             }
 
             if (jenis === 'dapur') {
-                const itemsDapur = d.status_pembayaran === 'Belum Lunas'
-                    ? d.keranjang
-                    : d.keranjang.filter(item => item.status_ketersediaan === 'perlu_diproduksi');
+                // Tiket dapur/produksi HANYA untuk item berstatus "Perlu Diproduksi",
+                // berlaku sama baik untuk transaksi Lunas maupun Belum Lunas.
+                const itemsDapur = d.keranjang.filter(item => this.itemButuhProduksi(item));
                 if (itemsDapur.length === 0) {
                     this.tambahToast('Tidak ada item untuk dicetak ke dapur.', 'info');
                     return;
@@ -1386,7 +1515,7 @@
 
             mulaiLunaskan(pesanan) {
                 this.pesananSedangDilunaskan = pesanan;
-                this.keranjang = JSON.parse(JSON.stringify(pesanan.item_pesanan));
+                this.keranjang = this.normalisasiItemKeranjang(JSON.parse(JSON.stringify(pesanan.item_pesanan)));
                 this.namaPembeli = pesanan.nama_pembeli;
                 this.diskonPersen = pesanan.diskon || '';
                 this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 5;
