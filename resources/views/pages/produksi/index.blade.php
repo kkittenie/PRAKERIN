@@ -63,7 +63,6 @@
 
             <select name="periode" x-model="periode" @change="$nextTick(() => $el.form.submit())"
                 class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-                class="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
                 <option value="harian">Per Hari</option>
                 <option value="mingguan">Per Minggu</option>
                 <option value="bulanan">Per Bulan</option>
@@ -100,7 +99,9 @@
 
         {{-- TODO (teman): taruh tombol "Cetak PDF" & "Export Excel" di sini.
              Gunakan query filter yang sama (periode, tanggal_ref, search) supaya hasil cetak/export
-             mengikuti data yang lagi difilter di halaman ini. --}}
+             mengikuti data yang lagi difilter di halaman ini. Data lengkap (Jam, Kadaluarsa,
+             dan detail Bahan Baku Digunakan) sudah tersedia lewat relasi $item->detailBahan.bahanBaku.satuan
+             dan accessor $item->kadaluarsa_label — tinggal dipakai di template PDF/Excel-nya. --}}
     </div>
 </div>
 
@@ -112,10 +113,8 @@
 <th class="py-4 px-2 sm:hidden w-8 text-center"></th>
 <th class="py-4 hidden sm:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
 <th class="py-4 hidden md:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Tanggal</th>
-<th class="py-4 hidden lg:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Jam</th>
 <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Produk</th>
-<th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Hasil</th>
-<th class="py-4 hidden lg:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Kadaluarsa</th>
+<th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Hasil Produksi</th>
 <th class="py-4 hidden lg:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Dibuat Oleh</th>
 <th class="py-4 hidden lg:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Keterangan</th>
 <th class="py-4 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">Aksi</th>
@@ -131,7 +130,6 @@
 </td>
 <td class="py-3.5 hidden sm:table-cell text-gray-500">{{ $produksi->firstItem() + $loop->index }}</td>
 <td class="py-3.5 hidden md:table-cell">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td>
-<td class="py-3.5 hidden lg:table-cell">{{ $item->jam_produksi ? \Carbon\Carbon::parse($item->jam_produksi)->format('H:i') : '-' }}</td>
 <td class="py-3.5 font-semibold text-gray-900 dark:text-white">
     {{ $item->produk->nama_produk }}
     <div class="md:hidden text-[11px] text-gray-400 font-normal mt-0.5">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</div>
@@ -141,7 +139,6 @@
 {{ $item->jumlah_hasil }} pcs
 </span>
 </td>
-<td class="py-3.5 hidden lg:table-cell">{{ $item->kadaluarsa_label }}</td>
 <td class="py-3.5 hidden lg:table-cell">{{ $item->user->name }}</td>
 <td class="py-3.5 hidden lg:table-cell">{{ $item->keterangan ?: '-' }}</td>
 <td class="py-3.5 text-right">
@@ -150,41 +147,11 @@
 </tr>
 <!-- Expandable child row -->
 <tr x-show="open" x-cloak x-transition class="bg-amber-50/40 dark:bg-amber-950/20 text-xs">
-<td colspan="10" class="p-3.5">
-    <div class="grid grid-cols-2 gap-2.5 text-gray-600 dark:text-gray-300 mb-3">
+<td colspan="8" class="p-3.5">
+    <div class="grid grid-cols-2 gap-2.5 text-gray-600 dark:text-gray-300">
         <div><span class="text-gray-400">Tanggal:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</span></div>
-        <div><span class="text-gray-400">Jam Produksi:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->jam_produksi ? \Carbon\Carbon::parse($item->jam_produksi)->format('H:i') : '-' }}</span></div>
-        <div><span class="text-gray-400">Kadaluarsa:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->kadaluarsa_label }}</span></div>
         <div><span class="text-gray-400">Dibuat Oleh:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->user->name }}</span></div>
         <div class="col-span-2"><span class="text-gray-400">Keterangan:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->keterangan ?: '-' }}</span></div>
-    </div>
-
-    <div class="mt-2">
-        <p class="font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Bahan Baku Digunakan</p>
-        <table class="w-full text-xs border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-            <thead>
-                <tr class="bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">
-                    <th class="py-2 px-2 text-left w-10">No</th>
-                    <th class="py-2 px-2 text-left">Nama Bahan</th>
-                    <th class="py-2 px-2 text-right">Jumlah Dipakai</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($item->detailBahan as $bahan)
-                <tr class="border-t border-gray-100 dark:border-gray-800">
-                    <td class="py-2 px-2">{{ $loop->iteration }}</td>
-                    <td class="py-2 px-2">{{ $bahan->bahanBaku->nama_bahan ?? '-' }}</td>
-                    <td class="py-2 px-2 text-right">
-                        {{ $bahan->jumlah_terpakai }} {{ $bahan->bahanBaku->satuan->nama ?? '' }}
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="3" class="py-2 px-2 text-center text-gray-400">Tidak ada data bahan baku.</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
     </div>
 </td>
 </tr>
@@ -192,7 +159,7 @@
 @empty
 <tbody>
 <tr>
-<td colspan="10" class="py-10 text-center text-gray-500 dark:text-gray-400">Belum ada data produksi untuk periode ini.</td>
+<td colspan="8" class="py-10 text-center text-gray-500 dark:text-gray-400">Belum ada data produksi untuk periode ini.</td>
 </tr>
 </tbody>
 @endforelse
