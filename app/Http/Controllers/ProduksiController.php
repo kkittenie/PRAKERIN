@@ -16,19 +16,69 @@ class ProduksiController extends Controller
     public function index(Request $request)
     {
             $search = $request->search;
+            $periode = $request->periode ?? 'harian';
+            $tanggalRefInput = $request->tanggal_ref;
 
-            $produksi = Produksi::with(['produk','user'])
+            switch ($periode) {
+                case 'mingguan':
+                    try {
+                    if ($tanggalRefInput && preg_match('/^(\d{4})-W(\d{2})$/', $tanggalRefInput, $m)) {
+                        $tanggalRef = \Carbon\Carbon::now()->setISODate((int) $m[1], (int) $m[2]);
+                    } else {
+                        $tanggalRef = \Carbon\Carbon::now();
+                    }
+            } catch (\Exception $e) {
+                $tanggalRef = \Carbon\Carbon::now();
+            }
+                    break;
+
+                    case 'bulanan':
+                        try{
+                        $tanggalRef = $tanggalRefInput
+                        ? \Carbon\Carbon::parse($tanggalRefInput . '-01')    
+                        : \Carbon\Carbon::now();
+                        } catch (\Exception $e) {
+                            $tanggalRef = \Carbon\Carbon::now();
+                        }
+                        break;
+
+                    default:
+                    try{
+                        $tanggalRef = $tanggalRefInput
+                        ? \Carbon\Carbon::parse($tanggalRefInput)
+                        : \Carbon\Carbon::today();
+                    } catch (\Exception $e) {
+                        $tanggalRef = \Carbon\Carbon::today();
+                    }
+                        $periode = 'harian';
+                        break;
+            }
+
+            $produksi = Produksi::with(['produk','user', 'detailBahan.bahanBaku.satuan'])
                 ->when($search, function ($query) use ($search) {
                     $query->whereHas('produk', function ($q) use ($search) {
                         $q->where('nama_produk', 'like', "%{$search}%");
                     });
+                })
+                ->when($periode === 'harian', function ($query) use ($tanggalRef) {
+                    $query->whereDate('tanggal', $tanggalRef->toDateString());
+                })
+                ->when($periode === 'mingguan', function ($query) use ($tanggalRef) {
+                    $query->whereBetween('tanggal', [
+                        $tanggalRef->copy()->startOfWeek()->toDateString(),
+                        $tanggalRef->copy()->endOfWeek()->toDateString(),
+                    ]);
+                })
+                ->when($periode === 'bulanan', function ($query) use ($tanggalRef) {
+                    $query->whereYear('tanggal', $tanggalRef->year)
+                          ->whereMonth('tanggal', $tanggalRef->month);
                 })
                 ->latest()
                 ->paginate(10);
 
             return view(
                 'pages.produksi.index',
-                compact('produksi','search')
+                compact('produksi','search', 'periode', 'tanggalRef')
             );
     }
 

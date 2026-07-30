@@ -34,4 +34,17 @@ class Produksi extends Model
     {
         return $this->hasMany(ProduksiBahanBaku::class, 'produksi_id');
     }
+
+    public function getKadaluarsaLabelAttribute(): string
+    {
+        if ($this->kadaluarsa_tipe === 'tanggal' && $this->kadaluarsa_tanggal) {
+            return \Carbon\Carbon::parse($this->kadaluarsa_tanggal)->format('d-m-Y');
+        }
+
+        if ($this->kadaluarsa_tipe === 'jam' && this->kadaluarsa_jam) {
+            return $this->kadaluarsa_jam . ' jam setelah produksi';
+        }
+
+        return '-';
+    }
 }
