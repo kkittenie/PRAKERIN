@@ -47,4 +47,17 @@ class Satuan extends Model
     {
         return $this->hasMany(BahanBaku::class, 'satuan_id');
     }
+
+        public static function formatAngka($angka, ?string $tipe = 'desimal'): string
+    {
+        $angka = (float) $angka;
+
+        if ($tipe === 'bulat') {
+            return number_format($angka, 0, ',', '.');
+        }
+
+        $formatted = rtrim(rtrim(number_format($angka, 2, '.', ''), '0'), '.');
+
+        return str_replace('.', ',', $formatted);
+    }
 }

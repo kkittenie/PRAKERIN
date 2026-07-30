@@ -75,6 +75,8 @@ class TransaksiBahanBakuController extends Controller
 
     public function store(Request $request)
     {
+        $bahanBaku = \App\Models\BahanBaku::with('satuan')->find($request->bahan_baku_id);
+
         $validated = $request->validate([
 
             'tanggal' => [
@@ -91,6 +93,11 @@ class TransaksiBahanBakuController extends Controller
                 'required',
                 'numeric',
                 'gt:0',
+                function ($attribute, $value, $fail) use ($bahanBaku) {
+                    if ($bahanBaku && $bahanBaku->satuan?->tipe === 'bulat' && floor($value) != $value) {
+                        $fail("Jumlah harus bilangan bulat untuk satuan {$bahanBaku->satuan->nama} (tidak boleh desimal).");
+                    }
+                },
             ],
 
             'harga_satuan' => [

@@ -30,12 +30,8 @@
 
 <x-common.component-card title="Form Transaksi Bahan Baku">
 
-<form
-    action="{{ route('transaksi-bahan-baku.store') }}"
-    method="POST"
->
-
-@csrf
+    <form action="{{ route('transaksi-bahan-baku.store') }}"method="POST">
+    @csrf
 
 
 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -85,16 +81,15 @@
             name="bahan_baku_id"
             id="bahanBakuSelect"
             required
-            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-        >
+            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
             <option value="">Pilih Bahan Baku</option>
 
             @foreach($bahanBaku as $item)
                 <option
                     value="{{ $item->id }}"
                     data-satuan="{{ $item->satuan?->nama ?? '-' }}"
-                    {{ old('bahan_baku_id') == $item->id ? 'selected' : '' }}
-                >
+                    data-tipe="{{ $item->satuan?->tipe ?? 'desimal' }}"
+                    {{ old('bahan_baku_id') == $item->id ? 'selected' : '' }}>
                     {{ $item->nama_bahan }}
                 </option>
             @endforeach
@@ -120,14 +115,14 @@
             <input
                 type="number"
                 name="jumlah"
+                id="inputJumlah"
                 step="0.01"
                 min="0.01"
                 value="{{ old('jumlah') }}"
                 required
-                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-            >
-
-            <span id="satuanJumlah" class="flex min-w-[64px] items-center justify-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+           
+                <span id="satuanJumlah" class="flex min-w-[64px] items-center justify-center rounded-lg border border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
                 -
             </span>
         </div>
@@ -243,8 +238,7 @@
 
         <span
             id="total-harga"
-            class="text-lg font-semibold text-gray-800 dark:text-white"
-        >
+            class="text-lg font-semibold text-gray-800 dark:text-white">
 
             Rp 0
 
@@ -270,8 +264,7 @@
 
     <button
         type="submit"
-        class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600"
-    >
+        class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600">
 
         Simpan Transaksi
 
@@ -317,21 +310,24 @@ function hitungTotal()
 
 }
 
-const bahanBakuSelect = document.getElementById('bahanBakuSelect');
-const satuanJumlah = document.getElementById('satuanJumlah');
+    const bahanBakuSelect = document.getElementById('bahanBakuSelect');
+    const satuanJumlah = document.getElementById('satuanJumlah');
 
-function tampilkanSatuan() {
-    const selected = bahanBakuSelect.options[bahanBakuSelect.selectedIndex];
-    satuanJumlah.textContent = (selected && selected.dataset.satuan) ? selected.dataset.satuan : '-';
-}
+    function tampilkanSatuan() {
+        const selected = bahanBakuSelect.options[bahanBakuSelect.selectedIndex];
+        satuanJumlah.textContent = (selected && selected.dataset.satuan) ? selected.dataset.satuan : '-';
 
-bahanBakuSelect.addEventListener('change', tampilkanSatuan);
-window.addEventListener('load', tampilkanSatuan);
+        const tipe = (selected && selected.dataset.tipe) ? selected.dataset.tipe : 'desimal';
+        inputJumlah.step = (tipe === 'bulat') ? '1' : '0.01';
+    }
 
-inputJumlah.addEventListener(
-    'input',
-    hitungTotal
-);
+    bahanBakuSelect.addEventListener('change', tampilkanSatuan);
+    window.addEventListener('load', tampilkanSatuan);
+
+    inputJumlah.addEventListener(
+        'input',
+        hitungTotal
+    );
 
 
 inputHarga.addEventListener(

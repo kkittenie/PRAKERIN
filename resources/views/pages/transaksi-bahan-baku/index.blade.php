@@ -94,7 +94,7 @@
 </td>
 <td class="py-3.5 hidden lg:table-cell text-center">
 <span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-3 py-1 text-green-700 dark:text-green-400 text-xs font-bold">
-{{ number_format($item->jumlah, 2, ',', '.') }} {{ $item->bahanBaku->satuan?->nama ?? '-' }}</span>
+{{ \App\Models\Satuan::formatAngka($item->jumlah, $item->bahanBaku->satuan?->tipe) }} {{ $item->bahanBaku->satuan?->nama ?? '-' }}</span>
 </td>
 <td class="py-3.5 font-bold text-amber-700 dark:text-amber-400">Rp {{ number_format($item->total_harga, 0, ',', '.') }}</td>
 <td class="py-3.5 hidden md:table-cell">{{ $item->supplier ?: '-' }}</td>
@@ -107,7 +107,7 @@
 <td colspan="8" class="p-3.5">
     <div class="grid grid-cols-2 gap-2.5 text-gray-600 dark:text-gray-300">
         <div><span class="text-gray-400">Tanggal:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</span></div>
-        <div><span class="text-gray-400">Jumlah:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ number_format($item->jumlah, 2, ',', '.') }} {{ $item->bahanBaku->satuan?->nama ?? '-' }}</span></div>        <div><span class="text-gray-400">Supplier:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->supplier ?: '-' }}</span></div>
+        <div><span class="text-gray-400">Jumlah:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ \App\Models\Satuan::formatAngka($item->jumlah, $item->bahanBaku->satuan?->tipe) }} {{ $item->bahanBaku->satuan?->nama ?? '-' }}</span></div>        <div><span class="text-gray-400">Supplier:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->supplier ?: '-' }}</span></div>
         <div><span class="text-gray-400">Total Harga:</span> <span class="font-bold text-amber-700 dark:text-amber-400">Rp {{ number_format($item->total_harga, 0, ',', '.') }}</span></div>
     </div>
 </td>

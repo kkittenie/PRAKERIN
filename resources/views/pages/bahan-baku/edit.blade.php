@@ -8,6 +8,12 @@
 
     <x-common.component-card title="Form Edit Bahan Baku">
 
+        @php
+            $tipeSatuan = $bahanBaku->satuan?->tipe;
+            $stokTampil = old('stok', $tipeSatuan === 'bulat' ? (int) $bahanBaku->stok : $bahanBaku->stok);
+            $stokMinTampil = old('stok_minimum', $tipeSatuan === 'bulat' ? (int) $bahanBaku->stok_minimum : $bahanBaku->stok_minimum);
+        @endphp
+
        <form action="{{ route('bahan-baku.update', $bahanBaku->id) }}" method="POST">
         @csrf
         @method('PUT')
@@ -85,7 +91,7 @@
                     step="0.01"
                     name="stok"
                     id="inputStok"
-                    value="{{ old('stok', $bahanBaku->stok) }}"
+                    value="{{ $stokTampil }}"
                     class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('stok')
@@ -104,7 +110,7 @@
                     step="0.01"
                     name="stok_minimum"
                     id="inputStokMinimum"
-                    value="{{ old('stok_minimum', $bahanBaku->stok_minimum) }}"
+                    value="{{ $stokMinTampil }}"
                     class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                                 
                     @error('stok_minimum')
