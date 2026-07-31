@@ -75,6 +75,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('produksi', ProduksiController::class)
         ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
 
+    Route::post('produksi/{produksi}/kurangi-stok', [ProduksiController::class, 'kurangiStok'])
+        ->name('produksi.kurangi-stok')
+        ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
+
     Route::resource('pegawai', PegawaiController::class)
         ->middleware('permission:lihat_pegawai|tambah_pegawai|edit_pegawai|hapus_pegawai');
 

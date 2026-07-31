@@ -3,7 +3,8 @@
     $lowStockProduk = \App\Models\Produk::where('status_aktif', true)->whereColumn('stok', '<=', 'stok_minimum')->get();
     $lowStockBahan = \App\Models\BahanBaku::whereColumn('stok', '<=', 'stok_minimum')->get();
     $pesananDitahan = \App\Models\PesananDitahan::orderBy('created_at', 'desc')->limit(5)->get();
-    
+    $produksiKadaluarsa = \App\Models\Produksi::with('produk')->whereColumn('jumlah_disesuaikan', '<', 'jumlah_hasil')->get()->filter(fn ($item) => $item->is_kadaluarsa);    
+ 
     $notificationsList = [];
     
     // Add held orders
@@ -36,14 +37,28 @@
     
     // Add low stock raw materials
     foreach ($lowStockBahan as $bahan) {
+        $namaSatuan = optional($bahan->satuan)->nama ?? '-';
         $notificationsList[] = [
             'type' => 'Stok Bahan Menipis',
             'title' => 'Bahan Baku Menipis',
-            'desc' => 'Bahan "' . $bahan->nama_bahan . '" sisa ' . rtrim(rtrim(number_format($bahan->stok, 2, '.', ''), '0'), '.') . ' ' . $bahan->satuan . ' (minimum ' . rtrim(rtrim(number_format($bahan->stok_minimum, 2, '.', ''), '0'), '.') . ' ' . $bahan->satuan . ').',
+            'desc' => 'Bahan "' . $bahan->nama_bahan . '" sisa ' . \App\Models\Satuan::formatAngka($bahan->stok, optional($bahan->satuan)->tipe) . ' ' . $namaSatuan . ' (minimum ' . \App\Models\Satuan::formatAngka($bahan->stok_minimum, optional($bahan->satuan)->tipe) . ' ' . $namaSatuan . ').',
             'time' => $bahan->updated_at->diffForHumans(),
             'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>',
             'color' => 'bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400',
             'url' => route('bahan-baku.index'),
+        ];
+    }
+    
+   // Add expired production batches
+    foreach ($produksiKadaluarsa as $item) {
+        $notificationsList[] = [
+            'type' => 'Produk Kadaluarsa',
+            'title' => 'Produk Kadaluarsa',
+            'desc' => 'Batch produksi "' . $item->produk->nama_produk . '" sisa ' . $item->sisa_belum_disesuaikan . ' pcs (dari ' . $item->jumlah_hasil . ' pcs) sudah lewat masa kadaluarsa.',
+            'time' => $item->created_at->diffForHumans(),
+            'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>',
+            'color' => 'bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400',
+            'url' => route('produksi.index'),
         ];
     }
     

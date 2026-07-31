@@ -93,15 +93,22 @@ class ProduksiController extends Controller
 
     public function index(Request $request)
     {
+        $search = $request->search;
+
         [$periode, $tanggalRef] = $this->resolvePeriode($request);
 
         $produksi = $this->filteredProduksiQuery($request, $periode, $tanggalRef)
             ->latest()
             ->paginate(10);
 
+        $produksiKadaluarsa = Produksi::with('produk')
+            ->whereColumn('jumlah_disesuaikan', '<', 'jumlah_hasil')
+            ->get()
+            ->filter(fn ($item) => $item->is_kadaluarsa);
+
         return view(
             'pages.produksi.index',
-            compact('produksi', 'periode', 'tanggalRef')
+            compact('produksi', 'search', 'periode', 'tanggalRef', 'produksiKadaluarsa')
         );
     }
 
@@ -320,5 +327,35 @@ class ProduksiController extends Controller
     public function destroy(string $id)
     {
         return back()->with('error', 'Data produksi tidak dapat dihapus.');
+    }
+
+    public function kurangiStok(Request $request, Produksi $produksi)
+    {
+        $request->validate([
+            'jumlah' => 'required|integer|min:1',
+        ]);
+
+        $sisa = $produksi->sisa_belum_disesuaikan;
+
+        if ($request->jumlah > $sisa) {
+            return back()->with('error', "Jumlah melebihi sisa yang belum disesuaikan ({$sisa} pcs).");
+        }
+
+        if ($request->jumlah > $produksi->produk->stok) {
+            return back()->with('error', 'Jumlah yang dikurangi melebihi stok produk saat ini.');
+        }
+
+        DB::transaction(function () use ($request, $produksi) {
+            $produksi->produk->decrement('stok', $request->jumlah);
+            $produksi->increment('jumlah_disesuaikan', $request->jumlah);
+        });
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($produksi)
+            ->withProperties(['jumlah_dikurangi' => $request->jumlah])
+            ->log('menyesuaikan stok produk kadaluarsa');
+
+        return back()->with('success', "Stok produk \"{$produksi->produk->nama_produk}\" berhasil dikurangi {$request->jumlah} pcs.");
     }
 }
