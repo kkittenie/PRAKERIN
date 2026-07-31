@@ -79,6 +79,18 @@ Jumlah Hasil
 <div>
 
 <p class="text-sm text-gray-500 dark:text-gray-400">
+Kebutuhan Produksi
+</p>
+
+<p class="font-semibold text-amber-600 dark:text-amber-400">
+{{ $produksi->kebutuhan_produksi ?: 0 }}
+</p>
+
+</div>
+
+<div>
+
+<p class="text-sm text-gray-500 dark:text-gray-400">
 Dibuat Oleh
 </p>
 

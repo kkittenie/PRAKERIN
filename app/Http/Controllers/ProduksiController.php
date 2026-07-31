@@ -120,6 +120,7 @@ class ProduksiController extends Controller
             'jam_produksi' => 'required|date_format:H:i',
             'produk_id' => 'required|exists:produks,id',
             'jumlah_hasil' => 'required|integer|min:1',
+            'kebutuhan_produksi' => 'nullable|integer|min:0|lte:jumlah_hasil',
             'keterangan' => 'nullable|string',
 
             'kadaluarsa_tipe' => 'required|in:tanggal,jam',
@@ -167,11 +168,14 @@ class ProduksiController extends Controller
         try {
             $produksi = null;
             DB::transaction(function () use ($request, &$produksi) {
+                $kebutuhanProduksi = (int) ($request->kebutuhan_produksi ?? 0);
+
                 $produksi = Produksi::create([
                     'tanggal' => $request->tanggal,
                     'jam_produksi' => $request->jam_produksi,
                     'produk_id' => $request->produk_id,
                     'jumlah_hasil' => $request->jumlah_hasil,
+                    'kebutuhan_produksi' => $kebutuhanProduksi,
                     'user_id' => Auth::id(),
                     'keterangan' => $request->keterangan,
                     'kadaluarsa_tipe' => $request->kadaluarsa_tipe,
@@ -201,8 +205,16 @@ class ProduksiController extends Controller
                     $bahan->decrement('stok', $pakai);
                 }
 
-                $produk = Produk::findOrFail($request->produk_id);
+                $produk = Produk::lockForUpdate()->findOrFail($request->produk_id);
                 $produk->increment('stok', $request->jumlah_hasil);
+
+                if ($kebutuhanProduksi > 0) {
+                    if ($produk->stok < $kebutuhanProduksi) {
+                        throw new Exception("Stok {$produk->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                    }
+
+                    $produk->decrement('stok', $kebutuhanProduksi);
+                }
             });
 
             activity()
@@ -211,6 +223,7 @@ class ProduksiController extends Controller
                 ->withProperties([
                     'produk_id' => $request->produk_id,
                     'jumlah_hasil' => $request->jumlah_hasil,
+                    'kebutuhan_produksi' => $request->kebutuhan_produksi ?? 0,
                     'bahan_baku_id' => $request->bahan_baku_id,
                     'jumlah_terpakai' => $request->jumlah_terpakai,
                 ])

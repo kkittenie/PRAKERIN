@@ -183,6 +183,7 @@ Pengambilan Bahan Baku
 
         <input
         type="number"
+        id="jumlah_hasil"
         name="jumlah_hasil"
         value="{{ old('jumlah_hasil') }}"
         min="1"
@@ -190,6 +191,34 @@ Pengambilan Bahan Baku
 
         @error('jumlah_hasil')
         <small class="text-red-500">{{ $message }}</small>
+        @enderror
+
+        </div>
+
+        {{-- Kebutuhan Produksi --}}
+        <div>
+
+        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+
+        Kebutuhan Produksi
+
+        </label>
+
+        <input
+        type="number"
+        id="kebutuhan_produksi"
+        name="kebutuhan_produksi"
+        value="{{ old('kebutuhan_produksi', 0) }}"
+        min="0"
+        max="{{ old('jumlah_hasil') ?: 0 }}"
+        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+
+        <small id="infoKebutuhan" class="text-gray-500 dark:text-gray-400">
+            Jumlah stok produk yang akan dipakai/dikurangi untuk kebutuhan produksi ini. Tidak boleh lebih dari jumlah hasil produksi.
+        </small>
+
+        @error('kebutuhan_produksi')
+        <small class="block text-red-500">{{ $message }}</small>
         @enderror
 
         </div>
@@ -216,19 +245,13 @@ Pengambilan Bahan Baku
 
 <div class="mt-8 flex justify-end gap-3">
 
-<a
-href="{{ route('produksi.index') }}"
-class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+    <a href="{{ route('produksi.index') }}" class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+        Batal
+    </a>
 
-Batal
-
-</a>
-
-<button
-type="submit"
-class="rounded-lg bg-brand-500 px-5 py-2 text-white">
-    Simpan Produksi
-</button>
+    <button type="submit" class="rounded-lg bg-brand-500 px-5 py-2 text-white">
+        Simpan Produksi
+    </button>
 
 </div>
 
@@ -491,6 +514,71 @@ function aktifkanSearch(element) {
     tipeTanggal.addEventListener('change', toggleKadaluarsa);
     tipeJam.addEventListener('change', toggleKadaluarsa);
     window.addEventListener('load', toggleKadaluarsa);
+
+    // ==== Batas Kebutuhan Produksi tidak boleh lebih dari Jumlah Hasil Produksi ====
+    const inputHasil = document.getElementById('jumlah_hasil');
+    const inputKebutuhan = document.getElementById('kebutuhan_produksi');
+    const infoKebutuhan = document.getElementById('infoKebutuhan');
+    const formProduksi = document.querySelector('form');
+
+    function maxHasilSaatIni() {
+        const nilai = parseInt(inputHasil.value, 10);
+        return (isNaN(nilai) || nilai < 0) ? 0 : nilai;
+    }
+
+    function updateInfoKebutuhan(maxHasil) {
+        infoKebutuhan.textContent = maxHasil > 0
+            ? `Maksimal ${maxHasil} (tidak boleh lebih dari jumlah hasil produksi).`
+            : 'Isi jumlah hasil produksi terlebih dahulu.';
+    }
+
+    function sinkronMax() {
+        const maxHasil = maxHasilSaatIni();
+
+        inputKebutuhan.max = maxHasil;
+
+        let nilaiKebutuhan = parseInt(inputKebutuhan.value, 10);
+        if (isNaN(nilaiKebutuhan) || nilaiKebutuhan < 0) {
+            nilaiKebutuhan = 0;
+        }
+        if (nilaiKebutuhan > maxHasil) {
+            nilaiKebutuhan = maxHasil;
+        }
+        inputKebutuhan.value = nilaiKebutuhan;
+
+        updateInfoKebutuhan(maxHasil);
+    }
+
+    function clampKebutuhan() {
+        const maxHasil = maxHasilSaatIni();
+
+        let nilaiKebutuhan = parseInt(inputKebutuhan.value, 10);
+        if (isNaN(nilaiKebutuhan) || nilaiKebutuhan < 0) {
+            nilaiKebutuhan = 0;
+        }
+        if (nilaiKebutuhan > maxHasil) {
+            nilaiKebutuhan = maxHasil;
+        }
+
+        inputKebutuhan.value = nilaiKebutuhan;
+        updateInfoKebutuhan(maxHasil);
+    }
+
+    inputHasil.addEventListener('input', sinkronMax);
+    inputHasil.addEventListener('change', sinkronMax);
+
+    inputKebutuhan.addEventListener('input', clampKebutuhan);
+    inputKebutuhan.addEventListener('change', clampKebutuhan);
+    inputKebutuhan.addEventListener('blur', clampKebutuhan);
+    inputKebutuhan.addEventListener('keyup', clampKebutuhan);
+
+    if (formProduksi) {
+        formProduksi.addEventListener('submit', function () {
+            clampKebutuhan();
+        });
+    }
+
+    window.addEventListener('load', sinkronMax);
 
 </script>
 

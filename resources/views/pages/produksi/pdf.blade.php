@@ -4,37 +4,37 @@
     <meta charset="UTF-8">
     <title>Laporan Produksi</title>
     <style>
-        @page { margin: 25px 30px; }
+        @page { margin: 22px 28px; }
 
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 11px;
+            font-size: 10.5px;
             color: #333;
         }
 
         .header {
             text-align: center;
             border-bottom: 2px solid #b45309;
-            padding-bottom: 10px;
-            margin-bottom: 12px;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
         }
         .header h1 {
-            font-size: 18px;
+            font-size: 17px;
             margin: 0;
             color: #b45309;
             letter-spacing: 1px;
         }
         .header p {
             margin: 2px 0 0 0;
-            font-size: 10px;
+            font-size: 9.5px;
             color: #777;
         }
 
         .meta {
             display: table;
             width: 100%;
-            margin-bottom: 15px;
-            font-size: 10px;
+            margin-bottom: 12px;
+            font-size: 9.5px;
             color: #555;
         }
         .meta .left { display: table-cell; text-align: left; }
@@ -43,55 +43,70 @@
         .card {
             border: 1px solid #d4a373;
             border-radius: 4px;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
             page-break-inside: avoid;
         }
         .card-title {
+            display: table;
+            width: 100%;
             background: #fff7ed;
-            padding: 6px 10px;
-            font-weight: bold;
+            padding: 5px 10px;
             border-bottom: 1px solid #d4a373;
-            font-size: 12px;
+            font-size: 11px;
             color: #92400e;
+        }
+        .card-title .nama {
+            display: table-cell;
+            font-weight: bold;
+        }
+        .card-title .tanggal {
+            display: table-cell;
+            text-align: right;
+            font-weight: normal;
+            font-size: 9.5px;
+            color: #a16207;
         }
 
         .info-table {
             width: 100%;
             border-collapse: collapse;
+            border-bottom: 1px solid #f1e0c8;
         }
         .info-table td {
-            padding: 4px 10px;
+            padding: 3px 10px;
             vertical-align: top;
-            font-size: 10.5px;
+            font-size: 9.5px;
+            white-space: nowrap;
         }
         .info-table .label {
-            color: #888;
-            width: 110px;
+            color: #999;
+            width: 1%;
+            padding-right: 4px;
         }
-
-        .badge {
-            display: inline-block;
-            background: #dcfce7;
-            color: #15803d;
-            padding: 1px 8px;
-            border-radius: 10px;
-            font-weight: bold;
+        .info-table .val {
+            width: 32%;
+        }
+        .info-table .val.wrap {
+            white-space: normal;
         }
 
         table.bahan {
             width: calc(100% - 20px);
-            margin: 6px 10px 10px 10px;
+            margin: 6px 10px 8px 10px;
             border-collapse: collapse;
         }
         table.bahan th, table.bahan td {
             border: 1px solid #e5c9a3;
-            padding: 4px 8px;
-            font-size: 10px;
+            padding: 3px 7px;
+            font-size: 9.5px;
         }
         table.bahan th {
             background: #fef3e2;
             color: #92400e;
             text-align: left;
+        }
+        table.bahan tbody tr:nth-child(even) td {
+            background: #fffaf3;
         }
         table.bahan td.center { text-align: center; }
         table.bahan td.right { text-align: right; }
@@ -104,11 +119,11 @@
 
         .footer {
             position: fixed;
-            bottom: -15px;
+            bottom: -14px;
             left: 0;
             right: 0;
             text-align: center;
-            font-size: 9px;
+            font-size: 8.5px;
             color: #999;
         }
     </style>
@@ -138,36 +153,33 @@
     @forelse ($produksi as $item)
     <div class="card">
         <div class="card-title">
-            {{ $loop->iteration }}. {{ $item->produk->nama_produk ?? '-' }}
+            <span class="nama">{{ $loop->iteration }}. {{ $item->produk->nama_produk ?? '-' }}</span>
+            <span class="tanggal">{{ \Carbon\Carbon::parse($item->tanggal)->translatedFormat('d F Y') }} &bull; {{ $item->jam_produksi ? \Carbon\Carbon::parse($item->jam_produksi)->format('H:i') : '-' }}</span>
         </div>
 
         <table class="info-table">
             <tr>
-                <td class="label">Tanggal Produksi</td>
-                <td>: {{ \Carbon\Carbon::parse($item->tanggal)->translatedFormat('d F Y') }}</td>
                 <td class="label">Jumlah Hasil</td>
-                <td>: <span class="badge">{{ $item->jumlah_hasil }} pcs</span></td>
-            </tr>
-            <tr>
-                <td class="label">Jam Produksi</td>
-                <td>: {{ $item->jam_produksi ? \Carbon\Carbon::parse($item->jam_produksi)->format('H:i') : '-' }}</td>
-                <td class="label">Dibuat Oleh</td>
-                <td>: {{ $item->user->name ?? '-' }}</td>
-            </tr>
-            <tr>
+                <td class="val">{{ $item->jumlah_hasil }} pcs</td>
+                <td class="label">Kebutuhan Produksi</td>
+                <td class="val">{{ $item->kebutuhan_produksi ?: 0 }} pcs</td>
                 <td class="label">Kadaluarsa</td>
-                <td>: {{ $item->kadaluarsa_label }}</td>
+                <td class="val">{{ $item->kadaluarsa_label }}</td>
+            </tr>
+            <tr>
+                <td class="label">Dibuat Oleh</td>
+                <td class="val" colspan="3">{{ $item->user->name ?? '-' }}</td>
                 <td class="label">Keterangan</td>
-                <td>: {{ $item->keterangan ?: '-' }}</td>
+                <td class="val wrap">{{ $item->keterangan ?: '-' }}</td>
             </tr>
         </table>
 
         <table class="bahan">
             <thead>
                 <tr>
-                    <th style="width:35px;">No</th>
+                    <th style="width:28px;">No</th>
                     <th>Nama Bahan</th>
-                    <th style="width:140px;">Jumlah Dipakai</th>
+                    <th style="width:120px;">Jumlah Dipakai</th>
                 </tr>
             </thead>
             <tbody>

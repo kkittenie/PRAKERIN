@@ -13,6 +13,7 @@ class Produksi extends Model
         'jam_produksi',
         'produk_id',
         'jumlah_hasil',
+        'kebutuhan_produksi',
         'user_id',
         'keterangan',
         'kadaluarsa_tipe',
@@ -41,7 +42,7 @@ class Produksi extends Model
             return \Carbon\Carbon::parse($this->kadaluarsa_tanggal)->format('d-m-Y');
         }
 
-        if ($this->kadaluarsa_tipe === 'jam' && this->kadaluarsa_jam) {
+        if ($this->kadaluarsa_tipe === 'jam' && $this->kadaluarsa_jam) {
             return $this->kadaluarsa_jam . ' jam setelah produksi';
         }
 
