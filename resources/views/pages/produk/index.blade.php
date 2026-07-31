@@ -90,7 +90,7 @@
                 <td class="py-3 px-3 hidden sm:table-cell text-center text-gray-500">{{ $produk->firstItem() + $loop->index }}</td>
                 <td class="py-3 px-3 hidden sm:table-cell text-center">
                     @if($item->foto)
-                    <img src="{{ asset($item->foto) }}" class="w-10 h-10 rounded-lg object-cover border mx-auto">
+                    <img src="{{ asset('storage/' . $item->foto) }}" class="w-10 h-10 rounded-lg object-cover border mx-auto">
                     @else
                     <div class="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 text-xs mx-auto">-</div>
                     @endif
@@ -138,7 +138,7 @@
                 <td colspan="11" class="p-4">
                     <div class="flex flex-col sm:flex-row gap-4 items-start">
                         @if($item->foto)
-                        <img src="{{ asset($item->foto) }}" class="w-16 h-16 rounded-xl object-cover border border-amber-200 dark:border-amber-800 shrink-0">
+                        <img src="{{ asset('storage/' . $item->foto) }}" class="w-16 h-16 rounded-xl object-cover border border-amber-200 dark:border-amber-800 shrink-0">
                         @endif
                         <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300 w-full">
                             <div><span class="text-gray-400 block text-[11px]">Kode Produk</span> <span class="font-mono font-bold text-gray-800 dark:text-white">{{ $item->kode_produk }}</span></div>

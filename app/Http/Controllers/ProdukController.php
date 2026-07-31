@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\Storage;
 
 class ProdukController extends Controller
 {
+    /**
+     * Folder tempat foto produk disimpan di dalam disk "public".
+     * Akan menghasilkan path fisik: storage/app/public/produk/images/...
+     * Dan bisa diakses lewat URL: /storage/produk/images/...
+     * (pastikan sudah jalankan: php artisan storage:link)
+     */
+    private const FOTO_PATH = 'produk/images';
+
     public function index(Request $request)
     {
         $search = $request->search;
@@ -35,19 +43,19 @@ class ProdukController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-        'kategori_id' => 'required|exists:kategori_produks,id',
-        'kode_produk' => 'required|max:50|unique:produks,kode_produk',
-        'nama_produk' => 'required|max:100',
-        'harga_jual' => 'required|numeric|min:0',
-        'harga_modal' => 'required|numeric|min:0',
-        'stok' => 'required|integer|min:0',
-        'stok_minimum' => 'required|integer|min:0',
-        'status_aktif' => 'required|boolean',
-        'status_ketersediaan' => [
-            'required',
-            Rule::in(['stok_ada', 'perlu_diproduksi']),
-        ],
-        'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'kategori_id' => 'required|exists:kategori_produks,id',
+            'kode_produk' => 'required|max:50|unique:produks,kode_produk',
+            'nama_produk' => 'required|max:100',
+            'harga_jual' => 'required|numeric|min:0',
+            'harga_modal' => 'required|numeric|min:0',
+            'stok' => 'required|integer|min:0',
+            'stok_minimum' => 'required|integer|min:0',
+            'status_aktif' => 'required|boolean',
+            'status_ketersediaan' => [
+                'required',
+                Rule::in(['stok_ada', 'perlu_diproduksi']),
+            ],
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         // Stok yang habis (0) otomatis diset "Perlu Diproduksi", bukan pre-order.
@@ -56,7 +64,7 @@ class ProdukController extends Controller
             : 'stok_ada';
 
         if ($request->hasFile('foto')) {
-            $validated['foto'] = $request->file('foto')->store('produk', 'public');
+            $validated['foto'] = $request->file('foto')->store(self::FOTO_PATH, 'public');
         }
 
         $produk = Produk::create($validated);
@@ -124,7 +132,7 @@ class ProdukController extends Controller
 
             $validated['foto'] = $request
                 ->file('foto')
-                ->store('produk', 'public');
+                ->store(self::FOTO_PATH, 'public');
         }
 
         $produk->update($validated);
@@ -148,8 +156,8 @@ class ProdukController extends Controller
 
     public function destroy(Produk $produk)
     {
-         if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
-        Storage::disk('public')->delete($produk->foto);
+        if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
+            Storage::disk('public')->delete($produk->foto);
         }
 
         activity()
