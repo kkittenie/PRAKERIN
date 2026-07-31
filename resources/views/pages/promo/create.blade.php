@@ -207,7 +207,7 @@
                             
                             <div class="w-full aspect-square rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 mb-3">
                                 @if($produk->foto)
-                                    <img src="{{ asset($produk->foto) }}" class="w-full h-full object-cover">
+                                    <img src="{{ asset('storage/' . $produk->foto) }}" class="w-full h-full object-cover">
                                 @else
                                     <div class="w-full h-full flex items-center justify-center text-gray-400 text-xxs font-bold uppercase bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 text-amber-700 dark:text-amber-400">
                                         {{ substr($produk->nama_produk, 0, 2) }}

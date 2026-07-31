@@ -16,7 +16,22 @@
     </div>
 @endif
 
-<div class="space-y-6">
+<div class="space-y-6" x-data="{
+        modalHapusTerbuka: false,
+        formTerpilih: null,
+        namaHapus: '',
+        bukaModalHapus(form, nama) {
+            this.formTerpilih = form;
+            this.namaHapus = nama;
+            this.modalHapusTerbuka = true;
+        },
+        konfirmasiHapus() {
+            if (this.formTerpilih) {
+                this.formTerpilih.submit();
+            }
+            this.modalHapusTerbuka = false;
+        }
+    }">
 
     <x-common.component-card title="Data Satuan">
 
@@ -141,7 +156,8 @@
                                     @method('DELETE')
 
                                     <button
-                                        onclick="return confirm('Yakin ingin menghapus satuan ini?')"
+                                        type="button"
+                                        @click="bukaModalHapus($el.closest('form'), '{{ addslashes($item->nama) }}')"
                                         class="text-red-500 font-semibold hover:underline text-xs sm:text-sm">
 
                                         Hapus
@@ -183,6 +199,30 @@
         </div>
 
     </x-common.component-card>
+
+    <!-- ========== MODAL: KONFIRMASI HAPUS SATUAN ========== -->
+    <div x-show="modalHapusTerbuka" x-cloak x-transition
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+        <div @click.away="modalHapusTerbuka = false"
+            class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+            <div class="p-6 text-center">
+                <div class="w-14 h-14 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
+                    ⚠
+                </div>
+                <h3 class="font-extrabold text-gray-900 dark:text-white text-base">Hapus Satuan?</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Satuan <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="namaHapus"></span>
+                    akan dihapus dan tidak dapat dipulihkan kembali.
+                </p>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3">
+                <button type="button" @click="modalHapusTerbuka = false"
+                    class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-bold text-xs rounded-lg transition text-gray-700 dark:text-gray-300">Batal</button>
+                <button type="button" @click="konfirmasiHapus()"
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Hapus</button>
+            </div>
+        </div>
+    </div>
 
 </div>
 
