@@ -68,16 +68,47 @@
 <div class="relative" x-data="{
     dropdownOpen: false,
     notifying: {{ $notifyingCount > 0 ? 'true' : 'false' }},
+    posisiAtas: 0,
+    posisiKiri: 0,
+    tinggiMax: 400,
+
     toggleDropdown() {
         this.dropdownOpen = !this.dropdownOpen;
         this.notifying = false;
+        if (this.dropdownOpen) {
+            this.$nextTick(() => this.hitungPosisi());
+        }
     },
     closeDropdown() {
         this.dropdownOpen = false;
+    },
+    hitungPosisi() {
+        const margin = 12;
+        const tombol = this.$refs.tombolNotifikasi.getBoundingClientRect();
+        const panel = this.$refs.panelNotifikasi;
+        const lebarPanel = panel.offsetWidth;
+
+        let kiri = tombol.right - lebarPanel;
+        kiri = Math.max(margin, Math.min(kiri, window.innerWidth - lebarPanel - margin));
+
+        let atas = tombol.bottom + margin;
+        let tinggi = window.innerHeight - atas - margin;
+
+        // Jika ruang di bawah tombol terlalu sempit (misal hp/tab landscape),
+        // pastikan tetap ada tinggi minimum yang wajar untuk menampilkan list.
+        if (tinggi < 200) {
+            tinggi = Math.max(160, window.innerHeight - margin * 2);
+            atas = margin;
+        }
+
+        this.posisiKiri = kiri;
+        this.posisiAtas = atas;
+        this.tinggiMax = tinggi;
     }
-}" @click.away="closeDropdown()">
+}" @click.away="closeDropdown()" @resize.window="if (dropdownOpen) hitungPosisi()" @scroll.window="if (dropdownOpen) hitungPosisi()">
     <!-- Notification Button -->
     <button
+        x-ref="tombolNotifikasi"
         class="relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full hover:text-dark-900 h-11 w-11 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700"
         @click="toggleDropdown()"
         type="button"
@@ -112,6 +143,7 @@
 
     <!-- Dropdown Start -->
     <div
+        x-ref="panelNotifikasi"
         x-show="dropdownOpen"
         x-transition:enter="transition ease-out duration-100"
         x-transition:enter-start="transform opacity-0 scale-95"
@@ -119,11 +151,12 @@
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
-        class="absolute -right-[240px] mt-[17px] flex h-[380px] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg sm:w-[361px] lg:right-0 dark:border-gray-800 dark:bg-gray-900"
+        :style="`top:${posisiAtas}px; left:${posisiKiri}px; max-height:${tinggiMax}px;`"
+        class="fixed flex w-[92vw] max-w-[361px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900 z-99999"
         style="display: none;"
     >
         <!-- Dropdown Header -->
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
             <h5 class="text-lg font-semibold text-gray-800 dark:text-white">Notifikasi POS</h5>
             <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
                 {{ $notifyingCount }} Baru
@@ -131,7 +164,7 @@
         </div>
 
         <!-- Notification List -->
-        <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar flex-1">
+        <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar flex-1 min-h-0">
             @forelse ($notificationsList as $notification)
                 <li>
                     <a

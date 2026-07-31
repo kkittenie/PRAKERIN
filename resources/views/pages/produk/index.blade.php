@@ -161,7 +161,7 @@
                             <div><span class="text-gray-400 block text-[11px]">Kode Produk</span> <span class="font-mono font-bold text-gray-800 dark:text-white">{{ $item->kode_produk }}</span></div>
                             <div><span class="text-gray-400 block text-[11px]">Kategori</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->kategori->nama_kategori ?? '-' }}</span></div>
                             <div><span class="text-gray-400 block text-[11px]">Stok</span> <span class="font-bold {{ $item->stok <= $item->stok_minimum ? 'text-red-600' : 'text-green-600' }}">{{ $item->stok }}</span> <span class="text-gray-400 text-[10px]">(Min: {{ $item->stok_minimum }})</span></div>
-                            <div><span class="text-gray-400 block text-[11px]">Status</span> <span class="font-semibold {{ $item->status_aktif ? 'text-green-600' : 'text-red-600' }}">{{ $item->status_aktif ? 'status_aktif' : 'Tidak Aktif' }}</span></div>
+                            <div><span class="text-gray-400 block text-[11px]">Status</span> <span class="font-semibold {{ $item->status_aktif ? 'text-green-600' : 'text-red-600' }}">{{ $item->status_aktif ? 'Aktif' : 'Tidak Aktif' }}</span></div>
                             <div class="col-span-2">
                                 <span class="text-gray-400 block text-[11px]">Ketersediaan</span>
                                 @if($item->stok <= 0 || $item->status_ketersediaan=='perlu_diproduksi')

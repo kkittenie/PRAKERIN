@@ -11,6 +11,10 @@
     toasts: [],
     toastCounter: 0,
 
+    posisiAtas: 0,
+    posisiKiri: 0,
+    tinggiMax: 500,
+
     tambahToast(pesan, tipe = 'sukses') {
         const id = this.toastCounter++;
         this.toasts.push({ id, pesan, tipe });
@@ -20,33 +24,60 @@
     },
 
     init() {
-    this.refreshPrinters();
-},
+        this.refreshPrinters();
+    },
 
     toggleDropdown() {
         this.dropdownOpen = !this.dropdownOpen;
+        if (this.dropdownOpen) {
+            this.$nextTick(() => this.hitungPosisi());
+        }
     },
 
     closeDropdown() {
         this.dropdownOpen = false;
     },
 
-    refreshPrinters() {
-    if (!window.Android) return;
+    hitungPosisi() {
+        const margin = 12;
+        const tombol = this.$refs.tombolSetelan.getBoundingClientRect();
+        const panel = this.$refs.panelSetelan;
+        const lebarPanel = panel.offsetWidth;
 
-    try {
-        let data = Android.getPairedPrinters();
+        let kiri = tombol.right - lebarPanel;
+        kiri = Math.max(margin, Math.min(kiri, window.innerWidth - lebarPanel - margin));
 
-        this.availablePrinters = JSON.parse(data);
+        let atas = tombol.bottom + margin;
+        let tinggi = window.innerHeight - atas - margin;
 
-        if (this.availablePrinters.length > 0) {
-            this.selectedPrinter = this.availablePrinters[0].address;
+        // Jika ruang di bawah tombol terlalu sempit (misal hp/tab landscape),
+        // pastikan tetap ada tinggi minimum yang wajar untuk menampilkan isi panel.
+        if (tinggi < 250) {
+            tinggi = Math.max(220, window.innerHeight - margin * 2);
+            atas = margin;
         }
 
-    } catch (e) {
-        console.error(e);
-    }
-},
+        this.posisiKiri = kiri;
+        this.posisiAtas = atas;
+        this.tinggiMax = tinggi;
+    },
+
+    refreshPrinters() {
+        if (!window.Android) return;
+
+        try {
+            let data = Android.getPairedPrinters();
+
+            this.availablePrinters = JSON.parse(data);
+
+            if (this.availablePrinters.length > 0) {
+                this.selectedPrinter = this.availablePrinters[0].address;
+            }
+
+        } catch (e) {
+            console.error(e);
+        }
+    },
 
     scanPrinter() {
         this.isScanning = true;
@@ -58,45 +89,46 @@
 
     toggleConnect() {
 
-    if (!this.selectedPrinter) {
-        this.tambahToast('Pilih printer terlebih dahulu.', 'error');
-        return;
-    }
-
-    this.isConnecting = true;
-
-    setTimeout(() => {
-        try {
-            const result = Android.connectPrinter(
-                this.selectedPrinter
-            );
-
-            console.log('CONNECT RESULT:', result);
-
-            this.isConnected = result === 'true' || result === true;
-
-            if (this.isConnected) {
-                this.tambahToast('Berhasil menyambungkan printer.', 'sukses');
-            } else {
-                this.tambahToast('Gagal menyambungkan printer.', 'error');
-            }
-
-        } catch(e) {
-
-            console.error(e);
-
-            this.isConnected = false;
-            this.tambahToast('Gagal menyambungkan printer.', 'error');
-
-        } finally {
-            this.isConnecting = false;
+        if (!this.selectedPrinter) {
+            this.tambahToast('Pilih printer terlebih dahulu.', 'error');
+            return;
         }
-    }, 400);
 
-}
-}" @click.away="closeDropdown()">
+        this.isConnecting = true;
+
+        setTimeout(() => {
+            try {
+                const result = Android.connectPrinter(
+                    this.selectedPrinter
+                );
+
+                console.log('CONNECT RESULT:', result);
+
+                this.isConnected = result === 'true' || result === true;
+
+                if (this.isConnected) {
+                    this.tambahToast('Berhasil menyambungkan printer.', 'sukses');
+                } else {
+                    this.tambahToast('Gagal menyambungkan printer.', 'error');
+                }
+
+            } catch(e) {
+
+                console.error(e);
+
+                this.isConnected = false;
+                this.tambahToast('Gagal menyambungkan printer.', 'error');
+
+            } finally {
+                this.isConnecting = false;
+            }
+        }, 400);
+
+    }
+}" @click.away="closeDropdown()" @resize.window="if (dropdownOpen) hitungPosisi()" @scroll.window="if (dropdownOpen) hitungPosisi()">
     <!-- Settings Button -->
     <button
+        x-ref="tombolSetelan"
         class="relative flex items-center justify-center text-gray-500 transition-all duration-200 bg-white border border-gray-200 rounded-full hover:text-gray-900 h-11 w-11 hover:bg-gray-100 hover:scale-105 active:scale-95 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer"
         @click="toggleDropdown()" type="button" aria-label="Pengaturan Printer">
         <!-- Crisp Heroicons Gear / Settings Icon -->
@@ -109,11 +141,14 @@
     </button>
 
     <!-- Dropdown Panel -->
-    <div x-show="dropdownOpen" x-transition:enter="transition ease-out duration-100"
+    <div
+        x-ref="panelSetelan"
+        x-show="dropdownOpen" x-transition:enter="transition ease-out duration-100"
         x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100"
         x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
-        class="fixed inset-x-4 top-20 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-3 w-auto sm:w-80 max-w-full sm:max-w-none rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900 z-99999"
+        :style="`top:${posisiAtas}px; left:${posisiKiri}px; max-height:${tinggiMax}px;`"
+        class="fixed w-[92vw] max-w-[320px] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900 z-99999"
         style="display: none;">
         <!-- Header -->
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800">
