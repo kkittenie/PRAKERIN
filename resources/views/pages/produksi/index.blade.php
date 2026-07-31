@@ -105,7 +105,6 @@
                 : ($periode == 'mingguan'
                     ? $tanggalRef->format('o-\WW')
                     : $tanggalRef->format('Y-m')),
-            'search' => $search,
             ]) }}"
         class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition">
             📄 Cetak PDF
@@ -114,7 +113,6 @@
         <a href="{{ route('produksi.excel', [
             'periode' => $periode,
             'tanggal_ref' => request('tanggal_ref') ?? $tanggalRef->toDateString(),
-            'search' => $search,
         ]) }}"
         class="inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition">
             📊 Export CSV

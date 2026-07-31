@@ -15,85 +15,102 @@ use Exception;
 
 class ProduksiController extends Controller
 {
+    /**
+     * Resolve periode & tanggal referensi dari request.
+     * Dipakai bareng oleh index(), pdf(), dan excel() biar filternya selalu selaras.
+     */
+    private function resolvePeriode(Request $request): array
+    {
+        $periode = $request->periode ?? 'harian';
+        $tanggalRefInput = $request->tanggal_ref;
+
+        switch ($periode) {
+            case 'mingguan':
+                try {
+                    if ($tanggalRefInput && preg_match('/^(\d{4})-W(\d{2})$/', $tanggalRefInput, $m)) {
+                        $tanggalRef = Carbon::now()->setISODate((int) $m[1], (int) $m[2]);
+                    } else {
+                        $tanggalRef = Carbon::now();
+                    }
+                } catch (Exception $e) {
+                    $tanggalRef = Carbon::now();
+                }
+                break;
+
+            case 'bulanan':
+                try {
+                    $tanggalRef = $tanggalRefInput
+                        ? Carbon::parse($tanggalRefInput . '-01')
+                        : Carbon::now();
+                } catch (Exception $e) {
+                    $tanggalRef = Carbon::now();
+                }
+                break;
+
+            default:
+                try {
+                    $tanggalRef = $tanggalRefInput
+                        ? Carbon::parse($tanggalRefInput)
+                        : Carbon::today();
+                } catch (Exception $e) {
+                    $tanggalRef = Carbon::today();
+                }
+                $periode = 'harian';
+                break;
+        }
+
+        return [$periode, $tanggalRef];
+    }
+
+    /**
+     * Query produksi yang sudah difilter sesuai periode & pencarian.
+     * Dipakai bareng oleh index(), pdf(), dan excel().
+     */
+    private function filteredProduksiQuery(Request $request, string $periode, Carbon $tanggalRef)
+    {
+        $search = $request->search;
+
+        return Produksi::with(['produk', 'user', 'detailBahan.bahanBaku.satuan'])
+            ->when($search, function ($query) use ($search) {
+                $query->whereHas('produk', function ($q) use ($search) {
+                    $q->where('nama_produk', 'like', "%{$search}%");
+                });
+            })
+            ->when($periode === 'harian', function ($query) use ($tanggalRef) {
+                $query->whereDate('tanggal', $tanggalRef->toDateString());
+            })
+            ->when($periode === 'mingguan', function ($query) use ($tanggalRef) {
+                $query->whereBetween('tanggal', [
+                    $tanggalRef->copy()->startOfWeek()->toDateString(),
+                    $tanggalRef->copy()->endOfWeek()->toDateString(),
+                ]);
+            })
+            ->when($periode === 'bulanan', function ($query) use ($tanggalRef) {
+                $query->whereYear('tanggal', $tanggalRef->year)
+                      ->whereMonth('tanggal', $tanggalRef->month);
+            });
+    }
+
     public function index(Request $request)
     {
-            $search = $request->search;
-            $periode = $request->periode ?? 'harian';
-            $tanggalRefInput = $request->tanggal_ref;
+        [$periode, $tanggalRef] = $this->resolvePeriode($request);
 
-            switch ($periode) {
-                case 'mingguan':
-                    try {
-                    if ($tanggalRefInput && preg_match('/^(\d{4})-W(\d{2})$/', $tanggalRefInput, $m)) {
-                        $tanggalRef = \Carbon\Carbon::now()->setISODate((int) $m[1], (int) $m[2]);
-                    } else {
-                        $tanggalRef = \Carbon\Carbon::now();
-                    }
-            } catch (\Exception $e) {
-                $tanggalRef = \Carbon\Carbon::now();
-            }
-                    break;
+        $produksi = $this->filteredProduksiQuery($request, $periode, $tanggalRef)
+            ->latest()
+            ->paginate(10);
 
-                    case 'bulanan':
-                        try{
-                        $tanggalRef = $tanggalRefInput
-                        ? \Carbon\Carbon::parse($tanggalRefInput . '-01')    
-                        : \Carbon\Carbon::now();
-                        } catch (\Exception $e) {
-                            $tanggalRef = \Carbon\Carbon::now();
-                        }
-                        break;
-
-                    default:
-                    try{
-                        $tanggalRef = $tanggalRefInput
-                        ? \Carbon\Carbon::parse($tanggalRefInput)
-                        : \Carbon\Carbon::today();
-                    } catch (\Exception $e) {
-                        $tanggalRef = \Carbon\Carbon::today();
-                    }
-                        $periode = 'harian';
-                        break;
-            }
-
-            $produksi = Produksi::with(['produk','user', 'detailBahan.bahanBaku.satuan'])
-                ->when($search, function ($query) use ($search) {
-                    $query->whereHas('produk', function ($q) use ($search) {
-                        $q->where('nama_produk', 'like', "%{$search}%");
-                    });
-                })
-                ->when($periode === 'harian', function ($query) use ($tanggalRef) {
-                    $query->whereDate('tanggal', $tanggalRef->toDateString());
-                })
-                ->when($periode === 'mingguan', function ($query) use ($tanggalRef) {
-                    $query->whereBetween('tanggal', [
-                        $tanggalRef->copy()->startOfWeek()->toDateString(),
-                        $tanggalRef->copy()->endOfWeek()->toDateString(),
-                    ]);
-                })
-                ->when($periode === 'bulanan', function ($query) use ($tanggalRef) {
-                    $query->whereYear('tanggal', $tanggalRef->year)
-                          ->whereMonth('tanggal', $tanggalRef->month);
-                })
-                ->latest()
-                ->paginate(10);
-
-            return view(
-                'pages.produksi.index',
-                compact('produksi','search', 'periode', 'tanggalRef')
-            );
+        return view(
+            'pages.produksi.index',
+            compact('produksi', 'periode', 'tanggalRef')
+        );
     }
 
     public function create()
     {
-            $produk = Produk::orderBy('nama_produk')->get();
+        $produk = Produk::orderBy('nama_produk')->get();
+        $bahanBaku = BahanBaku::with('satuan')->orderBy('nama_bahan')->get();
 
-            $bahanBaku = BahanBaku::with('satuan')->orderBy('nama_bahan')->get();
-
-            return view(
-                'pages.produksi.create',
-                compact('produk','bahanBaku')
-            );
+        return view('pages.produksi.create', compact('produk', 'bahanBaku'));
     }
 
     public function store(Request $request)
@@ -110,24 +127,16 @@ class ProduksiController extends Controller
             'kadaluarsa_jam' => 'required_if:kadaluarsa_tipe,jam|nullable|integer|min:1',
 
             'bahan_baku_id' => 'required|array|min:1',
+            'bahan_baku_id.*' => ['required', 'distinct', 'exists:bahan_bakus,id'],
 
-            'bahan_baku_id.*' => [
-                'required',
-                'distinct',
-                'exists:bahan_bakus,id',
-            ],
-            
             'jumlah_terpakai' => 'required|array|min:1',
-
             'jumlah_terpakai.*' => [
                 'required',
                 'numeric',
                 'gt:0',
                 function ($attribute, $value, $fail) use ($request) {
-
                     preg_match('/\d+/', $attribute, $match);
                     $index = $match[0] ?? null;
-
                     $bahanId = $request->bahan_baku_id[$index] ?? null;
 
                     if (!$bahanId) {
@@ -144,177 +153,106 @@ class ProduksiController extends Controller
         ]);
 
         $adaBahan = false;
-
         foreach ($request->jumlah_terpakai as $jumlah) {
-
             if ($jumlah > 0) {
                 $adaBahan = true;
                 break;
             }
-
         }
 
         if (!$adaBahan) {
-
-            return back()
-                ->withInput()
-                ->with('error', 'Minimal pilih satu bahan baku yang digunakan.');
-
+            return back()->withInput()->with('error', 'Minimal pilih satu bahan baku yang digunakan.');
         }
 
-    try {
-        $produksi = null;
-        DB::transaction(function () use ($request, &$produksi) {
-
-        $produksi = Produksi::create([
-            'tanggal' => $request->tanggal,
-            'jam_produksi' => $request->jam_produksi,
-            'produk_id' => $request->produk_id,
-            'jumlah_hasil' => $request->jumlah_hasil,
-            'user_id' => Auth::id(),
-            'keterangan' => $request->keterangan,
-            'kadaluarsa_tipe' => $request->kadaluarsa_tipe,
-            'kadaluarsa_tanggal' => $request->kadaluarsa_tipe === 'tanggal' ? $request->kadaluarsa_tanggal : null,
-            'kadaluarsa_jam' => $request->kadaluarsa_tipe === 'jam' ? $request->kadaluarsa_jam : null,
-        ]);
-
-            foreach ($request->bahan_baku_id as $i => $id) {
-
-                $pakai = (float) $request->jumlah_terpakai[$i];
-
-                if ($pakai <= 0) {
-                    continue;
-                }
-
-                $bahan = BahanBaku::lockForUpdate()->findOrFail($id);
-
-                if ($bahan->stok < $pakai) {
-                    throw new Exception(
-                        "Stok {$bahan->nama_bahan} tidak mencukupi."
-                    );
-                }
-
-                ProduksiBahanBaku::create([
-                    'produksi_id' => $produksi->id,
-                    'bahan_baku_id' => $id,
-                    'jumlah_terpakai' => $pakai,
+        try {
+            $produksi = null;
+            DB::transaction(function () use ($request, &$produksi) {
+                $produksi = Produksi::create([
+                    'tanggal' => $request->tanggal,
+                    'jam_produksi' => $request->jam_produksi,
+                    'produk_id' => $request->produk_id,
+                    'jumlah_hasil' => $request->jumlah_hasil,
+                    'user_id' => Auth::id(),
+                    'keterangan' => $request->keterangan,
+                    'kadaluarsa_tipe' => $request->kadaluarsa_tipe,
+                    'kadaluarsa_tanggal' => $request->kadaluarsa_tipe === 'tanggal' ? $request->kadaluarsa_tanggal : null,
+                    'kadaluarsa_jam' => $request->kadaluarsa_tipe === 'jam' ? $request->kadaluarsa_jam : null,
                 ]);
 
-                $bahan->decrement('stok', $pakai);
-            }
+                foreach ($request->bahan_baku_id as $i => $id) {
+                    $pakai = (float) $request->jumlah_terpakai[$i];
 
-            $produk = Produk::findOrFail($request->produk_id);
+                    if ($pakai <= 0) {
+                        continue;
+                    }
 
-            $produk->increment('stok', $request->jumlah_hasil);
+                    $bahan = BahanBaku::lockForUpdate()->findOrFail($id);
 
-        });
+                    if ($bahan->stok < $pakai) {
+                        throw new Exception("Stok {$bahan->nama_bahan} tidak mencukupi.");
+                    }
 
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($produksi)
-            ->withProperties([
-                'produk_id' => $request->produk_id,
-                'jumlah_hasil' => $request->jumlah_hasil,
-                'bahan_baku_id' => $request->bahan_baku_id,
-                'jumlah_terpakai' => $request->jumlah_terpakai,
-            ])
-            ->log('menambahkan produksi');
+                    ProduksiBahanBaku::create([
+                        'produksi_id' => $produksi->id,
+                        'bahan_baku_id' => $id,
+                        'jumlah_terpakai' => $pakai,
+                    ]);
 
-        return redirect()
-            ->route('produksi.index')
-            ->with('success','Produksi berhasil disimpan.');
-    } catch (\Exception $e) {
+                    $bahan->decrement('stok', $pakai);
+                }
 
-        return back()
-            ->withInput()
-            ->with('error', $e->getMessage());
+                $produk = Produk::findOrFail($request->produk_id);
+                $produk->increment('stok', $request->jumlah_hasil);
+            });
 
-    }
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($produksi)
+                ->withProperties([
+                    'produk_id' => $request->produk_id,
+                    'jumlah_hasil' => $request->jumlah_hasil,
+                    'bahan_baku_id' => $request->bahan_baku_id,
+                    'jumlah_terpakai' => $request->jumlah_terpakai,
+                ])
+                ->log('menambahkan produksi');
+
+            return redirect()->route('produksi.index')->with('success', 'Produksi berhasil disimpan.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
     }
 
     public function show(Produksi $produksi)
     {
-        $produksi->load([
-            'produk',
-            'user',
-            'detailBahan.bahanBaku.satuan'
-        ]);
+        $produksi->load(['produk', 'user', 'detailBahan.bahanBaku.satuan']);
 
-        return view(
-            'pages.produksi.show',
-            compact('produksi')
-        );
+        return view('pages.produksi.show', compact('produksi'));
     }
 
     public function pdf(Request $request)
     {
-        // sementara ambil semua dulu buat ngetes
-        $produksi = Produksi::with([
-            'produk',
-            'user',
-            'detailBahan.bahanBaku.satuan'
-        ])->get();
+        [$periode, $tanggalRef] = $this->resolvePeriode($request);
+
+        $produksi = $this->filteredProduksiQuery($request, $periode, $tanggalRef)
+            ->orderBy('tanggal')
+            ->orderBy('jam_produksi')
+            ->get();
 
         $pdf = Pdf::loadView(
             'pages.produksi.pdf',
-            compact('produksi')
-        );
+            compact('produksi', 'periode', 'tanggalRef')
+        )->setPaper('a4', 'portrait');
 
-        return $pdf->stream('laporan-produksi.pdf');
+        return $pdf->stream('laporan-produksi-' . now()->format('Ymd_His') . '.pdf');
     }
 
     public function excel(Request $request)
     {
-        $search = $request->search;
-        $periode = $request->periode ?? 'harian';
-        $tanggalRefInput = $request->tanggal_ref;
+        [$periode, $tanggalRef] = $this->resolvePeriode($request);
 
-        switch ($periode) {
-            case 'mingguan':
-                if ($tanggalRefInput && preg_match('/^(\d{4})-W(\d{2})$/', $tanggalRefInput, $m)) {
-                    $tanggalRef = Carbon::now()->setISODate((int) $m[1], (int) $m[2]);
-                } else {
-                    $tanggalRef = Carbon::now();
-                }
-                break;
-
-            case 'bulanan':
-                $tanggalRef = $tanggalRefInput
-                    ? Carbon::parse($tanggalRefInput . '-01')
-                    : Carbon::now();
-                break;
-
-            default:
-                $tanggalRef = $tanggalRefInput
-                    ? Carbon::parse($tanggalRefInput)
-                    : Carbon::today();
-                $periode = 'harian';
-                break;
-        }
-
-        $produksi = Produksi::with([
-                'produk',
-                'user',
-                'detailBahan.bahanBaku.satuan'
-            ])
-            ->when($search, function ($query) use ($search) {
-                $query->whereHas('produk', function ($q) use ($search) {
-                    $q->where('nama_produk', 'like', "%{$search}%");
-                });
-            })
-            ->when($periode === 'harian', function ($query) use ($tanggalRef) {
-                $query->whereDate('tanggal', $tanggalRef);
-            })
-            ->when($periode === 'mingguan', function ($query) use ($tanggalRef) {
-                $query->whereBetween('tanggal', [
-                    $tanggalRef->copy()->startOfWeek(),
-                    $tanggalRef->copy()->endOfWeek(),
-                ]);
-            })
-            ->when($periode === 'bulanan', function ($query) use ($tanggalRef) {
-                $query->whereYear('tanggal', $tanggalRef->year)
-                      ->whereMonth('tanggal', $tanggalRef->month);
-            })
+        $produksi = $this->filteredProduksiQuery($request, $periode, $tanggalRef)
+            ->orderBy('tanggal')
+            ->orderBy('jam_produksi')
             ->get();
 
         $filename = 'laporan-produksi-' . now()->format('YmdHis') . '.csv';
@@ -325,64 +263,34 @@ class ProduksiController extends Controller
         ];
 
         return response()->stream(function () use ($produksi) {
-
             $file = fopen('php://output', 'w');
-
-            // UTF-8 BOM supaya Excel tidak rusak karakter
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             fputcsv($file, [
-                'Tanggal Produksi',
-                'Jam Produksi',
-                'Kadaluarsa',
-                'Produk',
-                'Jumlah Hasil',
-                'Dibuat Oleh',
-                'Keterangan',
-                'Nama Bahan',
-                'Jumlah Dipakai',
+                'Tanggal Produksi', 'Jam Produksi', 'Kadaluarsa', 'Produk',
+                'Jumlah Hasil', 'Dibuat Oleh', 'Keterangan', 'Nama Bahan', 'Jumlah Dipakai',
             ]);
 
             foreach ($produksi as $item) {
-
                 if ($item->detailBahan->isEmpty()) {
-
                     fputcsv($file, [
-                        $item->tanggal,
-                        $item->jam_produksi,
-                        $item->kadaluarsa_label,
-                        $item->produk->nama_produk,
-                        $item->jumlah_hasil,
-                        $item->user->name,
-                        $item->keterangan,
-                        '-',
-                        '-',
+                        $item->tanggal, $item->jam_produksi, $item->kadaluarsa_label,
+                        $item->produk->nama_produk, $item->jumlah_hasil, $item->user->name,
+                        $item->keterangan, '-', '-',
                     ]);
-
                 } else {
-
                     foreach ($item->detailBahan as $detail) {
-
                         fputcsv($file, [
-                            $item->tanggal,
-                            $item->jam_produksi,
-                            $item->kadaluarsa_label,
-                            $item->produk->nama_produk,
-                            $item->jumlah_hasil,
-                            $item->user->name,
-                            $item->keterangan,
-                            $detail->bahanBaku->nama_bahan,
+                            $item->tanggal, $item->jam_produksi, $item->kadaluarsa_label,
+                            $item->produk->nama_produk, $item->jumlah_hasil, $item->user->name,
+                            $item->keterangan, $detail->bahanBaku->nama_bahan,
                             $detail->jumlah_terpakai . ' ' . ($detail->bahanBaku->satuan->nama ?? ''),
                         ]);
-
                     }
-
                 }
-
             }
 
             fclose($file);
-
         }, 200, $headers);
     }
 
@@ -398,9 +306,6 @@ class ProduksiController extends Controller
 
     public function destroy(string $id)
     {
-        return back()->with(
-        'error',
-        'Data produksi tidak dapat dihapus.'
-    );
+        return back()->with('error', 'Data produksi tidak dapat dihapus.');
     }
 }
