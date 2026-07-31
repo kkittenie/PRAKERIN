@@ -25,6 +25,13 @@ class ProduksiController extends Controller
         $tanggalRefInput = $request->tanggal_ref;
 
         switch ($periode) {
+            case 'semua':
+                // Tidak ada filter tanggal sama sekali, tanggalRef cuma dipakai
+                // sebagai nilai default kalau user beralih ke periode lain di form.
+                $periode = 'semua';
+                $tanggalRef = Carbon::now();
+                break;
+
             case 'mingguan':
                 try {
                     if ($tanggalRefInput && preg_match('/^(\d{4})-W(\d{2})$/', $tanggalRefInput, $m)) {
@@ -63,12 +70,24 @@ class ProduksiController extends Controller
     }
 
     /**
-     * Query produksi yang sudah difilter sesuai periode & pencarian.
+     * Query produksi yang sudah difilter sesuai periode, pencarian, & status kadaluarsa.
      * Dipakai bareng oleh index(), pdf(), dan excel().
      */
     private function filteredProduksiQuery(Request $request, string $periode, Carbon $tanggalRef)
     {
         $search = $request->search;
+        $status = $request->status ?? 'semua';
+        $now = Carbon::now();
+
+        // Ekspresi SQL untuk menentukan status kadaluarsa langsung di query,
+        // karena kadaluarsa bisa berupa tanggal tetap ATAU jam setelah produksi.
+        $kadaluarsaExpr = "
+            CASE
+                WHEN kadaluarsa_tipe = 'tanggal' THEN kadaluarsa_tanggal < ?
+                WHEN kadaluarsa_tipe = 'jam' THEN DATE_ADD(CONCAT(tanggal, ' ', jam_produksi), INTERVAL kadaluarsa_jam HOUR) < ?
+                ELSE 0
+            END
+        ";
 
         return Produksi::with(['produk', 'user', 'detailBahan.bahanBaku.satuan'])
             ->when($search, function ($query) use ($search) {
@@ -76,6 +95,13 @@ class ProduksiController extends Controller
                     $q->where('nama_produk', 'like', "%{$search}%");
                 });
             })
+            ->when($status === 'kadaluarsa', function ($query) use ($kadaluarsaExpr, $now) {
+                $query->whereRaw($kadaluarsaExpr, [$now->toDateString(), $now->toDateTimeString()]);
+            })
+            ->when($status === 'aktif', function ($query) use ($kadaluarsaExpr, $now) {
+                $query->whereRaw('NOT (' . $kadaluarsaExpr . ')', [$now->toDateString(), $now->toDateTimeString()]);
+            })
+            // periode 'semua' sengaja tidak menambahkan filter tanggal apa pun.
             ->when($periode === 'harian', function ($query) use ($tanggalRef) {
                 $query->whereDate('tanggal', $tanggalRef->toDateString());
             })
@@ -94,6 +120,7 @@ class ProduksiController extends Controller
     public function index(Request $request)
     {
         $search = $request->search;
+        $status = $request->status ?? 'semua';
 
         [$periode, $tanggalRef] = $this->resolvePeriode($request);
 
@@ -108,7 +135,7 @@ class ProduksiController extends Controller
 
         return view(
             'pages.produksi.index',
-            compact('produksi', 'search', 'periode', 'tanggalRef', 'produksiKadaluarsa')
+            compact('produksi', 'search', 'status', 'periode', 'tanggalRef', 'produksiKadaluarsa')
         );
     }
 

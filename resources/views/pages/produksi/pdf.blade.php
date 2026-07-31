@@ -137,7 +137,9 @@
 
     <div class="meta">
         <div class="left">
-            @if($periode === 'harian')
+            @if($periode === 'semua')
+                Periode: Semua Data
+            @elseif($periode === 'harian')
                 Periode: Per Hari &mdash; {{ $tanggalRef->translatedFormat('d F Y') }}
             @elseif($periode === 'mingguan')
                 Periode: Per Minggu &mdash; {{ $tanggalRef->copy()->startOfWeek()->format('d-m-Y') }} s/d {{ $tanggalRef->copy()->endOfWeek()->format('d-m-Y') }}

@@ -371,10 +371,6 @@
                 </div>
             @elseif ($jenis === 'dapur')
                 @php
-                    // Tiket dapur/produksi HANYA mencetak item berstatus
-                    // "Perlu Diproduksi" (snapshot butuh_produksi yang disimpan
-                    // saat transaksi dibuat), berlaku sama baik untuk transaksi
-                    // Lunas maupun Belum Lunas.
                     $itemsDapur = $transaksi->detailTransaksi->filter(function ($item) {
                         return (bool) $item->butuh_produksi;
                     })->values();

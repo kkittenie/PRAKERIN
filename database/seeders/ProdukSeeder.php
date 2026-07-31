@@ -32,7 +32,7 @@ class ProdukSeeder extends Seeder
             // Croissant & Danish
             [
                 'kategori_id' => $categoryModels['Croissant & Danish']->id,
-                'kode_produk' => 'PST-CR001',
+                'kode_produk' => 'SSH-CR001',
                 'nama_produk' => 'Butter Croissant',
                 'harga_jual' => 18000.00,
                 'harga_modal' => 9000.00,
@@ -44,7 +44,7 @@ class ProdukSeeder extends Seeder
             ],
             [
                 'kategori_id' => $categoryModels['Croissant & Danish']->id,
-                'kode_produk' => 'PST-CR002',
+                'kode_produk' => 'SSH-CR002',
                 'nama_produk' => 'Chocolate Croissant (Pain au Chocolat)',
                 'harga_jual' => 22000.00,
                 'harga_modal' => 11000.00,
@@ -56,7 +56,7 @@ class ProdukSeeder extends Seeder
             ],
             [
                 'kategori_id' => $categoryModels['Croissant & Danish']->id,
-                'kode_produk' => 'PST-CR003',
+                'kode_produk' => 'SSH-CR003',
                 'nama_produk' => 'Almond Croissant',
                 'harga_jual' => 26000.00,
                 'harga_modal' => 13000.00,
@@ -68,7 +68,7 @@ class ProdukSeeder extends Seeder
             ],
             [
                 'kategori_id' => $categoryModels['Croissant & Danish']->id,
-                'kode_produk' => 'PST-DN004',
+                'kode_produk' => 'SSH-DN004',
                 'nama_produk' => 'Blueberry Danish',
                 'harga_jual' => 24000.00,
                 'harga_modal' => 12000.00,
@@ -82,7 +82,7 @@ class ProdukSeeder extends Seeder
             // Cake & Tart
             [
                 'kategori_id' => $categoryModels['Cake & Tart']->id,
-                'kode_produk' => 'PST-CK001',
+                'kode_produk' => 'SSH-CK001',
                 'nama_produk' => 'Strawberry Cheese Tart',
                 'harga_jual' => 28000.00,
                 'harga_modal' => 14000.00,
@@ -94,7 +94,7 @@ class ProdukSeeder extends Seeder
             ],
             [
                 'kategori_id' => $categoryModels['Cake & Tart']->id,
-                'kode_produk' => 'PST-CK002',
+                'kode_produk' => 'SSH-CK002',
                 'nama_produk' => 'Chocolate Fudge Cake Slice',
                 'harga_jual' => 35000.00,
                 'harga_modal' => 17000.00,
@@ -108,7 +108,7 @@ class ProdukSeeder extends Seeder
             // Bread & Bun
             [
                 'kategori_id' => $categoryModels['Bread & Bun']->id,
-                'kode_produk' => 'PST-BR001',
+                'kode_produk' => 'SSH-BR001',
                 'nama_produk' => 'Cinnamon Roll',
                 'harga_jual' => 20000.00,
                 'harga_modal' => 10000.00,
@@ -120,7 +120,7 @@ class ProdukSeeder extends Seeder
             ],
             [
                 'kategori_id' => $categoryModels['Bread & Bun']->id,
-                'kode_produk' => 'PST-BR002',
+                'kode_produk' => 'SSH-BR002',
                 'nama_produk' => 'Soft Milk Bun',
                 'harga_jual' => 15000.00,
                 'harga_modal' => 7500.00,
@@ -134,7 +134,7 @@ class ProdukSeeder extends Seeder
             // Cookies & Sweet Treats
             [
                 'kategori_id' => $categoryModels['Cookies & Sweet Treats']->id,
-                'kode_produk' => 'PST-SW001',
+                'kode_produk' => 'SSH-SW001',
                 'nama_produk' => 'Chocolate Chip Cookie',
                 'harga_jual' => 12000.00,
                 'harga_modal' => 6000.00,
