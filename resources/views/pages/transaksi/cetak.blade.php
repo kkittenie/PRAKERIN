@@ -281,6 +281,23 @@
                     $diskonPersen = $subtotal > 0 ? round(($diskon / $subtotal) * 100) : 0;
                     $pajak = (float) $transaksi->pajak;
                     $pajakPersen = ($subtotal - $diskon) > 0 ? round(($pajak / ($subtotal - $diskon)) * 100) : 0;
+
+                    // Gabungkan item dengan nama produk yang sama supaya tidak
+                    // tercetak sebagai baris terpisah (mis. akibat sebagian
+                    // butuh produksi & sebagian ready stok saat transaksi dibuat).
+                    $itemsPelanggan = $transaksi->detailTransaksi
+                        ->groupBy('nama_produk')
+                        ->map(function ($group) {
+                            $first = $group->first();
+                            return (object) [
+                                'nama_produk' => $first->nama_produk,
+                                'harga_satuan' => $first->harga_satuan,
+                                'jumlah' => $group->sum('jumlah'),
+                                'subtotal' => $group->sum('subtotal'),
+                                'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
+                            ];
+                        })
+                        ->values();
                 @endphp
                 <div class="text-center border-bottom-dashed" style="padding-bottom:10px; margin-bottom:10px;">
                     <img src="{{ asset('images/logo/B&W-logo.svg') }}" alt="Logo"
@@ -301,7 +318,7 @@
                     <div style="text-transform: capitalize;">Bayar: {{ $transaksi->metode_pembayaran }}</div>
                 </div>
                 <div class="border-top-dashed border-bottom-dashed" style="padding:8px 0;">
-                    @foreach ($transaksi->detailTransaksi as $index => $item)
+                    @foreach ($itemsPelanggan as $index => $item)
                         <div class="item-row margin-bottom-sm">
                             <span class="item-name">
                                 {{ $index + 1 }}. {{ $item->nama_produk }}
@@ -443,6 +460,22 @@
             $pajak = (float) $transaksi->pajak;
             $pajakPersen = ($subtotal - $diskon) > 0 ? round(($pajak / ($subtotal - $diskon)) * 100) : 0;
 
+            // Sama seperti versi HTML di atas: gabungkan item dengan nama
+            // produk yang sama supaya tidak tercetak sebagai baris terpisah.
+            $itemsPelangganTeks = $transaksi->detailTransaksi
+                ->groupBy('nama_produk')
+                ->map(function ($group) {
+                    $first = $group->first();
+                    return (object) [
+                        'nama_produk' => $first->nama_produk,
+                        'harga_satuan' => $first->harga_satuan,
+                        'jumlah' => $group->sum('jumlah'),
+                        'subtotal' => $group->sum('subtotal'),
+                        'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
+                    ];
+                })
+                ->values();
+
             $struk .= "      " . strtoupper($toko) . "\n";
             $struk .= "  Jl. Kemboja No.1, Kedungjaya\n";
             $struk .= "   Kec. Kedawung, Kab. Cirebon\n";
@@ -453,8 +486,8 @@
             $struk .= "Bayar: " . ucfirst($transaksi->metode_pembayaran) . "\n";
             $struk .= $dividerDashed;
 
-            // Invoice pelanggan mencetak SEMUA item tanpa membedakan status produksi
-            foreach ($transaksi->detailTransaksi as $index => $item) {
+            // Invoice pelanggan mencetak SEMUA item (sudah digabung per nama produk)
+            foreach ($itemsPelangganTeks as $index => $item) {
                 $no = ($index + 1) . ". ";
                 $namaFull = $no . $item->nama_produk;
                 $struk .= wrapStrukLine($namaFull, mb_strlen($no));

@@ -28,11 +28,6 @@ class ProdukSeeder extends Seeder
             ]);
         }
 
-        // 2. Seed Products
-        // Catatan: 'foto' di sini berisi path relatif terhadap folder public/,
-        // sesuai file yang ada di public/images/product/. Ini BEDA dengan foto
-        // hasil upload lewat form (yang tersimpan di storage/app/public/produk/).
-        // Accessor getFotoUrlAttribute() di model Produk yang menangani perbedaan ini.
         $products = [
             // Croissant & Danish
             [
@@ -45,7 +40,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'images/product/butter-croissant.jpeg',
+                'foto' => 'produk/butter-croissant.jpeg',
             ],
             [
                 'kategori_id' => $categoryModels['Croissant & Danish']->id,
@@ -57,7 +52,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 4,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'images/product/chocolate-croissant.jpeg',
+                'foto' => 'produk/chocolate-croissant.jpeg',
             ],
             [
                 'kategori_id' => $categoryModels['Croissant & Danish']->id,
@@ -69,7 +64,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 3,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'images/product/almond-croissant.jpeg',
+                'foto' => 'produk/almond-croissant.jpeg',
             ],
             [
                 'kategori_id' => $categoryModels['Croissant & Danish']->id,
@@ -81,7 +76,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 2,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'images/product/blueberry-danish.jpeg',
+                'foto' => 'produk/blueberry-danish.jpeg',
             ],
 
             // Cake & Tart
@@ -95,7 +90,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 2,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'images/product/strawberry-cheese-tart.jpeg',
+                'foto' => 'produk/strawberry-cheese-tart.jpeg',
             ],
             [
                 'kategori_id' => $categoryModels['Cake & Tart']->id,
@@ -107,7 +102,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 2,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'images/product/chocolate-fudge-cake.jpeg',
+                'foto' => 'produk/chocolate-fudge-cake.jpeg',
             ],
 
             // Bread & Bun
@@ -121,7 +116,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 3,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'images/product/cinnamon-roll.jpeg',
+                'foto' => 'produk/cinnamon-roll.jpeg',
             ],
             [
                 'kategori_id' => $categoryModels['Bread & Bun']->id,
@@ -133,7 +128,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'images/product/soft-milk-bun.jpeg',
+                'foto' => 'produk/soft-milk-bun.jpeg',
             ],
 
             // Cookies & Sweet Treats
@@ -147,7 +142,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'images/product/chocolate-chip-cookies.jpeg',
+                'foto' => 'produk/chocolate-chip-cookies.jpeg',
             ],
         ];
 

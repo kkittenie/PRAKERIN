@@ -1080,14 +1080,11 @@
                     const crcHex = (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
                     return payloadWithoutCrc + crcHex;
                 },
-
-                // Ambil URL foto produk langsung dari database (kolom `foto`),
-                // sama seperti halaman Produk yang pakai asset($item->foto).
-                // Kalau foto tidak ada, pakai placeholder logo (bukan tebakan gambar dari internet).
+                
                 getFotoUrl(foto) {
                     if (foto) {
                         if (foto.startsWith('http://') || foto.startsWith('https://')) return foto;
-                        return '/' + foto.replace(/^\/+/, '');
+                        return '/storage/' + foto;
                     }
                     return '/images/logo/logo-icon.svg';
                 },

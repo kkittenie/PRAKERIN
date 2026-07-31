@@ -15,6 +15,15 @@ class MenuHelper
                 ],
             ],
             [
+                'name' => 'Manajemen Akses',
+                'icon' => 'manajemen-akses',
+                'subItems' => [
+                    ['name' => 'Kelola Role', 'path' => '/roles', 'permission' => 'lihat_role'],
+                    ['name' => 'Kelola Pengguna', 'path' => '/users', 'permission' => 'lihat_user'],
+                    ['name' => 'Kelola Pegawai', 'path' => '/pegawai', 'permission' => 'lihat_pegawai'],
+                ],
+            ],
+            [
                 'name' => 'Data Master',
                 'icon' => 'data-master',
                 'subItems' => [
@@ -23,15 +32,6 @@ class MenuHelper
                     ['name' => 'Satuan', 'path' => '/satuan', 'permission' => 'lihat_satuan'],
                     ['name' => 'Bahan Baku', 'path' => '/bahan-baku', 'permission' => 'lihat_stok'],
                 ]
-            ],
-            [
-                'name' => 'Manajemen Akses',
-                'icon' => 'manajemen-akses',
-                'subItems' => [
-                    ['name' => 'Kelola Role', 'path' => '/roles', 'permission' => 'lihat_role'],
-                    ['name' => 'Kelola Pengguna', 'path' => '/users', 'permission' => 'lihat_user'],
-                    ['name' => 'Kelola Pegawai', 'path' => '/pegawai', 'permission' => 'lihat_pegawai'],
-                ],
             ],
             [
                 'name' => 'Manajemen Produk',
