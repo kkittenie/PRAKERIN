@@ -76,17 +76,18 @@
                     @enderror
                 </div>
 
-                {{-- Harga Jual --}}
+               {{-- Harga Jual --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Harga Jual <span class="text-red-500">*</span>
                     </label>
 
                     <input
-                        type="number"
+                        type="text"
+                        inputmode="numeric"
                         name="harga_jual"
-                        value="{{ old('harga_jual',$produk->harga_jual) }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        value="{{ number_format((int) old('harga_jual', $produk->harga_jual), 0, ',', '.') }}"
+                        class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('harga_jual')
                         <small class="text-red-500">{{ $message }}</small>
@@ -100,10 +101,11 @@
                     </label>
 
                     <input
-                        type="number"
+                        type="text"
+                        inputmode="numeric"
                         name="harga_modal"
-                        value="{{ old('harga_modal',$produk->harga_modal) }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                        value="{{ number_format((int) old('harga_modal', $produk->harga_modal), 0, ',', '.') }}"
+                        class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('harga_modal')
                         <small class="text-red-500">{{ $message }}</small>
@@ -234,5 +236,48 @@
     </x-common.component-card>
 
 </div>
+
+    <script>
+    document.querySelectorAll('.input-rupiah').forEach(function (input) {
+
+        input.addEventListener('input', function (e) {
+
+            const cursorPos = input.selectionStart;
+            const digitSebelumKursor = input.value.slice(0, cursorPos).replace(/\D/g, '').length;
+
+            let digits = input.value.replace(/\D/g, '');
+            const formatted = digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+            input.value = formatted;
+
+            let jumlahDigit = 0;
+            let posisiBaru = formatted.length;
+
+            for (let i = 0; i < formatted.length; i++) {
+                if (/\d/.test(formatted[i])) {
+                    jumlahDigit++;
+                }
+                if (jumlahDigit === digitSebelumKursor) {
+                    posisiBaru = i + 1;
+                    break;
+                }
+            }
+
+            if (digitSebelumKursor === 0) {
+                posisiBaru = 0;
+            }
+
+            input.setSelectionRange(posisiBaru, posisiBaru);
+        });
+    });
+
+    document.querySelectorAll('form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            document.querySelectorAll('.input-rupiah').forEach(function (input) {
+                input.value = input.value.replace(/\./g, '');
+            });
+        });
+    });
+    </script>
 
 @endsection
