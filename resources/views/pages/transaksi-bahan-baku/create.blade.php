@@ -67,7 +67,7 @@
 
 
     {{-- Bahan Baku --}}
-    <div>
+    <div class="relative">
 
         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
 
@@ -77,23 +77,26 @@
 
         </label>
 
-        <select
+        <input
+            type="text"
+            id="inputSearchBahan"
+            placeholder="Ketik nama bahan baku..."
+            autocomplete="off"
+            value="{{ old('bahan_baku_id') ? optional($bahanBaku->firstWhere('id', old('bahan_baku_id')))->nama_bahan : '' }}"
+            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+
+        <div
+            id="hasilSearchBahan"
+            class="absolute z-50 mt-1 hidden w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+        </div>
+
+        <input
+            type="hidden"
             name="bahan_baku_id"
             id="bahanBakuSelect"
-            required
-            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
-            <option value="">Pilih Bahan Baku</option>
-
-            @foreach($bahanBaku as $item)
-                <option
-                    value="{{ $item->id }}"
-                    data-satuan="{{ $item->satuan?->nama ?? '-' }}"
-                    data-tipe="{{ $item->satuan?->tipe ?? 'desimal' }}"
-                    {{ old('bahan_baku_id') == $item->id ? 'selected' : '' }}>
-                    {{ $item->nama_bahan }}
-                </option>
-            @endforeach
-        </select>
+            data-satuan=""
+            data-tipe="desimal"
+            value="{{ old('bahan_baku_id') }}">
 
         @error('bahan_baku_id')
 
@@ -280,10 +283,12 @@
 </div>
 
 
-<script>
+    <script>
 
-const inputJumlah =
-    document.querySelector('[name="jumlah"]');
+    const daftarBahanBaku = @json($bahanBaku);
+
+    const inputJumlah =
+        document.querySelector('[name="jumlah"]');
 
 const inputHarga =
     document.querySelector('[name="harga_satuan"]');
@@ -312,16 +317,79 @@ function hitungTotal()
 
     const bahanBakuSelect = document.getElementById('bahanBakuSelect');
     const satuanJumlah = document.getElementById('satuanJumlah');
+    const inputSearchBahan = document.getElementById('inputSearchBahan');
+    const hasilSearchBahan = document.getElementById('hasilSearchBahan');
 
     function tampilkanSatuan() {
-        const selected = bahanBakuSelect.options[bahanBakuSelect.selectedIndex];
-        satuanJumlah.textContent = (selected && selected.dataset.satuan) ? selected.dataset.satuan : '-';
+        satuanJumlah.textContent = bahanBakuSelect.dataset.satuan || '-';
 
-        const tipe = (selected && selected.dataset.tipe) ? selected.dataset.tipe : 'desimal';
+        const tipe = bahanBakuSelect.dataset.tipe || 'desimal';
         inputJumlah.step = (tipe === 'bulat') ? '1' : '0.01';
+        inputJumlah.min = (tipe === 'bulat') ? '1' : '0.01';
     }
 
-    bahanBakuSelect.addEventListener('change', tampilkanSatuan);
+    function pilihBahanBaku(bahan) {
+        inputSearchBahan.value = bahan.nama_bahan;
+        bahanBakuSelect.value = bahan.id;
+        bahanBakuSelect.dataset.satuan = bahan.satuan ? bahan.satuan.nama : '-';
+        bahanBakuSelect.dataset.tipe = bahan.satuan ? bahan.satuan.tipe : 'desimal';
+        hasilSearchBahan.classList.add('hidden');
+        tampilkanSatuan();
+    }
+
+    inputSearchBahan.addEventListener('input', function () {
+        const keyword = this.value.toLowerCase();
+
+        bahanBakuSelect.value = '';
+
+        if (keyword.length === 0) {
+            hasilSearchBahan.classList.add('hidden');
+            return;
+        }
+
+        const hasil = daftarBahanBaku.filter(function (bahan) {
+            return bahan.nama_bahan.toLowerCase().includes(keyword);
+        });
+
+        hasilSearchBahan.innerHTML = '';
+
+        if (hasil.length === 0) {
+            hasilSearchBahan.innerHTML = `
+                <div class="p-3 text-sm text-gray-500">
+                    Bahan baku tidak ditemukan
+                </div>
+            `;
+        } else {
+            hasil.forEach(function (bahan) {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'block w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700';
+                item.innerHTML = `
+                    <div class="font-medium text-gray-800 dark:text-white">
+                        ${bahan.nama_bahan}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        ${bahan.satuan ? bahan.satuan.nama : '-'}
+                    </div>
+                `;
+
+                item.addEventListener('click', function () {
+                    pilihBahanBaku(bahan);
+                });
+
+                hasilSearchBahan.appendChild(item);
+            });
+        }
+
+        hasilSearchBahan.classList.remove('hidden');
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!inputSearchBahan.contains(e.target) && !hasilSearchBahan.contains(e.target)) {
+            hasilSearchBahan.classList.add('hidden');
+        }
+    });
+
     window.addEventListener('load', tampilkanSatuan);
 
     inputJumlah.addEventListener(
