@@ -290,30 +290,30 @@
     const inputJumlah =
         document.querySelector('[name="jumlah"]');
 
-const inputHarga =
-    document.querySelector('[name="harga_satuan"]');
+    const inputHarga =
+        document.querySelector('[name="harga_satuan"]');
 
-const totalHarga =
-    document.getElementById('total-harga');
-
-
-function hitungTotal()
-{
-
-    const jumlah =
-        parseFloat(inputJumlah.value) || 0;
-
-    const harga =
-        parseFloat(inputHarga.value) || 0;
-
-    const total =
-        jumlah * harga;
+    const totalHarga =
+        document.getElementById('total-harga');
 
 
-    totalHarga.textContent =
-        'Rp ' + total.toLocaleString('id-ID');
+    function hitungTotal()
+    {
 
-}
+        const jumlah =
+            parseFloat(inputJumlah.value) || 0;
+
+        const harga =
+            parseFloat(inputHarga.value) || 0;
+
+        const total =
+            jumlah * harga;
+
+
+        totalHarga.textContent =
+            'Rp ' + total.toLocaleString('id-ID');
+
+    }
 
     const bahanBakuSelect = document.getElementById('bahanBakuSelect');
     const satuanJumlah = document.getElementById('satuanJumlah');

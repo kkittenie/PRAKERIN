@@ -9,6 +9,7 @@ use App\Http\Controllers\KategoriProdukController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\BahanBakuController;
 use App\Http\Controllers\ProduksiController;
+use App\Http\Controllers\BundlingController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PromoController;
@@ -74,6 +75,13 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('produksi', ProduksiController::class)
         ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
+
+    Route::resource('produksi', ProduksiController::class)
+        ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
+
+    Route::resource('bundling', BundlingController::class)
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
+        ->middleware('permission:lihat_bundling|tambah_bundling|edit_bundling|hapus_bundling');
 
     Route::post('produksi/{produksi}/kurangi-stok', [ProduksiController::class, 'kurangiStok'])
         ->name('produksi.kurangi-stok')
