@@ -9,10 +9,10 @@
         <div class="fixed top-5 right-5 z-99999 flex flex-col gap-2">
             <template x-for="toast in toasts" :key="toast.id">
                 <div :class="{
-                        'bg-green-600': toast.tipe === 'sukses',
-                        'bg-red-600': toast.tipe === 'error',
-                        'bg-amber-700': toast.tipe === 'info'
-                     }"
+                                'bg-green-600': toast.tipe === 'sukses',
+                                'bg-red-600': toast.tipe === 'error',
+                                'bg-amber-700': toast.tipe === 'info'
+                             }"
                     class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] transform transition-all duration-300 animate-slide-in">
                     <span class="font-semibold text-lg" x-text="toast.tipe === 'sukses' ? '✓' : '⚠'"></span>
                     <span class="text-sm" x-text="toast.pesan"></span>
@@ -138,7 +138,8 @@
                             <template x-for="produk in produkTersaring" :key="produk.id">
                                 <div
                                     class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
-                                    <div class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden">
+                                    <div @click="tambahKeKeranjang(produk)" title="Klik untuk tambah ke keranjang"
+                                        class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden cursor-pointer">
                                         <img :src="getFotoUrl(produk.foto)" x-on:error="handleFotoError($event)"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             alt="Produk">
@@ -174,7 +175,7 @@
                                                 <div class="flex flex-wrap items-center gap-1.5">
                                                     <span
                                                         class="text-xxs font-extrabold px-1.5 py-0.5 bg-rose-100 dark:bg-rose-500/10 text-rose-600 dark:text-rose-450 rounded animate-pulse"
-                                                        x-text="produk.promo_aktif.jenis_potongan === 'nominal' ? ('-Rp ' + Math.round(produk.promo_aktif.nominal_potongan/1000) + 'rb') : ('-' + Math.round(produk.promo_aktif.persentase) + '%')"></span>
+                                                        x-text="produk.promo_aktif.jenis_potongan === 'nominal' ? ('-Rp ' + Math.round(produk.promo_aktif.nominal_potongan/1000) + 'rb') : ('-' + formatPersen(produk.promo_aktif.persentase) + '%')"></span>
                                                     <span class="text-xs text-gray-450 dark:text-gray-500 line-through"
                                                         x-text="formatRupiah(produk.harga_jual)"></span>
                                                 </div>
@@ -263,35 +264,35 @@
 
                     <!-- Pilih Member -->
                     <div class="p-3 border-b border-gray-100 dark:border-gray-800 shrink-0" x-data="{
-                cariMember: '',
-                dropdownTerbuka: false,
-                get memberTersaring() {
-                    if (!this.cariMember.trim()) return $data.daftarMember;
-                    const q = this.cariMember.toLowerCase();
-                    return $data.daftarMember.filter(m =>
-                        m.nama.toLowerCase().includes(q) || m.no_hp.includes(q)
-                    );
-                },
-                pilihMemberItem(member) {
-                    $data.memberIdTerpilih = member.id;
-                    $data.memberTerpilih = member;
-                    if ($data.namaPembeli.trim() === '') {
-                        $data.namaPembeli = member.nama;
-                    }
-                    this.cariMember = '';
-                    this.dropdownTerbuka = false;
-                },
-                hapusMember() {
-                    $data.memberIdTerpilih = '';
-                    $data.memberTerpilih = null;
-                    this.cariMember = '';
-                },
-                getLevelColor(level) {
-                    if (level === 'Gold') return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400';
-                    if (level === 'Silver') return 'bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300';
-                    return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400';
-                }
-            }" @click.outside="dropdownTerbuka = false">
+                        cariMember: '',
+                        dropdownTerbuka: false,
+                        get memberTersaring() {
+                            if (!this.cariMember.trim()) return $data.daftarMember;
+                            const q = this.cariMember.toLowerCase();
+                            return $data.daftarMember.filter(m =>
+                                m.nama.toLowerCase().includes(q) || m.no_hp.includes(q)
+                            );
+                        },
+                        pilihMemberItem(member) {
+                            $data.memberIdTerpilih = member.id;
+                            $data.memberTerpilih = member;
+                            if ($data.namaPembeli.trim() === '') {
+                                $data.namaPembeli = member.nama;
+                            }
+                            this.cariMember = '';
+                            this.dropdownTerbuka = false;
+                        },
+                        hapusMember() {
+                            $data.memberIdTerpilih = '';
+                            $data.memberTerpilih = null;
+                            this.cariMember = '';
+                        },
+                        getLevelColor(level) {
+                            if (level === 'Gold') return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400';
+                            if (level === 'Silver') return 'bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300';
+                            return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400';
+                        }
+                    }" @click.outside="dropdownTerbuka = false">
                         <label
                             class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-2">Member
                             (Opsional)</label>
@@ -435,7 +436,7 @@
                                                 <template x-if="item.promo_aktif">
                                                     <span
                                                         class="text-[9px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-1 rounded"
-                                                        x-text="item.promo_aktif.jenis_potongan === 'nominal' ? ('Promo Rp ' + Math.round(item.promo_aktif.nominal_potongan/1000) + 'rb') : ('Promo ' + Math.round(item.promo_aktif.persentase) + '%')"></span>
+                                                        x-text="item.promo_aktif.jenis_potongan === 'nominal' ? ('Promo Rp ' + Math.round(item.promo_aktif.nominal_potongan/1000) + 'rb') : ('Promo ' + formatPersen(item.promo_aktif.persentase) + '%')"></span>
                                                 </template>
                                             </div>
                                             <span class="text-xxs text-gray-400 dark:text-gray-500">Total: <span
@@ -479,7 +480,9 @@
                                 <label
                                     class="text-xxs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">Pajak
                                     (%)</label>
-                                <input type="number" x-model.number="pajakPersen" min="0" placeholder="10"
+                                <input type="text" inputmode="decimal" x-model="pajakPersen"
+                                    @input="pajakPersen = pajakPersen.replace(/[^0-9,]/g, '').replace(/(,.*),/g, '$1')"
+                                    placeholder="Masukan pajak (%)"
                                     class="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500">
                             </div>
                         </div>
@@ -494,7 +497,7 @@
                         </div>
                         <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
                             x-show="nilaiDiskon > 0">
-                            <span>Diskon (<span x-text="diskonPersen"></span>%)</span>
+                            <span>Diskon (<span x-text="formatPersen(diskonPersenEfektif)"></span>%)</span>
                             <span class="font-semibold text-red-600 dark:text-red-400"
                                 x-text="'-' + formatRupiah(nilaiDiskon)"></span>
                         </div>
@@ -649,7 +652,7 @@
                                         <img src="{{ asset('images/logo/logo.svg') }}" class="w-auto h-10 object-contain"
                                             alt="Saisho Logo">
                                     </span class="px-2 py-0.5 bg-amber-600 text-white font-black text-[9px] rounded uppercase
-                                    tracking-widest"></span>
+                                            tracking-widest"></span>
                                 </div>
                             </div>
                             <div class="max-w-xs">
@@ -700,7 +703,7 @@
                                         <template x-if="item.promo_aktif">
                                             <span
                                                 class="text-[9px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-1 rounded ml-1"
-                                                x-text="item.promo_aktif.jenis_potongan === 'nominal' ? ('Promo Rp ' + Math.round(item.promo_aktif.nominal_potongan/1000) + 'rb') : ('Promo ' + Math.round(item.promo_aktif.persentase) + '%')"></span>
+                                                x-text="item.promo_aktif.jenis_potongan === 'nominal' ? ('Promo Rp ' + Math.round(item.promo_aktif.nominal_potongan/1000) + 'rb') : ('Promo ' + formatPersen(item.promo_aktif.persentase) + '%')"></span>
                                         </template>
                                     </p>
                                 </div>
@@ -1012,7 +1015,7 @@
                 memberTerpilih: null,
                 catatan: '',
                 diskonPersen: '',
-                pajakPersen: 5,
+                pajakPersen: '5',
 
                 // Input pembeli modal
                 inputNamaPembeli: '',
@@ -1057,6 +1060,14 @@
 
                 inisialisasi() { },
 
+                // Ubah string pajak/diskon yang mungkin memakai koma (mis. "1,2")
+                // menjadi angka desimal yang valid untuk perhitungan (1.2).
+                parsePersen(v) {
+                    if (typeof v === 'number') return v;
+                    const n = parseFloat(String(v ?? '').replace(',', '.'));
+                    return isNaN(n) ? 0 : n;
+                },
+
                 get qrisPayload() {
                     // Base QRIS format for static/dynamic merchant
                     const baseMerchant = "00020101021226380010co.saishos0115936000020012345520458125303360";
@@ -1080,7 +1091,7 @@
                     const crcHex = (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
                     return payloadWithoutCrc + crcHex;
                 },
-                
+
                 getFotoUrl(foto) {
                     if (foto) {
                         if (foto.startsWith('http://') || foto.startsWith('https://')) return foto;
@@ -1247,13 +1258,17 @@
                 },
 
                 get nilaiDiskon() {
-                    const diskonManual = Math.round(this.subtotalGross * ((this.diskonPersen || 0) / 100));
+                    const diskonManual = Math.round(this.subtotalGross * ((this.parsePersen(this.diskonPersen) || 0) / 100));
                     return this.diskonPromo + diskonManual;
+                },
+                get diskonPersenEfektif() {
+                    if (this.subtotalGross <= 0) return 0;
+                    return (this.nilaiDiskon / this.subtotalGross) * 100;
                 },
 
                 get pajak() {
                     const base = this.subtotal - this.nilaiDiskon;
-                    return Math.max(0, Math.round(base * (this.pajakPersen / 100)));
+                    return Math.max(0, Math.round(base * (this.parsePersen(this.pajakPersen) / 100)));
                 },
                 get totalTagihan() {
                     return Math.max(0, this.subtotal - this.nilaiDiskon + this.pajak);
@@ -1434,7 +1449,7 @@
                             item_pesanan: this.keranjang,
                             subtotal: this.subtotal,
                             pajak: this.pajak,
-                            diskon: this.diskonPersen || 0,
+                            diskon: this.parsePersen(this.diskonPersen) || 0,
                             total: this.totalTagihan,
                             catatan: this.catatan || null
                         })
@@ -1649,7 +1664,7 @@
                     this.keranjang = this.normalisasiItemKeranjang(JSON.parse(JSON.stringify(pesanan.item_pesanan)));
                     this.namaPembeli = pesanan.nama_pembeli;
                     this.diskonPersen = pesanan.diskon || '';
-                    this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 5;
+                    this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? String(Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100)) : '5';
                     this.catatan = pesanan.catatan || '';
                     if (pesanan.transaksi && pesanan.transaksi.member_id) {
                         this.memberIdTerpilih = pesanan.transaksi.member_id;
@@ -1690,13 +1705,27 @@
                     this.namaPembeli = '';
                     this.catatan = '';
                     this.diskonPersen = '';
-                    this.pajakPersen = 5;
+                    this.pajakPersen = '5';
                     this.jumlahDiterima = '';
                     this.memberIdTerpilih = '';
                     this.memberTerpilih = null;
                 },
 
                 formatRupiah(v) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v); },
+
+                // Tampilkan persentase dengan desimal apa adanya (format Indonesia,
+                // pakai koma), bukan dibulatkan paksa ke bilangan bulat seperti
+                // sebelumnya (Math.round). Ini supaya badge promo di kasir tetap
+                // menunjukkan angka yang sama persis dengan yang diinput admin di
+                // form promo (mis. 12,5%), sementara kalkulasi uangnya sendiri
+                // sudah benar dari awal karena activePromoInfo() sudah pakai
+                // parseFloat(), bukan dibulatkan.
+                formatPersen(v) {
+                    const n = parseFloat(v) || 0;
+                    const dibulatkan = Math.round(n * 100) / 100; // maks. 2 desimal
+                    return dibulatkan.toString().replace('.', ',');
+                },
+
                 formatTanggal(d) { return new Date(d).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); },
                 tambahToast(pesan, tipe = 'info') { const id = this.toastIdCounter++; this.toasts.push({ id, pesan, tipe }); setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000); }
             }

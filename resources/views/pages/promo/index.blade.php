@@ -100,9 +100,14 @@
                 $badgeColor = 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400';
             }
 
-            $diskonText = $item->jenis_potongan === 'nominal'
-                ? 'Rp ' . number_format($item->nominal_potongan, 0, ',', '.')
-                : number_format($item->persentase, 0) . '%';
+            if ($item->jenis_potongan === 'nominal') {
+                $diskonText = 'Rp ' . number_format($item->nominal_potongan, 0, ',', '.');
+            } else {
+                // Tampilkan persentase dengan koma, tapi buang nol desimal yang tidak perlu
+                // (mis. 15,5% tetap 15,5%, tapi 20,00% jadi 20%)
+                $persentaseFormatted = rtrim(rtrim(number_format($item->persentase, 2, ',', '.'), '0'), ',');
+                $diskonText = $persentaseFormatted . '%';
+            }
         @endphp
         <tbody x-data="{ open: false }" class="divide-y divide-gray-100 dark:divide-gray-800 border-b border-gray-100 dark:border-gray-800">
             <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition duration-200 text-gray-700 dark:text-gray-300">
@@ -133,12 +138,18 @@
                     </span>
                 </td>
                 <td class="py-3.5 px-3 hidden sm:table-cell text-center">
-                    <form action="{{ route('promo.toggle-status', $item->id) }}" method="POST" class="inline">
-                        @csrf @method('PATCH')
-                        <button type="submit" title="Klik untuk mengaktifkan/menonaktifkan promo" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer hover:opacity-80 transition {{ $badgeColor }}">
+                    <div class="flex flex-col items-center gap-1.5">
+                        <form action="{{ route('promo.toggle-status', $item->id) }}" method="POST" class="inline">
+                            @csrf @method('PATCH')
+                            <label class="relative inline-flex items-center cursor-pointer" title="Klik untuk mengaktifkan/menonaktifkan promo">
+                                <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
+                                <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
+                            </label>
+                        </form>
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $badgeColor }}">
                             {{ $status }}
-                        </button>
-                    </form>
+                        </span>
+                    </div>
                 </td>
                 <td class="py-3.5 px-2 sm:px-3 text-right space-x-1 whitespace-nowrap">
                     <a href="{{ route('promo.edit', $item->id) }}" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">Edit</a>
@@ -155,13 +166,19 @@
                 <td colspan="10" class="p-4">
                     <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300">
                         <div>
-                            <span class="text-gray-400 block text-[11px]">Status</span>
-                            <form action="{{ route('promo.toggle-status', $item->id) }}" method="POST" class="inline">
-                                @csrf @method('PATCH')
-                                <button type="submit" class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $badgeColor }} mt-0.5">
+                            <span class="text-gray-400 block text-[11px] mb-0.5">Status</span>
+                            <div class="flex items-center gap-2">
+                                <form action="{{ route('promo.toggle-status', $item->id) }}" method="POST" class="inline">
+                                    @csrf @method('PATCH')
+                                    <label class="relative inline-flex items-center cursor-pointer" title="Klik untuk mengaktifkan/menonaktifkan promo">
+                                        <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
+                                        <div class="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-4"></div>
+                                    </label>
+                                </form>
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $badgeColor }}">
                                     {{ $status }}
-                                </button>
-                            </form>
+                                </span>
+                            </div>
                         </div>
                         <div><span class="text-gray-400 block text-[11px]">Min. Pembelian</span> <span class="font-bold text-gray-800 dark:text-white">{{ $item->min_pembelian > 0 ? 'Rp ' . number_format($item->min_pembelian, 0, ',', '.') : '-' }}</span></div>
                         <div><span class="text-gray-400 block text-[11px]">Jumlah Produk</span> <span class="font-bold text-amber-700 dark:text-amber-400">{{ $item->produks_count }} Produk</span></div>

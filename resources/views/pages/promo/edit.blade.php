@@ -10,14 +10,120 @@
 
         <form action="{{ route('promo.update', $promo->id) }}" method="POST" x-data="{
             jenisPotongan: '{{ old('jenis_potongan', $promo->jenis_potongan ?? 'persentase') }}',
+            persentaseDisplay: '{{ old('persentase', $promo->persentase) ? str_replace('.', ',', rtrim(rtrim(number_format((float) old('persentase', $promo->persentase), 2, '.', ''), '0'), '.')) : '' }}',
             nominalDisplay: '{{ old('nominal_potongan', $promo->nominal_potongan) ? number_format(old('nominal_potongan', $promo->nominal_potongan), 0, ',', '.') : '' }}',
             minPembelianDisplay: '{{ old('min_pembelian', $promo->min_pembelian) ? number_format(old('min_pembelian', $promo->min_pembelian), 0, ',', '.') : '0' }}',
-            formatRupiahInput(val) {
-                let number = (val || '').toString().replace(/\D/g, '');
-                return number ? new Intl.NumberFormat('id-ID').format(number) : '';
-            },
             getRawNumber(val) {
                 return (val || '').toString().replace(/\D/g, '') || '0';
+            },
+            // Format & cursor-safe handler for rupiah (ribuan) inputs
+            handleRupiahInput(event, prop) {
+                const input = event.target;
+                const oldValue = input.value;
+                const cursorPos = input.selectionStart;
+                const digitsBeforeCursor = oldValue.slice(0, cursorPos).replace(/\D/g, '').length;
+
+                const rawDigits = oldValue.replace(/\D/g, '');
+                const formatted = rawDigits ? new Intl.NumberFormat('id-ID').format(rawDigits) : '';
+
+                this[prop] = formatted;
+
+                this.$nextTick(() => {
+                    let newPos = formatted.length;
+                    let count = 0;
+                    for (let i = 0; i < formatted.length; i++) {
+                        if (/\d/.test(formatted[i])) {
+                            count++;
+                            if (count === digitsBeforeCursor) {
+                                newPos = i + 1;
+                                break;
+                            }
+                        }
+                    }
+                    if (digitsBeforeCursor === 0) newPos = 0;
+                    input.setSelectionRange(newPos, newPos);
+                });
+            },
+            // Format & cursor-safe handler for persentase (allows koma sebagai desimal)
+            handlePersentaseInput(event) {
+                const input = event.target;
+                const oldValue = input.value;
+                const cursorPos = input.selectionStart;
+                const relevantBeforeCursor = oldValue.slice(0, cursorPos).replace(/[^0-9,]/g, '').length;
+
+                let cleaned = oldValue.replace(/[^0-9,]/g, '');
+                const commaIndex = cleaned.indexOf(',');
+                if (commaIndex !== -1) {
+                    cleaned = cleaned.slice(0, commaIndex + 1) + cleaned.slice(commaIndex + 1).replace(/,/g, '');
+                }
+
+                let intPart = commaIndex === -1 ? cleaned : cleaned.slice(0, commaIndex);
+                let decPart = commaIndex === -1 ? null : cleaned.slice(commaIndex + 1).slice(0, 2);
+
+                intPart = intPart.slice(0, 3);
+                if (intPart !== '' && parseInt(intPart, 10) > 100) intPart = '100';
+
+                let formatted = intPart;
+                if (decPart !== null) formatted += ',' + decPart;
+
+                this.persentaseDisplay = formatted;
+
+                this.$nextTick(() => {
+                    let newPos = formatted.length;
+                    let count = 0;
+                    for (let i = 0; i < formatted.length; i++) {
+                        if (/[0-9,]/.test(formatted[i])) {
+                            count++;
+                            if (count === relevantBeforeCursor) {
+                                newPos = i + 1;
+                                break;
+                            }
+                        }
+                    }
+                    if (relevantBeforeCursor === 0) newPos = 0;
+                    input.setSelectionRange(newPos, newPos);
+                });
+            },
+            getPersentaseRaw() {
+                let v = (this.persentaseDisplay || '').toString();
+                if (v === '' || v === ',') return '0';
+                v = v.replace(',', '.');
+                if (v.endsWith('.')) v = v.slice(0, -1);
+                return v;
+            },
+            semuaProduk: @js($produks->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'nama_produk' => $p->nama_produk,
+                    'kode_produk' => $p->kode_produk,
+                    'foto' => $p->foto,
+                    'harga_jual' => $p->harga_jual,
+                ];
+            })->values()),
+            produkTerpilih: @js(old('produk_ids') ? array_map('intval', old('produk_ids')) : array_values($selectedProduks)),
+            itemsPerPage: '10',
+            halamanProduk: 1,
+            get totalHalamanProduk() {
+                if (this.itemsPerPage === 'semua') return 1;
+                const perPage = parseInt(this.itemsPerPage) || 10;
+                return Math.max(1, Math.ceil(this.semuaProduk.length / perPage));
+            },
+            get produkDitampilkan() {
+                if (this.itemsPerPage === 'semua') return this.semuaProduk;
+                const perPage = parseInt(this.itemsPerPage) || 10;
+                const start = (this.halamanProduk - 1) * perPage;
+                return this.semuaProduk.slice(start, start + perPage);
+            },
+            fotoUrl(foto) {
+                if (!foto) return '';
+                if (foto.startsWith('http://') || foto.startsWith('https://')) return foto;
+                return '/storage/' + foto;
+            },
+            formatNumber(v) {
+                return new Intl.NumberFormat('id-ID').format(v);
+            },
+            pilihSemuaProduk(status) {
+                this.produkTerpilih = status ? this.semuaProduk.map(p => p.id) : [];
             }
         }">
             @csrf
@@ -68,16 +174,19 @@
                         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Persentase Diskon (%) <span class="text-red-500">*</span>
                         </label>
-                        <input
-                            type="number"
-                            name="persentase"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            value="{{ old('persentase', $promo->persentase) }}"
-                            placeholder="Contoh: 15"
-                            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
-                            :required="jenisPotongan === 'persentase'">
+                        <div class="relative">
+                            <input
+                                type="text"
+                                inputmode="decimal"
+                                autocomplete="off"
+                                x-model="persentaseDisplay"
+                                @input="handlePersentaseInput($event)"
+                                placeholder="Contoh: 15,5"
+                                class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-4 pr-10 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
+                                :required="jenisPotongan === 'persentase'">
+                            <span class="absolute right-4 top-3 text-gray-500 font-bold text-sm">%</span>
+                            <input type="hidden" name="persentase" :value="getPersentaseRaw()">
+                        </div>
                         @error('persentase')
                             <small class="text-red-500">{{ $message }}</small>
                         @enderror
@@ -91,8 +200,10 @@
                             <span class="absolute left-4 top-3 text-gray-500 font-bold text-sm">Rp</span>
                             <input
                                 type="text"
+                                inputmode="numeric"
+                                autocomplete="off"
                                 x-model="nominalDisplay"
-                                @input="nominalDisplay = formatRupiahInput($event.target.value)"
+                                @input="handleRupiahInput($event, 'nominalDisplay')"
                                 placeholder="5.000"
                                 class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-12 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 font-semibold"
                                 :required="jenisPotongan === 'nominal'">
@@ -113,9 +224,11 @@
                         <span class="absolute left-4 top-3 text-gray-500 font-bold text-sm">Rp</span>
                         <input
                             type="text"
+                            inputmode="numeric"
+                            autocomplete="off"
                             x-model="minPembelianDisplay"
-                            @input="minPembelianDisplay = formatRupiahInput($event.target.value)"
-                            placeholder="50.000 (Isi 0 jika tidak ada minimum)"
+                            @input="handleRupiahInput($event, 'minPembelianDisplay')"
+                            placeholder="50.000"
                             class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-12 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 font-semibold">
                         <input type="hidden" name="min_pembelian" :value="getRawNumber(minPembelianDisplay)">
                     </div>
@@ -181,14 +294,27 @@
 
             {{-- Pilih Produk --}}
             <div class="mb-8">
-                <div class="flex justify-between items-center mb-4">
+                <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Pilih Produk Yang Diberi Promo <span class="text-red-500">*</span>
                     </label>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="pilihSemuaProduk(true)" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Pilih Semua</button>
-                        <span class="text-gray-300">|</span>
-                        <button type="button" onclick="pilihSemuaProduk(false)" class="text-xs font-semibold text-gray-500 hover:text-gray-600">Hapus Semua</button>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-600 dark:text-gray-400 shrink-0">
+                            <span>Tampilkan:</span>
+                            <select x-model="itemsPerPage" @change="halamanProduk = 1"
+                                class="bg-transparent font-bold text-amber-600 dark:text-amber-400 focus:outline-none cursor-pointer">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                                <option value="semua">Semua</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" @click="pilihSemuaProduk(true)" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Pilih Semua</button>
+                            <span class="text-gray-300">|</span>
+                            <button type="button" @click="pilihSemuaProduk(false)" class="text-xs font-semibold text-gray-500 hover:text-gray-600">Hapus Semua</button>
+                        </div>
                     </div>
                 </div>
 
@@ -197,41 +323,65 @@
                 @enderror
 
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    @foreach($produks as $produk)
-                        @php
-                            $checked = is_array(old('produk_ids')) 
-                                ? in_array($produk->id, old('produk_ids')) 
-                                : in_array($produk->id, $selectedProduks);
-                        @endphp
+                    <template x-for="produk in produkDitampilkan" :key="produk.id">
                         <label class="relative flex flex-col bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700/80 rounded-xl p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition duration-150 select-none">
                             <input
                                 type="checkbox"
                                 name="produk_ids[]"
-                                value="{{ $produk->id }}"
-                                class="produk-checkbox absolute top-3 right-3 rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500"
-                                {{ $checked ? 'checked' : '' }}>
-                            
+                                :value="produk.id"
+                                x-model.number="produkTerpilih"
+                                class="produk-checkbox absolute top-3 right-3 rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500">
+
                             <div class="w-full aspect-square rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 mb-3">
-                                @if($produk->foto)
-                                    <img src="{{ asset($produk->foto) }}" class="w-full h-full object-cover">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center text-gray-400 text-xxs font-bold uppercase bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 text-amber-700 dark:text-amber-400">
-                                        {{ substr($produk->nama_produk, 0, 2) }}
-                                    </div>
-                                @endif
+                                <template x-if="produk.foto">
+                                    <img :src="fotoUrl(produk.foto)" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!produk.foto">
+                                    <div class="w-full h-full flex items-center justify-center text-gray-400 text-xxs font-bold uppercase bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 text-amber-700 dark:text-amber-400"
+                                        x-text="produk.nama_produk.substring(0,2)"></div>
+                                </template>
                             </div>
 
                             <div class="flex-1 flex flex-col justify-between">
                                 <div>
-                                    <h4 class="font-bold text-xs text-gray-900 dark:text-white line-clamp-2 leading-tight">{{ $produk->nama_produk }}</h4>
-                                    <span class="text-xxs text-gray-400 dark:text-gray-500 mt-1 block">{{ $produk->kode_produk }}</span>
+                                    <h4 class="font-bold text-xs text-gray-900 dark:text-white line-clamp-2 leading-tight" x-text="produk.nama_produk"></h4>
+                                    <span class="text-xxs text-gray-400 dark:text-gray-500 mt-1 block" x-text="produk.kode_produk"></span>
                                 </div>
                                 <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                                    <span class="text-xs font-extrabold text-brand-600 dark:text-brand-400">Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}</span>
+                                    <span class="text-xs font-extrabold text-brand-600 dark:text-brand-400" x-text="'Rp ' + formatNumber(produk.harga_jual)"></span>
                                 </div>
                             </div>
                         </label>
-                    @endforeach
+                    </template>
+                </div>
+
+                <div x-show="semuaProduk.length === 0" class="py-10 text-center text-gray-400 dark:text-gray-500 text-sm">
+                    Belum ada data produk
+                </div>
+
+                <!-- Product Pagination Bar -->
+                <div x-show="itemsPerPage !== 'semua' && totalHalamanProduk > 1"
+                    class="flex flex-wrap items-center justify-between bg-gray-50 dark:bg-gray-800/40 px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-800 mt-4 text-xs gap-2">
+                    <span class="text-gray-500 dark:text-gray-400">
+                        Menampilkan <span class="font-bold text-gray-800 dark:text-white" x-text="produkDitampilkan.length"></span> dari
+                        <span class="font-bold text-gray-800 dark:text-white" x-text="semuaProduk.length"></span> produk
+                        (<span x-text="produkTerpilih.length"></span> dipilih)
+                    </span>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" @click="if(halamanProduk > 1) halamanProduk--" :disabled="halamanProduk <= 1"
+                            class="px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed font-semibold transition text-gray-700 dark:text-gray-300">
+                            &laquo; Prev
+                        </button>
+                        <span class="px-2 font-bold text-amber-600 dark:text-amber-400" x-text="halamanProduk + ' / ' + totalHalamanProduk"></span>
+                        <button type="button" @click="if(halamanProduk < totalHalamanProduk) halamanProduk++" :disabled="halamanProduk >= totalHalamanProduk"
+                            class="px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed font-semibold transition text-gray-700 dark:text-gray-300">
+                            Next &raquo;
+                        </button>
+                    </div>
+                </div>
+                <div x-show="itemsPerPage === 'semua'" class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    Menampilkan seluruh <span class="font-bold text-gray-800 dark:text-white" x-text="semuaProduk.length"></span> produk
+                    (<span x-text="produkTerpilih.length"></span> dipilih)
                 </div>
             </div>
 
@@ -252,14 +402,5 @@
     </x-common.component-card>
 
 </div>
-
-<script>
-function pilihSemuaProduk(status) {
-    const checkboxes = document.querySelectorAll('.produk-checkbox');
-    checkboxes.forEach(cb => {
-        cb.checked = status;
-    });
-}
-</script>
 
 @endsection
