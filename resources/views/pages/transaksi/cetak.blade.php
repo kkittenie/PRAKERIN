@@ -349,10 +349,26 @@
                         <span>Subtotal</span>
                         <span>Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
                     </div>
-                    @if ($diskon > 0)
-                        <div class="flex-between">
-                            <span>Diskon ({{ $transaksi->diskon_label ?? formatPersenStruk($diskonPersen) }})</span>
-                            <span>-Rp {{ number_format($diskon, 0, ',', '.') }}</span>
+                    @php
+                        $diskonItems = [];
+                        if (!empty($transaksi->diskon_label)) {
+                            $decoded = json_decode($transaksi->diskon_label, true);
+                            if (is_array($decoded)) {
+                                $diskonItems = $decoded;
+                            }
+                        }
+                    @endphp
+                    @if (!empty($diskonItems))
+                        @foreach ($diskonItems as $itemDiskon)
+                            <div class="flex-between" style="align-items: flex-start; gap: 6px; color: #000000; margin-bottom: 2px;">
+                                <span style="flex: 1; min-width: 0; word-break: break-word;">{{ $itemDiskon['nama'] }}</span>
+                                <span style="white-space: nowrap; flex-shrink: 0; font-weight: 500;">-Rp {{ number_format($itemDiskon['nilai'], 0, ',', '.') }}</span>
+                            </div>
+                        @endforeach
+                    @elseif ($diskon > 0)
+                        <div class="flex-between" style="align-items: flex-start; gap: 6px; color: #000000; margin-bottom: 2px;">
+                            <span style="flex: 1; min-width: 0; word-break: break-word;">Diskon ({{ $transaksi->diskon_label ?? formatPersenStruk($diskonPersen) }})</span>
+                            <span style="white-space: nowrap; flex-shrink: 0; font-weight: 500;">-Rp {{ number_format($diskon, 0, ',', '.') }}</span>
                         </div>
                     @endif
                     @if ($pajak > 0)
@@ -506,7 +522,11 @@
             $struk .= $dividerDashed;
             $struk .= padLineStruk("Subtotal", "Rp " . number_format($subtotal, 0, ',', '.'));
 
-            if ($diskon > 0) {
+            if (!empty($diskonItems)) {
+                foreach ($diskonItems as $itemDiskon) {
+                    $struk .= padLineStruk($itemDiskon['nama'], "-Rp " . number_format($itemDiskon['nilai'], 0, ',', '.'));
+                }
+            } elseif ($diskon > 0) {
                 $labelDiskon = $transaksi->diskon_label ?? formatPersenStruk($diskonPersen);
                 $struk .= padLineStruk("Diskon (" . $labelDiskon . ")", "-Rp " . number_format($diskon, 0, ',', '.'));
             }

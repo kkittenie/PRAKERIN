@@ -11,11 +11,11 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('transaksi', function (Blueprint $table) {
-            $table->string('diskon_label')->nullable()->after('diskon');
+            $table->text('diskon_label')->nullable()->after('diskon');
         });
 
         Schema::table('pesanan_ditahan', function (Blueprint $table) {
-            $table->string('diskon_label')->nullable()->after('diskon');
+            $table->text('diskon_label')->nullable()->after('diskon');
         });
     }
 

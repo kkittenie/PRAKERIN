@@ -525,25 +525,12 @@
                             <span class="font-semibold text-gray-800 dark:text-white"
                                 x-text="formatRupiah(subtotal)"></span>
                         </div>
-                        <<div
-                            class="flex items-center justify-between text-xs text-rose-600 dark:text-rose-400 font-semibold"
-                            x-show="activePromoInfo.diskonNominal > 0">
-                            <span>Diskon <span class="font-bold"
-                                    x-text="'(' + activePromoInfo.namaNominal + ')'"></span></span>
-                            <span class="font-semibold" x-text="'-' + formatRupiah(activePromoInfo.diskonNominal)"></span>
-                    </div>
-                    <div class="flex items-center justify-between text-xs text-rose-600 dark:text-rose-400 font-semibold"
-                        x-show="activePromoInfo.diskonPersen > 0">
-                        <span>Diskon (<span x-text="formatPersen(activePromoInfo.persenEfektif)"></span>%) <span
-                                class="font-bold" x-text="'(' + activePromoInfo.namaPersen + ')'"></span></span>
-                        <span class="font-semibold" x-text="'-' + formatRupiah(activePromoInfo.diskonPersen)"></span>
-                    </div>
-                    <div class="flex items-center justify-between text-xs text-rose-600 dark:text-rose-400 font-semibold"
-                        x-show="parsePersen(diskonPersen) > 0">
-                        <span>Diskon Tambahan (<span x-text="diskonPersen"></span>%)</span>
-                        <span class="font-semibold"
-                            x-text="'-' + formatRupiah(Math.round(subtotalGross * (parsePersen(diskonPersen) / 100)))"></span>
-                    </div>
+                        <template x-for="dItem in rincianDiskonList" :key="dItem.nama">
+                            <div class="flex items-center justify-between text-xs text-rose-600 dark:text-rose-400 font-semibold">
+                                <span x-text="dItem.nama"></span>
+                                <span class="font-semibold" x-text="'-' + formatRupiah(dItem.nilai)"></span>
+                            </div>
+                        </template>
                     <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
                         x-show="pajak > 0">
                         <span>Pajak (<span x-text="pajakPersen"></span>%)</span>
@@ -741,25 +728,12 @@
                     <div class="flex justify-between text-gray-500 dark:text-gray-400"><span>Subtotal</span><span
                             class="font-semibold text-gray-800 dark:text-white" x-text="formatRupiah(subtotal)"></span>
                     </div>
-                    <div class="flex justify-between text-rose-600 dark:text-rose-400 font-semibold"
-                        x-show="activePromoInfo.diskonNominal > 0">
-                        <span>Diskon <span class="font-bold text-rose-500"
-                                x-text="'(' + activePromoInfo.namaNominal + ')'"></span></span>
-                        <span class="font-semibold" x-text="'-' + formatRupiah(activePromoInfo.diskonNominal)"></span>
-                    </div>
-                    <div class="flex justify-between text-rose-600 dark:text-rose-400 font-semibold"
-                        x-show="activePromoInfo.diskonPersen > 0">
-                        <span>Diskon (<span x-text="formatPersen(activePromoInfo.persenEfektif)"></span>%) <span
-                                class="font-bold text-rose-500"
-                                x-text="'(' + activePromoInfo.namaPersen + ')'"></span></span>
-                        <span class="font-semibold" x-text="'-' + formatRupiah(activePromoInfo.diskonPersen)"></span>
-                    </div>
-                    <div class="flex justify-between text-red-600 dark:text-red-400 font-semibold"
-                        x-show="parsePersen(diskonPersen) > 0">
-                        <span>Diskon Tambahan (<span x-text="diskonPersen"></span>%)</span>
-                        <span class="font-semibold"
-                            x-text="'-' + formatRupiah(Math.round(subtotalGross * (parsePersen(diskonPersen) / 100)))"></span>
-                    </div>
+                    <template x-for="dItem in rincianDiskonList" :key="dItem.nama">
+                        <div class="flex justify-between text-rose-600 dark:text-rose-400 font-semibold">
+                            <span x-text="dItem.nama"></span>
+                            <span class="font-semibold" x-text="'-' + formatRupiah(dItem.nilai)"></span>
+                        </div>
+                    </template>
                     <div class="flex justify-between text-gray-500 dark:text-gray-400" x-show="pajak > 0"><span>Pajak
                             (<span x-text="pajakPersen"></span>%)</span><span
                             class="font-semibold text-gray-800 dark:text-white" x-text="formatRupiah(pajak)"></span>
@@ -1465,34 +1439,97 @@
                     const diskonManual = Math.round(this.subtotalGross * ((this.parsePersen(this.diskonPersen) || 0) / 100));
                     return this.diskonPromo + diskonManual;
                 },
-                get diskonPersenEfektif() {
-                    if (this.subtotalGross <= 0) return 0;
-                    return (this.nilaiDiskon / this.subtotalGross) * 100;
-                },
-                get diskonLabel() {
-                    let adaNominal = false;
-                    let adaPersenPromo = false;
+                get rincianDiskonList() {
+                    if (this.keranjang.length === 0) return [];
+
+                    const promoMap = new Map();
 
                     this.keranjang.forEach(item => {
-                        if (!item.promos_tersedia || !item.promos_terpilih_ids) return;
+                        if (!item.promos_tersedia || item.promos_tersedia.length === 0 || !item.promos_terpilih_ids || item.promos_terpilih_ids.length === 0) {
+                            return;
+                        }
+
+                        const subtotalItem = item.harga_jual_asli * item.jumlah;
+                        const itemPromoDiscounts = [];
+                        let totalItemDiskon = 0;
+
                         item.promos_tersedia.forEach(promo => {
-                            if (item.promos_terpilih_ids.includes(promo.id)) {
-                                if (promo.jenis_potongan === 'nominal') adaNominal = true;
-                                else adaPersenPromo = true;
+                            if (!item.promos_terpilih_ids.includes(promo.id)) return;
+
+                            const minPembelian = parseFloat(promo.min_pembelian || 0);
+                            const nominalPotongan = parseFloat(promo.nominal_potongan || 0);
+                            let syaratTerpenuhi;
+                            if (minPembelian > 0) {
+                                syaratTerpenuhi = subtotalItem >= minPembelian || this.subtotalGross >= minPembelian;
+                            } else if (promo.jenis_potongan === 'nominal') {
+                                syaratTerpenuhi = subtotalItem >= nominalPotongan || this.subtotalGross >= nominalPotongan;
+                            } else {
+                                syaratTerpenuhi = true;
                             }
+
+                            if (!syaratTerpenuhi) return;
+
+                            let hitung = 0;
+                            if (promo.jenis_potongan === 'nominal') {
+                                hitung = nominalPotongan;
+                            } else {
+                                hitung = (parseFloat(promo.persentase || 0) / 100) * subtotalItem;
+                            }
+
+                            itemPromoDiscounts.push({ promo, hitung });
+                            totalItemDiskon += hitung;
+                        });
+
+                        let faktor = 1;
+                        if (totalItemDiskon > subtotalItem && totalItemDiskon > 0) {
+                            faktor = subtotalItem / totalItemDiskon;
+                        }
+
+                        itemPromoDiscounts.forEach(({ promo, hitung }) => {
+                            const diskonFinal = hitung * faktor;
+                            if (!promoMap.has(promo.id)) {
+                                promoMap.set(promo.id, {
+                                    id: promo.id,
+                                    nama: promo.nama_promo,
+                                    jenis: promo.jenis_potongan,
+                                    persentase: promo.persentase,
+                                    nilai: 0
+                                });
+                            }
+                            promoMap.get(promo.id).nilai += diskonFinal;
                         });
                     });
 
-                    const parts = [];
-                    if (adaNominal) parts.push('Nominal');
-                    if (adaPersenPromo) parts.push('Persentase');
+                    const result = [];
+                    promoMap.forEach(promoData => {
+                        const roundedNilai = Math.round(promoData.nilai);
+                        if (roundedNilai > 0) {
+                            let labelNama = promoData.nama;
+                            if (promoData.jenis === 'persentase' && promoData.persentase) {
+                                labelNama += ' (' + this.formatPersen(promoData.persentase) + '%)';
+                            }
+                            result.push({
+                                nama: 'Diskon (' + labelNama + ')',
+                                nilai: roundedNilai
+                            });
+                        }
+                    });
 
                     const manualPersen = this.parsePersen(this.diskonPersen);
                     if (manualPersen > 0) {
-                        parts.push(this.formatPersen(manualPersen) + '%');
+                        const nilaiManual = Math.round(this.subtotalGross * (manualPersen / 100));
+                        if (nilaiManual > 0) {
+                            result.push({
+                                nama: 'Diskon Tambahan (' + this.formatPersen(manualPersen) + '%)',
+                                nilai: nilaiManual
+                            });
+                        }
                     }
 
-                    return parts.join(' + ');
+                    return result;
+                },
+                get diskonLabel() {
+                    return JSON.stringify(this.rincianDiskonList);
                 },
 
                 get pajak() {
