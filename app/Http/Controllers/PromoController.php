@@ -28,6 +28,17 @@ class PromoController extends Controller
         }
     }
 
+    public function lihat($id)
+    {
+        try {
+            $promo = Promo::with(['produks.kategori'])->findOrFail($id);
+            return view('pages.promo.show', compact('promo'));
+        } catch (\Exception $e) {
+            Log::error('Error pada lihat PromoController: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat detail promo.');
+        }
+    }
+
     public function tambah()
     {
         try {
@@ -42,6 +53,10 @@ class PromoController extends Controller
     public function simpan(Request $request)
     {
         try {
+            // Jaga-jaga: normalisasi koma (format Indonesia) menjadi titik
+            // untuk field numerik, seandainya JS di client tidak jalan.
+            $this->normalisasiInputKoma($request);
+
             $validated = $request->validate([
                 'nama_promo' => 'required|string|max:255',
                 'jenis_potongan' => 'required|in:persentase,nominal',
@@ -108,6 +123,10 @@ class PromoController extends Controller
     {
         try {
             $promo = Promo::findOrFail($id);
+
+            // Jaga-jaga: normalisasi koma (format Indonesia) menjadi titik
+            // untuk field numerik, seandainya JS di client tidak jalan.
+            $this->normalisasiInputKoma($request);
 
             $validated = $request->validate([
                 'nama_promo' => 'required|string|max:255',
@@ -206,6 +225,22 @@ class PromoController extends Controller
         } catch (\Exception $e) {
             Log::error('Error pada hapus PromoController: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus promo.');
+        }
+    }
+
+    /**
+     * Ubah pemisah desimal koma (format Indonesia, mis. "15,5") menjadi
+     * titik (format standar PHP, mis. "15.5") pada field-field numerik,
+     * sebagai fallback jika hidden input dari JS tidak terkirim.
+     */
+    private function normalisasiInputKoma(Request $request): void
+    {
+        foreach (['persentase', 'nominal_potongan', 'min_pembelian'] as $field) {
+            if ($request->filled($field) && is_string($request->input($field))) {
+                $request->merge([
+                    $field => str_replace(',', '.', $request->input($field)),
+                ]);
+            }
         }
     }
 }

@@ -15,6 +15,7 @@ class Transaksi extends Model
         'subtotal',
         'pajak',
         'diskon',
+        'diskon_label',
         'total_bayar',
         'jumlah_diterima',
         'kembalian',
