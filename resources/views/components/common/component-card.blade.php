@@ -1,23 +1,27 @@
 @props([
-    'title',
+    'title' => '',
     'desc' => '',
 ])
 
 <div {{ $attributes->merge(['class' => 'rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900']) }}>
+    @if($title || $desc)
     <!-- Card Header -->
     <div class="px-6 py-5">
+        @if($title)
         <h3 class="text-base font-medium text-gray-800 dark:text-gray-100">
             {{ $title }}
         </h3>
+        @endif
         @if($desc)
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {{ $desc }}
             </p>
         @endif
     </div>
+    @endif
 
     <!-- Card Body -->
-    <div class="p-4 border-t border-gray-100 dark:border-gray-800 sm:p-6">
+    <div class="p-4 {{ ($title || $desc) ? 'border-t border-gray-100 dark:border-gray-800' : '' }} sm:p-6">
         <div class="space-y-6">
             {{ $slot }}
         </div>

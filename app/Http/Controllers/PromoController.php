@@ -28,6 +28,17 @@ class PromoController extends Controller
         }
     }
 
+    public function lihat($id)
+    {
+        try {
+            $promo = Promo::with(['produks.kategori'])->findOrFail($id);
+            return view('pages.promo.show', compact('promo'));
+        } catch (\Exception $e) {
+            Log::error('Error pada lihat PromoController: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat detail promo.');
+        }
+    }
+
     public function tambah()
     {
         try {

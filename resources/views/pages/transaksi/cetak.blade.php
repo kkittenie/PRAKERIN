@@ -351,7 +351,7 @@
                     </div>
                     @if ($diskon > 0)
                         <div class="flex-between">
-                            <span>Diskon ({{ formatPersenStruk($diskonPersen) }}%)</span>
+                            <span>Diskon ({{ $transaksi->diskon_label ?? formatPersenStruk($diskonPersen) }})</span>
                             <span>-Rp {{ number_format($diskon, 0, ',', '.') }}</span>
                         </div>
                     @endif
@@ -507,7 +507,8 @@
             $struk .= padLineStruk("Subtotal", "Rp " . number_format($subtotal, 0, ',', '.'));
 
             if ($diskon > 0) {
-                $struk .= padLineStruk("Diskon (" . formatPersenStruk($diskonPersen) . "%)", "-Rp " . number_format($diskon, 0, ',', '.'));
+                $labelDiskon = $transaksi->diskon_label ?? formatPersenStruk($diskonPersen);
+                $struk .= padLineStruk("Diskon (" . $labelDiskon . ")", "-Rp " . number_format($diskon, 0, ',', '.'));
             }
             if ($pajak > 0) {
                 $struk .= padLineStruk("Pajak (" . formatPersenStruk($pajakPersen) . "%)", "Rp " . number_format($pajak, 0, ',', '.'));

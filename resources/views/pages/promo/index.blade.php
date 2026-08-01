@@ -118,7 +118,9 @@
                 </td>
                 <td class="py-3.5 px-3 hidden sm:table-cell text-gray-500">{{ $promo->firstItem() + $loop->index }}</td>
                 <td class="py-3.5 px-2 sm:px-3 font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">
-                    {{ $item->nama_promo }}
+                    <a href="{{ route('promo.show', $item->id) }}" class="hover:text-amber-600 dark:hover:text-amber-400 transition">
+                        {{ $item->nama_promo }}
+                    </a>
                 </td>
                 <td class="py-3.5 px-2 sm:px-3 text-center text-brand-600 dark:text-brand-400 font-bold text-xs sm:text-sm whitespace-nowrap">{{ $diskonText }}</td>
                 <td class="py-3.5 px-3 hidden md:table-cell text-center text-xs">
@@ -152,6 +154,7 @@
                     </div>
                 </td>
                 <td class="py-3.5 px-2 sm:px-3 text-right space-x-1 whitespace-nowrap">
+                    <a href="{{ route('promo.show', $item->id) }}" class="text-blue-600 dark:text-blue-400 font-semibold hover:underline text-xs sm:text-sm">Detail</a>
                     <a href="{{ route('promo.edit', $item->id) }}" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">Edit</a>
                     <form action="{{ route('promo.destroy', $item->id) }}" method="POST" class="inline">
                         @csrf @method('DELETE')

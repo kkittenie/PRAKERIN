@@ -15,6 +15,7 @@ class PesananDitahan extends Model
         'subtotal',
         'pajak',
         'diskon',
+        'diskon_label',
         'total',
         'catatan',
         'transaksi_id',

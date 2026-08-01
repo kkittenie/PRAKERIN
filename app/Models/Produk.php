@@ -23,6 +23,7 @@ class Produk extends Model
 
     protected $appends = [
         'promo_aktif',
+        'promos_aktif_semua',
         'harga_diskon'
     ];
 
@@ -39,6 +40,30 @@ class Produk extends Model
     public function promos()
     {
         return $this->belongsToMany(Promo::class, 'promo_produk', 'produk_id', 'promo_id')->withTimestamps();
+    }
+
+    public function getPromosAktifSemuaAttribute()
+    {
+        $now = now();
+        $isPromoBerlaku = function ($promo) use ($now) {
+            if (!$promo->status_aktif) return false;
+            if ($promo->mulai_berlaku > $now) return false;
+            if ($promo->selesai_berlaku && $promo->selesai_berlaku < $now) return false;
+            return true;
+        };
+
+        if ($this->relationLoaded('promos')) {
+            return $this->promos->filter($isPromoBerlaku)->values();
+        }
+
+        return $this->promos()
+            ->where('status_aktif', true)
+            ->where('mulai_berlaku', '<=', $now)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('selesai_berlaku')
+                  ->orWhere('selesai_berlaku', '>=', $now);
+            })
+            ->get();
     }
 
     public function getPromoAktifAttribute()

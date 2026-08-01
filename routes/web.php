@@ -100,7 +100,8 @@ Route::middleware(['auth'])->group(function () {
     // Promo Produk
     Route::middleware('permission:lihat_promo')->group(function () {
         Route::get('/promo', [PromoController::class, 'indeks'])->name('promo.index');
-        Route::get('/promo/{id}/ubah', [PromoController::class, 'ubah'])->name('promo.edit');
+        Route::get('/promo/{id}', [PromoController::class, 'lihat'])->whereNumber('id')->name('promo.show');
+        Route::get('/promo/{id}/ubah', [PromoController::class, 'ubah'])->whereNumber('id')->name('promo.edit');
     });
     Route::middleware('permission:tambah_promo')->group(function () {
         Route::get('/promo/tambah', [PromoController::class, 'tambah'])->name('promo.create');
