@@ -47,11 +47,29 @@
                     </div>
 
                     <div>
+                    <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
                             Jumlah Produk
                         </p>
                         <p class="font-semibold text-amber-600 dark:text-amber-400">
                             {{ $bundling->jumlah_produk }} pcs
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Status Produksi
+                        </p>
+                        <p class="mt-0.5">
+                            @if($bundling->perlu_diproduksi)
+                                <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
+                                    ⚠ Perlu Diproduksi
+                                </span>
+                            @else
+                                <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                    ✓ Stok Ada
+                                </span>
+                            @endif
                         </p>
                     </div>
 
@@ -78,17 +96,32 @@
                     <thead>
                         <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
                             <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
-                            <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Produk
-                            </th>
-                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Qty</th>
+                            <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Produk</th>
+                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Qty Bundling</th>
+                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status Stok Produk</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($bundling->items as $item)
+                            @php
+                                $p = $item->produk;
+                                $stokHabis = !$p || $p->stok <= 0 || $p->status_ketersediaan === 'perlu_diproduksi';
+                            @endphp
                             <tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
                                 <td class="py-4">{{ $loop->iteration }}</td>
-                                <td class="font-medium text-gray-800 dark:text-white">{{ $item->produk->nama_produk }}</td>
+                                <td class="font-medium text-gray-800 dark:text-white">{{ $p ? $p->nama_produk : '-' }}</td>
                                 <td class="text-center font-bold text-amber-700 dark:text-amber-400">{{ $item->qty }} pcs</td>
+                                <td class="text-center">
+                                    @if($stokHabis)
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-500/15 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:text-red-400">
+                                            Perlu Diproduksi (Stok: {{ $p ? $p->stok : 0 }})
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                            Stok Ada ({{ $p->stok }} tersedia)
+                                        </span>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -98,12 +131,29 @@
             <!-- Mobile Card View -->
             <div class="block sm:hidden divide-y divide-gray-100 dark:divide-gray-800">
                 @foreach($bundling->items as $item)
-                    <div class="py-3 flex items-center justify-between">
-                        <span class="font-bold text-gray-800 dark:text-white text-sm">{{ $item->produk->nama_produk }}</span>
-                        <span
-                            class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
-                            {{ $item->qty }} pcs
-                        </span>
+                    @php
+                        $p = $item->produk;
+                        $stokHabis = !$p || $p->stok <= 0 || $p->status_ketersediaan === 'perlu_diproduksi';
+                    @endphp
+                    <div class="py-3 flex flex-col gap-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-gray-800 dark:text-white text-sm">{{ $p ? $p->nama_produk : '-' }}</span>
+                            <span
+                                class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
+                                {{ $item->qty }} pcs
+                            </span>
+                        </div>
+                        <div>
+                            @if($stokHabis)
+                                <span class="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-500/15 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:text-red-400">
+                                    Perlu Diproduksi (Stok: {{ $p ? $p->stok : 0 }})
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                    Stok Ada ({{ $p->stok }} tersedia)
+                                </span>
+                            @endif
+                        </div>
                     </div>
                 @endforeach
             </div>

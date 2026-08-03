@@ -89,11 +89,14 @@
                                 class="py-3.5 px-3 hidden md:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
                                 Jumlah Produk</th>
                             <th
-                                class="py-3.5 px-3 hidden sm:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                Status</th>
-                            <th
-                                class="py-3.5 px-2 sm:px-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                Aksi</th>
+    class="py-3.5 px-3 hidden sm:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
+    Status</th>
+<th
+    class="py-3.5 px-3 hidden lg:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
+    Ketersediaan</th>
+<th
+    class="py-3.5 px-2 sm:px-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">
+    Aksi</th>
                         </tr>
                     </thead>
                     @forelse($bundling as $item)
@@ -147,24 +150,32 @@
                                     </span>
                                 </td>
                                 <td class="py-3.5 px-3 hidden sm:table-cell text-center">
-                                    <div class="flex flex-col items-center gap-1.5">
-                                        <form action="{{ route('bundling.toggle-status', $item->id) }}" method="POST"
-                                            class="inline">
-                                            @csrf @method('PATCH')
-                                            <label class="relative inline-flex items-center cursor-pointer"
-                                                title="Klik untuk mengaktifkan/menonaktifkan bundling">
-                                                <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
-                                                <div
-                                                    class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5">
-                                                </div>
-                                            </label>
-                                        </form>
-                                        <span
-                                            class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $badgeColor }}">
-                                            {{ $status }}
-                                        </span>
-                                    </div>
-                                </td>
+    <div class="flex flex-col items-center gap-1.5">
+        <form action="{{ route('bundling.toggle-status', $item->id) }}" method="POST"
+            class="inline">
+            @csrf @method('PATCH')
+            <label class="relative inline-flex items-center cursor-pointer"
+                title="Klik untuk mengaktifkan/menonaktifkan bundling">
+                <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
+                <div
+                    class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5">
+                </div>
+            </label>
+        </form>
+        <span
+            class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $badgeColor }}">
+            {{ $status }}
+        </span>
+    </div>
+</td>
+<td class="py-3.5 px-3 hidden lg:table-cell text-center">
+    @if($item->perlu_diproduksi)
+        <span class="inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-xs text-orange-700 dark:text-orange-400">Perlu
+            Diproduksi</span>
+    @else
+        <span class="inline-flex rounded-full bg-emerald-100 dark:bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">Ready</span>
+    @endif
+</td>
                                 <td class="py-3.5 px-2 sm:px-3 text-right space-x-1 whitespace-nowrap">
                                     <a href="{{ route('bundling.show', $item->id) }}"
                                         class="text-blue-600 dark:text-blue-400 font-semibold hover:underline text-xs sm:text-sm">Detail</a>
@@ -182,7 +193,7 @@
                             <!-- Dropdown Row for Hidden Mobile Columns -->
                             <tr x-show="open" x-cloak x-transition
                                 class="sm:hidden bg-amber-50/50 dark:bg-amber-950/30 text-xs">
-                                <td colspan="9" class="p-4">
+                                <td colspan="10" class="p-4">
                                     <div class="flex flex-col sm:flex-row gap-4 items-start">
                                         @if($item->gambar)
                                             <img src="{{ asset('storage/' . $item->gambar) }}"
@@ -194,26 +205,34 @@
                                         @endif
                                         <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300 w-full">
                                             <div>
-                                                <span class="text-gray-400 block text-[11px] mb-0.5">Status</span>
-                                                <div class="flex items-center gap-2">
-                                                    <form action="{{ route('bundling.toggle-status', $item->id) }}" method="POST"
-                                                        class="inline">
-                                                        @csrf @method('PATCH')
-                                                        <label class="relative inline-flex items-center cursor-pointer"
-                                                            title="Klik untuk mengaktifkan/menonaktifkan bundling">
-                                                            <input type="checkbox" class="sr-only peer"
-                                                                onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
-                                                            <div
-                                                                class="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-4">
-                                                            </div>
-                                                        </label>
-                                                    </form>
-                                                    <span
-                                                        class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $badgeColor }}">
-                                                        {{ $status }}
-                                                    </span>
-                                                </div>
-                                            </div>
+    <span class="text-gray-400 block text-[11px] mb-0.5">Status</span>
+    <div class="flex items-center gap-2">
+        <form action="{{ route('bundling.toggle-status', $item->id) }}" method="POST"
+            class="inline">
+            @csrf @method('PATCH')
+            <label class="relative inline-flex items-center cursor-pointer"
+                title="Klik untuk mengaktifkan/menonaktifkan bundling">
+                <input type="checkbox" class="sr-only peer"
+                    onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
+                <div
+                    class="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-4">
+                </div>
+            </label>
+        </form>
+        <span
+            class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $badgeColor }}">
+            {{ $status }}
+        </span>
+    </div>
+</div>
+<div>
+    <span class="text-gray-400 block text-[11px] mb-0.5">Ketersediaan</span>
+    @if($item->perlu_diproduksi)
+        <span class="font-semibold text-orange-600">Perlu Diproduksi</span>
+    @else
+        <span class="font-semibold text-emerald-600">Stok Ada (Ready)</span>
+    @endif
+</div>
                                             <div>
                                                 <span class="text-gray-400 block text-[11px] mb-0.5">Kode Bundling</span>
                                                 <span
@@ -238,7 +257,7 @@
                     @empty
                         <tbody>
                             <tr>
-                                <td colspan="9" class="py-10 text-center text-gray-500 dark:text-gray-400">Belum ada bundling
+                                <td colspan="10" class="py-10 text-center text-gray-500 dark:text-gray-400">Belum ada bundling
                                 </td>
                             </tr>
                         </tbody>

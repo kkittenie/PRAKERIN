@@ -176,8 +176,8 @@
                                                         Bundling</span>
                                                 </div>
                                                 <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
-                                                    :class="stokBundlingTersedia(produk) <= 0 ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
-                                                    x-text="'Stok: ' + stokBundlingTersedia(produk)"></div>
+                                                    :class="bundlingPerluDiproduksi(produk) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
+                                                    x-text="bundlingPerluDiproduksi(produk) ? 'Perlu Diproduksi' : ('Stok: ' + stokBundlingTersedia(produk))"></div>
                                             </div>
                                             <div class="p-4 flex-1 flex flex-col justify-between gap-3">
                                                 <div>
@@ -197,8 +197,7 @@
                                                         <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                             x-text="formatRupiah(produk.harga)"></span>
                                                         <button @click="tambahBundlingKeKeranjang(produk)"
-                                                            :disabled="stokBundlingTersedia(produk) <= 0"
-                                                            class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed">
+                                                            class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                                 viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -323,8 +322,8 @@
                                                 Bundling</span>
                                         </div>
                                         <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
-                                            :class="stokBundlingTersedia(bundling) <= 0 ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
-                                            x-text="'Stok: ' + stokBundlingTersedia(bundling)"></div>
+                                            :class="bundlingPerluDiproduksi(bundling) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
+                                            x-text="bundlingPerluDiproduksi(bundling) ? 'Perlu Diproduksi' : ('Stok: ' + stokBundlingTersedia(bundling))"></div>
                                     </div>
                                     <div class="p-4 flex-1 flex flex-col justify-between gap-3">
                                         <div>
@@ -341,8 +340,7 @@
                                             <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                 x-text="formatRupiah(bundling.harga)"></span>
                                             <button @click="tambahBundlingKeKeranjang(bundling)"
-                                                :disabled="stokBundlingTersedia(bundling) <= 0"
-                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed">
+                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                                                         d="M12 4v16m8-8H4" />
@@ -1339,6 +1337,19 @@
                 },
 
                 itemButuhProduksi(item) {
+                    if (item.is_bundling) {
+                        if (typeof item.butuh_produksi !== 'undefined' && item.butuh_produksi !== null) {
+                            return !!item.butuh_produksi;
+                        }
+                        if (item.items && item.items.length > 0) {
+                            return item.items.some(k => {
+                                if (typeof k.butuh_produksi !== 'undefined') return !!k.butuh_produksi;
+                                const p = this.daftarProduk.find(x => x.id === k.produk_id);
+                                return p ? (p.status_ketersediaan === 'perlu_diproduksi' || (parseFloat(p.stok) || 0) <= 0) : false;
+                            });
+                        }
+                        return false;
+                    }
                     if (typeof item.butuh_produksi !== 'undefined' && item.butuh_produksi !== null) {
                         return !!item.butuh_produksi;
                     }
@@ -1461,6 +1472,16 @@
                         min = (min === null) ? bisaDibuat : Math.min(min, bisaDibuat);
                     });
                     return min ?? 0;
+                },
+
+                bundlingPerluDiproduksi(bundling) {
+                    if (typeof bundling.perlu_diproduksi !== 'undefined') return !!bundling.perlu_diproduksi;
+                    if (!bundling.items || bundling.items.length === 0) return false;
+                    return bundling.items.some(it => {
+                        const p = this.daftarProduk.find(x => x.id === it.produk_id);
+                        if (!p) return true;
+                        return p.status_ketersediaan === 'perlu_diproduksi' || (parseFloat(p.stok) || 0) <= 0 || (parseFloat(p.stok) || 0) < it.qty;
+                    });
                 },
 
                 get totalHalamanProduk() {
@@ -1796,19 +1817,10 @@
                     }
                 },
                 tambahBundlingKeKeranjang(bundling) {
-                    const stokTersedia = this.stokBundlingTersedia(bundling);
-                    if (stokTersedia <= 0) {
-                        this.tambahToast('Stok komponen bundling tidak mencukupi.', 'error');
-                        return;
-                    }
-
+                    const perluDiproduksi = this.bundlingPerluDiproduksi(bundling);
                     const existing = this.keranjang.find(i => i.is_bundling && i.bundling_id === bundling.id);
 
                     if (existing) {
-                        if (existing.jumlah >= stokTersedia) {
-                            this.tambahToast('Stok komponen bundling tidak mencukupi untuk ditambah lagi.', 'error');
-                            return;
-                        }
                         existing.jumlah++;
                     } else {
                         this.keranjang.push({
@@ -1819,24 +1831,24 @@
                             harga_jual: parseFloat(bundling.harga),
                             harga_jual_asli: parseFloat(bundling.harga),
                             foto: bundling.gambar,
-                            items: bundling.items.map(i => ({ produk_id: i.produk_id, qty: i.qty })),
+                            items: (bundling.items || []).map(i => {
+                                const p = this.daftarProduk.find(x => x.id === i.produk_id);
+                                const stokP = p ? (parseFloat(p.stok) || 0) : 0;
+                                const subButuh = p ? (p.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < i.qty) : true;
+                                return { produk_id: i.produk_id, qty: i.qty, butuh_produksi: subButuh };
+                            }),
                             jumlah: 1,
-                            butuh_produksi: false,
+                            butuh_produksi: perluDiproduksi,
                             catatan: ''
                         });
                     }
 
-                    this.tambahToast('Bundling ditambahkan.', 'sukses');
+                    this.tambahToast(perluDiproduksi ? 'Bundling ditambahkan (Perlu Diproduksi).' : 'Bundling ditambahkan.', 'sukses');
                 },
 
                 tambahJumlah(item) {
                     if (item.is_bundling) {
-                        const bundling = this.daftarBundling.find(b => b.id === item.bundling_id);
-                        if (bundling && item.jumlah < this.stokBundlingTersedia(bundling)) {
-                            item.jumlah++;
-                        } else {
-                            this.tambahToast('Stok komponen bundling tidak mencukupi.', 'error');
-                        }
+                        item.jumlah++;
                         return;
                     }
 

@@ -19,21 +19,21 @@
     @endif
 
     <div class="space-y-6" x-data="{
-            modalHapusTerbuka: false,
-            formTerpilih: null,
-            namaHapus: '',
-            bukaModalHapus(form, nama) {
-                this.formTerpilih = form;
-                this.namaHapus = nama;
-                this.modalHapusTerbuka = true;
-            },
-            konfirmasiHapus() {
-                if (this.formTerpilih) {
-                    this.formTerpilih.submit();
-                }
-                this.modalHapusTerbuka = false;
-            }
-        }">
+                        modalHapusTerbuka: false,
+                        formTerpilih: null,
+                        namaHapus: '',
+                        bukaModalHapus(form, nama) {
+                            this.formTerpilih = form;
+                            this.namaHapus = nama;
+                            this.modalHapusTerbuka = true;
+                        },
+                        konfirmasiHapus() {
+                            if (this.formTerpilih) {
+                                this.formTerpilih.submit();
+                            }
+                            this.modalHapusTerbuka = false;
+                        }
+                    }">
 
         <x-common.component-card title="Data Produk">
 
@@ -95,7 +95,8 @@
                                     </button>
                                 </td>
                                 <td class="py-3 px-3 hidden sm:table-cell text-center text-gray-500">
-                                    {{ $produk->firstItem() + $loop->index }}</td>
+                                    {{ $produk->firstItem() + $loop->index }}
+                                </td>
                                 <td class="py-3 px-3 hidden sm:table-cell text-center">
                                     @if($item->foto)
                                         <img src="{{ asset('storage/' . $item->foto) }}"
@@ -109,7 +110,8 @@
                                 <td class="py-3 px-2 sm:px-3 font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">
                                     {{ $item->nama_produk }}
                                     <div class="sm:hidden text-[10px] text-gray-400 font-normal mt-0.5">
-                                        {{ $item->kategori->nama_kategori ?? '-' }}</div>
+                                        {{ $item->kategori->nama_kategori ?? '-' }}
+                                    </div>
                                 </td>
                                 <td class="py-3 px-3 hidden lg:table-cell font-mono text-xs">{{ $item->kode_produk }}</td>
                                 <td class="py-3 px-3 hidden md:table-cell">{{ $item->kategori->nama_kategori ?? '-' }}</td>
@@ -127,13 +129,23 @@
                                     <div class="text-[10px] text-gray-400 mt-0.5">Min {{ $item->stok_minimum }}</div>
                                 </td>
                                 <td class="py-3 px-3 hidden md:table-cell text-center">
-                                    @if($item->status_aktif)
+                                    <div class="flex flex-col items-center gap-1.5">
+                                        <form action="{{ route('produk.toggle-status', $item->id) }}" method="POST"
+                                            class="inline">
+                                            @csrf @method('PATCH')
+                                            <label class="relative inline-flex items-center cursor-pointer"
+                                                title="Klik untuk mengaktifkan/menonaktifkan produk">
+                                                <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
+                                                <div
+                                                    class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5">
+                                                </div>
+                                            </label>
+                                        </form>
                                         <span
-                                            class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-2 py-0.5 text-xs text-green-700 dark:text-green-400">Aktif</span>
-                                    @else
-                                        <span
-                                            class="inline-flex rounded-full bg-red-100 dark:bg-red-500/10 px-2 py-0.5 text-xs text-red-700 dark:text-red-400">Off</span>
-                                    @endif
+                                            class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $item->status_aktif ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400' }}">
+                                            {{ $item->status_aktif ? 'Aktif' : 'Nonaktif' }}
+                                        </span>
+                                    </div>
                                 </td>
                                 <td class="py-3 px-3 hidden lg:table-cell text-center">
                                     @if($item->stok <= 0 || $item->status_ketersediaan == 'perlu_diproduksi')
@@ -177,19 +189,39 @@
                                                     class="font-bold {{ $item->stok <= $item->stok_minimum ? 'text-red-600' : 'text-green-600' }}">{{ $item->stok }}</span>
                                                 <span class="text-gray-400 text-[10px]">(Min: {{ $item->stok_minimum }})</span>
                                             </div>
-                                            <div><span class="text-gray-400 block text-[11px]">Status</span> <span
-                                                    class="font-semibold {{ $item->status_aktif ? 'text-green-600' : 'text-red-600' }}">{{ $item->status_aktif ? 'Aktif' : 'Tidak Aktif' }}</span>
-                                            </div>
-                                            <div class="col-span-2">
-                                                <span class="text-gray-400 block text-[11px]">Ketersediaan</span>
-                                                @if($item->stok <= 0 || $item->status_ketersediaan == 'perlu_diproduksi')
-                                                    <span class="font-semibold text-orange-600">Perlu Diproduksi</span>
-                                                @else
-                                                    <span class="font-semibold text-emerald-600">Stok Ada (Ready)</span>
-                                                @endif
+                                            <div>
+                                                <span class="text-gray-400 block text-[11px] mb-0.5">Status</span>
+                                                <div>
+                                                    <span class="text-gray-400 block text-[11px] mb-0.5">Status</span>
+                                                    <div class="flex items-center gap-2">
+                                                        <form action="{{ route('produk.toggle-status', $item->id) }}"
+                                                            method="POST" class="inline">
+                                                            @csrf @method('PATCH')
+                                                            <label class="relative inline-flex items-center cursor-pointer"
+                                                                title="Klik untuk mengaktifkan/menonaktifkan produk">
+                                                                <input type="checkbox" class="sr-only peer"
+                                                                    onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
+                                                                <div
+                                                                    class="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-4">
+                                                                </div>
+                                                            </label>
+                                                        </form>
+                                                        <span
+                                                            class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $item->status_aktif ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400' }}">
+                                                            {{ $item->status_aktif ? 'Aktif' : 'Nonaktif' }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-span-2">
+                                                    <span class="text-gray-400 block text-[11px]">Ketersediaan</span>
+                                                    @if($item->stok <= 0 || $item->status_ketersediaan == 'perlu_diproduksi')
+                                                        <span class="font-semibold text-orange-600">Perlu Diproduksi</span>
+                                                    @else
+                                                        <span class="font-semibold text-emerald-600">Stok Ada (Ready)</span>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
                                 </td>
                             </tr>
                         </tbody>

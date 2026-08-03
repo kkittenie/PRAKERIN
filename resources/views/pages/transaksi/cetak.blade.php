@@ -293,6 +293,12 @@
                     $pajak = (float) $transaksi->pajak;
                     $pajakPersen = ($subtotal - $diskon) > 0 ? ($pajak / ($subtotal - $diskon)) * 100 : 0;
                     $itemsPelanggan = $transaksi->detailTransaksi
+                        ->filter(function ($item) {
+                            if (!is_null($item->bundling_id) && !is_null($item->produk_id) && (float) $item->harga_satuan == 0 && (float) $item->subtotal == 0) {
+                                return false;
+                            }
+                            return true;
+                        })
                         ->groupBy('nama_produk')
                         ->map(function ($group) {
                             $first = $group->first();
@@ -486,6 +492,12 @@
             $pajakPersen = ($subtotal - $diskon) > 0 ? ($pajak / ($subtotal - $diskon)) * 100 : 0;            // Sama seperti versi HTML di atas: gabungkan item dengan nama
             // produk yang sama supaya tidak tercetak sebagai baris terpisah.
             $itemsPelangganTeks = $transaksi->detailTransaksi
+                ->filter(function ($item) {
+                    if (!is_null($item->bundling_id) && !is_null($item->produk_id) && (float) $item->harga_satuan == 0 && (float) $item->subtotal == 0) {
+                        return false;
+                    }
+                    return true;
+                })
                 ->groupBy('nama_produk')
                 ->map(function ($group) {
                     $first = $group->first();

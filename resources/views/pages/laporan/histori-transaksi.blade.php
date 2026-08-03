@@ -345,7 +345,7 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-50 dark:divide-gray-850">
-                                        <template x-for="item in detailData?.detail_transaksi || []" :key="item.id">
+                                        <template x-for="item in (detailData?.detail_transaksi || []).filter(i => !(i.bundling_id && i.produk_id && Number(i.harga_satuan) === 0 && Number(i.subtotal) === 0))" :key="item.id">
                                             <tr
                                                 class="text-gray-750 dark:text-gray-300 hover:bg-gray-55 dark:hover:bg-gray-850">
                                                 <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">
@@ -368,7 +368,7 @@
 
                             <!-- Mobile Card View -->
                             <div class="block sm:hidden divide-y divide-gray-100 dark:divide-gray-800 p-3">
-                                <template x-for="item in detailData?.detail_transaksi || []" :key="item.id">
+                                <template x-for="item in (detailData?.detail_transaksi || []).filter(i => !(i.bundling_id && i.produk_id && Number(i.harga_satuan) === 0 && Number(i.subtotal) === 0))" :key="item.id">
                                     <div class="py-2.5 space-y-1">
                                         <div class="flex justify-between items-start gap-2">
                                             <span class="font-bold text-gray-800 dark:text-white text-xs"
@@ -512,7 +512,7 @@
                     const d = this.detailData;
 
                     if (jenis === 'dapur') {
-                        const itemsDapur = (d.detail_transaksi || []).filter(item => item.produk?.status_ketersediaan === 'pesan_dulu');
+                        const itemsDapur = (d.detail_transaksi || []).filter(item => item.butuh_produksi || item.produk?.status_ketersediaan === 'perlu_diproduksi' || item.produk?.status_ketersediaan === 'pesan_dulu');
                         if (itemsDapur.length === 0) {
                             this.tambahToast('Tidak ada item yang perlu diproduksi oleh dapur.', 'info');
                             return;

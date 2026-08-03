@@ -270,26 +270,13 @@
                                         </div>
                                         <div>
                                             <span class="text-gray-400">Status:</span>
-<<<<<<< HEAD
 
-                                            @if($item->status == 'kadaluarsa')
-                                                <span class="font-semibold text-red-600 dark:text-red-400">
-                                                    Kadaluarsa
-                                                </span>
-
-                                            @elseif($item->status == 'aktif')
-                                                <span class="font-semibold text-green-600 dark:text-green-400">
-                                                    Aktif
-                                                </span>
-
-=======
                                             @if($item->perlu_tindakan)
                                                 <span class="font-semibold text-red-600 dark:text-red-400">Kadaluarsa · sisa
                                                     {{ $item->sisa_belum_disesuaikan }} pcs</span>
                                             @elseif($item->is_kadaluarsa)
                                                 <span class="font-semibold text-red-600 dark:text-red-400">Kadaluarsa (sudah
                                                     disesuaikan)</span>
->>>>>>> b52c54703afff484ffa7e6141abf638ce5ee1d8f
                                             @else
                                                 <span class="font-semibold text-gray-600 dark:text-gray-400">
                                                     {{ ucfirst($item->status ?? '-') }}

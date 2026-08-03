@@ -57,6 +57,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('kategori-produk', KategoriProdukController::class)
         ->middleware('permission:lihat_kategori_produk|tambah_kategori_produk|edit_kategori_produk|hapus_kategori_produk');
 
+    Route::patch('/produk/{produk}/toggle-status', [ProdukController::class, 'toggleStatus'])->name('produk.toggle-status');
+    
     Route::resource('produk', ProdukController::class)
         ->middleware('permission:lihat_produk|tambah_produk|edit_produk|hapus_produk');
 

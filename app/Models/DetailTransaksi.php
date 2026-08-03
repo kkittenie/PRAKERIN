@@ -17,6 +17,7 @@ class DetailTransaksi extends Model
         'jumlah',
         'catatan',
         'subtotal',
+        'butuh_produksi',
     ];
 
     public function transaksi()

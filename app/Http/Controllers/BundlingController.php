@@ -15,7 +15,7 @@ class BundlingController extends Controller
     {
         $search = $request->search;
 
-        $bundling = Bundling::with('items')
+        $bundling = Bundling::with('items.produk')
             ->when($search, function ($query) use ($search) {
                 $query->where('nama_bundling', 'like', "%{$search}%");
             })

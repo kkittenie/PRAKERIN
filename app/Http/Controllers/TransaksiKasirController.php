@@ -51,6 +51,7 @@ class TransaksiKasirController extends Controller
                     }, null) ?? 0;
 
                     $bundling->stok_bundling = $stokMaksimal;
+                    $bundling->perlu_diproduksi = $bundling->perlu_diproduksi;
                     return $bundling;
                 });
 
@@ -76,35 +77,62 @@ class TransaksiKasirController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data transaksi: ' . $e->getMessage());
         }
     }
-    private function prosesStokBundling(int $bundlingId, int $jumlahBundling): Bundling
+
+    private function prosesItemBundlingTransaksi(Transaksi $transaksi, array $item): void
     {
+        $bundlingId = (int) $item['bundling_id'];
+        $jumlahBundling = (int) $item['jumlah'];
         $bundling = Bundling::with('items.produk')->findOrFail($bundlingId);
 
-        foreach ($bundling->items as $bundlingItem) {
-            $totalDibutuhkan = $bundlingItem->qty * $jumlahBundling;
-            $produk = $bundlingItem->produk;
+        // 1. Entry Bundling Utama untuk Struk Pelanggan
+        DetailTransaksi::create([
+            'transaksi_id' => $transaksi->id,
+            'produk_id' => null,
+            'bundling_id' => $bundling->id,
+            'nama_produk' => $bundling->nama_bundling,
+            'harga_satuan' => $bundling->harga,
+            'jumlah' => $jumlahBundling,
+            'catatan' => $item['catatan'] ?? null,
+            'subtotal' => $bundling->harga * $jumlahBundling,
+            'butuh_produksi' => false,
+        ]);
 
+        // 2. Entry Komponen Produk (Stok & Struk Dapur)
+        foreach ($bundling->items as $bundlingItem) {
+            $produk = $bundlingItem->produk;
             if (!$produk) {
                 continue;
             }
 
-            if ($produk->stok < $totalDibutuhkan) {
-                throw new \Exception(
-                    "Stok '{$produk->nama_produk}' tidak cukup untuk bundling '{$bundling->nama_bundling}' " .
-                    "(Tersedia: {$produk->stok}, Dibutuhkan: {$totalDibutuhkan})"
-                );
+            $totalDibutuhkan = $bundlingItem->qty * $jumlahBundling;
+            $butuhProduksi = $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
+
+            if (!$butuhProduksi) {
+                $stokTersedia = max(0, (float) $produk->stok);
+                if ($stokTersedia >= $totalDibutuhkan) {
+                    $produk->decrement('stok', $totalDibutuhkan);
+                } else {
+                    if ($stokTersedia > 0) {
+                        $produk->decrement('stok', $stokTersedia);
+                    }
+                    $butuhProduksi = true;
+                }
             }
 
-            $produk->decrement('stok', $totalDibutuhkan);
+            DetailTransaksi::create([
+                'transaksi_id' => $transaksi->id,
+                'produk_id' => $produk->id,
+                'bundling_id' => $bundling->id,
+                'nama_produk' => $produk->nama_produk,
+                'harga_satuan' => 0,
+                'jumlah' => $totalDibutuhkan,
+                'catatan' => null,
+                'subtotal' => 0,
+                'butuh_produksi' => $butuhProduksi,
+            ]);
         }
-
-        return $bundling;
     }
 
-    /**
-     * Kebalikan dari prosesStokBundling — dipakai saat pesanan ditahan
-     * dipulihkan/dihapus, supaya stok komponen dikembalikan.
-     */
     private function kembalikanStokBundling(int $bundlingId, int $jumlahBundling): void
     {
         $bundling = Bundling::with('items.produk')->find($bundlingId);
@@ -114,7 +142,7 @@ class TransaksiKasirController extends Controller
 
         foreach ($bundling->items as $bundlingItem) {
             $produk = $bundlingItem->produk;
-            if ($produk) {
+            if ($produk && $produk->status_ketersediaan !== 'perlu_diproduksi') {
                 $produk->increment('stok', $bundlingItem->qty * $jumlahBundling);
             }
         }
@@ -161,19 +189,7 @@ class TransaksiKasirController extends Controller
 
                 // ==== Item BUNDLING ====
                 if (!empty($item['is_bundling']) && !empty($item['bundling_id'])) {
-                    $bundling = $this->prosesStokBundling((int) $item['bundling_id'], (int) $item['jumlah']);
-
-                    DetailTransaksi::create([
-                        'transaksi_id' => $transaksi->id,
-                        'produk_id' => null,
-                        'bundling_id' => $bundling->id,
-                        'nama_produk' => $bundling->nama_bundling,
-                        'harga_satuan' => $bundling->harga,
-                        'jumlah' => $item['jumlah'],
-                        'catatan' => $item['catatan'] ?? null,
-                        'subtotal' => $bundling->harga * $item['jumlah'],
-                    ]);
-
+                    $this->prosesItemBundlingTransaksi($transaksi, $item);
                     continue;
                 }
 
@@ -545,19 +561,7 @@ class TransaksiKasirController extends Controller
 
                 // ==== Item BUNDLING ====
                 if (!empty($item['is_bundling']) && !empty($item['bundling_id'])) {
-                    $bundling = $this->prosesStokBundling((int) $item['bundling_id'], (int) $item['jumlah']);
-
-                    DetailTransaksi::create([
-                        'transaksi_id' => $transaksi->id,
-                        'produk_id' => null,
-                        'bundling_id' => $bundling->id,
-                        'nama_produk' => $bundling->nama_bundling,
-                        'harga_satuan' => $bundling->harga,
-                        'jumlah' => $item['jumlah'],
-                        'catatan' => $item['catatan'] ?? null,
-                        'subtotal' => $bundling->harga * $item['jumlah'],
-                    ]);
-
+                    $this->prosesItemBundlingTransaksi($transaksi, $item);
                     continue;
                 }
 

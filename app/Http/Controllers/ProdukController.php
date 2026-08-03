@@ -25,12 +25,17 @@ class ProdukController extends Controller
         $produk = Produk::with('kategori')
             ->when($search, function ($query) use ($search) {
                 $query->where('nama_produk', 'like', "%{$search}%")
-                      ->orWhere('kode_produk', 'like', "%{$search}%");
+                    ->orWhere('kode_produk', 'like', "%{$search}%");
             })
             ->latest()
             ->paginate(10);
 
         return view('pages.produk.index', compact('produk', 'search'));
+    }
+    public function toggleStatus(Produk $produk)
+    {
+        $produk->update(['status_aktif' => !$produk->status_aktif]);
+        return redirect()->back()->with('success', 'Status produk berhasil diubah.');
     }
 
     public function create()
