@@ -10,22 +10,30 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('transaksi', function (Blueprint $table) {
-            $table->text('diskon_label')->nullable()->after('diskon');
-        });
+        if (!Schema::hasColumn('transaksi', 'diskon_label')) {
+            Schema::table('transaksi', function (Blueprint $table) {
+                $table->text('diskon_label')->nullable()->after('diskon');
+            });
+        }
 
-        Schema::table('pesanan_ditahan', function (Blueprint $table) {
-            $table->text('diskon_label')->nullable()->after('diskon');
-        });
+        if (!Schema::hasColumn('pesanan_ditahan', 'diskon_label')) {
+            Schema::table('pesanan_ditahan', function (Blueprint $table) {
+                $table->text('diskon_label')->nullable()->after('diskon');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('transaksi', function (Blueprint $table) {
-            $table->dropColumn('diskon_label');
-        });
-        Schema::table('pesanan_ditahan', function (Blueprint $table) {
-            $table->dropColumn('diskon_label');
-        });
+        if (Schema::hasColumn('transaksi', 'diskon_label')) {
+            Schema::table('transaksi', function (Blueprint $table) {
+                $table->dropColumn('diskon_label');
+            });
+        }
+        if (Schema::hasColumn('pesanan_ditahan', 'diskon_label')) {
+            Schema::table('pesanan_ditahan', function (Blueprint $table) {
+                $table->dropColumn('diskon_label');
+            });
+        }
     }
 };

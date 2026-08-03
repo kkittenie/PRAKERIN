@@ -12,41 +12,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\PengaturanMember;
 use App\Models\Member;
+use App\Models\Bundling;
 
 class TransaksiKasirController extends Controller
 {
-    /**
-     * Tentukan apakah sebuah PRODUK (secara keseluruhan) berstatus
-     * "Perlu Diproduksi". Dipakai untuk kondisi manual/legacy.
-     *
-     * Sebuah produk dianggap "Perlu Diproduksi" jika:
-     * 1) admin menandainya manual sebagai 'perlu_diproduksi', ATAU
-     * 2) stoknya sudah habis (<= 0).
-     */
     private function butuhProduksi(Produk $produk): bool
     {
         return $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
     }
-
-    /**
-     * Tentukan status "Perlu Diproduksi" untuk SATU BARIS item pesanan.
-     *
-     * Kasir di frontend boleh menambahkan jumlah melebihi stok yang
-     * tersedia. Kalau begitu, kasir akan MEMECAH permintaan itu menjadi
-     * 2 baris keranjang untuk produk yang sama: sebagian "Ready Stock"
-     * (sejumlah stok yang tersisa) dan sisanya "Perlu Diproduksi". Setiap
-     * baris keranjang sudah membawa flag `butuh_produksi` miliknya sendiri.
-     *
-     * Aturan:
-     * - Jika produk ditandai MANUAL sebagai 'perlu_diproduksi' oleh admin,
-     *   maka SELURUH baris untuk produk ini otomatis "Perlu Diproduksi"
-     *   (tidak displit), karena penandaan manual berlaku untuk keseluruhan
-     *   produk, bukan sebagian.
-     * - Selain itu (mode otomatis berbasis stok), backend memakai flag
-     *   `butuh_produksi` yang sudah dihitung & displit oleh kasir di
-     *   frontend untuk baris ini. Kalau flag tidak dikirim (klien lama),
-     *   fallback ke pengecekan stok produk saat ini.
-     */
     private function tentukanPerluProduksi(Produk $produk, array $item): bool
     {
         if ($produk->status_ketersediaan === 'perlu_diproduksi') {
@@ -65,14 +38,30 @@ class TransaksiKasirController extends Controller
 
             $daftarKategori = KategoriProduk::all();
 
-            $daftarDitahan = PesananDitahan::with('transaksi')->orderBy('created_at', 'desc')->get();
+            $daftarBundling = Bundling::with('items.produk')
+                ->where('status_aktif', true)
+                ->get()
+                ->map(function ($bundling) {
+                    $stokMaksimal = $bundling->items->reduce(function ($carry, $item) {
+                        if (!$item->produk) {
+                            return 0;
+                        }
+                        $bisaDibuat = intdiv((int) $item->produk->stok, max(1, $item->qty));
+                        return is_null($carry) ? $bisaDibuat : min($carry, $bisaDibuat);
+                    }, null) ?? 0;
 
+                    $bundling->stok_bundling = $stokMaksimal;
+                    return $bundling;
+                });
+
+            $daftarDitahan = PesananDitahan::with('transaksi')->orderBy('created_at', 'desc')->get();
             $daftarMember = \App\Models\Member::orderBy('nama')->get();
 
             return view('pages.transaksi.indeks', [
                 'title' => 'Transaksi Kasir',
                 'daftarProduk' => $daftarProduk,
                 'daftarKategori' => $daftarKategori,
+                'daftarBundling' => $daftarBundling,
                 'daftarDitahan' => $daftarDitahan,
                 'daftarMember' => $daftarMember,
             ]);
@@ -85,6 +74,49 @@ class TransaksiKasirController extends Controller
                 ])
                 ->log('gagal memuat data transaksi');
             return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data transaksi: ' . $e->getMessage());
+        }
+    }
+    private function prosesStokBundling(int $bundlingId, int $jumlahBundling): Bundling
+    {
+        $bundling = Bundling::with('items.produk')->findOrFail($bundlingId);
+
+        foreach ($bundling->items as $bundlingItem) {
+            $totalDibutuhkan = $bundlingItem->qty * $jumlahBundling;
+            $produk = $bundlingItem->produk;
+
+            if (!$produk) {
+                continue;
+            }
+
+            if ($produk->stok < $totalDibutuhkan) {
+                throw new \Exception(
+                    "Stok '{$produk->nama_produk}' tidak cukup untuk bundling '{$bundling->nama_bundling}' " .
+                    "(Tersedia: {$produk->stok}, Dibutuhkan: {$totalDibutuhkan})"
+                );
+            }
+
+            $produk->decrement('stok', $totalDibutuhkan);
+        }
+
+        return $bundling;
+    }
+
+    /**
+     * Kebalikan dari prosesStokBundling — dipakai saat pesanan ditahan
+     * dipulihkan/dihapus, supaya stok komponen dikembalikan.
+     */
+    private function kembalikanStokBundling(int $bundlingId, int $jumlahBundling): void
+    {
+        $bundling = Bundling::with('items.produk')->find($bundlingId);
+        if (!$bundling) {
+            return;
+        }
+
+        foreach ($bundling->items as $bundlingItem) {
+            $produk = $bundlingItem->produk;
+            if ($produk) {
+                $produk->increment('stok', $bundlingItem->qty * $jumlahBundling);
+            }
         }
     }
 
@@ -125,11 +157,27 @@ class TransaksiKasirController extends Controller
                 'status_pembayaran' => 'Belum Lunas',
             ]);
 
-            // Buat detail transaksi. Stok HANYA dikurangi untuk baris yang
-            // BUKAN "Perlu Diproduksi". Satu produk bisa muncul sebagai 2
-            // baris berbeda (Ready Stock & Perlu Diproduksi) kalau kasir
-            // meminta jumlah melebihi stok yang tersedia.
             foreach ($validated['item_pesanan'] as $item) {
+
+                // ==== Item BUNDLING ====
+                if (!empty($item['is_bundling']) && !empty($item['bundling_id'])) {
+                    $bundling = $this->prosesStokBundling((int) $item['bundling_id'], (int) $item['jumlah']);
+
+                    DetailTransaksi::create([
+                        'transaksi_id' => $transaksi->id,
+                        'produk_id' => null,
+                        'bundling_id' => $bundling->id,
+                        'nama_produk' => $bundling->nama_bundling,
+                        'harga_satuan' => $bundling->harga,
+                        'jumlah' => $item['jumlah'],
+                        'catatan' => $item['catatan'] ?? null,
+                        'subtotal' => $bundling->harga * $item['jumlah'],
+                    ]);
+
+                    continue;
+                }
+
+                // ==== Item PRODUK biasa (logic lama, tidak berubah) ====
                 $produk = Produk::findOrFail($item['produk_id']);
                 $perluProduksi = $this->tentukanPerluProduksi($produk, $item);
 
@@ -151,9 +199,6 @@ class TransaksiKasirController extends Controller
                     'subtotal' => $item['harga_jual'] * $item['jumlah'],
                 ]);
 
-                // Set langsung via assignment (bukan mass-assignment) supaya
-                // TIDAK ke-drop walau 'butuh_produksi' belum ada di $fillable
-                // model DetailTransaksi.
                 $detail->butuh_produksi = $perluProduksi;
                 $detail->save();
             }
@@ -242,6 +287,11 @@ class TransaksiKasirController extends Controller
             if ($pesanan->transaksi) {
                 $detailTransaksi = DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->get();
                 foreach ($detailTransaksi as $detail) {
+                    if ($detail->bundling_id) {
+                        $this->kembalikanStokBundling($detail->bundling_id, $detail->jumlah);
+                        continue;
+                    }
+
                     if (!$detail->butuh_produksi) {
                         $produk = Produk::find($detail->produk_id);
                         if ($produk) {
@@ -301,6 +351,11 @@ class TransaksiKasirController extends Controller
             if ($pesanan->transaksi) {
                 $detailTransaksi = DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->get();
                 foreach ($detailTransaksi as $detail) {
+                    if ($detail->bundling_id) {
+                        $this->kembalikanStokBundling($detail->bundling_id, $detail->jumlah);
+                        continue;
+                    }
+
                     if (!$detail->butuh_produksi) {
                         $produk = Produk::find($detail->produk_id);
                         if ($produk) {
@@ -486,13 +541,27 @@ class TransaksiKasirController extends Controller
                 }
             }
 
-            // Buat detail transaksi. Stok HANYA dikurangi untuk baris yang
-            // BUKAN "Perlu Diproduksi". Satu produk bisa muncul sebagai 2
-            // baris berbeda (Ready Stock & Perlu Diproduksi) kalau kasir
-            // meminta jumlah melebihi stok yang tersedia - baris "Perlu
-            // Diproduksi" tetap boleh dibeli tanpa batas stok karena akan
-            // dibuatkan oleh bagian produksi.
             foreach ($validated['item_pesanan'] as $item) {
+
+                // ==== Item BUNDLING ====
+                if (!empty($item['is_bundling']) && !empty($item['bundling_id'])) {
+                    $bundling = $this->prosesStokBundling((int) $item['bundling_id'], (int) $item['jumlah']);
+
+                    DetailTransaksi::create([
+                        'transaksi_id' => $transaksi->id,
+                        'produk_id' => null,
+                        'bundling_id' => $bundling->id,
+                        'nama_produk' => $bundling->nama_bundling,
+                        'harga_satuan' => $bundling->harga,
+                        'jumlah' => $item['jumlah'],
+                        'catatan' => $item['catatan'] ?? null,
+                        'subtotal' => $bundling->harga * $item['jumlah'],
+                    ]);
+
+                    continue;
+                }
+
+                // ==== Item PRODUK biasa (logic lama, tidak berubah) ====
                 $produk = Produk::findOrFail($item['produk_id']);
                 $perluProduksi = $this->tentukanPerluProduksi($produk, $item);
 
@@ -514,9 +583,6 @@ class TransaksiKasirController extends Controller
                     'subtotal' => $item['harga_jual'] * $item['jumlah'],
                 ]);
 
-                // Set langsung via assignment (bukan mass-assignment) supaya
-                // TIDAK ke-drop walau 'butuh_produksi' belum ada di $fillable
-                // model DetailTransaksi.
                 $detail->butuh_produksi = $perluProduksi;
                 $detail->save();
             }
