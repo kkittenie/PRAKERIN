@@ -448,6 +448,7 @@
     @php
         $dividerDashed = "--------------------------------\n";
         $dividerSolid = "================================\n";
+        $strukWidth = 32; // lebar area cetak (karakter) untuk kertas 58mm
 
         if (!function_exists('padLineStruk')) {
             function padLineStruk($left, $right, $length = 32)
@@ -475,6 +476,55 @@
                     $chunk = mb_substr($remaining, 0, $availWidth);
                     $result .= $indentStr . $chunk . "\n";
                     $remaining = mb_substr($remaining, mb_strlen($chunk));
+                }
+                return $result;
+            }
+        }
+
+        // Helper untuk center-kan sebuah baris teks sesuai lebar kertas.
+        // Ini menggantikan cara lama yang hardcode jumlah spasi manual
+        // (mis. "      " . strtoupper($toko)), yang jadi sumber teks
+        // header/footer tidak center kalau panjang teksnya berubah-ubah.
+        if (!function_exists('centerLineStruk')) {
+            function centerLineStruk($text, $width = 32)
+            {
+                $len = mb_strlen($text);
+                if ($len >= $width) {
+                    return $text . "\n";
+                }
+                $leftPad = intdiv($width - $len, 2);
+                return str_repeat(' ', $leftPad) . $text . "\n";
+            }
+        }
+
+        // BARU: helper untuk teks panjang yang perlu di-wrap ke beberapa
+        // baris DULU baru masing-masing baris di-center. centerLineStruk()
+        // saja tidak cukup untuk teks yang lebih panjang dari lebar kertas
+        // (>= 32 karakter), karena fungsi itu cuma nge-pad spasi kalau
+        // teksnya muat dalam satu baris.
+        if (!function_exists('centerWrapStruk')) {
+            function centerWrapStruk($text, $width = 32)
+            {
+                $words = explode(' ', $text);
+                $lines = [];
+                $current = '';
+
+                foreach ($words as $word) {
+                    $test = $current === '' ? $word : $current . ' ' . $word;
+                    if (mb_strlen($test) > $width) {
+                        $lines[] = $current;
+                        $current = $word;
+                    } else {
+                        $current = $test;
+                    }
+                }
+                if ($current !== '') {
+                    $lines[] = $current;
+                }
+
+                $result = '';
+                foreach ($lines as $line) {
+                    $result .= centerLineStruk($line, $width);
                 }
                 return $result;
             }
@@ -512,9 +562,12 @@
                 })
                 ->values();
 
-            $struk .= "      " . strtoupper($toko) . "\n";
-            $struk .= "  Jl. Kemboja No.1, Kedungjaya\n";
-            $struk .= "   Kec. Kedawung, Kab. Cirebon\n";
+            // Header teks TIDAK lagi mencetak nama toko, karena logo
+            // (dicetak sebagai gambar lewat printReceiptWithLogo) sudah
+            // memuat nama toko. Kalau nama toko dicetak lagi di sini,
+            // jadinya duplikat (logo + tulisan "SAISHO CAKE & BAKERY").
+            $struk .= centerLineStruk("Jl. Kemboja No.1, Kedungjaya");
+            $struk .= centerLineStruk("Kec. Kedawung, Kab. Cirebon");
             $struk .= $dividerDashed;
             $struk .= "No   : " . $transaksi->kode_transaksi . "\n";
             $struk .= "Tgl  : " . $transaksi->created_at->locale('id')->isoFormat('D MMM YYYY, HH:mm') . "\n";
@@ -556,7 +609,11 @@
             $struk .= padLineStruk("Diterima", "Rp " . number_format($transaksi->jumlah_diterima, 0, ',', '.'));
             $struk .= padLineStruk("Kembalian", "Rp " . number_format($transaksi->kembalian, 0, ',', '.'));
             $struk .= $dividerDashed;
-            $struk .= "Sampai ketemu di pesanan berikutnya! ^^\n";
+            // DIUBAH: pakai centerWrapStruk() supaya teks panjang di-wrap
+            // dulu baru di-center per baris (centerLineStruk saja tidak
+            // cukup untuk teks >= 32 karakter, lihat komentar di definisi
+            // fungsinya di atas).
+            $struk .= centerWrapStruk("Sampai ketemu di pesanan berikutnya! ^^");
 
         } else {
             // DAPUR: hanya item butuh_produksi (snapshot saat transaksi dibuat),
@@ -565,8 +622,9 @@
                 return (bool) $item->butuh_produksi;
             })->values();
 
-            $struk .= "      SAISHO CAKE & BAKERY\n";
-            $struk .= "         TIKET PRODUKSI\n";
+            // Header pakai centerLineStruk() bukan hardcode spasi.
+            $struk .= centerLineStruk("SAISHO CAKE & BAKERY");
+            $struk .= centerLineStruk("TIKET PRODUKSI");
             $struk .= $dividerDashed;
             $struk .= "No   : " . $transaksi->kode_transaksi . "\n";
             $struk .= "Tgl  : " . $transaksi->created_at->locale('id')->isoFormat('D MMM YYYY, HH:mm') . "\n";
@@ -602,7 +660,10 @@
             }
 
             $struk .= $dividerDashed;
-            $struk .= "Dicetak: " . now()->locale('id')->isoFormat('D MMM YYYY, HH:mm') . "\n\n\n";
+            // DIUBAH: pakai centerWrapStruk() supaya konsisten dengan footer
+            // struk pelanggan (footer ini juga berpotensi > 32 karakter
+            // tergantung format tanggal/lokal).
+            $struk .= centerWrapStruk("Dicetak: " . now()->locale('id')->isoFormat('D MMM YYYY, HH:mm')) . "\n\n";
         }
     @endphp
 
@@ -659,6 +720,61 @@
             }, 3000);
         }
 
+        // Render logo (SVG) ke <canvas> lalu ambil hasilnya sebagai base64
+        // PNG. Ini dibutuhkan karena printer thermal tidak bisa langsung
+        // "print SVG" — harus dikonversi jadi bitmap dulu di sisi web,
+        // baru bytes-nya dikirim ke Android untuk dicetak sebagai raster
+        // image (lihat AndroidBridge.printImage / printReceiptWithLogo).
+        function loadLogoAsBase64(callback) {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+
+            img.onload = function () {
+                // Beberapa file SVG tidak punya atribut width/height eksplisit
+                // (cuma viewBox), sehingga naturalWidth/naturalHeight bisa
+                // terbaca 0 di WebView. Kalau dibiarkan, targetHeight jadi
+                // Infinity/NaN dan canvas gagal dibuat -> logo diam-diam
+                // gagal tanpa error yang kelihatan (fallback ke print teks).
+                let sourceWidth = img.naturalWidth || img.width;
+                let sourceHeight = img.naturalHeight || img.height;
+
+                if (!sourceWidth || !sourceHeight) {
+                    console.warn('Logo tidak punya ukuran intrinsik yang valid (SVG tanpa width/height), pakai fallback 384x384');
+                    sourceWidth = 384;
+                    sourceHeight = 384;
+                }
+
+                const targetWidth = 384;
+                const scale = targetWidth / sourceWidth;
+                const targetHeight = Math.round(sourceHeight * scale);
+
+                const canvas = document.createElement('canvas');
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, targetWidth, targetHeight);
+                ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+                try {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    console.log('Logo berhasil dikonversi ke base64, ukuran:', targetWidth + 'x' + targetHeight);
+                    callback(dataUrl.split(',')[1]);
+                } catch (e) {
+                    console.error('Gagal convert logo ke base64 (kemungkinan canvas tainted / CORS):', e);
+                    callback(null);
+                }
+            };
+
+            img.onerror = function (e) {
+                console.error('Gagal memuat file logo (cek path asset atau format file):', e);
+                callback(null);
+            };
+
+            img.src = @json(asset('images/logo/B&W-logo.svg'));
+        }
+
         function printStruk() {
             if (!window.Android) {
                 showToast("Koneksi Bluetooth hanya tersedia di aplikasi Android POS.", "info");
@@ -666,12 +782,32 @@
             }
 
             let strukText = @json($struk);
-            let result = Android.printText(strukText);
+            let strukJenis = @json($jenis);
 
-            if (result === "true" || result === true) {
-                showToast("Berhasil dicetak ke printer Bluetooth!", "sukses");
+            function kirimHasilPrint(result) {
+                if (result === "true" || result === true) {
+                    showToast("Berhasil dicetak ke printer Bluetooth!", "sukses");
+                } else {
+                    showToast("Gagal mencetak ke printer Bluetooth.", "error");
+                }
+            }
+
+            // Logo cuma dicetak untuk struk pelanggan. Tiket dapur tetap
+            // teks biasa seperti sebelumnya (tidak butuh logo).
+            if (strukJenis === 'pelanggan') {
+                loadLogoAsBase64(function (base64Logo) {
+                    let result;
+                    if (base64Logo) {
+                        result = Android.printReceiptWithLogo(base64Logo, strukText);
+                    } else {
+                        // fallback: kalau logo gagal dimuat, tetap cetak teksnya saja
+                        result = Android.printText(strukText);
+                    }
+                    kirimHasilPrint(result);
+                });
             } else {
-                showToast("Gagal mencetak ke printer Bluetooth.", "error");
+                let result = Android.printText(strukText);
+                kirimHasilPrint(result);
             }
         }
 
