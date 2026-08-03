@@ -22,7 +22,7 @@ class ProduksiController extends Controller
      */
     private function resolvePeriode(Request $request): array
     {
-        $periode = $request->periode ?? 'harian';
+        $periode = $request->periode ?? 'semua';
         $tanggalRefInput = $request->tanggal_ref;
 
         switch ($periode) {
@@ -70,18 +70,12 @@ class ProduksiController extends Controller
         return [$periode, $tanggalRef];
     }
 
-    /**
-     * Query produksi yang sudah difilter sesuai periode, pencarian, & status kadaluarsa.
-     * Dipakai bareng oleh index(), pdf(), dan excel().
-     */
     private function filteredProduksiQuery(Request $request, string $periode, Carbon $tanggalRef)
     {
         $search = $request->search;
         $status = $request->status ?? 'semua';
         $now = Carbon::now();
 
-        // Ekspresi SQL untuk menentukan status kadaluarsa langsung di query,
-        // karena kadaluarsa bisa berupa tanggal tetap ATAU jam setelah produksi.
         $kadaluarsaExpr = "
             CASE
                 WHEN kadaluarsa_tipe = 'tanggal' THEN kadaluarsa_tanggal < ?
@@ -114,7 +108,7 @@ class ProduksiController extends Controller
             })
             ->when($periode === 'bulanan', function ($query) use ($tanggalRef) {
                 $query->whereYear('tanggal', $tanggalRef->year)
-                      ->whereMonth('tanggal', $tanggalRef->month);
+                    ->whereMonth('tanggal', $tanggalRef->month);
             });
     }
 
@@ -132,7 +126,7 @@ class ProduksiController extends Controller
         $produksiKadaluarsa = Produksi::with('produk')
             ->whereColumn('jumlah_disesuaikan', '<', 'jumlah_hasil')
             ->get()
-            ->filter(fn ($item) => $item->is_kadaluarsa);
+            ->filter(fn($item) => $item->is_kadaluarsa);
 
         return view(
             'pages.produksi.index',
@@ -318,23 +312,41 @@ class ProduksiController extends Controller
             fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             fputcsv($file, [
-                'Tanggal Produksi', 'Jam Produksi', 'Kadaluarsa', 'Produk',
-                'Jumlah Hasil', 'Dibuat Oleh', 'Keterangan', 'Nama Bahan', 'Jumlah Dipakai',
+                'Tanggal Produksi',
+                'Jam Produksi',
+                'Kadaluarsa',
+                'Produk',
+                'Jumlah Hasil',
+                'Dibuat Oleh',
+                'Keterangan',
+                'Nama Bahan',
+                'Jumlah Dipakai',
             ]);
 
             foreach ($produksi as $item) {
                 if ($item->detailBahan->isEmpty()) {
                     fputcsv($file, [
-                        $item->tanggal, $item->jam_produksi, $item->kadaluarsa_label,
-                        $item->produk->nama_produk, $item->jumlah_hasil, $item->user->name,
-                        $item->keterangan, '-', '-',
+                        $item->tanggal,
+                        $item->jam_produksi,
+                        $item->kadaluarsa_label,
+                        $item->produk->nama_produk,
+                        $item->jumlah_hasil,
+                        $item->user->name,
+                        $item->keterangan,
+                        '-',
+                        '-',
                     ]);
                 } else {
                     foreach ($item->detailBahan as $detail) {
                         fputcsv($file, [
-                            $item->tanggal, $item->jam_produksi, $item->kadaluarsa_label,
-                            $item->produk->nama_produk, $item->jumlah_hasil, $item->user->name,
-                            $item->keterangan, $detail->bahanBaku->nama_bahan,
+                            $item->tanggal,
+                            $item->jam_produksi,
+                            $item->kadaluarsa_label,
+                            $item->produk->nama_produk,
+                            $item->jumlah_hasil,
+                            $item->user->name,
+                            $item->keterangan,
+                            $detail->bahanBaku->nama_bahan,
                             $detail->jumlah_terpakai . ' ' . ($detail->bahanBaku->satuan->nama ?? ''),
                         ]);
                     }
@@ -385,7 +397,7 @@ class ProduksiController extends Controller
             ->causedBy(auth()->user())
             ->performedOn($produksi)
             ->withProperties(['jumlah_dikurangi' => $request->jumlah])
-            ->log('menyesuaikan stok produk kadaluarsa');
+            ->log('menyesuaikan stok produk kadaluwarsa');
 
         return back()->with('success', "Stok produk \"{$produksi->produk->nama_produk}\" berhasil dikurangi {$request->jumlah} pcs.");
     }

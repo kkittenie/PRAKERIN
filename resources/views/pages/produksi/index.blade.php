@@ -32,10 +32,10 @@
                         </svg>
                     </div>
                     <div>
-                        <h4 class="font-bold text-sm text-red-900 dark:text-red-300">Peringatan Produk Kadaluarsa!</h4>
+                        <h4 class="font-bold text-sm text-red-900 dark:text-red-300">Peringatan Produk Kadaluwarsa!</h4>
                         <p class="text-xs text-red-700 dark:text-red-400 mt-0.5">
                             Terdapat <span class="font-bold">{{ $produksiKadaluarsa->count() }} batch produksi</span> yang sudah
-                            kadaluarsa dan belum disesuaikan stoknya.
+                            kadaluwarsa dan belum disesuaikan stoknya.
                         </p>
                     </div>
                 </div>
@@ -47,7 +47,7 @@
             <div class="flex flex-col lg:flex-row lg:items-end gap-4">
                 <div class="flex-1">
                     <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-1">Data Produksi</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Catatan produksi dan status kadaluarsanya.</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Catatan produksi dan status kadaluwarsanya.</p>
                 </div>
 
                 <form method="GET" action="{{ route('produksi.index') }}" id="filterForm"
@@ -146,8 +146,7 @@
                 : ($periode == 'bulanan'
                     ? $tanggalRef->format('Y-m')
                     : null)),
-    ]) }}"
-                        class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition">
+    ]) }}" class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition">
                         📄 Cetak PDF
                     </a>
 
@@ -156,8 +155,7 @@
         'status' => $status,
         'search' => request('search'),
         'tanggal_ref' => $periode === 'semua' ? null : (request('tanggal_ref') ?? $tanggalRef->toDateString()),
-    ]) }}"
-                        class="inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition">
+    ]) }}" class="inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition">
                         📊 Export CSV
                     </a>
 
@@ -353,14 +351,7 @@
     </div>
 
     <script>
-        let timer;
         const searchInput = document.getElementById('search');
-        const searchForm = document.getElementById('filterForm');
-
-        searchInput.addEventListener('keyup', function () {
-            clearTimeout(timer);
-            timer = setTimeout(() => { searchForm.submit(); }, 400);
-        });
 
         window.addEventListener('load', function () {
             if (searchInput.value !== '') {
