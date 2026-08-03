@@ -9,6 +9,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use App\Models\Produksi;
 
 class StatusProduksiUpdate
 {
@@ -19,15 +20,13 @@ class StatusProduksiUpdate
     /**
      * Create a new event instance.
      */
-    public function __construct()
+    public function __construct(Produksi $produksi)
     {
         $this->produksi = $produksi;
     }
 
     /**
      * Get the channels the event should broadcast on.
-     *
-     * @return array<int, Channel>
      */
     public function broadcastOn(): array
     {

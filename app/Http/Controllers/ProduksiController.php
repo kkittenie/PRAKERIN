@@ -6,6 +6,7 @@ use App\Models\Produksi;
 use App\Models\Produk;
 use App\Models\BahanBaku;
 use App\Models\ProduksiBahanBaku;
+use App\Events\StatusProduksiUpdate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -218,8 +219,6 @@ class ProduksiController extends Controller
                     'status' => 'aktif',
                 ]);
 
-                event(new StatusProduksiUpdate($produksi));
-
                 foreach ($request->bahan_baku_id as $i => $id) {
                     $pakai = (float) $request->jumlah_terpakai[$i];
 
@@ -253,6 +252,8 @@ class ProduksiController extends Controller
                     $produk->decrement('stok', $kebutuhanProduksi);
                 }
             });
+
+            event(new StatusProduksiUpdate($produksi));
 
             activity()
                 ->causedBy(auth()->user())
