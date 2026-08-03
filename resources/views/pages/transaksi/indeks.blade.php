@@ -542,11 +542,6 @@
                                 </div>
                             </div>
                         </template>
-
-                        <template x-if="akanDapatPoin">
-                            <p class="text-xxs text-emerald-600 dark:text-emerald-400 font-bold mt-1.5">🎁 Bonus poin masuk!
-                                +<span x-text="poinDiperoleh"></span> poin untuk member ✨</p>
-                        </template>
                     </div>
 
                     <!-- Daftar Keranjang -->
@@ -1746,12 +1741,6 @@
                 },
                 get totalTagihan() {
                     return Math.max(0, this.subtotal - this.nilaiDiskon + this.pajak);
-                },
-                get poinDiperoleh() {
-                    return Math.floor(this.totalTagihan / 100000) * 100;
-                },
-                get akanDapatPoin() {
-                    return this.memberTerpilih && this.totalTagihan >= 100000;
                 },
                 get jumlahDiterimaNum() {
                     if (this.metodePembayaran === 'QRIS') {

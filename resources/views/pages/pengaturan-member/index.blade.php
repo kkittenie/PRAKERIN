@@ -115,13 +115,23 @@
                                     @endif
                                 </td>
                                 <td class="py-3.5 px-3 hidden sm:table-cell text-center">
-                                    <form action="{{ route('pengaturan-member.toggle-status', $item->id) }}" method="POST" class="inline">
-                                        @csrf @method('PATCH')
-                                        <button type="submit" title="Klik untuk mengaktifkan/menonaktifkan aturan" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer hover:opacity-80 transition {{ $badgeColor }}">
-                                            {{ $status }}
-                                        </button>
-                                    </form>
-                                </td>
+    <div class="flex flex-col items-center gap-1.5">
+        <form action="{{ route('pengaturan-member.toggle-status', $item->id) }}" method="POST" class="inline">
+            @csrf @method('PATCH')
+            <label class="relative inline-flex items-center cursor-pointer"
+                title="Klik untuk mengaktifkan/menonaktifkan aturan">
+                <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
+                <div
+                    class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5">
+                </div>
+            </label>
+        </form>
+        <span
+            class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $badgeColor }}">
+            {{ $status }}
+        </span>
+    </div>
+</td>
                                 <td class="py-3.5 px-2 sm:px-3 text-right space-x-1 whitespace-nowrap">
                                     <a href="{{ route('pengaturan-member.edit', $item->id) }}" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">Edit</a>
                                     <form action="{{ route('pengaturan-member.destroy', $item->id) }}" method="POST" class="inline">
@@ -137,14 +147,25 @@
                              <tr x-show="open" x-cloak x-transition class="sm:hidden bg-amber-50/50 dark:bg-amber-950/30 text-xs">                                <td colspan="9" class="p-4">
                                     <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300">
                                         <div>
-                                            <span class="text-gray-400 block text-[11px]">Status</span>
-                                            <form action="{{ route('pengaturan-member.toggle-status', $item->id) }}" method="POST" class="inline">
-                                                @csrf @method('PATCH')
-                                                <button type="submit" class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $badgeColor }} mt-0.5">
-                                                    {{ $status }}
-                                                </button>
-                                            </form>
-                                        </div>
+    <span class="text-gray-400 block text-[11px] mb-0.5">Status</span>
+    <div class="flex items-center gap-2">
+        <form action="{{ route('pengaturan-member.toggle-status', $item->id) }}" method="POST" class="inline">
+            @csrf @method('PATCH')
+            <label class="relative inline-flex items-center cursor-pointer"
+                title="Klik untuk mengaktifkan/menonaktifkan aturan">
+                <input type="checkbox" class="sr-only peer"
+                    onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
+                <div
+                    class="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-4">
+                </div>
+            </label>
+        </form>
+        <span
+            class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $badgeColor }}">
+            {{ $status }}
+        </span>
+    </div>
+</div>
                                         <div><span class="text-gray-400 block text-[11px]">Belanja</span> <span class="font-bold text-gray-800 dark:text-white">Rp {{ number_format($item->minimal_belanja, 0, ',', '.') }}</span></div>
                                         <div><span class="text-gray-400 block text-[11px]">Poin</span> <span class="font-bold text-amber-700 dark:text-amber-400">{{ $item->poin }} poin</span></div>
                                         <div><span class="text-gray-400 block text-[11px]">Mulai Berlaku</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->mulai_berlaku ? $item->mulai_berlaku->format('d M Y H:i') : '-' }}</span></div>
