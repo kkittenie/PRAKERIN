@@ -359,6 +359,10 @@
                 searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
             }
         });
+
+        setInterval(() => {
+            location.reload();
+        }, 60000); // Refresh setiap 60 detik (60000 ms)
     </script>
 
 @endsection
