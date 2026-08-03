@@ -1290,7 +1290,76 @@
                 toasts: [],
                 toastIdCounter: 0,
 
-                inisialisasi() { },
+                inisialisasi() {
+                    // Cek pertama kali saat halaman dibuka
+                    this.perbaruiPromoKadaluwarsa();
+
+                    // Jalan tiap 5 detik: kalau ada promo yang selesai_berlaku-nya
+                    // sudah lewat dari waktu sekarang, badge/harga diskonnya otomatis
+                    // hilang dari layar tanpa perlu refresh browser.
+                    this._intervalPromoKadaluwarsa = setInterval(() => {
+                        this.perbaruiPromoKadaluwarsa();
+                    }, 5000);
+                },
+
+                // Menentukan apakah sebuah objek promo masih berlaku dibanding waktu sekarang (jam di browser kasir)
+                _promoMasihBerlaku(promo, sekarang) {
+                    if (!promo || !promo.status_aktif) return false;
+                    if (promo.mulai_berlaku && new Date(promo.mulai_berlaku) > sekarang) return false;
+                    if (promo.selesai_berlaku && new Date(promo.selesai_berlaku) <= sekarang) return false;
+                    return true;
+                },
+
+                // Menghitung ulang promo mana yang paling menguntungkan (sama seperti logika di backend)
+                _pilihPromoTerbaik(daftarPromo, hargaJual) {
+                    if (!daftarPromo || daftarPromo.length === 0) return null;
+                    const nilaiPromo = (p) => p.jenis_potongan === 'nominal'
+                        ? parseFloat(p.nominal_potongan || 0)
+                        : (parseFloat(p.persentase || 0) / 100) * hargaJual;
+                    return daftarPromo.reduce((terbaik, p) => (
+                        !terbaik || nilaiPromo(p) > nilaiPromo(terbaik) ? p : terbaik
+                    ), null);
+                },
+
+                perbaruiPromoKadaluwarsa() {
+                    const sekarang = new Date();
+
+                    // 1. Grid/daftar produk di halaman kasir
+                    this.daftarProduk.forEach(produk => {
+                        if (produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0) {
+                            const jumlahSemula = produk.promos_aktif_semua.length;
+                            produk.promos_aktif_semua = produk.promos_aktif_semua.filter(p => this._promoMasihBerlaku(p, sekarang));
+
+                            if (produk.promos_aktif_semua.length !== jumlahSemula) {
+                                produk.promo_aktif = this._pilihPromoTerbaik(produk.promos_aktif_semua, produk.harga_jual);
+                                produk.harga_diskon = produk.promo_aktif
+                                    ? Math.max(0, produk.harga_jual - (produk.promo_aktif.jenis_potongan === 'nominal'
+                                        ? parseFloat(produk.promo_aktif.nominal_potongan || 0)
+                                        : (parseFloat(produk.promo_aktif.persentase || 0) / 100) * produk.harga_jual))
+                                    : produk.harga_jual;
+                            }
+                        } else if (produk.promo_aktif && !this._promoMasihBerlaku(produk.promo_aktif, sekarang)) {
+                            produk.promo_aktif = null;
+                            produk.harga_diskon = produk.harga_jual;
+                        }
+                    });
+
+                    // 2. Item yang sudah terlanjur ada di keranjang, biar checkbox & badge "Promo" ikut hilang
+                    this.keranjang.forEach(item => {
+                        if (item.promos_tersedia && item.promos_tersedia.length > 0) {
+                            const idSebelumnya = item.promos_tersedia.map(p => p.id);
+                            item.promos_tersedia = item.promos_tersedia.filter(p => this._promoMasihBerlaku(p, sekarang));
+                            const idSekarang = item.promos_tersedia.map(p => p.id);
+
+                            if (idSekarang.length !== idSebelumnya.length && item.promos_terpilih_ids) {
+                                item.promos_terpilih_ids = item.promos_terpilih_ids.filter(id => idSekarang.includes(id));
+                            }
+                        }
+                        if (item.promo_aktif && !this._promoMasihBerlaku(item.promo_aktif, sekarang)) {
+                            item.promo_aktif = null;
+                        }
+                    });
+                },
 
                 parsePersen(v) {
                     if (typeof v === 'number') return v;
