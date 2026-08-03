@@ -9,10 +9,10 @@
         <div class="fixed top-5 right-5 z-99999 flex flex-col gap-2">
             <template x-for="toast in toasts" :key="toast.id">
                 <div :class="{
-                                                                                                                            'bg-green-600': toast.tipe === 'sukses',
-                                                                                                                            'bg-red-600': toast.tipe === 'error',
-                                                                                                                            'bg-amber-700': toast.tipe === 'info'
-                                                                                                                         }"
+                                                                                                                                'bg-green-600': toast.tipe === 'sukses',
+                                                                                                                                'bg-red-600': toast.tipe === 'error',
+                                                                                                                                'bg-amber-700': toast.tipe === 'info'
+                                                                                                                             }"
                     class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] transform transition-all duration-300 animate-slide-in">
                     <span class="font-semibold text-lg" x-text="toast.tipe === 'sukses' ? '✓' : '⚠'"></span>
                     <span class="text-sm" x-text="toast.pesan"></span>
@@ -421,33 +421,33 @@
 
                     <!-- Pilih Member -->
                     <div class="p-3 border-b border-gray-100 dark:border-gray-800 shrink-0" x-data="{
-                                                                                                                    cariMember: '',
-                                                                                                                    dropdownTerbuka: false,
-                                                                                                                    get memberTersaring() {
-                                                                                                                    if (!this.cariMember.trim()) return $data.daftarMember;
-                                                                                                                    const q = this.cariMember.toLowerCase();
-                                                                                                                    return $data.daftarMember.filter(m =>
-                                                                                                                    m.nama.toLowerCase().includes(q) || m.no_hp.includes(q)
-                                                                                                                    );
-                                                                                                                    },
-                                                                                                                    pilihMemberItem(member) {
-                            $data.memberIdTerpilih = member.id;
-                            $data.memberTerpilih = member;
-                            $data.namaPembeli = member.nama;
-                            this.cariMember = '';
-                            this.dropdownTerbuka = false;
-                            },
-                                                                                                                    hapusMember() {
-                                                                                                                    $data.memberIdTerpilih = '';
-                                                                                                                    $data.memberTerpilih = null;
-                                                                                                                    this.cariMember = '';
-                                                                                                                    },
-                                                                                                                    getLevelColor(level) {
-                                                                                                                    if (level === 'Gold') return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400';
-                                                                                                                    if (level === 'Silver') return 'bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300';
-                                                                                                                    return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400';
-                                                                                                                    }
-                                                                                                                    }"
+                                                                                                                        cariMember: '',
+                                                                                                                        dropdownTerbuka: false,
+                                                                                                                        get memberTersaring() {
+                                                                                                                        if (!this.cariMember.trim()) return $data.daftarMember;
+                                                                                                                        const q = this.cariMember.toLowerCase();
+                                                                                                                        return $data.daftarMember.filter(m =>
+                                                                                                                        m.nama.toLowerCase().includes(q) || m.no_hp.includes(q)
+                                                                                                                        );
+                                                                                                                        },
+                                                                                                                        pilihMemberItem(member) {
+                                $data.memberIdTerpilih = member.id;
+                                $data.memberTerpilih = member;
+                                $data.namaPembeli = member.nama;
+                                this.cariMember = '';
+                                this.dropdownTerbuka = false;
+                                },
+                                                                                                                        hapusMember() {
+                                                                                                                        $data.memberIdTerpilih = '';
+                                                                                                                        $data.memberTerpilih = null;
+                                                                                                                        this.cariMember = '';
+                                                                                                                        },
+                                                                                                                        getLevelColor(level) {
+                                                                                                                        if (level === 'Gold') return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400';
+                                                                                                                        if (level === 'Silver') return 'bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300';
+                                                                                                                        return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400';
+                                                                                                                        }
+                                                                                                                        }"
                         @click.outside="dropdownTerbuka = false">
                         <label
                             class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-2">Member
@@ -1476,7 +1476,8 @@
                 },
 
                 bundlingPerluDiproduksi(bundling) {
-                    if (typeof bundling.perlu_diproduksi !== 'undefined') return !!bundling.perlu_diproduksi;
+                    if (bundling.perlu_diproduksi) return true;
+
                     if (!bundling.items || bundling.items.length === 0) return false;
                     return bundling.items.some(it => {
                         const p = this.daftarProduk.find(x => x.id === it.produk_id);
