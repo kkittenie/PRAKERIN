@@ -238,12 +238,22 @@
                                         <div><span class="text-gray-400">Dibuat Oleh:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->user->name }}</span></div>
                                         <div>
                                             <span class="text-gray-400">Status:</span>
-                                            @if($item->perlu_tindakan)
-                                                <span class="font-semibold text-red-600 dark:text-red-400">Kadaluarsa · sisa {{ $item->sisa_belum_disesuaikan }} pcs</span>
-                                            @elseif($item->is_kadaluarsa)
-                                                <span class="font-semibold text-red-600 dark:text-red-400">Kadaluarsa (sudah disesuaikan)</span>
+
+                                            @if($item->status == 'kadaluarsa')
+                                                <span class="font-semibold text-red-600 dark:text-red-400">
+                                                    Kadaluarsa
+                                                </span>
+
+                                            @elseif($item->status == 'aktif')
+                                                <span class="font-semibold text-green-600 dark:text-green-400">
+                                                    Aktif
+                                                </span>
+
                                             @else
-                                                <span class="font-semibold text-green-600 dark:text-green-400">Aktif</span>
+                                                <span class="font-semibold text-gray-600 dark:text-gray-400">
+                                                    {{ ucfirst($item->status ?? '-') }}
+                                                </span>
+
                                             @endif
                                         </div>
                                         <div><span class="text-gray-400">Kadaluarsa:</span> <span class="font-semibold text-gray-800 dark:text-white">{{ $item->kadaluarsa_label }}</span></div>

@@ -19,6 +19,7 @@ class Produksi extends Model
             'kadaluarsa_tipe',
             'kadaluarsa_tanggal',
             'kadaluarsa_jam',
+            'status',
             'jumlah_disesuaikan',
         ];
 
