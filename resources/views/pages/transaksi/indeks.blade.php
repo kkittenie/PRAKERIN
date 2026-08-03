@@ -9,10 +9,10 @@
         <div class="fixed top-5 right-5 z-99999 flex flex-col gap-2">
             <template x-for="toast in toasts" :key="toast.id">
                 <div :class="{
-                                                                                                    'bg-green-600': toast.tipe === 'sukses',
-                                                                                                    'bg-red-600': toast.tipe === 'error',
-                                                                                                    'bg-amber-700': toast.tipe === 'info'
-                                                                                                 }"
+                                                                                                                            'bg-green-600': toast.tipe === 'sukses',
+                                                                                                                            'bg-red-600': toast.tipe === 'error',
+                                                                                                                            'bg-amber-700': toast.tipe === 'info'
+                                                                                                                         }"
                     class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] transform transition-all duration-300 animate-slide-in">
                     <span class="font-semibold text-lg" x-text="toast.tipe === 'sukses' ? '✓' : '⚠'"></span>
                     <span class="text-sm" x-text="toast.pesan"></span>
@@ -177,7 +177,8 @@
                                                 </div>
                                                 <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                                     :class="bundlingPerluDiproduksi(produk) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
-                                                    x-text="bundlingPerluDiproduksi(produk) ? 'Perlu Diproduksi' : ('Stok: ' + stokBundlingTersedia(produk))"></div>
+                                                    x-text="bundlingPerluDiproduksi(produk) ? 'Perlu Diproduksi' : ('Stok: ' + stokBundlingTersedia(produk))">
+                                                </div>
                                             </div>
                                             <div class="p-4 flex-1 flex flex-col justify-between gap-3">
                                                 <div>
@@ -323,7 +324,8 @@
                                         </div>
                                         <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                             :class="bundlingPerluDiproduksi(bundling) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
-                                            x-text="bundlingPerluDiproduksi(bundling) ? 'Perlu Diproduksi' : ('Stok: ' + stokBundlingTersedia(bundling))"></div>
+                                            x-text="bundlingPerluDiproduksi(bundling) ? 'Perlu Diproduksi' : ('Stok: ' + stokBundlingTersedia(bundling))">
+                                        </div>
                                     </div>
                                     <div class="p-4 flex-1 flex flex-col justify-between gap-3">
                                         <div>
@@ -419,33 +421,33 @@
 
                     <!-- Pilih Member -->
                     <div class="p-3 border-b border-gray-100 dark:border-gray-800 shrink-0" x-data="{
-                                                                                            cariMember: '',
-                                                                                            dropdownTerbuka: false,
-                                                                                            get memberTersaring() {
-                                                                                            if (!this.cariMember.trim()) return $data.daftarMember;
-                                                                                            const q = this.cariMember.toLowerCase();
-                                                                                            return $data.daftarMember.filter(m =>
-                                                                                            m.nama.toLowerCase().includes(q) || m.no_hp.includes(q)
-                                                                                            );
-                                                                                            },
-                                                                                            pilihMemberItem(member) {
-    $data.memberIdTerpilih = member.id;
-    $data.memberTerpilih = member;
-    $data.namaPembeli = member.nama;
-    this.cariMember = '';
-    this.dropdownTerbuka = false;
-    },
-                                                                                            hapusMember() {
-                                                                                            $data.memberIdTerpilih = '';
-                                                                                            $data.memberTerpilih = null;
-                                                                                            this.cariMember = '';
-                                                                                            },
-                                                                                            getLevelColor(level) {
-                                                                                            if (level === 'Gold') return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400';
-                                                                                            if (level === 'Silver') return 'bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300';
-                                                                                            return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400';
-                                                                                            }
-                                                                                            }"
+                                                                                                                    cariMember: '',
+                                                                                                                    dropdownTerbuka: false,
+                                                                                                                    get memberTersaring() {
+                                                                                                                    if (!this.cariMember.trim()) return $data.daftarMember;
+                                                                                                                    const q = this.cariMember.toLowerCase();
+                                                                                                                    return $data.daftarMember.filter(m =>
+                                                                                                                    m.nama.toLowerCase().includes(q) || m.no_hp.includes(q)
+                                                                                                                    );
+                                                                                                                    },
+                                                                                                                    pilihMemberItem(member) {
+                            $data.memberIdTerpilih = member.id;
+                            $data.memberTerpilih = member;
+                            $data.namaPembeli = member.nama;
+                            this.cariMember = '';
+                            this.dropdownTerbuka = false;
+                            },
+                                                                                                                    hapusMember() {
+                                                                                                                    $data.memberIdTerpilih = '';
+                                                                                                                    $data.memberTerpilih = null;
+                                                                                                                    this.cariMember = '';
+                                                                                                                    },
+                                                                                                                    getLevelColor(level) {
+                                                                                                                    if (level === 'Gold') return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400';
+                                                                                                                    if (level === 'Silver') return 'bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300';
+                                                                                                                    return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400';
+                                                                                                                    }
+                                                                                                                    }"
                         @click.outside="dropdownTerbuka = false">
                         <label
                             class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-2">Member
@@ -1447,11 +1449,10 @@
                             || (b.kode_bundling || '').toLowerCase().includes(this.kataKunciPencarian.toLowerCase());
 
                         let cocokFilter = true;
-                        const stokTersedia = this.stokBundlingTersedia(b);
                         if (this.filterBundling === 'tersedia') {
-                            cocokFilter = stokTersedia > 0;
+                            cocokFilter = !this.bundlingPerluDiproduksi(b);
                         } else if (this.filterBundling === 'habis') {
-                            cocokFilter = stokTersedia <= 0;
+                            cocokFilter = this.bundlingPerluDiproduksi(b);
                         }
 
                         return cocokCari && cocokFilter;
@@ -1955,19 +1956,7 @@
                         .then(r => r.json())
                         .then(r => {
                             if (r.status === 'success') {
-                                // Kurangi stok di frontend UI segera setelah berhasil ditahan
-                                // (hanya untuk item yang bukan "Perlu Diproduksi")
-                                this.keranjang.forEach(item => {
-                                    if (item.is_bundling) {
-                                        item.items.forEach(komponen => {
-                                            const p = this.daftarProduk.find(x => x.id === komponen.produk_id);
-                                            if (p) p.stok -= komponen.qty * item.jumlah;
-                                        });
-                                        return;
-                                    }
-                                    const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                    if (p && !this.itemButuhProduksi(item)) p.stok -= item.jumlah;
-                                });
+                                this.kurangiStokFrontend(this.keranjang);
                                 this.tambahToast('Pesanan disimpan.', 'sukses');
                                 this.suksesData = { ...dataStruk, kode_transaksi: r.kode_transaksi };
                                 this.modalSuksesTerbuka = true;
@@ -1997,15 +1986,8 @@
                                 this.diskonPersen = d.diskon || '';
                                 this.modalDitahanTerbuka = false;
 
-                                // Kembalikan stok di frontend UI saat pesanan dipulihkan
-                                // (hanya untuk item yang bukan "Perlu Diproduksi")
                                 if (d.item_pesanan) {
-                                    d.item_pesanan.forEach(item => {
-                                        const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                        if (p && !this.itemButuhProduksi(item)) {
-                                            p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
-                                        }
-                                    });
+                                    this.kembalikanStokFrontend(d.item_pesanan);
                                 }
 
                                 this.pesananSedangDilunaskan = null;
@@ -2032,12 +2014,7 @@
                                 // Kembalikan stok di frontend UI saat pesanan ditahan dihapus
                                 // (hanya untuk item yang bukan "Perlu Diproduksi")
                                 if (pesanan && pesanan.item_pesanan) {
-                                    pesanan.item_pesanan.forEach(item => {
-                                        const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                        if (p && !this.itemButuhProduksi(item)) {
-                                            p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
-                                        }
-                                    });
+                                    this.kembalikanStokFrontend(pesanan.item_pesanan);
                                 }
                                 this.tambahToast('Pesanan dihapus.', 'info');
                                 this.ambilDaftarDitahanDariServer();
@@ -2126,19 +2103,7 @@
                             .then(r => r.json())
                             .then(r => {
                                 if (r.status === 'success') {
-                                    // Kurangi stok di frontend UI hanya untuk item yang bukan
-                                    // "Perlu Diproduksi" (server juga tidak menguranginya).
-                                    this.keranjang.forEach(item => {
-                                        if (item.is_bundling) {
-                                            item.items.forEach(komponen => {
-                                                const p = this.daftarProduk.find(x => x.id === komponen.produk_id);
-                                                if (p) p.stok -= komponen.qty * item.jumlah;
-                                            });
-                                            return;
-                                        }
-                                        const p = this.daftarProduk.find(x => x.id === item.produk_id);
-                                        if (p && !this.itemButuhProduksi(item)) p.stok -= item.jumlah;
-                                    });
+                                    this.kurangiStokFrontend(this.keranjang);
                                     this.suksesData = { ...dataStruk, kode_transaksi: r.kode_transaksi };
                                     this.modalSuksesTerbuka = true;
                                     this.bersihkanKeranjang();
@@ -2224,15 +2189,43 @@
                     this.memberTerpilih = null;
                 },
 
+                kembalikanStokFrontend(itemPesanan) {
+                    (itemPesanan || []).forEach(item => {
+                        if (item.is_bundling) {
+                            (item.items || []).forEach(komponen => {
+                                if (!komponen.butuh_produksi) {
+                                    const p = this.daftarProduk.find(x => x.id === komponen.produk_id);
+                                    if (p) p.stok = parseFloat(p.stok) + (parseFloat(komponen.qty) * parseFloat(item.jumlah));
+                                }
+                            });
+                            return;
+                        }
+                        const p = this.daftarProduk.find(x => x.id === item.produk_id);
+                        if (p && !this.itemButuhProduksi(item)) {
+                            p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
+                        }
+                    });
+                },
+                kurangiStokFrontend(itemPesanan) {
+                    (itemPesanan || []).forEach(item => {
+                        if (item.is_bundling) {
+                            (item.items || []).forEach(komponen => {
+                                if (!komponen.butuh_produksi) {
+                                    const p = this.daftarProduk.find(x => x.id === komponen.produk_id);
+                                    if (p) p.stok = parseFloat(p.stok) - (parseFloat(komponen.qty) * parseFloat(item.jumlah));
+                                }
+                            });
+                            return;
+                        }
+                        const p = this.daftarProduk.find(x => x.id === item.produk_id);
+                        if (p && !this.itemButuhProduksi(item)) {
+                            p.stok = parseFloat(p.stok) - parseFloat(item.jumlah);
+                        }
+                    });
+                },
+
                 formatRupiah(v) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v); },
 
-                // Tampilkan persentase dengan desimal apa adanya (format Indonesia,
-                // pakai koma), bukan dibulatkan paksa ke bilangan bulat seperti
-                // sebelumnya (Math.round). Ini supaya badge promo di kasir tetap
-                // menunjukkan angka yang sama persis dengan yang diinput admin di
-                // form promo (mis. 12,5%), sementara kalkulasi uangnya sendiri
-                // sudah benar dari awal karena activePromoInfo() sudah pakai
-                // parseFloat(), bukan dibulatkan.
                 formatPersen(v) {
                     const n = parseFloat(v) || 0;
                     const dibulatkan = Math.round(n * 100) / 100; // maks. 2 desimal

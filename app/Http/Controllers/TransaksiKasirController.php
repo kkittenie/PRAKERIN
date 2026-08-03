@@ -20,6 +20,7 @@ class TransaksiKasirController extends Controller
     {
         return $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
     }
+
     private function tentukanPerluProduksi(Produk $produk, array $item): bool
     {
         if ($produk->status_ketersediaan === 'perlu_diproduksi') {
@@ -51,7 +52,7 @@ class TransaksiKasirController extends Controller
                     }, null) ?? 0;
 
                     $bundling->stok_bundling = $stokMaksimal;
-                    $bundling->perlu_diproduksi = $bundling->perlu_diproduksi;
+                    $bundling->perlu_diproduksi = $stokMaksimal <= 0;
                     return $bundling;
                 });
 
@@ -78,6 +79,16 @@ class TransaksiKasirController extends Controller
         }
     }
 
+    /**
+     * Proses satu item bundling dalam transaksi.
+     *
+     * Untuk tiap komponen produk di dalam bundling, kebutuhan dipecah
+     * menjadi 2 baris DetailTransaksi kalau perlu:
+     *  - baris "ready"     -> jumlah yang kepakai dari stok (butuh_produksi=false)
+     *  - baris "produksi"  -> sisa kebutuhan yang stoknya gak cukup (butuh_produksi=true)
+     * Ini supaya struk dapur cuma nampilin jumlah yang BENERAN perlu diproduksi,
+     * bukan seluruh kebutuhan komponen itu.
+     */
     private function prosesItemBundlingTransaksi(Transaksi $transaksi, array $item): void
     {
         $bundlingId = (int) $item['bundling_id'];
@@ -105,45 +116,69 @@ class TransaksiKasirController extends Controller
             }
 
             $totalDibutuhkan = $bundlingItem->qty * $jumlahBundling;
-            $butuhProduksi = $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
+            $statusManualProduksi = $produk->status_ketersediaan === 'perlu_diproduksi';
 
-            if (!$butuhProduksi) {
+            $jumlahReady = 0;
+            $jumlahProduksi = $totalDibutuhkan;
+
+            if (!$statusManualProduksi) {
                 $stokTersedia = max(0, (float) $produk->stok);
-                if ($stokTersedia >= $totalDibutuhkan) {
-                    $produk->decrement('stok', $totalDibutuhkan);
-                } else {
-                    if ($stokTersedia > 0) {
-                        $produk->decrement('stok', $stokTersedia);
-                    }
-                    $butuhProduksi = true;
+                $jumlahReady = min($stokTersedia, $totalDibutuhkan);
+                $jumlahProduksi = $totalDibutuhkan - $jumlahReady;
+
+                if ($jumlahReady > 0) {
+                    $produk->decrement('stok', $jumlahReady);
                 }
             }
 
-            DetailTransaksi::create([
-                'transaksi_id' => $transaksi->id,
-                'produk_id' => $produk->id,
-                'bundling_id' => $bundling->id,
-                'nama_produk' => $produk->nama_produk,
-                'harga_satuan' => 0,
-                'jumlah' => $totalDibutuhkan,
-                'catatan' => null,
-                'subtotal' => 0,
-                'butuh_produksi' => $butuhProduksi,
-            ]);
+            if ($jumlahReady > 0) {
+                DetailTransaksi::create([
+                    'transaksi_id' => $transaksi->id,
+                    'produk_id' => $produk->id,
+                    'bundling_id' => $bundling->id,
+                    'nama_produk' => $produk->nama_produk,
+                    'harga_satuan' => 0,
+                    'jumlah' => $jumlahReady,
+                    'catatan' => null,
+                    'subtotal' => 0,
+                    'butuh_produksi' => false,
+                ]);
+            }
+
+            if ($jumlahProduksi > 0) {
+                DetailTransaksi::create([
+                    'transaksi_id' => $transaksi->id,
+                    'produk_id' => $produk->id,
+                    'bundling_id' => $bundling->id,
+                    'nama_produk' => $produk->nama_produk,
+                    'harga_satuan' => 0,
+                    'jumlah' => $jumlahProduksi,
+                    'catatan' => null,
+                    'subtotal' => 0,
+                    'butuh_produksi' => true,
+                ]);
+            }
         }
     }
 
-    private function kembalikanStokBundling(int $bundlingId, int $jumlahBundling): void
+    /**
+     * Kembalikan stok berdasarkan baris-baris DetailTransaksi (dipakai baik
+     * untuk item produk biasa maupun komponen bundling). Baris ringkasan
+     * bundling (produk_id null) dilewati karena baris itu tidak pernah
+     * memotong stok. Baris yang butuh_produksi=true juga dilewati karena
+     * stoknya memang tidak pernah dipotong.
+     */
+    private function kembalikanStokDariDetail($detailTransaksi): void
     {
-        $bundling = Bundling::with('items.produk')->find($bundlingId);
-        if (!$bundling) {
-            return;
-        }
-
-        foreach ($bundling->items as $bundlingItem) {
-            $produk = $bundlingItem->produk;
-            if ($produk && $produk->status_ketersediaan !== 'perlu_diproduksi') {
-                $produk->increment('stok', $bundlingItem->qty * $jumlahBundling);
+        foreach ($detailTransaksi as $detail) {
+            if (!$detail->produk_id) {
+                continue;
+            }
+            if (!$detail->butuh_produksi) {
+                $produk = Produk::find($detail->produk_id);
+                if ($produk) {
+                    $produk->increment('stok', $detail->jumlah);
+                }
             }
         }
     }
@@ -297,24 +332,12 @@ class TransaksiKasirController extends Controller
         try {
             $pesanan = PesananDitahan::with('transaksi')->findOrFail($id);
 
-            // Kembalikan stok jika ada transaksi terkait, HANYA untuk item
+            // Kembalikan stok jika ada transaksi terkait, HANYA untuk baris
             // yang bukan "Perlu Diproduksi" (pakai snapshot butuh_produksi
             // yang disimpan saat transaksi dibuat, bukan status produk saat ini).
             if ($pesanan->transaksi) {
                 $detailTransaksi = DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->get();
-                foreach ($detailTransaksi as $detail) {
-                    if ($detail->bundling_id) {
-                        $this->kembalikanStokBundling($detail->bundling_id, $detail->jumlah);
-                        continue;
-                    }
-
-                    if (!$detail->butuh_produksi) {
-                        $produk = Produk::find($detail->produk_id);
-                        if ($produk) {
-                            $produk->increment('stok', $detail->jumlah);
-                        }
-                    }
-                }
+                $this->kembalikanStokDariDetail($detailTransaksi);
 
                 // Hapus detail transaksi dan transaksi
                 DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->delete();
@@ -362,23 +385,11 @@ class TransaksiKasirController extends Controller
         try {
             $pesanan = PesananDitahan::with('transaksi')->findOrFail($id);
 
-            // Kembalikan stok jika ada transaksi terkait, HANYA untuk item
+            // Kembalikan stok jika ada transaksi terkait, HANYA untuk baris
             // yang bukan "Perlu Diproduksi".
             if ($pesanan->transaksi) {
                 $detailTransaksi = DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->get();
-                foreach ($detailTransaksi as $detail) {
-                    if ($detail->bundling_id) {
-                        $this->kembalikanStokBundling($detail->bundling_id, $detail->jumlah);
-                        continue;
-                    }
-
-                    if (!$detail->butuh_produksi) {
-                        $produk = Produk::find($detail->produk_id);
-                        if ($produk) {
-                            $produk->increment('stok', $detail->jumlah);
-                        }
-                    }
-                }
+                $this->kembalikanStokDariDetail($detailTransaksi);
 
                 // Hapus detail transaksi dan transaksi
                 DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->delete();
