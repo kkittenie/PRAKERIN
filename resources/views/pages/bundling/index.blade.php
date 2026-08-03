@@ -244,11 +244,6 @@
                                                     class="font-bold text-amber-700 dark:text-amber-400">{{ $item->jumlah_produk }}
                                                     Produk</span>
                                             </div>
-                                            <div>
-                                                <span class="text-gray-400 block text-[11px]">Harga</span>
-                                                <span class="font-bold text-brand-600 dark:text-brand-400">Rp
-                                                    {{ number_format($item->harga, 0, ',', '.') }}</span>
-                                            </div>
                                         </div>
                                     </div>
                                 </td>
