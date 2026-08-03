@@ -166,7 +166,11 @@
                                             </label>
                                         </form>
                                         <span
-                                            class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $badgeColor }}">
+                                            class="promo-status-badge inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $badgeColor }}"
+                                            data-mulai="{{ $item->mulai_berlaku }}"
+                                            data-selesai="{{ $item->selesai_berlaku }}"
+                                            data-status-aktif="{{ $item->status_aktif ? '1' : '0' }}"
+                                            data-variant="row">
                                             {{ $status }}
                                         </span>
                                     </div>
@@ -205,7 +209,11 @@
                                                     </label>
                                                 </form>
                                                 <span
-                                                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $badgeColor }}">
+                                                    class="promo-status-badge inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold {{ $badgeColor }}"
+                                                    data-mulai="{{ $item->mulai_berlaku }}"
+                                                    data-selesai="{{ $item->selesai_berlaku }}"
+                                                    data-status-aktif="{{ $item->status_aktif ? '1' : '0' }}"
+                                                    data-variant="card">
                                                     {{ $status }}
                                                 </span>
                                             </div>
@@ -272,26 +280,62 @@
     </div>
 
     <script>
-        let timer;
-        const searchInput = document.getElementById('search');
-        const searchForm = document.getElementById('searchForm');
+let timer;
+const searchInput = document.getElementById('search');
+const searchForm = document.getElementById('searchForm');
 
-        searchInput.addEventListener('keyup', function () {
-            clearTimeout(timer);
-            timer = setTimeout(() => {
-                searchForm.submit();
-            }, 400);
-        });
+searchInput.addEventListener('keyup', function () {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+        searchForm.submit();
+    }, 400);
+});
 
-        window.addEventListener('load', function () {
-            if (searchInput.value !== '') {
-                searchInput.focus();
-                searchInput.setSelectionRange(
-                    searchInput.value.length,
-                    searchInput.value.length
-                );
-            }
-        });
-    </script>
+window.addEventListener('load', function () {
+    if (searchInput.value !== '') {
+        searchInput.focus();
+        searchInput.setSelectionRange(
+            searchInput.value.length,
+            searchInput.value.length
+        );
+    }
+});
+
+// ====== Update status promo otomatis tanpa refresh ======
+function hitungStatusPromo(mulai, selesai, statusAktif) {
+    const now = new Date();
+
+    if (!statusAktif) {
+        return { label: 'Nonaktif', color: 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400' };
+    }
+    if (mulai && now < new Date(mulai)) {
+        return { label: 'Belum Mulai', color: 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400' };
+    }
+    if (selesai && now > new Date(selesai)) {
+        return { label: 'Kedaluwarsa', color: 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400' };
+    }
+    return { label: 'Aktif', color: 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400' };
+}
+
+function perbaruiStatusPromoDiLayar() {
+    document.querySelectorAll('.promo-status-badge').forEach(function (btn) {
+        const mulai = btn.dataset.mulai;
+        const selesai = btn.dataset.selesai;
+        const statusAktif = btn.dataset.statusAktif === '1';
+
+        const hasil = hitungStatusPromo(mulai, selesai, statusAktif);
+
+        const baseClass = btn.dataset.variant === 'card'
+            ? 'promo-status-badge inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold'
+            : 'promo-status-badge inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold';
+
+        btn.className = baseClass + ' ' + hasil.color;
+        btn.textContent = hasil.label;
+    });
+}
+
+document.addEventListener('DOMContentLoaded', perbaruiStatusPromoDiLayar);
+setInterval(perbaruiStatusPromoDiLayar, 1000);
+</script>
 
 @endsection
