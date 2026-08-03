@@ -49,31 +49,26 @@
     </div>
 
     {{-- Produk --}}
-    <div>
+    <div class="relative">
 
         <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
             Produk <span class="text-red-500">*</span>
         </label>
 
-        <select
-            name="produk_id"
+        <input
+            type="text"
+            id="input-search-produk"
+            placeholder="Ketik nama produk..."
+            autocomplete="off"
+            value="{{ old('produk_id') ? optional($produk->firstWhere('id', old('produk_id')))->nama_produk : '' }}"
             class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 @error('produk_id') border-red-500 @enderror">
-         
-            <option value="">Pilih Produk</option>
 
-            @foreach($produk as $item)
+        <div
+            id="hasil-search-produk"
+            class="hasil-search absolute z-50 mt-1 hidden w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+        </div>
 
-            <option
-                value="{{ $item->id }}"
-                {{ old('produk_id') == $item->id ? 'selected' : '' }}>
-
-                {{ $item->nama_produk }}
-
-            </option>
-
-            @endforeach
-
-        </select>
+        <input type="hidden" name="produk_id" id="input-id-produk" value="{{ old('produk_id') }}">
 
         @error('produk_id')
             <small class="text-red-500">{{ $message }}</small>
@@ -249,7 +244,7 @@ Pengambilan Bahan Baku
         Batal
     </a>
 
-    <button type="submit" class="rounded-lg bg-brand-500 px-5 py-2 text-white">
+    <button type="submit" id="btnSubmitProduksi" class="rounded-lg bg-brand-500 px-5 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed">
         Simpan Produksi
     </button>
 
@@ -261,9 +256,10 @@ Pengambilan Bahan Baku
 
 </div>
 
-<script>
-    const daftarBahanBaku = @json($bahanBaku);
-</script>
+    <script>
+        const daftarBahanBaku = @json($bahanBaku);
+        const daftarProduk = @json($produk);
+    </script>
 
 <script>
 
@@ -272,9 +268,7 @@ let bahanTerpilih = [];
 const container = document.getElementById('bahan-container');
 const tombolTambah = document.getElementById('btn-tambah-bahan');
 
-tombolTambah.addEventListener('click', function () {
-
-    const id = Date.now();
+function tambahBarisBahan() {
 
     const div = document.createElement('div');
 
@@ -316,7 +310,7 @@ tombolTambah.addEventListener('click', function () {
 
                 <div class="flex items-center gap-2">
 
-                    <input
+                   <input
                         type="number"
                         name="jumlah_terpakai[]"
                         step="0.01"
@@ -329,6 +323,10 @@ tombolTambah.addEventListener('click', function () {
                     </span>
 
                 </div>
+
+                <p class="peringatan-stok hidden text-xs text-red-600 mt-1">
+                    Jumlah melebihi stok yang tersedia!
+                </p>
 
             </div>
 
@@ -355,7 +353,13 @@ tombolTambah.addEventListener('click', function () {
 
     aktifkanSearch(div);
 
-});
+    return div;
+
+    }
+
+    tombolTambah.addEventListener('click', function () {
+        tambahBarisBahan();
+    });
 
 function aktifkanSearch(element) {
 
@@ -376,6 +380,13 @@ function aktifkanSearch(element) {
 
     const inputJumlah =
         element.querySelector('.input-jumlah');
+
+    const peringatanStok =
+        element.querySelector('.peringatan-stok');
+
+    inputJumlah.addEventListener('input', function () {
+        cekJumlahMelebihiStok(inputJumlah, peringatanStok);
+    });
 
     inputSearch.addEventListener('input', function () {
 
@@ -458,9 +469,72 @@ function aktifkanSearch(element) {
 
             element.remove();
 
-        });
+            perbaruiTombolSubmitProduksi();
 
+        });
 }
+
+                function aktifkanSearchProduk() {
+
+            const inputSearch = document.getElementById('input-search-produk');
+            const hasilSearch = document.getElementById('hasil-search-produk');
+            const inputId = document.getElementById('input-id-produk');
+
+            inputSearch.addEventListener('input', function () {
+
+                const keyword = this.value.toLowerCase();
+
+                inputId.value = '';
+
+                if (keyword.length === 0) {
+                    hasilSearch.classList.add('hidden');
+                    return;
+                }
+
+                const hasil = daftarProduk.filter(function (produk) {
+                    return produk.nama_produk.toLowerCase().includes(keyword);
+                });
+
+                hasilSearch.innerHTML = '';
+
+                if (hasil.length === 0) {
+                    hasilSearch.innerHTML = `
+                        <div class="p-3 text-sm text-gray-500">
+                            Produk tidak ditemukan
+                        </div>
+                    `;
+                } else {
+                    hasil.forEach(function (produk) {
+                        const item = document.createElement('button');
+                        item.type = 'button';
+                        item.className = 'block w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700';
+                        item.innerHTML = `
+                            <div class="font-medium text-gray-800 dark:text-white">
+                                ${produk.nama_produk}
+                            </div>
+                        `;
+
+                        item.addEventListener('click', function () {
+                            inputSearch.value = produk.nama_produk;
+                            inputId.value = produk.id;
+                            hasilSearch.classList.add('hidden');
+                        });
+
+                        hasilSearch.appendChild(item);
+                    });
+                }
+
+                hasilSearch.classList.remove('hidden');
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!inputSearch.contains(e.target) && !hasilSearch.contains(e.target)) {
+                    hasilSearch.classList.add('hidden');
+                }
+            });
+        }
+
+        aktifkanSearchProduk();
 
         function formatStok(stok, tipe) {
             const angka = parseFloat(stok) || 0;
@@ -488,12 +562,67 @@ function aktifkanSearch(element) {
 
             infoStok.innerHTML =`Stok tersedia: <strong>${formatStok(bahan.stok, tipeSatuan)} ${namaSatuan}</strong>`;
 
-            if (inputJumlah) {
+        if (inputJumlah) {
                 inputJumlah.step = (tipeSatuan === 'bulat') ? '1' : '0.01';
+                inputJumlah.dataset.stokMax = bahan.stok;
+                inputJumlah.dispatchEvent(new Event('input'));
             }
 
             hasilSearch.classList.add('hidden');
 
+        }
+
+        function cekJumlahMelebihiStok(inputJumlah, peringatan) {
+
+            const stokMax = parseFloat(inputJumlah.dataset.stokMax || 0);
+            const nilai = parseFloat(inputJumlah.value) || 0;
+
+            if (nilai > stokMax) {
+                peringatan.classList.remove('hidden');
+                inputJumlah.classList.add('border-red-500');
+            } else {
+                peringatan.classList.add('hidden');
+                inputJumlah.classList.remove('border-red-500');
+            }
+
+            perbaruiTombolSubmitProduksi();
+        }
+
+        const oldBahanBakuId = @json(old('bahan_baku_id', []));
+        const oldJumlahTerpakai = @json(old('jumlah_terpakai', []));
+
+        oldBahanBakuId.forEach(function (id, index) {
+
+            const bahan = daftarBahanBaku.find(function (b) {
+                return b.id == id;
+            });
+
+            if (!bahan) {
+                return;
+            }
+
+            const div = tambahBarisBahan();
+
+            const inputSearch = div.querySelector('.input-search-bahan');
+            const hasilSearch = div.querySelector('.hasil-search');
+            const inputId = div.querySelector('.input-id-bahan');
+            const satuan = div.querySelector('.satuan-bahan');
+            const infoStok = div.querySelector('.info-stok');
+            const inputJumlah = div.querySelector('.input-jumlah');
+
+            pilihBahan(bahan, inputSearch, hasilSearch, inputId, satuan, infoStok, inputJumlah);
+
+            inputJumlah.value = oldJumlahTerpakai[index] ?? 0;
+            inputJumlah.dispatchEvent(new Event('input'));
+
+        });
+
+        function perbaruiTombolSubmitProduksi() {
+            const adaError = document.querySelectorAll('.peringatan-stok:not(.hidden)').length > 0;
+            const btn = document.getElementById('btnSubmitProduksi');
+            if (btn) {
+                btn.disabled = adaError;
+            }
         }
 
     const tipeTanggal = document.getElementById('tipeTanggal');

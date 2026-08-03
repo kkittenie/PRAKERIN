@@ -9,10 +9,10 @@
         <div class="fixed top-5 right-5 z-99999 flex flex-col gap-2">
             <template x-for="toast in toasts" :key="toast.id">
                 <div :class="{
-                        'bg-green-600': toast.tipe === 'sukses',
-                        'bg-red-600': toast.tipe === 'error',
-                        'bg-amber-700': toast.tipe === 'info'
-                     }"
+                                                                                                                                                                        'bg-green-600': toast.tipe === 'sukses',
+                                                                                                                                                                        'bg-red-600': toast.tipe === 'error',
+                                                                                                                                                                        'bg-amber-700': toast.tipe === 'info'
+                                                                                                                                                                     }"
                     class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] transform transition-all duration-300 animate-slide-in">
                     <span class="font-semibold text-lg" x-text="toast.tipe === 'sukses' ? '✓' : '⚠'"></span>
                     <span class="text-sm" x-text="toast.pesan"></span>
@@ -138,7 +138,8 @@
                             <template x-for="produk in produkTersaring" :key="produk.id">
                                 <div
                                     class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
-                                    <div class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden">
+                                    <div @click="tambahKeKeranjang(produk)" title="Klik untuk tambah ke keranjang"
+                                        class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden cursor-pointer">
                                         <img :src="getFotoUrl(produk.foto)" x-on:error="handleFotoError($event)"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             alt="Produk">
@@ -170,11 +171,24 @@
                                         </div>
                                         <div
                                             class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
-                                            <template x-if="produk.promo_aktif">
+                                            <template
+                                                x-if="produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0">
+                                                <div class="flex flex-wrap items-center gap-1">
+                                                    <template x-for="p in produk.promos_aktif_semua" :key="p.id">
+                                                        <span
+                                                            class="text-xxs font-extrabold px-1.5 py-0.5 bg-rose-100 dark:bg-rose-500/10 text-rose-600 dark:text-rose-450 rounded animate-pulse"
+                                                            x-text="p.jenis_potongan === 'nominal' ? ('-Rp ' + Math.round(p.nominal_potongan/1000) + 'rb') : ('-' + formatPersen(p.persentase) + '%')"></span>
+                                                    </template>
+                                                    <span class="text-xs text-gray-450 dark:text-gray-500 line-through"
+                                                        x-text="formatRupiah(produk.harga_jual)"></span>
+                                                </div>
+                                            </template>
+                                            <template
+                                                x-if="(!produk.promos_aktif_semua || produk.promos_aktif_semua.length === 0) && produk.promo_aktif">
                                                 <div class="flex flex-wrap items-center gap-1.5">
                                                     <span
                                                         class="text-xxs font-extrabold px-1.5 py-0.5 bg-rose-100 dark:bg-rose-500/10 text-rose-600 dark:text-rose-450 rounded animate-pulse"
-                                                        x-text="produk.promo_aktif.jenis_potongan === 'nominal' ? ('-Rp ' + Math.round(produk.promo_aktif.nominal_potongan/1000) + 'rb') : ('-' + Math.round(produk.promo_aktif.persentase) + '%')"></span>
+                                                        x-text="produk.promo_aktif.jenis_potongan === 'nominal' ? ('-Rp ' + Math.round(produk.promo_aktif.nominal_potongan/1000) + 'rb') : ('-' + formatPersen(produk.promo_aktif.persentase) + '%')"></span>
                                                     <span class="text-xs text-gray-450 dark:text-gray-500 line-through"
                                                         x-text="formatRupiah(produk.harga_jual)"></span>
                                                 </div>
@@ -262,36 +276,38 @@
                     </div>
 
                     <!-- Pilih Member -->
-                    <div class="p-3 border-b border-gray-100 dark:border-gray-800 shrink-0" x-data="{
-                cariMember: '',
-                dropdownTerbuka: false,
-                get memberTersaring() {
-                    if (!this.cariMember.trim()) return $data.daftarMember;
-                    const q = this.cariMember.toLowerCase();
-                    return $data.daftarMember.filter(m =>
-                        m.nama.toLowerCase().includes(q) || m.no_hp.includes(q)
-                    );
-                },
-                pilihMemberItem(member) {
-                    $data.memberIdTerpilih = member.id;
-                    $data.memberTerpilih = member;
-                    if ($data.namaPembeli.trim() === '') {
-                        $data.namaPembeli = member.nama;
-                    }
-                    this.cariMember = '';
-                    this.dropdownTerbuka = false;
-                },
-                hapusMember() {
-                    $data.memberIdTerpilih = '';
-                    $data.memberTerpilih = null;
-                    this.cariMember = '';
-                },
-                getLevelColor(level) {
-                    if (level === 'Gold') return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400';
-                    if (level === 'Silver') return 'bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300';
-                    return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400';
-                }
-            }" @click.outside="dropdownTerbuka = false">
+                    <div class="p-3 border-b border-gray-100 dark:border-gray-800 shrink-0"
+                        x-data="{
+                                                                                                                                                                cariMember: '',
+                                                                                                                                                                dropdownTerbuka: false,
+                                                                                                                                                                get memberTersaring() {
+                                                                                                                                                                    if (!this.cariMember.trim()) return $data.daftarMember;
+                                                                                                                                                                    const q = this.cariMember.toLowerCase();
+                                                                                                                                                                    return $data.daftarMember.filter(m =>
+                                                                                                                                                                        m.nama.toLowerCase().includes(q) || m.no_hp.includes(q)
+                                                                                                                                                                    );
+                                                                                                                                                                },
+                                                                                                                                                                pilihMemberItem(member) {
+                                                                                                                                                                    $data.memberIdTerpilih = member.id;
+                                                                                                                                                                    $data.memberTerpilih = member;
+                                                                                                                                                                    if ($data.namaPembeli.trim() === '') {
+                                                                                                                                                                        $data.namaPembeli = member.nama;
+                                                                                                                                                                    }
+                                                                                                                                                                    this.cariMember = '';
+                                                                                                                                                                    this.dropdownTerbuka = false;
+                                                                                                                                                                },
+                                                                                                                                                                hapusMember() {
+                                                                                                                                                                    $data.memberIdTerpilih = '';
+                                                                                                                                                                    $data.memberTerpilih = null;
+                                                                                                                                                                    this.cariMember = '';
+                                                                                                                                                                },
+                                                                                                                                                                getLevelColor(level) {
+                                                                                                                                                                    if (level === 'Gold') return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400';
+                                                                                                                                                                    if (level === 'Silver') return 'bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300';
+                                                                                                                                                                    return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400';
+                                                                                                                                                                }
+                                                                                                                                                            }"
+                        @click.outside="dropdownTerbuka = false">
                         <label
                             class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-2">Member
                             (Opsional)</label>
@@ -432,10 +448,26 @@
                                             <div class="flex items-center gap-1.5">
                                                 <span class="text-xxs font-bold text-amber-700 dark:text-amber-400"
                                                     x-text="formatRupiah(item.harga_jual_asli)"></span>
-                                                <template x-if="item.promo_aktif">
+                                                <template
+                                                    x-if="apakahBarisPertamaProduk(item) && item.promos_tersedia && item.promos_tersedia.length > 0">
+                                                    <button type="button" @click="bukaModalPilihPromo(item)"
+                                                        class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border transition"
+                                                        :class="item.promos_terpilih_ids && item.promos_terpilih_ids.length > 0 ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/25 hover:bg-rose-100' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700'"
+                                                        title="Klik untuk memilih promo">
+                                                        <span>🏷️</span>
+                                                        <span
+                                                            x-text="item.promos_terpilih_ids.length + '/' + item.promos_tersedia.length + ' Promo'"></span>
+                                                        <svg class="w-2.5 h-2.5 ml-0.5" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </button>
+                                                </template>
+                                                <template x-if="apakahBarisPertamaProduk(item) && (!item.promos_tersedia || item.promos_tersedia.length === 0) && item.promo_aktif">
                                                     <span
                                                         class="text-[9px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-1 rounded"
-                                                        x-text="item.promo_aktif.jenis_potongan === 'nominal' ? ('Promo Rp ' + Math.round(item.promo_aktif.nominal_potongan/1000) + 'rb') : ('Promo ' + Math.round(item.promo_aktif.persentase) + '%')"></span>
+                                                        x-text="item.promo_aktif.jenis_potongan === 'nominal' ? ('Promo Rp ' + Math.round(item.promo_aktif.nominal_potongan/1000) + 'rb') : ('Promo ' + formatPersen(item.promo_aktif.persentase) + '%')"></span>
                                                 </template>
                                             </div>
                                             <span class="text-xxs text-gray-400 dark:text-gray-500">Total: <span
@@ -479,7 +511,9 @@
                                 <label
                                     class="text-xxs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">Pajak
                                     (%)</label>
-                                <input type="number" x-model.number="pajakPersen" min="0" placeholder="10"
+                                <input type="text" inputmode="decimal" x-model="pajakPersen"
+                                    @input="pajakPersen = pajakPersen.replace(/[^0-9,]/g, '').replace(/(,.*),/g, '$1')"
+                                    placeholder="Masukan pajak (%)"
                                     class="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500">
                             </div>
                         </div>
@@ -492,12 +526,13 @@
                             <span class="font-semibold text-gray-800 dark:text-white"
                                 x-text="formatRupiah(subtotal)"></span>
                         </div>
-                        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
-                            x-show="nilaiDiskon > 0">
-                            <span>Diskon (<span x-text="diskonPersen"></span>%)</span>
-                            <span class="font-semibold text-red-600 dark:text-red-400"
-                                x-text="'-' + formatRupiah(nilaiDiskon)"></span>
-                        </div>
+                        <template x-for="dItem in rincianDiskonList" :key="dItem.nama">
+                            <div
+                                class="flex items-center justify-between text-xs text-rose-600 dark:text-rose-400 font-semibold">
+                                <span x-text="dItem.nama"></span>
+                                <span class="font-semibold" x-text="'-' + formatRupiah(dItem.nilai)"></span>
+                            </div>
+                        </template>
                         <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
                             x-show="pajak > 0">
                             <span>Pajak (<span x-text="pajakPersen"></span>%)</span>
@@ -648,8 +683,9 @@
                                         class="text-xs font-black text-gray-800 dark:text-white tracking-wider flex items-center gap-1.5">
                                         <img src="{{ asset('images/logo/logo.svg') }}" class="w-auto h-10 object-contain"
                                             alt="Saisho Logo">
-                                    </span class="px-2 py-0.5 bg-amber-600 text-white font-black text-[9px] rounded uppercase
-                                    tracking-widest"></span>
+                                    </span
+                                        class="px-2 py-0.5 bg-amber-600 text-white font-black text-[9px] rounded uppercase
+                                                                                                                                                                                    tracking-widest"></span>
                                 </div>
                             </div>
                             <div class="max-w-xs">
@@ -680,28 +716,11 @@
                         <template x-for="item in keranjang" :key="item.key">
                             <div class="flex justify-between items-start gap-4">
                                 <div class="min-w-0 flex-1">
-                                    <div class="flex items-center gap-1.5 flex-wrap">
-                                        <p class="font-bold text-xs text-gray-900 dark:text-white"
-                                            x-text="item.nama_produk"></p>
-                                        <template x-if="itemButuhProduksi(item)">
-                                            <span
-                                                class="text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/25">Perlu
-                                                Diproduksi</span>
-                                        </template>
-                                        <template x-if="!itemButuhProduksi(item)">
-                                            <span
-                                                class="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/25">Ready
-                                                Stock</span>
-                                        </template>
-                                    </div>
+                                    <p class="font-bold text-xs text-gray-900 dark:text-white" x-text="item.nama_produk">
+                                    </p>
                                     <p class="text-xxs text-gray-400 dark:text-gray-500">
                                         <span x-text="item.jumlah"></span> x <span
                                             x-text="formatRupiah(item.harga_jual_asli)"></span>
-                                        <template x-if="item.promo_aktif">
-                                            <span
-                                                class="text-[9px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-1 rounded ml-1"
-                                                x-text="item.promo_aktif.jenis_potongan === 'nominal' ? ('Promo Rp ' + Math.round(item.promo_aktif.nominal_potongan/1000) + 'rb') : ('Promo ' + Math.round(item.promo_aktif.persentase) + '%')"></span>
-                                        </template>
                                     </p>
                                 </div>
                                 <span class="font-bold text-xs text-gray-700 dark:text-gray-300 shrink-0"
@@ -713,17 +732,12 @@
                         <div class="flex justify-between text-gray-500 dark:text-gray-400"><span>Subtotal</span><span
                                 class="font-semibold text-gray-800 dark:text-white" x-text="formatRupiah(subtotal)"></span>
                         </div>
-                        <div class="flex justify-between text-rose-600 dark:text-rose-400" x-show="diskonPromo > 0">
-                            <span>Diskon Promo <template x-if="activePromoInfo.nama"><span
-                                        class="text-xs font-bold text-rose-500">(<span
-                                            x-text="activePromoInfo.nama"></span>)</span></template></span>
-                            <span class="font-semibold" x-text="'-' + formatRupiah(diskonPromo)"></span>
-                        </div>
-                        <div class="flex justify-between text-red-600 dark:text-red-400" x-show="diskonPersen > 0">
-                            <span>Diskon Tambahan (<span x-text="diskonPersen"></span>%)</span>
-                            <span class="font-semibold"
-                                x-text="'-' + formatRupiah(Math.round(subtotalGross * ((diskonPersen || 0) / 100)))"></span>
-                        </div>
+                        <template x-for="dItem in rincianDiskonList" :key="dItem.nama">
+                            <div class="flex justify-between text-rose-600 dark:text-rose-400 font-semibold">
+                                <span x-text="dItem.nama"></span>
+                                <span class="font-semibold" x-text="'-' + formatRupiah(dItem.nilai)"></span>
+                            </div>
+                        </template>
                         <div class="flex justify-between text-gray-500 dark:text-gray-400" x-show="pajak > 0"><span>Pajak
                                 (<span x-text="pajakPersen"></span>%)</span><span
                                 class="font-semibold text-gray-800 dark:text-white" x-text="formatRupiah(pajak)"></span>
@@ -988,6 +1002,87 @@
             </div>
         </div>
 
+        <!-- ========== MODAL: PILIH PROMO ITEM ========== -->
+        <div x-show="modalPilihPromoTerbuka"
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4"
+            x-transition x-cloak>
+            <div @click.away="modalPilihPromoTerbuka = false"
+                class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800">
+                <div class="bg-amber-800 dark:bg-amber-900 text-white p-4 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-extrabold text-sm">Pilih Promo Produk</h3>
+                        <p class="text-white/80 text-xs mt-0.5"
+                            x-text="itemPromoTerpilih ? itemPromoTerpilih.nama_produk : ''">
+                        </p>
+                    </div>
+                    <button @click="modalPilihPromoTerbuka = false"
+                        class="text-white hover:text-gray-200 font-bold text-lg leading-none">&times;</button>
+                </div>
+
+                <div class="p-5 flex flex-col gap-4 max-h-[380px] overflow-y-auto custom-scrollbar">
+                    <div
+                        class="flex items-center justify-between text-xs pb-2 border-b border-gray-100 dark:border-gray-800">
+                        <span class="text-gray-500 dark:text-gray-400">Promo yang tersedia:</span>
+                        <div class="flex items-center gap-2"
+                            x-show="itemPromoTerpilih && itemPromoTerpilih.promos_tersedia && itemPromoTerpilih.promos_tersedia.length > 1">
+                            <button type="button" @click="pilihSemuaPromoItem(itemPromoTerpilih, true)"
+                                class="text-amber-700 dark:text-amber-400 font-bold hover:underline">Pilih Semua</button>
+                            <span class="text-gray-300 dark:text-gray-700">|</span>
+                            <button type="button" @click="pilihSemuaPromoItem(itemPromoTerpilih, false)"
+                                class="text-gray-500 font-medium hover:underline">Hapus Semua</button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2.5">
+                        <template x-for="promo in (itemPromoTerpilih ? itemPromoTerpilih.promos_tersedia : [])"
+                            :key="promo.id">
+                            <label
+                                class="flex items-start gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 cursor-pointer transition">
+                                <input type="checkbox" :checked="itemPromoTerpilih.promos_terpilih_ids.includes(promo.id)"
+                                    @change="togglePromoItem(itemPromoTerpilih, promo.id)"
+                                    class="mt-0.5 rounded border-gray-300 dark:border-gray-700 text-amber-600 focus:ring-amber-500">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="font-bold text-xs text-gray-900 dark:text-white"
+                                            x-text="promo.nama_promo"></span>
+                                        <span class="text-xs font-extrabold text-amber-700 dark:text-amber-400 shrink-0"
+                                            x-text="promo.jenis_potongan === 'nominal' ? ('-Rp ' + Math.round(promo.nominal_potongan/1000) + 'rb') : ('-' + formatPersen(promo.persentase) + '%')"></span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                                        <span>Tipe: <strong class="text-gray-600 dark:text-gray-300"
+                                                x-text="promo.jenis_potongan"></strong></span>
+                                        <template x-if="promo.min_pembelian > 0">
+                                            <span>Min. Belanja: <strong class="text-gray-600 dark:text-gray-300"
+                                                    x-text="formatRupiah(promo.min_pembelian)"></strong></span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </label>
+                        </template>
+
+                        <template
+                            x-if="!itemPromoTerpilih || !itemPromoTerpilih.promos_tersedia || itemPromoTerpilih.promos_tersedia.length === 0">
+                            <p class="text-xs text-center text-gray-400 py-4">Tidak ada promo aktif untuk produk ini.</p>
+                        </template>
+                    </div>
+                </div>
+
+                <div
+                    class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Total Diskon
+                            Item Ini</span>
+                        <span class="font-extrabold text-sm text-amber-700 dark:text-amber-400"
+                            x-text="itemPromoTerpilih ? ('-' + formatRupiah(hitungDiskonItem(itemPromoTerpilih))) : 'Rp 0'"></span>
+                    </div>
+                    <button type="button" @click="modalPilihPromoTerbuka = false"
+                        class="px-5 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-xl transition shadow-xs">
+                        Selesai
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 @endsection
 
@@ -1012,7 +1107,7 @@
                 memberTerpilih: null,
                 catatan: '',
                 diskonPersen: '',
-                pajakPersen: 5,
+                pajakPersen: '5',
 
                 // Input pembeli modal
                 inputNamaPembeli: '',
@@ -1029,6 +1124,8 @@
                 modalPembeliTerbuka: false,
                 modalSuksesTerbuka: false,
                 modalKonfirmasiHapusTerbuka: false,
+                modalPilihPromoTerbuka: false,
+                itemPromoTerpilih: null,
                 idPesananAkanDihapus: null,
 
                 // Data sukses (untuk struk)
@@ -1057,6 +1154,14 @@
 
                 inisialisasi() { },
 
+                // Ubah string pajak/diskon yang mungkin memakai koma (mis. "1,2")
+                // menjadi angka desimal yang valid untuk perhitungan (1.2).
+                parsePersen(v) {
+                    if (typeof v === 'number') return v;
+                    const n = parseFloat(String(v ?? '').replace(',', '.'));
+                    return isNaN(n) ? 0 : n;
+                },
+
                 get qrisPayload() {
                     // Base QRIS format for static/dynamic merchant
                     const baseMerchant = "00020101021226380010co.saishos0115936000020012345520458125303360";
@@ -1080,7 +1185,7 @@
                     const crcHex = (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
                     return payloadWithoutCrc + crcHex;
                 },
-                
+
                 getFotoUrl(foto) {
                     if (foto) {
                         if (foto.startsWith('http://') || foto.startsWith('https://')) return foto;
@@ -1096,22 +1201,10 @@
                     event.target.src = '/images/logo/logo-icon.svg';
                 },
 
-                // ================== ALUR KETERSEDIAAN PRODUK ==================
-                // Sebuah PRODUK (dilihat dari kartu produk / status global) dianggap
-                // "Perlu Diproduksi" jika:
-                // 1) admin memang menandainya manual sebagai 'perlu_diproduksi', ATAU
-                // 2) stoknya sudah habis (<= 0).
-                // Ini dipakai untuk badge & filter di grid produk.
                 butuhProduksi(produk) {
                     return produk.status_ketersediaan === 'perlu_diproduksi' || parseFloat(produk.stok) <= 0;
                 },
 
-                // Versi untuk item yang sudah ada di keranjang / pesanan ditahan.
-                // Item keranjang menyimpan flag `butuh_produksi` sebagai snapshot per
-                // BARIS (bukan per produk), karena satu produk bisa terbagi jadi 2
-                // baris: "Ready Stock" dan "Perlu Diproduksi", saat jumlah yang
-                // diminta melebihi stok yang tersedia. Fallback ke status_ketersediaan
-                // untuk data lama yang belum punya flag ini.
                 itemButuhProduksi(item) {
                     if (typeof item.butuh_produksi !== 'undefined' && item.butuh_produksi !== null) {
                         return !!item.butuh_produksi;
@@ -1119,11 +1212,26 @@
                     return item.status_ketersediaan === 'perlu_diproduksi';
                 },
 
-                // Bangun satu baris keranjang baru. `key` unik per produk+status
-                // supaya "Ready Stock" dan "Perlu Diproduksi" untuk produk yang
-                // sama bisa hidup berdampingan sebagai 2 baris terpisah.
+                apakahBarisPertamaProduk(item) {
+                    const index = this.keranjang.findIndex(i => i.produk_id === item.produk_id);
+                    return index !== -1 && this.keranjang[index] === item;
+                },
+
                 buatItemKeranjang(produk, jumlah, perluProduksi) {
                     const hargaAsli = parseFloat(produk.harga_jual);
+                    const promosTersedia = (produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0)
+                        ? produk.promos_aktif_semua
+                        : (produk.promo_aktif ? [produk.promo_aktif] : []);
+
+                    // Kalau produk yang sama sudah ada baris lain di keranjang (kesplit jadi
+                    // Ready Stock / Perlu Diproduksi), ikutin pilihan promo baris itu — biar
+                    // promo yang aktif SELALU sama untuk produk yang sama, gak peduli baris
+                    // mana yang lagi ditambah.
+                    const barisLain = this.keranjang.find(i => i.produk_id === produk.id);
+                    const promosTerpilihIds = barisLain
+                        ? [...barisLain.promos_terpilih_ids]
+                        : promosTersedia.map(p => p.id);
+
                     return {
                         key: produk.id + '_' + (perluProduksi ? 'produksi' : 'ready'),
                         produk_id: produk.id,
@@ -1131,6 +1239,8 @@
                         harga_jual: hargaAsli,
                         harga_jual_asli: hargaAsli,
                         promo_aktif: produk.promo_aktif,
+                        promos_tersedia: promosTersedia,
+                        promos_terpilih_ids: promosTerpilihIds,
                         foto: produk.foto,
                         jumlah: jumlah,
                         stok: produk.stok,
@@ -1139,14 +1249,18 @@
                         catatan: ''
                     };
                 },
-
-                // Pastikan setiap item punya `key` unik. Dipakai saat memuat ulang
-                // item_pesanan dari server (data lama mungkin belum punya `key`).
                 normalisasiItemKeranjang(items) {
-                    return (items || []).map(item => ({
-                        ...item,
-                        key: item.key || (item.produk_id + '_' + (item.butuh_produksi ? 'produksi' : 'ready'))
-                    }));
+                    return (items || []).map(item => {
+                        const produk = this.daftarProduk.find(p => p.id === item.produk_id);
+                        const promosTersedia = item.promos_tersedia || (produk && produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0 ? produk.promos_aktif_semua : (item.promo_aktif ? [item.promo_aktif] : []));
+                        const promosTerpilihIds = item.promos_terpilih_ids || promosTersedia.map(p => p.id);
+                        return {
+                            ...item,
+                            key: item.key || (item.produk_id + '_' + (item.butuh_produksi ? 'produksi' : 'ready')),
+                            promos_tersedia: promosTersedia,
+                            promos_terpilih_ids: promosTerpilihIds
+                        };
+                    });
                 },
 
                 get semuaProdukTersaring() {
@@ -1188,50 +1302,141 @@
                 },
 
                 get activePromoInfo() {
-                    if (this.keranjang.length === 0) return { diskon: 0, promo: null, nama: '' };
+                    if (this.keranjang.length === 0) {
+                        return { diskonNominal: 0, diskonPersen: 0, namaNominal: '', namaPersen: '', persenEfektif: 0, diskon: 0, promoCount: 0 };
+                    }
 
-                    const promoMap = new Map();
+                    let totalDiskonNominal = 0;
+                    let totalDiskonPersen = 0;
+                    let basisPersen = 0;
+                    const namaNominalSet = new Set();
+                    const namaPersenSet = new Set();
+                    const produkSudahDihitung = new Set();
+
                     this.keranjang.forEach(item => {
-                        if (item.promo_aktif) {
-                            promoMap.set(item.promo_aktif.id, item.promo_aktif);
+                        if (produkSudahDihitung.has(item.produk_id)) return;
+                        produkSudahDihitung.add(item.produk_id);
+
+                        if (!item.promos_tersedia || item.promos_tersedia.length === 0 || !item.promos_terpilih_ids || item.promos_terpilih_ids.length === 0) {
+                            return;
                         }
-                    });
 
-                    if (promoMap.size === 0) return { diskon: 0, promo: null, nama: '' };
+                        const subtotalProduk = this.subtotalProduk(item.produk_id);
+                        let diskonProdukNominal = 0;
+                        let diskonProdukPersen = 0;
+                        let persenDipakaiProduk = false;
 
-                    let bestDiskon = 0;
-                    let bestPromo = null;
+                        item.promos_tersedia.forEach(promo => {
+                            if (!item.promos_terpilih_ids.includes(promo.id)) return;
 
-                    const totalSubtotal = this.subtotalGross;
+                            const minPembelian = parseFloat(promo.min_pembelian || 0);
+                            const nominalPotongan = parseFloat(promo.nominal_potongan || 0);
+                            let syaratTerpenuhi;
+                            if (minPembelian > 0) {
+                                syaratTerpenuhi = this.subtotalGross >= minPembelian || subtotalProduk >= minPembelian;
+                            } else if (promo.jenis_potongan === 'nominal') {
+                                syaratTerpenuhi = subtotalProduk >= nominalPotongan || this.subtotalGross >= nominalPotongan;
+                            } else {
+                                syaratTerpenuhi = true;
+                            }
 
-                    promoMap.forEach(promo => {
-                        const minPembelian = parseFloat(promo.min_pembelian || 0);
+                            if (!syaratTerpenuhi) return;
 
-                        const subtotalPromoItems = this.keranjang
-                            .filter(i => i.promo_aktif && i.promo_aktif.id === promo.id)
-                            .reduce((s, i) => s + (i.harga_jual_asli * i.jumlah), 0);
-
-                        if (minPembelian === 0 || totalSubtotal >= minPembelian || subtotalPromoItems >= minPembelian) {
-                            let hitungDiskon = 0;
                             if (promo.jenis_potongan === 'nominal') {
-                                hitungDiskon = parseFloat(promo.nominal_potongan || 0);
+                                diskonProdukNominal += nominalPotongan;
+                                namaNominalSet.add(promo.nama_promo);
                             } else {
                                 const persentase = parseFloat(promo.persentase || 0);
-                                hitungDiskon = (persentase / 100) * subtotalPromoItems;
+                                diskonProdukPersen += (persentase / 100) * subtotalProduk;
+                                namaPersenSet.add(promo.nama_promo);
+                                persenDipakaiProduk = true;
+                            }
+                        });
+
+                        if (diskonProdukNominal + diskonProdukPersen > subtotalProduk) {
+                            if (diskonProdukNominal >= subtotalProduk) {
+                                diskonProdukNominal = subtotalProduk;
+                                diskonProdukPersen = 0;
+                            } else {
+                                diskonProdukPersen = subtotalProduk - diskonProdukNominal;
+                            }
+                        }
+
+                        totalDiskonNominal += diskonProdukNominal;
+                        totalDiskonPersen += diskonProdukPersen;
+                        if (persenDipakaiProduk) basisPersen += subtotalProduk;
+                    });
+
+                    const persenEfektif = basisPersen > 0 ? (totalDiskonPersen / basisPersen) * 100 : 0;
+
+                    return {
+                        diskonNominal: Math.round(totalDiskonNominal),
+                        diskonPersen: Math.round(totalDiskonPersen),
+                        namaNominal: Array.from(namaNominalSet).join(', '),
+                        namaPersen: Array.from(namaPersenSet).join(', '),
+                        persenEfektif: persenEfektif,
+                        diskon: Math.round(totalDiskonNominal + totalDiskonPersen),
+                        promoCount: namaNominalSet.size + namaPersenSet.size
+                    };
+                },
+
+                bukaModalPilihPromo(item) {
+                    this.itemPromoTerpilih = item;
+                    this.modalPilihPromoTerbuka = true;
+                },
+                togglePromoItem(item, promoId) {
+                    if (!item || !item.promos_terpilih_ids) return;
+                    const idx = item.promos_terpilih_ids.indexOf(promoId);
+                    const terpilihBaru = idx > -1
+                        ? item.promos_terpilih_ids.filter(id => id !== promoId)
+                        : [...item.promos_terpilih_ids, promoId];
+                    this.keranjang
+                        .filter(i => i.produk_id === item.produk_id)
+                        .forEach(i => { i.promos_terpilih_ids = [...terpilihBaru]; });
+                },
+                pilihSemuaPromoItem(item, status) {
+                    if (!item) return;
+                    const terpilihBaru = status ? (item.promos_tersedia || []).map(p => p.id) : [];
+                    this.keranjang
+                        .filter(i => i.produk_id === item.produk_id)
+                        .forEach(i => { i.promos_terpilih_ids = [...terpilihBaru]; });
+                },
+                hitungDiskonItem(item) {
+                    if (!item || !item.promos_tersedia || !item.promos_terpilih_ids) return 0;
+                    const subtotalProduk = this.subtotalProduk(item.produk_id);
+                    let diskonNominal = 0;
+                    let diskonPersen = 0;
+                    item.promos_tersedia.forEach(promo => {
+                        if (item.promos_terpilih_ids.includes(promo.id)) {
+                            const minPembelian = parseFloat(promo.min_pembelian || 0);
+                            const nominalPotongan = parseFloat(promo.nominal_potongan || 0);
+
+                            let syaratTerpenuhi;
+                            if (minPembelian > 0) {
+                                syaratTerpenuhi = subtotalProduk >= minPembelian || this.subtotalGross >= minPembelian;
+                            } else if (promo.jenis_potongan === 'nominal') {
+                                syaratTerpenuhi = subtotalProduk >= nominalPotongan || this.subtotalGross >= nominalPotongan;
+                            } else {
+                                syaratTerpenuhi = true;
                             }
 
-                            if (hitungDiskon > bestDiskon) {
-                                bestDiskon = hitungDiskon;
-                                bestPromo = promo;
+                            if (syaratTerpenuhi) {
+                                if (promo.jenis_potongan === 'nominal') {
+                                    diskonNominal += nominalPotongan;
+                                } else {
+                                    diskonPersen += (parseFloat(promo.persentase || 0) / 100) * subtotalProduk;
+                                }
                             }
                         }
                     });
-
-                    return {
-                        diskon: Math.round(bestDiskon),
-                        promo: bestPromo,
-                        nama: bestPromo ? bestPromo.nama_promo : ''
-                    };
+                    const nominalFinal = Math.min(diskonNominal, subtotalProduk);
+                    const persenFinal = Math.min(diskonPersen, Math.max(0, subtotalProduk - nominalFinal));
+                    return Math.round(nominalFinal + persenFinal);
+                },
+                subtotalProduk(produkId) {
+                    return this.keranjang
+                        .filter(i => i.produk_id === produkId)
+                        .reduce((s, i) => s + (i.harga_jual_asli * i.jumlah), 0);
                 },
 
                 get subtotalGross() {
@@ -1247,13 +1452,112 @@
                 },
 
                 get nilaiDiskon() {
-                    const diskonManual = Math.round(this.subtotalGross * ((this.diskonPersen || 0) / 100));
+                    const diskonManual = Math.round(this.subtotalGross * ((this.parsePersen(this.diskonPersen) || 0) / 100));
                     return this.diskonPromo + diskonManual;
+                },
+                get rincianDiskonList() {
+                    if (this.keranjang.length === 0) return [];
+
+                    const promoMap = new Map();
+                    const produkSudahDihitung = new Set();
+
+                    this.keranjang.forEach(item => {
+                        if (produkSudahDihitung.has(item.produk_id)) return;
+                        produkSudahDihitung.add(item.produk_id);
+
+                        if (!item.promos_tersedia || item.promos_tersedia.length === 0 || !item.promos_terpilih_ids || item.promos_terpilih_ids.length === 0) {
+                            return;
+                        }
+
+                        const subtotalProduk = this.subtotalProduk(item.produk_id);
+                        const promoDiscounts = [];
+                        let totalNominal = 0;
+                        let totalPersen = 0;
+
+                        item.promos_tersedia.forEach(promo => {
+                            if (!item.promos_terpilih_ids.includes(promo.id)) return;
+
+                            const minPembelian = parseFloat(promo.min_pembelian || 0);
+                            const nominalPotongan = parseFloat(promo.nominal_potongan || 0);
+                            let syaratTerpenuhi;
+                            if (minPembelian > 0) {
+                                syaratTerpenuhi = subtotalProduk >= minPembelian || this.subtotalGross >= minPembelian;
+                            } else if (promo.jenis_potongan === 'nominal') {
+                                syaratTerpenuhi = subtotalProduk >= nominalPotongan || this.subtotalGross >= nominalPotongan;
+                            } else {
+                                syaratTerpenuhi = true;
+                            }
+
+                            if (!syaratTerpenuhi) return;
+
+                            let hitung = 0;
+                            if (promo.jenis_potongan === 'nominal') {
+                                hitung = nominalPotongan;
+                                totalNominal += hitung;
+                            } else {
+                                hitung = (parseFloat(promo.persentase || 0) / 100) * subtotalProduk;
+                                totalPersen += hitung;
+                            }
+
+                            promoDiscounts.push({ promo, hitung });
+                        });
+
+                        const jatahNominal = Math.min(totalNominal, subtotalProduk);
+                        const faktorNominal = totalNominal > 0 ? jatahNominal / totalNominal : 1;
+                        const sisaJatahPersen = Math.max(0, subtotalProduk - jatahNominal);
+                        const faktorPersen = (totalPersen > sisaJatahPersen && totalPersen > 0) ? sisaJatahPersen / totalPersen : 1;
+
+                        promoDiscounts.forEach(({ promo, hitung }) => {
+                            const faktor = promo.jenis_potongan === 'nominal' ? faktorNominal : faktorPersen;
+                            const diskonFinal = hitung * faktor;
+                            if (!promoMap.has(promo.id)) {
+                                promoMap.set(promo.id, {
+                                    id: promo.id,
+                                    nama: promo.nama_promo,
+                                    jenis: promo.jenis_potongan,
+                                    persentase: promo.persentase,
+                                    nilai: 0
+                                });
+                            }
+                            promoMap.get(promo.id).nilai += diskonFinal;
+                        });
+                    });
+
+                    const result = [];
+                    promoMap.forEach(promoData => {
+                        const roundedNilai = Math.round(promoData.nilai);
+                        if (roundedNilai > 0) {
+                            let labelNama = promoData.nama;
+                            if (promoData.jenis === 'persentase' && promoData.persentase) {
+                                labelNama += ' (' + this.formatPersen(promoData.persentase) + '%)';
+                            }
+                            result.push({
+                                nama: 'Diskon (' + labelNama + ')',
+                                nilai: roundedNilai
+                            });
+                        }
+                    });
+
+                    const manualPersen = this.parsePersen(this.diskonPersen);
+                    if (manualPersen > 0) {
+                        const nilaiManual = Math.round(this.subtotalGross * (manualPersen / 100));
+                        if (nilaiManual > 0) {
+                            result.push({
+                                nama: 'Diskon Tambahan (' + this.formatPersen(manualPersen) + '%)',
+                                nilai: nilaiManual
+                            });
+                        }
+                    }
+
+                    return result;
+                },
+                get diskonLabel() {
+                    return JSON.stringify(this.rincianDiskonList);
                 },
 
                 get pajak() {
                     const base = this.subtotal - this.nilaiDiskon;
-                    return Math.max(0, Math.round(base * (this.pajakPersen / 100)));
+                    return Math.max(0, Math.round(base * (this.parsePersen(this.pajakPersen) / 100)));
                 },
                 get totalTagihan() {
                     return Math.max(0, this.subtotal - this.nilaiDiskon + this.pajak);
@@ -1415,6 +1719,7 @@
                         diskon_persen: this.diskonPersen || 0,
                         nilai_diskon: this.nilaiDiskon,
                         pajak_persen: this.pajakPersen,
+                        diskon_label: this.diskonLabel,
                         pajak: this.pajak,
                         total_bayar: this.totalTagihan,
                         jumlah_diterima: 0,
@@ -1434,7 +1739,8 @@
                             item_pesanan: this.keranjang,
                             subtotal: this.subtotal,
                             pajak: this.pajak,
-                            diskon: this.diskonPersen || 0,
+                            diskon: this.nilaiDiskon,
+                            diskon_label: this.diskonLabel,
                             total: this.totalTagihan,
                             catatan: this.catatan || null
                         })
@@ -1552,6 +1858,7 @@
                         diskon_persen: this.diskonPersen || 0,
                         nilai_diskon: this.nilaiDiskon,
                         pajak_persen: this.pajakPersen,
+                        diskon_label: this.diskonLabel,
                         pajak: this.pajak,
                         total_bayar: this.totalTagihan,
                         jumlah_diterima: this.jumlahDiterimaNum,
@@ -1570,7 +1877,8 @@
                                 jumlah_diterima: this.jumlahDiterimaNum,
                                 kembalian: this.kembalianNum,
                                 metode_pembayaran: this.metodePembayaran,
-                                member_id: this.memberIdTerpilih || null
+                                member_id: this.memberIdTerpilih || null,
+                                diskon_label: this.diskonLabel
                             })
                         })
                             .then(r => r.json())
@@ -1596,6 +1904,7 @@
                                 subtotal: this.subtotal,
                                 pajak: this.pajak,
                                 diskon: this.nilaiDiskon,
+                                diskon_label: this.diskonLabel,
                                 total_bayar: this.totalTagihan,
                                 jumlah_diterima: this.jumlahDiterimaNum,
                                 kembalian: this.kembalianNum,
@@ -1649,7 +1958,7 @@
                     this.keranjang = this.normalisasiItemKeranjang(JSON.parse(JSON.stringify(pesanan.item_pesanan)));
                     this.namaPembeli = pesanan.nama_pembeli;
                     this.diskonPersen = pesanan.diskon || '';
-                    this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 5;
+                    this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? String(Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100)) : '5';
                     this.catatan = pesanan.catatan || '';
                     if (pesanan.transaksi && pesanan.transaksi.member_id) {
                         this.memberIdTerpilih = pesanan.transaksi.member_id;
@@ -1690,13 +1999,27 @@
                     this.namaPembeli = '';
                     this.catatan = '';
                     this.diskonPersen = '';
-                    this.pajakPersen = 5;
+                    this.pajakPersen = '5';
                     this.jumlahDiterima = '';
                     this.memberIdTerpilih = '';
                     this.memberTerpilih = null;
                 },
 
                 formatRupiah(v) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v); },
+
+                // Tampilkan persentase dengan desimal apa adanya (format Indonesia,
+                // pakai koma), bukan dibulatkan paksa ke bilangan bulat seperti
+                // sebelumnya (Math.round). Ini supaya badge promo di kasir tetap
+                // menunjukkan angka yang sama persis dengan yang diinput admin di
+                // form promo (mis. 12,5%), sementara kalkulasi uangnya sendiri
+                // sudah benar dari awal karena activePromoInfo() sudah pakai
+                // parseFloat(), bukan dibulatkan.
+                formatPersen(v) {
+                    const n = parseFloat(v) || 0;
+                    const dibulatkan = Math.round(n * 100) / 100; // maks. 2 desimal
+                    return dibulatkan.toString().replace('.', ',');
+                },
+
                 formatTanggal(d) { return new Date(d).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); },
                 tambahToast(pesan, tipe = 'info') { const id = this.toastIdCounter++; this.toasts.push({ id, pesan, tipe }); setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000); }
             }

@@ -200,7 +200,7 @@
         </table>
     </div>
     @empty
-    <p class="empty">Belum ada data produksi untuk periode ini.</p>
+    <p class="empty">Belum ada data produksi.</p>
     @endforelse
 
     <div class="footer">

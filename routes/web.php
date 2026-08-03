@@ -9,6 +9,7 @@ use App\Http\Controllers\KategoriProdukController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\BahanBakuController;
 use App\Http\Controllers\ProduksiController;
+use App\Http\Controllers\BundlingController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PromoController;
@@ -75,6 +76,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('produksi', ProduksiController::class)
         ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
 
+    Route::resource('produksi', ProduksiController::class)
+        ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
+
+    Route::resource('bundling', BundlingController::class)
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
+        ->middleware('permission:lihat_bundling|tambah_bundling|edit_bundling|hapus_bundling');
+
     Route::post('produksi/{produksi}/kurangi-stok', [ProduksiController::class, 'kurangiStok'])
         ->name('produksi.kurangi-stok')
         ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
@@ -100,7 +108,8 @@ Route::middleware(['auth'])->group(function () {
     // Promo Produk
     Route::middleware('permission:lihat_promo')->group(function () {
         Route::get('/promo', [PromoController::class, 'indeks'])->name('promo.index');
-        Route::get('/promo/{id}/ubah', [PromoController::class, 'ubah'])->name('promo.edit');
+        Route::get('/promo/{id}', [PromoController::class, 'lihat'])->whereNumber('id')->name('promo.show');
+        Route::get('/promo/{id}/ubah', [PromoController::class, 'ubah'])->whereNumber('id')->name('promo.edit');
     });
     Route::middleware('permission:tambah_promo')->group(function () {
         Route::get('/promo/tambah', [PromoController::class, 'tambah'])->name('promo.create');

@@ -272,16 +272,26 @@
     <!-- Receipt Card Container -->
     <div class="struk-card">
         <div class="struk-container">
+            @php
+                if (!function_exists('formatPersenStruk')) {
+                    function formatPersenStruk($v)
+                    {
+                        $n = round((float) $v, 2);
+                        // buang trailing zero, mis: 12.50 -> 12,5 ; 12.00 -> 12
+                        $n = rtrim(rtrim(number_format($n, 2, '.', ''), '0'), '.');
+                        return str_replace('.', ',', $n);
+                    }
+                }
+            @endphp
             @if ($jenis === 'pelanggan')
                 @php
                     $toko = '';
                     $alamat = 'Jl. Kemboja No.1, Kedungjaya, Kec. Kedawung, Kabupaten Cirebon';
                     $subtotal = (float) $transaksi->subtotal;
                     $diskon = (float) $transaksi->diskon;
-                    $diskonPersen = $subtotal > 0 ? round(($diskon / $subtotal) * 100) : 0;
+                    $diskonPersen = $subtotal > 0 ? ($diskon / $subtotal) * 100 : 0;
                     $pajak = (float) $transaksi->pajak;
-                    $pajakPersen = ($subtotal - $diskon) > 0 ? round(($pajak / ($subtotal - $diskon)) * 100) : 0;
-
+                    $pajakPersen = ($subtotal - $diskon) > 0 ? ($pajak / ($subtotal - $diskon)) * 100 : 0;
                     // Gabungkan item dengan nama produk yang sama supaya tidak
                     // tercetak sebagai baris terpisah (mis. akibat sebagian
                     // butuh produksi & sebagian ready stok saat transaksi dibuat).
@@ -339,16 +349,32 @@
                         <span>Subtotal</span>
                         <span>Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
                     </div>
-                    @if ($diskon > 0)
-                        <div class="flex-between">
-                            <span>Diskon ({{ $diskonPersen }}%)</span>
-                            <span>-Rp {{ number_format($diskon, 0, ',', '.') }}</span>
+                    @php
+                        $diskonItems = [];
+                        if (!empty($transaksi->diskon_label)) {
+                            $decoded = json_decode($transaksi->diskon_label, true);
+                            if (is_array($decoded)) {
+                                $diskonItems = $decoded;
+                            }
+                        }
+                    @endphp
+                    @if (!empty($diskonItems))
+                        @foreach ($diskonItems as $itemDiskon)
+                            <div class="flex-between" style="align-items: flex-start; gap: 6px; color: #000000; margin-bottom: 2px;">
+                                <span style="flex: 1; min-width: 0; word-break: break-word;">{{ $itemDiskon['nama'] }}</span>
+                                <span style="white-space: nowrap; flex-shrink: 0; font-weight: 500;">-Rp {{ number_format($itemDiskon['nilai'], 0, ',', '.') }}</span>
+                            </div>
+                        @endforeach
+                    @elseif ($diskon > 0)
+                        <div class="flex-between" style="align-items: flex-start; gap: 6px; color: #000000; margin-bottom: 2px;">
+                            <span style="flex: 1; min-width: 0; word-break: break-word;">Diskon ({{ $transaksi->diskon_label ?? formatPersenStruk($diskonPersen) }})</span>
+                            <span style="white-space: nowrap; flex-shrink: 0; font-weight: 500;">-Rp {{ number_format($diskon, 0, ',', '.') }}</span>
                         </div>
                     @endif
                     @if ($pajak > 0)
                         <div class="flex-between">
-                            <span>Pajak ({{ $pajakPersen }}%)</span>
-                            <span>Rp {{ number_format($pajak, 0, ',', '.') }}</span>
+                            <span>Pajak ({{ formatPersenStruk($pajakPersen) }}%)</span> <span>Rp
+                                {{ number_format($pajak, 0, ',', '.') }}</span>
                         </div>
                     @endif
                     <div class="flex-between" style="font-weight:bold; font-size:14px; margin-top:6px;">
@@ -452,11 +478,9 @@
             $alamat = "Jl. Kemboja No.1, Kedungjaya, Cirebon";
             $subtotal = (float) $transaksi->subtotal;
             $diskon = (float) $transaksi->diskon;
-            $diskonPersen = $subtotal > 0 ? round(($diskon / $subtotal) * 100) : 0;
+            $diskonPersen = $subtotal > 0 ? ($diskon / $subtotal) * 100 : 0;
             $pajak = (float) $transaksi->pajak;
-            $pajakPersen = ($subtotal - $diskon) > 0 ? round(($pajak / ($subtotal - $diskon)) * 100) : 0;
-
-            // Sama seperti versi HTML di atas: gabungkan item dengan nama
+            $pajakPersen = ($subtotal - $diskon) > 0 ? ($pajak / ($subtotal - $diskon)) * 100 : 0;            // Sama seperti versi HTML di atas: gabungkan item dengan nama
             // produk yang sama supaya tidak tercetak sebagai baris terpisah.
             $itemsPelangganTeks = $transaksi->detailTransaksi
                 ->groupBy('nama_produk')
@@ -498,11 +522,16 @@
             $struk .= $dividerDashed;
             $struk .= padLineStruk("Subtotal", "Rp " . number_format($subtotal, 0, ',', '.'));
 
-            if ($diskon > 0) {
-                $struk .= padLineStruk("Diskon (" . $diskonPersen . "%)", "-Rp " . number_format($diskon, 0, ',', '.'));
+            if (!empty($diskonItems)) {
+                foreach ($diskonItems as $itemDiskon) {
+                    $struk .= padLineStruk($itemDiskon['nama'], "-Rp " . number_format($itemDiskon['nilai'], 0, ',', '.'));
+                }
+            } elseif ($diskon > 0) {
+                $labelDiskon = $transaksi->diskon_label ?? formatPersenStruk($diskonPersen);
+                $struk .= padLineStruk("Diskon (" . $labelDiskon . ")", "-Rp " . number_format($diskon, 0, ',', '.'));
             }
             if ($pajak > 0) {
-                $struk .= padLineStruk("Pajak (" . $pajakPersen . "%)", "Rp " . number_format($pajak, 0, ',', '.'));
+                $struk .= padLineStruk("Pajak (" . formatPersenStruk($pajakPersen) . "%)", "Rp " . number_format($pajak, 0, ',', '.'));
             }
 
             $struk .= $dividerDashed;

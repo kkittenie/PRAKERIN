@@ -64,7 +64,7 @@ class TransaksiKasirController extends Controller
                 ->get();
 
             $daftarKategori = KategoriProduk::all();
-            
+
             $daftarDitahan = PesananDitahan::with('transaksi')->orderBy('created_at', 'desc')->get();
 
             $daftarMember = \App\Models\Member::orderBy('nama')->get();
@@ -99,6 +99,7 @@ class TransaksiKasirController extends Controller
                 'subtotal' => 'required|numeric',
                 'pajak' => 'required|numeric',
                 'diskon' => 'required|numeric',
+                'diskon_label' => 'nullable|string|max:255',
                 'total' => 'required|numeric',
                 'catatan' => 'nullable|string',
             ]);
@@ -116,6 +117,7 @@ class TransaksiKasirController extends Controller
                 'subtotal' => $validated['subtotal'],
                 'pajak' => $validated['pajak'],
                 'diskon' => $validated['diskon'],
+                'diskon_label' => $request->diskon_label,
                 'total_bayar' => $validated['total'],
                 'jumlah_diterima' => 0,
                 'kembalian' => 0,
@@ -163,6 +165,7 @@ class TransaksiKasirController extends Controller
                 'subtotal' => $validated['subtotal'],
                 'pajak' => $validated['pajak'],
                 'diskon' => $validated['diskon'],
+                'diskon_label' => $request->diskon_label,
                 'total' => $validated['total'],
                 'catatan' => $validated['catatan'],
                 'transaksi_id' => $transaksi->id,
@@ -260,7 +263,7 @@ class TransaksiKasirController extends Controller
                     'nama_pembeli' => $pesanan->nama_pembeli,
                 ])
                 ->log('memulihkan pesanan ditahan');
-            
+
             $pesanan->delete();
 
             DB::commit();
@@ -367,6 +370,7 @@ class TransaksiKasirController extends Controller
                 'kembalian' => 'required|numeric',
                 'metode_pembayaran' => 'required|string',
                 'member_id' => 'nullable|exists:members,id',
+                'diskon_label' => 'nullable|string|max:255',
             ]);
 
             $transaksi = $pesanan->transaksi;
@@ -378,6 +382,7 @@ class TransaksiKasirController extends Controller
                 'metode_pembayaran' => $validated['metode_pembayaran'],
                 'member_id' => $validated['member_id'] ?? $transaksi->member_id,
                 'status_pembayaran' => 'Lunas',
+                'diskon_label' => $validated['diskon_label'] ?? $transaksi->diskon_label,
             ]);
 
             // Hitung poin member
@@ -438,6 +443,7 @@ class TransaksiKasirController extends Controller
                 'subtotal' => 'required|numeric',
                 'pajak' => 'required|numeric',
                 'diskon' => 'required|numeric',
+                'diskon_label' => 'nullable|string|max:255',
                 'total_bayar' => 'required|numeric',
                 'jumlah_diterima' => 'required|numeric',
                 'kembalian' => 'required|numeric',
@@ -454,6 +460,7 @@ class TransaksiKasirController extends Controller
                 'subtotal' => $validated['subtotal'],
                 'pajak' => $validated['pajak'],
                 'diskon' => $validated['diskon'],
+                'diskon_label' => $request->diskon_label,
                 'total_bayar' => $validated['total_bayar'],
                 'jumlah_diterima' => $validated['jumlah_diterima'],
                 'kembalian' => $validated['kembalian'],
