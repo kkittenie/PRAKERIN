@@ -242,8 +242,11 @@ class ProduksiController extends Controller
                     if ($produk->stok < $kebutuhanProduksi) {
                         throw new Exception("Stok {$produk->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
                     }
-
                     $produk->decrement('stok', $kebutuhanProduksi);
+                }
+
+                 if ($produk->stok > 0 && $produk->status_ketersediaan === 'perlu_diproduksi') {
+                    $produk->update(['status_ketersediaan' => 'stok_ada']);
                 }
             });
 
