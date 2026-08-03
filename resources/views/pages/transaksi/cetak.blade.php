@@ -292,9 +292,6 @@
                     $diskonPersen = $subtotal > 0 ? ($diskon / $subtotal) * 100 : 0;
                     $pajak = (float) $transaksi->pajak;
                     $pajakPersen = ($subtotal - $diskon) > 0 ? ($pajak / ($subtotal - $diskon)) * 100 : 0;
-                    // Gabungkan item dengan nama produk yang sama supaya tidak
-                    // tercetak sebagai baris terpisah (mis. akibat sebagian
-                    // butuh produksi & sebagian ready stok saat transaksi dibuat).
                     $itemsPelanggan = $transaksi->detailTransaksi
                         ->groupBy('nama_produk')
                         ->map(function ($group) {
@@ -305,6 +302,7 @@
                                 'jumlah' => $group->sum('jumlah'),
                                 'subtotal' => $group->sum('subtotal'),
                                 'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
+                                'is_bundling' => !is_null($first->bundling_id),
                             ];
                         })
                         ->values();
@@ -360,15 +358,20 @@
                     @endphp
                     @if (!empty($diskonItems))
                         @foreach ($diskonItems as $itemDiskon)
-                            <div class="flex-between" style="align-items: flex-start; gap: 6px; color: #000000; margin-bottom: 2px;">
+                            <div class="flex-between"
+                                style="align-items: flex-start; gap: 6px; color: #000000; margin-bottom: 2px;">
                                 <span style="flex: 1; min-width: 0; word-break: break-word;">{{ $itemDiskon['nama'] }}</span>
-                                <span style="white-space: nowrap; flex-shrink: 0; font-weight: 500;">-Rp {{ number_format($itemDiskon['nilai'], 0, ',', '.') }}</span>
+                                <span style="white-space: nowrap; flex-shrink: 0; font-weight: 500;">-Rp
+                                    {{ number_format($itemDiskon['nilai'], 0, ',', '.') }}</span>
                             </div>
                         @endforeach
                     @elseif ($diskon > 0)
-                        <div class="flex-between" style="align-items: flex-start; gap: 6px; color: #000000; margin-bottom: 2px;">
-                            <span style="flex: 1; min-width: 0; word-break: break-word;">Diskon ({{ $transaksi->diskon_label ?? formatPersenStruk($diskonPersen) }})</span>
-                            <span style="white-space: nowrap; flex-shrink: 0; font-weight: 500;">-Rp {{ number_format($diskon, 0, ',', '.') }}</span>
+                        <div class="flex-between"
+                            style="align-items: flex-start; gap: 6px; color: #000000; margin-bottom: 2px;">
+                            <span style="flex: 1; min-width: 0; word-break: break-word;">Diskon
+                                ({{ $transaksi->diskon_label ?? formatPersenStruk($diskonPersen) }})</span>
+                            <span style="white-space: nowrap; flex-shrink: 0; font-weight: 500;">-Rp
+                                {{ number_format($diskon, 0, ',', '.') }}</span>
                         </div>
                     @endif
                     @if ($pajak > 0)
@@ -492,6 +495,7 @@
                         'jumlah' => $group->sum('jumlah'),
                         'subtotal' => $group->sum('subtotal'),
                         'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
+                        'is_bundling' => !is_null($first->bundling_id),
                     ];
                 })
                 ->values();

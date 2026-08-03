@@ -13,6 +13,8 @@ class Bundling extends Model
         'nama_bundling',
         'harga',
         'deskripsi',
+        'status_aktif',
+        'gambar',
     ];
 
     public function items()

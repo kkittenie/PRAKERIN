@@ -134,8 +134,7 @@
                             </tr>
 
                             <!-- Expandable child row (mobile) -->
-                            <tr x-show="open" x-cloak x-transition class="bg-amber-50/50 dark:bg-amber-950/30 text-xs">
-                                <td colspan="9" class="p-4">
+                             <tr x-show="open" x-cloak x-transition class="sm:hidden bg-amber-50/50 dark:bg-amber-950/30 text-xs">                                <td colspan="9" class="p-4">
                                     <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300">
                                         <div>
                                             <span class="text-gray-400 block text-[11px]">Status</span>

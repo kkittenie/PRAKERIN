@@ -8,7 +8,7 @@
 
 <x-common.component-card title="Informasi Bundling">
 
-<form action="{{ route('bundling.store') }}" method="POST">
+<form action="{{ route('bundling.store') }}" method="POST" enctype="multipart/form-data">
 @csrf
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -61,21 +61,64 @@
         @enderror
     </div>
 
-    {{-- Deskripsi --}}
-    <div class="md:col-span-2">
+    {{-- Status Bundling --}}
+    <div>
         <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
-            Deskripsi
+            Status Bundling
         </label>
-
-        <textarea
-            name="deskripsi"
-            rows="3"
-            class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">{{ old('deskripsi') }}</textarea>
-
-        @error('deskripsi')
+        <label class="flex items-center gap-3 h-12 cursor-pointer">
+            <input type="hidden" name="status_aktif" value="0">
+            <input
+                type="checkbox"
+                name="status_aktif"
+                value="1"
+                class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                {{ old('status_aktif', '1') == '1' ? 'checked' : '' }}>
+            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Bundling Aktif</span>
+        </label>
+        @error('status_aktif')
             <small class="text-red-500">{{ $message }}</small>
         @enderror
     </div>
+
+    {{-- Deskripsi --}}
+<div>
+    <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+        Deskripsi
+    </label>
+
+    <textarea
+        name="deskripsi"
+        rows="3"
+        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">{{ old('deskripsi') }}</textarea>
+
+    @error('deskripsi')
+        <small class="text-red-500">{{ $message }}</small>
+    @enderror
+</div>
+
+{{-- Gambar Bundling --}}
+<div>
+    <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+        Gambar Bundling
+    </label>
+
+    <div class="flex items-center gap-4">
+        <img id="preview-gambar" src="https://via.placeholder.com/96x96?text=No+Image"
+             class="w-24 h-24 rounded-lg object-cover border border-gray-200 dark:border-gray-700">
+
+        <input
+            type="file"
+            name="gambar"
+            accept="image/*"
+            onchange="document.getElementById('preview-gambar').src = URL.createObjectURL(this.files[0])"
+            class="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-500 file:px-4 file:py-2 file:text-white hover:file:bg-brand-600">
+    </div>
+
+    @error('gambar')
+        <small class="text-red-500">{{ $message }}</small>
+    @enderror
+</div>
 
 </div>
 
