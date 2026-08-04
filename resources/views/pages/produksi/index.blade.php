@@ -134,7 +134,7 @@
                     ? $tanggalRef->format('Y-m')
                     : null)),
     ]) }}" class="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition">
-                            📄 Cetak PDF
+                            Cetak PDF
                         </a>
 
                         <a href="{{ route('produksi.excel', [
@@ -143,7 +143,7 @@
         'search' => request('search'),
         'tanggal_ref' => $periode === 'semua' ? null : (request('tanggal_ref') ?? $tanggalRef->toDateString()),
     ]) }}" class="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition">
-                            📊 Export CSV
+                            Export CSV
                         </a>
                     </div>
 
