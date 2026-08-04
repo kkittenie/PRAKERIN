@@ -32,13 +32,6 @@
         @endcan
     </div>
 
-    @if (session('success'))
-        <div class="mx-6 mt-4 rounded-lg bg-green-50 dark:bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">{{ session('success') }}</div>
-    @endif
-    @if (session('error'))
-        <div class="mx-6 mt-4 rounded-lg bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">{{ session('error') }}</div>
-    @endif
-
     <!-- Unified Responsive Table -->
     <div class="overflow-x-auto p-6">
         <table class="w-full text-left text-sm">

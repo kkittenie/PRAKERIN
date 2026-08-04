@@ -278,7 +278,7 @@ class TransaksiKasirController extends Controller
                     'kode_transaksi' => $kodeTransaksi,
                     'nama_pembeli' => $pesanan->nama_pembeli,
                 ])
-                ->log('menahan pesanan (kredit)');
+                ->log('menahan pesanan (bayar nanti)');
 
             return response()->json([
                 'status' => 'success',
@@ -385,13 +385,10 @@ class TransaksiKasirController extends Controller
         try {
             $pesanan = PesananDitahan::with('transaksi')->findOrFail($id);
 
-            // Kembalikan stok jika ada transaksi terkait, HANYA untuk baris
-            // yang bukan "Perlu Diproduksi".
             if ($pesanan->transaksi) {
                 $detailTransaksi = DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->get();
                 $this->kembalikanStokDariDetail($detailTransaksi);
 
-                // Hapus detail transaksi dan transaksi
                 DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->delete();
                 $pesanan->transaksi->delete();
             }
@@ -429,14 +426,6 @@ class TransaksiKasirController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * Lunaskan pesanan yang ditahan (proses pembayaran kredit).
-     *
-     * Catatan: stok sudah dikurangi (untuk item yang bukan "Perlu
-     * Diproduksi") saat pesanan pertama kali ditahan di simpanDitahan(),
-     * jadi di sini tidak ada perubahan stok lagi.
-     */
     public function lunaskanDitahan(Request $request, $id)
     {
         DB::beginTransaction();
@@ -489,7 +478,7 @@ class TransaksiKasirController extends Controller
                     'kode_transaksi' => $transaksi->kode_transaksi,
                     'nama_pembeli' => $transaksi->nama_pembeli,
                 ])
-                ->log('melunaskan pesanan kredit');
+                ->log('melunaskan pesanan');
 
             return response()->json([
                 'status' => 'success',
@@ -506,7 +495,7 @@ class TransaksiKasirController extends Controller
                     'error' => $e->getMessage(),
                     'request_data' => $request->all(),
                 ])
-                ->log('gagal melunaskan pesanan kredit');
+                ->log('gagal melunaskan pesanan');
             return response()->json([
                 'status' => 'error',
                 'pesan' => 'Gagal melunaskan pesanan: ' . $e->getMessage()

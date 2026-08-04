@@ -12,7 +12,8 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- Alpine.js -->
-    {{-- <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
+    {{--
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
 
     <!-- Theme Store -->
     <script>
@@ -76,7 +77,7 @@
 
     <!-- Apply dark mode immediately to prevent flash -->
     <script>
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('theme');
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             const theme = savedTheme || systemTheme;
@@ -89,12 +90,10 @@
     </script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
 </head>
 
-<body
-    x-data="{ 'loaded': true}"
-    x-init="$store.sidebar.isExpanded = window.innerWidth >= 1280;
+<body x-data="{ 'loaded': true}" x-init="$store.sidebar.isExpanded = window.innerWidth >= 1280;
     const checkMobile = () => {
         if (window.innerWidth < 1280) {
             $store.sidebar.setMobileOpen(false);
@@ -107,15 +106,14 @@
     window.addEventListener('resize', checkMobile);">
 
     {{-- preloader --}}
-    <x-common.preloader/>
+    <x-common.preloader />
     {{-- preloader end --}}
 
     <div class="min-h-screen xl:flex">
         @include('layouts.backdrop')
         @include('layouts.sidebar')
 
-        <div class="flex-1 min-w-0 transition-all duration-300 ease-in-out"
-            :class="{
+        <div class="flex-1 min-w-0 transition-all duration-300 ease-in-out" :class="{
                 'xl:ml-[290px]': $store.sidebar.isExpanded || $store.sidebar.isHovered,
                 'xl:ml-[90px]': !$store.sidebar.isExpanded && !$store.sidebar.isHovered,
                 'ml-0': $store.sidebar.isMobileOpen
@@ -131,33 +129,19 @@
     </div>
 
     @if (session('success') || session('error'))
-        <!-- Global Toast Alert -->
-        <div id="global-toast" class="fixed top-5 right-5 z-99999 transform transition-all duration-300 translate-y-4 opacity-0 pointer-events-none">
-            <div class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] pointer-events-auto {{ session('success') ? 'bg-green-600' : 'bg-red-600' }}">
+        <div x-data="{ show: false }" x-init="
+                show = true;
+                setTimeout(() => show = false, 3000);
+            " x-show="show" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="translate-y-4 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
+            x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-y-0 opacity-100"
+            x-transition:leave-end="translate-y-4 opacity-0" class="fixed top-5 right-5 z-99999">
+            <div
+                class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] {{ session('success') ? 'bg-green-600' : 'bg-red-600' }}">
                 <span class="font-semibold text-lg">{{ session('success') ? '✓' : '⚠' }}</span>
                 <span class="text-sm">{{ session('success') ?? session('error') }}</span>
             </div>
         </div>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const toast = document.getElementById('global-toast');
-                if (toast) {
-                    // Slide in
-                    setTimeout(() => {
-                        toast.classList.remove('translate-y-4', 'opacity-0');
-                        toast.classList.add('translate-y-0', 'opacity-100');
-                    }, 100);
-                    // Slide out and remove
-                    setTimeout(() => {
-                        toast.classList.remove('translate-y-0', 'opacity-100');
-                        toast.classList.add('translate-y-4', 'opacity-0');
-                        setTimeout(() => {
-                            toast.remove();
-                        }, 300);
-                    }, 3500);
-                }
-            });
-        </script>
     @endif
 
 </body>

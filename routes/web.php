@@ -58,7 +58,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:lihat_kategori_produk|tambah_kategori_produk|edit_kategori_produk|hapus_kategori_produk');
 
     Route::patch('/produk/{produk}/toggle-status', [ProdukController::class, 'toggleStatus'])->name('produk.toggle-status');
-    
+
     Route::resource('produk', ProdukController::class)
         ->middleware('permission:lihat_produk|tambah_produk|edit_produk|hapus_produk');
 
@@ -78,13 +78,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('produksi', ProduksiController::class)
         ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
 
-    Route::resource('produksi', ProduksiController::class)
-        ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
-
     Route::patch('/bundling/{bundling}/toggle-status', [BundlingController::class, 'toggleStatus'])
-        ->name('bundling.toggle-status');
+        ->name('bundling.toggle-status')
+        ->middleware('permission:edit_bundling');
 
-    Route::resource('bundling', BundlingController::class);
     Route::resource('bundling', BundlingController::class)
         ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
         ->middleware('permission:lihat_bundling|tambah_bundling|edit_bundling|hapus_bundling');
