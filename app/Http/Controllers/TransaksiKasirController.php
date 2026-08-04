@@ -457,11 +457,14 @@ class TransaksiKasirController extends Controller
             ]);
 
             // Hitung poin member
-            if (!empty($validated['member_id']) && $transaksi->total_bayar >= 100000) {
-                $member = \App\Models\Member::find($validated['member_id']);
-                if ($member) {
-                    $poinDiperoleh = floor($transaksi->total_bayar / 100000) * 100;
-                    $member->increment('poin', (int) $poinDiperoleh);
+            if (!empty($validated['member_id'])) {
+                $nominalUntukPoin = $transaksi->subtotal + $transaksi->pajak;
+                if ($nominalUntukPoin >= 100000) {
+                    $member = \App\Models\Member::find($validated['member_id']);
+                    if ($member) {
+                        $poinDiperoleh = floor($nominalUntukPoin / 100000) * 100;
+                        $member->increment('poin', (int) $poinDiperoleh);
+                    }
                 }
             }
 
@@ -544,8 +547,9 @@ class TransaksiKasirController extends Controller
                 $pengaturan = PengaturanMember::where('status_aktif', true)->first();
 
                 if ($pengaturan) {
+                    $nominalUntukPoin = $transaksi->subtotal + $transaksi->pajak;
                     $kelipatan = floor(
-                        $transaksi->total_bayar / $pengaturan->minimal_belanja
+                        $nominalUntukPoin / $pengaturan->minimal_belanja
                     );
                     $poin = $kelipatan * $pengaturan->poin;
                     if ($poin > 0) {
