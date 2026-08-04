@@ -23,8 +23,8 @@ class UpdateStatusProduksi
     {
         $produksi = $event->produksi;
 
-        if ($produksi->kadaluarsa <= now()) {
-            $produksi->update(['status' => 'aktif']);
+        if (! $produksi->is_kadaluarsa) {
+            $produksi->update(['status' => 'belum kadaluwarsa']);
         }
     }
 }

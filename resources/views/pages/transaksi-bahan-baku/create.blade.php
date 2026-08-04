@@ -97,30 +97,60 @@
 
 
                     {{-- Harga Satuan --}}
-                    <div>
+                    <div x-data="{
+                hargaSatuanDisplay: '{{ old('harga_satuan') ? number_format(old('harga_satuan'), 0, ',', '.') : '' }}',
+                getRawNumber(val) {
+                    return (val || '').toString().replace(/\D/g, '') || '0';
+                },
+                handleRupiahInput(event, prop) {
+                    const input = event.target;
+                    const oldValue = input.value;
+                    const cursorPos = input.selectionStart;
+                    const digitsBeforeCursor = oldValue.slice(0, cursorPos).replace(/\D/g, '').length;
+
+                    const rawDigits = oldValue.replace(/\D/g, '');
+                    const formatted = rawDigits ? new Intl.NumberFormat('id-ID').format(rawDigits) : '';
+
+                    this[prop] = formatted;
+
+                    this.$nextTick(() => {
+                        let newPos = formatted.length;
+                        let count = 0;
+                        for (let i = 0; i < formatted.length; i++) {
+                            if (/\d/.test(formatted[i])) {
+                                count++;
+                                if (count === digitsBeforeCursor) {
+                                    newPos = i + 1;
+                                    break;
+                                }
+                            }
+                        }
+                        if (digitsBeforeCursor === 0) newPos = 0;
+                        input.setSelectionRange(newPos, newPos);
+                        if (window.hitungTotal) window.hitungTotal();
+                    });
+                }
+            }">
 
                         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-
                             Harga Satuan
-
                             <span class="text-red-500">*</span>
-
                         </label>
 
-                        <input type="number" name="harga_satuan" step="0.01" min="0" value="{{ old('harga_satuan') }}"
-                            required
-                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                        <div class="relative">
+                            <span class="absolute left-4 top-3 text-gray-500 font-bold text-sm">Rp</span>
+                            <input type="text" inputmode="numeric" autocomplete="off" x-model="hargaSatuanDisplay"
+                                @input="handleRupiahInput($event, 'hargaSatuanDisplay')" placeholder="5.000"
+                                class="h-12 w-full rounded-lg border border-gray-300 bg-white pl-12 pr-4 py-3 text-gray-900 font-semibold dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                required>
+                            <input type="hidden" name="harga_satuan" :value="getRawNumber(hargaSatuanDisplay)">
+                        </div>
 
                         @error('harga_satuan')
-
-                            <p class="mt-1 text-sm text-red-500">
-                                {{ $message }}
-                            </p>
-
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                         @enderror
 
                     </div>
-
 
                     {{-- Supplier --}}
                     <div>
@@ -249,6 +279,24 @@
                 'Rp ' + total.toLocaleString('id-ID');
 
         }
+        function hitungTotal() {
+
+            const jumlah =
+                parseFloat(inputJumlah.value) || 0;
+
+            const harga =
+                parseFloat(inputHarga.value) || 0;
+
+            const total =
+                jumlah * harga;
+
+
+            totalHarga.textContent =
+                'Rp ' + total.toLocaleString('id-ID');
+
+        }
+
+        window.hitungTotal = hitungTotal; 
 
         const bahanBakuSelect = document.getElementById('bahanBakuSelect');
         const satuanJumlah = document.getElementById('satuanJumlah');
@@ -290,23 +338,23 @@
 
             if (hasil.length === 0) {
                 hasilSearchBahan.innerHTML = `
-                    <div class="p-3 text-sm text-gray-500">
-                        Bahan baku tidak ditemukan
-                    </div>
-                `;
+                            <div class="p-3 text-sm text-gray-500">
+                                Bahan baku tidak ditemukan
+                            </div>
+                        `;
             } else {
                 hasil.forEach(function (bahan) {
                     const item = document.createElement('button');
                     item.type = 'button';
                     item.className = 'block w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700';
                     item.innerHTML = `
-                        <div class="font-medium text-gray-800 dark:text-white">
-                            ${bahan.nama_bahan}
-                        </div>
-                        <div class="text-xs text-gray-500">
-                            ${bahan.satuan ? bahan.satuan.nama : '-'}
-                        </div>
-                    `;
+                                <div class="font-medium text-gray-800 dark:text-white">
+                                    ${bahan.nama_bahan}
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    ${bahan.satuan ? bahan.satuan.nama : '-'}
+                                </div>
+                            `;
 
                     item.addEventListener('click', function () {
                         pilihBahanBaku(bahan);

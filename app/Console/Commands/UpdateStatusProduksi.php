@@ -28,13 +28,15 @@ class UpdateStatusProduksi extends Command
      */
     public function handle()
     {
-        $now = Carbon::now();
-        Produksi::all()->each(function ($produksi) use ($now) {
-            if ($produksi->kadaluarsa <= $now) {
-                $produksi->status = 'kadaluarsa';
-                $produksi->save();
-            }
-        });
+        Produksi::where('status', '!=', 'kadaluarsa')
+            ->get()
+            ->each(function ($produksi) {
+                if ($produksi->is_kadaluarsa) {
+                    $produksi->status = 'kadaluarsa';
+                    $produksi->save();
+                }
+            });
+
         $this->info('Status produksi telah diperbarui');
         return Command::SUCCESS;
     }

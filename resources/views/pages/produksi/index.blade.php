@@ -120,8 +120,9 @@
                     @endif
                 </span>
 
-                <div class="flex flex-wrap items-center gap-2">
-                    <a href="{{ route('produksi.pdf', [
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <a href="{{ route('produksi.pdf', [
         'periode' => $periode,
         'status' => $status,
         'search' => request('search'),
@@ -132,21 +133,22 @@
                 : ($periode == 'bulanan'
                     ? $tanggalRef->format('Y-m')
                     : null)),
-    ]) }}" class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition">
-                        📄 Cetak PDF
-                    </a>
+    ]) }}" class="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition">
+                            📄 Cetak PDF
+                        </a>
 
-                    <a href="{{ route('produksi.excel', [
+                        <a href="{{ route('produksi.excel', [
         'periode' => $periode,
         'status' => $status,
         'search' => request('search'),
         'tanggal_ref' => $periode === 'semua' ? null : (request('tanggal_ref') ?? $tanggalRef->toDateString()),
-    ]) }}" class="inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition">
-                        📊 Export CSV
-                    </a>
+    ]) }}" class="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition">
+                            📊 Export CSV
+                        </a>
+                    </div>
 
                     <a href="{{ route('produksi.create') }}"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white px-5 py-2.5 font-semibold text-sm transition shadow-xs">
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white px-5 py-2.5 font-semibold text-sm transition shadow-xs">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -210,15 +212,17 @@
                                     {{ $item->produk->nama_produk }}
                                     @if($item->perlu_tindakan)
 
-                                    <span class="inline-flex items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400">
-                                        Kadaluarsa · sisa {{ $item->sisa_belum_disesuaikan }} pcs
-                                    </span>
+                                        <span
+                                            class="inline-flex items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400">
+                                            Kadaluarsa · sisa {{ $item->sisa_belum_disesuaikan }} pcs
+                                        </span>
 
                                     @elseif($item->is_kadaluarsa)
 
-                                    <span class="inline-flex items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400">
-                                        Kadaluarsa
-                                    </span>
+                                        <span
+                                            class="inline-flex items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400">
+                                            Kadaluarsa
+                                        </span>
 
                                     @endif
                                     <div class="md:hidden text-[11px] text-gray-500 font-normal mt-0.5">
@@ -271,7 +275,7 @@
                                                     disesuaikan)</span>
                                             @else
                                                 <span class="font-semibold text-gray-600 dark:text-gray-400">
-                                                    {{ ucfirst($item->status ?? '-') }}
+                                                    {{ $item->status ? ucwords($item->status) : '-' }}
                                                 </span>
 
                                             @endif
@@ -356,7 +360,7 @@
 
         setInterval(() => {
             location.reload();
-        }, 60000); // Refresh setiap 60 detik (60000 ms)
+        }, 30000); // Refresh setiap 30 detik (30000 ms)
     </script>
 
 @endsection

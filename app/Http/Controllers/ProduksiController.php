@@ -212,7 +212,7 @@ class ProduksiController extends Controller
                     'kadaluarsa_tipe' => $request->kadaluarsa_tipe,
                     'kadaluarsa_tanggal' => $request->kadaluarsa_tipe === 'tanggal' ? $request->kadaluarsa_tanggal : null,
                     'kadaluarsa_jam' => $request->kadaluarsa_tipe === 'jam' ? $request->kadaluarsa_jam : null,
-                    'status' => 'aktif',
+                    'status' => 'belum kadaluwarsa',
                 ]);
 
                 foreach ($request->bahan_baku_id as $i => $id) {
