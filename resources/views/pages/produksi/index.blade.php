@@ -223,9 +223,17 @@
                                 <td class="px-4 sm:px-6 py-3.5 font-medium text-gray-800 dark:text-white">
                                     {{ $item->produk->nama_produk }}
                                     @if($item->perlu_tindakan)
-                                        <span
-                                            class="inline-flex items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400">Kadaluarsa
-                                            · sisa {{ $item->sisa_belum_disesuaikan }} pcs</span>
+
+                                    <span class="inline-flex items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400">
+                                        Kadaluarsa · sisa {{ $item->sisa_belum_disesuaikan }} pcs
+                                    </span>
+
+                                    @elseif($item->is_kadaluarsa)
+
+                                    <span class="inline-flex items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400">
+                                        Kadaluarsa
+                                    </span>
+
                                     @endif
                                     <div class="md:hidden text-[11px] text-gray-500 font-normal mt-0.5">
                                         {{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}

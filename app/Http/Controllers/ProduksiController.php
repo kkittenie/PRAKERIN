@@ -124,9 +124,11 @@ class ProduksiController extends Controller
             ->paginate(10);
 
         $produksiKadaluarsa = Produksi::with('produk')
-            ->whereColumn('jumlah_disesuaikan', '<', 'jumlah_hasil')
             ->get()
-            ->filter(fn($item) => $item->is_kadaluarsa);
+            ->filter(function ($item) {
+                return $item->is_kadaluarsa
+                    && $item->sisa_belum_disesuaikan > 0;
+            });
 
         return view(
             'pages.produksi.index',

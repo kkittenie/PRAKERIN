@@ -63,9 +63,14 @@ class Produksi extends Model
         return false;
     }
 
+    public function getJumlahEfektifAttribute(): int
+    {
+        return max(0, $this->jumlah_hasil - (int) $this->kebutuhan_produksi);
+    }
+
     public function getSisaBelumDisesuaikanAttribute(): int
     {
-        return max(0, $this->jumlah_hasil - $this->jumlah_disesuaikan);
+        return max(0, $this->jumlah_efektif - $this->jumlah_disesuaikan);
     }
 
     public function getPerluTindakanAttribute(): bool

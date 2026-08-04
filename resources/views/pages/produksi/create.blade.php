@@ -131,7 +131,7 @@
 
 <h4 class="font-semibold text-lg mb-4 text-gray-850 dark:text-white">
 
-Pengambilan Bahan Baku
+Pengambilan Bahan Baku <span class="text-red-500">*</span>
 
 </h4>
 
