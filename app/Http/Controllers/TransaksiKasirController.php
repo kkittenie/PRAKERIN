@@ -459,12 +459,20 @@ class TransaksiKasirController extends Controller
             // Hitung poin member
             if (!empty($validated['member_id'])) {
                 $nominalUntukPoin = $transaksi->subtotal + $transaksi->pajak;
-                if ($nominalUntukPoin >= 100000) {
-                    $member = \App\Models\Member::find($validated['member_id']);
-                    if ($member) {
+                $member = \App\Models\Member::find($validated['member_id']);
+                if ($member) {
+                    $poinSebelum = $member->poin;
+                    $poinDiperoleh = 0;
+                    if ($nominalUntukPoin >= 100000) {
                         $poinDiperoleh = floor($nominalUntukPoin / 100000) * 100;
-                        $member->increment('poin', (int) $poinDiperoleh);
+                        if ($poinDiperoleh > 0) {
+                            $member->increment('poin', (int) $poinDiperoleh);
+                        }
                     }
+                    $transaksi->update([
+                        'poin_sebelum' => $poinSebelum,
+                        'poin_didapat' => (int) $poinDiperoleh,
+                    ]);
                 }
             }
 
@@ -552,11 +560,17 @@ class TransaksiKasirController extends Controller
                         $nominalUntukPoin / $pengaturan->minimal_belanja
                     );
                     $poin = $kelipatan * $pengaturan->poin;
-                    if ($poin > 0) {
-                        $member = Member::find($transaksi->member_id);
-                        if ($member) {
+
+                    $member = Member::find($transaksi->member_id);
+                    if ($member) {
+                        $poinSebelum = $member->poin;
+                        if ($poin > 0) {
                             $member->increment('poin', $poin);
                         }
+                        $transaksi->update([
+                            'poin_sebelum' => $poinSebelum,
+                            'poin_didapat' => (int) $poin,
+                        ]);
                     }
                 }
             }

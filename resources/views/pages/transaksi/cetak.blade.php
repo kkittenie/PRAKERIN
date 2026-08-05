@@ -277,7 +277,6 @@
                     function formatPersenStruk($v)
                     {
                         $n = round((float) $v, 2);
-                        // buang trailing zero, mis: 12.50 -> 12,5 ; 12.00 -> 12
                         $n = rtrim(rtrim(number_format($n, 2, '.', ''), '0'), '.');
                         return str_replace('.', ',', $n);
                     }
@@ -401,6 +400,32 @@
                         <span>Rp {{ number_format($transaksi->kembalian, 0, ',', '.') }}</span>
                     </div>
                 </div>
+                @if ($transaksi->member)
+                    @php
+                        $poinSebelumHtml = $transaksi->poin_sebelum ?? $transaksi->member->poin;
+                        $poinDidapatHtml = (int) $transaksi->poin_didapat;
+                    @endphp
+                    <div class="border-bottom-dashed" style="padding:8px 0;">
+                        <div class="flex-between">
+                            <span>Member:</span>
+                            <span>{{ $transaksi->member->nama }}</span>
+                        </div>
+                        <div class="flex-between">
+                            <span>Poin sebelum</span>
+                            <span>{{ number_format($poinSebelumHtml, 0, ',', '.') }}</span>
+                        </div>
+                        @if ($poinDidapatHtml > 0)
+                            <div class="flex-between" style="font-weight:bold;">
+                                <span>Poin didapat</span>
+                                <span>+{{ number_format($poinDidapatHtml, 0, ',', '.') }}</span>
+                            </div>
+                        @endif
+                        <div class="flex-between" style="font-weight:bold;">
+                            <span>Total poin</span>
+                            <span>{{ number_format($poinSebelumHtml + $poinDidapatHtml, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                @endif
                 <div class="text-center" style="padding-top:12px; font-size:11px; color:#666;">
                     <p style="margin:0;">Sampai ketemu di pesanan berikutnya! ^^</p>
                 </div>
@@ -448,7 +473,7 @@
     @php
         $dividerDashed = "--------------------------------\n";
         $dividerSolid = "================================\n";
-        $strukWidth = 32; // lebar area cetak (karakter) untuk kertas 58mm
+        $strukWidth = 32; 
 
         if (!function_exists('padLineStruk')) {
             function padLineStruk($left, $right, $length = 32)
@@ -459,6 +484,20 @@
                 if ($spaces < 1)
                     $spaces = 1;
                 return $left . str_repeat(' ', $spaces) . $right . "\n";
+            }
+        }
+
+        if (!function_exists('padLineStrukWrap')) {
+            function padLineStrukWrap($left, $right, $width = 32)
+            {
+                $rightLen = mb_strlen($right);
+                if (mb_strlen($left) + 1 + $rightLen <= $width) {
+                    return padLineStruk($left, $right, $width);
+                }
+
+                $result = wrapStrukLine($left, 0, $width);
+                $result .= str_repeat(' ', max(0, $width - $rightLen)) . $right . "\n";
+                return $result;
             }
         }
 
@@ -481,10 +520,6 @@
             }
         }
 
-        // Helper untuk center-kan sebuah baris teks sesuai lebar kertas.
-        // Ini menggantikan cara lama yang hardcode jumlah spasi manual
-        // (mis. "      " . strtoupper($toko)), yang jadi sumber teks
-        // header/footer tidak center kalau panjang teksnya berubah-ubah.
         if (!function_exists('centerLineStruk')) {
             function centerLineStruk($text, $width = 32)
             {
@@ -497,11 +532,6 @@
             }
         }
 
-        // BARU: helper untuk teks panjang yang perlu di-wrap ke beberapa
-        // baris DULU baru masing-masing baris di-center. centerLineStruk()
-        // saja tidak cukup untuk teks yang lebih panjang dari lebar kertas
-        // (>= 32 karakter), karena fungsi itu cuma nge-pad spasi kalau
-        // teksnya muat dalam satu baris.
         if (!function_exists('centerWrapStruk')) {
             function centerWrapStruk($text, $width = 32)
             {
@@ -534,13 +564,12 @@
 
         if ($jenis === 'pelanggan') {
             $toko = "Saisho Cake & Bakery";
-            $alamat = "Jl. Kemboja No.1, Kedungjaya, Cirebon";
+            $alamat = "Jl. Kemboja No.1, Kedungjaya, Kec. Kedawung, Kabupaten Cirebon";
             $subtotal = (float) $transaksi->subtotal;
             $diskon = (float) $transaksi->diskon;
             $diskonPersen = $subtotal > 0 ? ($diskon / $subtotal) * 100 : 0;
             $pajak = (float) $transaksi->pajak;
             $pajakPersen = ($subtotal - $diskon) > 0 ? ($pajak / ($subtotal - $diskon)) * 100 : 0;            // Sama seperti versi HTML di atas: gabungkan item dengan nama
-            // produk yang sama supaya tidak tercetak sebagai baris terpisah.
             $itemsPelangganTeks = $transaksi->detailTransaksi
                 ->filter(function ($item) {
                     if (!is_null($item->bundling_id) && !is_null($item->produk_id) && (float) $item->harga_satuan == 0 && (float) $item->subtotal == 0) {
@@ -562,12 +591,7 @@
                 })
                 ->values();
 
-            // Header teks TIDAK lagi mencetak nama toko, karena logo
-            // (dicetak sebagai gambar lewat printReceiptWithLogo) sudah
-            // memuat nama toko. Kalau nama toko dicetak lagi di sini,
-            // jadinya duplikat (logo + tulisan "SAISHO CAKE & BAKERY").
-            $struk .= centerLineStruk("Jl. Kemboja No.1, Kedungjaya");
-            $struk .= centerLineStruk("Kec. Kedawung, Kab. Cirebon");
+            $struk .= centerWrapStruk($alamat);
             $struk .= $dividerDashed;
             $struk .= "No   : " . $transaksi->kode_transaksi . "\n";
             $struk .= "Tgl  : " . $transaksi->created_at->locale('id')->isoFormat('D MMM YYYY, HH:mm') . "\n";
@@ -575,7 +599,6 @@
             $struk .= "Bayar: " . ucfirst($transaksi->metode_pembayaran) . "\n";
             $struk .= $dividerDashed;
 
-            // Invoice pelanggan mencetak SEMUA item (sudah digabung per nama produk)
             foreach ($itemsPelangganTeks as $index => $item) {
                 $no = ($index + 1) . ". ";
                 $namaFull = $no . $item->nama_produk;
@@ -593,11 +616,11 @@
 
             if (!empty($diskonItems)) {
                 foreach ($diskonItems as $itemDiskon) {
-                    $struk .= padLineStruk($itemDiskon['nama'], "-Rp " . number_format($itemDiskon['nilai'], 0, ',', '.'));
+                    $struk .= padLineStrukWrap($itemDiskon['nama'], "-Rp " . number_format($itemDiskon['nilai'], 0, ',', '.'));
                 }
             } elseif ($diskon > 0) {
                 $labelDiskon = $transaksi->diskon_label ?? formatPersenStruk($diskonPersen);
-                $struk .= padLineStruk("Diskon (" . $labelDiskon . ")", "-Rp " . number_format($diskon, 0, ',', '.'));
+                $struk .= padLineStrukWrap("Diskon (" . $labelDiskon . ")", "-Rp " . number_format($diskon, 0, ',', '.'));
             }
             if ($pajak > 0) {
                 $struk .= padLineStruk("Pajak (" . formatPersenStruk($pajakPersen) . "%)", "Rp " . number_format($pajak, 0, ',', '.'));
@@ -609,20 +632,27 @@
             $struk .= padLineStruk("Diterima", "Rp " . number_format($transaksi->jumlah_diterima, 0, ',', '.'));
             $struk .= padLineStruk("Kembalian", "Rp " . number_format($transaksi->kembalian, 0, ',', '.'));
             $struk .= $dividerDashed;
-            // DIUBAH: pakai centerWrapStruk() supaya teks panjang di-wrap
-            // dulu baru di-center per baris (centerLineStruk saja tidak
-            // cukup untuk teks >= 32 karakter, lihat komentar di definisi
-            // fungsinya di atas).
+
+            if ($transaksi->member) {
+                $poinSebelumTeks = $transaksi->poin_sebelum ?? $transaksi->member->poin;
+                $poinDidapatTeks = (int) $transaksi->poin_didapat;
+
+                $struk .= padLineStruk("Member", $transaksi->member->nama);
+                $struk .= padLineStruk("Poin sebelum", number_format($poinSebelumTeks, 0, ',', '.'));
+                if ($poinDidapatTeks > 0) {
+                    $struk .= padLineStruk("Poin didapat", "+" . number_format($poinDidapatTeks, 0, ',', '.'));
+                }
+                $struk .= padLineStruk("Total poin", number_format($poinSebelumTeks + $poinDidapatTeks, 0, ',', '.'));
+                $struk .= $dividerDashed;
+            }
+
             $struk .= centerWrapStruk("Sampai ketemu di pesanan berikutnya! ^^");
 
         } else {
-            // DAPUR: hanya item butuh_produksi (snapshot saat transaksi dibuat),
-            // berlaku sama untuk transaksi Lunas maupun Belum Lunas.
             $itemsDapur = $transaksi->detailTransaksi->filter(function ($item) {
                 return (bool) $item->butuh_produksi;
             })->values();
 
-            // Header pakai centerLineStruk() bukan hardcode spasi.
             $struk .= centerLineStruk("SAISHO CAKE & BAKERY");
             $struk .= centerLineStruk("TIKET PRODUKSI");
             $struk .= $dividerDashed;
@@ -660,9 +690,6 @@
             }
 
             $struk .= $dividerDashed;
-            // DIUBAH: pakai centerWrapStruk() supaya konsisten dengan footer
-            // struk pelanggan (footer ini juga berpotensi > 32 karakter
-            // tergantung format tanggal/lokal).
             $struk .= centerWrapStruk("Dicetak: " . now()->locale('id')->isoFormat('D MMM YYYY, HH:mm')) . "\n\n";
         }
     @endphp
@@ -719,22 +746,11 @@
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
-
-        // Render logo (SVG) ke <canvas> lalu ambil hasilnya sebagai base64
-        // PNG. Ini dibutuhkan karena printer thermal tidak bisa langsung
-        // "print SVG" — harus dikonversi jadi bitmap dulu di sisi web,
-        // baru bytes-nya dikirim ke Android untuk dicetak sebagai raster
-        // image (lihat AndroidBridge.printImage / printReceiptWithLogo).
         function loadLogoAsBase64(callback) {
             const img = new Image();
             img.crossOrigin = "anonymous";
 
             img.onload = function () {
-                // Beberapa file SVG tidak punya atribut width/height eksplisit
-                // (cuma viewBox), sehingga naturalWidth/naturalHeight bisa
-                // terbaca 0 di WebView. Kalau dibiarkan, targetHeight jadi
-                // Infinity/NaN dan canvas gagal dibuat -> logo diam-diam
-                // gagal tanpa error yang kelihatan (fallback ke print teks).
                 let sourceWidth = img.naturalWidth || img.width;
                 let sourceHeight = img.naturalHeight || img.height;
 
@@ -792,15 +808,12 @@
                 }
             }
 
-            // Logo cuma dicetak untuk struk pelanggan. Tiket dapur tetap
-            // teks biasa seperti sebelumnya (tidak butuh logo).
             if (strukJenis === 'pelanggan') {
                 loadLogoAsBase64(function (base64Logo) {
                     let result;
                     if (base64Logo) {
                         result = Android.printReceiptWithLogo(base64Logo, strukText);
                     } else {
-                        // fallback: kalau logo gagal dimuat, tetap cetak teksnya saja
                         result = Android.printText(strukText);
                     }
                     kirimHasilPrint(result);

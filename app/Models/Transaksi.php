@@ -12,6 +12,8 @@ class Transaksi extends Model
         'kode_transaksi',
         'nama_pembeli',
         'member_id',
+        'poin_sebelum',
+        'poin_didapat',
         'subtotal',
         'pajak',
         'diskon',
