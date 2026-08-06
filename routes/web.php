@@ -15,6 +15,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\RewardController;
 use App\Http\Controllers\TransaksiBahanBakuController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\PengaturanMemberController;
@@ -215,6 +216,13 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/pengaturan-member/{id}', [PengaturanMemberController::class, 'destroy'])
             ->name('pengaturan-member.destroy');
     });
+
+    Route::patch('/reward/{reward}/toggle-status', [RewardController::class, 'toggleStatus'])
+        ->name('reward.toggle-status')
+        ->middleware('permission:edit_reward');
+
+    Route::resource('reward', RewardController::class)
+        ->middleware('permission:lihat_reward|tambah_reward|edit_reward|hapus_reward');
 
     // Activity Log
     Route::middleware('permission:lihat_activity_log')->group(function () {

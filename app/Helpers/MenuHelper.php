@@ -43,12 +43,28 @@ class MenuHelper
                     ['name' => 'Promo Produk', 'path' => '/promo', 'permission' => 'lihat_promo'],
                 ],
             ],
+
+            [
+                'name' => 'Data Master Member',
+                'icon' => 'member',
+                'subItems' => [
+                    ['name' => 'Member', 'path' => '/member', 'permission' => 'lihat_member'],
+                    ['name' => 'Pengaturan Member', 'path' => '/pengaturan-member', 'permission' => 'lihat_member'],
+                ],
+            ],
+            [
+                'name' => 'Reward',
+                'icon' => 'reward',
+                'subItems' => [
+                    ['name' => 'Reward Produk', 'path' => '/reward', 'permission' => 'lihat_reward'],
+                ],
+            ],
+
             [
                 'icon' => 'ecommerce',
                 'name' => 'Transaksi',
                 'subItems' => [
                     ['name' => 'Pengaturan Member', 'path' => '/pengaturan-member', 'permission' => 'lihat_member'],
-                    ['name' => 'Member', 'path' => '/member', 'permission' => 'lihat_member'],
                     ['name' => 'Kasir', 'path' => '/transaksi', 'permission' => 'lihat_transaksi'],
                 ],
             ],
@@ -119,6 +135,8 @@ class MenuHelper
             'ecommerce' => '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>',
             'laporan' => '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>',
             'box' => '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"> <path d="M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/> <path d="M3.3 7L12 12l8.7-5"/> <path d="M12 22V12"/> </svg>',
+            'member' => '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+            'reward' => '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>',
         ];
 
         return $icons[$iconName] ?? '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>';
