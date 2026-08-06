@@ -410,10 +410,6 @@
                             <span>Member:</span>
                             <span>{{ $transaksi->member->nama }}</span>
                         </div>
-                        <div class="flex-between">
-                            <span>Poin sebelum</span>
-                            <span>{{ number_format($poinSebelumHtml, 0, ',', '.') }}</span>
-                        </div>
                         @if ($poinDidapatHtml > 0)
                             <div class="flex-between" style="font-weight:bold;">
                                 <span>Poin didapat</span>
