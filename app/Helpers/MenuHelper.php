@@ -57,6 +57,7 @@ class MenuHelper
                 'icon' => 'reward',
                 'subItems' => [
                     ['name' => 'Reward Produk', 'path' => '/reward', 'permission' => 'lihat_reward'],
+                    ['name' => 'Reward Voucher', 'path' => '/reward', 'permission' => 'lihat_reward'],
                 ],
             ],
 
