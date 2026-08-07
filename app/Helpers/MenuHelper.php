@@ -45,19 +45,20 @@ class MenuHelper
             ],
 
             [
-                'name' => 'Data Master Member',
+                'name' => 'Kelola Member',
                 'icon' => 'member',
                 'subItems' => [
                     ['name' => 'Member', 'path' => '/member', 'permission' => 'lihat_member'],
                     ['name' => 'Pengaturan Member', 'path' => '/pengaturan-member', 'permission' => 'lihat_member'],
+                    ['name' => 'Aturan Naik Level', 'path' => '/member-level', 'permission' => 'lihat_member'],
                 ],
             ],
             [
                 'name' => 'Reward',
                 'icon' => 'reward',
                 'subItems' => [
-                    ['name' => 'Reward Produk', 'path' => '/reward', 'permission' => 'lihat_reward'],
-                    ['name' => 'Reward Voucher', 'path' => '/reward', 'permission' => 'lihat_reward'],
+                    ['name' => 'Reward Stamp', 'path' => '/stamp-program', 'permission' => 'lihat_reward'],
+                    ['name' => 'Reward Voucher', 'path' => '/reward-voucher', 'permission' => 'lihat_reward'],
                 ],
             ],
 

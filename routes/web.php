@@ -15,11 +15,14 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\MemberController;
-use App\Http\Controllers\RewardController;
 use App\Http\Controllers\TransaksiBahanBakuController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\PengaturanMemberController;
 use App\Http\Controllers\SatuanController;
+use App\Http\Controllers\StampProgramController;
+use App\Http\Controllers\RewardVoucherController;
+use App\Http\Controllers\MemberLevelController;
+use App\Http\Controllers\Member\StampController as MemberStampController;
 
 require __DIR__ . '/member.php';
 
@@ -43,6 +46,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/transaksi/bayar', [TransaksiKasirController::class, 'bayar'])->name('transaksi.bayar');
         Route::post('/transaksi/lunaskan/{id}', [TransaksiKasirController::class, 'lunaskanDitahan'])->name('transaksi.lunaskan');
     });
+    Route::post('/transaksi-kasir/klaim-stamp', [TransaksiKasirController::class, 'klaimStamp'])
+        ->name('transaksi-kasir.klaim-stamp')
+        ->middleware('permission:lihat_transaksi');
 
     // Laporan
     Route::middleware('permission:lihat_laporan')->group(function () {
@@ -219,12 +225,32 @@ Route::middleware(['auth'])->group(function () {
             ->name('pengaturan-member.destroy');
     });
 
-    Route::patch('/reward/{reward}/toggle-status', [RewardController::class, 'toggleStatus'])
-        ->name('reward.toggle-status')
+    // Reward Stamp
+    Route::patch('/stamp-program/{stampProgram}/toggle-status', [StampProgramController::class, 'toggleStatus'])
+        ->name('stamp-program.toggle-status')
         ->middleware('permission:edit_reward');
 
-    Route::resource('reward', RewardController::class)
+    Route::resource('stamp-program', StampProgramController::class)
+        ->except(['show'])
         ->middleware('permission:lihat_reward|tambah_reward|edit_reward|hapus_reward');
+
+    // Reward Voucher
+    Route::patch('/reward-voucher/{rewardVoucher}/toggle-status', [RewardVoucherController::class, 'toggleStatus'])
+        ->name('reward-voucher.toggle-status')
+        ->middleware('permission:edit_reward');
+
+    Route::resource('reward-voucher', RewardVoucherController::class)
+        ->except(['show'])
+        ->middleware('permission:lihat_reward|tambah_reward|edit_reward|hapus_reward');
+
+    // Aturan Naik Level
+    Route::patch('/member-level/{memberLevel}/toggle-status', [MemberLevelController::class, 'toggleStatus'])
+        ->name('member-level.toggle-status')
+        ->middleware('permission:edit_member');
+
+    Route::resource('member-level', MemberLevelController::class)
+        ->except(['show'])
+        ->middleware('permission:lihat_member|tambah_member|edit_member|hapus_member');
 
     // Activity Log
     Route::middleware('permission:lihat_activity_log')->group(function () {
