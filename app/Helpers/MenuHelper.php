@@ -65,7 +65,6 @@ class MenuHelper
                 'icon' => 'ecommerce',
                 'name' => 'Transaksi',
                 'subItems' => [
-                    ['name' => 'Pengaturan Member', 'path' => '/pengaturan-member', 'permission' => 'lihat_member'],
                     ['name' => 'Kasir', 'path' => '/transaksi', 'permission' => 'lihat_transaksi'],
                 ],
             ],

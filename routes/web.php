@@ -21,6 +21,8 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\PengaturanMemberController;
 use App\Http\Controllers\SatuanController;
 
+require __DIR__ . '/member.php';
+
 Route::middleware(['auth'])->group(function () {
 
     // Dashboard Utama (Beranda)

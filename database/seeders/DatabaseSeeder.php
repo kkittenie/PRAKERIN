@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             BahanBakuSeeder::class,
             ProdukSeeder::class,
             SatuanSeeder::class,
+            RewardKatalogSeeder::class,
         ]);
     }
 }
