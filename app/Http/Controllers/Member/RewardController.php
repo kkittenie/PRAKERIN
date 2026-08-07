@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\Member;
 use App\Models\PenukaranPoin;
 use App\Models\RewardKatalog;
 use Illuminate\Http\Request;
@@ -50,9 +51,7 @@ class RewardController extends Controller
             $memberTerkunci = $member->newQuery()->lockForUpdate()->find($member->id);
             $rewardTerkunci = $reward->newQuery()->lockForUpdate()->find($reward->id);
 
-            if (! $rewardTerkunci->status_aktif) {
-                abort(422, 'Reward ini sudah tidak tersedia.');
-            }
+            abort_unless($rewardTerkunci->status_aktif, 422, 'Reward ini sudah tidak tersedia.');
 
             if (! is_null($rewardTerkunci->stok) && $rewardTerkunci->stok <= 0) {
                 abort(422, 'Stok reward ini sudah habis.');

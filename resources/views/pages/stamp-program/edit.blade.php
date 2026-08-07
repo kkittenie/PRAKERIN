@@ -2,13 +2,13 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Tambah Reward Stamp" parentTitle="Reward Stamp" :parentUrl="route('stamp-program.index')" />
+<x-common.page-breadcrumb pageTitle="Edit Reward Stamp" parentTitle="Reward Stamp" :parentUrl="route('stamp-program.index')" />
 
 <div class="space-y-6">
 
-    <x-common.component-card title="Form Tambah Program Stamp">
+    <x-common.component-card title="Form Edit Program Stamp">
 
-        <form action="{{ route('stamp-program.store') }}" method="POST" id="formStampProgram">
+        <form action="{{ route('stamp-program.update', $program->id) }}" method="POST" id="formStampProgram">
             @csrf
             @method('PUT')
 
@@ -24,7 +24,7 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Nama Program <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="nama_program" value="{{ old('nama_program') }}"
+                    <input type="text" name="nama_program" value="{{ old('nama_program', $program->nama_program) }}"
                         placeholder="Contoh: Kumpulkan 10 Stamp, Gratis 1 Croissant"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
                         required>
@@ -38,7 +38,7 @@
                         Deskripsi
                     </label>
                     <textarea name="deskripsi" rows="2" placeholder="Deskripsi singkat program (opsional)"
-                        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400">{{ old('deskripsi') }}</textarea>
+                        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400">{{ old('deskripsi', $program->deskripsi) }}</textarea>
                     @error('deskripsi')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
@@ -52,7 +52,7 @@
 
                 {{-- Minimal Pembelian (format Rupiah, kayak Harga Satuan di Transaksi Bahan Baku) --}}
                 <div x-data="{
-                        minimalPembelianDisplay: '{{ old('minimal_pembelian') ? number_format(old('minimal_pembelian'), 0, ',', '.') : '' }}',
+                        minimalPembelianDisplay: '{{ old('minimal_pembelian', $program->minimal_pembelian) ? number_format(old('minimal_pembelian', $program->minimal_pembelian), 0, ',', '.') : '' }}',
                         getRawNumber(val) {
                             return (val || '').toString().replace(/\D/g, '') || '0';
                         },
@@ -106,7 +106,7 @@
                         Jumlah Stamp Dibutuhkan <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <input type="number" name="jumlah_stamp_dibutuhkan" min="1" value="{{ old('jumlah_stamp_dibutuhkan') }}"
+                        <input type="number" name="jumlah_stamp_dibutuhkan" min="1" value="{{ old('jumlah_stamp_dibutuhkan', $program->jumlah_stamp_dibutuhkan) }}"
                             placeholder="Contoh: 10"
                             class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-4 pr-16 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
                             required>
@@ -122,10 +122,10 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Maksimal Redeem
                     </label>
-                    <input type="number" name="maksimal_redeem" min="1" value="{{ old('maksimal_redeem') }}"
+                    <input type="number" name="maksimal_redeem" min="1" value="{{ old('maksimal_redeem', $program->maksimal_redeem) }}"
                         placeholder="Kosongkan jika tidak terbatas"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400">
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Total maksimal kartu boleh ditukar seluruh member. Kosongkan = tidak terbatas.</span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Total maksimal kartu boleh ditukar seluruh member. Kosongkan = tidak terbatas. Sudah terpakai: {{ $program->jumlah_redeem ?? 0 }}.</span>
                     @error('maksimal_redeem')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
@@ -168,7 +168,8 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Tanggal Mulai
                     </label>
-                    <input type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}"
+                    <input type="date" name="tanggal_mulai"
+                        value="{{ old('tanggal_mulai', optional($program->tanggal_mulai)->format('Y-m-d')) }}"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                     @error('tanggal_mulai')
                         <small class="text-red-500">{{ $message }}</small>
@@ -179,7 +180,8 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Tanggal Berakhir
                     </label>
-                    <input type="date" name="tanggal_berakhir" value="{{ old('tanggal_berakhir') }}"
+                    <input type="date" name="tanggal_berakhir"
+                        value="{{ old('tanggal_berakhir', optional($program->tanggal_berakhir)->format('Y-m-d')) }}"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Kosongkan jika berlaku selamanya</span>
                     @error('tanggal_berakhir')
@@ -195,7 +197,7 @@
                         <input type="hidden" name="status_aktif" value="0">
                         <input type="checkbox" name="status_aktif" value="1"
                             class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                            {{ old('status_aktif') == '1' ? 'checked' : '' }}>
+                            {{ old('status_aktif', $program->status_aktif) == '1' ? 'checked' : '' }}>
                         <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Aktifkan Sekarang</span>
                     </label>
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Cuma boleh 1 program aktif. Mengaktifkan ini otomatis menonaktifkan program lain.</span>
@@ -213,7 +215,7 @@
                 </a>
                 <button type="submit"
                     class="rounded-lg bg-brand-500 px-5 py-2 text-white hover:bg-brand-600">
-                    Simpan Program
+                    Simpan Perubahan
                 </button>
             </div>
 
@@ -345,24 +347,33 @@
         hasilSearch.classList.add('hidden');
     }
 
-    // Prefill ulang kalau validasi gagal (old input)
+    // Prefill: kalau validasi gagal, pakai old input. Kalau load pertama kali, pakai data hadiah yang sudah tersimpan.
     const oldProdukHadiah = @json(old('produk_hadiah', []));
     const oldJumlahHadiah = @json(old('jumlah_hadiah', []));
+    const hadiahTersimpan = @json($hadiahTerpilih->map(fn ($h) => ['produk_id' => $h->produk_id, 'jumlah' => $h->jumlah]));
+
+    function isiBarisHadiah(produkId, jumlah) {
+        const produk = daftarProdukHadiah.find(function (p) { return p.id == produkId; });
+        if (!produk) return;
+
+        const div = tambahBarisHadiah();
+        const inputSearch = div.querySelector('.input-search-hadiah');
+        const hasilSearch = div.querySelector('.hasil-search');
+        const inputId = div.querySelector('.input-id-hadiah');
+        const infoStok = div.querySelector('.info-stok-hadiah');
+        const inputJumlah = div.querySelector('.input-jumlah-hadiah');
+
+        pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok);
+        inputJumlah.value = jumlah ?? 1;
+    }
 
     if (oldProdukHadiah.length > 0) {
         oldProdukHadiah.forEach(function (id, index) {
-            const produk = daftarProdukHadiah.find(function (p) { return p.id == id; });
-            if (!produk) return;
-
-            const div = tambahBarisHadiah();
-            const inputSearch = div.querySelector('.input-search-hadiah');
-            const hasilSearch = div.querySelector('.hasil-search');
-            const inputId = div.querySelector('.input-id-hadiah');
-            const infoStok = div.querySelector('.info-stok-hadiah');
-            const inputJumlah = div.querySelector('.input-jumlah-hadiah');
-
-            pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok);
-            inputJumlah.value = oldJumlahHadiah[index] ?? 1;
+            isiBarisHadiah(id, oldJumlahHadiah[index]);
+        });
+    } else if (hadiahTersimpan.length > 0) {
+        hadiahTersimpan.forEach(function (h) {
+            isiBarisHadiah(h.produk_id, h.jumlah);
         });
     } else {
         tambahBarisHadiah();
