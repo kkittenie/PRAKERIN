@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 use App\Models\PengaturanMember;
 use App\Models\Member;
 use App\Models\Bundling;
+use App\Models\StampProgram;
+use App\Models\MemberStamp;
 
 class TransaksiKasirController extends Controller
 {
@@ -575,6 +577,40 @@ class TransaksiKasirController extends Controller
                 }
             }
 
+            //hitung stamp member (program stamp yang aktif sekarang, kalau ada)
+            if ($transaksi->member_id) {
+                $stampProgram = StampProgram::aktifSekarang();
+
+                if ($stampProgram) {
+                    $nominalUntukStamp = $transaksi->subtotal + $transaksi->pajak;
+                    $stampDidapat = (int) floor($nominalUntukStamp / $stampProgram->minimal_pembelian);
+
+                    if ($stampDidapat > 0) {
+                        $memberStamp = MemberStamp::firstOrCreate(
+                            ['member_id' => $transaksi->member_id, 'stamp_program_id' => $stampProgram->id],
+                            ['jumlah_stamp' => 0]
+                        );
+
+                        $stampSebelum = $memberStamp->jumlah_stamp;
+
+                        // Stamp gak nambah lewat batas jumlah_stamp_dibutuhkan — kalau kartu udah
+                        // penuh, member harus tukar dulu sebelum ngumpulin stamp baru.
+                        $stampBaru = min(
+                            $stampSebelum + $stampDidapat,
+                            $stampProgram->jumlah_stamp_dibutuhkan
+                        );
+
+                        $memberStamp->update(['jumlah_stamp' => $stampBaru]);
+
+                        $transaksi->update([
+                            'stamp_program_id' => $stampProgram->id,
+                            'stamp_sebelum' => $stampSebelum,
+                            'stamp_didapat' => $stampBaru - $stampSebelum,
+                        ]);
+                    }
+                }
+            }
+
             foreach ($validated['item_pesanan'] as $item) {
 
                 // ==== Item BUNDLING ====
@@ -664,6 +700,67 @@ class TransaksiKasirController extends Controller
                 ])
                 ->log('gagal mencetak struk transaksi');
             abort(404, 'Transaksi tidak ditemukan.');
+        }
+    }
+
+    public function klaimStamp(Request $request)
+    {
+        $validated = $request->validate([
+            'member_id' => 'required|exists:members,id',
+            'produk_id' => 'required|exists:produks,id',
+        ]);
+
+        try {
+            $redemption = DB::transaction(function () use ($validated) {
+                $stampProgram = StampProgram::aktifSekarang();
+
+                if (!$stampProgram) {
+                    abort(422, 'Tidak ada program stamp yang sedang aktif.');
+                }
+
+                $memberStamp = MemberStamp::where('member_id', $validated['member_id'])
+                    ->where('stamp_program_id', $stampProgram->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$memberStamp || $memberStamp->jumlah_stamp < $stampProgram->jumlah_stamp_dibutuhkan) {
+                    abort(422, 'Stamp member ini belum penuh.');
+                }
+
+                $hadiahValid = $stampProgram->hadiah()->where('produk_id', $validated['produk_id'])->exists();
+                if (!$hadiahValid) {
+                    abort(422, 'Produk ini bukan pilihan hadiah untuk program stamp yang aktif.');
+                }
+
+                if ($stampProgram->maksimal_redeem_tercapai) {
+                    abort(422, 'Kuota penukaran program stamp ini sudah habis.');
+                }
+
+                $memberStamp->decrement('jumlah_stamp', $stampProgram->jumlah_stamp_dibutuhkan);
+                $stampProgram->increment('jumlah_redeem');
+
+                return \App\Models\StampRedemption::create([
+                    'member_id' => $validated['member_id'],
+                    'stamp_program_id' => $stampProgram->id,
+                    'produk_id' => $validated['produk_id'],
+                    'sumber' => 'kasir',
+                    'status' => 'selesai',
+                    'diproses_oleh' => auth()->id(),
+                    'diambil_pada' => now(),
+                ]);
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'pesan' => 'Hadiah stamp berhasil diklaim.',
+                'kode_redeem' => $redemption->kode_redeem,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error klaimStamp TransaksiKasirController: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'pesan' => $e->getMessage(),
+            ], 422);
         }
     }
 }

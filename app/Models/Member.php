@@ -17,14 +17,6 @@ class Member extends Authenticatable
 
     protected $appends = ['level'];
 
-    // Ambang batas poin per tier. Samakan dengan aturan yang dipakai
-    // di layar Pengaturan Member kalau nanti dibuat configurable.
-    public const TIER_THRESHOLDS = [
-        'Bronze' => 0,
-        'Silver' => 300,
-        'Gold' => 500,
-    ];
-
     protected function casts(): array
     {
         return [
@@ -34,40 +26,37 @@ class Member extends Authenticatable
 
     public function getLevelAttribute(): string
     {
-        if ($this->poin >= self::TIER_THRESHOLDS['Gold']) {
-            return 'Gold';
-        }
+        $level = MemberLevel::aktif()
+            ->where('minimal_poin', '<=', $this->poin)
+            ->orderByDesc('minimal_poin')
+            ->first();
 
-        if ($this->poin >= self::TIER_THRESHOLDS['Silver']) {
-            return 'Silver';
-        }
-
-        return 'Bronze';
+        return $level->nama_level ?? 'Bronze';
     }
 
-    /**
-     * Info progress menuju tier berikutnya, dipakai untuk progress bar
-     * di kartu member. Null kalau sudah di tier tertinggi.
-     */
     public function getProgresTierAttribute(): ?array
     {
-        $tierBerikutnya = match ($this->level) {
-            'Bronze' => 'Silver',
-            'Silver' => 'Gold',
-            default => null,
-        };
+        $levelSaatIni = MemberLevel::aktif()
+            ->where('minimal_poin', '<=', $this->poin)
+            ->orderByDesc('minimal_poin')
+            ->first();
 
-        if (! $tierBerikutnya) {
-            return null;
+        $levelBerikutnya = MemberLevel::aktif()
+            ->where('minimal_poin', '>', $this->poin)
+            ->orderBy('minimal_poin')
+            ->first();
+
+        if (! $levelBerikutnya) {
+            return null; // sudah di level tertinggi
         }
 
-        $batasSaatIni = self::TIER_THRESHOLDS[$this->level];
-        $batasBerikutnya = self::TIER_THRESHOLDS[$tierBerikutnya];
+        $batasSaatIni = $levelSaatIni->minimal_poin ?? 0;
+        $batasBerikutnya = $levelBerikutnya->minimal_poin;
 
         $persen = (($this->poin - $batasSaatIni) / max(1, $batasBerikutnya - $batasSaatIni)) * 100;
 
         return [
-            'tier_berikutnya' => $tierBerikutnya,
+            'tier_berikutnya' => $levelBerikutnya->nama_level,
             'poin_dibutuhkan' => max(0, $batasBerikutnya - $this->poin),
             'persen' => (int) min(100, max(0, round($persen))),
         ];
@@ -81,6 +70,16 @@ class Member extends Authenticatable
     public function penukaranPoin()
     {
         return $this->hasMany(PenukaranPoin::class);
+    }
+
+    public function stamps()
+    {
+        return $this->hasMany(MemberStamp::class);
+    }
+
+    public function stampRedemptions()
+    {
+        return $this->hasMany(StampRedemption::class);
     }
 
     protected static function getActivitylogOptions(): LogOptions

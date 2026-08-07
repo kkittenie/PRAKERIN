@@ -4,6 +4,7 @@ use App\Http\Controllers\Member\AuthController;
 use App\Http\Controllers\Member\DashboardController;
 use App\Http\Controllers\Member\RewardController;
 use App\Http\Controllers\Member\RiwayatController;
+use App\Http\Controllers\Member\StampController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('member')->name('member.')->group(function () {
@@ -24,5 +25,8 @@ Route::prefix('member')->name('member.')->group(function () {
         Route::post('/reward/{reward}/tukar', [RewardController::class, 'redeem'])->name('reward.tukar');
 
         Route::get('/riwayat', [RiwayatController::class, 'index'])->name('riwayat');
+
+        Route::get('/stamps', [StampController::class, 'index'])->name('stamps.index');
+        Route::post('/stamps/redeem', [StampController::class, 'redeem'])->name('stamps.redeem');
     });
 });
