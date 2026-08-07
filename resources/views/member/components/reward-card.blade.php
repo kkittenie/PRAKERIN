@@ -1,7 +1,7 @@
-@props(['reward', 'member'])
+@props(['reward', 'member' => null])
 
 @php
-    $cukupPoin = $member->poin >= $reward->poin_dibutuhkan;
+    $cukupPoin = $member ? $member->poin >= $reward->poin_dibutuhkan : false;
     $habis = ! is_null($reward->stok) && $reward->stok <= 0;
     $icon = $reward->jenis === 'produk' ? 'icon-cup' : 'icon-ticket';
 @endphp
