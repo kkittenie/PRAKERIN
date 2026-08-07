@@ -35,6 +35,7 @@ class DashboardController extends Controller
                 'harga' => 'Rp35K',
                 'waktu' => '7 - 11 Pagi',
                 'gradient' => 'from-brand-700 via-brand-800 to-brand-900',
+                'gambar' => 'storage/produk/chocolate-croissant.jpeg',
             ],
             [
                 'badge' => 'Member Baru',
@@ -44,6 +45,7 @@ class DashboardController extends Controller
                 'harga' => 'Langsung cair',
                 'waktu' => 'Daftar sekarang',
                 'gradient' => 'from-orange-500 via-orange-600 to-brand-800',
+                'gambar' => 'storage/produk/chocolate-fudge-cake.jpeg',
             ],
         ];
     }

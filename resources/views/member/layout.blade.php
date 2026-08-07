@@ -38,22 +38,6 @@
 
     <div id="app-card" class="mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-[0_0_60px_-15px_rgba(90,60,39,0.15)] sm:my-0">
 
-        {{-- Top App Header --}}
-        @unless(request()->routeIs('member.akun'))
-        <header class="sticky top-0 z-20 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 pb-3 pt-4 backdrop-blur">
-            <div class="flex items-center gap-2.5">
-                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-800 text-white shadow-sm">
-                    <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
-                <div>
-                    <span class="block text-sm font-bold tracking-tight text-gray-900 leading-tight">Saisho</span>
-                    <span class="block text-[10px] font-semibold uppercase tracking-wider text-brand-800">Cake & Bakery</span>
-                </div>
-            </div>
-            @yield('header-action')
-        </header>
-        @endunless
-
         {{-- Flash messages --}}
         @if (session('success'))
             <div class="mx-5 mt-3 flex items-start gap-2 rounded-2xl bg-brand-50 px-4 py-3 text-xs font-semibold text-brand-800 border border-brand-200">
@@ -69,7 +53,7 @@
         @endif
 
         {{-- Main Page Content --}}
-        <main class="flex-1 px-5 pb-28">
+        <main class="flex-1 {{ request()->routeIs('member.profil') ? '' : 'px-5' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-28' }}">
             @yield('content')
         </main>
 
@@ -87,6 +71,7 @@
                 default => -1,
             };
         @endphp
+        @unless(request()->routeIs('member.profil'))
         <nav class="fixed bottom-0 left-1/2 z-30 w-full max-w-md -translate-x-1/2 border-t border-gray-100 bg-white/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur">
             <div class="grid grid-cols-4 gap-1 text-center">
                 
@@ -142,6 +127,7 @@
 
             </div>
         </nav>
+        @endunless
 
         {{-- Login Required Dialog Modal for Guests --}}
         <dialog id="modal-login-required" class="fixed inset-0 my-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 backdrop:bg-gray-900/50 shadow-2xl border-0">
@@ -206,10 +192,8 @@
             setTimeout(() => { window.location.href = url; }, 150);
         }
 
-        // Bottom-nav specific: picks the slide direction based on tab order,
-        // so moving right in the tab bar slides forward, moving left slides back
         function animateNavigateTab(url, targetIndex) {
-            if (targetIndex === window.__currentTabIndex) return; // already on this tab
+            if (targetIndex === window.__currentTabIndex) return; 
             const dir = targetIndex > window.__currentTabIndex ? 'forward' : 'back';
             animateNavigate(url, dir);
         }

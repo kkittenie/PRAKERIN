@@ -2,32 +2,26 @@
 
 @section('content')
 
-    {{-- Top Header --}}
-    <div class="sticky top-0 z-20 flex items-center justify-center bg-white/95 py-4 backdrop-blur border-b border-gray-100 -mx-5 px-5">
-        <h1 class="text-base font-bold text-gray-900">Account</h1>
-    </div>
+    <h1 class="text-center text-lg font-extrabold text-gray-900">Account</h1>
 
-    <div class="pt-4 space-y-6">
+    <div class="mt-5 space-y-6">
 
-        {{-- Top Banner Card --}}
+        {{-- Profile Card --}}
         @auth('member')
-            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#5a3c27] to-[#8b5e3c] p-5 text-white shadow-sm">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <span class="inline-block rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase text-white backdrop-blur">
-                            Member Saisho
-                        </span>
-                        <h2 class="mt-1.5 text-lg font-bold">{{ auth('member')->user()->nama }}</h2>
-                        <p class="text-xs text-brand-100 opacity-90">{{ auth('member')->user()->no_hp }} &middot; {{ auth('member')->user()->poin ?? 0 }} Poin</p>
-                    </div>
-                    <form method="POST" action="{{ route('member.logout') }}">
-                        @csrf
-                        <button type="submit" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur hover:bg-white/30" title="Keluar">
-                            <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </button>
-                    </form>
+            <a href="{{ route('member.profil') }}" class="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-[#5a3c27] to-[#8b5e3c] p-5 text-white shadow-sm transition active:scale-[0.99]">
+                <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/40 bg-white/20">
+                    @if ($member->foto)
+                        <img src="{{ asset('storage/'.$member->foto) }}" alt="{{ $member->nama }}" class="h-full w-full object-cover">
+                    @else
+                        <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6 text-white"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    @endif
+                </span>
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-base font-bold uppercase">{{ $member->nama }}</p>
+                    <p class="text-xs text-white/80">{{ $member->no_hp }}</p>
                 </div>
-            </div>
+                <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 shrink-0 text-white/80"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
         @else
             <a href="{{ route('member.login') }}" class="relative block overflow-hidden rounded-2xl bg-gradient-to-r from-[#5a3c27] to-[#8b5e3c] p-5 text-white shadow-sm transition active:scale-[0.99]">
                 <div class="flex items-center justify-between">
@@ -103,6 +97,17 @@
                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-400"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
         </div>
+
+        {{-- Version & Logout --}}
+        @auth('member')
+            <div class="flex items-center justify-between border-t border-gray-100 pt-4">
+                <span class="text-xs text-gray-400">Version 1.0.0</span>
+                <form method="POST" action="{{ route('member.logout') }}">
+                    @csrf
+                    <button type="submit" class="text-sm font-bold text-red-600 hover:text-red-700">Logout</button>
+                </form>
+            </div>
+        @endauth
 
     </div>
 

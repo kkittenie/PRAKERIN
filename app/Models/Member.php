@@ -11,7 +11,7 @@ class Member extends Authenticatable
 {
     use Notifiable, LogsActivity;
 
-    protected $fillable = ['nama', 'no_hp', 'poin', 'password'];
+    protected $fillable = ['nama', 'no_hp', 'email', 'tanggal_lahir', 'gender', 'foto', 'poin', 'password'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -21,7 +21,16 @@ class Member extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'tanggal_lahir' => 'date',
         ];
+    }
+
+    public function getKelengkapanProfilAttribute(): int
+    {
+        $fields = [$this->email, $this->tanggal_lahir, $this->gender];
+        $terisi = count(array_filter($fields, fn ($f) => ! is_null($f) && $f !== ''));
+
+        return (int) round((1 + $terisi) / 4 * 100); // username selalu terisi + 3 field opsional
     }
 
     public function getLevelAttribute(): string
