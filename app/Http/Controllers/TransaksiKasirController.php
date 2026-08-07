@@ -736,6 +736,14 @@ class TransaksiKasirController extends Controller
                     abort(422, 'Kuota penukaran program stamp ini sudah habis.');
                 }
 
+                $hadiah = $stampProgram->hadiah()->where('produk_id', $validated['produk_id'])->first();
+
+                $produk = \App\Models\Produk::where('id', $validated['produk_id'])->lockForUpdate()->first();
+                if ($produk->stok < $hadiah->jumlah) {
+                    abort(422, 'Stok produk hadiah ini tidak mencukupi.');
+                }
+                $produk->decrement('stok', $hadiah->jumlah);
+
                 $memberStamp->decrement('jumlah_stamp', $stampProgram->jumlah_stamp_dibutuhkan);
                 $stampProgram->increment('jumlah_redeem');
 
