@@ -49,11 +49,36 @@
         #slide-text {
             transition: opacity 0.2s ease;
         }
+
+        /* Subtle Smooth Page Animations */
+        @keyframes pageEnterFromRight {
+            0% { opacity: 0; transform: translateX(20px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes pageEnterFromLeft {
+            0% { opacity: 0; transform: translateX(-20px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        .page-enter-right {
+            animation: pageEnterFromRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) ease-out forwards;
+        }
+        .page-enter-left {
+            animation: pageEnterFromLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) ease-out forwards;
+        }
+
+        /* One-time splash entrance the very first time the app is opened this session */
+        @keyframes appSplashIn {
+            0% { opacity: 0; transform: translateY(14px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .app-splash-in {
+            animation: appSplashIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
     </style>
 </head>
 
-<body class="h-full font-outfit antialiased">
-    <div
+<body class="h-full font-outfit antialiased overflow-x-hidden">
+    <div id="app-card"
         class="mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-[0_0_60px_-15px_rgba(90,60,39,0.2)] overflow-hidden">
         <div id="carousel-viewport" class="relative w-full aspect-[3/4] overflow-hidden touch-pan-x bg-[#5a3c27]">
             <div id="carousel-track" class="carousel-track">
@@ -105,12 +130,12 @@
 
             <div class="mt-auto px-6 pb-5 pt-2 flex flex-col items-center gap-2.5">
 
-                <a href="{{ route('member.login') }}"
+                <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                     class="w-full rounded-full bg-[#5a3c27] py-3 text-center text-base font-bold text-white shadow-lg transition hover:bg-[#4a3120] active:scale-[0.99]">
                     Login
                 </a>
 
-                <a href="{{ route('member.beranda') }}"
+                <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                     class="py-1 text-sm font-semibold text-[#5a3c27] hover:underline">
                     Skip This Step
                 </a>
@@ -119,8 +144,37 @@
 
     </div>
 
-    {{-- Carousel JavaScript --}}
+    {{-- Carousel & Page Transition JavaScript --}}
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const card = document.getElementById('app-card');
+            const alreadyOpened = sessionStorage.getItem('saisho_app_opened');
+            if (!alreadyOpened) {
+                card.classList.add('app-splash-in');
+                sessionStorage.setItem('saisho_app_opened', '1');
+            } else {
+                const dir = sessionStorage.getItem('nav_dir');
+                card.classList.add(dir === 'back' ? 'page-enter-left' : 'page-enter-right');
+            }
+            sessionStorage.removeItem('nav_dir');
+        });
+
+        function animateNavigate(url, dir) {
+            const card = document.getElementById('app-card');
+            card.style.transition = 'all 0.16s cubic-bezier(0.4, 0, 0.2, 1)';
+            card.style.opacity = '0';
+            if (dir === 'forward') {
+                card.style.transform = 'translateX(-16px)';
+                sessionStorage.setItem('nav_dir', 'forward');
+            } else {
+                card.style.transform = 'translateX(20px)';
+                sessionStorage.setItem('nav_dir', 'back');
+            }
+            setTimeout(() => {
+                window.location.href = url;
+            }, 150);
+        }
+
         let currentSlide = 0;
         const totalSlides = 3;
         const track = document.getElementById('carousel-track');

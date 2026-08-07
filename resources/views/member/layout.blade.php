@@ -7,10 +7,36 @@
     <meta name="theme-color" content="#5a3c27">
     <title>{{ $title ?? 'Member' }} &middot; {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        /* Page-to-page transition (tab switch / navigation) */
+        @keyframes pageEnterFromRight {
+            0% { opacity: 0; transform: translateX(20px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes pageEnterFromLeft {
+            0% { opacity: 0; transform: translateX(-20px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        .page-enter-right {
+            animation: pageEnterFromRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) ease-out forwards;
+        }
+        .page-enter-left {
+            animation: pageEnterFromLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) ease-out forwards;
+        }
+
+        /* One-time splash entrance the very first time the app is opened this session */
+        @keyframes appSplashIn {
+            0% { opacity: 0; transform: translateY(14px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .app-splash-in {
+            animation: appSplashIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
 </head>
 <body class="h-full bg-gray-50 font-outfit text-gray-800 antialiased">
 
-    <div class="mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-[0_0_60px_-15px_rgba(90,60,39,0.15)] sm:my-0">
+    <div id="app-card" class="mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-[0_0_60px_-15px_rgba(90,60,39,0.15)] sm:my-0">
 
         {{-- Top App Header --}}
         @unless(request()->routeIs('member.akun'))
@@ -48,12 +74,24 @@
         </main>
 
         {{-- Fore App Style Bottom Navigation --}}
+        @php
+            $activeHome = request()->routeIs('member.beranda');
+            $activeVoucher = request()->routeIs('member.reward*');
+            $activeOrder = request()->routeIs('member.riwayat*');
+            $activeAccount = request()->routeIs('member.akun');
+            $currentTabIndex = match (true) {
+                $activeHome => 0,
+                $activeVoucher => 1,
+                $activeOrder => 2,
+                $activeAccount => 3,
+                default => -1,
+            };
+        @endphp
         <nav class="fixed bottom-0 left-1/2 z-30 w-full max-w-md -translate-x-1/2 border-t border-gray-100 bg-white/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur">
             <div class="grid grid-cols-4 gap-1 text-center">
                 
                 {{-- Home / Beranda --}}
-                @php $activeHome = request()->routeIs('member.beranda'); @endphp
-                <a href="{{ route('member.beranda') }}" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeHome ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
+                <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 0);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeHome ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
                     <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeHome ? 'bg-brand-50 text-brand-800' : '' }}">
                         <svg viewBox="0 0 24 24" fill="{{ $activeHome ? 'currentColor' : 'none' }}" class="h-5 w-5"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-9.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </span>
@@ -61,16 +99,15 @@
                 </a>
 
                 {{-- Vouchers / Reward --}}
-                @php $activeVoucher = request()->routeIs('member.reward*'); @endphp
                 @auth('member')
-                    <a href="{{ route('member.reward.index') }}" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeVoucher ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
+                    <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 1);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeVoucher ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
                         <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeVoucher ? 'bg-brand-50 text-brand-800' : '' }}">
                             <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M15 5v14M9 5v14M4 10a2 2 0 0 0 0 4M20 10a2 2 0 0 1 0 4M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </span>
                         Vouchers
                     </a>
                 @else
-                    <a href="{{ route('member.welcome') }}" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold text-gray-400 hover:text-gray-600">
+                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold text-gray-400 hover:text-gray-600">
                         <span class="flex h-7 w-7 items-center justify-center">
                             <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M15 5v14M9 5v14M4 10a2 2 0 0 0 0 4M20 10a2 2 0 0 1 0 4M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </span>
@@ -79,16 +116,15 @@
                 @endauth
 
                 {{-- Your Order / Riwayat --}}
-                @php $activeOrder = request()->routeIs('member.riwayat*'); @endphp
                 @auth('member')
-                    <a href="{{ route('member.riwayat') }}" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeOrder ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
+                    <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeOrder ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
                         <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeOrder ? 'bg-brand-50 text-brand-800' : '' }}">
                             <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </span>
                         Your Order
                     </a>
                 @else
-                    <a href="{{ route('member.welcome') }}" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold text-gray-400 hover:text-gray-600">
+                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold text-gray-400 hover:text-gray-600">
                         <span class="flex h-7 w-7 items-center justify-center">
                             <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </span>
@@ -97,8 +133,7 @@
                 @endauth
 
                 {{-- Account / Akun --}}
-                @php $activeAccount = request()->routeIs('member.akun'); @endphp
-                <a href="{{ route('member.akun') }}" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeAccount ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
+                <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 3);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeAccount ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
                     <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeAccount ? 'bg-brand-50 text-brand-800' : '' }}">
                         <svg viewBox="0 0 24 24" fill="{{ $activeAccount ? 'currentColor' : 'none' }}" class="h-5 w-5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </span>
@@ -117,7 +152,7 @@
                 <h3 class="mt-4 text-base font-bold text-gray-900">Login Diperlukan</h3>
                 <p id="login-required-msg" class="mt-2 text-xs leading-relaxed text-gray-500">Silakan masuk atau daftar akun Saisho untuk mengakses fitur ini.</p>
                 <div class="mt-6 flex flex-col gap-2">
-                    <a href="{{ route('member.login') }}" class="w-full rounded-2xl bg-brand-800 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-900">
+                    <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="w-full rounded-2xl bg-brand-800 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-900">
                         Login Sekarang
                     </a>
                     <button type="button" onclick="document.getElementById('modal-login-required').close()" class="py-2 text-xs font-semibold text-gray-500 hover:text-gray-700">
@@ -133,6 +168,50 @@
         function bukaModalLoginRequired(namaFitur) {
             document.getElementById('login-required-msg').innerText = 'Silakan masuk atau daftar akun Saisho untuk mengakses fitur ' + namaFitur + '.';
             document.getElementById('modal-login-required').showModal();
+        }
+
+        // Which bottom-nav tab this page currently is (0=Home,1=Vouchers,2=Order,3=Account,-1=none)
+        window.__currentTabIndex = {{ $currentTabIndex }};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const card = document.getElementById('app-card');
+            if (!card) return;
+
+            const alreadyOpened = sessionStorage.getItem('saisho_app_opened');
+            if (!alreadyOpened) {
+                // True first screen this session -> a slightly richer "app is launching" entrance
+                card.classList.add('app-splash-in');
+                sessionStorage.setItem('saisho_app_opened', '1');
+            } else {
+                // Navigating between pages/tabs inside the app -> directional slide + fade
+                const dir = sessionStorage.getItem('nav_dir');
+                card.classList.add(dir === 'back' ? 'page-enter-left' : 'page-enter-right');
+            }
+            sessionStorage.removeItem('nav_dir');
+        });
+
+        // Generic animated navigation: fades/slides the app card out, then follows the link
+        function animateNavigate(url, dir) {
+            const card = document.getElementById('app-card');
+            if (!card) { window.location.href = url; return; }
+            card.style.transition = 'all 0.16s cubic-bezier(0.4, 0, 0.2, 1)';
+            card.style.opacity = '0';
+            if (dir === 'forward') {
+                card.style.transform = 'translateX(-16px)';
+                sessionStorage.setItem('nav_dir', 'forward');
+            } else {
+                card.style.transform = 'translateX(20px)';
+                sessionStorage.setItem('nav_dir', 'back');
+            }
+            setTimeout(() => { window.location.href = url; }, 150);
+        }
+
+        // Bottom-nav specific: picks the slide direction based on tab order,
+        // so moving right in the tab bar slides forward, moving left slides back
+        function animateNavigateTab(url, targetIndex) {
+            if (targetIndex === window.__currentTabIndex) return; // already on this tab
+            const dir = targetIndex > window.__currentTabIndex ? 'forward' : 'back';
+            animateNavigate(url, dir);
         }
     </script>
 </body>

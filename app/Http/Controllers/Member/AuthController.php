@@ -34,7 +34,7 @@ class AuthController extends Controller
         ]);
 
         $noHp = trim($request->no_hp);
-        
+
         // Normalize phone number
         if (str_starts_with($noHp, '0')) {
             $noHp = '+62' . substr($noHp, 1);
@@ -52,7 +52,7 @@ class AuthController extends Controller
 
         // Generate 6 digit OTP
         $otp = (string) rand(100000, 999999);
-        
+
         session([
             'otp_code' => $otp,
             'otp_phone' => $noHp,
@@ -111,7 +111,7 @@ class AuthController extends Controller
         Auth::guard('member')->login($member);
         $request->session()->regenerate();
 
-        return redirect()->route('member.beranda')->with('success', 'Selamat datang, '.$member->nama.'! Akun member Saisho kamu sudah aktif.');
+        return redirect()->route('member.beranda')->with('success', 'Selamat datang, ' . $member->nama . '! Akun member Saisho kamu sudah aktif.');
     }
 
     public function tampilkanLogin()
@@ -158,7 +158,13 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('member.beranda'));
+        $intendedUrl = $request->session()->pull('url.intended');
+
+        if ($intendedUrl && str_starts_with(parse_url($intendedUrl, PHP_URL_PATH) ?? '', '/member')) {
+            return redirect()->to($intendedUrl);
+        }
+
+        return redirect()->route('member.beranda');
     }
 
     public function logout(Request $request)

@@ -5,13 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Login &middot; {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        /* Subtle Smooth Page Animations */
+        @keyframes pageEnterFromRight {
+            0% { opacity: 0; transform: translateX(20px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes pageEnterFromLeft {
+            0% { opacity: 0; transform: translateX(-20px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        .page-enter-right {
+            animation: pageEnterFromRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) ease-out forwards;
+        }
+        .page-enter-left {
+            animation: pageEnterFromLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) ease-out forwards;
+        }
+
+        @keyframes appSplashIn {
+            0% { opacity: 0; transform: translateY(14px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .app-splash-in {
+            animation: appSplashIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
 </head>
-<body class="h-full font-outfit antialiased">
-    <div class="mx-auto flex min-h-screen max-w-md flex-col bg-white px-6 pb-8 pt-4 shadow-[0_0_60px_-15px_rgba(90,60,39,0.15)]">
+<body class="h-full font-outfit antialiased overflow-x-hidden">
+    <div id="app-card" class="mx-auto flex min-h-screen max-w-md flex-col bg-white px-6 pb-8 pt-4 shadow-[0_0_60px_-15px_rgba(90,60,39,0.15)]">
         
         {{-- Header Bar --}}
         <div class="relative flex items-center justify-center py-2">
-            <a href="{{ route('member.welcome') }}" class="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-brand-800 transition hover:bg-gray-50">
+            <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+               class="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-brand-800 transition hover:bg-gray-50 active:scale-95">
                 <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
             <h1 class="text-base font-bold text-brand-800">Login</h1>
@@ -27,7 +53,7 @@
 
         {{-- Main Content --}}
         <div class="mt-8 flex-1">
-            <h2 class="text-lg font-bold text-brand-800">Input Phone Number</h2>
+            <!-- <h2 class="text-lg font-bold text-brand-800">Input Phone Number</h2> -->
 
             <form method="POST" action="{{ route('member.login.store') }}" class="mt-6 space-y-6">
                 @csrf
@@ -62,7 +88,8 @@
                         <input type="checkbox" name="ingat_saya" class="rounded border-gray-300 text-brand-800 focus:ring-brand-800">
                         Ingat saya
                     </label>
-                    <a href="{{ route('member.register') }}" class="text-xs font-bold text-brand-800 hover:underline">Belum punya akun? Daftar</a>
+                    <a href="{{ route('member.register') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                       class="text-xs font-bold text-brand-800 hover:underline">Belum punya akun? Daftar</a>
                 </div>
 
                 {{-- Continue Button --}}
@@ -78,5 +105,36 @@
         </p>
 
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const card = document.getElementById('app-card');
+            const alreadyOpened = sessionStorage.getItem('saisho_app_opened');
+            if (!alreadyOpened) {
+                card.classList.add('app-splash-in');
+                sessionStorage.setItem('saisho_app_opened', '1');
+            } else {
+                const dir = sessionStorage.getItem('nav_dir');
+                card.classList.add(dir === 'back' ? 'page-enter-left' : 'page-enter-right');
+            }
+            sessionStorage.removeItem('nav_dir');
+        });
+
+        function animateNavigate(url, dir) {
+            const card = document.getElementById('app-card');
+            card.style.transition = 'all 0.16s cubic-bezier(0.4, 0, 0.2, 1)';
+            card.style.opacity = '0';
+            if (dir === 'back') {
+                card.style.transform = 'translateX(20px)';
+                sessionStorage.setItem('nav_dir', 'back');
+            } else {
+                card.style.transform = 'translateX(-16px)';
+                sessionStorage.setItem('nav_dir', 'forward');
+            }
+            setTimeout(() => {
+                window.location.href = url;
+            }, 150);
+        }
+    </script>
 </body>
 </html>
