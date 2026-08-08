@@ -114,8 +114,15 @@
                                             </div>
                                         </label>
                                     </form>
+                                    @if($item->status_aktif && $item->status_saat_ini !== 'Aktif')
+                                        <p class="mt-1.5 text-[11px] leading-tight font-semibold text-red-600 dark:text-red-400">
+                                            ⚠ {{ $item->status_saat_ini }}
+                                        </p>
+                                    @endif
                                 </td>
                                 <td class="py-3.5 px-2 sm:px-3 text-right space-x-1 whitespace-nowrap">
+                                    <a href="{{ route('stamp-program.show', $item->id) }}"
+                                        class="text-gray-600 dark:text-gray-400 font-semibold hover:underline text-xs sm:text-sm">Detail</a>
                                     <a href="{{ route('stamp-program.edit', $item->id) }}"
                                         class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">Edit</a>
                                     <form action="{{ route('stamp-program.destroy', $item->id) }}" method="POST" class="inline">
@@ -132,7 +139,7 @@
                                     <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300">
                                         <div>
                                             <span class="text-gray-400 block text-[11px] mb-0.5">Status</span>
-                                            <span class="{{ $item->status_aktif ? 'text-green-600' : 'text-gray-500' }} font-semibold">{{ $item->status_aktif ? 'Aktif' : 'Nonaktif' }}</span>
+                                            <span class="{{ $item->status_saat_ini === 'Aktif' ? 'text-green-600' : ($item->status_aktif ? 'text-red-600' : 'text-gray-500') }} font-semibold">{{ $item->status_saat_ini }}</span>
                                         </div>
                                         <div><span class="text-gray-400 block text-[11px]">Min. Pembelian</span>
                                             <span class="font-bold text-gray-800 dark:text-white">Rp {{ number_format($item->minimal_pembelian, 0, ',', '.') }}</span>

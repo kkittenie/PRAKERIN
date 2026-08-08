@@ -87,6 +87,16 @@ class StampProgramController extends Controller
         return redirect()->route('stamp-program.index')->with('success', 'Program stamp berhasil ditambahkan.');
     }
 
+    public function show(StampProgram $stampProgram)
+    {
+        $stampProgram->load(['hadiah.produk', 'redemptions']);
+
+        return view('pages.stamp-program.show', [
+            'title' => 'Detail Reward Stamp',
+            'program' => $stampProgram,
+        ]);
+    }
+
     public function edit(StampProgram $stampProgram)
     {
         $produks = Produk::where('status_aktif', true)->orderBy('nama_produk')->get();
@@ -147,9 +157,14 @@ class StampProgramController extends Controller
 
     public function toggleStatus(StampProgram $stampProgram)
     {
-        DB::transaction(function () use ($stampProgram) {
-            $akanAktif = !$stampProgram->status_aktif;
+        $akanAktif = !$stampProgram->status_aktif;
 
+        // Jangan biarkan program yang masa berlakunya sudah lewat diaktifkan dari toggle index.
+        if ($akanAktif && $stampProgram->tanggal_berakhir && now()->startOfDay()->gt($stampProgram->tanggal_berakhir)) {
+            return back()->with('error', 'Program "' . $stampProgram->nama_program . '" tidak bisa diaktifkan karena tanggal berakhirnya (' . $stampProgram->tanggal_berakhir->format('d-m-Y') . ') sudah lewat. Ubah dulu tanggal berakhirnya lewat menu Edit.');
+        }
+
+        DB::transaction(function () use ($stampProgram, $akanAktif) {
             if ($akanAktif) {
                 StampProgram::where('id', '!=', $stampProgram->id)
                     ->where('status_aktif', true)
@@ -166,11 +181,19 @@ class StampProgramController extends Controller
                 ->log('Mengubah status program stamp: ' . $stampProgram->nama_program);
         });
 
-        return back()->with('success', 'Status program stamp berhasil diubah. Ingat, cuma 1 program yang boleh aktif dalam satu waktu.');
+        $pesan = $akanAktif
+            ? 'Program stamp diaktifkan. Program aktif lainnya (jika ada) otomatis dinonaktifkan karena cuma 1 yang boleh aktif.'
+            : 'Program stamp dinonaktifkan.';
+
+        return back()->with('success', $pesan);
     }
 
     public function destroy(StampProgram $stampProgram)
     {
+        if ($stampProgram->redemptions()->exists()) {
+            return back()->with('error', 'Program stamp ini sudah pernah ditukar member dan tidak bisa dihapus. Nonaktifkan saja agar riwayat penukaran tetap tersimpan.');
+        }
+
         activity()
             ->causedBy(auth()->user())
             ->performedOn($stampProgram)
@@ -192,17 +215,51 @@ class StampProgramController extends Controller
             'maksimal_redeem' => 'nullable|integer|min:1',
             'tanggal_mulai' => 'nullable|date',
             'tanggal_berakhir' => 'nullable|date|after_or_equal:tanggal_mulai',
-            'status_aktif' => 'nullable|boolean',
+            'status_aktif' => [
+                'nullable',
+                'boolean',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (!$value) {
+                        return;
+                    }
+
+                    $tanggalBerakhir = $request->input('tanggal_berakhir');
+
+                    if ($tanggalBerakhir && now()->startOfDay()->gt(\Carbon\Carbon::parse($tanggalBerakhir))) {
+                        $fail('Program tidak bisa diaktifkan karena tanggal berakhir yang diisi sudah lewat. Ubah tanggal berakhir ke tanggal yang belum lewat, atau jangan aktifkan sekarang.');
+                    }
+                },
+            ],
             'produk_hadiah' => 'required|array|min:1',
-            'produk_hadiah.*' => 'exists:produks,id',
+            'produk_hadiah.*' => 'required|distinct|exists:produks,id',
             'jumlah_hadiah' => 'required|array|min:1',
-            'jumlah_hadiah.*' => 'required|integer|min:1',
+            'jumlah_hadiah.*' => [
+                'required',
+                'integer',
+                'min:1',
+                function ($attribute, $value, $fail) use ($request) {
+                    preg_match('/\d+/', $attribute, $match);
+                    $index = $match[0] ?? null;
+                    $produkId = $request->produk_hadiah[$index] ?? null;
+
+                    if (!$produkId) {
+                        return;
+                    }
+
+                    $produk = Produk::find($produkId);
+
+                    if ($produk && $value > $produk->stok) {
+                        $fail("Jumlah hadiah untuk \"{$produk->nama_produk}\" melebihi stok yang tersedia (stok saat ini: {$produk->stok}).");
+                    }
+                },
+            ],
         ], [
             'nama_program.required' => 'Nama program wajib diisi.',
             'minimal_pembelian.required' => 'Minimal pembelian per stamp wajib diisi.',
             'minimal_pembelian.min' => 'Minimal pembelian minimal Rp 1.000.',
             'jumlah_stamp_dibutuhkan.required' => 'Jumlah stamp yang dibutuhkan wajib diisi.',
             'produk_hadiah.required' => 'Pilih minimal 1 produk sebagai pilihan hadiah.',
+            'produk_hadiah.*.distinct' => 'Produk hadiah tidak boleh dipilih lebih dari sekali.',
             'jumlah_hadiah.*.required' => 'Isi jumlah untuk setiap hadiah yang dipilih.',
             'tanggal_berakhir.after_or_equal' => 'Tanggal berakhir tidak boleh sebelum tanggal mulai.',
         ]);

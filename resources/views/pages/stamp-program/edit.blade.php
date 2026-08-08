@@ -168,7 +168,7 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Tanggal Mulai
                     </label>
-                    <input type="date" name="tanggal_mulai"
+                    <input type="date" id="inputTanggalMulai" name="tanggal_mulai"
                         value="{{ old('tanggal_mulai', optional($program->tanggal_mulai)->format('Y-m-d')) }}"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                     @error('tanggal_mulai')
@@ -180,7 +180,7 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Tanggal Berakhir
                     </label>
-                    <input type="date" name="tanggal_berakhir"
+                    <input type="date" id="inputTanggalBerakhir" name="tanggal_berakhir"
                         value="{{ old('tanggal_berakhir', optional($program->tanggal_berakhir)->format('Y-m-d')) }}"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Kosongkan jika berlaku selamanya</span>
@@ -195,14 +195,17 @@
                     </label>
                     <label class="flex items-center gap-3 h-12 cursor-pointer">
                         <input type="hidden" name="status_aktif" value="0">
-                        <input type="checkbox" name="status_aktif" value="1"
+                        <input type="checkbox" id="inputStatusAktif" name="status_aktif" value="1"
                             class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
                             {{ old('status_aktif', $program->status_aktif) == '1' ? 'checked' : '' }}>
                         <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Aktifkan Sekarang</span>
                     </label>
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Cuma boleh 1 program aktif. Mengaktifkan ini otomatis menonaktifkan program lain.</span>
+                    <p id="peringatanMasaBerlaku" class="hidden text-xs font-semibold text-red-600 dark:text-red-400 mt-1">
+                        ⚠ Tanggal berakhir sudah lewat. Program tidak bisa diaktifkan &mdash; ubah tanggal berakhirnya dulu atau jangan aktifkan sekarang.
+                    </p>
                     @error('status_aktif')
-                        <small class="text-red-500">{{ $message }}</small>
+                        <small class="text-red-500 block mt-1">{{ $message }}</small>
                     @enderror
                 </div>
 
@@ -213,8 +216,8 @@
                    class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300">
                     Batal
                 </a>
-                <button type="submit"
-                    class="rounded-lg bg-brand-500 px-5 py-2 text-white hover:bg-brand-600">
+                <button type="submit" id="btnSubmitStampProgram"
+                    class="rounded-lg bg-brand-500 px-5 py-2 text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed">
                     Simpan Perubahan
                 </button>
             </div>
@@ -255,6 +258,9 @@
                     </label>
                     <input type="number" name="jumlah_hadiah[]" min="1" value="1"
                         class="input-jumlah-hadiah w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3">
+                    <p class="peringatan-stok hidden text-xs text-red-600 mt-1">
+                        Jumlah melebihi stok yang tersedia!
+                    </p>
                 </div>
             </div>
 
@@ -266,6 +272,10 @@
                     Hapus
                 </button>
             </div>
+
+            <p class="peringatan-duplikat hidden text-xs text-red-600 mt-1">
+                Produk ini sudah dipilih di baris lain!
+            </p>
         `;
 
         containerHadiah.appendChild(div);
@@ -277,11 +287,104 @@
         tambahBarisHadiah();
     });
 
+    function cekJumlahMelebihiStok(inputJumlah, peringatan) {
+        const stokMax = parseFloat(inputJumlah.dataset.stokMax || 0);
+        const nilai = parseFloat(inputJumlah.value) || 0;
+
+        if (nilai > stokMax) {
+            peringatan.classList.remove('hidden');
+            inputJumlah.classList.add('border-red-500');
+        } else {
+            peringatan.classList.add('hidden');
+            inputJumlah.classList.remove('border-red-500');
+        }
+
+        perbaruiTombolSubmitStampProgram();
+    }
+
+    function cekDuplikatHadiah() {
+        const semuaBaris = document.querySelectorAll('#hadiah-container > div');
+        const jumlahPerId = {};
+
+        semuaBaris.forEach(function (baris) {
+            const id = baris.querySelector('.input-id-hadiah').value;
+            if (id) {
+                jumlahPerId[id] = (jumlahPerId[id] || 0) + 1;
+            }
+        });
+
+        let adaDuplikat = false;
+
+        semuaBaris.forEach(function (baris) {
+            const inputId = baris.querySelector('.input-id-hadiah');
+            const inputSearch = baris.querySelector('.input-search-hadiah');
+            const peringatan = baris.querySelector('.peringatan-duplikat');
+
+            if (inputId.value && jumlahPerId[inputId.value] > 1) {
+                peringatan.classList.remove('hidden');
+                inputSearch.classList.add('border-red-500');
+                adaDuplikat = true;
+            } else {
+                peringatan.classList.add('hidden');
+                inputSearch.classList.remove('border-red-500');
+            }
+        });
+
+        perbaruiTombolSubmitStampProgram();
+        return adaDuplikat;
+    }
+
+    // --- Validasi Masa Berlaku vs Status Aktif ---
+    const inputTanggalMulai = document.getElementById('inputTanggalMulai');
+    const inputTanggalBerakhir = document.getElementById('inputTanggalBerakhir');
+    const inputStatusAktif = document.getElementById('inputStatusAktif');
+    const peringatanMasaBerlaku = document.getElementById('peringatanMasaBerlaku');
+
+    function cekMasaBerlakuVsStatus() {
+        if (!inputStatusAktif.checked || !inputTanggalBerakhir.value) {
+            peringatanMasaBerlaku.classList.add('hidden');
+            perbaruiTombolSubmitStampProgram();
+            return;
+        }
+
+        const hariIni = new Date();
+        hariIni.setHours(0, 0, 0, 0);
+        const tanggalBerakhir = new Date(inputTanggalBerakhir.value + 'T00:00:00');
+
+        if (tanggalBerakhir < hariIni) {
+            peringatanMasaBerlaku.classList.remove('hidden');
+        } else {
+            peringatanMasaBerlaku.classList.add('hidden');
+        }
+
+        perbaruiTombolSubmitStampProgram();
+    }
+
+    inputStatusAktif.addEventListener('change', cekMasaBerlakuVsStatus);
+    inputTanggalBerakhir.addEventListener('change', cekMasaBerlakuVsStatus);
+    inputTanggalMulai.addEventListener('change', cekMasaBerlakuVsStatus);
+
+    function perbaruiTombolSubmitStampProgram() {
+        const adaErrorStok = containerHadiah.querySelectorAll('.peringatan-stok:not(.hidden)').length > 0;
+        const adaErrorDuplikat = containerHadiah.querySelectorAll('.peringatan-duplikat:not(.hidden)').length > 0;
+        const adaErrorMasaBerlaku = !peringatanMasaBerlaku.classList.contains('hidden');
+        const btn = document.getElementById('btnSubmitStampProgram');
+        if (btn) {
+            btn.disabled = adaErrorStok || adaErrorDuplikat || adaErrorMasaBerlaku;
+        }
+    }
+
     function aktifkanSearchHadiah(element) {
         const inputSearch = element.querySelector('.input-search-hadiah');
         const hasilSearch = element.querySelector('.hasil-search');
         const inputId = element.querySelector('.input-id-hadiah');
         const infoStok = element.querySelector('.info-stok-hadiah');
+        const inputJumlah = element.querySelector('.input-jumlah-hadiah');
+        const peringatanStok = element.querySelector('.peringatan-stok');
+
+        inputJumlah.addEventListener('input', function () {
+            cekJumlahMelebihiStok(inputJumlah, peringatanStok);
+        });
 
         inputSearch.addEventListener('input', function () {
             const keyword = this.value.toLowerCase();
@@ -289,6 +392,7 @@
 
             if (keyword.length === 0) {
                 hasilSearch.classList.add('hidden');
+                cekDuplikatHadiah();
                 return;
             }
 
@@ -319,7 +423,8 @@
                     `;
 
                     item.addEventListener('click', function () {
-                        pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok);
+                        pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok, inputJumlah);
+                        cekDuplikatHadiah();
                     });
 
                     hasilSearch.appendChild(item);
@@ -331,6 +436,7 @@
 
         element.querySelector('.btn-hapus-hadiah').addEventListener('click', function () {
             element.remove();
+            cekDuplikatHadiah();
         });
 
         document.addEventListener('click', function (e) {
@@ -340,11 +446,16 @@
         });
     }
 
-    function pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok) {
+    function pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok, inputJumlah) {
         inputSearch.value = produk.nama_produk;
         inputId.value = produk.id;
         infoStok.innerHTML = `Stok saat ini: <strong>${produk.stok}</strong>`;
         hasilSearch.classList.add('hidden');
+
+        if (inputJumlah) {
+            inputJumlah.dataset.stokMax = produk.stok;
+            inputJumlah.dispatchEvent(new Event('input'));
+        }
     }
 
     // Prefill: kalau validasi gagal, pakai old input. Kalau load pertama kali, pakai data hadiah yang sudah tersimpan.
@@ -363,8 +474,9 @@
         const infoStok = div.querySelector('.info-stok-hadiah');
         const inputJumlah = div.querySelector('.input-jumlah-hadiah');
 
-        pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok);
+        pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok, inputJumlah);
         inputJumlah.value = jumlah ?? 1;
+        inputJumlah.dispatchEvent(new Event('input'));
     }
 
     if (oldProdukHadiah.length > 0) {
@@ -378,6 +490,8 @@
     } else {
         tambahBarisHadiah();
     }
+    cekDuplikatHadiah();
+    cekMasaBerlakuVsStatus();
 </script>
 
 @endsection

@@ -231,7 +231,6 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:edit_reward');
 
     Route::resource('stamp-program', StampProgramController::class)
-        ->except(['show'])
         ->middleware('permission:lihat_reward|tambah_reward|edit_reward|hapus_reward');
 
     // Reward Voucher
