@@ -9,14 +9,14 @@
     <div>
 
         {{-- Promo Banner (1 big image, carousel like welcome page) + Greeting Card, stacked Fore-style --}}
-        <div class="-mx-5 relative">
+        <div class="-mx-5 sm:-mx-8 md:-mx-10 relative">
             {{-- Notification button, floating top-right over the banner --}}
             <button type="button" class="absolute right-4 top-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur transition hover:bg-black/40">
                 <svg viewBox="0 0 24 24" fill="none" class="h-[18px] w-[18px]"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
 
             @if (count($promoBanners))
-                <div id="promo-viewport" class="relative h-80 w-full touch-pan-x overflow-hidden rounded-b-[1.1rem]">
+                <div id="promo-viewport" class="relative h-80 md:h-[380px] lg:h-[420px] landscape:h-64 md:landscape:h-72 w-full touch-pan-x overflow-hidden rounded-b-[1.5rem]">
                     <div id="promo-track" class="flex h-full transition-transform duration-[450ms] ease-out" style="width: {{ count($promoBanners) * 100 }}%;">
                         @foreach ($promoBanners as $banner)
                             <div class="relative h-full shrink-0" style="width: {{ 100 / count($promoBanners) }}%;">
@@ -115,7 +115,7 @@
             </script>
 
             {{-- Greeting card, tucked up over the banner image like the Fore app --}}
-            <div class="relative z-20 {{ count($promoBanners) ? '-mt-10' : 'mt-0' }} px-5">
+            <div class="relative z-20 {{ count($promoBanners) ? '-mt-10 md:-mt-14' : 'mt-0' }} px-5 sm:px-8 md:px-10">
                 @auth('member')
                     {{-- Kartu sapaan ala "Hi Sofi!" --}}
                     <div class="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-5 shadow-lg shadow-gray-900/10">
@@ -132,7 +132,7 @@
                         <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-dashed border-gray-100 pt-4">
                             <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 py-1.5 pl-1.5 pr-3 text-xs font-bold text-gray-800">
                                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-                                    @include('member.components.icon-cup', ['class' => 'h-3.5 w-3.5'])
+                                    @include('member.components.icon-cake', ['class' => 'h-3.5 w-3.5'])
                                 </span>
                                 {{ number_format($member->poin, 0, ',', '.') }} Poin
                             </span>
@@ -230,7 +230,7 @@
                     <div class="flex items-center justify-between gap-3">
                         <div class="flex min-w-0 items-center gap-3">
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15">
-                                @include('member.components.icon-cup', ['class' => 'h-5 w-5'])
+                                @include('member.components.icon-cake', ['class' => 'h-5 w-5'])
                             </span>
                             <div class="min-w-0">
                                 <p class="text-[11px] font-semibold uppercase tracking-wide text-white/60">Program Stamp</p>
@@ -246,7 +246,7 @@
                         @for ($i = 1; $i <= $stampDotCount; $i++)
                             @php $terisi = $i <= $stampCurrent; @endphp
                             <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $terisi ? 'bg-white text-brand-800' : 'border-2 border-dashed border-white/35 text-white/35' }}">
-                                @include('member.components.icon-cup', ['class' => 'h-3 w-3'])
+                                @include('member.components.icon-cake', ['class' => 'h-3 w-3'])
                             </span>
                         @endfor
                         @if ($stampTarget > $stampDotCount)
@@ -281,7 +281,7 @@
             @endauth
         </div>
 
-        <div class="mt-3 space-y-3">
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 space-y-0">
             @forelse ($rewardUnggulan as $reward)
                 @include('member.components.reward-card', ['reward' => $reward, 'member' => $member])
             @empty

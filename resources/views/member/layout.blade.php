@@ -129,11 +129,22 @@
         .stamp-card-penuh .stamp-badge-icon {
             animation: stampCelebrate 1s ease-in-out 0.5s 1;
         }
+
+        /* ===== TABLET & LANDSCAPE RESPONSIVE ===== */
+        /* Constrain dialog sheets on landscape / short viewports */
+        @media (orientation: landscape) {
+            dialog.sheet > div,
+            dialog.modal-center > div {
+                max-height: 85vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
     </style>
 </head>
 <body class="h-full overflow-x-hidden bg-gray-50 font-outfit text-gray-800 antialiased">
 
-    <div id="app-card" class="mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-[0_0_60px_-15px_rgba(90,60,39,0.15)] sm:my-0">
+    <div id="app-card" class="mx-auto flex min-h-screen w-full max-w-none sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl flex-col bg-white shadow-2xl sm:my-6 sm:min-h-0 sm:rounded-3xl sm:border sm:border-gray-200/80 transition-all duration-300">
 
         {{-- Flash messages --}}
         @if (session('success'))
@@ -150,7 +161,7 @@
         @endif
 
         {{-- Main Page Content --}}
-        <main class="flex flex-1 flex-col {{ request()->routeIs('member.profil') ? '' : 'px-5' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-28' }}">
+        <main class="flex flex-1 flex-col {{ request()->routeIs('member.profil') ? '' : 'px-5 sm:px-8 md:px-10' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-28 sm:pb-32' }}">
             @yield('content')
         </main>
 
@@ -169,7 +180,7 @@
             };
         @endphp
         @unless(request()->routeIs('member.profil'))
-        <nav class="fixed bottom-0 left-1/2 z-30 w-full max-w-md -translate-x-1/2 border-t border-gray-100 bg-white/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur">
+        <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 z-30 w-full max-w-none sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl bg-white/95 backdrop-blur-md border-t border-gray-200/80 sm:rounded-b-3xl sm:bottom-6 sm:shadow-xl px-4 sm:px-8 py-2 transition-all duration-300">
             <div class="grid grid-cols-4 gap-1 text-center">
                 
                 {{-- Home / Beranda --}}
@@ -227,7 +238,7 @@
         @endunless
 
         {{-- Login Required Dialog Modal for Guests --}}
-        <dialog id="modal-login-required" class="modal-center fixed inset-0 my-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 shadow-2xl border-0">
+        <dialog id="modal-login-required" class="modal-center fixed inset-0 my-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 shadow-2xl border-0 sm:max-w-md md:max-w-lg">
             <div class="p-6 text-center">
                 <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-800">
                     <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 15v2m0 4h.01M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Zm2 0V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>

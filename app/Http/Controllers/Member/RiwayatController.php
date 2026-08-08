@@ -17,6 +17,7 @@ class RiwayatController extends Controller
             ->get();
 
         $transaksi = $member->transaksi()
+            ->with('detailTransaksi')
             ->latest()
             ->take(20)
             ->get();

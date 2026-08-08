@@ -32,7 +32,7 @@
     </style>
 </head>
 <body class="h-full font-outfit antialiased overflow-x-hidden">
-    <div id="app-card" class="mx-auto flex min-h-screen max-w-md flex-col bg-white px-6 pb-8 pt-4 shadow-[0_0_60px_-15px_rgba(90,60,39,0.15)]">
+    <div id="app-card" class="mx-auto flex min-h-screen w-full max-w-none sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex-col bg-white px-6 sm:px-10 pb-8 pt-6 shadow-2xl sm:my-6 sm:min-h-0 sm:rounded-3xl sm:border sm:border-gray-200/80 transition-all duration-300">
         
         {{-- Header Bar --}}
         <div class="relative flex items-center justify-center py-2">

@@ -32,16 +32,16 @@
         @endauth
 
         {{-- Legal & Support Links --}}
-        <div class="divide-y divide-gray-100 bg-white rounded-xl">
-            <a href="#" class="flex items-center justify-between py-3.5 px-1 text-sm font-medium text-gray-800 hover:text-brand-800">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <a href="#" class="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 text-sm font-medium text-gray-800 hover:text-brand-800 shadow-xs">
                 <span>Help Center</span>
                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-400"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
-            <a href="#" class="flex items-center justify-between py-3.5 px-1 text-sm font-medium text-gray-800 hover:text-brand-800">
+            <a href="#" class="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 text-sm font-medium text-gray-800 hover:text-brand-800 shadow-xs">
                 <span>Terms and Conditions</span>
                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-400"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
-            <a href="#" class="flex items-center justify-between py-3.5 px-1 text-sm font-medium text-gray-800 hover:text-brand-800">
+            <a href="#" class="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 text-sm font-medium text-gray-800 hover:text-brand-800 shadow-xs">
                 <span>Privacy Policy</span>
                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-400"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>

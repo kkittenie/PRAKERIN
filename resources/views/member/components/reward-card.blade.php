@@ -4,7 +4,8 @@
     $cukupPoin = $member ? $member->poin >= $reward->poin_dibutuhkan : false;
     $habis = ! is_null($reward->stok) && $reward->stok <= 0;
     $isVoucher = $reward->jenis === 'voucher';
-    $icon = $isVoucher ? 'icon-ticket' : 'icon-cup';
+    $isCroissant = str_contains(strtolower($reward->nama ?? ''), 'croissant');
+    $icon = $isVoucher ? 'icon-ticket' : ($isCroissant ? 'icon-cake' : 'icon-cup');
     $iconBg = $isVoucher ? '#5a3c27' : '#f97316';
     $tintRgba = $isVoucher ? 'rgba(90,60,39,.05)' : 'rgba(249,115,22,.06)';
 @endphp

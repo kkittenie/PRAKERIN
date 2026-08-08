@@ -36,7 +36,7 @@
         @include('member.components.empty-state', [
             'title' => 'Belum Ada Program Stamp',
             'description' => 'Sabar ya, program kumpulin stamp bakal dibuka lagi nanti.',
-            'icon' => 'icon-cup',
+            'icon' => 'icon-cake',
             'iconBg' => 'bg-orange-50',
             'iconColor' => 'text-orange-500',
         ])
@@ -67,7 +67,7 @@
                     @endif
                 </div>
                 <span class="stamp-badge-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15">
-                    @include('member.components.icon-cup', ['class' => 'h-5 w-5'])
+                    @include('member.components.icon-cake', ['class' => 'h-5 w-5'])
                 </span>
             </div>
 
@@ -78,7 +78,7 @@
             {{-- Stamp dots. The most recently earned dot (index === $current) gets the
                  "latest" variant so it pops in bigger and keeps a soft glow pulse,
                  making a freshly-earned stamp obviously stand out from older ones. --}}
-            <div class="mt-4 grid grid-cols-5 gap-2.5">
+            <div class="mt-4 grid grid-cols-5 md:grid-cols-10 gap-2.5">
                 @for ($i = 1; $i <= $target; $i++)
                     @php
                         $terisi = $i <= $current;
@@ -88,7 +88,7 @@
                         class="flex aspect-square items-center justify-center rounded-full {{ $terisi ? ($terbaru ? 'stamp-filled-latest' : 'stamp-filled') . ' bg-white text-brand-800 shadow-sm' : 'border-2 border-dashed border-white/35 text-white/35' }}"
                         @if ($terisi && ! $terbaru) style="animation-delay: {{ ($i - 1) * 0.06 }}s" @endif
                     >
-                        @include('member.components.icon-cup', ['class' => 'h-4 w-4'])
+                        @include('member.components.icon-cake', ['class' => 'h-4 w-4'])
                     </span>
                 @endfor
             </div>
@@ -115,15 +115,20 @@
             <span class="text-xs text-gray-400">{{ $program->hadiah->count() }} pilihan</span>
         </div>
 
-        <div class="mt-3 space-y-3">
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
             @forelse ($program->hadiah as $hadiah)
-                @php $produk = $hadiah->produk; @endphp
+                @php
+                    $produk = $hadiah->produk;
+                    $isCroissant = str_contains(strtolower($produk?->nama_produk ?? ''), 'croissant');
+                @endphp
                 <div class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm {{ ! $bisaTukar ? 'opacity-60' : '' }}">
                     <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-brand-50">
                         @if ($produk?->foto)
                             <img src="{{ asset('storage/'.$produk->foto) }}" alt="{{ $produk->nama_produk }}" class="h-full w-full object-cover">
+                        @elseif ($isCroissant)
+                            <span class="text-brand-800">@include('member.components.icon-cake', ['class' => 'h-6 w-6'])</span>
                         @else
-                            <span class="text-brand-800">@include('member.components.icon-cup', ['class' => 'h-6 w-6'])</span>
+                            <span class="text-brand-800">@include('member.components.icon-cake', ['class' => 'h-6 w-6'])</span>
                         @endif
                     </span>
 
@@ -146,7 +151,7 @@
         </div>
 
         {{-- Shared confirmation dialog, filled in dynamically by bukaKonfirmasiTukarStamp() --}}
-        <dialog id="konfirmasi-tukar-stamp" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md mx-auto rounded-t-3xl border-0 p-0">
+        <dialog id="konfirmasi-tukar-stamp" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto rounded-t-3xl border-0 p-0">
             <div class="flex shrink-0 justify-center pb-1 pt-3">
                 <span class="h-1 w-10 rounded-full bg-gray-200"></span>
             </div>

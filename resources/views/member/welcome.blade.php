@@ -79,8 +79,8 @@
 
 <body class="h-full font-outfit antialiased overflow-x-hidden">
     <div id="app-card"
-        class="mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-[0_0_60px_-15px_rgba(90,60,39,0.2)] overflow-hidden">
-        <div id="carousel-viewport" class="relative w-full aspect-[3/4] overflow-hidden touch-pan-x bg-[#5a3c27]">
+        class="mx-auto flex min-h-screen w-full max-w-none sm:max-w-2xl md:max-w-4xl lg:max-w-5xl flex-col bg-white shadow-2xl overflow-hidden sm:my-6 sm:min-h-0 sm:rounded-3xl sm:border sm:border-gray-200/80 transition-all duration-300 md:grid md:grid-cols-2 md:items-center">
+        <div id="carousel-viewport" class="relative w-full aspect-[3/4] sm:aspect-[4/3] md:aspect-square md:h-full overflow-hidden touch-pan-x bg-[#5a3c27] sm:rounded-t-3xl md:rounded-tr-none md:rounded-l-3xl">
             <div id="carousel-track" class="carousel-track">
 
                 {{-- Slide 1 --}}
@@ -128,15 +128,15 @@
                     Saisho Plan for a rewarding coffee, bakery & cake experience</p>
             </div>
 
-            <div class="mt-auto px-6 pb-5 pt-2 flex flex-col items-center gap-2.5">
+            <div class="mt-auto px-6 pb-5 pt-2 flex flex-col items-center gap-2.5 sm:flex-row sm:justify-center sm:gap-4 sm:pb-8">
 
                 <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                    class="w-full rounded-full bg-[#5a3c27] py-3 text-center text-base font-bold text-white shadow-lg transition hover:bg-[#4a3120] active:scale-[0.99]">
+                    class="w-full sm:w-auto sm:min-w-[200px] rounded-full bg-[#5a3c27] py-3 text-center text-base font-bold text-white shadow-lg transition hover:bg-[#4a3120] active:scale-[0.99]">
                     Login
                 </a>
 
                 <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                    class="py-1 text-sm font-semibold text-[#5a3c27] hover:underline">
+                    class="py-1 text-sm font-semibold text-[#5a3c27] hover:underline sm:py-3 sm:px-6 sm:rounded-full sm:border sm:border-[#5a3c27]/30 sm:hover:bg-[#5a3c27]/5">
                     Skip This Step
                 </a>
             </div>

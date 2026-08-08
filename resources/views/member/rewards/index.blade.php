@@ -29,11 +29,11 @@
          viewport pixel value — so there's nothing that can go stale if the fetched
          Stamp pane's content later changes the page's height. That measured-px-value
          staleness is what used to leave "Tukar Hadiah" rendering partially clipped. --}}
-    <div id="voucher-tab-viewport" class="flex flex-1 flex-col overflow-hidden">
+    <div id="voucher-tab-viewport" class="relative flex flex-1 flex-col overflow-hidden">
         <div id="voucher-tab-track" class="flex flex-1 transition-transform duration-300 ease-out">
 
             {{-- Pane: Semua --}}
-            <div class="voucher-tab-pane flex shrink-0 flex-col pt-5">
+            <div class="voucher-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="0">
 
                 {{-- Program Stamp card: shown here too (not just its own Stamp tab). Tapping
                      it switches to the Stamp pane via the same client-side tab switcher used
@@ -44,7 +44,7 @@
                 <button type="button" id="stamp-teaser-card" onclick="switchVoucherTab('stamp')"
                         class="mb-4 flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-[#5a3c27] to-[#8b5e3c] p-4 text-left text-white shadow-sm transition active:scale-[0.99]">
                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15">
-                        @include('member.components.icon-cup', ['class' => 'h-5 w-5'])
+                        @include('member.components.icon-cake', ['class' => 'h-5 w-5'])
                     </span>
                     <div class="min-w-0 flex-1">
                         <p id="stamp-teaser-title" class="truncate text-sm font-extrabold">Program Stamp</p>
@@ -59,7 +59,7 @@
                     <h2 class="text-sm font-bold text-gray-900">Katalog Reward</h2>
                     <span class="text-xs text-gray-400">{{ $rewards->count() }} reward</span>
                 </div>
-                <div class="mt-3 flex flex-1 flex-col space-y-3">
+                <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 space-y-0">
                     @forelse ($rewards as $reward)
                         @include('member.components.reward-card', ['reward' => $reward, 'member' => $member])
                     @empty
@@ -76,12 +76,12 @@
 
             {{-- Pane: Voucher (same $rewards collection, filtered to jenis=voucher) --}}
             @php $rewardsVoucher = $rewards->where('jenis', 'voucher'); @endphp
-            <div class="voucher-tab-pane flex shrink-0 flex-col pt-5">
+            <div class="voucher-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="1">
                 <div class="flex items-center justify-between">
                     <h2 class="text-sm font-bold text-gray-900">Katalog Voucher</h2>
                     <span class="text-xs text-gray-400">{{ $rewardsVoucher->count() }} voucher</span>
                 </div>
-                <div class="mt-3 flex flex-1 flex-col space-y-3">
+                <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 space-y-0">
                     @forelse ($rewardsVoucher as $reward)
                         @include('member.components.reward-card', ['reward' => $reward, 'member' => $member])
                     @empty
@@ -98,7 +98,7 @@
 
             {{-- Pane: Stamp — lazily fetched from the existing member.stamps.index route
                  the first time this tab is opened, so we reuse that page/controller as-is. --}}
-            <div class="voucher-tab-pane flex shrink-0 flex-col">
+            <div class="voucher-tab-pane flex shrink-0 flex-col bg-white" data-pane-index="2">
                 <div id="stamp-pane-content" class="flex flex-1 flex-col">
                     <div class="flex flex-1 flex-col items-center justify-center py-10 text-center">
                         <svg class="h-6 w-6 animate-spin text-gray-300" viewBox="0 0 24 24" fill="none">
@@ -139,10 +139,17 @@
             // then keeps every pane exactly viewport-width via CSS as layout changes.
             const paneWidthPercent = 100 / tabs.length;
             track.style.width = (tabs.length * 100) + '%';
-            panes.forEach((pane) => { pane.style.width = paneWidthPercent + '%'; });
+            panes.forEach((pane, i) => {
+                pane.style.width = paneWidthPercent + '%';
+                pane.style.pointerEvents = i === current ? 'auto' : 'none';
+            });
 
             function paint() {
                 track.style.transform = `translateX(-${current * paneWidthPercent}%)`;
+                panes.forEach((pane, i) => {
+                    pane.style.pointerEvents = i === current ? 'auto' : 'none';
+                    pane.style.zIndex = i === current ? '1' : '0';
+                });
                 indicator.style.transform = `translateX(${current * 100}%)`;
                 buttons.forEach((btn, i) => {
                     btn.classList.toggle('text-brand-800', i === current);

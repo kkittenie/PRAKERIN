@@ -6,7 +6,8 @@
     $bisaDitukar = $cukupPoin && ! $habis;
     $kurang = max(0, $reward->poin_dibutuhkan - $member->poin);
     $isVoucher = $reward->jenis !== 'produk';
-    $icon = $isVoucher ? 'icon-ticket' : 'icon-cup';
+    $isCroissant = str_contains(strtolower($reward->nama ?? ''), 'croissant');
+    $icon = $isVoucher ? 'icon-ticket' : ($isCroissant ? 'icon-cake' : 'icon-cup');
 
     // These three read from optional columns on the reward if present, and fall back
     // to sensible generic copy otherwise. Add `syarat_ketentuan`, `cara_pakai`,
@@ -19,7 +20,7 @@
 @section('content')
 
     {{-- App-bar style header: back button on the left, title centered --}}
-    <div class="relative -mx-5 -mt-6 flex items-center justify-center border-b border-gray-100 px-5 py-4">
+    <div class="relative -mx-5 sm:-mx-8 md:-mx-10 -mt-6 flex items-center justify-center border-b border-gray-100 px-5 py-4">
         <a href="{{ route('member.reward.index') }}"
            onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
            class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100">
@@ -28,19 +29,31 @@
         <h1 class="text-theme-sm font-bold text-gray-900">Voucher Detail</h1>
     </div>
 
-    {{-- Full-bleed decorative hero (kept original/generic, not copied from any app) --}}
-    <div class="relative -mx-5 overflow-hidden bg-gradient-to-br {{ $isVoucher ? 'from-brand-100 to-brand-200' : 'from-orange-100 to-orange-200' }} py-10">
-        <span class="absolute -left-6 -top-6 h-28 w-28 rounded-full bg-white/40"></span>
-        <span class="absolute -right-8 top-8 h-20 w-20 rounded-full bg-white/30"></span>
-        <span class="absolute bottom-0 right-10 h-16 w-16 rounded-full bg-white/25"></span>
+    {{-- Hero image: uses the reward image uploaded from the admin panel. --}}
+    <div class="relative -mx-5 sm:-mx-8 md:-mx-10 h-36 overflow-hidden bg-gradient-to-br {{ $isVoucher ? 'from-brand-100 to-brand-200' : 'from-orange-100 to-orange-200' }} md:h-48">
+        @if ($reward->gambar)
+            <img
+                src="{{ asset('storage/' . $reward->gambar) }}"
+                alt="{{ $reward->nama }}"
+                class="h-full w-full object-cover"
+            >
+            <div class="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-white/10"></div>
+        @else
+            <span class="absolute -left-6 -top-6 h-28 w-28 rounded-full bg-white/40"></span>
+            <span class="absolute -right-8 top-8 h-20 w-20 rounded-full bg-white/30"></span>
+            <span class="absolute bottom-0 right-10 h-16 w-16 rounded-full bg-white/25"></span>
 
-        <span class="relative mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white/70 shadow-sm {{ $isVoucher ? 'text-brand-700' : 'text-orange-600' }}">
-            @include('member.components.'.$icon, ['class' => 'h-9 w-9'])
-        </span>
+            <span class="relative mx-auto flex h-full w-full items-center justify-center">
+                <span class="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/70 shadow-sm {{ $isVoucher ? 'text-brand-700' : 'text-orange-600' }}">
+                    @include('member.components.'.$icon, ['class' => 'h-9 w-9'])
+                </span>
+            </span>
+        @endif
     </div>
 
     {{-- Title & description --}}
-    <div class="pt-5">
+    <div class="pt-5 md:grid md:grid-cols-2 md:gap-8 md:items-start">
+        <div>
         <h2 class="text-theme-lg font-bold leading-tight text-gray-900">{{ $reward->nama }}</h2>
         <p class="mt-2 text-theme-sm leading-relaxed text-gray-500">
             {{ $reward->deskripsi ?: ($isVoucher ? 'Voucher diskon spesial dari Saisho Cake & Bake.' : 'Tukar poin kamu dengan produk gratis ini.') }}
@@ -112,7 +125,7 @@
     </div>
 
     {{-- Bottom sheet: Menu yang Berlaku --}}
-    <dialog id="sheet-menu-berlaku" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md mx-auto max-h-[82vh] rounded-t-3xl border-0 p-0">
+    <dialog id="sheet-menu-berlaku" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto max-h-[82vh] rounded-t-3xl border-0 p-0">
         <div class="flex max-h-[82vh] flex-col">
             <div class="flex shrink-0 justify-center pb-1 pt-3">
                 <span class="h-1 w-10 rounded-full bg-gray-200"></span>
@@ -137,7 +150,7 @@
     </dialog>
 
     {{-- Bottom sheet: Syarat & Ketentuan (matches the Terms & Conditions example) --}}
-    <dialog id="sheet-syarat-ketentuan" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md mx-auto max-h-[82vh] rounded-t-3xl border-0 p-0">
+    <dialog id="sheet-syarat-ketentuan" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto max-h-[82vh] rounded-t-3xl border-0 p-0">
         <div class="flex max-h-[82vh] flex-col">
             <div class="flex shrink-0 justify-center pb-1 pt-3">
                 <span class="h-1 w-10 rounded-full bg-gray-200"></span>
@@ -173,7 +186,7 @@
     </dialog>
 
     {{-- Bottom sheet: Cara Pakai --}}
-    <dialog id="sheet-cara-pakai" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md mx-auto max-h-[82vh] rounded-t-3xl border-0 p-0">
+    <dialog id="sheet-cara-pakai" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto max-h-[82vh] rounded-t-3xl border-0 p-0">
         <div class="flex max-h-[82vh] flex-col">
             <div class="flex shrink-0 justify-center pb-1 pt-3">
                 <span class="h-1 w-10 rounded-full bg-gray-200"></span>
@@ -206,18 +219,24 @@
         </div>
     </dialog>
 
-    {{-- Confirmation dialog before spending poin --}}
-    <dialog id="konfirmasi-tukar" class="modal-center w-[calc(100%-2.5rem)] max-w-sm rounded-2xl border-0 p-0">
-        <div class="p-5 text-center">
-            <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-                @include('member.components.icon-gift', ['class' => 'h-6 w-6'])
-            </span>
-            <p class="mt-3 text-theme-md font-semibold text-gray-800">Tukar {{ $reward->nama }}?</p>
-            <p class="mt-1 text-theme-sm text-gray-500">{{ number_format($reward->poin_dibutuhkan, 0, ',', '.') }} poin akan dipotong dari saldo kamu dan tidak bisa dibatalkan.</p>
+    {{-- Confirmation dialog before spending poin — bottom sheet, same as the
+         expandable rows above (Menu yang Berlaku, Syarat & Ketentuan, Cara Pakai) --}}
+    <dialog id="konfirmasi-tukar" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto rounded-t-3xl border-0 p-0">
+        <div class="flex flex-col">
+            <div class="flex shrink-0 justify-center pb-1 pt-3">
+                <span class="h-1 w-10 rounded-full bg-gray-200"></span>
+            </div>
+            <div class="px-6 pb-2 pt-3 text-center">
+                <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                    @include('member.components.icon-gift', ['class' => 'h-6 w-6'])
+                </span>
+                <p class="mt-3 text-theme-md font-semibold text-gray-800">Tukar {{ $reward->nama }}?</p>
+                <p class="mt-1 text-theme-sm text-gray-500">{{ number_format($reward->poin_dibutuhkan, 0, ',', '.') }} poin akan dipotong dari saldo kamu dan tidak bisa dibatalkan.</p>
+            </div>
 
-            <form method="POST" action="{{ route('member.reward.tukar', $reward) }}" class="mt-5 space-y-2">
+            <form method="POST" action="{{ route('member.reward.tukar', $reward) }}" class="shrink-0 space-y-2 px-6 pb-6 pt-4">
                 @csrf
-                <button type="submit" class="w-full rounded-full bg-brand-700 py-3 text-theme-sm font-semibold text-white">Ya, Tukar Sekarang</button>
+                <button type="submit" class="w-full rounded-full bg-brand-700 py-3.5 text-theme-sm font-semibold text-white active:bg-brand-800">Ya, Tukar Sekarang</button>
                 <button type="button" onclick="closeSheet('konfirmasi-tukar')" class="w-full rounded-full py-3 text-theme-sm font-medium text-gray-500">Batal</button>
             </form>
         </div>

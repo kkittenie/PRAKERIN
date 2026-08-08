@@ -83,7 +83,7 @@
                             </div>
                         </div>
 
-                        <div class="mt-7 space-y-4">
+                        <div class="mt-7 grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
                             <div>
                                 <label for="nama" class="text-xs font-semibold text-gray-500">Username</label>
                                 <input type="text" name="nama" id="nama" value="{{ old('nama', $member->nama) }}"
