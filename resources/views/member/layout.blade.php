@@ -32,6 +32,103 @@
         .app-splash-in {
             animation: appSplashIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+
+        /* Bottom-sheet dialogs (e.g. voucher T&C, stamp confirm) slide up + fade,
+           and their backdrop fades in behind them. Toggled via [data-open] so we
+           can animate the *close* too (native dialog.close() is instant). */
+        dialog.sheet {
+            transform: translateY(100%);
+            opacity: 0;
+            transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease;
+        }
+        dialog.sheet[data-open="true"] {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        dialog.sheet::backdrop {
+            background: rgba(16, 24, 40, 0);
+            transition: background 0.25s ease;
+        }
+        dialog.sheet[data-open="true"]::backdrop {
+            background: rgba(16, 24, 40, .4);
+        }
+
+        /* Centered confirmation dialogs pop in with a slight overshoot. */
+        dialog.modal-center {
+            transform: scale(0.92) translateY(6px);
+            opacity: 0;
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease;
+        }
+        dialog.modal-center[data-open="true"] {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+        dialog.modal-center::backdrop {
+            background: rgba(16, 24, 40, 0);
+            transition: background 0.2s ease;
+        }
+        dialog.modal-center[data-open="true"]::backdrop {
+            background: rgba(16, 24, 40, .4);
+        }
+
+        /* Expandable rows (Menu Berlaku / Syarat & Ketentuan / Cara Pakai, etc.) */
+        .expandable-row {
+            transition: background-color 0.15s ease;
+        }
+        .expandable-row:active {
+            background-color: #f9fafb;
+        }
+        .expandable-row.is-open {
+            background-color: #faf8f5;
+        }
+        .expandable-row .row-chevron {
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+        }
+        .expandable-row.is-open .row-chevron {
+            transform: rotate(90deg);
+        }
+
+        /* Stamp dots pop in one-by-one when a filled stamp card is shown/updated. */
+        @keyframes stampPop {
+            0% { transform: scale(0); opacity: 0; }
+            60% { transform: scale(1.18); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .stamp-filled {
+            animation: stampPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        /* The most recently earned stamp pops in a bit bigger and keeps a soft
+           glow ring pulsing around it for a couple of beats, so it reads as
+           "this one just got filled" instead of blending into the older dots. */
+        @keyframes stampPopLatest {
+            0% { transform: scale(0); opacity: 0; }
+            55% { transform: scale(1.3); opacity: 1; }
+            75% { transform: scale(0.95); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes stampGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55); }
+            50% { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0); }
+        }
+        .stamp-filled-latest {
+            animation: stampPopLatest 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+                       stampGlow 1.4s ease-out 0.5s 2;
+        }
+
+        /* When the punch-card just became full, give the header icon a little
+           celebratory wiggle so "stamp penuh" feels rewarding, not just a label change. */
+        @keyframes stampCelebrate {
+            0% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.15) rotate(-10deg); }
+            50% { transform: scale(1.05) rotate(8deg); }
+            75% { transform: scale(1.15) rotate(-6deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        .stamp-card-penuh .stamp-badge-icon {
+            animation: stampCelebrate 1s ease-in-out 0.5s 1;
+        }
     </style>
 </head>
 <body class="h-full bg-gray-50 font-outfit text-gray-800 antialiased">
@@ -53,7 +150,7 @@
         @endif
 
         {{-- Main Page Content --}}
-        <main class="flex-1 {{ request()->routeIs('member.profil') ? '' : 'px-5' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-28' }}">
+        <main class="flex flex-1 flex-col {{ request()->routeIs('member.profil') ? '' : 'px-5' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-28' }}">
             @yield('content')
         </main>
 
@@ -130,7 +227,7 @@
         @endunless
 
         {{-- Login Required Dialog Modal for Guests --}}
-        <dialog id="modal-login-required" class="fixed inset-0 my-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 backdrop:bg-gray-900/50 shadow-2xl border-0">
+        <dialog id="modal-login-required" class="modal-center fixed inset-0 my-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 shadow-2xl border-0">
             <div class="p-6 text-center">
                 <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-800">
                     <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 15v2m0 4h.01M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Zm2 0V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -141,7 +238,7 @@
                     <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="w-full rounded-2xl bg-brand-800 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-900">
                         Login Sekarang
                     </a>
-                    <button type="button" onclick="document.getElementById('modal-login-required').close()" class="py-2 text-xs font-semibold text-gray-500 hover:text-gray-700">
+                    <button type="button" onclick="closeSheet('modal-login-required')" class="py-2 text-xs font-semibold text-gray-500 hover:text-gray-700">
                         Nanti Saja
                     </button>
                 </div>
@@ -153,7 +250,66 @@
     <script>
         function bukaModalLoginRequired(namaFitur) {
             document.getElementById('login-required-msg').innerText = 'Silakan masuk atau daftar akun Saisho untuk mengakses fitur ' + namaFitur + '.';
-            document.getElementById('modal-login-required').showModal();
+            openSheet('modal-login-required');
+        }
+
+        // Animated open/close for any <dialog class="sheet"> or <dialog class="modal-center">.
+        // showModal()/close() themselves are instant, so we toggle a [data-open] attribute
+        // one frame after showModal() (to animate in) and wait for the transition to finish
+        // before actually calling close() (to animate out).
+        function openSheet(id) {
+            const dialog = document.getElementById(id);
+            if (!dialog || dialog.open) return;
+            dialog.showModal();
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => dialog.setAttribute('data-open', 'true'));
+            });
+        }
+
+        function closeSheet(id) {
+            const dialog = document.getElementById(id);
+            if (!dialog || !dialog.open) return;
+            dialog.removeAttribute('data-open');
+            let done = false;
+            const finish = () => {
+                if (done) return;
+                done = true;
+                dialog.removeEventListener('transitionend', onEnd);
+                if (dialog.open) dialog.close();
+            };
+            const onEnd = (e) => { if (e.target === dialog) finish(); };
+            dialog.addEventListener('transitionend', onEnd);
+            setTimeout(finish, 320); // safety net if no transition property changed
+        }
+
+        // Let ESC / Android back-button also animate out instead of closing instantly,
+        // and reset any expandable-row chevron that opened this sheet once it's shut.
+        // Exposed as window.bindSheetDialogs so pages that inject dialogs later (e.g. the
+        // fetched Stamp pane on the Vouchers page) can bind their new ones the same way.
+        function bindSheetDialog(dialog) {
+            if (dialog.dataset.sheetBound) return;
+            dialog.dataset.sheetBound = '1';
+            dialog.addEventListener('cancel', (e) => {
+                e.preventDefault();
+                closeSheet(dialog.id);
+            });
+            dialog.addEventListener('close', () => {
+                dialog.removeAttribute('data-open');
+                document.querySelectorAll(`[data-sheet-target="${dialog.id}"]`).forEach((btn) => {
+                    btn.classList.remove('is-open');
+                });
+            });
+        }
+        window.bindSheetDialogs = (root = document) => {
+            root.querySelectorAll('dialog.sheet, dialog.modal-center').forEach(bindSheetDialog);
+        };
+        window.bindSheetDialogs();
+
+        // Opens a sheet from an "expandable row" button, highlighting the row
+        // (and rotating its chevron via CSS) until the sheet is closed.
+        function openExpandableRow(btn, sheetId) {
+            btn.classList.add('is-open');
+            openSheet(sheetId);
         }
 
         // Which bottom-nav tab this page currently is (0=Home,1=Vouchers,2=Order,3=Account,-1=none)

@@ -194,7 +194,7 @@
         @auth('member')
             {{-- Aksi cepat member: tukar poin & riwayat --}}
             <div class="mt-5 grid grid-cols-2 gap-3">
-                <a href="{{ route('member.reward.index') }}" class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200">
+                <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200">
                     <span class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-800">
                         @include('member.components.icon-gift', ['class' => 'h-5 w-5'])
                     </span>
@@ -203,7 +203,7 @@
                         <span class="block text-[11px] text-gray-400">Lihat katalog</span>
                     </span>
                 </a>
-                <a href="{{ route('member.riwayat') }}" class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200">
+                <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200">
                     <span class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-700">
                         @include('member.components.icon-clock', ['class' => 'h-5 w-5'])
                     </span>
@@ -213,13 +213,63 @@
                     </span>
                 </a>
             </div>
+
+            {{-- Program Stamp: ringkasan punch-card yang mengarah ke tab Stamp.
+                 Butuh $program (aktif) dan $memberStamp dikirim dari controller dashboard,
+                 sama seperti di member.stamps.index — kalau belum dikirim, section ini
+                 otomatis disembunyikan lewat @isset di bawah. --}}
+            @isset($program)
+                @php
+                    $stampTarget = max(1, $program->jumlah_stamp_dibutuhkan);
+                    $stampCurrent = min($memberStamp->jumlah_stamp ?? 0, $stampTarget);
+                    $stampPenuh = ($memberStamp->jumlah_stamp ?? 0) >= $stampTarget;
+                    $stampDotCount = min($stampTarget, 8);
+                @endphp
+                <a href="{{ route('member.stamps.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                   class="mt-3 block overflow-hidden rounded-2xl bg-gradient-to-br from-[#5a3c27] to-[#8b5e3c] p-4 text-white shadow-sm transition active:scale-[0.99]">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15">
+                                @include('member.components.icon-cup', ['class' => 'h-5 w-5'])
+                            </span>
+                            <div class="min-w-0">
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-white/60">Program Stamp</p>
+                                <p class="truncate text-sm font-extrabold">{{ $program->nama_program }}</p>
+                            </div>
+                        </div>
+                        <span class="flex shrink-0 items-center gap-1 text-xs font-bold text-white">
+                            @include('member.components.icon-chevron-right', ['class' => 'h-3.5 w-3.5'])
+                        </span>
+                    </div>
+
+                    <div class="mt-3 flex items-center gap-1.5">
+                        @for ($i = 1; $i <= $stampDotCount; $i++)
+                            @php $terisi = $i <= $stampCurrent; @endphp
+                            <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $terisi ? 'bg-white text-brand-800' : 'border-2 border-dashed border-white/35 text-white/35' }}">
+                                @include('member.components.icon-cup', ['class' => 'h-3 w-3'])
+                            </span>
+                        @endfor
+                        @if ($stampTarget > $stampDotCount)
+                            <span class="ml-1 text-[11px] font-semibold text-white/60">+{{ $stampTarget - $stampDotCount }}</span>
+                        @endif
+                    </div>
+
+                    <p class="mt-3 text-xs font-semibold {{ $stampPenuh ? 'text-white' : 'text-white/75' }}">
+                        @if ($stampPenuh)
+                            Stamp penuh, yuk tukar! 🎉
+                        @else
+                            {{ $stampCurrent }}/{{ $stampTarget }} stamp &middot; {{ $stampTarget - $stampCurrent }} lagi buat hadiah
+                        @endif
+                    </p>
+                </a>
+            @endisset
         @endauth
 
         {{-- Reward unggulan --}}
         <div class="mt-7 flex items-center justify-between">
             <h2 class="text-sm font-bold text-gray-900">Spesial Katalog Reward</h2>
             @auth('member')
-                <a href="{{ route('member.reward.index') }}" class="flex items-center gap-1 text-xs font-bold text-brand-800 hover:underline">
+                <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-1 text-xs font-bold text-brand-800 hover:underline">
                     Lihat semua
                     @include('member.components.icon-chevron-right', ['class' => 'h-3.5 w-3.5'])
                 </a>

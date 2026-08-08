@@ -13,6 +13,7 @@ class DashboardController extends Controller
         $member = Auth::guard('member')->user();
 
         $rewardUnggulan = RewardKatalog::aktif()
+            ->where('jenis', 'voucher')
             ->orderBy('poin_dibutuhkan')
             ->take(3)
             ->get();

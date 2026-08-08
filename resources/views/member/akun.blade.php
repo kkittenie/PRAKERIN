@@ -8,7 +8,7 @@
 
         {{-- Profile Card --}}
         @auth('member')
-            <a href="{{ route('member.profil') }}" class="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-[#5a3c27] to-[#8b5e3c] p-5 text-white shadow-sm transition active:scale-[0.99]">
+            <a href="{{ route('member.profil') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-[#5a3c27] to-[#8b5e3c] p-5 text-white shadow-sm transition active:scale-[0.99]">
                 <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/40 bg-white/20">
                     @if ($member->foto)
                         <img src="{{ asset('storage/'.$member->foto) }}" alt="{{ $member->nama }}" class="h-full w-full object-cover">

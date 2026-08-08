@@ -15,7 +15,8 @@ class StampController extends Controller
     public function index()
     {
         $member = Auth::guard('member')->user();
-        $program = StampProgram::with('hadiah.produk')->aktifSekarang();
+        $program = StampProgram::aktifSekarang();
+        $program?->load('hadiah.produk');
 
         $memberStamp = null;
         if ($program) {

@@ -19,7 +19,7 @@ class RewardController extends Controller
         $jenis = $request->query('jenis');
 
         $rewards = RewardKatalog::aktif()
-            ->when($jenis, fn ($q) => $q->where('jenis', $jenis))
+            ->where('jenis', 'voucher')
             ->orderBy('poin_dibutuhkan')
             ->get();
 
@@ -34,7 +34,7 @@ class RewardController extends Controller
     {
         $member = Auth::guard('member')->user();
 
-        abort_unless($reward->status_aktif, 404);
+        abort_unless($reward->status_aktif && $reward->jenis === 'voucher', 404);
 
         return view('member.rewards.show', [
             'member' => $member,
@@ -46,8 +46,9 @@ class RewardController extends Controller
     {
         $member = Auth::guard('member')->user();
 
+        abort_unless($reward->jenis === 'voucher', 404);
+
         $penukaran = DB::transaction(function () use ($member, $reward) {
-            // Lock baris supaya aman dari redeem ganda/stok minus saat diakses bersamaan.
             $memberTerkunci = $member->newQuery()->lockForUpdate()->find($member->id);
             $rewardTerkunci = $reward->newQuery()->lockForUpdate()->find($reward->id);
 
