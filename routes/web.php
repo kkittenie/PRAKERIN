@@ -21,6 +21,7 @@ use App\Http\Controllers\PengaturanMemberController;
 use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\StampProgramController;
 use App\Http\Controllers\RewardVoucherController;
+use App\Http\Controllers\RiwayatRedeemController;
 use App\Http\Controllers\MemberLevelController;
 use App\Http\Controllers\Member\StampController as MemberStampController;
 
@@ -241,6 +242,16 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('reward-voucher', RewardVoucherController::class)
         ->except(['show'])
         ->middleware('permission:lihat_reward|tambah_reward|edit_reward|hapus_reward');
+
+    // Riwayat Redeem (histori penukaran poin milik seluruh member)
+    Route::middleware('permission:lihat_reward')->group(function () {
+        Route::get('/riwayat-redeem', [RiwayatRedeemController::class, 'index'])
+            ->name('riwayat-redeem.index');
+    });
+
+    Route::patch('/riwayat-redeem/{riwayatRedeem}/status', [RiwayatRedeemController::class, 'updateStatus'])
+        ->name('riwayat-redeem.update-status')
+        ->middleware('permission:edit_reward');
 
     // Aturan Naik Level
     Route::patch('/member-level/{memberLevel}/toggle-status', [MemberLevelController::class, 'toggleStatus'])

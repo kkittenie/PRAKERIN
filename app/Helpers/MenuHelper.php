@@ -59,6 +59,7 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'Reward Stamp', 'path' => '/stamp-program', 'permission' => 'lihat_reward'],
                     ['name' => 'Reward Voucher', 'path' => '/reward-voucher', 'permission' => 'lihat_reward'],
+                    ['name' => 'Riwayat Redeem', 'path' => '/riwayat-redeem', 'permission' => 'lihat_reward'],
                 ],
             ],
 
