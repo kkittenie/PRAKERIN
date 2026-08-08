@@ -2,8 +2,8 @@
 
 @php
     $statusBadge = [
-        'menunggu_diambil' => ['label' => 'Menunggu diambil', 'class' => 'bg-warning-50 text-warning-600'],
-        'selesai' => ['label' => 'Selesai', 'class' => 'bg-success-50 text-success-600'],
+        'menunggu_diambil' => ['label' => 'Menunggu diambil', 'class' => 'bg-amber-50 text-amber-700'],
+        'selesai' => ['label' => 'Selesai', 'class' => 'bg-green-50 text-green-600'],
         'dibatalkan' => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 text-gray-500'],
     ];
     // Optional — history of stamp-card redemptions (separate from poin-based
@@ -27,25 +27,33 @@
         ])
     @else
         @if ($penukaran->isNotEmpty())
-            <h2 class="mb-2.5 mt-6 text-theme-sm font-semibold text-gray-800">Penukaran Reward</h2>
-            <div class="space-y-2.5">
+            <div class="mt-6 flex items-center justify-between">
+                <h2 class="text-sm font-bold text-gray-900">Penukaran Reward</h2>
+                <span class="text-xs text-gray-400">{{ $penukaran->count() }} riwayat</span>
+            </div>
+            <div class="mt-3 space-y-3">
                 @foreach ($penukaran as $item)
-                    <div class="rounded-2xl bg-white p-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="truncate text-theme-sm font-semibold text-gray-800">{{ $item->reward->nama ?? 'Reward tidak ditemukan' }}</p>
-                                <p class="mt-0.5 text-theme-xs text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</p>
-                            </div>
-                            <span class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $statusBadge[$item->status]['class'] }}">
-                                {{ $statusBadge[$item->status]['label'] }}
+                    <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                        <div class="flex items-start gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800">
+                                @include('member.components.icon-gift', ['class' => 'h-5 w-5'])
                             </span>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="truncate text-sm font-bold text-gray-900">{{ $item->reward->nama ?? 'Reward tidak ditemukan' }}</p>
+                                    <span class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $statusBadge[$item->status]['class'] }}">
+                                        {{ $statusBadge[$item->status]['label'] }}
+                                    </span>
+                                </div>
+                                <p class="mt-0.5 text-xs text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</p>
+                            </div>
                         </div>
-                        <div class="mt-3 flex items-center justify-between border-t border-dashed border-gray-200 pt-3">
+                        <div class="mt-3 flex items-center justify-between border-t border-dashed border-gray-100 pt-3">
                             <div>
                                 <p class="text-[11px] text-gray-400">Kode redeem</p>
-                                <p class="font-mono text-theme-sm font-semibold tracking-widest text-gray-800">{{ $item->kode_redeem }}</p>
+                                <p class="font-mono text-sm font-bold tracking-widest text-gray-800">{{ $item->kode_redeem }}</p>
                             </div>
-                            <p class="text-theme-sm font-semibold text-error-500">-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin</p>
+                            <p class="text-sm font-bold text-red-500">-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin</p>
                         </div>
                     </div>
                 @endforeach
@@ -53,22 +61,30 @@
         @endif
 
         @if ($riwayatStamp->isNotEmpty())
-            <h2 class="mb-2.5 mt-7 text-theme-sm font-semibold text-gray-800">Penukaran Stamp</h2>
-            <div class="space-y-2.5">
+            <div class="mt-7 flex items-center justify-between">
+                <h2 class="text-sm font-bold text-gray-900">Penukaran Stamp</h2>
+                <span class="text-xs text-gray-400">{{ $riwayatStamp->count() }} riwayat</span>
+            </div>
+            <div class="mt-3 space-y-3">
                 @foreach ($riwayatStamp as $item)
-                    <div class="rounded-2xl bg-white p-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="truncate text-theme-sm font-semibold text-gray-800">{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}</p>
-                                <p class="mt-0.5 text-theme-xs text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }} &middot; {{ $item->stampProgram?->nama_program ?? 'Program Stamp' }}</p>
-                            </div>
-                            <span class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $statusBadge[$item->status]['class'] }}">
-                                {{ $statusBadge[$item->status]['label'] }}
+                    <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                        <div class="flex items-start gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-500">
+                                @include('member.components.icon-cup', ['class' => 'h-5 w-5'])
                             </span>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="truncate text-sm font-bold text-gray-900">{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}</p>
+                                    <span class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $statusBadge[$item->status]['class'] }}">
+                                        {{ $statusBadge[$item->status]['label'] }}
+                                    </span>
+                                </div>
+                                <p class="mt-0.5 text-xs text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }} &middot; {{ $item->stampProgram?->nama_program ?? 'Program Stamp' }}</p>
+                            </div>
                         </div>
-                        <div class="mt-3 border-t border-dashed border-gray-200 pt-3">
+                        <div class="mt-3 border-t border-dashed border-gray-100 pt-3">
                             <p class="text-[11px] text-gray-400">Kode redeem</p>
-                            <p class="font-mono text-theme-sm font-semibold tracking-widest text-gray-800">{{ $item->kode_redeem }}</p>
+                            <p class="font-mono text-sm font-bold tracking-widest text-gray-800">{{ $item->kode_redeem }}</p>
                         </div>
                     </div>
                 @endforeach
@@ -76,15 +92,21 @@
         @endif
 
         @if ($transaksi->isNotEmpty())
-            <h2 class="mb-2.5 mt-7 text-theme-sm font-semibold text-gray-800">Poin dari Transaksi</h2>
-            <div class="space-y-2.5">
+            <div class="mt-7 flex items-center justify-between">
+                <h2 class="text-sm font-bold text-gray-900">Poin dari Transaksi</h2>
+                <span class="text-xs text-gray-400">{{ $transaksi->count() }} transaksi</span>
+            </div>
+            <div class="mt-3 space-y-3">
                 @foreach ($transaksi as $trx)
-                    <div class="flex items-center justify-between rounded-2xl bg-white p-4">
-                        <div class="min-w-0">
-                            <p class="truncate text-theme-sm font-semibold text-gray-800">{{ $trx->kode_transaksi }}</p>
-                            <p class="mt-0.5 text-theme-xs text-gray-400">{{ $trx->created_at->translatedFormat('d M Y, H:i') }} &middot; Rp{{ number_format($trx->total_bayar, 0, ',', '.') }}</p>
+                    <div class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-600">
+                            @include('member.components.icon-check-circle', ['class' => 'h-5 w-5'])
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-bold text-gray-900">{{ $trx->kode_transaksi }}</p>
+                            <p class="mt-0.5 text-xs text-gray-400">{{ $trx->created_at->translatedFormat('d M Y, H:i') }} &middot; Rp{{ number_format($trx->total_bayar, 0, ',', '.') }}</p>
                         </div>
-                        <p class="shrink-0 text-theme-sm font-semibold text-success-600">+{{ number_format($trx->poin_didapat ?? 0, 0, ',', '.') }} poin</p>
+                        <p class="shrink-0 text-sm font-bold text-green-600">+{{ number_format($trx->poin_didapat ?? 0, 0, ',', '.') }} poin</p>
                     </div>
                 @endforeach
             </div>

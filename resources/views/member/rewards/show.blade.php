@@ -48,17 +48,6 @@
 
         <div class="mt-4 border-t border-dashed border-gray-200"></div>
 
-        {{-- Valid for --}}
-        <div class="mt-4 flex items-center gap-2 text-theme-sm text-gray-500">
-            Valid for:
-            <span class="flex items-center gap-1.5 font-semibold text-gray-700">
-                <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-                    @include('member.components.icon-cup', ['class' => 'h-3 w-3'])
-                </span>
-                Saisho Cake & Bake
-            </span>
-        </div>
-
         {{-- Valid Until / Min Transaction --}}
         <div class="mt-3 grid grid-cols-2 divide-x divide-gray-100 rounded-2xl border border-gray-100">
             <div class="px-4 py-3">

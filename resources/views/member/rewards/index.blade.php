@@ -9,31 +9,26 @@
         <span class="font-bold text-brand-800">{{ number_format($member->poin, 0, ',', '.') }}</span>
     </div>
 
-    {{-- Fore-style underline tabs. These are now real client-side tabs: no page
-         reload, just a swipeable/draggable track like the welcome carousel. --}}
+    {{-- Fore-style underline tabs. Same swipeable/draggable track pattern as the
+         welcome page carousel for all three tabs. --}}
     <div class="relative mt-5 grid grid-cols-3 border-b border-gray-100">
-        <button type="button" data-tab="semua" onclick="switchVoucherTab('semua')"
-                class="voucher-tab relative pb-3 text-center text-[13px] font-bold text-brand-800 transition">
-            Semua
-        </button>
-        <button type="button" data-tab="voucher" onclick="switchVoucherTab('voucher')"
-                class="voucher-tab relative pb-3 text-center text-[13px] font-bold text-gray-400 transition hover:text-gray-600">
-            Voucher
-        </button>
-        <button type="button" data-tab="stamp" onclick="switchVoucherTab('stamp')"
-                class="voucher-tab relative pb-3 text-center text-[13px] font-bold text-gray-400 transition hover:text-gray-600">
-            Stamp
-        </button>
+        @foreach (['semua' => 'Semua', 'voucher' => 'Voucher', 'stamp' => 'Stamp'] as $key => $label)
+            <button type="button" data-tab="{{ $key }}" onclick="switchVoucherTab('{{ $key }}')"
+                    class="voucher-tab relative pb-3 text-center text-[13px] font-bold transition {{ $key === 'semua' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
+                {{ $label }}
+            </button>
+        @endforeach
         <span id="voucher-tab-indicator"
               class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/3 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
               style="transform: translateX(0%);"></span>
     </div>
 
     {{-- Swipeable panes, same track/viewport pattern as the welcome page carousel.
-         Pane widths/offsets are set in JS from the viewport's real pixel width
-         (see paint() below) instead of hardcoded 33.3333%/300%, so a pane can
-         never render partially off-screen (e.g. "Tukar Hadiah" clipped on its
-         left edge) due to percentage rounding or a mid-transition frame. --}}
+         Pane widths and the track's translateX are plain CSS percentages (relative to
+         the track's own box), set once from the tab count — never from a measured
+         viewport pixel value — so there's nothing that can go stale if the fetched
+         Stamp pane's content later changes the page's height. That measured-px-value
+         staleness is what used to leave "Tukar Hadiah" rendering partially clipped. --}}
     <div id="voucher-tab-viewport" class="flex flex-1 flex-col overflow-hidden">
         <div id="voucher-tab-track" class="flex flex-1 transition-transform duration-300 ease-out">
 
@@ -136,22 +131,18 @@
             const track = document.getElementById('voucher-tab-track');
             const indicator = document.getElementById('voucher-tab-indicator');
             const buttons = document.querySelectorAll('.voucher-tab');
-            const viewport = document.getElementById('voucher-tab-viewport');
             const panes = document.querySelectorAll('.voucher-tab-pane');
+            const viewport = document.getElementById('voucher-tab-viewport');
 
-            // Size the track/panes from the viewport's real pixel width rather than
-            // fixed 33.3333%/300% CSS, so a pane's content (e.g. the "Tukar Hadiah"
-            // heading) is never left partially clipped by rounding.
-            function sizePanes() {
-                const w = viewport.getBoundingClientRect().width;
-                track.style.width = (w * tabs.length) + 'px';
-                panes.forEach((pane) => { pane.style.width = w + 'px'; });
-                track.style.transform = `translateX(-${current * w}px)`;
-            }
+            // Fixed ratio derived only from the tab count — not measured from the
+            // viewport's pixel width — so it can never go stale. Set once; the browser
+            // then keeps every pane exactly viewport-width via CSS as layout changes.
+            const paneWidthPercent = 100 / tabs.length;
+            track.style.width = (tabs.length * 100) + '%';
+            panes.forEach((pane) => { pane.style.width = paneWidthPercent + '%'; });
 
             function paint() {
-                const w = viewport.getBoundingClientRect().width;
-                track.style.transform = `translateX(-${current * w}px)`;
+                track.style.transform = `translateX(-${current * paneWidthPercent}%)`;
                 indicator.style.transform = `translateX(${current * 100}%)`;
                 buttons.forEach((btn, i) => {
                     btn.classList.toggle('text-brand-800', i === current);
@@ -162,15 +153,21 @@
                 }
             }
 
-            sizePanes();
-            window.addEventListener('resize', sizePanes);
-
             window.switchVoucherTab = function (name) {
                 const idx = tabs.indexOf(name);
                 if (idx === -1 || idx === current) return;
                 current = idx;
                 paint();
             };
+
+            // Initial paint (e.g. landing directly on ?tab=voucher or ?tab=stamp) should
+            // snap straight to that tab, not slide in from the "semua" position — only
+            // an actual tap/swipe afterwards should animate. Without this, the very first
+            // paint() call below would animate over the same 300ms transition used for
+            // real switches, and a screenshot taken during page load could catch it
+            // mid-slide, which looks like a layout bug but is actually just an in-flight
+            // animation frame.
+            track.style.transition = 'none';
 
             function loadStampPane() {
                 stampLoaded = true;
@@ -239,9 +236,9 @@
             }, { passive: true });
 
             paint();
-            // Load stamp data right away (not just when the Stamp tab is opened) so the
-            // teaser card on the Semua pane can show real progress immediately, and so
-            // switching to the Stamp tab later feels instant.
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                track.style.transition = '';
+            }));
             if (!stampLoaded) loadStampPane();
         })();
     </script>

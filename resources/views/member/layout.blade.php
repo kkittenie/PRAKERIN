@@ -131,7 +131,7 @@
         }
     </style>
 </head>
-<body class="h-full bg-gray-50 font-outfit text-gray-800 antialiased">
+<body class="h-full overflow-x-hidden bg-gray-50 font-outfit text-gray-800 antialiased">
 
     <div id="app-card" class="mx-auto flex min-h-screen max-w-md flex-col bg-white shadow-[0_0_60px_-15px_rgba(90,60,39,0.15)] sm:my-0">
 
