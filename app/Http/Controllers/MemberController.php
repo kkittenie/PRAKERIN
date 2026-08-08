@@ -32,6 +32,8 @@ class MemberController extends Controller
         $request->validate([
             'nama' => 'required|string|max:255',
             'no_hp' => 'required|string|max:20|unique:members,no_hp',
+            'email' => 'nullable|email|max:255',
+            'tanggal_lahir' => 'nullable|date|before_or_equal:today',
         ], [
             'nama.required' => 'Nama wajib diisi.',
             'nama.string' => 'Nama harus berupa teks.',
@@ -39,11 +41,17 @@ class MemberController extends Controller
             'no_hp.required' => 'Nomor HP wajib diisi.',
             'no_hp.max' => 'Nomor HP maksimal 20 karakter.',
             'no_hp.unique' => 'Nomor HP sudah digunakan.',
+            'email.email' => 'Format email tidak valid.',
+            'email.max' => 'Email maksimal 255 karakter.',
+            'tanggal_lahir.date' => 'Tanggal lahir tidak valid.',
+            'tanggal_lahir.before_or_equal' => 'Tanggal lahir tidak boleh melebihi hari ini.',
         ]);
 
         $member = Member::create([
             'nama' => $request->nama,
             'no_hp' => $request->no_hp,
+            'email' => $request->email ?: null,
+            'tanggal_lahir' => $request->tanggal_lahir ?: null,
             'poin' => 0,
         ]);
 
@@ -76,11 +84,26 @@ class MemberController extends Controller
         $request->validate([
             'nama' => 'required|string|max:255',
             'no_hp' => 'required|string|max:20|unique:members,no_hp,' . $member->id,
+            'email' => 'nullable|email|max:255',
+            'tanggal_lahir' => 'nullable|date|before_or_equal:today',
+        ], [
+            'nama.required' => 'Nama wajib diisi.',
+            'nama.string' => 'Nama harus berupa teks.',
+            'nama.max' => 'Nama maksimal 255 karakter.',
+            'no_hp.required' => 'Nomor HP wajib diisi.',
+            'no_hp.max' => 'Nomor HP maksimal 20 karakter.',
+            'no_hp.unique' => 'Nomor HP sudah digunakan.',
+            'email.email' => 'Format email tidak valid.',
+            'email.max' => 'Email maksimal 255 karakter.',
+            'tanggal_lahir.date' => 'Tanggal lahir tidak valid.',
+            'tanggal_lahir.before_or_equal' => 'Tanggal lahir tidak boleh melebihi hari ini.',
         ]);
 
         $member->update([
             'nama' => $request->nama,
             'no_hp' => $request->no_hp,
+            'email' => $request->email ?: null,
+            'tanggal_lahir' => $request->tanggal_lahir ?: null,
         ]);
 
         activity()->causedBy(auth()->user())->performedOn($member)->log("Mengubah member: {$member->nama}");
