@@ -70,18 +70,6 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Gambar Voucher
-                    </label>
-                    <input type="file" name="gambar" accept="image/png,image/jpeg,image/jpg"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Opsional. JPG/PNG, maks 2MB.</span>
-                    @error('gambar')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Status Program
                     </label>
                     <label class="flex items-center gap-3 h-12 cursor-pointer">

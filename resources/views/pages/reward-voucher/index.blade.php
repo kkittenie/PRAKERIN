@@ -63,6 +63,7 @@
                         <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
                             <th class="py-3.5 px-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
                             <th class="py-3.5 px-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Voucher</th>
+                            <th class="py-3.5 px-3 hidden lg:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Deskripsi</th>
                             <th class="py-3.5 px-3 hidden md:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Poin Dibutuhkan</th>
                             <th class="py-3.5 px-3 hidden md:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Stok</th>
                             <th class="py-3.5 px-3 hidden sm:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
@@ -75,17 +76,10 @@
                             <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition duration-200 text-gray-700 dark:text-gray-300">
                                 <td class="py-3.5 px-3 text-gray-500">{{ $vouchers->firstItem() + $loop->index }}</td>
                                 <td class="py-3.5 px-3">
-                                    <div class="flex items-center gap-3">
-                                        @if($item->gambar)
-                                            <img src="{{ asset('storage/' . $item->gambar) }}" alt="{{ $item->nama }}"
-                                                class="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700">
-                                        @else
-                                            <div class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 text-xs">
-                                                N/A
-                                            </div>
-                                        @endif
-                                        <span class="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{{ $item->nama }}</span>
-                                    </div>
+                                    <span class="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{{ $item->nama }}</span>
+                                </td>
+                                <td class="py-3.5 px-3 hidden lg:table-cell text-xs sm:text-sm text-gray-600 dark:text-gray-400 max-w-xs">
+                                    <span class="line-clamp-2">{{ $item->deskripsi ?: '-' }}</span>
                                 </td>
                                 <td class="py-3.5 px-3 hidden md:table-cell text-center text-xs sm:text-sm">
                                     {{ number_format($item->poin_dibutuhkan, 0, ',', '.') }} poin
@@ -120,7 +114,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="py-10 text-center text-gray-500 dark:text-gray-400">Belum ada data reward voucher</td>
+                                <td colspan="7" class="py-10 text-center text-gray-500 dark:text-gray-400">Belum ada data reward voucher</td>
                             </tr>
                         @endforelse
                     </tbody>
