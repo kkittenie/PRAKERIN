@@ -69,10 +69,48 @@
                     @enderror
                 </div>
 
+<div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Gambar Reward
+                    </label>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-24 h-24 shrink-0 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+                            <img id="preview-gambar"
+                                 src="{{ $voucher->gambar ? asset('storage/'.$voucher->gambar) : '' }}"
+                                 alt="Preview gambar reward"
+                                 class="{{ $voucher->gambar ? '' : 'hidden' }} w-full h-full object-cover">
+                            <svg id="icon-gambar-kosong" xmlns="http://www.w3.org/2000/svg"
+                                 class="{{ $voucher->gambar ? 'hidden' : '' }} w-8 h-8 text-gray-300 dark:text-gray-600"
+                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <label for="input-gambar"
+                                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-4 py-2 cursor-pointer transition">
+                                Ganti Gambar
+                            </label>
+                            <input id="input-gambar" type="file" name="gambar" accept="image/*" class="hidden"
+                                onchange="tampilkanPreviewGambar(this)">
+                            <p id="nama-file-gambar" class="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
+                                {{ $voucher->gambar ? 'Gambar saat ini tersimpan.' : 'Belum ada gambar dipilih.' }}
+                            </p>
+                        </div>
+                    </div>
+                    <p class="mt-2 text-xs text-gray-400">Kosongkan jika tidak ingin mengganti gambar.</p>
+
+                    @error('gambar')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Status Program
                     </label>
+
                     <label class="flex items-center gap-3 h-12 cursor-pointer">
                         <input type="hidden" name="status_aktif" value="0">
                         <input type="checkbox" name="status_aktif" value="1"
@@ -103,5 +141,20 @@
     </x-common.component-card>
 
 </div>
+
+    <script>
+        function tampilkanPreviewGambar(input) {
+            const preview = document.getElementById('preview-gambar');
+            const icon = document.getElementById('icon-gambar-kosong');
+            const namaFile = document.getElementById('nama-file-gambar');
+
+            if (input.files && input.files[0]) {
+                preview.src = URL.createObjectURL(input.files[0]);
+                preview.classList.remove('hidden');
+                icon.classList.add('hidden');
+                namaFile.textContent = input.files[0].name;
+            }
+        }
+    </script>
 
 @endsection

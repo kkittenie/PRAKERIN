@@ -76,7 +76,11 @@
                             <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition duration-200 text-gray-700 dark:text-gray-300">
                                 <td class="py-3.5 px-3 text-gray-500">{{ $vouchers->firstItem() + $loop->index }}</td>
                                 <td class="py-3.5 px-3">
-                                    <span class="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{{ $item->nama }}</span>
+                                    <div class="flex items-center gap-3">
+                                        <img src="{{ $item->gambar ? asset('storage/'.$item->gambar) : 'https://via.placeholder.com/48x48?text=No+Image' }}"
+                                             class="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700 shrink-0">
+                                        <span class="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{{ $item->nama }}</span>
+                                    </div>
                                 </td>
                                 <td class="py-3.5 px-3 hidden lg:table-cell text-xs sm:text-sm text-gray-600 dark:text-gray-400 max-w-xs">
                                     <span class="line-clamp-2">{{ $item->deskripsi ?: '-' }}</span>
