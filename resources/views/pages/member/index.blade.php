@@ -5,78 +5,136 @@
 
     <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
         x-data="{
+            search: '',
             modalHapusTerbuka: false,
             formTerpilih: null,
             namaHapus: '',
+
             bukaModalHapus(form, nama) {
                 this.formTerpilih = form;
                 this.namaHapus = nama;
                 this.modalHapusTerbuka = true;
             },
+
             konfirmasiHapus() {
                 if (this.formTerpilih) {
                     this.formTerpilih.submit();
                 }
+
                 this.modalHapusTerbuka = false;
+            },
+
+            memberCocok(nama, noHp) {
+                const keyword = this.search.trim().toLowerCase();
+
+                if (keyword === '') {
+                    return true;
+                }
+
+                return nama.toLowerCase().includes(keyword) ||
+                       noHp.toLowerCase().includes(keyword);
+            },
+
+            memberAda() {
+                const keyword = this.search.trim().toLowerCase();
+
+                if (keyword === '') {
+                    return true;
+                }
+
+                return Array.from(
+                    this.$root.querySelectorAll('[data-member]')
+                ).some(el => {
+                    const nama = el.dataset.nama.toLowerCase();
+                    const noHp = el.dataset.noHp.toLowerCase();
+
+                    return nama.includes(keyword) || noHp.includes(keyword);
+                });
             }
         }">
 
         {{-- Header --}}
-        <div
-            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-6 border-b border-gray-100 dark:border-gray-800">
+        <div class="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
 
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-                Daftar Member
-            </h3>
+            {{-- Search --}}
+            <div class="relative w-full sm:w-[275px]">
 
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-4.5 w-4.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+
+                        <path stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="m21 21-4.35-4.35m2.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
+
+                    </svg>
+                </span>
+
+                <input type="text"
+                    x-model="search"
+                    placeholder="Cari nama atau no. HP..."
+                    class="h-10 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-700 placeholder:text-gray-400 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+
+            </div>
+
+            {{-- Tambah Member --}}
             @can('tambah_member')
                 <a href="{{ route('member.create') }}"
-                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white px-5 py-2.5 font-semibold text-sm transition shadow-xs">
+                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-800">
 
                     <svg xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
+                        class="h-5 w-5"
                         fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24">
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+
                         <path stroke-linecap="round"
                             stroke-linejoin="round"
                             stroke-width="2"
                             d="M12 4v16m8-8H4" />
+
                     </svg>
 
-                    <span>Tambah Member</span>
+                    Tambah Member
+
                 </a>
             @endcan
+
         </div>
 
 
         {{-- Table --}}
         <div class="overflow-x-auto p-6">
+
             <table class="w-full text-left text-sm">
 
                 <thead>
                     <tr class="border-b border-gray-100 text-gray-500 dark:border-gray-800 dark:text-gray-400">
 
                         {{-- Mobile expand --}}
-                        <th class="py-3 px-2 sm:hidden w-8 text-center"></th>
+                        <th class="w-8 px-2 py-3 text-center sm:hidden"></th>
 
                         <th class="py-3">
                             Nama
                         </th>
 
-                        <th class="py-3 hidden md:table-cell">
+                        <th class="hidden py-3 md:table-cell">
                             No. HP
                         </th>
 
-                        <th class="py-3 hidden lg:table-cell">
+                        <th class="hidden py-3 lg:table-cell">
                             Email
                         </th>
 
-                        <th class="py-3 hidden lg:table-cell">
+                        <th class="hidden py-3 lg:table-cell">
                             Tanggal Lahir
                         </th>
 
-                        <th class="py-3 hidden sm:table-cell">
+                        <th class="hidden py-3 sm:table-cell">
                             Poin
                         </th>
 
@@ -95,27 +153,35 @@
                 @foreach ($members as $member)
 
                     @php
-                        $levelClasses = match ($member->level) {
-                            'Gold' => 'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
-                            'Silver' => 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-300',
-                            default => 'bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400',
+                        $levelClasses = match (strtolower($member->level ?? '')) {
+                            'gold' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
+                            'silver' => 'bg-gray-100 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400',
+                            'bronze' => 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400',
+                            default => 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
                         };
                     @endphp
 
                     <tbody
+                        data-member
+                        data-nama="{{ $member->nama }}"
+                        data-no-hp="{{ $member->no_hp }}"
                         x-data="{ open: false }"
-                        class="divide-y divide-gray-100 dark:divide-gray-800 border-b border-gray-100 dark:border-gray-800">
+                        x-show="memberCocok(
+                            @js($member->nama ?? ''),
+                            @js($member->no_hp ?? '')
+                        )"
+                        class="divide-y divide-gray-100 border-b border-gray-100 dark:divide-gray-800 dark:border-gray-800">
 
-                        {{-- Main row --}}
-                        <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition">
+                        {{-- Main Row --}}
+                        <tr class="transition hover:bg-amber-50/30 dark:hover:bg-amber-950/20">
 
-                            {{-- Expand button mobile --}}
-                            <td class="py-3.5 px-2 sm:hidden text-center">
+                            {{-- Mobile Expand --}}
+                            <td class="w-8 px-2 py-3.5 text-center sm:hidden">
 
                                 <button
                                     @click="open = !open"
                                     type="button"
-                                    class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center text-xs font-bold transition-transform duration-200"
+                                    class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700 transition-all duration-200 dark:bg-amber-500/20 dark:text-amber-400"
                                     :class="open ? 'rotate-90 bg-amber-500 text-white' : ''">
 
                                     <span x-text="open ? '−' : '+'"></span>
@@ -132,26 +198,28 @@
 
 
                             {{-- No HP --}}
-                            <td class="py-3.5 hidden md:table-cell text-gray-600 dark:text-gray-400">
+                            <td class="hidden py-3.5 text-gray-600 md:table-cell dark:text-gray-400">
                                 {{ $member->no_hp }}
                             </td>
 
 
                             {{-- Email --}}
-                            <td class="py-3.5 hidden lg:table-cell text-gray-600 dark:text-gray-400">
+                            <td class="hidden py-3.5 text-gray-600 lg:table-cell dark:text-gray-400">
                                 {{ $member->email ?: '-' }}
                             </td>
 
 
-                            {{-- Tanggal lahir --}}
-                            <td class="py-3.5 hidden lg:table-cell text-gray-600 dark:text-gray-400">
-                                {{ $member->tanggal_lahir ? $member->tanggal_lahir->format('d/m/Y') : '-' }}
+                            {{-- Tanggal Lahir --}}
+                            <td class="hidden py-3.5 text-gray-600 lg:table-cell dark:text-gray-400">
+                                {{ $member->tanggal_lahir
+                                    ? \Carbon\Carbon::parse($member->tanggal_lahir)->format('d/m/Y')
+                                    : '-' }}
                             </td>
 
 
                             {{-- Poin --}}
-                            <td class="py-3.5 hidden sm:table-cell text-gray-600 dark:text-gray-400">
-                                {{ $member->poin }}
+                            <td class="hidden py-3.5 text-gray-600 sm:table-cell dark:text-gray-400">
+                                {{ number_format($member->poin ?? 0, 0, ',', '.') }}
                             </td>
 
 
@@ -159,9 +227,9 @@
                             <td class="py-3.5">
 
                                 <span
-                                    class="rounded-full px-3 py-1 text-xs font-medium {{ $levelClasses }}">
+                                    class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {{ $levelClasses }}">
 
-                                    {{ $member->level }}
+                                    {{ ucfirst($member->level ?? '-') }}
 
                                 </span>
 
@@ -169,63 +237,69 @@
 
 
                             {{-- Aksi --}}
-                            <td class="py-3.5 text-right space-x-1.5 whitespace-nowrap">
+                            <td class="whitespace-nowrap py-3.5 text-right">
 
-                                @can('edit_member')
-                                    <a
-                                        href="{{ route('member.edit', $member) }}"
-                                        class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">
+                                <div class="flex items-center justify-end gap-2">
 
-                                        Edit
+                                    @can('edit_member')
 
-                                    </a>
-                                @endcan
+                                        <a href="{{ route('member.edit', $member) }}"
+                                            class="text-xs font-semibold text-amber-600 hover:underline sm:text-sm dark:text-amber-400">
+
+                                            Edit
+
+                                        </a>
+
+                                    @endcan
 
 
-                                @can('hapus_member')
+                                    @can('hapus_member')
 
-                                    <form
-                                        action="{{ route('member.destroy', $member) }}"
-                                        method="POST"
-                                        class="inline">
+                                        <form
+                                            action="{{ route('member.destroy', $member) }}"
+                                            method="POST"
+                                            class="inline">
 
-                                        @csrf
-                                        @method('DELETE')
+                                            @csrf
+                                            @method('DELETE')
 
-                                        <button
-                                            type="button"
-                                            @click="bukaModalHapus(
-                                                $el.closest('form'),
-                                                '{{ addslashes($member->nama) }}'
-                                            )"
-                                            class="text-red-500 font-semibold hover:underline text-xs sm:text-sm">
+                                            <button
+                                                type="button"
+                                                @click="bukaModalHapus(
+                                                    $el.closest('form'),
+                                                    @js($member->nama)
+                                                )"
+                                                class="text-xs font-semibold text-red-500 hover:underline sm:text-sm">
 
-                                            Hapus
+                                                Hapus
 
-                                        </button>
+                                            </button>
 
-                                    </form>
+                                        </form>
 
-                                @endcan
+                                    @endcan
+
+                                </div>
 
                             </td>
 
                         </tr>
 
 
-                        {{-- Expandable row untuk mobile --}}
+                        {{-- Mobile Detail --}}
                         <tr
                             x-show="open"
                             x-cloak
                             x-transition
-                            class="sm:hidden bg-amber-50/50 dark:bg-amber-950/30 text-xs">
+                            class="bg-amber-50/50 text-xs dark:bg-amber-950/30 sm:hidden">
 
                             <td colspan="6" class="p-3.5">
 
-                                <div class="grid grid-cols-2 gap-2.5 text-gray-600 dark:text-gray-300">
+                                <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300">
 
                                     {{-- No HP --}}
                                     <div>
+
                                         <span class="text-gray-400">
                                             No. HP:
                                         </span>
@@ -233,18 +307,21 @@
                                         <span class="font-semibold text-gray-800 dark:text-white">
                                             {{ $member->no_hp }}
                                         </span>
+
                                     </div>
 
 
                                     {{-- Poin --}}
                                     <div>
+
                                         <span class="text-gray-400">
                                             Poin:
                                         </span>
 
                                         <span class="font-bold text-amber-700 dark:text-amber-400">
-                                            {{ $member->poin }}
+                                            {{ number_format($member->poin ?? 0, 0, ',', '.') }}
                                         </span>
+
                                     </div>
 
 
@@ -262,7 +339,7 @@
                                     </div>
 
 
-                                    {{-- Tanggal lahir --}}
+                                    {{-- Tanggal Lahir --}}
                                     <div>
 
                                         <span class="text-gray-400">
@@ -270,7 +347,26 @@
                                         </span>
 
                                         <span class="font-semibold text-gray-800 dark:text-white">
-                                            {{ $member->tanggal_lahir ? $member->tanggal_lahir->format('d/m/Y') : '-' }}
+                                            {{ $member->tanggal_lahir
+                                                ? \Carbon\Carbon::parse($member->tanggal_lahir)->format('d/m/Y')
+                                                : '-' }}
+                                        </span>
+
+                                    </div>
+
+
+                                    {{-- Level --}}
+                                    <div>
+
+                                        <span class="text-gray-400">
+                                            Level:
+                                        </span>
+
+                                        <span
+                                            class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold {{ $levelClasses }}">
+
+                                            {{ ucfirst($member->level ?? '-') }}
+
                                         </span>
 
                                     </div>
@@ -286,39 +382,52 @@
                 @endforeach
 
             </table>
+
+
+            {{-- Data tidak ditemukan --}}
+            <div
+                x-show="search.trim() !== '' && !memberAda()"
+                x-cloak
+                class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+
+                Member tidak ditemukan.
+
+            </div>
+
         </div>
 
 
-        {{-- Modal konfirmasi hapus --}}
+        {{-- Modal Hapus --}}
         <div
             x-show="modalHapusTerbuka"
             x-cloak
             x-transition
-            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+            class="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
 
             <div
                 @click.away="modalHapusTerbuka = false"
-                class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+                class="w-full max-w-sm overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
 
                 <div class="p-6 text-center">
 
                     <div
-                        class="w-14 h-14 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
+                        class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-2xl font-bold text-red-600 dark:bg-red-500/10 dark:text-red-400">
 
                         ⚠
 
                     </div>
 
-                    <h3 class="font-extrabold text-gray-900 dark:text-white text-base">
+                    <h3 class="text-base font-extrabold text-gray-900 dark:text-white">
                         Hapus Member?
                     </h3>
 
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
 
                         Member
+
                         <span
-                            class="font-semibold text-gray-700 dark:text-gray-300"
-                            x-text="namaHapus">
+                            x-text="namaHapus"
+                            class="font-semibold text-gray-700 dark:text-gray-300">
                         </span>
 
                         akan dihapus dan tidak dapat dipulihkan kembali.
@@ -329,12 +438,12 @@
 
 
                 <div
-                    class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3">
+                    class="flex justify-center gap-3 border-t border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
 
                     <button
                         type="button"
                         @click="modalHapusTerbuka = false"
-                        class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-bold text-xs rounded-lg transition text-gray-700 dark:text-gray-300">
+                        class="rounded-lg bg-gray-200 px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
 
                         Batal
 
@@ -344,7 +453,7 @@
                     <button
                         type="button"
                         @click="konfirmasiHapus()"
-                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs">
+                        class="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-red-700">
 
                         Hapus
 
@@ -357,5 +466,4 @@
         </div>
 
     </div>
-
 @endsection

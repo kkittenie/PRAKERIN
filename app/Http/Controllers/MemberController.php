@@ -10,10 +10,22 @@ class MemberController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $members = Member::orderBy('nama')->get();
-        return view('pages.member.index', ['title' => 'Kelola Member', 'members' => $members]);
+        $search = $request->input('search');
+
+        $members = Member::query()
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama', 'like', "%{$search}%")
+                        ->orWhere('no_hp', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('pages.member.index', compact('members', 'search'));
     }
 
     /**
