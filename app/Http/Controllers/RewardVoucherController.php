@@ -5,12 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\RewardKatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class RewardVoucherController extends Controller
 {
-    private const GAMBAR_PATH = 'reward-voucher/images';
-
     public function index(Request $request)
     {
         try {
@@ -45,18 +42,13 @@ class RewardVoucherController extends Controller
     {
         $validated = $this->validasi($request);
 
-        if ($request->hasFile('gambar')) {
-            $validated['gambar'] = $request->file('gambar')->store(self::GAMBAR_PATH, 'public');
-        }
-
         $voucher = RewardKatalog::create([
             'nama' => $validated['nama'],
             'jenis' => 'voucher',
             'deskripsi' => $validated['deskripsi'] ?? null,
-            'gambar' => $validated['gambar'] ?? null,
             'poin_dibutuhkan' => $validated['poin_dibutuhkan'],
             'stok' => $validated['stok'] ?? null,
-            'status_aktif' => $request->has('status_aktif') ? (bool) $request->status_aktif : true,
+            'status_aktif' => (bool) $request->boolean('status_aktif'),
         ]);
 
         activity()
@@ -84,20 +76,12 @@ class RewardVoucherController extends Controller
 
         $validated = $this->validasi($request);
 
-        if ($request->hasFile('gambar')) {
-            if ($rewardVoucher->gambar && Storage::disk('public')->exists($rewardVoucher->gambar)) {
-                Storage::disk('public')->delete($rewardVoucher->gambar);
-            }
-            $validated['gambar'] = $request->file('gambar')->store(self::GAMBAR_PATH, 'public');
-        }
-
         $rewardVoucher->update([
             'nama' => $validated['nama'],
             'deskripsi' => $validated['deskripsi'] ?? null,
-            'gambar' => $validated['gambar'] ?? $rewardVoucher->gambar,
             'poin_dibutuhkan' => $validated['poin_dibutuhkan'],
             'stok' => $validated['stok'] ?? null,
-            'status_aktif' => $request->has('status_aktif') ? (bool) $request->status_aktif : false,
+            'status_aktif' => (bool) $request->boolean('status_aktif'),
         ]);
 
         activity()
@@ -129,8 +113,8 @@ class RewardVoucherController extends Controller
     {
         abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
-        if ($rewardVoucher->gambar && Storage::disk('public')->exists($rewardVoucher->gambar)) {
-            Storage::disk('public')->delete($rewardVoucher->gambar);
+        if ($rewardVoucher->penukaran()->exists()) {
+            return back()->with('error', 'Voucher ini sudah pernah ditukar oleh member dan tidak bisa dihapus. Nonaktifkan saja agar riwayat penukaran tetap tersimpan.');
         }
 
         activity()
@@ -148,8 +132,7 @@ class RewardVoucherController extends Controller
     {
         return $request->validate([
             'nama' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'deskripsi' => 'nullable|string|max:1000',
             'poin_dibutuhkan' => 'required|integer|min:1',
             'stok' => 'nullable|integer|min:0',
             'status_aktif' => 'nullable|boolean',
