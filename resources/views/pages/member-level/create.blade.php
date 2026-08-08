@@ -38,7 +38,7 @@
                     @enderror
                 </div>
 
-                <div>
+                <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Minimal Poin <span class="text-red-500">*</span>
                     </label>
@@ -46,21 +46,8 @@
                         placeholder="Contoh: 0, 500, 2000"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
                         required>
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Poin minimal yang harus dimiliki member untuk naik ke level ini</span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Poin minimal yang harus dimiliki member untuk naik ke level ini. Urutan tampil level otomatis mengikuti angka ini dari yang terkecil.</span>
                     @error('minimal_poin')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Urutan Tingkatan <span class="text-red-500">*</span>
-                    </label>
-                    <input type="number" name="urutan" min="1" value="{{ old('urutan', $urutanBerikutnya) }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
-                        required>
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Angka 1 = level paling rendah. Tiap level harus punya urutan yang beda</span>
-                    @error('urutan')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>

@@ -17,7 +17,7 @@ class MemberLevelController extends Controller
             $levels = MemberLevel::when($search, function ($query) use ($search) {
                     $query->where('nama_level', 'like', "%{$search}%");
                 })
-                ->orderBy('urutan')
+                ->orderBy('minimal_poin')
                 ->paginate(10);
 
             return view('pages.member-level.index', [
@@ -32,11 +32,8 @@ class MemberLevelController extends Controller
 
     public function create()
     {
-        $urutanBerikutnya = (MemberLevel::max('urutan') ?? 0) + 1;
-
         return view('pages.member-level.create', [
             'title' => 'Tambah Level Membership',
-            'urutanBerikutnya' => $urutanBerikutnya,
         ]);
     }
 
@@ -47,9 +44,8 @@ class MemberLevelController extends Controller
         $level = MemberLevel::create([
             'nama_level' => $validated['nama_level'],
             'minimal_poin' => $validated['minimal_poin'],
-            'urutan' => $validated['urutan'],
             'warna_badge' => $validated['warna_badge'] ?? 'gray',
-            'status_aktif' => $request->has('status_aktif') ? (bool) $request->status_aktif : true,
+            'status_aktif' => $request->boolean('status_aktif'),
         ]);
 
         activity()
@@ -76,9 +72,8 @@ class MemberLevelController extends Controller
         $memberLevel->update([
             'nama_level' => $validated['nama_level'],
             'minimal_poin' => $validated['minimal_poin'],
-            'urutan' => $validated['urutan'],
             'warna_badge' => $validated['warna_badge'] ?? $memberLevel->warna_badge,
-            'status_aktif' => $request->has('status_aktif') ? (bool) $request->status_aktif : false,
+            'status_aktif' => $request->boolean('status_aktif'),
         ]);
 
         activity()
@@ -92,6 +87,12 @@ class MemberLevelController extends Controller
 
     public function toggleStatus(MemberLevel $memberLevel)
     {
+        $akanDinonaktifkan = $memberLevel->status_aktif;
+
+        if ($akanDinonaktifkan && MemberLevel::aktif()->count() <= 1) {
+            return back()->with('error', 'Tidak bisa menonaktifkan level ini karena ini satu-satunya level aktif. Minimal harus ada 1 level aktif supaya semua member tetap punya level.');
+        }
+
         $memberLevel->status_aktif = !$memberLevel->status_aktif;
         $memberLevel->save();
 
@@ -106,6 +107,10 @@ class MemberLevelController extends Controller
 
     public function destroy(MemberLevel $memberLevel)
     {
+        if ($memberLevel->status_aktif && MemberLevel::aktif()->count() <= 1) {
+            return back()->with('error', 'Tidak bisa menghapus level ini karena ini satu-satunya level aktif. Minimal harus ada 1 level aktif supaya semua member tetap punya level.');
+        }
+
         activity()
             ->causedBy(auth()->user())
             ->performedOn($memberLevel)
@@ -124,10 +129,9 @@ class MemberLevelController extends Controller
                 'required', 'string', 'max:50',
                 Rule::unique('member_levels', 'nama_level')->ignore($ignoreId),
             ],
-            'minimal_poin' => 'required|integer|min:0',
-            'urutan' => [
-                'required', 'integer', 'min:1',
-                Rule::unique('member_levels', 'urutan')->ignore($ignoreId),
+            'minimal_poin' => [
+                'required', 'integer', 'min:0',
+                Rule::unique('member_levels', 'minimal_poin')->ignore($ignoreId),
             ],
             'warna_badge' => 'nullable|string|max:20',
             'status_aktif' => 'nullable|boolean',
@@ -135,8 +139,7 @@ class MemberLevelController extends Controller
             'nama_level.required' => 'Nama level wajib diisi.',
             'nama_level.unique' => 'Nama level ini sudah dipakai.',
             'minimal_poin.required' => 'Minimal poin wajib diisi.',
-            'urutan.required' => 'Urutan tingkatan wajib diisi.',
-            'urutan.unique' => 'Urutan ini sudah dipakai level lain. Pakai angka urutan yang berbeda.',
+            'minimal_poin.unique' => 'Minimal poin ini sudah dipakai level lain. Setiap level harus punya ambang batas poin yang berbeda supaya urutan tingkatannya jelas.',
         ]);
     }
 }

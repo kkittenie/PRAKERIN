@@ -1,7 +1,7 @@
 @props(['member'])
 
 @php
-    $tierIcon = ['Bronze' => 'text-orange-200', 'Silver' => 'text-gray-100', 'Gold' => 'text-warning-200'][$member->level];
+    $tierIcon = ['Bronze' => 'text-orange-200', 'Silver' => 'text-gray-100', 'Gold' => 'text-warning-200'][$member->level] ?? 'text-white/80';
     $progres = $member->progres_tier;
     $nomorSamar = str_repeat('•', max(0, strlen($member->no_hp) - 4)).substr($member->no_hp, -4);
 @endphp

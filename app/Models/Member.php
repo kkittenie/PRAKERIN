@@ -40,7 +40,16 @@ class Member extends Authenticatable
             ->orderByDesc('minimal_poin')
             ->first();
 
-        return $level->nama_level ?? 'Bronze';
+        if ($level) {
+            return $level->nama_level;
+        }
+
+        // Belum ada level aktif yang jangkauan poinnya mencakup member ini
+        // (mis. level terendah belum dibuat, atau minimal_poin-nya di atas 0).
+        // Fallback ke level aktif dengan minimal_poin terendah, bukan nama tetap.
+        $levelTerendah = MemberLevel::aktif()->orderBy('minimal_poin')->first();
+
+        return $levelTerendah->nama_level ?? 'Member';
     }
 
     public function getProgresTierAttribute(): ?array

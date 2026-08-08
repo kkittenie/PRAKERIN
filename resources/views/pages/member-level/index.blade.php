@@ -24,11 +24,11 @@
         <x-common.component-card title="Data Level Membership">
 
             <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
-                <form method="GET" action="{{ route('member-level.index') }}" id="searchForm" class="w-full sm:w-72">
-                    <div class="relative">
+                <form method="GET" action="{{ route('member-level.index') }}" id="searchForm" class="w-full sm:w-auto">
+                    <div class="relative w-full">
                         <input type="text" id="search" name="search" value="{{ request('search') }}"
                             placeholder="Cari nama level..."
-                            class="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2.5 pl-10 pr-4 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 text-sm">
+                            class="w-full sm:w-80 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2.5 pl-10 pr-4 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 text-sm">
                         <span class="absolute left-3 top-3 text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -54,7 +54,7 @@
                     <thead>
                         <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
                             <th class="py-3.5 px-2 sm:hidden w-7 text-center"></th>
-                            <th class="py-3.5 px-3 hidden sm:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Urutan</th>
+                            <th class="py-3.5 px-3 hidden sm:table-cell w-12 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
                             <th class="py-3.5 px-2 sm:px-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Level</th>
                             <th class="py-3.5 px-3 hidden md:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Minimal Poin</th>
                             <th class="py-3.5 px-3 hidden sm:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
@@ -84,8 +84,8 @@
                                         <span x-text="open ? '−' : '+'"></span>
                                     </button>
                                 </td>
-                                <td class="py-3.5 px-3 hidden sm:table-cell text-gray-500 font-semibold">
-                                    #{{ $item->urutan }}
+                                <td class="py-3.5 px-3 hidden sm:table-cell text-center text-gray-500">
+                                    {{ $levels->firstItem() + $loop->index }}
                                 </td>
                                 <td class="py-3.5 px-2 sm:px-3">
                                     <span class="rounded-full px-3 py-1 text-xs font-medium {{ $badgeClasses }}">
@@ -121,14 +121,10 @@
                                 <td colspan="5" class="p-4">
                                     <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300">
                                         <div>
-                                            <span class="text-gray-400 block text-[11px] mb-0.5">Urutan</span>
-                                            <span class="font-bold text-gray-800 dark:text-white">#{{ $item->urutan }}</span>
-                                        </div>
-                                        <div>
                                             <span class="text-gray-400 block text-[11px] mb-0.5">Status</span>
                                             <span class="{{ $item->status_aktif ? 'text-green-600' : 'text-gray-500' }} font-semibold">{{ $item->status_aktif ? 'Aktif' : 'Nonaktif' }}</span>
                                         </div>
-                                        <div class="col-span-2">
+                                        <div>
                                             <span class="text-gray-400 block text-[11px]">Minimal Poin</span>
                                             <span class="font-bold text-gray-800 dark:text-white">{{ number_format($item->minimal_poin, 0, ',', '.') }} poin</span>
                                         </div>
