@@ -161,10 +161,10 @@ class AuthController extends Controller
         $intendedUrl = $request->session()->pull('url.intended');
 
         if ($intendedUrl && str_starts_with(parse_url($intendedUrl, PHP_URL_PATH) ?? '', '/member')) {
-            return redirect()->to($intendedUrl);
+            return redirect()->to($intendedUrl)->with('success', 'Berhasil masuk. Selamat datang kembali, ' . Auth::guard('member')->user()->nama . '!');
         }
 
-        return redirect()->route('member.beranda');
+        return redirect()->route('member.beranda')->with('success', 'Berhasil masuk. Selamat datang kembali, ' . Auth::guard('member')->user()->nama . '!');
     }
 
     public function logout(Request $request)

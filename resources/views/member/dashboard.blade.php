@@ -170,23 +170,21 @@
         <div class="grid grid-cols-2 gap-3">
             <a href="https://wa.me/{{ $waCs }}?text={{ urlencode('Halo Saisho, saya mau pesan untuk diambil di toko (pick up).') }}"
                target="_blank" rel="noopener"
-               class="relative overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-white p-4 transition hover:border-brand-300">
-                <svg class="pointer-events-none absolute -bottom-4 -right-4 h-20 w-20 text-brand-100" viewBox="0 0 100 100" fill="currentColor"><circle cx="50" cy="50" r="50"/></svg>
-                <span class="relative block text-base font-extrabold text-brand-800">Pick Up</span>
-                <p class="relative mt-1 text-[11px] leading-snug text-gray-500">Pesan dulu, ambil tanpa antre</p>
-                <span class="relative mt-6 flex h-10 w-10 items-center justify-center rounded-full bg-white text-brand-700 shadow-sm">
-                    <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M6 8h12l1 12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L6 8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 8a3 3 0 0 1 6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                </span>
+               class="group relative overflow-hidden rounded-2xl border-2 border-brand-300 bg-gradient-to-br from-brand-50/70 to-white p-3.5 transition hover:border-brand-400 hover:shadow-theme-md">
+                <span class="pointer-events-none absolute -bottom-5 -right-5 h-16 w-16 rounded-full bg-brand-100/70"></span>
+                <span class="pointer-events-none absolute right-8 bottom-9 h-2 w-2 rounded-full bg-brand-200"></span>
+                <span class="pointer-events-none absolute right-1 bottom-9 h-2.5 w-2.5 rounded-full bg-brand-200/80"></span>
+                <span class="relative block text-base font-extrabold leading-tight text-brand-800">Pick Up</span>
+                <p class="relative mt-1 text-[11px] leading-snug text-gray-500">Pesan dulu, ambil<br>tanpa antre</p>
             </a>
             <a href="https://wa.me/{{ $waCs }}?text={{ urlencode('Halo Saisho, saya mau pesan untuk diantar (delivery).') }}"
                target="_blank" rel="noopener"
-               class="relative overflow-hidden rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-white p-4 transition hover:border-orange-300">
-                <svg class="pointer-events-none absolute -bottom-4 -right-4 h-20 w-20 text-orange-100" viewBox="0 0 100 100" fill="currentColor"><circle cx="50" cy="50" r="50"/></svg>
-                <span class="relative block text-base font-extrabold text-orange-700">Delivery</span>
-                <p class="relative mt-1 text-[11px] leading-snug text-gray-500">Pesan via WhatsApp, kami antar</p>
-                <span class="relative mt-6 flex h-10 w-10 items-center justify-center rounded-full bg-white text-orange-600 shadow-sm">
-                    <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><circle cx="7" cy="18" r="2" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="18" r="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 6h9v9H5m4 0H3V6m14 3h2.2a1 1 0 0 1 .9.55L21 12v3h-2M12 9v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </span>
+               class="group relative overflow-hidden rounded-2xl border-2 border-orange-300 bg-gradient-to-br from-orange-50/70 to-white p-3.5 transition hover:border-orange-400 hover:shadow-theme-md">
+                <span class="pointer-events-none absolute -bottom-5 -right-5 h-16 w-16 rounded-full bg-orange-100/70"></span>
+                <span class="pointer-events-none absolute right-8 bottom-9 h-2 w-2 rounded-full bg-orange-200"></span>
+                <span class="pointer-events-none absolute right-1 bottom-9 h-2.5 w-2.5 rounded-full bg-orange-200/80"></span>
+                <span class="relative block text-base font-extrabold leading-tight text-orange-700">Delivery</span>
+                <p class="relative mt-1 text-[11px] leading-snug text-gray-500">Pesan via WhatsApp,<br>kami antar</p>
             </a>
         </div>
         <p class="mt-2 text-center text-[11px] text-gray-400">Pesan langsung ke Customer Service kami via WhatsApp</p>

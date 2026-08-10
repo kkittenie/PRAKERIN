@@ -434,6 +434,9 @@
                                 if ($data.voucherTerpilih && $data.memberIdTerpilih !== member.id) {
                                     $data.voucherTerpilih = null;
                                 }
+                                if ($data.memberIdTerpilih !== member.id) {
+                                    $data.keranjang = $data.keranjang.filter(i => !i.is_reward_stamp);
+                                }
                                 $data.memberIdTerpilih = member.id;
                                 $data.memberTerpilih = member;
                                 $data.namaPembeli = member.nama;
@@ -444,6 +447,7 @@
                                                                                                                         $data.memberIdTerpilih = '';
                                                                                                                         $data.memberTerpilih = null;
                                                                                                                         $data.voucherTerpilih = null;
+                                                                                                                        $data.keranjang = $data.keranjang.filter(i => !i.is_reward_stamp);
                                                                                                                         this.cariMember = '';
                                                                                                                         },
                                                                                                                         getLevelColor(level) {
@@ -613,6 +617,147 @@
                         </template>
                     </div>
 
+                    <!-- Reward Stamp Member: hanya tampil kalau member sudah dipilih -->
+                    <div class="p-3 border-b border-gray-100 dark:border-gray-800 shrink-0" x-show="memberIdTerpilih"
+                        x-cloak>
+                        <label
+                            class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-2">Reward
+                            Stamp</label>
+
+                        <!-- Reward stamp belum dipilih -->
+                        <template x-if="!rewardStampDiKeranjang">
+                            <button type="button" @click="bukaModalRewardStamp()"
+                                class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-bold transition bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/25 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-500/20">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                </svg>
+                                <span>Gunakan Reward Stamp</span>
+                            </button>
+                        </template>
+
+                        <!-- Reward stamp sudah dipilih -->
+                        <template x-if="rewardStampDiKeranjang">
+                            <div
+                                class="flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/25 rounded-lg">
+                                <div
+                                    class="w-7 h-7 bg-purple-600 text-white flex items-center justify-center rounded-full shrink-0">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                    </svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-bold text-gray-900 dark:text-white truncate"
+                                        x-text="rewardStampDiKeranjang.nama_produk"></p>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-400">Gratis · Reward Stamp</p>
+                                </div>
+                                <button @click="hapusRewardStampTerpilih()"
+                                    class="p-1 hover:bg-red-100 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 rounded-md transition shrink-0"
+                                    title="Hapus reward stamp">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Modal Pilih Reward Stamp -->
+                    <div x-show="modalRewardStampTerbuka"
+                        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4"
+                        x-transition x-cloak>
+                        <div @click.away="tutupModalRewardStamp()"
+                            class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh]">
+                            <div
+                                class="bg-purple-700 dark:bg-purple-900 text-white p-4 flex items-center justify-between shrink-0">
+                                <div>
+                                    <h3 class="font-extrabold text-sm">Gunakan Reward Stamp</h3>
+                                    <p class="text-white/80 text-xs mt-0.5"
+                                        x-text="memberTerpilih ? memberTerpilih.nama : ''"></p>
+                                </div>
+                                <button @click="tutupModalRewardStamp()"
+                                    class="text-white hover:text-gray-200 font-bold text-lg leading-none">&times;</button>
+                            </div>
+
+                            <div class="p-5 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+                                <!-- Input kode manual -->
+                                <div>
+                                    <label
+                                        class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-1.5">Masukkan
+                                        Kode Reward Stamp</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" x-model="kodeRewardStampManual"
+                                            @input="kodeRewardStampManual = kodeRewardStampManual.toUpperCase()"
+                                            @keydown.enter="validasiKodeRewardStampManual()"
+                                            placeholder="Contoh: STP-1234"
+                                            class="flex-1 px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 uppercase">
+                                        <button type="button" @click="validasiKodeRewardStampManual()"
+                                            :disabled="rewardStampKodeLoading || !kodeRewardStampManual.trim()"
+                                            class="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-lg transition shrink-0">
+                                            <span x-show="!rewardStampKodeLoading">Pakai</span>
+                                            <span x-show="rewardStampKodeLoading">...</span>
+                                        </button>
+                                    </div>
+                                    <template x-if="rewardStampModalError">
+                                        <p class="text-[10px] text-red-500 mt-1.5" x-text="rewardStampModalError"></p>
+                                    </template>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
+                                    <span
+                                        class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">atau
+                                        pilih</span>
+                                    <div class="flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
+                                </div>
+
+                                <!-- Daftar reward stamp yang sudah diklaim member (menunggu diambil) -->
+                                <div class="flex flex-col gap-2">
+                                    <template x-if="rewardStampDaftarLoading">
+                                        <p class="text-xs text-center text-gray-400 py-4">Memuat reward stamp...</p>
+                                    </template>
+
+                                    <template x-if="!rewardStampDaftarLoading && daftarRewardStampAktif.length === 0">
+                                        <p class="text-xs text-center text-gray-400 py-4">Member ini belum punya
+                                            reward stamp yang menunggu diambil. Reward baru muncul di sini setelah
+                                            member menukar stamp lewat portal member.</p>
+                                    </template>
+
+                                    <template x-for="redemption in daftarRewardStampAktif" :key="redemption.id">
+                                        <button type="button" @click="pilihRewardStampItem(redemption)"
+                                            class="w-full text-left flex items-start gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 cursor-pointer transition">
+                                            <div
+                                                class="w-8 h-8 bg-purple-600 text-white flex items-center justify-center rounded-full shrink-0 mt-0.5">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span
+                                                        class="font-bold text-xs text-gray-900 dark:text-white truncate"
+                                                        x-text="redemption.nama_produk"></span>
+                                                    <span
+                                                        class="text-xs font-extrabold text-purple-600 dark:text-purple-400 shrink-0">Gratis</span>
+                                                </div>
+                                                <div
+                                                    class="flex items-center gap-2 text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                                                    <span x-text="'Jumlah: ' + redemption.jumlah"></span>
+                                                    <span x-text="redemption.kode_redeem"></span>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Modal Pilih/Gunakan Voucher -->
                     <div x-show="modalVoucherTerbuka"
                         class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4"
@@ -731,12 +876,22 @@
                                         <div class="flex items-center gap-1.5 flex-wrap">
                                             <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate"
                                                 x-text="item.nama_produk"></h5>
-                                            <template x-if="itemButuhProduksi(item)">
+                                            <template x-if="item.is_reward_stamp">
+                                                <span
+                                                    class="shrink-0 text-[9px] font-bold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 px-1.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-500/25">Reward
+                                                    Stamp</span>
+                                            </template>
+                                            <template x-if="item.is_reward_stamp && itemButuhProduksi(item)">
                                                 <span
                                                     class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/25">Perlu
                                                     Diproduksi</span>
                                             </template>
-                                            <template x-if="!itemButuhProduksi(item)">
+                                            <template x-if="!item.is_reward_stamp && itemButuhProduksi(item)">
+                                                <span
+                                                    class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/25">Perlu
+                                                    Diproduksi</span>
+                                            </template>
+                                            <template x-if="!item.is_reward_stamp && !itemButuhProduksi(item)">
                                                 <span
                                                     class="shrink-0 text-[9px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/25">Ready
                                                     Stock</span>
@@ -745,9 +900,9 @@
                                         <div class="flex flex-col gap-0.5 mt-1">
                                             <div class="flex items-center gap-1.5">
                                                 <span class="text-xxs font-bold text-amber-700 dark:text-amber-400"
-                                                    x-text="formatRupiah(item.harga_jual_asli)"></span>
+                                                    x-text="item.is_reward_stamp ? 'Gratis' : formatRupiah(item.harga_jual_asli)"></span>
                                                 <template
-                                                    x-if="apakahBarisPertamaProduk(item) && item.promos_tersedia && item.promos_tersedia.length > 0">
+                                                    x-if="!item.is_reward_stamp && apakahBarisPertamaProduk(item) && item.promos_tersedia && item.promos_tersedia.length > 0">
                                                     <button type="button" @click="bukaModalPilihPromo(item)"
                                                         class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border transition"
                                                         :class="item.promos_terpilih_ids && item.promos_terpilih_ids.length > 0 ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/25 hover:bg-rose-100' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700'"
@@ -763,7 +918,7 @@
                                                     </button>
                                                 </template>
                                                 <template
-                                                    x-if="apakahBarisPertamaProduk(item) && (!item.promos_tersedia || item.promos_tersedia.length === 0) && item.promo_aktif">
+                                                    x-if="!item.is_reward_stamp && apakahBarisPertamaProduk(item) && (!item.promos_tersedia || item.promos_tersedia.length === 0) && item.promo_aktif">
                                                     <span
                                                         class="text-[9px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-1 rounded"
                                                         x-text="item.promo_aktif.jenis_potongan === 'nominal' ? ('Promo Rp ' + Math.round(item.promo_aktif.nominal_potongan/1000) + 'rb') : ('Promo ' + formatPersen(item.promo_aktif.persentase) + '%')"></span>
@@ -771,18 +926,25 @@
                                             </div>
                                             <span class="text-xxs text-gray-400 dark:text-gray-500">Total: <span
                                                     class="font-semibold text-gray-700 dark:text-gray-300"
-                                                    x-text="formatRupiah(item.harga_jual_asli * item.jumlah)"></span></span>
+                                                    x-text="item.is_reward_stamp ? 'Gratis' : formatRupiah(item.harga_jual_asli * item.jumlah)"></span></span>
                                         </div>
                                     </div>
-                                    <div
-                                        class="flex items-center border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 shrink-0">
-                                        <button @click="kurangiJumlah(item)"
-                                            class="px-2 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 font-bold transition text-xs">-</button>
-                                        <span class="px-2 text-xs font-bold text-gray-800 dark:text-gray-200"
-                                            x-text="item.jumlah"></span>
-                                        <button @click="tambahJumlah(item)"
-                                            class="px-2 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 font-bold transition text-xs">+</button>
-                                    </div>
+                                    <template x-if="!item.is_reward_stamp">
+                                        <div
+                                            class="flex items-center border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 shrink-0">
+                                            <button @click="kurangiJumlah(item)"
+                                                class="px-2 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 font-bold transition text-xs">-</button>
+                                            <span class="px-2 text-xs font-bold text-gray-800 dark:text-gray-200"
+                                                x-text="item.jumlah"></span>
+                                            <button @click="tambahJumlah(item)"
+                                                class="px-2 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 font-bold transition text-xs">+</button>
+                                        </div>
+                                    </template>
+                                    <template x-if="item.is_reward_stamp">
+                                        <span
+                                            class="px-2 py-1 text-xs font-bold text-purple-700 dark:text-purple-400 shrink-0"
+                                            x-text="'x' + item.jumlah"></span>
+                                    </template>
                                     <button @click="hapusItem(item)"
                                         class="p-1 hover:bg-red-50 dark:hover:bg-red-500/10 text-red-500 dark:text-red-400 rounded-md transition hover:text-red-700 ml-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1417,6 +1579,16 @@
                 voucherKodeLoading: false,
                 voucherModalError: '',
 
+                // Reward Stamp member — daftar reward yang sudah diklaim di portal
+                // member (status menunggu_diambil), kasir tinggal pilih satu untuk
+                // ditautkan ke transaksi ini. Sama persis polanya dengan voucher.
+                modalRewardStampTerbuka: false,
+                daftarRewardStampAktif: [],
+                rewardStampDaftarLoading: false,
+                kodeRewardStampManual: '',
+                rewardStampKodeLoading: false,
+                rewardStampModalError: '',
+
                 // Input pembeli modal
                 inputNamaPembeli: '',
 
@@ -1601,6 +1773,93 @@
 
                 hapusVoucherTerpilih() {
                     this.voucherTerpilih = null;
+                },
+
+                // Reward Stamp member
+                get rewardStampDiKeranjang() {
+                    return this.keranjang.find(i => i.is_reward_stamp) || null;
+                },
+
+                bukaModalRewardStamp() {
+                    if (!this.memberIdTerpilih) return;
+                    this.rewardStampModalError = '';
+                    this.kodeRewardStampManual = '';
+                    this.modalRewardStampTerbuka = true;
+                    this.ambilDaftarRewardStampAktif();
+                },
+
+                tutupModalRewardStamp() {
+                    this.modalRewardStampTerbuka = false;
+                },
+
+                ambilDaftarRewardStampAktif() {
+                    if (!this.memberIdTerpilih) { this.daftarRewardStampAktif = []; return; }
+                    this.daftarRewardStampAktif = [];
+                    this.rewardStampDaftarLoading = true;
+                    fetch(`/transaksi/reward-stamp/member/${this.memberIdTerpilih}`)
+                        .then(r => r.json())
+                        .then(r => { this.daftarRewardStampAktif = (r.status === 'success') ? r.data : []; })
+                        .catch(() => { this.daftarRewardStampAktif = []; })
+                        .finally(() => { this.rewardStampDaftarLoading = false; });
+                },
+
+                pilihRewardStampItem(redemption) {
+                    // Hanya boleh satu reward stamp per transaksi — ganti kalau sudah ada.
+                    this.keranjang = this.keranjang.filter(i => !i.is_reward_stamp);
+
+                    this.keranjang.push({
+                        key: 'reward_stamp_' + redemption.id,
+                        stamp_redemption_id: redemption.id,
+                        kode_redeem: redemption.kode_redeem,
+                        produk_id: null,
+                        is_reward_stamp: true,
+                        nama_produk: redemption.nama_produk,
+                        harga_jual: 0,
+                        harga_jual_asli: 0,
+                        foto: redemption.gambar,
+                        jumlah: redemption.jumlah,
+                        butuh_produksi: !!redemption.butuh_produksi,
+                        catatan: 'Reward Stamp'
+                    });
+
+                    this.kodeRewardStampManual = '';
+                    this.rewardStampModalError = '';
+                    this.modalRewardStampTerbuka = false;
+                    this.tambahToast('Reward "' + redemption.nama_produk + '" ditambahkan ke keranjang.', 'sukses');
+                },
+
+                validasiKodeRewardStampManual() {
+                    const kode = this.kodeRewardStampManual.trim();
+                    if (!kode || this.rewardStampKodeLoading) return;
+
+                    if (!this.memberIdTerpilih) {
+                        this.rewardStampModalError = 'Pilih member terlebih dahulu sebelum memakai reward stamp.';
+                        return;
+                    }
+
+                    this.rewardStampModalError = '';
+                    this.rewardStampKodeLoading = true;
+
+                    fetch("{{ route('transaksi.reward-stamp.validasi') }}", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
+                        body: JSON.stringify({ kode: kode, member_id: this.memberIdTerpilih })
+                    })
+                        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+                        .then(({ ok, data }) => {
+                            if (ok && data.status === 'success') {
+                                this.pilihRewardStampItem(data.data);
+                            } else {
+                                this.rewardStampModalError = data.pesan || 'Kode reward stamp tidak valid.';
+                            }
+                        })
+                        .catch(() => { this.rewardStampModalError = 'Gagal memvalidasi kode reward stamp.'; })
+                        .finally(() => { this.rewardStampKodeLoading = false; });
+                },
+
+                hapusRewardStampTerpilih() {
+                    this.keranjang = this.keranjang.filter(i => !i.is_reward_stamp);
+                    this.tambahToast('Reward stamp dihapus dari keranjang.', 'info');
                 },
 
                 // Bentuk ulang relasi voucher (dari transaksi.voucher yang di-eager-load backend)
@@ -2313,6 +2572,7 @@
                             nama_pembeli: this.namaPembeli,
                             member_id: this.memberIdTerpilih || null,
                             voucher_id: this.voucherTerpilih ? this.voucherTerpilih.id : null,
+                            stamp_redemption_id: this.rewardStampDiKeranjang ? this.rewardStampDiKeranjang.stamp_redemption_id : null,
                             item_pesanan: this.keranjang,
                             subtotal: this.subtotal,
                             pajak: this.pajak,
@@ -2467,6 +2727,7 @@
                                 nama_pembeli: this.namaPembeli,
                                 member_id: this.memberIdTerpilih || null,
                                 voucher_id: this.voucherTerpilih ? this.voucherTerpilih.id : null,
+                                stamp_redemption_id: this.rewardStampDiKeranjang ? this.rewardStampDiKeranjang.stamp_redemption_id : null,
                                 item_pesanan: this.keranjang,
                                 subtotal: this.subtotal,
                                 pajak: this.pajak,
@@ -2566,6 +2827,7 @@
                     this.memberIdTerpilih = '';
                     this.memberTerpilih = null;
                     this.voucherTerpilih = null;
+                    this.daftarRewardStampAktif = [];
                 },
 
                 kembalikanStokFrontend(itemPesanan) {

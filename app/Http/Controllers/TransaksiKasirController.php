@@ -15,16 +15,11 @@ use App\Models\Member;
 use App\Models\Bundling;
 use App\Models\StampProgram;
 use App\Models\MemberStamp;
+use App\Models\StampRedemption;
 use App\Models\PenukaranPoin;
 
 class TransaksiKasirController extends Controller
 {
-    /**
-     * Ambil & validasi voucher member (kode redeem reward jenis "voucher") yang
-     * mau dipakai di kasir. Melempar Exception kalau tidak valid supaya
-     * DB::transaction di pemanggil otomatis rollback (transaksi gagal dibuat,
-     * voucher tetap aktif/tidak berubah).
-     */
     private function validasiVoucherUntukTransaksi(?int $voucherId, ?int $memberId): ?PenukaranPoin
     {
         if (!$voucherId) {
@@ -58,17 +53,81 @@ class TransaksiKasirController extends Controller
 
         return $voucher;
     }
-
-    /**
-     * Tandai voucher sudah dipakai. Hanya dipanggil setelah transaksi benar-benar
-     * berhasil (status Lunas) dan akan ikut ter-rollback kalau proses pembayaran gagal.
-     */
     private function tandaiVoucherDigunakan(PenukaranPoin $voucher, Transaksi $transaksi): void
     {
         $voucher->update([
             'status' => 'selesai',
             'diambil_pada' => now(),
             'transaksi_id' => $transaksi->id,
+        ]);
+    }
+    private function validasiRewardStampUntukTransaksi(?int $stampRedemptionId, ?int $memberId): ?StampRedemption
+    {
+        if (!$stampRedemptionId) {
+            return null;
+        }
+
+        if (!$memberId) {
+            throw new \Exception('Reward stamp hanya bisa dipakai jika member sudah dipilih.');
+        }
+
+        $redemption = StampRedemption::with('produk')
+            ->where('id', $stampRedemptionId)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$redemption) {
+            throw new \Exception('Reward stamp tidak ditemukan.');
+        }
+
+        if ((int) $redemption->member_id !== (int) $memberId) {
+            throw new \Exception('Reward stamp ini bukan milik member yang dipilih.');
+        }
+
+        if ($redemption->status !== 'menunggu_diambil') {
+            throw new \Exception('Reward stamp ini sudah pernah diambil atau dibatalkan.');
+        }
+
+        if (!$redemption->produk) {
+            throw new \Exception('Produk hadiah reward stamp ini tidak ditemukan.');
+        }
+
+        return $redemption;
+    }
+
+    private function prosesRewardStampTransaksi(Transaksi $transaksi, ?StampRedemption $redemption): void
+    {
+        if (!$redemption) {
+            return;
+        }
+
+        $produk = $redemption->produk;
+
+        DetailTransaksi::create([
+            'transaksi_id' => $transaksi->id,
+            'produk_id' => $produk->id,
+            'nama_produk' => $produk->nama_produk,
+            'harga_satuan' => 0,
+            'jumlah' => $redemption->jumlah ?: 1,
+            'catatan' => 'Reward Stamp',
+            'subtotal' => 0,
+            'butuh_produksi' => $this->butuhProduksi($produk),
+        ]);
+
+        $redemption->update([
+            'status' => 'selesai',
+            'diambil_pada' => now(),
+            'transaksi_id' => $transaksi->id,
+            'diproses_oleh' => auth()->id(),
+        ]);
+    }
+    private function kembalikanRewardStampDariTransaksi(Transaksi $transaksi): void
+    {
+        StampRedemption::where('transaksi_id', $transaksi->id)->update([
+            'status' => 'menunggu_diambil',
+            'diambil_pada' => null,
+            'transaksi_id' => null,
+            'diproses_oleh' => null,
         ]);
     }
 
@@ -112,7 +171,7 @@ class TransaksiKasirController extends Controller
                     return $bundling;
                 });
 
-            $daftarDitahan = PesananDitahan::with('transaksi.voucher.reward')->orderBy('created_at', 'desc')->get();
+            $daftarDitahan = PesananDitahan::with(['transaksi.voucher.reward', 'transaksi.stampRedemptions.produk'])->orderBy('created_at', 'desc')->get();
             $daftarMember = \App\Models\Member::orderBy('nama')->get();
 
             return view('pages.transaksi.indeks', [
@@ -134,24 +193,12 @@ class TransaksiKasirController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data transaksi: ' . $e->getMessage());
         }
     }
-
-    /**
-     * Proses satu item bundling dalam transaksi.
-     *
-     * Untuk tiap komponen produk di dalam bundling, kebutuhan dipecah
-     * menjadi 2 baris DetailTransaksi kalau perlu:
-     *  - baris "ready"     -> jumlah yang kepakai dari stok (butuh_produksi=false)
-     *  - baris "produksi"  -> sisa kebutuhan yang stoknya gak cukup (butuh_produksi=true)
-     * Ini supaya struk dapur cuma nampilin jumlah yang BENERAN perlu diproduksi,
-     * bukan seluruh kebutuhan komponen itu.
-     */
     private function prosesItemBundlingTransaksi(Transaksi $transaksi, array $item): void
     {
         $bundlingId = (int) $item['bundling_id'];
         $jumlahBundling = (int) $item['jumlah'];
         $bundling = Bundling::with('items.produk')->findOrFail($bundlingId);
 
-        // 1. Entry Bundling Utama untuk Struk Pelanggan
         DetailTransaksi::create([
             'transaksi_id' => $transaksi->id,
             'produk_id' => null,
@@ -217,13 +264,6 @@ class TransaksiKasirController extends Controller
         }
     }
 
-    /**
-     * Kembalikan stok berdasarkan baris-baris DetailTransaksi (dipakai baik
-     * untuk item produk biasa maupun komponen bundling). Baris ringkasan
-     * bundling (produk_id null) dilewati karena baris itu tidak pernah
-     * memotong stok. Baris yang butuh_produksi=true juga dilewati karena
-     * stoknya memang tidak pernah dipotong.
-     */
     private function kembalikanStokDariDetail($detailTransaksi): void
     {
         foreach ($detailTransaksi as $detail) {
@@ -247,6 +287,7 @@ class TransaksiKasirController extends Controller
                 'nama_pembeli' => 'nullable|string|max:255',
                 'member_id' => 'nullable|exists:members,id',
                 'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
+                'stamp_redemption_id' => 'nullable|integer|exists:stamp_redemptions,id',
                 'item_pesanan' => 'required|array',
                 'subtotal' => 'required|numeric',
                 'pajak' => 'required|numeric',
@@ -259,18 +300,17 @@ class TransaksiKasirController extends Controller
 
             $namaPembeli = $validated['nama_pembeli'] ?? 'Pelanggan Umum';
 
-            // Voucher divalidasi (kepemilikan, aktif, belum expired) tapi belum ditandai
-            // dipakai di sini — pesanan yang ditahan belum lunas, jadi voucher baru
-            // resmi dipakai saat pesanan ini dilunaskan lewat lunaskanDitahan().
             $voucher = $this->validasiVoucherUntukTransaksi(
                 $validated['voucher_id'] ?? null,
                 $validated['member_id'] ?? null
             );
+            $rewardStampSiap = $this->validasiRewardStampUntukTransaksi(
+                $validated['stamp_redemption_id'] ?? null,
+                $validated['member_id'] ?? null
+            );
 
-            // Buat kode transaksi unik
             $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
 
-            // Buat transaksi dengan status Belum Lunas
             $transaksi = Transaksi::create([
                 'kode_transaksi' => $kodeTransaksi,
                 'nama_pembeli' => $namaPembeli,
@@ -288,16 +328,20 @@ class TransaksiKasirController extends Controller
                 'status_pembayaran' => 'Belum Lunas',
             ]);
 
+            $this->prosesRewardStampTransaksi($transaksi, $rewardStampSiap);
+
             foreach ($validated['item_pesanan'] as $item) {
 
-                // ==== Item BUNDLING ====
-                if (!empty($item['is_bundling']) && !empty($item['bundling_id'])) {
+                if (!empty($item['is_reward_stamp'])) {
+                    continue;
+                }
+
+                 if (!empty($item['is_bundling']) && !empty($item['bundling_id'])) {
                     $this->prosesItemBundlingTransaksi($transaksi, $item);
                     continue;
                 }
 
-                // ==== Item PRODUK biasa (logic lama, tidak berubah) ====
-                $produk = Produk::findOrFail($item['produk_id']);
+                 $produk = Produk::findOrFail($item['produk_id']);
                 $perluProduksi = $this->tentukanPerluProduksi($produk, $item);
 
                 if (!$perluProduksi && $produk->stok < $item['jumlah']) {
@@ -322,8 +366,7 @@ class TransaksiKasirController extends Controller
                 $detail->save();
             }
 
-            // Simpan pesanan ditahan dengan link ke transaksi
-            $pesanan = PesananDitahan::create([
+             $pesanan = PesananDitahan::create([
                 'nama_pembeli' => $namaPembeli,
                 'item_pesanan' => $validated['item_pesanan'],
                 'subtotal' => $validated['subtotal'],
@@ -375,7 +418,7 @@ class TransaksiKasirController extends Controller
     public function ambilDitahan()
     {
         try {
-            $daftarDitahan = PesananDitahan::with('transaksi.voucher.reward')->orderBy('created_at', 'desc')->get();
+            $daftarDitahan = PesananDitahan::with(['transaksi.voucher.reward', 'transaksi.stampRedemptions.produk'])->orderBy('created_at', 'desc')->get();
             return response()->json([
                 'status' => 'success',
                 'data' => $daftarDitahan
@@ -399,17 +442,13 @@ class TransaksiKasirController extends Controller
     {
         DB::beginTransaction();
         try {
-            $pesanan = PesananDitahan::with('transaksi.voucher.reward')->findOrFail($id);
-
-            // Kembalikan stok jika ada transaksi terkait, HANYA untuk baris
-            // yang bukan "Perlu Diproduksi" (pakai snapshot butuh_produksi
-            // yang disimpan saat transaksi dibuat, bukan status produk saat ini).
-            if ($pesanan->transaksi) {
+            $pesanan = PesananDitahan::with(['transaksi.voucher.reward', 'transaksi.stampRedemptions.produk'])->findOrFail($id);
+             if ($pesanan->transaksi) {
                 $detailTransaksi = DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->get();
                 $this->kembalikanStokDariDetail($detailTransaksi);
+                 $this->kembalikanRewardStampDariTransaksi($pesanan->transaksi);
 
-                // Hapus detail transaksi dan transaksi
-                DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->delete();
+                 DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->delete();
                 $pesanan->transaksi->delete();
             }
 
@@ -457,6 +496,8 @@ class TransaksiKasirController extends Controller
             if ($pesanan->transaksi) {
                 $detailTransaksi = DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->get();
                 $this->kembalikanStokDariDetail($detailTransaksi);
+ 
+                $this->kembalikanRewardStampDariTransaksi($pesanan->transaksi);
 
                 DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->delete();
                 $pesanan->transaksi->delete();
@@ -517,16 +558,12 @@ class TransaksiKasirController extends Controller
             $transaksi = $pesanan->transaksi;
             $memberIdEfektif = $validated['member_id'] ?? $transaksi->member_id;
 
-            // Voucher final saat pesanan dilunaskan: kalau kasir mengirim voucher_id
-            // (termasuk null untuk melepas), pakai itu. Kalau tidak dikirim sama sekali,
-            // pakai voucher yang sudah tersimpan sejak pesanan ditahan.
-            $voucherDipakai = $this->validasiVoucherUntukTransaksi(
+               $voucherDipakai = $this->validasiVoucherUntukTransaksi(
                 $request->has('voucher_id') ? ($validated['voucher_id'] ?? null) : $transaksi->voucher_id,
                 $memberIdEfektif
             );
 
-            // Update transaksi menjadi Lunas
-            $transaksi->update([
+             $transaksi->update([
                 'jumlah_diterima' => $validated['jumlah_diterima'],
                 'kembalian' => $validated['kembalian'],
                 'metode_pembayaran' => $validated['metode_pembayaran'],
@@ -536,15 +573,11 @@ class TransaksiKasirController extends Controller
                 'diskon_label' => $validated['diskon_label'] ?? $transaksi->diskon_label,
             ]);
 
-            // Voucher baru resmi ditandai "dipakai" di titik ini, setelah transaksi
-            // benar-benar Lunas. Kalau ada langkah lain gagal, seluruh transaksi
-            // (termasuk penandaan voucher ini) ikut rollback dan voucher tetap aktif.
-            if ($voucherDipakai) {
+               if ($voucherDipakai) {
                 $this->tandaiVoucherDigunakan($voucherDipakai, $transaksi);
             }
 
-            // Hitung poin member
-            if (!empty($validated['member_id'])) {
+             if (!empty($validated['member_id'])) {
                 $nominalUntukPoin = $transaksi->subtotal + $transaksi->pajak;
                 $member = \App\Models\Member::find($validated['member_id']);
                 if ($member) {
@@ -563,8 +596,7 @@ class TransaksiKasirController extends Controller
                 }
             }
 
-            // Hapus pesanan ditahan (karena sudah lunas)
-            $pesanan->delete();
+             $pesanan->delete();
 
             DB::commit();
 
@@ -609,6 +641,7 @@ class TransaksiKasirController extends Controller
                 'nama_pembeli' => 'nullable|string|max:255',
                 'member_id' => 'nullable|exists:members,id',
                 'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
+                'stamp_redemption_id' => 'nullable|integer|exists:stamp_redemptions,id',
                 'item_pesanan' => 'required|array',
                 'subtotal' => 'required|numeric',
                 'pajak' => 'required|numeric',
@@ -621,16 +654,17 @@ class TransaksiKasirController extends Controller
                 'metode_pembayaran' => 'required|string',
             ]);
 
-            // Voucher divalidasi dulu (kepemilikan, aktif, belum expired) sebelum
-            // transaksi dibuat. Kalau tidak valid, Exception ini melempar ke luar
-            // dan seluruh DB::transaction dibatalkan (voucher tetap tidak berubah).
-            $voucherDipakai = $this->validasiVoucherUntukTransaksi(
+             $voucherDipakai = $this->validasiVoucherUntukTransaksi(
                 $validated['voucher_id'] ?? null,
                 $validated['member_id'] ?? null
             );
 
-            // Buat kode transaksi unik
-            $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
+               $rewardStampSiap = $this->validasiRewardStampUntukTransaksi(
+                $validated['stamp_redemption_id'] ?? null,
+                $validated['member_id'] ?? null
+            );
+
+             $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
 
             $transaksi = Transaksi::create([
                 'kode_transaksi' => $kodeTransaksi,
@@ -649,14 +683,13 @@ class TransaksiKasirController extends Controller
                 'status_pembayaran' => 'Lunas',
             ]);
 
-            // Transaksi langsung Lunas di sini, jadi voucher (kalau ada) langsung
-            // ditandai dipakai sekarang juga.
-            if ($voucherDipakai) {
+              if ($voucherDipakai) {
                 $this->tandaiVoucherDigunakan($voucherDipakai, $transaksi);
             }
 
-            //hitung poin member
-            if ($transaksi->member_id) {
+              $this->prosesRewardStampTransaksi($transaksi, $rewardStampSiap);
+
+             if ($transaksi->member_id) {
                 $pengaturan = PengaturanMember::where('status_aktif', true)->first();
 
                 if ($pengaturan) {
@@ -680,8 +713,7 @@ class TransaksiKasirController extends Controller
                 }
             }
 
-            //hitung stamp member (program stamp yang aktif sekarang, kalau ada)
-            if ($transaksi->member_id) {
+             if ($transaksi->member_id) {
                 $stampProgram = StampProgram::aktifSekarang();
 
                 if ($stampProgram) {
@@ -695,10 +727,7 @@ class TransaksiKasirController extends Controller
                         );
 
                         $stampSebelum = $memberStamp->jumlah_stamp;
-
-                        // Stamp gak nambah lewat batas jumlah_stamp_dibutuhkan — kalau kartu udah
-                        // penuh, member harus tukar dulu sebelum ngumpulin stamp baru.
-                        $stampBaru = min(
+                         $stampBaru = min(
                             $stampSebelum + $stampDidapat,
                             $stampProgram->jumlah_stamp_dibutuhkan
                         );
@@ -716,14 +745,16 @@ class TransaksiKasirController extends Controller
 
             foreach ($validated['item_pesanan'] as $item) {
 
-                // ==== Item BUNDLING ====
-                if (!empty($item['is_bundling']) && !empty($item['bundling_id'])) {
+                 if (!empty($item['is_reward_stamp'])) {
+                    continue;
+                }
+
+                 if (!empty($item['is_bundling']) && !empty($item['bundling_id'])) {
                     $this->prosesItemBundlingTransaksi($transaksi, $item);
                     continue;
                 }
 
-                // ==== Item PRODUK biasa (logic lama, tidak berubah) ====
-                $produk = Produk::findOrFail($item['produk_id']);
+                 $produk = Produk::findOrFail($item['produk_id']);
                 $perluProduksi = $this->tentukanPerluProduksi($produk, $item);
 
                 if (!$perluProduksi && $produk->stok < $item['jumlah']) {
@@ -806,72 +837,4 @@ class TransaksiKasirController extends Controller
         }
     }
 
-    public function klaimStamp(Request $request)
-    {
-        $validated = $request->validate([
-            'member_id' => 'required|exists:members,id',
-            'produk_id' => 'required|exists:produks,id',
-        ]);
-
-        try {
-            $redemption = DB::transaction(function () use ($validated) {
-                $stampProgram = StampProgram::aktifSekarang();
-
-                if (!$stampProgram) {
-                    abort(422, 'Tidak ada program stamp yang sedang aktif.');
-                }
-
-                $memberStamp = MemberStamp::where('member_id', $validated['member_id'])
-                    ->where('stamp_program_id', $stampProgram->id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (!$memberStamp || $memberStamp->jumlah_stamp < $stampProgram->jumlah_stamp_dibutuhkan) {
-                    abort(422, 'Stamp member ini belum penuh.');
-                }
-
-                $hadiahValid = $stampProgram->hadiah()->where('produk_id', $validated['produk_id'])->exists();
-                if (!$hadiahValid) {
-                    abort(422, 'Produk ini bukan pilihan hadiah untuk program stamp yang aktif.');
-                }
-
-                if ($stampProgram->maksimal_redeem_tercapai) {
-                    abort(422, 'Kuota penukaran program stamp ini sudah habis.');
-                }
-
-                $hadiah = $stampProgram->hadiah()->where('produk_id', $validated['produk_id'])->first();
-
-                $produk = \App\Models\Produk::where('id', $validated['produk_id'])->lockForUpdate()->first();
-                if ($produk->stok < $hadiah->jumlah) {
-                    abort(422, 'Stok produk hadiah ini tidak mencukupi.');
-                }
-                $produk->decrement('stok', $hadiah->jumlah);
-
-                $memberStamp->decrement('jumlah_stamp', $stampProgram->jumlah_stamp_dibutuhkan);
-                $stampProgram->increment('jumlah_redeem');
-
-                return \App\Models\StampRedemption::create([
-                    'member_id' => $validated['member_id'],
-                    'stamp_program_id' => $stampProgram->id,
-                    'produk_id' => $validated['produk_id'],
-                    'sumber' => 'kasir',
-                    'status' => 'selesai',
-                    'diproses_oleh' => auth()->id(),
-                    'diambil_pada' => now(),
-                ]);
-            });
-
-            return response()->json([
-                'status' => 'success',
-                'pesan' => 'Hadiah stamp berhasil diklaim.',
-                'kode_redeem' => $redemption->kode_redeem,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error klaimStamp TransaksiKasirController: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'pesan' => $e->getMessage(),
-            ], 422);
-        }
-    }
 }

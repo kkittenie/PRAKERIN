@@ -46,4 +46,9 @@ class Transaksi extends Model
     {
         return $this->hasOne(PesananDitahan::class, 'transaksi_id');
     }
+
+    public function stampRedemptions()
+    {
+        return $this->hasMany(StampRedemption::class, 'transaksi_id');
+    }
 }

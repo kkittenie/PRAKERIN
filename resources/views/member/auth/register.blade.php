@@ -77,7 +77,8 @@
                                     <span>+62</span>
                                     <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-500"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 </div>
-                                <input id="no_hp" name="no_hp" type="tel" inputmode="numeric" value="{{ old('no_hp') }}" required autofocus placeholder="882000768044"
+                                <input id="no_hp" name="no_hp" type="tel" inputmode="numeric" value="{{ old('no_hp') }}" required autofocus placeholder="882xxxxxxx"
+                                       oninput="this.value = this.value.replace(/\D/g, '').replace(/^0+/, '')"
                                        class="ml-3 flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
                                 <button type="button" onclick="document.getElementById('no_hp').value=''" class="text-gray-400 hover:text-gray-600 p-1">
                                     <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>

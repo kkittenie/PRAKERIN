@@ -25,6 +25,7 @@ use App\Http\Controllers\RiwayatRedeemController;
 use App\Http\Controllers\MemberLevelController;
 use App\Http\Controllers\Member\StampController as MemberStampController;
 use App\Http\Controllers\VoucherKasirController;
+use App\Http\Controllers\StampRedemptionKasirController;
 
 require __DIR__ . '/member.php';
 
@@ -42,6 +43,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/transaksi/cetak/{kode_transaksi}', [TransaksiKasirController::class, 'cetak'])->name('transaksi.cetak');
         Route::get('/transaksi/voucher/member/{member}', [VoucherKasirController::class, 'daftarAktif'])->name('transaksi.voucher.member');
         Route::post('/transaksi/voucher/validasi', [VoucherKasirController::class, 'validasiKode'])->name('transaksi.voucher.validasi');
+        Route::get('/transaksi/reward-stamp/member/{member}', [StampRedemptionKasirController::class, 'daftarAktif'])->name('transaksi.reward-stamp.member');
+        Route::post('/transaksi/reward-stamp/validasi', [StampRedemptionKasirController::class, 'validasiKode'])->name('transaksi.reward-stamp.validasi');
     });
     Route::middleware('permission:tambah_transaksi')->group(function () {
         Route::post('/transaksi/tahan', [TransaksiKasirController::class, 'simpanDitahan'])->name('transaksi.tahan');
@@ -50,9 +53,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/transaksi/bayar', [TransaksiKasirController::class, 'bayar'])->name('transaksi.bayar');
         Route::post('/transaksi/lunaskan/{id}', [TransaksiKasirController::class, 'lunaskanDitahan'])->name('transaksi.lunaskan');
     });
-    Route::post('/transaksi-kasir/klaim-stamp', [TransaksiKasirController::class, 'klaimStamp'])
-        ->name('transaksi-kasir.klaim-stamp')
-        ->middleware('permission:lihat_transaksi');
 
     // Laporan
     Route::middleware('permission:lihat_laporan')->group(function () {

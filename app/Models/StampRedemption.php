@@ -12,6 +12,7 @@ class StampRedemption extends Model
     protected $fillable = [
         'member_id', 'stamp_program_id', 'produk_id', 'kode_redeem',
         'sumber', 'status', 'diproses_oleh', 'diambil_pada',
+        'transaksi_id', 'jumlah',
     ];
 
     protected $casts = [
@@ -52,5 +53,10 @@ class StampRedemption extends Model
     public function diprosesOleh()
     {
         return $this->belongsTo(\App\Models\User::class, 'diproses_oleh');
+    }
+
+    public function transaksi()
+    {
+        return $this->belongsTo(Transaksi::class, 'transaksi_id');
     }
 }
