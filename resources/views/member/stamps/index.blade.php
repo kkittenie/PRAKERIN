@@ -98,7 +98,7 @@
                 @if ($penuh)
                     <p class="text-xs font-bold text-white">Stamp penuh, yuk tukar! 🎉</p>
                 @else
-                    <p class="text-xs text-white/75">{{ $target - $current }} stamp lagi buat hadiah</p>
+                    <p class="text-xs text-white/75">{{ $target - $current }} stamp lagi untuk tukar hadiah</p>
                 @endif
             </div>
         </div>

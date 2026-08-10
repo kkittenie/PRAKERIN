@@ -599,7 +599,12 @@
                                     </button>
                                 </div>
                                 <template
-                                    x-if="voucherTerpilih && subtotalGross < (parseFloat(voucherTerpilih.min_pembelian) || 0)">
+                                    x-if="voucherTerpilih && voucherSubtotalBerlaku <= 0">
+                                    <p class="text-[10px] text-amber-600 dark:text-amber-400">Produk di keranjang
+                                        belum ada yang berhak dapat voucher ini.</p>
+                                </template>
+                                <template
+                                    x-if="voucherTerpilih && voucherSubtotalBerlaku > 0 && subtotalGross < (parseFloat(voucherTerpilih.min_pembelian) || 0)">
                                     <p class="text-[10px] text-amber-600 dark:text-amber-400">Minimal belanja <span
                                             x-text="formatRupiah(voucherTerpilih.min_pembelian)"></span> supaya
                                         voucher ini aktif.</p>
@@ -1979,8 +1984,22 @@
                     const diskonManual = Math.round(this.subtotalGross * ((this.parsePersen(this.diskonPersen) || 0) / 100));
                     return this.diskonPromo + diskonManual + this.voucherDiskon;
                 },
+                get voucherSubtotalBerlaku() {
+                    if (!this.voucherTerpilih) return 0;
+
+                    const produkIds = this.voucherTerpilih.produk_ids || [];
+                    if (produkIds.length === 0) return this.subtotalGross;
+
+                    return this.keranjang
+                        .filter(i => produkIds.includes(i.produk_id))
+                        .reduce((s, i) => s + (i.harga_jual_asli * i.jumlah), 0);
+                },
+
                 get voucherDiskon() {
                     if (!this.voucherTerpilih) return 0;
+
+                    const subtotalBerlaku = this.voucherSubtotalBerlaku;
+                    if (subtotalBerlaku <= 0) return 0;
 
                     const minPembelian = parseFloat(this.voucherTerpilih.min_pembelian || 0);
                     if (this.subtotalGross < minPembelian) return 0;
@@ -1989,16 +2008,15 @@
                     if (this.voucherTerpilih.jenis_potongan === 'nominal') {
                         nilai = parseFloat(this.voucherTerpilih.nominal_potongan || 0);
                     } else {
-                        nilai = (parseFloat(this.voucherTerpilih.persentase || 0) / 100) * this.subtotalGross;
+                        nilai = (parseFloat(this.voucherTerpilih.persentase || 0) / 100) * subtotalBerlaku;
                         const maksimal = parseFloat(this.voucherTerpilih.maksimal_potongan || 0);
                         if (maksimal > 0) nilai = Math.min(nilai, maksimal);
                     }
 
-                    // Voucher tidak boleh membuat total diskon melebihi subtotal
                     const diskonManual = Math.round(this.subtotalGross * ((this.parsePersen(this.diskonPersen) || 0) / 100));
                     const sisaKuota = Math.max(0, this.subtotalGross - this.diskonPromo - diskonManual);
 
-                    return Math.round(Math.min(nilai, sisaKuota));
+                    return Math.round(Math.min(nilai, subtotalBerlaku, sisaKuota));
                 },
                 get rincianDiskonList() {
                     if (this.keranjang.length === 0) return [];
@@ -2335,13 +2353,9 @@
                                 this.keranjang = this.normalisasiItemKeranjang(d.item_pesanan);
                                 this.namaPembeli = d.nama_pembeli;
                                 this.catatan = d.catatan || '';
-                                // BUGFIX: sama seperti di mulaiLunaskan() — `d.diskon` itu nominal (Rp),
-                                // bukan persen. Pakai `d.diskon_persen` (kolom terpisah) untuk memulihkan
-                                // persentase diskon manual yang sebenarnya.
                                 this.diskonPersen = d.diskon_persen || '';
                                 this.modalDitahanTerbuka = false;
 
-                                // Pulihkan member & voucher yang dipakai saat pesanan ini ditahan
                                 const memberId = d.transaksi ? d.transaksi.member_id : null;
                                 this.memberIdTerpilih = memberId || '';
                                 this.memberTerpilih = memberId
@@ -2376,8 +2390,6 @@
                         .then(r => r.json())
                         .then(r => {
                             if (r.status === 'success') {
-                                // Kembalikan stok di frontend UI saat pesanan ditahan dihapus
-                                // (hanya untuk item yang bukan "Perlu Diproduksi")
                                 if (pesanan && pesanan.item_pesanan) {
                                     this.kembalikanStokFrontend(pesanan.item_pesanan);
                                 }
@@ -2404,7 +2416,6 @@
                 selesaikanPembayaran() {
                     if (this.kembalianNum < 0) { this.tambahToast('Uang yang diterima kurang!', 'error'); return; }
 
-                    // Simpan data struk sebelum bersihkan keranjang
                     const dataStruk = {
                         nama_pembeli: this.namaPembeli,
                         keranjang: JSON.parse(JSON.stringify(this.keranjang)),
@@ -2491,8 +2502,6 @@
                     }
 
                     if (jenis === 'dapur') {
-                        // Tiket dapur/produksi HANYA untuk item berstatus "Perlu Diproduksi",
-                        // berlaku sama baik untuk transaksi Lunas maupun Belum Lunas.
                         const itemsDapur = d.keranjang.filter(item => this.itemButuhProduksi(item));
                         if (itemsDapur.length === 0) {
                             this.tambahToast('Tidak ada item untuk dicetak ke dapur.', 'info');
@@ -2509,11 +2518,6 @@
                     this.pesananSedangDilunaskan = pesanan;
                     this.keranjang = this.normalisasiItemKeranjang(JSON.parse(JSON.stringify(pesanan.item_pesanan)));
                     this.namaPembeli = pesanan.nama_pembeli;
-                    // BUGFIX: `pesanan.diskon` adalah NOMINAL (Rp) total diskon (promo + manual + voucher),
-                    // bukan persentase. Sebelumnya nilai ini langsung dijejalkan ke `diskonPersen`
-                    // sehingga diskon manual membengkak jadi ribuan persen dan menimpa/menggandakan
-                    // potongan voucher. Persentase diskon manual yang sebenarnya diambil dari
-                    // `pesanan.diskon_persen` (kolom terpisah).
                     this.diskonPersen = pesanan.diskon_persen || '';
                     this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? String(Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100)) : '5';
                     this.catatan = pesanan.catatan || '';
@@ -2536,11 +2540,6 @@
                         nama_pembeli: pesanan.nama_pembeli,
                         keranjang: JSON.parse(JSON.stringify(pesanan.item_pesanan)),
                         subtotal: pesanan.subtotal,
-                        // BUGFIX: sebelumnya nilai nominal diskon (pesanan.diskon) dipakai sebagai
-                        // persen lalu dihitung ulang seolah persen (subtotal * diskon/100), sehingga
-                        // nilai diskon di struk jadi salah total. `pesanan.diskon` sudah nominal Rp,
-                        // langsung dipakai apa adanya; persennya (kalau ada diskon manual) dari
-                        // `pesanan.diskon_persen`.
                         diskon_persen: pesanan.diskon_persen || 0,
                         nilai_diskon: pesanan.diskon || 0,
                         pajak_persen: pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 5,
@@ -2608,7 +2607,7 @@
 
                 formatPersen(v) {
                     const n = parseFloat(v) || 0;
-                    const dibulatkan = Math.round(n * 100) / 100; // maks. 2 desimal
+                    const dibulatkan = Math.round(n * 100) / 100; 
                     return dibulatkan.toString().replace('.', ',');
                 },
 

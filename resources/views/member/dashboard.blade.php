@@ -258,7 +258,7 @@
                         @if ($stampPenuh)
                             Stamp penuh, yuk tukar! 🎉
                         @else
-                            {{ $stampCurrent }}/{{ $stampTarget }} stamp &middot; {{ $stampTarget - $stampCurrent }} lagi buat hadiah
+                            {{ $stampCurrent }}/{{ $stampTarget }} stamp &middot; {{ $stampTarget - $stampCurrent }} lagi untuk tukar hadiah
                         @endif
                     </p>
                 </a>

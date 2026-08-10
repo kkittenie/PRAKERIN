@@ -38,7 +38,11 @@ class RewardController extends Controller
 
         return view('member.rewards.show', [
             'member' => $member,
-            'reward' => $reward,
+            'reward' => $reward->load(['produks' => function ($query) {
+                $query->select('produks.id', 'produks.kategori_id', 'produks.nama_produk', 'produks.foto')
+                    ->with('kategori:id,nama_kategori')
+                    ->orderBy('nama_produk');
+            }]),
         ]);
     }
 

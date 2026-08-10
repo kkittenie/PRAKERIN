@@ -16,7 +16,7 @@ class VoucherKasirController extends Controller
     public function daftarAktif(Member $member)
     {
         try {
-            $voucher = PenukaranPoin::with('reward')
+            $voucher = PenukaranPoin::with('reward.produks')
                 ->where('member_id', $member->id)
                 ->whereHas('reward', fn ($q) => $q->where('jenis', 'voucher'))
                 ->aktifDigunakan()
@@ -52,7 +52,7 @@ class VoucherKasirController extends Controller
             'member_id.required' => 'Pilih member terlebih dahulu sebelum memakai voucher.',
         ]);
 
-        $penukaran = PenukaranPoin::with(['reward', 'member'])
+        $penukaran = PenukaranPoin::with(['reward.produks', 'member'])
             ->where('kode_redeem', strtoupper(trim($validated['kode'])))
             ->whereHas('reward', fn ($q) => $q->where('jenis', 'voucher'))
             ->first();
@@ -106,6 +106,7 @@ class VoucherKasirController extends Controller
             'maksimal_potongan' => $reward->maksimal_potongan !== null ? (float) $reward->maksimal_potongan : null,
             'min_pembelian' => (float) ($reward->min_pembelian ?? 0),
             'berlaku_sampai' => $penukaran->berlaku_sampai ? $penukaran->berlaku_sampai->toDateString() : null,
+            'produk_ids' => $reward ? $reward->produks->pluck('id')->values()->all() : [],
         ];
     }
 }

@@ -371,6 +371,24 @@
     </dialog>
 
     <script>
+        // diskon_label disimpan di DB sebagai JSON string, mis. [{"nama":"Voucher (CEF-PJAY)","nilai":10000}]
+        // (rincian tiap komponen diskon: promo produk, diskon manual, voucher). Fungsi ini mengubahnya
+        // jadi teks nama yang enak dibaca, bukan JSON mentah.
+        function formatDiskonLabel(raw) {
+            if (!raw) return 'Diskon';
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    const nama = parsed.map((item) => item && item.nama ? item.nama : null).filter(Boolean);
+                    if (nama.length > 0) return nama.join(', ');
+                }
+                return 'Diskon';
+            } catch (e) {
+                // Bukan JSON (data lama / label polos) — tampilkan apa adanya.
+                return raw;
+            }
+        }
+
         function bukaDetailTransaksi(btn) {
             const d = btn.dataset;
 
@@ -393,7 +411,7 @@
             const diskon = Number(d.diskon || 0);
             if (diskon > 0) {
                 diskonRow.classList.remove('hidden');
-                document.getElementById('detail-trx-diskon-label').textContent = d.diskonLabel || 'Diskon';
+                document.getElementById('detail-trx-diskon-label').textContent = formatDiskonLabel(d.diskonLabel);
                 document.getElementById('detail-trx-diskon').textContent = '-' + fmtRupiah(diskon);
             } else {
                 diskonRow.classList.add('hidden');
