@@ -15,11 +15,14 @@ class PenukaranPoin extends Model
         'kode_redeem',
         'poin_terpakai',
         'status',
+        'berlaku_sampai',
         'diambil_pada',
+        'transaksi_id',
     ];
 
     protected $casts = [
         'diambil_pada' => 'datetime',
+        'berlaku_sampai' => 'date',
     ];
 
     protected static function booted(): void
@@ -46,5 +49,30 @@ class PenukaranPoin extends Model
     public function reward()
     {
         return $this->belongsTo(RewardKatalog::class, 'reward_katalog_id');
+    }
+
+    public function transaksi()
+    {
+        return $this->belongsTo(Transaksi::class, 'transaksi_id');
+    }
+
+    /**
+     * Voucher yang masih bisa dipakai: belum diambil/dipakai dan belum kedaluwarsa.
+     */
+    public function scopeAktifDigunakan($query)
+    {
+        return $query->where('status', 'menunggu_diambil')
+            ->where(function ($q) {
+                $q->whereNull('berlaku_sampai')->orWhereDate('berlaku_sampai', '>=', now()->toDateString());
+            });
+    }
+
+    public function sudahExpired(): bool
+    {
+        if (! $this->berlaku_sampai) {
+            return false;
+        }
+
+        return $this->berlaku_sampai->endOfDay()->isPast();
     }
 }

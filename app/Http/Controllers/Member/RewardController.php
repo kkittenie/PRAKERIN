@@ -73,6 +73,9 @@ class RewardController extends Controller
                 'reward_katalog_id' => $rewardTerkunci->id,
                 'poin_terpakai' => $rewardTerkunci->poin_dibutuhkan,
                 'status' => 'menunggu_diambil',
+                'berlaku_sampai' => $rewardTerkunci->masa_berlaku_hari
+                    ? now()->addDays($rewardTerkunci->masa_berlaku_hari)->toDateString()
+                    : null,
             ]);
         });
 

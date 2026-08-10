@@ -12,11 +12,13 @@ class Transaksi extends Model
         'kode_transaksi',
         'nama_pembeli',
         'member_id',
+        'voucher_id',
         'poin_sebelum',
         'poin_didapat',
         'subtotal',
         'pajak',
         'diskon',
+        'diskon_persen',
         'diskon_label',
         'total_bayar',
         'jumlah_diterima',
@@ -28,6 +30,11 @@ class Transaksi extends Model
     public function member()
     {
         return $this->belongsTo(Member::class);
+    }
+
+    public function voucher()
+    {
+        return $this->belongsTo(PenukaranPoin::class, 'voucher_id');
     }
 
     public function detailTransaksi()

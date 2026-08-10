@@ -24,6 +24,7 @@ use App\Http\Controllers\RewardVoucherController;
 use App\Http\Controllers\RiwayatRedeemController;
 use App\Http\Controllers\MemberLevelController;
 use App\Http\Controllers\Member\StampController as MemberStampController;
+use App\Http\Controllers\VoucherKasirController;
 
 require __DIR__ . '/member.php';
 
@@ -39,6 +40,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/transaksi', [TransaksiKasirController::class, 'indeks'])->name('transaksi.indeks');
         Route::get('/transaksi/daftar-ditahan', [TransaksiKasirController::class, 'ambilDitahan'])->name('transaksi.daftar-ditahan');
         Route::get('/transaksi/cetak/{kode_transaksi}', [TransaksiKasirController::class, 'cetak'])->name('transaksi.cetak');
+        Route::get('/transaksi/voucher/member/{member}', [VoucherKasirController::class, 'daftarAktif'])->name('transaksi.voucher.member');
+        Route::post('/transaksi/voucher/validasi', [VoucherKasirController::class, 'validasiKode'])->name('transaksi.voucher.validasi');
     });
     Route::middleware('permission:tambah_transaksi')->group(function () {
         Route::post('/transaksi/tahan', [TransaksiKasirController::class, 'simpanDitahan'])->name('transaksi.tahan');

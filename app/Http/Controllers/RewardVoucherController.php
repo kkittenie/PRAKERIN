@@ -56,6 +56,12 @@ class RewardVoucherController extends Controller
             'poin_dibutuhkan' => $validated['poin_dibutuhkan'],
             'stok' => $validated['stok'] ?? null,
             'status_aktif' => (bool) $request->boolean('status_aktif'),
+            'jenis_potongan' => $validated['jenis_potongan'],
+            'nominal_potongan' => $validated['jenis_potongan'] === 'nominal' ? $validated['nominal_potongan'] : 0,
+            'persentase' => $validated['jenis_potongan'] === 'persentase' ? $validated['persentase'] : 0,
+            'maksimal_potongan' => $validated['jenis_potongan'] === 'persentase' ? ($validated['maksimal_potongan'] ?? null) : null,
+            'min_pembelian' => $validated['min_pembelian'] ?? 0,
+            'masa_berlaku_hari' => $validated['masa_berlaku_hari'] ?? null,
         ]);
 
         activity()
@@ -89,6 +95,12 @@ class RewardVoucherController extends Controller
             'poin_dibutuhkan' => $validated['poin_dibutuhkan'],
             'stok' => $validated['stok'] ?? null,
             'status_aktif' => (bool) $request->boolean('status_aktif'),
+            'jenis_potongan' => $validated['jenis_potongan'],
+            'nominal_potongan' => $validated['jenis_potongan'] === 'nominal' ? $validated['nominal_potongan'] : 0,
+            'persentase' => $validated['jenis_potongan'] === 'persentase' ? $validated['persentase'] : 0,
+            'maksimal_potongan' => $validated['jenis_potongan'] === 'persentase' ? ($validated['maksimal_potongan'] ?? null) : null,
+            'min_pembelian' => $validated['min_pembelian'] ?? 0,
+            'masa_berlaku_hari' => $validated['masa_berlaku_hari'] ?? null,
         ];
 
         if ($request->hasFile('gambar')) {
@@ -159,12 +171,21 @@ class RewardVoucherController extends Controller
             'poin_dibutuhkan' => 'required|integer|min:1',
             'stok' => 'nullable|integer|min:0',
             'status_aktif' => 'nullable|boolean',
+            'jenis_potongan' => 'required|in:nominal,persentase',
+            'nominal_potongan' => 'required_if:jenis_potongan,nominal|nullable|numeric|min:0',
+            'persentase' => 'required_if:jenis_potongan,persentase|nullable|numeric|min:0|max:100',
+            'maksimal_potongan' => 'nullable|numeric|min:0',
+            'min_pembelian' => 'nullable|numeric|min:0',
+            'masa_berlaku_hari' => 'nullable|integer|min:1',
         ], [
             'nama.required' => 'Nama voucher wajib diisi.',
             'poin_dibutuhkan.required' => 'Jumlah poin yang dibutuhkan wajib diisi.',
             'gambar.image' => 'File yang diunggah harus berupa gambar.',
             'gambar.mimes' => 'Format gambar harus jpg, jpeg, png, atau webp.',
             'gambar.max' => 'Ukuran gambar maksimal 2MB.',
+            'jenis_potongan.required' => 'Jenis potongan wajib dipilih.',
+            'nominal_potongan.required_if' => 'Nominal potongan wajib diisi untuk voucher jenis nominal.',
+            'persentase.required_if' => 'Persentase potongan wajib diisi untuk voucher jenis persentase.',
         ]);
     }
 }

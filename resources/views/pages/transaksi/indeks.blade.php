@@ -431,6 +431,9 @@
                                                                                                                         );
                                                                                                                         },
                                                                                                                         pilihMemberItem(member) {
+                                if ($data.voucherTerpilih && $data.memberIdTerpilih !== member.id) {
+                                    $data.voucherTerpilih = null;
+                                }
                                 $data.memberIdTerpilih = member.id;
                                 $data.memberTerpilih = member;
                                 $data.namaPembeli = member.nama;
@@ -440,6 +443,7 @@
                                                                                                                         hapusMember() {
                                                                                                                         $data.memberIdTerpilih = '';
                                                                                                                         $data.memberTerpilih = null;
+                                                                                                                        $data.voucherTerpilih = null;
                                                                                                                         this.cariMember = '';
                                                                                                                         },
                                                                                                                         getLevelColor(level) {
@@ -451,7 +455,7 @@
                         @click.outside="dropdownTerbuka = false">
                         <label
                             class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-2">Member
-                            (Opsional)</label>
+                            </label>
 
                         <!-- Jika member sudah terpilih -->
                         <template x-if="$data.memberTerpilih">
@@ -542,6 +546,159 @@
                                 </div>
                             </div>
                         </template>
+                    </div>
+
+                    <!-- Voucher Member: hanya tampil kalau member sudah dipilih -->
+                    <div class="p-3 border-b border-gray-100 dark:border-gray-800 shrink-0" x-show="memberIdTerpilih"
+                        x-cloak>
+                        <label
+                            class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-2">Voucher</label>
+
+                        <!-- Voucher belum dipilih -->
+                        <template x-if="!voucherTerpilih">
+                            <button type="button" @click="bukaModalVoucher()"
+                                class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-xs font-bold transition bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/25 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>Gunakan Voucher</span>
+                            </button>
+                        </template>
+
+                        <!-- Voucher sudah dipilih -->
+                        <template x-if="voucherTerpilih">
+                            <div class="flex flex-col gap-1">
+                                <div
+                                    class="flex items-center gap-2 px-3 py-2 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/25 rounded-lg">
+                                    <div
+                                        class="w-7 h-7 bg-rose-600 text-white flex items-center justify-center rounded-full shrink-0">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-bold text-gray-900 dark:text-white truncate"
+                                            x-text="voucherTerpilih.nama"></p>
+                                        <p class="text-[10px] text-gray-500 dark:text-gray-400">
+                                            <span x-text="voucherTerpilih.kode_redeem"></span> ·
+                                            <span
+                                                x-text="voucherDiskon > 0 ? ('-' + formatRupiah(voucherDiskon)) : 'Belum aktif'"></span>
+                                        </p>
+                                    </div>
+                                    <button @click="hapusVoucherTerpilih()"
+                                        class="p-1 hover:bg-red-100 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-500 rounded-md transition shrink-0"
+                                        title="Hapus voucher">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <template
+                                    x-if="voucherTerpilih && subtotalGross < (parseFloat(voucherTerpilih.min_pembelian) || 0)">
+                                    <p class="text-[10px] text-amber-600 dark:text-amber-400">Minimal belanja <span
+                                            x-text="formatRupiah(voucherTerpilih.min_pembelian)"></span> supaya
+                                        voucher ini aktif.</p>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Modal Pilih/Gunakan Voucher -->
+                    <div x-show="modalVoucherTerbuka"
+                        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4"
+                        x-transition x-cloak>
+                        <div @click.away="tutupModalVoucher()"
+                            class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh]">
+                            <div class="bg-rose-700 dark:bg-rose-900 text-white p-4 flex items-center justify-between shrink-0">
+                                <div>
+                                    <h3 class="font-extrabold text-sm">Gunakan Voucher</h3>
+                                    <p class="text-white/80 text-xs mt-0.5" x-text="memberTerpilih ? memberTerpilih.nama : ''"></p>
+                                </div>
+                                <button @click="tutupModalVoucher()"
+                                    class="text-white hover:text-gray-200 font-bold text-lg leading-none">&times;</button>
+                            </div>
+
+                            <div class="p-5 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+                                <!-- Input kode manual -->
+                                <div>
+                                    <label
+                                        class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-1.5">Masukkan
+                                        Kode Voucher</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" x-model="kodeVoucherManual"
+                                            @input="kodeVoucherManual = kodeVoucherManual.toUpperCase()"
+                                            @keydown.enter="validasiKodeVoucherManual()"
+                                            placeholder="Contoh: ABC-1234"
+                                            class="flex-1 px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-rose-500 uppercase">
+                                        <button type="button" @click="validasiKodeVoucherManual()"
+                                            :disabled="voucherKodeLoading || !kodeVoucherManual.trim()"
+                                            class="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-lg transition shrink-0">
+                                            <span x-show="!voucherKodeLoading">Pakai</span>
+                                            <span x-show="voucherKodeLoading">...</span>
+                                        </button>
+                                    </div>
+                                    <template x-if="voucherModalError">
+                                        <p class="text-[10px] text-red-500 mt-1.5" x-text="voucherModalError"></p>
+                                    </template>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
+                                    <span class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">atau
+                                        pilih</span>
+                                    <div class="flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
+                                </div>
+
+                                <!-- Daftar voucher aktif member -->
+                                <div class="flex flex-col gap-2">
+                                    <template x-if="voucherDaftarLoading">
+                                        <p class="text-xs text-center text-gray-400 py-4">Memuat voucher...</p>
+                                    </template>
+
+                                    <template x-if="!voucherDaftarLoading && daftarVoucherAktif.length === 0">
+                                        <p class="text-xs text-center text-gray-400 py-4">Member ini belum punya voucher
+                                            aktif.</p>
+                                    </template>
+
+                                    <template x-for="voucher in daftarVoucherAktif" :key="voucher.id">
+                                        <button type="button" @click="pilihVoucherItem(voucher)"
+                                            class="w-full text-left flex items-start gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 cursor-pointer transition">
+                                            <div
+                                                class="w-8 h-8 bg-rose-600 text-white flex items-center justify-center rounded-full shrink-0 mt-0.5">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="font-bold text-xs text-gray-900 dark:text-white truncate"
+                                                        x-text="voucher.nama"></span>
+                                                    <span class="text-xs font-extrabold text-rose-600 dark:text-rose-400 shrink-0"
+                                                        x-text="voucher.jenis_potongan === 'nominal' ? ('-' + formatRupiah(voucher.nominal_potongan)) : ('-' + formatPersen(voucher.persentase) + '%')"></span>
+                                                </div>
+                                                <div class="flex items-center gap-2 text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                                                    <span x-text="voucher.kode_redeem"></span>
+                                                    <template x-if="voucher.min_pembelian > 0">
+                                                        <span>· Min. <strong class="text-gray-600 dark:text-gray-300"
+                                                                x-text="formatRupiah(voucher.min_pembelian)"></strong></span>
+                                                    </template>
+                                                    <template x-if="voucher.berlaku_sampai">
+                                                        <span>· Berlaku s/d <strong class="text-gray-600 dark:text-gray-300"
+                                                                x-text="voucher.berlaku_sampai"></strong></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Daftar Keranjang -->
@@ -1247,6 +1404,14 @@
                 diskonPersen: '',
                 pajakPersen: '5',
 
+                // Voucher member
+                voucherTerpilih: null,
+                daftarVoucherAktif: [],
+                voucherDaftarLoading: false,
+                kodeVoucherManual: '',
+                voucherKodeLoading: false,
+                voucherModalError: '',
+
                 // Input pembeli modal
                 inputNamaPembeli: '',
 
@@ -1263,6 +1428,7 @@
                 modalSuksesTerbuka: false,
                 modalKonfirmasiHapusTerbuka: false,
                 modalPilihPromoTerbuka: false,
+                modalVoucherTerbuka: false,
                 itemPromoTerpilih: null,
                 idPesananAkanDihapus: null,
 
@@ -1365,6 +1531,92 @@
                     if (typeof v === 'number') return v;
                     const n = parseFloat(String(v ?? '').replace(',', '.'));
                     return isNaN(n) ? 0 : n;
+                },
+
+                // Voucher member
+                bukaModalVoucher() {
+                    if (!this.memberIdTerpilih) return;
+                    this.voucherModalError = '';
+                    this.kodeVoucherManual = '';
+                    this.modalVoucherTerbuka = true;
+                    this.ambilDaftarVoucherAktif();
+                },
+
+                tutupModalVoucher() {
+                    this.modalVoucherTerbuka = false;
+                },
+
+                ambilDaftarVoucherAktif() {
+                    if (!this.memberIdTerpilih) { this.daftarVoucherAktif = []; return; }
+                    this.daftarVoucherAktif = [];
+                    this.voucherDaftarLoading = true;
+                    fetch(`/transaksi/voucher/member/${this.memberIdTerpilih}`)
+                        .then(r => r.json())
+                        .then(r => { this.daftarVoucherAktif = (r.status === 'success') ? r.data : []; })
+                        .catch(() => { this.daftarVoucherAktif = []; })
+                        .finally(() => { this.voucherDaftarLoading = false; });
+                },
+
+                pilihVoucherItem(voucher) {
+                    this.voucherTerpilih = voucher;
+                    this.kodeVoucherManual = '';
+                    this.voucherModalError = '';
+                    this.modalVoucherTerbuka = false;
+                    this.tambahToast('Voucher "' + voucher.nama + '" dipakai.', 'sukses');
+                },
+
+                validasiKodeVoucherManual() {
+                    const kode = this.kodeVoucherManual.trim();
+                    if (!kode || this.voucherKodeLoading) return;
+
+                    if (!this.memberIdTerpilih) {
+                        this.voucherModalError = 'Pilih member terlebih dahulu sebelum memakai voucher.';
+                        return;
+                    }
+
+                    this.voucherModalError = '';
+                    this.voucherKodeLoading = true;
+
+                    fetch("{{ route('transaksi.voucher.validasi') }}", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "X-CSRF-TOKEN": "{{ csrf_token() }}" },
+                        body: JSON.stringify({ kode: kode, member_id: this.memberIdTerpilih })
+                    })
+                        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+                        .then(({ ok, data }) => {
+                            if (ok && data.status === 'success') {
+                                this.pilihVoucherItem(data.data);
+                            } else {
+                                this.voucherModalError = data.pesan || 'Kode voucher tidak valid.';
+                            }
+                        })
+                        .catch(() => { this.voucherModalError = 'Gagal memvalidasi kode voucher.'; })
+                        .finally(() => { this.voucherKodeLoading = false; });
+                },
+
+                hapusVoucherTerpilih() {
+                    this.voucherTerpilih = null;
+                },
+
+                // Bentuk ulang relasi voucher (dari transaksi.voucher yang di-eager-load backend)
+                // jadi struktur yang sama dengan voucherTerpilih supaya bisa dipakai ulang
+                // baik saat melanjutkan pesanan ditahan ke keranjang maupun saat langsung dilunaskan.
+                _formatVoucherDariRelasi(voucher) {
+                    if (!voucher) return null;
+                    const reward = voucher.reward || {};
+                    return {
+                        id: voucher.id,
+                        kode_redeem: voucher.kode_redeem,
+                        nama: reward.nama || 'Voucher',
+                        deskripsi: reward.deskripsi || null,
+                        jenis_potongan: reward.jenis_potongan || 'nominal',
+                        nominal_potongan: parseFloat(reward.nominal_potongan || 0),
+                        persentase: parseFloat(reward.persentase || 0),
+                        maksimal_potongan: (reward.maksimal_potongan !== null && reward.maksimal_potongan !== undefined)
+                            ? parseFloat(reward.maksimal_potongan) : null,
+                        min_pembelian: parseFloat(reward.min_pembelian || 0),
+                        berlaku_sampai: voucher.berlaku_sampai || null,
+                    };
                 },
 
                 get qrisPayload() {
@@ -1725,7 +1977,28 @@
 
                 get nilaiDiskon() {
                     const diskonManual = Math.round(this.subtotalGross * ((this.parsePersen(this.diskonPersen) || 0) / 100));
-                    return this.diskonPromo + diskonManual;
+                    return this.diskonPromo + diskonManual + this.voucherDiskon;
+                },
+                get voucherDiskon() {
+                    if (!this.voucherTerpilih) return 0;
+
+                    const minPembelian = parseFloat(this.voucherTerpilih.min_pembelian || 0);
+                    if (this.subtotalGross < minPembelian) return 0;
+
+                    let nilai = 0;
+                    if (this.voucherTerpilih.jenis_potongan === 'nominal') {
+                        nilai = parseFloat(this.voucherTerpilih.nominal_potongan || 0);
+                    } else {
+                        nilai = (parseFloat(this.voucherTerpilih.persentase || 0) / 100) * this.subtotalGross;
+                        const maksimal = parseFloat(this.voucherTerpilih.maksimal_potongan || 0);
+                        if (maksimal > 0) nilai = Math.min(nilai, maksimal);
+                    }
+
+                    // Voucher tidak boleh membuat total diskon melebihi subtotal
+                    const diskonManual = Math.round(this.subtotalGross * ((this.parsePersen(this.diskonPersen) || 0) / 100));
+                    const sisaKuota = Math.max(0, this.subtotalGross - this.diskonPromo - diskonManual);
+
+                    return Math.round(Math.min(nilai, sisaKuota));
                 },
                 get rincianDiskonList() {
                     if (this.keranjang.length === 0) return [];
@@ -1819,6 +2092,13 @@
                                 nilai: nilaiManual
                             });
                         }
+                    }
+
+                    if (this.voucherTerpilih && this.voucherDiskon > 0) {
+                        result.push({
+                            nama: 'Voucher (' + this.voucherTerpilih.kode_redeem + ')',
+                            nilai: this.voucherDiskon
+                        });
                     }
 
                     return result;
@@ -2014,10 +2294,12 @@
                         body: JSON.stringify({
                             nama_pembeli: this.namaPembeli,
                             member_id: this.memberIdTerpilih || null,
+                            voucher_id: this.voucherTerpilih ? this.voucherTerpilih.id : null,
                             item_pesanan: this.keranjang,
                             subtotal: this.subtotal,
                             pajak: this.pajak,
                             diskon: this.nilaiDiskon,
+                            diskon_persen: this.diskonPersen || 0,
                             diskon_label: this.diskonLabel,
                             total: this.totalTagihan,
                             catatan: this.catatan || null
@@ -2053,8 +2335,21 @@
                                 this.keranjang = this.normalisasiItemKeranjang(d.item_pesanan);
                                 this.namaPembeli = d.nama_pembeli;
                                 this.catatan = d.catatan || '';
-                                this.diskonPersen = d.diskon || '';
+                                // BUGFIX: sama seperti di mulaiLunaskan() — `d.diskon` itu nominal (Rp),
+                                // bukan persen. Pakai `d.diskon_persen` (kolom terpisah) untuk memulihkan
+                                // persentase diskon manual yang sebenarnya.
+                                this.diskonPersen = d.diskon_persen || '';
                                 this.modalDitahanTerbuka = false;
+
+                                // Pulihkan member & voucher yang dipakai saat pesanan ini ditahan
+                                const memberId = d.transaksi ? d.transaksi.member_id : null;
+                                this.memberIdTerpilih = memberId || '';
+                                this.memberTerpilih = memberId
+                                    ? (this.daftarMember.find(m => m.id === memberId) || null)
+                                    : null;
+
+                                const voucher = d.transaksi ? d.transaksi.voucher : null;
+                                this.voucherTerpilih = this._formatVoucherDariRelasi(voucher);
 
                                 if (d.item_pesanan) {
                                     this.kembalikanStokFrontend(d.item_pesanan);
@@ -2137,6 +2432,7 @@
                                 kembalian: this.kembalianNum,
                                 metode_pembayaran: this.metodePembayaran,
                                 member_id: this.memberIdTerpilih || null,
+                                voucher_id: this.voucherTerpilih ? this.voucherTerpilih.id : null,
                                 diskon_label: this.diskonLabel
                             })
                         })
@@ -2159,10 +2455,12 @@
                             body: JSON.stringify({
                                 nama_pembeli: this.namaPembeli,
                                 member_id: this.memberIdTerpilih || null,
+                                voucher_id: this.voucherTerpilih ? this.voucherTerpilih.id : null,
                                 item_pesanan: this.keranjang,
                                 subtotal: this.subtotal,
                                 pajak: this.pajak,
                                 diskon: this.nilaiDiskon,
+                                diskon_persen: this.diskonPersen || 0,
                                 diskon_label: this.diskonLabel,
                                 total_bayar: this.totalTagihan,
                                 jumlah_diterima: this.jumlahDiterimaNum,
@@ -2211,7 +2509,12 @@
                     this.pesananSedangDilunaskan = pesanan;
                     this.keranjang = this.normalisasiItemKeranjang(JSON.parse(JSON.stringify(pesanan.item_pesanan)));
                     this.namaPembeli = pesanan.nama_pembeli;
-                    this.diskonPersen = pesanan.diskon || '';
+                    // BUGFIX: `pesanan.diskon` adalah NOMINAL (Rp) total diskon (promo + manual + voucher),
+                    // bukan persentase. Sebelumnya nilai ini langsung dijejalkan ke `diskonPersen`
+                    // sehingga diskon manual membengkak jadi ribuan persen dan menimpa/menggandakan
+                    // potongan voucher. Persentase diskon manual yang sebenarnya diambil dari
+                    // `pesanan.diskon_persen` (kolom terpisah).
+                    this.diskonPersen = pesanan.diskon_persen || '';
                     this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? String(Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100)) : '5';
                     this.catatan = pesanan.catatan || '';
                     if (pesanan.transaksi && pesanan.transaksi.member_id) {
@@ -2221,6 +2524,7 @@
                         this.memberIdTerpilih = '';
                         this.memberTerpilih = null;
                     }
+                    this.voucherTerpilih = this._formatVoucherDariRelasi(pesanan.transaksi ? pesanan.transaksi.voucher : null);
                     this.modalDitahanTerbuka = false;
                     this.jumlahDiterima = '';
                     this.halamanAktif = 'pembayaran';
@@ -2232,8 +2536,13 @@
                         nama_pembeli: pesanan.nama_pembeli,
                         keranjang: JSON.parse(JSON.stringify(pesanan.item_pesanan)),
                         subtotal: pesanan.subtotal,
-                        diskon_persen: pesanan.diskon || 0,
-                        nilai_diskon: pesanan.diskon ? Math.round(pesanan.subtotal * (pesanan.diskon / 100)) : 0,
+                        // BUGFIX: sebelumnya nilai nominal diskon (pesanan.diskon) dipakai sebagai
+                        // persen lalu dihitung ulang seolah persen (subtotal * diskon/100), sehingga
+                        // nilai diskon di struk jadi salah total. `pesanan.diskon` sudah nominal Rp,
+                        // langsung dipakai apa adanya; persennya (kalau ada diskon manual) dari
+                        // `pesanan.diskon_persen`.
+                        diskon_persen: pesanan.diskon_persen || 0,
+                        nilai_diskon: pesanan.diskon || 0,
                         pajak_persen: pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100) : 5,
                         pajak: pesanan.pajak,
                         total_bayar: pesanan.total,
@@ -2257,6 +2566,7 @@
                     this.jumlahDiterima = '';
                     this.memberIdTerpilih = '';
                     this.memberTerpilih = null;
+                    this.voucherTerpilih = null;
                 },
 
                 kembalikanStokFrontend(itemPesanan) {

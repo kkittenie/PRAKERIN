@@ -16,10 +16,20 @@ class RewardKatalog extends Model
         'poin_dibutuhkan',
         'stok',
         'status_aktif',
+        'jenis_potongan',
+        'nominal_potongan',
+        'persentase',
+        'maksimal_potongan',
+        'min_pembelian',
+        'masa_berlaku_hari',
     ];
 
     protected $casts = [
         'status_aktif' => 'boolean',
+        'nominal_potongan' => 'decimal:2',
+        'persentase' => 'decimal:2',
+        'maksimal_potongan' => 'decimal:2',
+        'min_pembelian' => 'decimal:2',
     ];
 
     public function penukaran()

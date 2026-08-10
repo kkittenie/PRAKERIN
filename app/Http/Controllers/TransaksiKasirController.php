@@ -15,9 +15,63 @@ use App\Models\Member;
 use App\Models\Bundling;
 use App\Models\StampProgram;
 use App\Models\MemberStamp;
+use App\Models\PenukaranPoin;
 
 class TransaksiKasirController extends Controller
 {
+    /**
+     * Ambil & validasi voucher member (kode redeem reward jenis "voucher") yang
+     * mau dipakai di kasir. Melempar Exception kalau tidak valid supaya
+     * DB::transaction di pemanggil otomatis rollback (transaksi gagal dibuat,
+     * voucher tetap aktif/tidak berubah).
+     */
+    private function validasiVoucherUntukTransaksi(?int $voucherId, ?int $memberId): ?PenukaranPoin
+    {
+        if (!$voucherId) {
+            return null;
+        }
+
+        if (!$memberId) {
+            throw new \Exception('Voucher hanya bisa dipakai jika member sudah dipilih.');
+        }
+
+        $voucher = PenukaranPoin::with('reward')
+            ->where('id', $voucherId)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$voucher || !$voucher->reward || $voucher->reward->jenis !== 'voucher') {
+            throw new \Exception('Voucher tidak ditemukan.');
+        }
+
+        if ((int) $voucher->member_id !== (int) $memberId) {
+            throw new \Exception('Voucher ini bukan milik member yang dipilih.');
+        }
+
+        if ($voucher->status !== 'menunggu_diambil') {
+            throw new \Exception('Voucher ini sudah pernah dipakai atau dibatalkan.');
+        }
+
+        if ($voucher->sudahExpired()) {
+            throw new \Exception('Voucher ini sudah kedaluwarsa.');
+        }
+
+        return $voucher;
+    }
+
+    /**
+     * Tandai voucher sudah dipakai. Hanya dipanggil setelah transaksi benar-benar
+     * berhasil (status Lunas) dan akan ikut ter-rollback kalau proses pembayaran gagal.
+     */
+    private function tandaiVoucherDigunakan(PenukaranPoin $voucher, Transaksi $transaksi): void
+    {
+        $voucher->update([
+            'status' => 'selesai',
+            'diambil_pada' => now(),
+            'transaksi_id' => $transaksi->id,
+        ]);
+    }
+
     private function butuhProduksi(Produk $produk): bool
     {
         return $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
@@ -58,7 +112,7 @@ class TransaksiKasirController extends Controller
                     return $bundling;
                 });
 
-            $daftarDitahan = PesananDitahan::with('transaksi')->orderBy('created_at', 'desc')->get();
+            $daftarDitahan = PesananDitahan::with('transaksi.voucher.reward')->orderBy('created_at', 'desc')->get();
             $daftarMember = \App\Models\Member::orderBy('nama')->get();
 
             return view('pages.transaksi.indeks', [
@@ -192,16 +246,26 @@ class TransaksiKasirController extends Controller
             $validated = $request->validate([
                 'nama_pembeli' => 'nullable|string|max:255',
                 'member_id' => 'nullable|exists:members,id',
+                'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
                 'item_pesanan' => 'required|array',
                 'subtotal' => 'required|numeric',
                 'pajak' => 'required|numeric',
                 'diskon' => 'required|numeric',
+                'diskon_persen' => 'nullable|numeric',
                 'diskon_label' => 'nullable|string|max:255',
                 'total' => 'required|numeric',
                 'catatan' => 'nullable|string',
             ]);
 
             $namaPembeli = $validated['nama_pembeli'] ?? 'Pelanggan Umum';
+
+            // Voucher divalidasi (kepemilikan, aktif, belum expired) tapi belum ditandai
+            // dipakai di sini — pesanan yang ditahan belum lunas, jadi voucher baru
+            // resmi dipakai saat pesanan ini dilunaskan lewat lunaskanDitahan().
+            $voucher = $this->validasiVoucherUntukTransaksi(
+                $validated['voucher_id'] ?? null,
+                $validated['member_id'] ?? null
+            );
 
             // Buat kode transaksi unik
             $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
@@ -211,9 +275,11 @@ class TransaksiKasirController extends Controller
                 'kode_transaksi' => $kodeTransaksi,
                 'nama_pembeli' => $namaPembeli,
                 'member_id' => $validated['member_id'] ?? null,
+                'voucher_id' => $voucher?->id,
                 'subtotal' => $validated['subtotal'],
                 'pajak' => $validated['pajak'],
                 'diskon' => $validated['diskon'],
+                'diskon_persen' => $validated['diskon_persen'] ?? 0,
                 'diskon_label' => $request->diskon_label,
                 'total_bayar' => $validated['total'],
                 'jumlah_diterima' => 0,
@@ -263,6 +329,7 @@ class TransaksiKasirController extends Controller
                 'subtotal' => $validated['subtotal'],
                 'pajak' => $validated['pajak'],
                 'diskon' => $validated['diskon'],
+                'diskon_persen' => $validated['diskon_persen'] ?? 0,
                 'diskon_label' => $request->diskon_label,
                 'total' => $validated['total'],
                 'catatan' => $validated['catatan'],
@@ -308,7 +375,7 @@ class TransaksiKasirController extends Controller
     public function ambilDitahan()
     {
         try {
-            $daftarDitahan = PesananDitahan::with('transaksi')->orderBy('created_at', 'desc')->get();
+            $daftarDitahan = PesananDitahan::with('transaksi.voucher.reward')->orderBy('created_at', 'desc')->get();
             return response()->json([
                 'status' => 'success',
                 'data' => $daftarDitahan
@@ -332,7 +399,7 @@ class TransaksiKasirController extends Controller
     {
         DB::beginTransaction();
         try {
-            $pesanan = PesananDitahan::with('transaksi')->findOrFail($id);
+            $pesanan = PesananDitahan::with('transaksi.voucher.reward')->findOrFail($id);
 
             // Kembalikan stok jika ada transaksi terkait, HANYA untuk baris
             // yang bukan "Perlu Diproduksi" (pakai snapshot butuh_produksi
@@ -443,20 +510,38 @@ class TransaksiKasirController extends Controller
                 'kembalian' => 'required|numeric',
                 'metode_pembayaran' => 'required|string',
                 'member_id' => 'nullable|exists:members,id',
+                'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
                 'diskon_label' => 'nullable|string|max:255',
             ]);
 
             $transaksi = $pesanan->transaksi;
+            $memberIdEfektif = $validated['member_id'] ?? $transaksi->member_id;
+
+            // Voucher final saat pesanan dilunaskan: kalau kasir mengirim voucher_id
+            // (termasuk null untuk melepas), pakai itu. Kalau tidak dikirim sama sekali,
+            // pakai voucher yang sudah tersimpan sejak pesanan ditahan.
+            $voucherDipakai = $this->validasiVoucherUntukTransaksi(
+                $request->has('voucher_id') ? ($validated['voucher_id'] ?? null) : $transaksi->voucher_id,
+                $memberIdEfektif
+            );
 
             // Update transaksi menjadi Lunas
             $transaksi->update([
                 'jumlah_diterima' => $validated['jumlah_diterima'],
                 'kembalian' => $validated['kembalian'],
                 'metode_pembayaran' => $validated['metode_pembayaran'],
-                'member_id' => $validated['member_id'] ?? $transaksi->member_id,
+                'member_id' => $memberIdEfektif,
+                'voucher_id' => $voucherDipakai?->id,
                 'status_pembayaran' => 'Lunas',
                 'diskon_label' => $validated['diskon_label'] ?? $transaksi->diskon_label,
             ]);
+
+            // Voucher baru resmi ditandai "dipakai" di titik ini, setelah transaksi
+            // benar-benar Lunas. Kalau ada langkah lain gagal, seluruh transaksi
+            // (termasuk penandaan voucher ini) ikut rollback dan voucher tetap aktif.
+            if ($voucherDipakai) {
+                $this->tandaiVoucherDigunakan($voucherDipakai, $transaksi);
+            }
 
             // Hitung poin member
             if (!empty($validated['member_id'])) {
@@ -523,16 +608,26 @@ class TransaksiKasirController extends Controller
             $validated = $request->validate([
                 'nama_pembeli' => 'nullable|string|max:255',
                 'member_id' => 'nullable|exists:members,id',
+                'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
                 'item_pesanan' => 'required|array',
                 'subtotal' => 'required|numeric',
                 'pajak' => 'required|numeric',
                 'diskon' => 'required|numeric',
+                'diskon_persen' => 'nullable|numeric',
                 'diskon_label' => 'nullable|string|max:255',
                 'total_bayar' => 'required|numeric',
                 'jumlah_diterima' => 'required|numeric',
                 'kembalian' => 'required|numeric',
                 'metode_pembayaran' => 'required|string',
             ]);
+
+            // Voucher divalidasi dulu (kepemilikan, aktif, belum expired) sebelum
+            // transaksi dibuat. Kalau tidak valid, Exception ini melempar ke luar
+            // dan seluruh DB::transaction dibatalkan (voucher tetap tidak berubah).
+            $voucherDipakai = $this->validasiVoucherUntukTransaksi(
+                $validated['voucher_id'] ?? null,
+                $validated['member_id'] ?? null
+            );
 
             // Buat kode transaksi unik
             $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
@@ -541,9 +636,11 @@ class TransaksiKasirController extends Controller
                 'kode_transaksi' => $kodeTransaksi,
                 'nama_pembeli' => $validated['nama_pembeli'] ?? 'Pelanggan Umum',
                 'member_id' => $validated['member_id'] ?? null,
+                'voucher_id' => $voucherDipakai?->id,
                 'subtotal' => $validated['subtotal'],
                 'pajak' => $validated['pajak'],
                 'diskon' => $validated['diskon'],
+                'diskon_persen' => $validated['diskon_persen'] ?? 0,
                 'diskon_label' => $request->diskon_label,
                 'total_bayar' => $validated['total_bayar'],
                 'jumlah_diterima' => $validated['jumlah_diterima'],
@@ -551,6 +648,12 @@ class TransaksiKasirController extends Controller
                 'metode_pembayaran' => $validated['metode_pembayaran'],
                 'status_pembayaran' => 'Lunas',
             ]);
+
+            // Transaksi langsung Lunas di sini, jadi voucher (kalau ada) langsung
+            // ditandai dipakai sekarang juga.
+            if ($voucherDipakai) {
+                $this->tandaiVoucherDigunakan($voucherDipakai, $transaksi);
+            }
 
             //hitung poin member
             if ($transaksi->member_id) {
