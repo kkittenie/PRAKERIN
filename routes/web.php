@@ -243,7 +243,6 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:edit_reward');
 
     Route::resource('reward-voucher', RewardVoucherController::class)
-        ->except(['show'])
         ->middleware('permission:lihat_reward|tambah_reward|edit_reward|hapus_reward');
 
     // Riwayat Redeem (histori penukaran poin milik seluruh member)

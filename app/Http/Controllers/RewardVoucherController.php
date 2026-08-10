@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Produk;
 use App\Models\RewardKatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -36,7 +37,24 @@ class RewardVoucherController extends Controller
 
     public function create()
     {
-        return view('pages.reward-voucher.create', ['title' => 'Tambah Reward Voucher']);
+        $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
+
+        return view('pages.reward-voucher.create', [
+            'title' => 'Tambah Reward Voucher',
+            'produks' => $produks,
+        ]);
+    }
+
+    public function show(RewardKatalog $rewardVoucher)
+    {
+        abort_unless($rewardVoucher->jenis === 'voucher', 404);
+
+        $rewardVoucher->load('produks.kategori');
+
+        return view('pages.reward-voucher.show', [
+            'title' => 'Detail Reward Voucher',
+            'voucher' => $rewardVoucher,
+        ]);
     }
 
     public function store(Request $request)
@@ -64,10 +82,12 @@ class RewardVoucherController extends Controller
             'masa_berlaku_hari' => $validated['masa_berlaku_hari'] ?? null,
         ]);
 
+        $voucher->produks()->sync($validated['produk_ids']);
+
         activity()
             ->causedBy(auth()->user())
             ->performedOn($voucher)
-            ->withProperties($voucher->toArray())
+            ->withProperties($voucher->toArray() + ['produk_ids' => $validated['produk_ids']])
             ->log('Menambahkan reward voucher: ' . $voucher->nama);
 
         return redirect()->route('reward-voucher.index')->with('success', 'Reward voucher berhasil ditambahkan.');
@@ -77,9 +97,14 @@ class RewardVoucherController extends Controller
     {
         abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
+        $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
+        $selectedProduks = $rewardVoucher->produks->pluck('id')->toArray();
+
         return view('pages.reward-voucher.edit', [
             'title' => 'Edit Reward Voucher',
             'voucher' => $rewardVoucher,
+            'produks' => $produks,
+            'selectedProduks' => $selectedProduks,
         ]);
     }
 
@@ -114,10 +139,12 @@ class RewardVoucherController extends Controller
 
         $rewardVoucher->update($dataUpdate);
 
+        $rewardVoucher->produks()->sync($validated['produk_ids']);
+
         activity()
             ->causedBy(auth()->user())
             ->performedOn($rewardVoucher)
-            ->withProperties($rewardVoucher->toArray())
+            ->withProperties($rewardVoucher->toArray() + ['produk_ids' => $validated['produk_ids']])
             ->log('Memperbarui reward voucher: ' . $rewardVoucher->nama);
 
         return redirect()->route('reward-voucher.index')->with('success', 'Reward voucher berhasil diperbarui.');
@@ -177,6 +204,8 @@ class RewardVoucherController extends Controller
             'maksimal_potongan' => 'nullable|numeric|min:0',
             'min_pembelian' => 'nullable|numeric|min:0',
             'masa_berlaku_hari' => 'nullable|integer|min:1',
+            'produk_ids' => 'required|array|min:1',
+            'produk_ids.*' => 'exists:produks,id',
         ], [
             'nama.required' => 'Nama voucher wajib diisi.',
             'poin_dibutuhkan.required' => 'Jumlah poin yang dibutuhkan wajib diisi.',
@@ -186,6 +215,7 @@ class RewardVoucherController extends Controller
             'jenis_potongan.required' => 'Jenis potongan wajib dipilih.',
             'nominal_potongan.required_if' => 'Nominal potongan wajib diisi untuk voucher jenis nominal.',
             'persentase.required_if' => 'Persentase potongan wajib diisi untuk voucher jenis persentase.',
+            'produk_ids.required' => 'Pilih minimal satu produk yang mendapat reward voucher ini.',
         ]);
     }
 }

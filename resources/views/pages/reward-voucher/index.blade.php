@@ -79,7 +79,10 @@
                                     <div class="flex items-center gap-3">
                                         <img src="{{ $item->gambar ? asset('storage/'.$item->gambar) : 'https://via.placeholder.com/48x48?text=No+Image' }}"
                                              class="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700 shrink-0">
-                                        <span class="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{{ $item->nama }}</span>
+                                        <a href="{{ route('reward-voucher.show', $item->id) }}"
+                                            class="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm hover:text-amber-600 dark:hover:text-amber-400 transition">
+                                            {{ $item->nama }}
+                                        </a>
                                     </div>
                                 </td>
                                 <td class="py-3.5 px-3 hidden lg:table-cell text-xs sm:text-sm text-gray-600 dark:text-gray-400 max-w-xs">
@@ -106,6 +109,8 @@
                                     </form>
                                 </td>
                                 <td class="py-3.5 px-3 text-right space-x-1 whitespace-nowrap">
+                                    <a href="{{ route('reward-voucher.show', $item->id) }}"
+                                        class="text-blue-600 dark:text-blue-400 font-semibold hover:underline text-xs sm:text-sm">Detail</a>
                                     <a href="{{ route('reward-voucher.edit', $item->id) }}"
                                         class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">Edit</a>
                                     <form action="{{ route('reward-voucher.destroy', $item->id) }}" method="POST" class="inline">

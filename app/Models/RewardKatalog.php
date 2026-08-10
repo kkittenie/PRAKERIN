@@ -32,6 +32,11 @@ class RewardKatalog extends Model
         'min_pembelian' => 'decimal:2',
     ];
 
+    public function produks()
+    {
+        return $this->belongsToMany(Produk::class, 'reward_katalog_produk', 'reward_katalog_id', 'produk_id')->withTimestamps();
+    }
+
     public function penukaran()
     {
         return $this->hasMany(PenukaranPoin::class);
