@@ -1,0 +1,199 @@
+@extends('member.layout', ['title' => 'Menu'])
+
+@section('content')
+
+    <style>[x-cloak] { display: none !important; }</style>
+
+    <div x-data="{
+            search: '',
+            activeKategori: 'semua',
+            searching: false,
+            taglines: ['Freshly Baked Every Day', 'Skip The Line, Order Ahead', 'Your Favorite Cakes &amp; Bakes', 'Order Now, Pick Up Later'],
+            taglineIdx: 0,
+         }"
+         x-init="setInterval(() => taglineIdx = (taglineIdx + 1) % taglines.length, 4500)">
+
+        <div class="relative -mx-5 sm:-mx-8 md:-mx-10 -mt-6 overflow-hidden rounded-b-[22px] bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-5 pb-8 pt-4 text-white">
+
+            <div class="relative flex items-center justify-center">
+                <a href="{{ route('member.beranda') }}"
+                   onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+                   class="absolute left-0 flex h-8 w-8 items-center justify-center rounded-full text-white transition active:bg-white/10">
+                    <span class="rotate-180">@include('member.components.icon-chevron-right', ['class' => 'h-4 w-4'])</span>
+                </a>
+                <h1 class="text-theme-sm font-bold text-white">Saisho Cake & Bakery</h1>
+            </div>
+
+            {{-- Pick Up / Delivery segmented toggle (compact pill, centered) --}}
+            <div class="relative mx-auto mt-4 flex w-fit items-center gap-1 rounded-full border border-white/25 bg-white/10 p-1 backdrop-blur">
+                <span class="rounded-full bg-white px-5 py-1.5 text-xs font-bold text-brand-800 shadow-sm">
+                    Pick Up
+                </span>
+                <a href="https://wa.me/{{ $waCs }}?text={{ urlencode('Halo Saisho, saya mau pesan untuk diantar (delivery).') }}"
+                   target="_blank" rel="noopener"
+                   class="rounded-full px-5 py-1.5 text-xs font-bold text-white/80 transition hover:text-white">
+                    Delivery
+                </a>
+            </div>
+
+            {{-- Rotating tagline, ticker-style: dark translucent pill, bakery-only
+                 copy in English. Rotation at 4.5s per change so it's easy to read. --}}
+            <div class="relative mx-auto mt-4 h-7 w-56 max-w-full overflow-hidden rounded-full bg-black/25"
+                 style="mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);">
+                <template x-for="(tagline, i) in taglines" :key="i">
+                    <p x-show="taglineIdx === i"
+                       x-transition:enter="transition ease-out duration-700"
+                       x-transition:enter-start="opacity-0 -translate-y-2"
+                       x-transition:enter-end="opacity-100 translate-y-0"
+                       x-transition:leave="transition ease-in duration-500"
+                       x-transition:leave-start="opacity-100 translate-y-0"
+                       x-transition:leave-end="opacity-0 translate-y-2"
+                       x-text="tagline"
+                       class="absolute inset-0 flex items-center justify-center text-center text-[10px] font-bold tracking-wide text-white"></p>
+                </template>
+            </div>
+        </div>
+
+        <div class="relative z-10 -mt-8">
+            <div class="flex items-center gap-3 rounded-3xl border border-white/10 bg-white p-3.5 shadow-lg shadow-black/20">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 10.5V20a1 1 0 0 0 1 1h4v-5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5h4a1 1 0 0 0 1-1v-9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2.5 10 12 3l9.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-xs font-bold text-gray-900">{{ $storeNama }}</p>
+                    <p class="truncate text-[11px] text-gray-400">{{ $storeAlamat }}</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Category chips + search, merged in one row (search icon overlapping at the right) --}}
+        @if ($kategoris->isNotEmpty())
+            <div class="relative mt-4 flex items-center gap-2">
+                <div class="flex-1 overflow-x-auto" style="scrollbar-width:none;" x-show="! searching">
+                    <div class="flex gap-2">
+                        <button type="button" @click="activeKategori = 'semua'"
+                                :class="activeKategori === 'semua' ? 'bg-brand-800 text-white border-brand-800' : 'bg-white text-gray-600 border-gray-200'"
+                                class="shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-bold transition">
+                            Semua Menu
+                        </button>
+                        @foreach ($kategoris as $kategori)
+                            <button type="button" @click="activeKategori = '{{ $kategori->id }}'"
+                                    :class="activeKategori === '{{ $kategori->id }}' ? 'bg-brand-800 text-white border-brand-800' : 'bg-white text-gray-600 border-gray-200'"
+                                    class="shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-bold transition">
+                                {{ $kategori->nama_kategori }}
+                            </button>
+                        @endforeach
+                        <div class="w-11 shrink-0" aria-hidden="true"></div>
+                    </div>
+                </div>
+
+                {{-- Search input, replaces the chip row when active --}}
+                <div x-show="searching" x-cloak
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     class="flex flex-1 items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 pr-11 shadow-sm">
+                    <svg class="h-4 w-4 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <input type="text" x-model="search" x-ref="searchInput" placeholder="Cari menu favoritmu..."
+                           class="w-full border-0 bg-transparent p-0 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0">
+                </div>
+
+                {{-- Search toggle button, pinned at the right edge, overlapping the row --}}
+                <button type="button"
+                        @click="searching = ! searching; search = ''; if (searching) $nextTick(() => $refs.searchInput.focus());"
+                        class="absolute right-0 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition active:scale-90">
+                    <template x-if="! searching">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                            <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </template>
+                    <template x-if="searching">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </template>
+                </button>
+            </div>
+        @endif
+
+        {{-- Menu sections, grouped by category --}}
+        @forelse ($kategoris as $kategori)
+            <div x-show="activeKategori === 'semua' || activeKategori === '{{ $kategori->id }}'" class="mt-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-gray-900">{{ $kategori->nama_kategori }}</h2>
+                    <span class="text-[11px] text-gray-400">{{ $kategori->produk->count() }} item</span>
+                </div>
+                <div class="mt-1 border-t border-dashed border-gray-100"></div>
+
+                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    @foreach ($kategori->produk as $produk)
+                        @php
+                            $hargaAsli = $produk->harga_jual;
+                            $hargaFinal = $produk->harga_diskon;
+                            $adaPromo = $hargaFinal < $hargaAsli;
+                            $habis = $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
+                        @endphp
+                        <div x-show="'{{ addslashes(strtolower($produk->nama_produk)) }}'.includes(search.toLowerCase())"
+                             class="{{ $habis ? 'opacity-60' : '' }}">
+                            <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
+                                @if ($produk->foto)
+                                    <img src="{{ asset('storage/' . $produk->foto) }}" alt="{{ $produk->nama_produk }}"
+                                         class="h-full w-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                @endif
+                                <div class="{{ $produk->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
+                                    @include('member.components.icon-cup', ['class' => 'h-10 w-10'])
+                                </div>
+                                @if ($adaPromo)
+                                    <span class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">Promo</span>
+                                @endif
+                                @if ($habis)
+                                    <span class="absolute inset-0 flex items-center justify-center bg-white/70">
+                                        <span class="rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Habis</span>
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="pt-2">
+                                <p class="text-[10px] font-medium text-gray-400">{{ $kategori->nama_kategori }}</p>
+                                <p class="mt-0.5 text-xs font-bold leading-snug text-gray-900 line-clamp-2">{{ $produk->nama_produk }}</p>
+
+                                <div class="mt-2 flex items-center justify-between gap-1">
+                                    <div class="min-w-0">
+                                        @if ($adaPromo)
+                                            <p class="truncate text-[10px] text-gray-400 line-through">Rp {{ number_format($hargaAsli, 0, ',', '.') }}</p>
+                                        @endif
+                                        <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($hargaFinal, 0, ',', '.') }}</p>
+                                    </div>
+
+                                    @if (! $habis)
+                                        <a href="https://wa.me/{{ $waCs }}?text={{ urlencode('Halo Saisho, saya mau pesan pick up: ' . $produk->nama_produk) }}"
+                                           target="_blank" rel="noopener"
+                                           class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm transition active:scale-90">
+                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                            </svg>
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @empty
+            <div class="mt-8 rounded-2xl border border-gray-100 bg-white p-6 text-center text-xs font-medium text-gray-400">
+                Belum ada menu tersedia saat ini.
+            </div>
+        @endforelse
+
+        <p class="mt-6 text-center text-[11px] text-gray-400">Tap tombol + untuk pesan menu ini via WhatsApp</p>
+    </div>
+
+@endsection

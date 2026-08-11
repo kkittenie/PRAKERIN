@@ -168,8 +168,8 @@
         {{-- Pick Up / Delivery --}}
         <h2 class="mb-3 mt-7 text-sm font-bold text-gray-900">Mau pesan di Saisho?</h2>
         <div class="grid grid-cols-2 gap-3">
-            <a href="https://wa.me/{{ $waCs }}?text={{ urlencode('Halo Saisho, saya mau pesan untuk diambil di toko (pick up).') }}"
-               target="_blank" rel="noopener"
+            <a href="{{ route('member.menu') }}"
+               onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                class="group relative overflow-hidden rounded-2xl border-2 border-brand-300 bg-gradient-to-br from-brand-50/70 to-white p-3.5 transition hover:border-brand-400 hover:shadow-theme-md">
                 <span class="pointer-events-none absolute -bottom-5 -right-5 h-16 w-16 rounded-full bg-brand-100/70"></span>
                 <span class="pointer-events-none absolute right-8 bottom-9 h-2 w-2 rounded-full bg-brand-200"></span>
@@ -187,7 +187,7 @@
                 <p class="relative mt-1 text-[11px] leading-snug text-gray-500">Pesan via WhatsApp,<br>kami antar</p>
             </a>
         </div>
-        <p class="mt-2 text-center text-[11px] text-gray-400">Pesan langsung ke Customer Service kami via WhatsApp</p>
+        <p class="mt-2 text-center text-[11px] text-gray-400">Lihat menu untuk pick up, atau pesan delivery via WhatsApp</p>
 
         @auth('member')
             {{-- Aksi cepat member: tukar poin & riwayat --}}

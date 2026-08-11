@@ -3,6 +3,7 @@
 use App\Http\Controllers\Member\AkunController;
 use App\Http\Controllers\Member\AuthController;
 use App\Http\Controllers\Member\DashboardController;
+use App\Http\Controllers\Member\MenuController;
 use App\Http\Controllers\Member\RewardController;
 use App\Http\Controllers\Member\RiwayatController;
 use App\Http\Controllers\Member\StampController;
@@ -15,6 +16,7 @@ Route::prefix('member')->name('member.')->group(function () {
 
     // Accessible by anyone (Guest & Auth Member): Home & Account
     Route::get('/beranda', [DashboardController::class, 'index'])->name('beranda');
+    Route::get('/menu', [MenuController::class, 'index'])->name('menu');
     Route::get('/akun', [AkunController::class, 'index'])->name('akun');
 
     // Logout (Supports GET and POST safely)
