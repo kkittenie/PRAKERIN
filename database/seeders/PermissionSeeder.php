@@ -28,6 +28,11 @@ class PermissionSeeder extends Seeder
             }
         }
 
+        // Permission untuk menu "Pesanan Pick Up" (pesanan dari Member App).
+        foreach (['lihat_pesanan_pickup', 'edit_pesanan_pickup'] as $nama) {
+            Permission::firstOrCreate(['name' => $nama, 'guard_name' => 'web']);
+        }
+
         $admin = Role::firstOrCreate(['name' => 'Admin']);
         $kasir = Role::firstOrCreate(['name' => 'Kasir']);
         $pegawai = Role::firstOrCreate(['name' => 'Pegawai']);
@@ -39,6 +44,7 @@ class PermissionSeeder extends Seeder
             'lihat_dashboard',
             'lihat_transaksi', 'tambah_transaksi',
             'lihat_member', 'tambah_member', 'edit_member',
+            'lihat_pesanan_pickup', 'edit_pesanan_pickup',
         ]);
 
         $pegawai->syncPermissions([

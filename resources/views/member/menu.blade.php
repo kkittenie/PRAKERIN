@@ -8,12 +8,71 @@
             search: '',
             activeKategori: 'semua',
             searching: false,
+            scrolled: false,
+            menuScrollerMaxHeight: 0,
+            updateMenuScrollerHeight() {
+                this.$nextTick(() => {
+                    const el = this.$refs.menuScroller;
+                    if (!el) return;
+                    const top = el.getBoundingClientRect().top;
+                    this.menuScrollerMaxHeight = Math.max(180, window.innerHeight - top - 72);
+                });
+            },
             taglines: ['Freshly Baked Every Day', 'Skip The Line, Order Ahead', 'Your Favorite Cakes &amp; Bakes', 'Order Now, Pick Up Later'],
             taglineIdx: 0,
          }"
-         x-init="setInterval(() => taglineIdx = (taglineIdx + 1) % taglines.length, 4500)">
+         x-init="
+             setInterval(() => taglineIdx = (taglineIdx + 1) % taglines.length, 4500);
+             $nextTick(() => {
+                 updateMenuScrollerHeight();
+                 window.addEventListener('resize', () => updateMenuScrollerHeight());
+             });
+         ">
 
-        <div class="relative -mx-5 sm:-mx-8 md:-mx-10 -mt-6 overflow-hidden rounded-b-[22px] bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-5 pb-8 pt-4 text-white">
+        {{-- Compact header: hanya muncul saat area produk di-scroll.
+             Header awal di bawah ini TIDAK diubah ukurannya/posisinya. --}}
+        <div x-cloak
+             x-show="scrolled"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-2"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-2"
+             class="pointer-events-none absolute inset-x-0 top-0 z-50">
+            <div class="bg-white px-5 pb-4 pt-3 shadow-sm sm:px-8 md:px-10">
+                <div class="mx-auto flex max-w-screen-xl items-start gap-3">
+                    <a href="{{ route('member.beranda') }}"
+                       onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+                       class="pointer-events-auto mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-800 transition active:bg-gray-100">
+                        <span class="rotate-180">
+                            @include('member.components.icon-chevron-right', ['class' => 'h-4 w-4'])
+                        </span>
+                    </a>
+
+                    <div class="min-w-0 flex-1 text-left">
+                        <p class="text-[13px] font-medium leading-tight text-gray-800">
+                            Pick up from the store
+                        </p>
+                        <p class="mt-1 truncate text-[18px] font-extrabold leading-tight text-gray-900">
+                            {{ $storeNama }}
+                        </p>
+                        <p class="mt-1 text-[14px] font-medium leading-snug text-gray-500">
+                            {{ $storeAlamat }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="!scrolled"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="relative -mx-5 sm:-mx-8 md:-mx-10 -mt-6 overflow-hidden rounded-b-[22px] bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-5 pb-8 pt-4 text-white">
 
             <div class="relative flex items-center justify-center">
                 <a href="{{ route('member.beranda') }}"
@@ -54,8 +113,15 @@
             </div>
         </div>
 
-        <div class="relative z-10 -mt-8">
-            <div class="flex items-center gap-3 rounded-3xl border border-white/10 bg-white p-3.5 shadow-lg shadow-black/20">
+        <div x-show="!scrolled"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-1"
+             class="relative z-10 -mt-8">
+            <div class="flex items-center gap-3 rounded-3xl border border-white/10 bg-white px-4 py-4 shadow-lg shadow-black/20">
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                         <path d="M4 10.5V20a1 1 0 0 0 1 1h4v-5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5h4a1 1 0 0 0 1-1v-9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -63,15 +129,16 @@
                     </svg>
                 </span>
                 <div class="min-w-0 flex-1">
-                    <p class="truncate text-xs font-bold text-gray-900">{{ $storeNama }}</p>
-                    <p class="truncate text-[11px] text-gray-400">{{ $storeAlamat }}</p>
+                    <p class="text-sm font-bold leading-tight text-gray-900">{{ $storeNama }}</p>
+                    <p class="mt-0.5 text-[14px] leading-snug text-gray-400">{{ $storeAlamat }}</p>
                 </div>
             </div>
         </div>
 
         {{-- Category chips + search, merged in one row (search icon overlapping at the right) --}}
         @if ($kategoris->isNotEmpty())
-            <div class="relative mt-4 flex items-center gap-2">
+            <div :class="scrolled ? 'mt-20' : 'mt-4'"
+                 class="relative flex items-center gap-2 pb-8 transition-[margin] duration-200">
                 <div class="flex-1 overflow-x-auto" style="scrollbar-width:none;" x-show="! searching">
                     <div class="flex gap-2">
                         <button type="button" @click="activeKategori = 'semua'"
@@ -123,9 +190,22 @@
             </div>
         @endif
 
+        {{-- HANYA daftar produk yang scroll. Header, store card, kategori, dan search tetap diam. --}}
+        <div x-ref="menuScroller"
+             @scroll="
+                 const isScrolled = $refs.menuScroller.scrollTop > 10;
+                 if (scrolled !== isScrolled) {
+                     scrolled = isScrolled;
+                     setTimeout(() => updateMenuScrollerHeight(), 240);
+                 }
+             "
+             :style="`max-height: ${menuScrollerMaxHeight}px`"
+             class="min-h-0 overflow-y-auto overscroll-contain"
+             style="scrollbar-width:none; -webkit-overflow-scrolling:touch;">
+
         {{-- Menu sections, grouped by category --}}
         @forelse ($kategoris as $kategori)
-            <div x-show="activeKategori === 'semua' || activeKategori === '{{ $kategori->id }}'" class="mt-6">
+            <div x-show="activeKategori === 'semua' || activeKategori === '{{ $kategori->id }}'" class="mt-2">
                 <div class="flex items-center justify-between">
                     <h2 class="text-sm font-bold text-gray-900">{{ $kategori->nama_kategori }}</h2>
                     <span class="text-[11px] text-gray-400">{{ $kategori->produk->count() }} item</span>
@@ -140,8 +220,10 @@
                             $adaPromo = $hargaFinal < $hargaAsli;
                             $habis = $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
                         @endphp
-                        <div x-show="'{{ addslashes(strtolower($produk->nama_produk)) }}'.includes(search.toLowerCase())"
-                             class="{{ $habis ? 'opacity-60' : '' }}">
+                        <a href="{{ route('member.produk.show', $produk) }}"
+                           onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                           x-show="'{{ addslashes(strtolower($produk->nama_produk)) }}'.includes(search.toLowerCase())"
+                           class="block">
                             <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
                                 @if ($produk->foto)
                                     <img src="{{ asset('storage/' . $produk->foto) }}" alt="{{ $produk->nama_produk }}"
@@ -154,9 +236,7 @@
                                     <span class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">Promo</span>
                                 @endif
                                 @if ($habis)
-                                    <span class="absolute inset-0 flex items-center justify-center bg-white/70">
-                                        <span class="rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Habis</span>
-                                    </span>
+                                    <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Perlu Diproduksi</span>
                                 @endif
                             </div>
 
@@ -172,18 +252,14 @@
                                         <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($hargaFinal, 0, ',', '.') }}</p>
                                     </div>
 
-                                    @if (! $habis)
-                                        <a href="https://wa.me/{{ $waCs }}?text={{ urlencode('Halo Saisho, saya mau pesan pick up: ' . $produk->nama_produk) }}"
-                                           target="_blank" rel="noopener"
-                                           class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm transition active:scale-90">
-                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-                                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                            </svg>
-                                        </a>
-                                    @endif
+                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm">
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                        </svg>
+                                    </span>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     @endforeach
                 </div>
             </div>
@@ -193,7 +269,10 @@
             </div>
         @endforelse
 
-        <p class="mt-6 text-center text-[11px] text-gray-400">Tap tombol + untuk pesan menu ini via WhatsApp</p>
+        <p class="mt-6 pb-5 text-center text-[11px] text-gray-400">Tap menu untuk lihat detail &amp; pesan Pick Up</p>
+        </div>
     </div>
+
+    @include('member.components.floating-cart')
 
 @endsection

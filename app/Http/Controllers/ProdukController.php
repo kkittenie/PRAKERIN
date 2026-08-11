@@ -10,12 +10,6 @@ use Illuminate\Support\Facades\Storage;
 
 class ProdukController extends Controller
 {
-    /**
-     * Folder tempat foto produk disimpan di dalam disk "public".
-     * Akan menghasilkan path fisik: storage/app/public/produk/images/...
-     * Dan bisa diakses lewat URL: /storage/produk/images/...
-     * (pastikan sudah jalankan: php artisan storage:link)
-     */
     private const FOTO_PATH = 'produk/images';
 
     public function index(Request $request)
@@ -51,6 +45,7 @@ class ProdukController extends Controller
             'kategori_id' => 'required|exists:kategori_produks,id',
             'kode_produk' => 'required|max:50|unique:produks,kode_produk',
             'nama_produk' => 'required|max:100',
+            'deskripsi' => 'nullable|string|max:1000',
             'harga_jual' => 'required|numeric|min:0',
             'harga_modal' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
@@ -113,6 +108,7 @@ class ProdukController extends Controller
                 Rule::unique('produks', 'kode_produk')->ignore($produk->id),
             ],
             'nama_produk' => 'required|max:100',
+            'deskripsi' => 'nullable|string|max:1000',
             'harga_jual' => 'required|numeric|min:0',
             'harga_modal' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',

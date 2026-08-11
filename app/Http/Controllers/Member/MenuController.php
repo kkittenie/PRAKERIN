@@ -24,10 +24,8 @@ class MenuController extends Controller
             'kategoris' => $kategoris,
             'totalProduk' => $totalProduk,
             'waCs' => '6282000768044',
-            // Static store info for now — swap for a real Toko/outlet model & address
-            // once the app supports multiple outlets.
             'storeNama' => 'Saisho Cake & Bakery',
-            'storeAlamat' => 'Jl. Tuparev No. 12, Cirebon',
+            'storeAlamat' => 'Jl. Kemboja Jl. Tuparev No. 1, Cirebon',
         ]);
     }
 }

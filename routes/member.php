@@ -2,8 +2,12 @@
 
 use App\Http\Controllers\Member\AkunController;
 use App\Http\Controllers\Member\AuthController;
+use App\Http\Controllers\Member\CheckoutController;
 use App\Http\Controllers\Member\DashboardController;
+use App\Http\Controllers\Member\KeranjangController;
 use App\Http\Controllers\Member\MenuController;
+use App\Http\Controllers\Member\PesananController;
+use App\Http\Controllers\Member\ProdukController;
 use App\Http\Controllers\Member\RewardController;
 use App\Http\Controllers\Member\RiwayatController;
 use App\Http\Controllers\Member\StampController;
@@ -11,18 +15,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('member')->name('member.')->group(function () {
 
-    // Welcome / Pre-login Onboarding Screen
     Route::get('/welcome', [AuthController::class, 'welcome'])->name('welcome');
 
-    // Accessible by anyone (Guest & Auth Member): Home & Account
     Route::get('/beranda', [DashboardController::class, 'index'])->name('beranda');
     Route::get('/menu', [MenuController::class, 'index'])->name('menu');
     Route::get('/akun', [AkunController::class, 'index'])->name('akun');
 
-    // Logout (Supports GET and POST safely)
+    Route::get('/produk/{produk}', [ProdukController::class, 'show'])->name('produk.show');
+
     Route::match(['get', 'post'], '/keluar', [AuthController::class, 'logout'])->name('logout');
 
-    // Guest Auth Routes
     Route::middleware('guest:member')->group(function () {
         Route::get('/masuk', [AuthController::class, 'tampilkanLogin'])->name('login');
         Route::post('/masuk', [AuthController::class, 'login'])->name('login.store');
@@ -31,7 +33,6 @@ Route::prefix('member')->name('member.')->group(function () {
         Route::post('/kirim-otp', [AuthController::class, 'kirimOtp'])->name('otp.send');
     });
 
-    // Authenticated Member Routes (Vouchers/Reward, History)
     Route::middleware('auth:member')->group(function () {
         Route::get('/profil', [AkunController::class, 'profil'])->name('profil');
         Route::post('/profil', [AkunController::class, 'updateProfil'])->name('profil.update');
@@ -44,5 +45,17 @@ Route::prefix('member')->name('member.')->group(function () {
 
         Route::get('/stamps', [StampController::class, 'index'])->name('stamps.index');
         Route::post('/stamps/redeem', [StampController::class, 'redeem'])->name('stamps.redeem');
+
+        Route::post('/produk/{produk}/keranjang', [KeranjangController::class, 'tambah'])->name('keranjang.tambah');
+        Route::patch('/keranjang/{itemId}', [KeranjangController::class, 'ubahJumlah'])->name('keranjang.ubah-jumlah');
+        Route::delete('/keranjang/{itemId}', [KeranjangController::class, 'hapus'])->name('keranjang.hapus');
+
+        Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+        Route::post('/checkout/voucher', [CheckoutController::class, 'pilihVoucher'])->name('checkout.voucher');
+        Route::post('/checkout/metode-pembayaran', [CheckoutController::class, 'pilihMetodePembayaran'])->name('checkout.metode-pembayaran');
+        Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+
+        Route::get('/pesanan/{transaksi}', [PesananController::class, 'show'])->name('pesanan.show');
+        Route::get('/pesanan/{transaksi}/status', [PesananController::class, 'status'])->name('pesanan.status');
     });
 });

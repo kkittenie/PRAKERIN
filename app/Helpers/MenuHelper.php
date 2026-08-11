@@ -68,6 +68,7 @@ class MenuHelper
                 'name' => 'Transaksi',
                 'subItems' => [
                     ['name' => 'Kasir', 'path' => '/transaksi', 'permission' => 'lihat_transaksi'],
+                    ['name' => 'Pesanan Pick Up', 'path' => '/pesanan-pickup', 'permission' => 'lihat_pesanan_pickup'],
                 ],
             ],
             [

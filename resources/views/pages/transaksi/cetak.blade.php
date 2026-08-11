@@ -285,7 +285,7 @@
             @if ($jenis === 'pelanggan')
                 @php
                     $toko = '';
-                    $alamat = 'Jl. Kemboja No.1, Kedungjaya, Kec. Kedawung, Kabupaten Cirebon';
+                    $alamat = 'Jl. Kemboja Jl. Tuparev No.1, Kedungjaya, Kec. Kedawung, Kabupaten Cirebon';
                     $subtotal = (float) $transaksi->subtotal;
                     $diskon = (float) $transaksi->diskon;
                     $diskonPersen = $subtotal > 0 ? ($diskon / $subtotal) * 100 : 0;
@@ -560,12 +560,12 @@
 
         if ($jenis === 'pelanggan') {
             $toko = "Saisho Cake & Bakery";
-            $alamat = "Jl. Kemboja No.1, Kedungjaya, Kec. Kedawung, Kabupaten Cirebon";
+            $alamat = "Jl. Kemboja Jl. Tuparev No.1, Kedungjaya, Kec. Kedawung, Kabupaten Cirebon";
             $subtotal = (float) $transaksi->subtotal;
             $diskon = (float) $transaksi->diskon;
             $diskonPersen = $subtotal > 0 ? ($diskon / $subtotal) * 100 : 0;
             $pajak = (float) $transaksi->pajak;
-            $pajakPersen = ($subtotal - $diskon) > 0 ? ($pajak / ($subtotal - $diskon)) * 100 : 0;            // Sama seperti versi HTML di atas: gabungkan item dengan nama
+            $pajakPersen = ($subtotal - $diskon) > 0 ? ($pajak / ($subtotal - $diskon)) * 100 : 0;   
             $itemsPelangganTeks = $transaksi->detailTransaksi
                 ->filter(function ($item) {
                     if (!is_null($item->bundling_id) && !is_null($item->produk_id) && (float) $item->harga_satuan == 0 && (float) $item->subtotal == 0) {

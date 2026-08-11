@@ -195,7 +195,7 @@
                 default => -1,
             };
         @endphp
-        @unless(request()->routeIs('member.profil'))
+        @unless(request()->routeIs('member.profil') || request()->routeIs('member.produk.show') || request()->routeIs('member.checkout.index'))
         <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 z-30 w-full max-w-none sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl bg-white/95 backdrop-blur-md border-t border-gray-200/80 sm:rounded-b-3xl sm:bottom-6 sm:shadow-xl px-4 sm:px-8 py-2 transition-all duration-300">
             <div class="grid grid-cols-4 gap-1 text-center">
                 

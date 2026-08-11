@@ -26,6 +26,7 @@ use App\Http\Controllers\MemberLevelController;
 use App\Http\Controllers\Member\StampController as MemberStampController;
 use App\Http\Controllers\VoucherKasirController;
 use App\Http\Controllers\StampRedemptionKasirController;
+use App\Http\Controllers\PesananPickupController;
 
 require __DIR__ . '/member.php';
 
@@ -52,6 +53,16 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/transaksi/hapus-ditahan/{id}', [TransaksiKasirController::class, 'hapusDitahan'])->name('transaksi.hapus-ditahan');
         Route::post('/transaksi/bayar', [TransaksiKasirController::class, 'bayar'])->name('transaksi.bayar');
         Route::post('/transaksi/lunaskan/{id}', [TransaksiKasirController::class, 'lunaskanDitahan'])->name('transaksi.lunaskan');
+    });
+
+    // Pesanan Pick Up (pesanan masuk dari Member App)
+    Route::middleware('permission:lihat_pesanan_pickup')->group(function () {
+        Route::get('/pesanan-pickup', [PesananPickupController::class, 'indeks'])->name('pesanan-pickup.indeks');
+    });
+    Route::middleware('permission:edit_pesanan_pickup')->group(function () {
+        Route::post('/pesanan-pickup/verifikasi', [PesananPickupController::class, 'verifikasiKode'])->name('pesanan-pickup.verifikasi');
+        Route::patch('/pesanan-pickup/{transaksi}/siap', [PesananPickupController::class, 'tandaiSiap'])->name('pesanan-pickup.siap');
+        Route::patch('/pesanan-pickup/{transaksi}/batal', [PesananPickupController::class, 'batalkan'])->name('pesanan-pickup.batal');
     });
 
     // Laporan

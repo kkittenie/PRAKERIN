@@ -3,10 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Transaksi extends Model
 {
     protected $table = 'transaksi';
+
+    public const ASAL_KASIR = 'kasir';
+    public const ASAL_MEMBER_APP = 'member_app';
+
+    public const STATUS_DIPROSES = 'diproses';
+    public const STATUS_SIAP_DIAMBIL = 'siap_diambil';
+    public const STATUS_SUDAH_DIAMBIL = 'sudah_diambil';
+    public const STATUS_DIBATALKAN = 'dibatalkan';
 
     protected $fillable = [
         'kode_transaksi',
@@ -25,7 +34,50 @@ class Transaksi extends Model
         'kembalian',
         'metode_pembayaran',
         'status_pembayaran',
+        'asal_pesanan',
+        'status_pesanan',
+        'kode_pickup',
+        'catatan_pesanan',
+        'siap_pada',
+        'diambil_pada',
     ];
+
+    protected $casts = [
+        'siap_pada' => 'datetime',
+        'diambil_pada' => 'datetime',
+    ];
+
+    /**
+     * Label yang dipakai di UI (Member App maupun POS) untuk tiap status_pesanan.
+     */
+    public static function labelStatusPesanan(?string $status): string
+    {
+        return match ($status) {
+            self::STATUS_DIPROSES => 'Diproses',
+            self::STATUS_SIAP_DIAMBIL => 'Ready for Pickup',
+            self::STATUS_SUDAH_DIAMBIL => 'Sudah Diambil',
+            self::STATUS_DIBATALKAN => 'Dibatalkan',
+            default => '-',
+        };
+    }
+
+    public function getIsPickupMemberAttribute(): bool
+    {
+        return $this->asal_pesanan === self::ASAL_MEMBER_APP;
+    }
+
+    /**
+     * Kode pickup pendek & unik yang ditunjukkan member ke kasir (mis. "A3F9K2").
+     * Dibuat pendek supaya gampang dibacakan/diketik ulang oleh kasir.
+     */
+    public static function buatKodePickupUnik(): string
+    {
+        do {
+            $kode = strtoupper(Str::random(6));
+        } while (self::where('kode_pickup', $kode)->exists());
+
+        return $kode;
+    }
 
     public function member()
     {

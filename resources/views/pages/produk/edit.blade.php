@@ -76,6 +76,23 @@
                     @enderror
                 </div>
 
+               {{-- Deskripsi --}}
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Deskripsi Produk
+                    </label>
+
+                    <textarea
+                        name="deskripsi"
+                        rows="3"
+                        placeholder="Deskripsi singkat produk, tampil di Detail Produk Member App"
+                        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">{{ old('deskripsi', $produk->deskripsi) }}</textarea>
+
+                    @error('deskripsi')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
                {{-- Harga Jual --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">

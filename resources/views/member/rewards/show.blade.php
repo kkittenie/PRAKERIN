@@ -9,16 +9,10 @@
     $isCroissant = str_contains(strtolower($reward->nama ?? ''), 'croissant');
     $icon = $isVoucher ? 'icon-ticket' : ($isCroissant ? 'icon-cake' : 'icon-cup');
 
-    // These three read from optional columns on the reward if present, and fall back
-    // to sensible generic copy otherwise. Add `syarat_ketentuan`, `cara_pakai`,
-    // `menu_berlaku` (text) columns on `rewards` to make them fully dynamic per reward.
     $syaratKetentuan = collect(preg_split('/\r\n|\r|\n/', trim((string) ($reward->syarat_ketentuan ?? ''))))->filter()->values();
     $caraPakai = collect(preg_split('/\r\n|\r|\n/', trim((string) ($reward->cara_pakai ?? ''))))->filter()->values();
     $menuBerlaku = trim((string) ($reward->menu_berlaku ?? ''));
 
-    // Menu yang berlaku untuk voucher ini = produk yang dipilih admin waktu
-    // bikin reward-nya (relasi reward_katalog_produk). Kalau tidak ada produk
-    // yang dipilih sama sekali, artinya berlaku untuk semua menu.
     $eligibleProduk = $reward->produks->map(fn ($p) => [
         'id' => $p->id,
         'nama' => $p->nama_produk,

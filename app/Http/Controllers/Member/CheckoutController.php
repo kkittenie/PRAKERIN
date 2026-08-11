@@ -1,0 +1,354 @@
+<?php
+
+namespace App\Http\Controllers\Member;
+
+use App\Http\Controllers\Controller;
+use App\Models\DetailTransaksi;
+use App\Models\Member;
+use App\Models\PenukaranPoin;
+use App\Models\Produk;
+use App\Models\Transaksi;
+use App\Support\MemberCart;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
+
+class CheckoutController extends Controller
+{
+    private const NAMA_TOKO = 'Saisho Cake & Bakery';
+    private const ALAMAT_TOKO = 'Jl. Kemboja Jl. Tuparev No. 1, Cirebon';
+    private const SESSION_VOUCHER_KEY = 'member_checkout_voucher_id';
+    private const SESSION_METODE_KEY = 'member_checkout_metode_pembayaran';
+
+    // Pajak dihitung otomatis (member self-checkout, nggak ada kasir yang input
+    // manual kayak di POS) — persentase sama dengan default di kasir.
+    private const PAJAK_PERSEN = 5;
+
+    // Metode pembayaran yang bisa dipilih member — pembayaran tetap dilakukan
+    // di kasir saat pengambilan, ini cuma preferensi yang ditunjukkan ke kasir.
+    private const METODE_PEMBAYARAN = ['Tunai', 'QRIS'];
+
+    /**
+     * Halaman Checkout: toko pickup, daftar item, voucher/poin, subtotal,
+     * total pembayaran, tombol Order Now — persis alur Fore.
+     */
+    public function index()
+    {
+        $member = Auth::guard('member')->user();
+
+        if (MemberCart::isEmpty()) {
+            return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
+        }
+
+        $items = MemberCart::items();
+        $subtotal = MemberCart::subtotal();
+
+        $voucherAktif = PenukaranPoin::with('reward.produks')
+            ->where('member_id', $member->id)
+            ->whereHas('reward', fn ($q) => $q->where('jenis', 'voucher'))
+            ->aktifDigunakan()
+            ->latest()
+            ->get();
+
+        $voucherId = Session::get(self::SESSION_VOUCHER_KEY);
+        $voucherDipilih = $voucherId ? $voucherAktif->firstWhere('id', $voucherId) : null;
+
+        $diskon = $voucherDipilih ? $this->hitungDiskonVoucher($voucherDipilih, $items, $subtotal) : 0;
+        $pajak = $this->hitungPajak($subtotal, $diskon);
+        $totalBayar = max(0, $subtotal - $diskon + $pajak);
+
+        $metodeDipilih = Session::get(self::SESSION_METODE_KEY, self::METODE_PEMBAYARAN[0]);
+
+        return view('member.checkout.index', [
+            'member' => $member,
+            'items' => $items,
+            'subtotal' => $subtotal,
+            'diskon' => $diskon,
+            'pajak' => $pajak,
+            'pajakPersen' => self::PAJAK_PERSEN,
+            'totalBayar' => $totalBayar,
+            'voucherAktif' => $voucherAktif,
+            'voucherDipilih' => $voucherDipilih,
+            'metodePembayaranList' => self::METODE_PEMBAYARAN,
+            'metodeDipilih' => $metodeDipilih,
+            'storeNama' => self::NAMA_TOKO,
+            'storeAlamat' => self::ALAMAT_TOKO,
+            'poinPotensial' => $this->estimasiPoin($member, $totalBayar),
+        ]);
+    }
+
+    public function pilihVoucher(Request $request)
+    {
+        $validated = $request->validate([
+            'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
+        ]);
+
+        if (empty($validated['voucher_id'])) {
+            Session::forget(self::SESSION_VOUCHER_KEY);
+            return back();
+        }
+
+        $member = Auth::guard('member')->user();
+        $milikMember = PenukaranPoin::where('id', $validated['voucher_id'])
+            ->where('member_id', $member->id)
+            ->exists();
+
+        if (! $milikMember) {
+            return back()->with('error', 'Voucher tidak ditemukan.');
+        }
+
+        Session::put(self::SESSION_VOUCHER_KEY, (int) $validated['voucher_id']);
+
+        return back();
+    }
+
+    public function pilihMetodePembayaran(Request $request)
+    {
+        $validated = $request->validate([
+            'metode_pembayaran' => 'required|string|in:' . implode(',', self::METODE_PEMBAYARAN),
+        ]);
+
+        Session::put(self::SESSION_METODE_KEY, $validated['metode_pembayaran']);
+
+        return back();
+    }
+
+    /**
+     * Tombol "Order Now" — bikin pesanan pick up. Integrasi penuh dengan
+     * data existing: stok/produksi (pola sama seperti kasir), voucher poin
+     * (ditandai terpakai), dan member (poin & stamp baru ditambahkan saat
+     * kasir mengonfirmasi pesanan sudah dibayar/diambil — lihat
+     * PesananPickupController::verifikasiKode).
+     */
+    public function store(Request $request)
+    {
+        $member = Auth::guard('member')->user();
+
+        if (MemberCart::isEmpty()) {
+            return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
+        }
+
+        $request->validate([
+            'catatan' => 'nullable|string|max:255',
+        ]);
+
+        $items = MemberCart::items();
+        $subtotal = MemberCart::subtotal();
+        $voucherId = Session::get(self::SESSION_VOUCHER_KEY);
+
+        DB::beginTransaction();
+        try {
+            $voucher = null;
+            $diskon = 0;
+
+            if ($voucherId) {
+                $voucher = PenukaranPoin::with('reward.produks')
+                    ->where('id', $voucherId)
+                    ->where('member_id', $member->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $voucher || $voucher->status !== 'menunggu_diambil' || $voucher->sudahExpired()) {
+                    throw new \Exception('Voucher yang dipilih sudah tidak berlaku, silakan pilih ulang.');
+                }
+
+                $diskon = $this->hitungDiskonVoucher($voucher, $items, $subtotal);
+            }
+
+            $pajak = $this->hitungPajak($subtotal, $diskon);
+            $totalBayar = max(0, $subtotal - $diskon + $pajak);
+
+            $metodePembayaran = Session::get(self::SESSION_METODE_KEY, self::METODE_PEMBAYARAN[0]);
+
+            $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
+            $kodePickup = Transaksi::buatKodePickupUnik();
+
+            $transaksi = Transaksi::create([
+                'kode_transaksi' => $kodeTransaksi,
+                'nama_pembeli' => $member->nama,
+                'member_id' => $member->id,
+                'voucher_id' => $voucher?->id,
+                'subtotal' => $subtotal,
+                'pajak' => $pajak,
+                'diskon' => $diskon,
+                'diskon_persen' => 0,
+                'diskon_label' => $voucher ? ($voucher->reward->nama ?? 'Voucher') : null,
+                'total_bayar' => $totalBayar,
+                'jumlah_diterima' => $totalBayar,
+                'kembalian' => 0,
+                'metode_pembayaran' => $metodePembayaran,
+                'status_pembayaran' => 'Menunggu Pembayaran',
+                'asal_pesanan' => Transaksi::ASAL_MEMBER_APP,
+                'status_pesanan' => Transaksi::STATUS_DIPROSES,
+                'kode_pickup' => $kodePickup,
+                'catatan_pesanan' => $request->input('catatan'),
+            ]);
+
+            if ($voucher) {
+                $voucher->update([
+                    'status' => 'selesai',
+                    'diambil_pada' => now(),
+                    'transaksi_id' => $transaksi->id,
+                ]);
+            }
+
+            foreach ($items as $item) {
+                $produk = Produk::lockForUpdate()->findOrFail($item['produk_id']);
+                $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah']);
+
+                // Tidak ada lagi pengecekan "stok tidak mencukupi" yang
+                // memblokir order di sini. Kalau stok kurang dari jumlah
+                // yang dipesan, pecahJumlahProduksi() sudah memecah item ini
+                // jadi porsi yang tersedia dari stok & porsi yang butuh
+                // diproduksi, jadi tiket dapur cuma mencetak jumlah yang
+                // benar-benar perlu dibuat.
+
+                // Stok BELUM dikurangi di sini. Order dari member app baru
+                // sebatas permintaan — stok baru benar-benar dikurangi kasir
+                // saat pesanan ditandai siap (lihat
+                // PesananPickupController::tandaiSiap()), supaya stok tidak
+                // berkurang hanya karena member checkout tapi pesanannya
+                // belum tentu diproses/diambil.
+
+                $catatanItem = trim(collect([
+                    $item['ukuran'] ?? null,
+                    $item['catatan'] ?? null,
+                ])->filter()->implode(' — '));
+
+                foreach ($pecahan as $bagian) {
+                    DetailTransaksi::create([
+                        'transaksi_id' => $transaksi->id,
+                        'produk_id' => $produk->id,
+                        'nama_produk' => $produk->nama_produk,
+                        'harga_satuan' => $item['harga_satuan'],
+                        'jumlah' => $bagian['jumlah'],
+                        'catatan' => $catatanItem !== '' ? $catatanItem : null,
+                        'subtotal' => $item['harga_satuan'] * $bagian['jumlah'],
+                        'butuh_produksi' => $bagian['butuh_produksi'],
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            activity()
+                ->causedBy($member)
+                ->performedOn($transaksi)
+                ->withProperties([
+                    'transaksi_id' => $transaksi->id,
+                    'kode_transaksi' => $kodeTransaksi,
+                    'kode_pickup' => $kodePickup,
+                ])
+                ->log('membuat pesanan pick up dari member app');
+
+            MemberCart::kosongkan();
+            Session::forget(self::SESSION_VOUCHER_KEY);
+            Session::forget(self::SESSION_METODE_KEY);
+
+            return redirect()
+                ->route('member.pesanan.show', $transaksi)
+                ->with('success', 'Pesanan berhasil dibuat! Tunjukkan kode pickup ke kasir saat mengambil.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error checkout member app: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Pecah jumlah yang dipesan jadi porsi yang bisa dipenuhi dari stok
+     * (butuh_produksi = false) dan porsi yang harus diproduksi
+     * (butuh_produksi = true). Kalau stok cuma cukup sebagian — misal stok
+     * 1 tapi dipesan 2 — baris dipecah jadi dua: 1 dari stok & 1 masuk
+     * tiket dapur, supaya tiket dapur nggak ikut mencetak porsi yang
+     * sebenarnya sudah tersedia. Member tetap boleh order meski stok
+     * kurang/habis — sama seperti alur kasir POS (lihat
+     * TransaksiKasirController::tentukanPerluProduksi()).
+     *
+     * @return array<int, array{jumlah: int, butuh_produksi: bool}>
+     */
+    private function pecahJumlahProduksi(Produk $produk, int $jumlah): array
+    {
+        if ($produk->status_ketersediaan === 'perlu_diproduksi') {
+            return [['jumlah' => $jumlah, 'butuh_produksi' => true]];
+        }
+
+        $stokTersedia = max(0, (int) floor((float) $produk->stok));
+
+        if ($stokTersedia >= $jumlah) {
+            return [['jumlah' => $jumlah, 'butuh_produksi' => false]];
+        }
+
+        if ($stokTersedia <= 0) {
+            return [['jumlah' => $jumlah, 'butuh_produksi' => true]];
+        }
+
+        return [
+            ['jumlah' => $stokTersedia, 'butuh_produksi' => false],
+            ['jumlah' => $jumlah - $stokTersedia, 'butuh_produksi' => true],
+        ];
+    }
+
+    /**
+     * Hitung nominal diskon dari voucher — meniru aturan yang sama dipakai
+     * di kasir (VoucherKasirController): nominal langsung, atau persentase
+     * dari basis harga (dibatasi ke produk tertentu kalau voucher-nya
+     * scoped ke produk, dan dipotong maksimal_potongan bila ada).
+     */
+    private function hitungDiskonVoucher(PenukaranPoin $voucher, $items, float $subtotal): float
+    {
+        $reward = $voucher->reward;
+        if (! $reward) {
+            return 0;
+        }
+
+        if ((float) ($reward->min_pembelian ?? 0) > $subtotal) {
+            return 0;
+        }
+
+        $produkIds = $reward->produks->pluck('id')->values()->all();
+
+        $basis = $subtotal;
+        if (! empty($produkIds)) {
+            $basis = collect($items)
+                ->filter(fn ($item) => in_array($item['produk_id'], $produkIds, true))
+                ->sum(fn ($item) => $item['harga_satuan'] * $item['jumlah']);
+        }
+
+        if ($reward->jenis_potongan === 'nominal') {
+            $diskon = (float) $reward->nominal_potongan;
+        } else {
+            $diskon = $basis * ((float) $reward->persentase / 100);
+            if (! is_null($reward->maksimal_potongan)) {
+                $diskon = min($diskon, (float) $reward->maksimal_potongan);
+            }
+        }
+
+        return min($diskon, $basis);
+    }
+
+    /**
+     * Hitung pajak otomatis dari (subtotal - diskon) — formula & persentase
+     * default sama dengan yang dipakai kasir di POS (5%), cuma di sini nggak
+     * bisa diubah manual karena member checkout sendiri tanpa kasir.
+     */
+    private function hitungPajak(float $subtotal, float $diskon): float
+    {
+        $basis = max(0, $subtotal - $diskon);
+
+        return round($basis * (self::PAJAK_PERSEN / 100));
+    }
+
+    private function estimasiPoin(Member $member, float $totalBayar): int
+    {
+        $pengaturan = \App\Models\PengaturanMember::where('status_aktif', true)->first();
+        if (! $pengaturan || $pengaturan->minimal_belanja <= 0) {
+            return 0;
+        }
+
+        return (int) (floor($totalBayar / $pengaturan->minimal_belanja) * $pengaturan->poin);
+    }
+}

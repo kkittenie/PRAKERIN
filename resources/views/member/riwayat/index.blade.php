@@ -6,11 +6,15 @@
         'selesai' => ['label' => 'Selesai', 'class' => 'bg-green-50 text-green-600'],
         'dibatalkan' => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 text-gray-500'],
     ];
-    // Optional — history of stamp-card redemptions (separate from poin-based
-    // reward/voucher redemptions in $penukaran). Falls back to empty so this
-    // page still renders fine before the controller passes it in.
+    $statusPesananBadge = [
+        \App\Models\Transaksi::STATUS_DIPROSES => ['label' => 'Diproses', 'class' => 'bg-amber-50 text-amber-700'],
+        \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => ['label' => 'Ready for Pickup', 'class' => 'bg-blue-50 text-blue-700'],
+        \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => ['label' => 'Sudah Diambil', 'class' => 'bg-green-50 text-green-600'],
+        \App\Models\Transaksi::STATUS_DIBATALKAN => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 text-gray-500'],
+    ];
     $riwayatStamp = $riwayatStamp ?? collect();
-    $isEmpty = $penukaran->isEmpty() && $transaksi->isEmpty() && $riwayatStamp->isEmpty();
+    $pesanan = $pesanan ?? collect();
+    $isEmpty = $penukaran->isEmpty() && $transaksi->isEmpty() && $riwayatStamp->isEmpty() && $pesanan->isEmpty();
     $redeemCount = $penukaran->count() + $riwayatStamp->count();
 @endphp
 
@@ -65,9 +69,17 @@
             'iconColor' => 'text-gray-400',
         ])
     @else
-        <div x-data="{ tab: 'transaksi' }" class="mt-5">
+        <div x-data="{ tab: 'pesanan' }" class="mt-5">
             {{-- Fore-style underline tabs — same pattern as the Vouchers page. --}}
-            <div class="relative grid grid-cols-2 border-b border-gray-100">
+            <div class="relative grid grid-cols-3 border-b border-gray-100">
+                <button
+                    type="button"
+                    @click="tab = 'pesanan'"
+                    :class="tab === 'pesanan' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
+                    class="relative pb-3 text-center text-[13px] font-bold transition"
+                >
+                    Pesanan
+                </button>
                 <button
                     type="button"
                     @click="tab = 'transaksi'"
@@ -85,9 +97,94 @@
                     Riwayat Redeem
                 </button>
                 <span
-                    class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/2 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
-                    :class="tab === 'redeem' ? 'translate-x-full' : 'translate-x-0'"
+                    class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/3 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
+                    :class="{ 'translate-x-0': tab === 'pesanan', 'translate-x-full': tab === 'transaksi', 'translate-x-[200%]': tab === 'redeem' }"
                 ></span>
+            </div>
+
+            {{-- ================= TAB: PESANAN (pick up dari Member App) ================= --}}
+            <div x-show="tab === 'pesanan'" x-cloak class="pt-5">
+                @if ($pesanan->isEmpty())
+                    @include('member.components.empty-state', [
+                        'title' => 'Belum Ada Pesanan',
+                        'description' => 'Pesanan pick up kamu bakal kecatat di sini.',
+                        'icon' => 'icon-clock',
+                        'iconBg' => 'bg-gray-100',
+                        'iconColor' => 'text-gray-400',
+                    ])
+                @else
+                    @php
+                        $statusAktif = [\App\Models\Transaksi::STATUS_DIPROSES, \App\Models\Transaksi::STATUS_SIAP_DIAMBIL];
+                        $pesananAktif = $pesanan->whereIn('status_pesanan', $statusAktif);
+                        $pesananSelesai = $pesanan->whereNotIn('status_pesanan', $statusAktif);
+                    @endphp
+
+                    @if ($pesananAktif->isNotEmpty())
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-sm font-bold text-gray-900">Pesanan Aktif</h2>
+                            <span class="text-xs text-gray-400">{{ $pesananAktif->count() }} pesanan</span>
+                        </div>
+                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
+                            @foreach ($pesananAktif as $trx)
+                                @php $pesananBadge = $statusPesananBadge[$trx->status_pesanan] ?? null; @endphp
+                                <a
+                                    href="{{ route('member.pesanan.show', $trx) }}"
+                                    onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                    class="flex w-full items-center gap-3 rounded-2xl border border-brand-200 bg-brand-25 p-4 text-left shadow-sm transition active:bg-brand-50"
+                                >
+                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-800">
+                                        @include('member.components.icon-cake', ['class' => 'h-5 w-5'])
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="truncate text-sm font-bold text-gray-900">{{ $trx->kode_transaksi }}</p>
+                                            @if ($pesananBadge)
+                                                <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $pesananBadge['class'] }}">
+                                                    {{ $pesananBadge['label'] }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <p class="mt-0.5 text-xs text-gray-400">Kode pickup: <span class="font-mono font-bold text-gray-600">{{ $trx->kode_pickup }}</span></p>
+                                    </div>
+                                    @include('member.components.icon-chevron-right', ['class' => 'h-4 w-4 shrink-0 text-gray-300'])
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if ($pesananSelesai->isNotEmpty())
+                        <div class="{{ $pesananAktif->isNotEmpty() ? 'mt-6' : '' }} flex items-center justify-between">
+                            <h2 class="text-sm font-bold text-gray-900">Riwayat Pesanan</h2>
+                            <span class="text-xs text-gray-400">{{ $pesananSelesai->count() }} pesanan</span>
+                        </div>
+                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
+                            @foreach ($pesananSelesai as $trx)
+                                @php $pesananBadge = $statusPesananBadge[$trx->status_pesanan] ?? null; @endphp
+                                <a
+                                    href="{{ route('member.pesanan.show', $trx) }}"
+                                    onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                    class="flex w-full items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition active:bg-gray-50"
+                                >
+                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800">
+                                        @include('member.components.icon-cake', ['class' => 'h-5 w-5'])
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="truncate text-sm font-bold text-gray-900">{{ $trx->kode_transaksi }}</p>
+                                            @if ($pesananBadge)
+                                                <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $pesananBadge['class'] }}">
+                                                    {{ $pesananBadge['label'] }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <p class="mt-0.5 text-xs text-gray-400">{{ $trx->created_at->translatedFormat('d M Y, H:i') }} &middot; Rp{{ number_format($trx->total_bayar, 0, ',', '.') }}</p>
+                                    </div>
+                                    @include('member.components.icon-chevron-right', ['class' => 'h-4 w-4 shrink-0 text-gray-300'])
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+                @endif
             </div>
 
             {{-- ================= TAB: RIWAYAT TRANSAKSI ================= --}}
@@ -109,12 +206,20 @@
                         @foreach ($transaksi as $trx)
                             @php
                                 $belumLunas = strtolower($trx->status_pembayaran ?? 'lunas') !== 'lunas';
-                                $itemsJson = $trx->detailTransaksi->map(fn ($d) => [
-                                    'nama' => $d->nama_produk,
-                                    'jumlah' => $d->jumlah,
-                                    'subtotal' => $d->subtotal,
-                                    'catatan' => $d->catatan,
-                                ])->toJson();
+                                // Satu produk bisa punya lebih dari satu baris detail kalau
+                                // sebagian dipenuhi dari stok & sebagian lagi butuh diproduksi
+                                // (lihat CheckoutController::pecahJumlahProduksi()). Digabung
+                                // per nama produk supaya riwayat cuma menampilkan satu baris.
+                                $itemsJson = $trx->detailTransaksi
+                                    ->groupBy('nama_produk')
+                                    ->map(fn ($group) => [
+                                        'nama' => $group->first()->nama_produk,
+                                        'jumlah' => $group->sum('jumlah'),
+                                        'subtotal' => $group->sum('subtotal'),
+                                        'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
+                                    ])
+                                    ->values()
+                                    ->toJson();
                             @endphp
                             <button
                                 type="button"
