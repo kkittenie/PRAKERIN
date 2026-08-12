@@ -49,11 +49,7 @@
                     }
                 }" class="relative">
 
-        {{-- =========================================================
-        FOTO PRODUK
-        Foto dibuat langsung mulai dari bagian atas.
-        Tombol kembali overlay di atas foto.
-        ========================================================== --}}
+
         <div class="relative -mx-5 -mt-6 aspect-square w-auto overflow-hidden bg-gray-50 sm:-mx-8 md:-mx-10">
 
             @if ($produk->foto)
@@ -83,13 +79,6 @@
                 </span>
             @endif
 
-            {{-- Overlay perlu diproduksi --}}
-            @if ($habis)
-                <span class="absolute left-4 bottom-4 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
-                    Perlu Diproduksi
-                </span>
-            @endif
-
         </div>
 
         <div class="mt-5">
@@ -104,6 +93,13 @@
                     {{ $produk->nama_produk }}
                 </h2>
 
+                <div class="mt-4">
+    
+                    <p class="mt-1.5 text-xs leading-relaxed text-gray-500">
+                        {{ $produk->deskripsi ?: '' }}
+                    </p>
+                </div>
+
                 <div class="mt-2 flex items-center gap-2">
                     @if ($adaPromo)
                         <span class="text-xs text-gray-400 line-through">
@@ -117,15 +113,6 @@
                 </div>
             </div>
 
-            <div class="mt-4">
-                <h3 class="text-xs font-bold text-gray-900">
-                    Deskripsi
-                </h3>
-
-                <p class="mt-1.5 text-xs leading-relaxed text-gray-500">
-                    {{ $produk->deskripsi ?: 'Belum ada deskripsi untuk produk ini.' }}
-                </p>
-            </div>
 
             @if ($habis)
                 <div class="mt-4 flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bundling;
 use App\Models\DetailTransaksi;
 use App\Models\Member;
 use App\Models\PenukaranPoin;
@@ -18,22 +19,14 @@ use Illuminate\Support\Facades\Session;
 class CheckoutController extends Controller
 {
     private const NAMA_TOKO = 'Saisho Cake & Bakery';
-    private const ALAMAT_TOKO = 'Jl. Kemboja Jl. Tuparev No. 1, Cirebon';
+    private const ALAMAT_TOKO = 'Jl. Kemboja Jl. Tuparev No.1, Cirebon';
     private const SESSION_VOUCHER_KEY = 'member_checkout_voucher_id';
     private const SESSION_METODE_KEY = 'member_checkout_metode_pembayaran';
 
-    // Pajak dihitung otomatis (member self-checkout, nggak ada kasir yang input
-    // manual kayak di POS) — persentase sama dengan default di kasir.
     private const PAJAK_PERSEN = 5;
 
-    // Metode pembayaran yang bisa dipilih member — pembayaran tetap dilakukan
-    // di kasir saat pengambilan, ini cuma preferensi yang ditunjukkan ke kasir.
     private const METODE_PEMBAYARAN = ['Tunai', 'QRIS'];
 
-    /**
-     * Halaman Checkout: toko pickup, daftar item, voucher/poin, subtotal,
-     * total pembayaran, tombol Order Now — persis alur Fore.
-     */
     public function index()
     {
         $member = Auth::guard('member')->user();
@@ -115,13 +108,6 @@ class CheckoutController extends Controller
         return back();
     }
 
-    /**
-     * Tombol "Order Now" — bikin pesanan pick up. Integrasi penuh dengan
-     * data existing: stok/produksi (pola sama seperti kasir), voucher poin
-     * (ditandai terpakai), dan member (poin & stamp baru ditambahkan saat
-     * kasir mengonfirmasi pesanan sudah dibayar/diambil — lihat
-     * PesananPickupController::verifikasiKode).
-     */
     public function store(Request $request)
     {
         $member = Auth::guard('member')->user();
@@ -195,22 +181,13 @@ class CheckoutController extends Controller
             }
 
             foreach ($items as $item) {
+                if (! empty($item['bundling_id'])) {
+                    $this->prosesItemBundlingCheckout($transaksi, $item);
+                    continue;
+                }
+
                 $produk = Produk::lockForUpdate()->findOrFail($item['produk_id']);
                 $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah']);
-
-                // Tidak ada lagi pengecekan "stok tidak mencukupi" yang
-                // memblokir order di sini. Kalau stok kurang dari jumlah
-                // yang dipesan, pecahJumlahProduksi() sudah memecah item ini
-                // jadi porsi yang tersedia dari stok & porsi yang butuh
-                // diproduksi, jadi tiket dapur cuma mencetak jumlah yang
-                // benar-benar perlu dibuat.
-
-                // Stok BELUM dikurangi di sini. Order dari member app baru
-                // sebatas permintaan — stok baru benar-benar dikurangi kasir
-                // saat pesanan ditandai siap (lihat
-                // PesananPickupController::tandaiSiap()), supaya stok tidak
-                // berkurang hanya karena member checkout tapi pesanannya
-                // belum tentu diproses/diambil.
 
                 $catatanItem = trim(collect([
                     $item['ukuran'] ?? null,
@@ -257,19 +234,47 @@ class CheckoutController extends Controller
             return back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
         }
     }
+    private function prosesItemBundlingCheckout(Transaksi $transaksi, array $item): void
+    {
+        $bundling = Bundling::with('items.produk')->findOrFail($item['bundling_id']);
+        $jumlahBundling = (int) $item['jumlah'];
 
-    /**
-     * Pecah jumlah yang dipesan jadi porsi yang bisa dipenuhi dari stok
-     * (butuh_produksi = false) dan porsi yang harus diproduksi
-     * (butuh_produksi = true). Kalau stok cuma cukup sebagian — misal stok
-     * 1 tapi dipesan 2 — baris dipecah jadi dua: 1 dari stok & 1 masuk
-     * tiket dapur, supaya tiket dapur nggak ikut mencetak porsi yang
-     * sebenarnya sudah tersedia. Member tetap boleh order meski stok
-     * kurang/habis — sama seperti alur kasir POS (lihat
-     * TransaksiKasirController::tentukanPerluProduksi()).
-     *
-     * @return array<int, array{jumlah: int, butuh_produksi: bool}>
-     */
+        DetailTransaksi::create([
+            'transaksi_id' => $transaksi->id,
+            'produk_id' => null,
+            'bundling_id' => $bundling->id,
+            'nama_produk' => $bundling->nama_bundling,
+            'harga_satuan' => $item['harga_satuan'],
+            'jumlah' => $jumlahBundling,
+            'catatan' => $item['catatan'] ?? null,
+            'subtotal' => $item['harga_satuan'] * $jumlahBundling,
+            'butuh_produksi' => false,
+        ]);
+
+        foreach ($bundling->items as $bundlingItem) {
+            $produk = $bundlingItem->produk;
+            if (! $produk) {
+                continue;
+            }
+
+            $totalDibutuhkan = $bundlingItem->qty * $jumlahBundling;
+            $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan);
+
+            foreach ($pecahan as $bagian) {
+                DetailTransaksi::create([
+                    'transaksi_id' => $transaksi->id,
+                    'produk_id' => $produk->id,
+                    'bundling_id' => $bundling->id,
+                    'nama_produk' => $produk->nama_produk,
+                    'harga_satuan' => 0,
+                    'jumlah' => $bagian['jumlah'],
+                    'catatan' => null,
+                    'subtotal' => 0,
+                    'butuh_produksi' => $bagian['butuh_produksi'],
+                ]);
+            }
+        }
+    }
     private function pecahJumlahProduksi(Produk $produk, int $jumlah): array
     {
         if ($produk->status_ketersediaan === 'perlu_diproduksi') {
@@ -314,7 +319,7 @@ class CheckoutController extends Controller
         $basis = $subtotal;
         if (! empty($produkIds)) {
             $basis = collect($items)
-                ->filter(fn ($item) => in_array($item['produk_id'], $produkIds, true))
+                ->filter(fn ($item) => in_array($item['produk_id'] ?? null, $produkIds, true))
                 ->sum(fn ($item) => $item['harga_satuan'] * $item['jumlah']);
         }
 

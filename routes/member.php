@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Member\AkunController;
 use App\Http\Controllers\Member\AuthController;
+use App\Http\Controllers\Member\BundlingController;
 use App\Http\Controllers\Member\CheckoutController;
 use App\Http\Controllers\Member\DashboardController;
 use App\Http\Controllers\Member\KeranjangController;
@@ -22,6 +23,7 @@ Route::prefix('member')->name('member.')->group(function () {
     Route::get('/akun', [AkunController::class, 'index'])->name('akun');
 
     Route::get('/produk/{produk}', [ProdukController::class, 'show'])->name('produk.show');
+    Route::get('/bundling/{bundling}', [BundlingController::class, 'show'])->name('bundling.show');
 
     Route::match(['get', 'post'], '/keluar', [AuthController::class, 'logout'])->name('logout');
 
@@ -47,6 +49,7 @@ Route::prefix('member')->name('member.')->group(function () {
         Route::post('/stamps/redeem', [StampController::class, 'redeem'])->name('stamps.redeem');
 
         Route::post('/produk/{produk}/keranjang', [KeranjangController::class, 'tambah'])->name('keranjang.tambah');
+        Route::post('/bundling/{bundling}/keranjang', [KeranjangController::class, 'tambahBundling'])->name('keranjang.tambah-bundling');
         Route::patch('/keranjang/{itemId}', [KeranjangController::class, 'ubahJumlah'])->name('keranjang.ubah-jumlah');
         Route::delete('/keranjang/{itemId}', [KeranjangController::class, 'hapus'])->name('keranjang.hapus');
 

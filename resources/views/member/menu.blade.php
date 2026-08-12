@@ -136,7 +136,7 @@
         </div>
 
         {{-- Category chips + search, merged in one row (search icon overlapping at the right) --}}
-        @if ($kategoris->isNotEmpty())
+        @if ($kategoris->isNotEmpty() || $daftarBundling->isNotEmpty())
             <div :class="scrolled ? 'mt-20' : 'mt-4'"
                  class="relative flex items-center gap-2 pb-8 transition-[margin] duration-200">
                 <div class="flex-1 overflow-x-auto" style="scrollbar-width:none;" x-show="! searching">
@@ -146,6 +146,13 @@
                                 class="shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-bold transition">
                             Semua Menu
                         </button>
+                        @if ($daftarBundling->isNotEmpty())
+                            <button type="button" @click="activeKategori = 'bundling'"
+                                    :class="activeKategori === 'bundling' ? 'bg-brand-800 text-white border-brand-800' : 'bg-white text-gray-600 border-gray-200'"
+                                    class="shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-bold transition">
+                                Bundling
+                            </button>
+                        @endif
                         @foreach ($kategoris as $kategori)
                             <button type="button" @click="activeKategori = '{{ $kategori->id }}'"
                                     :class="activeKategori === '{{ $kategori->id }}' ? 'bg-brand-800 text-white border-brand-800' : 'bg-white text-gray-600 border-gray-200'"
@@ -204,8 +211,58 @@
              style="scrollbar-width:none; -webkit-overflow-scrolling:touch;">
 
         {{-- Menu sections, grouped by category --}}
+        @if ($daftarBundling->isNotEmpty())
+            <div x-show="activeKategori === 'semua' || activeKategori === 'bundling'" class="mt-6 first:mt-2">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-gray-900">Bundling</h2>
+                    <span class="text-[11px] text-gray-400">{{ $daftarBundling->count() }} item</span>
+                </div>
+                <div class="mt-1 border-t border-dashed border-gray-100"></div>
+
+                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    @foreach ($daftarBundling as $bundling)
+                        <a href="{{ route('member.bundling.show', $bundling) }}"
+                           onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                           x-show="'{{ addslashes(strtolower($bundling->nama_bundling)) }}'.includes(search.toLowerCase())"
+                           class="block">
+                            <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
+                                @if ($bundling->gambar)
+                                    <img src="{{ asset('storage/' . $bundling->gambar) }}" alt="{{ $bundling->nama_bundling }}"
+                                         class="h-full w-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                @endif
+                                <div class="{{ $bundling->gambar ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
+                                    @include('member.components.icon-cup', ['class' => 'h-10 w-10'])
+                                </div>
+                                <span class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">Bundling</span>
+                                @if ($bundling->perlu_diproduksi)
+                                    <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Perlu Diproduksi</span>
+                                @endif
+                            </div>
+
+                            <div class="pt-2">
+                                <p class="text-[10px] font-medium text-gray-400">Bundling</p>
+                                <p class="mt-0.5 text-xs font-bold leading-snug text-gray-900 line-clamp-2">{{ $bundling->nama_bundling }}</p>
+
+                                <div class="mt-2 flex items-center justify-between gap-1">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($bundling->harga, 0, ',', '.') }}</p>
+                                    </div>
+
+                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm">
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         @forelse ($kategoris as $kategori)
-            <div x-show="activeKategori === 'semua' || activeKategori === '{{ $kategori->id }}'" class="mt-2">
+            <div x-show="activeKategori === 'semua' || activeKategori === '{{ $kategori->id }}'" class="mt-6 first:mt-2">
                 <div class="flex items-center justify-between">
                     <h2 class="text-sm font-bold text-gray-900">{{ $kategori->nama_kategori }}</h2>
                     <span class="text-[11px] text-gray-400">{{ $kategori->produk->count() }} item</span>
@@ -264,9 +321,11 @@
                 </div>
             </div>
         @empty
-            <div class="mt-8 rounded-2xl border border-gray-100 bg-white p-6 text-center text-xs font-medium text-gray-400">
-                Belum ada menu tersedia saat ini.
-            </div>
+            @if ($daftarBundling->isEmpty())
+                <div class="mt-8 rounded-2xl border border-gray-100 bg-white p-6 text-center text-xs font-medium text-gray-400">
+                    Belum ada menu tersedia saat ini.
+                </div>
+            @endif
         @endforelse
 
         <p class="mt-6 pb-5 text-center text-[11px] text-gray-400">Tap menu untuk lihat detail &amp; pesan Pick Up</p>

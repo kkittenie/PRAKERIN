@@ -213,7 +213,7 @@
                                 </td>
                                 <td class="py-3.5 px-3">
                                     <ul class="space-y-0.5 text-xs text-gray-600 dark:text-gray-300">
-                                        @foreach ($item->detailTransaksi->groupBy('nama_produk') as $namaProduk => $group)
+                                        @foreach ($item->detailTransaksi->filter(fn ($d) => is_null($d->bundling_id) || is_null($d->produk_id) || (float) $d->harga_satuan != 0 || (float) $d->subtotal != 0)->groupBy('nama_produk') as $namaProduk => $group)
                                             <li>{{ $group->sum('jumlah') }}x {{ $namaProduk }}</li>
                                         @endforeach
                                     </ul>

@@ -3,7 +3,7 @@
 @section('content')
 
     {{-- Fixed-height page wrapper: only the middle section (below) scrolls --}}
-    <div class="flex h-screen max-h-screen flex-col overflow-hidden">
+    <div x-data="{ modalHapusAkunTerbuka: false }" class="flex h-screen max-h-screen flex-col overflow-hidden">
 
         <div class="-mt-6 flex flex-none items-center justify-between px-5 pt-6">
             <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
@@ -125,7 +125,7 @@
 
                     <div class="px-5">
                         <button type="button"
-                            onclick="return confirm('Yakin ingin menghapus akun kamu? Tindakan ini tidak bisa dibatalkan.')"
+                            @click="modalHapusAkunTerbuka = true"
                             class="mt-5 flex items-center gap-2 text-sm font-bold text-red-700">
                             <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
                                 <path
@@ -149,6 +149,33 @@
                 {{-- Scrollable section ends here --}}
 
         </form>
+
+        <!-- ========== MODAL: KONFIRMASI HAPUS AKUN ========== -->
+        {{-- Catatan: belum ada route/controller buat proses hapus akun beneran,
+             jadi tombol OK di sini masih belum ngapa-ngapain — tinggal disambungkan
+             ke form/route hapus akun kalau fiturnya udah dibuat. --}}
+        <div x-show="modalHapusAkunTerbuka" x-cloak x-transition
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+            <div @click.away="modalHapusAkunTerbuka = false"
+                class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100">
+                <div class="p-6 text-center">
+                    <div
+                        class="w-14 h-14 bg-red-100 text-red-600 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
+                        ⚠
+                    </div>
+                    <h3 class="font-extrabold text-gray-900 text-base">Hapus Akun?</h3>
+                    <p class="text-xs text-gray-500 mt-2">
+                        Yakin ingin menghapus akun kamu? Tindakan ini tidak bisa dibatalkan.
+                    </p>
+                </div>
+                <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-center gap-3">
+                    <button type="button" @click="modalHapusAkunTerbuka = false"
+                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-lg transition text-gray-700">Batal</button>
+                    <button type="button" @click="modalHapusAkunTerbuka = false"
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Hapus</button>
+                </div>
+            </div>
+        </div>
 
     </div>
 

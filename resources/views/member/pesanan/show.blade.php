@@ -78,6 +78,15 @@
             // (lihat CheckoutController::pecahJumlahProduksi()). Digabung
             // per nama produk supaya member cuma lihat satu baris ringkas.
             $detailRingkas = $transaksi->detailTransaksi
+                ->filter(function ($item) {
+                    // Buang baris komponen bundling (sudah diwakilkan oleh
+                    // baris ringkasan bundling_id, komponen ini cuma buat
+                    // stok/tiket dapur — sama seperti filter di struk pelanggan).
+                    if (! is_null($item->bundling_id) && ! is_null($item->produk_id) && (float) $item->harga_satuan == 0 && (float) $item->subtotal == 0) {
+                        return false;
+                    }
+                    return true;
+                })
                 ->groupBy('nama_produk')
                 ->map(function ($group) {
                     $first = $group->first();

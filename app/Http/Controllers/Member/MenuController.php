@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bundling;
 use App\Models\KategoriProduk;
 
 class MenuController extends Controller
@@ -19,13 +20,17 @@ class MenuController extends Controller
             ->values();
 
         $totalProduk = $kategoris->sum(fn ($kategori) => $kategori->produk->count());
+        $daftarBundling = Bundling::with('items.produk')
+            ->where('status_aktif', true)
+            ->get();
 
         return view('member.menu', [
             'kategoris' => $kategoris,
             'totalProduk' => $totalProduk,
+            'daftarBundling' => $daftarBundling,
             'waCs' => '6282000768044',
             'storeNama' => 'Saisho Cake & Bakery',
-            'storeAlamat' => 'Jl. Kemboja Jl. Tuparev No. 1, Cirebon',
+            'storeAlamat' => 'Jl. Tuparev No. 12,Jl. Kemboja Jl. Tuparev No.1, Cirebon',
         ]);
     }
 }

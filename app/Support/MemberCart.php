@@ -5,15 +5,6 @@ namespace App\Support;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
-/**
- * Keranjang belanja Member App — disimpan di session, per member/browser.
- * Ringan sengaja (bukan tabel DB) karena isinya sementara sampai Checkout
- * ditekan; begitu "Order Now" berhasil, keranjang dikosongkan.
- *
- * Setiap item punya "id" unik sendiri (bukan produk_id) supaya produk yang
- * sama dengan ukuran/catatan berbeda bisa jadi baris terpisah di keranjang —
- * persis seperti Fore.
- */
 class MemberCart
 {
     private const SESSION_KEY = 'member_cart';
@@ -38,18 +29,18 @@ class MemberCart
         return collect(self::items())->sum(fn ($item) => $item['harga_satuan'] * $item['jumlah']);
     }
 
-    /**
-     * Tambah produk ke keranjang. Kalau produk+varian+catatan yang sama
-     * sudah ada, jumlahnya digabung (bukan bikin baris baru).
-     */
     public static function tambah(array $data): void
     {
+        $data['produk_id'] = $data['produk_id'] ?? null;
+        $data['bundling_id'] = $data['bundling_id'] ?? null;
+
         $items = self::items();
 
         $existingKey = null;
         foreach ($items as $key => $item) {
             if (
-                $item['produk_id'] === $data['produk_id']
+                ($item['produk_id'] ?? null) === $data['produk_id']
+                && ($item['bundling_id'] ?? null) === $data['bundling_id']
                 && ($item['ukuran'] ?? null) === ($data['ukuran'] ?? null)
                 && ($item['catatan'] ?? null) === ($data['catatan'] ?? null)
             ) {

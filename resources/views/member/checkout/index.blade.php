@@ -23,7 +23,23 @@
         }
     </style>
 
-    <div x-data="{ pilihVoucherOpen: false }">
+    <div x-data="{
+                    pilihVoucherOpen: false,
+                    modalHapusTerbuka: false,
+                    formHapusTerpilih: null,
+                    namaHapus: '',
+                    bukaModalHapus(form, nama) {
+                        this.formHapusTerpilih = form;
+                        this.namaHapus = nama;
+                        this.modalHapusTerbuka = true;
+                    },
+                    konfirmasiHapus() {
+                        if (this.formHapusTerpilih) {
+                            this.formHapusTerpilih.submit();
+                        }
+                        this.modalHapusTerbuka = false;
+                    }
+                 }">
         <div
             class="checkout-sticky-header relative -mx-5 -mt-6 flex h-14 items-center justify-center border-b border-gray-100 px-5 sm:-mx-8 md:-mx-10">
             <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
@@ -152,11 +168,11 @@
                         {{-- Quantity + Hapus --}}
                         <div class="flex shrink-0 flex-col items-end gap-2">
 
-                            <form method="POST" action="{{ route('member.keranjang.hapus', $item['id']) }}"
-                                onsubmit="return confirm('Hapus {{ addslashes($item['nama_produk']) }} dari keranjang?');">
+                            <form method="POST" action="{{ route('member.keranjang.hapus', $item['id']) }}">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit"
+                                <button type="button"
+                                    @click="bukaModalHapus($el.closest('form'), '{{ addslashes($item['nama_produk']) }}')"
                                     class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition active:scale-90 active:text-red-500"
                                     aria-label="Hapus dari keranjang">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -535,6 +551,10 @@
 
         </dialog>
 
+
+        {{-- ========================================================= --}}
+        {{-- METODE PEMBAYARAN --}}
+        {{-- ========================================================= --}}
         <div class="mt-5">
 
             <p class="text-xs font-bold text-gray-900">
@@ -689,6 +709,31 @@
 
         {{-- Extra space supaya konten tidak ketutup sticky bottom --}}
         <div class="h-28"></div>
+
+        <!-- ========== MODAL: KONFIRMASI HAPUS ITEM KERANJANG ========== -->
+        <div x-show="modalHapusTerbuka" x-cloak x-transition
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+            <div @click.away="modalHapusTerbuka = false"
+                class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100">
+                <div class="p-6 text-center">
+                    <div
+                        class="w-14 h-14 bg-red-100 text-red-600 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
+                        ⚠
+                    </div>
+                    <h3 class="font-extrabold text-gray-900 text-base">Hapus dari Keranjang?</h3>
+                    <p class="text-xs text-gray-500 mt-2">
+                        <span class="font-semibold text-gray-700" x-text="namaHapus"></span>
+                        akan dihapus dari keranjang kamu.
+                    </p>
+                </div>
+                <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-center gap-3">
+                    <button type="button" @click="modalHapusTerbuka = false"
+                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-lg transition text-gray-700">Batal</button>
+                    <button type="button" @click="konfirmasiHapus()"
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Hapus</button>
+                </div>
+            </div>
+        </div>
 
     </div>
 

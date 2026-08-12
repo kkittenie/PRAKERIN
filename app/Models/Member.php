@@ -30,23 +30,20 @@ class Member extends Authenticatable
         $fields = [$this->email, $this->tanggal_lahir, $this->gender];
         $terisi = count(array_filter($fields, fn ($f) => ! is_null($f) && $f !== ''));
 
-        return (int) round((1 + $terisi) / 4 * 100); // username selalu terisi + 3 field opsional
+        return (int) round((1 + $terisi) / 4 * 100);
     }
 
     public function getLevelAttribute(): string
     {
         $level = MemberLevel::aktif()
             ->where('minimal_poin', '<=', $this->poin)
-            ->orderByDesc('minimal_poin')
+            ->reorder('minimal_poin', 'desc')
             ->first();
 
         if ($level) {
             return $level->nama_level;
         }
 
-        // Belum ada level aktif yang jangkauan poinnya mencakup member ini
-        // (mis. level terendah belum dibuat, atau minimal_poin-nya di atas 0).
-        // Fallback ke level aktif dengan minimal_poin terendah, bukan nama tetap.
         $levelTerendah = MemberLevel::aktif()->orderBy('minimal_poin')->first();
 
         return $levelTerendah->nama_level ?? 'Member';
@@ -56,7 +53,7 @@ class Member extends Authenticatable
     {
         $levelSaatIni = MemberLevel::aktif()
             ->where('minimal_poin', '<=', $this->poin)
-            ->orderByDesc('minimal_poin')
+            ->reorder('minimal_poin', 'desc')
             ->first();
 
         $levelBerikutnya = MemberLevel::aktif()
@@ -65,7 +62,7 @@ class Member extends Authenticatable
             ->first();
 
         if (! $levelBerikutnya) {
-            return null; // sudah di level tertinggi
+            return null;
         }
 
         $batasSaatIni = $levelSaatIni->minimal_poin ?? 0;
