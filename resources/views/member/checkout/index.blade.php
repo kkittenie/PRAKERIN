@@ -23,23 +23,7 @@
         }
     </style>
 
-    <div x-data="{
-                    pilihVoucherOpen: false,
-                    modalHapusTerbuka: false,
-                    formHapusTerpilih: null,
-                    namaHapus: '',
-                    bukaModalHapus(form, nama) {
-                        this.formHapusTerpilih = form;
-                        this.namaHapus = nama;
-                        this.modalHapusTerbuka = true;
-                    },
-                    konfirmasiHapus() {
-                        if (this.formHapusTerpilih) {
-                            this.formHapusTerpilih.submit();
-                        }
-                        this.modalHapusTerbuka = false;
-                    }
-                 }">
+    <div x-data="{ pilihVoucherOpen: false }">
         <div
             class="checkout-sticky-header relative -mx-5 -mt-6 flex h-14 items-center justify-center border-b border-gray-100 px-5 sm:-mx-8 md:-mx-10">
             <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
@@ -92,132 +76,158 @@
         {{-- ========================================================= --}}
         <div class="mt-5">
 
-            <div class="flex items-center justify-between">
+            <h2 class="text-sm font-bold text-gray-900">
+                Order Details
+            </h2>
 
-                <h2 class="text-sm font-bold text-gray-900">
-                    Order Details
-                </h2>
-
-                <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-                    class="text-xs font-bold text-brand-800">
-                    + Add More
-                </a>
-
-            </div>
-
-
-            <div class="mt-3 divide-y divide-gray-100 rounded-2xl border border-gray-100">
+            <div class="mt-2 divide-y divide-dashed divide-gray-200">
 
                 @foreach ($items as $item)
 
-                    <div class="flex items-center gap-3 p-3">
+                    <div class="py-3 first:pt-2">
 
-                        {{-- Product image --}}
-                        <div class="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-50">
+                        {{-- Nama produk + varian, foto di kanan --}}
+                        <div class="flex items-start justify-between gap-3">
 
-                            @if ($item['foto'])
+                            <div class="min-w-0 flex-1">
 
-                                <img src="{{ asset('storage/' . $item['foto']) }}" alt="{{ $item['nama_produk'] }}"
-                                    class="h-full w-full object-cover">
+                                <p class="text-xs font-bold leading-snug text-gray-900">
+                                    {{ $item['nama_produk'] }}
+                                </p>
 
-                            @else
+                                @if ($item['ukuran'])
 
-                                <div class="flex h-full w-full items-center justify-center text-brand-200">
+                                    <p class="mt-0.5 text-[11px] text-gray-400">
+                                        {{ $item['ukuran'] }}
+                                    </p>
 
-                                    @include('member.components.icon-cup', [
-                                        'class' => 'h-6 w-6'
-                                    ])
+                                @endif
 
-                                </div>
+                                @if ($item['catatan'])
 
-                            @endif
+                                    <p class="mt-0.5 truncate text-[11px] text-gray-400">
+                                        "{{ $item['catatan'] }}"
+                                    </p>
+
+                                @endif
+
+                            </div>
+
+                            {{-- Product image --}}
+                            <div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-gray-50">
+
+                                @if ($item['foto'])
+
+                                    <img src="{{ asset('storage/' . $item['foto']) }}" alt="{{ $item['nama_produk'] }}"
+                                        class="h-full w-full object-cover">
+
+                                @else
+
+                                    <div class="flex h-full w-full items-center justify-center text-brand-200">
+
+                                        @include('member.components.icon-cup', [
+                                            'class' => 'h-5 w-5'
+                                        ])
+
+                                    </div>
+
+                                @endif
+
+                            </div>
 
                         </div>
 
+                        {{-- Harga, Change, & stepper jumlah --}}
+                        <div class="mt-2 flex items-center justify-between gap-3">
 
-                        {{-- Product information --}}
-                        <div class="min-w-0 flex-1">
-
-                            <p class="truncate text-xs font-bold text-gray-900">
-                                {{ $item['nama_produk'] }}
-                            </p>
-
-                            @if ($item['ukuran'])
-
-                                <p class="text-[11px] text-gray-400">
-                                    {{ $item['ukuran'] }}
-                                </p>
-
-                            @endif
-
-                            @if ($item['catatan'])
-
-                                <p class="truncate text-[11px] text-gray-400">
-                                    "{{ $item['catatan'] }}"
-                                </p>
-
-                            @endif
-
-                            <p class="mt-1 text-xs font-extrabold text-gray-900">
+                            <p class="text-sm font-extrabold text-gray-900">
                                 Rp {{ number_format($item['harga_satuan'] * $item['jumlah'], 0, ',', '.') }}
                             </p>
 
-                        </div>
-
-
-                        {{-- Quantity + Hapus --}}
-                        <div class="flex shrink-0 flex-col items-end gap-2">
-
-                            <form method="POST" action="{{ route('member.keranjang.hapus', $item['id']) }}">
-                                @csrf
-                                @method('DELETE')
-                                <button type="button"
-                                    @click="bukaModalHapus($el.closest('form'), '{{ addslashes($item['nama_produk']) }}')"
-                                    class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition active:scale-90 active:text-red-500"
-                                    aria-label="Hapus dari keranjang">
-                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                                        <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 .8 12.2a1 1 0 0 0 1 .8h6.4a1 1 0 0 0 1-.8L18 7"
-                                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                </button>
-                            </form>
-
                             <div class="flex items-center gap-2">
 
-                                <form method="POST" action="{{ route('member.keranjang.ubah-jumlah', $item['id']) }}">
-                                    @csrf
-                                    @method('PATCH')
+                                @php
+                                    $urlUbahItem = $item['bundling_id']
+                                        ? route('member.bundling.show', $item['bundling_id']) . '?edit=' . $item['id']
+                                        : route('member.produk.show', $item['produk_id']) . '?edit=' . $item['id'];
+                                @endphp
 
-                                    <input type="hidden" name="jumlah" value="{{ $item['jumlah'] - 1 }}">
+                                <a href="{{ $urlUbahItem }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                    class="text-[11px] font-bold text-brand-800 transition active:opacity-70">
+                                    Change
+                                </a>
 
-                                    <button type="submit"
-                                        class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition active:scale-90">
-                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-                                            <path d="M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-                                        </svg>
-                                    </button>
-                                </form>
+                                <span class="h-4 border-l border-dashed border-gray-300"></span>
 
-                                <span class="w-4 text-center text-xs font-bold text-gray-900">
-                                    {{ $item['jumlah'] }}
-                                </span>
+                                <div class="flex items-center gap-0.5 rounded-full border border-brand-800 p-0.5">
 
-                                <form method="POST" action="{{ route('member.keranjang.ubah-jumlah', $item['id']) }}">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="jumlah" value="{{ $item['jumlah'] + 1 }}">
-                                    <button type="submit"
-                                        class="flex h-7 w-7 items-center justify-center rounded-full bg-brand-800 text-white transition active:scale-90">
-                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-                                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
-                                                stroke-linecap="round" />
-                                        </svg>
-                                    </button>
-                                </form>
+                                    <form method="POST"
+                                        action="{{ route('member.keranjang.ubah-jumlah', $item['id']) }}">
+                                        @csrf
+                                        @method('PATCH')
+
+                                        <input type="hidden" name="jumlah" value="{{ $item['jumlah'] - 1 }}">
+
+                                        <button type="submit"
+                                            class="flex h-6 w-6 items-center justify-center rounded-full text-brand-800 transition active:scale-90">
+                                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none">
+                                                <path d="M5 12h14" stroke="currentColor" stroke-width="2.5"
+                                                    stroke-linecap="round" />
+                                            </svg>
+                                        </button>
+                                    </form>
+
+                                    <span class="w-4 text-center text-[11px] font-bold text-gray-900">
+                                        {{ $item['jumlah'] }}
+                                    </span>
+
+                                    <form method="POST"
+                                        action="{{ route('member.keranjang.ubah-jumlah', $item['id']) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="jumlah" value="{{ $item['jumlah'] + 1 }}">
+                                        <button type="submit"
+                                            class="flex h-6 w-6 items-center justify-center rounded-full text-brand-800 transition active:scale-90">
+                                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none">
+                                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
+                                                    stroke-linecap="round" />
+                                            </svg>
+                                        </button>
+                                    </form>
+
+                                </div>
+
                             </div>
+
                         </div>
+
                     </div>
+
                 @endforeach
+
+            </div>
+
+            {{-- Want to add more? --}}
+            <div class="flex items-center justify-between gap-3 border-t border-dashed border-gray-200 pt-3">
+
+                <div class="min-w-0">
+
+                    <p class="text-xs font-bold text-gray-900">
+                        Want to add more?
+                    </p>
+
+                    <p class="mt-0.5 text-[11px] text-gray-400">
+                        Feel free to add more items in your order
+                    </p>
+
+                </div>
+
+                <a href="{{ route('member.menu') }}"
+                    onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+                    class="shrink-0 rounded-full border border-brand-800 px-3.5 py-1.5 text-[11px] font-bold text-brand-800 transition active:scale-95">
+                    Add More
+                </a>
+
             </div>
         </div>
 
@@ -240,47 +250,109 @@
 
 
         {{-- ========================================================= --}}
-        {{-- VOUCHER --}}
+        {{-- VOUCHER DISKON --}}
         {{-- ========================================================= --}}
         <div class="mt-5">
 
             <p class="text-xs font-bold text-gray-900">
-                Voucher
+                Voucher Diskon
             </p>
 
+            @php
+                $adaVoucherUnggulan = $voucherDipilih || $voucherTerbaik;
+            @endphp
 
-            {{-- Ini hanya ROW pemicunya --}}
-            <button type="button" onclick="openSheet('modal-pilih-voucher')"
-                class="expandable-row mt-2 flex w-full items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-left transition active:bg-gray-50">
+            <div class="mt-2 overflow-hidden rounded-2xl border border-gray-200">
 
-                <span class="flex items-center gap-2 text-xs font-semibold text-gray-700">
+                @if ($voucherDipilih)
 
-                    @include('member.components.icon-ticket', [
-                        'class' => 'h-4 w-4 text-brand-700'
-                    ])
+                    {{-- Voucher sedang dipakai --}}
+                    <div class="flex items-center justify-between gap-3 bg-brand-50 p-3.5">
 
-                    @if ($voucherDipilih)
+                        <div class="flex min-w-0 items-center gap-3">
 
-                        {{ $voucherDipilih->reward->nama ?? 'Voucher' }}
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-brand-700">
+                                @include('member.components.icon-ticket', ['class' => 'h-4 w-4'])
+                            </span>
 
-                    @else
+                            <div class="min-w-0">
+                                <p class="truncate text-xs font-bold text-brand-800">
+                                    {{ $voucherDipilih->reward->nama ?? 'Voucher' }}
+                                </p>
+                                <p class="mt-0.5 text-[11px] font-semibold text-brand-700">
+                                    Hemat Rp {{ number_format($diskon, 0, ',', '.') }} 🎉
+                                </p>
+                            </div>
 
-                        Pakai Voucher ({{ $voucherAktif->count() }} tersedia)
+                        </div>
 
-                    @endif
+                        <button type="button" onclick="openSheet('modal-pilih-voucher')"
+                            class="shrink-0 rounded-full border border-brand-800 bg-white px-4 py-1.5 text-[11px] font-bold text-brand-800 transition active:scale-95">
+                            Ganti
+                        </button>
 
-                </span>
+                    </div>
 
+                @elseif ($voucherTerbaik)
 
-                <span class="row-chevron text-gray-300">
+                    {{-- Voucher terbaik yang disarankan --}}
+                    @php
+                        $vtVoucher = $voucherTerbaik['voucher'];
+                        $vtDiskon = $voucherTerbaik['diskon'];
+                    @endphp
 
-                    @include('member.components.icon-chevron-right', [
-                        'class' => 'h-3.5 w-3.5'
-                    ])
+                    <div class="flex items-center justify-between gap-3 bg-gradient-to-r from-brand-50 to-white p-3.5">
 
-                </span>
+                        <div class="flex min-w-0 items-center gap-3">
 
-            </button>
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-brand-700">
+                                @include('member.components.icon-ticket', ['class' => 'h-4 w-4'])
+                            </span>
+
+                            <div class="min-w-0">
+                                <p class="text-[11px] font-bold text-gray-500">
+                                    1 voucher terbaik untukmu
+                                </p>
+                                <p class="truncate text-xs font-bold text-brand-700">
+                                    Hemat Rp {{ number_format($vtDiskon, 0, ',', '.') }} 🎉
+                                </p>
+                            </div>
+
+                        </div>
+
+                        <form method="POST" action="{{ route('member.checkout.voucher') }}">
+                            @csrf
+                            <input type="hidden" name="voucher_id" value="{{ $vtVoucher->id }}">
+                            <button type="submit"
+                                class="shrink-0 rounded-full border border-brand-800 px-5 py-1.5 text-[11px] font-bold text-brand-800 transition active:scale-95">
+                                Pakai
+                            </button>
+                        </form>
+
+                    </div>
+
+                @endif
+
+                {{-- Ini hanya ROW pemicu buka sheet daftar voucher --}}
+                <button type="button" onclick="openSheet('modal-pilih-voucher')"
+                    class="expandable-row flex w-full items-center justify-between px-4 py-3 text-left transition active:bg-gray-50
+                    {{ $adaVoucherUnggulan ? 'border-t border-dashed border-gray-200' : '' }}">
+
+                    <span class="text-[11px] font-semibold text-gray-600">
+                        @if ($voucherAktif->count() > 0)
+                            Lihat voucher lainnya ({{ $voucherAktif->count() }})
+                        @else
+                            Belum ada voucher aktif
+                        @endif
+                    </span>
+
+                    <span class="row-chevron text-gray-300">
+                        @include('member.components.icon-chevron-right', ['class' => 'h-3.5 w-3.5'])
+                    </span>
+
+                </button>
+
+            </div>
 
         </div>
 
@@ -561,53 +633,46 @@
                 Metode Pembayaran
             </p>
 
+            {{-- Row ini navigasi ke halaman baru (bukan sheet) --}}
+            <a href="{{ route('member.checkout.metode-pembayaran.pilih') }}"
+                onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                class="mt-2 flex w-full items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-left transition active:bg-gray-50">
 
-            <form method="POST" action="{{ route('member.checkout.metode-pembayaran') }}"
-                class="mt-2 grid grid-cols-2 gap-3">
-                @csrf
+                <span class="flex items-center gap-2.5 text-xs font-semibold text-gray-700">
 
-                @foreach ($metodePembayaranList as $metode)
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
 
-                        <button type="submit" name="metode_pembayaran" value="{{ $metode }}" class="flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-xs font-bold transition
-                                                        {{
-                    $metodeDipilih === $metode
-                    ? 'border-brand-800 bg-brand-50 text-brand-800'
-                    : 'border-gray-200 text-gray-600 active:bg-gray-50'
-                                                        }}">
+                        @if ($metodeDipilih === 'QRIS')
 
-                            @if ($metode === 'QRIS')
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+                                <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+                                <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+                                <path d="M14 14h3v3h-3zM19 14h2M14 19h2M19 17v4" stroke="currentColor" stroke-width="1.8"
+                                    stroke-linecap="round" />
+                            </svg>
 
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                                    <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+                        @else
 
-                                    <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                <rect x="2" y="6" width="20" height="13" rx="2" stroke="currentColor" stroke-width="1.8" />
+                                <path d="M2 10h20" stroke="currentColor" stroke-width="1.8" />
+                                <path d="M6 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                            </svg>
 
-                                    <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+                        @endif
 
-                                    <path d="M14 14h3v3h-3zM19 14h2M14 19h2M19 17v4" stroke="currentColor" stroke-width="1.8"
-                                        stroke-linecap="round" />
-                                </svg>
+                    </span>
 
-                            @else
+                    {{ $metodeDipilih }}
 
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                                    <rect x="2" y="6" width="20" height="13" rx="2" stroke="currentColor" stroke-width="1.8" />
+                </span>
 
-                                    <path d="M2 10h20" stroke="currentColor" stroke-width="1.8" />
+                <span class="text-gray-300">
+                    @include('member.components.icon-chevron-right', ['class' => 'h-3.5 w-3.5'])
+                </span>
 
-                                    <path d="M6 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                                </svg>
-
-                            @endif
-
-                            {{ $metode }}
-
-                        </button>
-
-                @endforeach
-
-            </form>
-
+            </a>
 
             <p class="mt-2 text-[10px] text-gray-400">
                 Pembayaran tetap dilakukan di kasir saat kamu mengambil pesanan —
@@ -618,122 +683,117 @@
 
 
         {{-- ========================================================= --}}
-        {{-- RINGKASAN PEMBAYARAN --}}
+        {{-- RINCIAN PEMBAYARAN --}}
         {{-- ========================================================= --}}
-        <div class="mt-5 space-y-2 rounded-2xl border border-dashed border-gray-200 p-4">
+        <div class="mt-5">
 
-            <div class="flex justify-between text-xs text-gray-500">
+            <h2 class="text-sm font-bold text-gray-900">
+                Rincian Pembayaran
+            </h2>
 
-                <span>
-                    Subtotal
-                </span>
-
-                <span class="font-semibold text-gray-800">
-                    Rp {{ number_format($subtotal, 0, ',', '.') }}
-                </span>
-
-            </div>
-
-
-            @if ($diskon > 0)
+            <div class="mt-2 space-y-2">
 
                 <div class="flex justify-between text-xs text-gray-500">
 
                     <span>
-                        Diskon Voucher
-                    </span>
-
-                    <span class="font-semibold text-red-500">
-                        - Rp {{ number_format($diskon, 0, ',', '.') }}
-                    </span>
-
-                </div>
-
-            @endif
-
-
-            @if ($pajak > 0)
-
-                <div class="flex justify-between text-xs text-gray-500">
-
-                    <span>
-                        Pajak
-                        ({{ rtrim(rtrim(number_format($pajakPersen, 1, ',', '.'), '0'), ',') }}%)
+                        Subtotal
                     </span>
 
                     <span class="font-semibold text-gray-800">
-                        Rp {{ number_format($pajak, 0, ',', '.') }}
+                        Rp {{ number_format($subtotal, 0, ',', '.') }}
                     </span>
 
                 </div>
 
-            @endif
+
+                @if ($diskon > 0)
+
+                    <div class="flex justify-between text-xs text-gray-500">
+
+                        <span>
+                            Diskon Voucher
+                        </span>
+
+                        <span class="font-semibold text-red-500">
+                            - Rp {{ number_format($diskon, 0, ',', '.') }}
+                        </span>
+
+                    </div>
+
+                @endif
 
 
-            <div class="mt-1 flex justify-between border-t border-dashed border-gray-200 pt-2 text-sm">
+                @if ($pajak > 0)
 
-                <span class="font-bold text-gray-900">
-                    Total Pembayaran
-                </span>
+                    <div class="flex justify-between text-xs text-gray-500">
 
-                <span class="font-extrabold text-gray-900">
-                    Rp {{ number_format($totalBayar, 0, ',', '.') }}
-                </span>
+                        <span>
+                            Pajak
+                            ({{ rtrim(rtrim(number_format($pajakPersen, 1, ',', '.'), '0'), ',') }}%)
+                        </span>
+
+                        <span class="font-semibold text-gray-800">
+                            Rp {{ number_format($pajak, 0, ',', '.') }}
+                        </span>
+
+                    </div>
+
+                @endif
+
+
+                <div class="flex justify-between border-t border-dashed border-gray-200 pt-2 text-sm">
+
+                    <span class="font-bold text-gray-900">
+                        Total Pembayaran
+                    </span>
+
+                    <span class="font-extrabold text-gray-900">
+                        Rp {{ number_format($totalBayar, 0, ',', '.') }}
+                    </span>
+
+                </div>
 
             </div>
 
 
             @if ($poinPotensial > 0)
 
-                <p class="!mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-brand-700">
+                <div class="mt-3 flex items-center gap-2.5 rounded-2xl bg-amber-50 px-3.5 py-3">
 
-                    @include('member.components.icon-gift', [
-                        'class' => 'h-3.5 w-3.5'
-                    ])
+                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-brand-700">
+                        @include('member.components.icon-gift', [
+                            'class' => 'h-3.5 w-3.5'
+                        ])
+                    </span>
 
-                    Kamu berpotensi dapat
-                    {{ $poinPotensial }}
-                    Fore Points
+                    <p class="text-[11px] font-semibold text-amber-800">
+                        Kamu berpotensi dapat
+                        <span class="font-extrabold text-brand-700">{{ $poinPotensial }} Fore Points</span>
+                    </p>
 
-                </p>
+                </div>
 
             @endif
 
 
-            <p class="!mt-2 text-[10px] text-gray-400">
-                Pembayaran dilakukan di kasir saat kamu mengambil pesanan.
-            </p>
+            <div class="mt-4">
+
+                <p class="text-xs font-bold text-gray-900">
+                    Kebijakan Pembatalan
+                </p>
+
+                <p class="mt-1 text-[11px] leading-relaxed text-gray-400">
+                    Pesanan tidak bisa dibatalkan atau diubah lagi setelah dibuat. Datang ke
+                    kasir sesuai kode pickup untuk membayar dan mengambil pesanan kamu.
+                </p>
+
+            </div>
 
         </div>
 
 
         {{-- Extra space supaya konten tidak ketutup sticky bottom --}}
         <div class="h-28"></div>
-
-        <!-- ========== MODAL: KONFIRMASI HAPUS ITEM KERANJANG ========== -->
-        <div x-show="modalHapusTerbuka" x-cloak x-transition
-            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
-            <div @click.away="modalHapusTerbuka = false"
-                class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100">
-                <div class="p-6 text-center">
-                    <div
-                        class="w-14 h-14 bg-red-100 text-red-600 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
-                        ⚠
-                    </div>
-                    <h3 class="font-extrabold text-gray-900 text-base">Hapus dari Keranjang?</h3>
-                    <p class="text-xs text-gray-500 mt-2">
-                        <span class="font-semibold text-gray-700" x-text="namaHapus"></span>
-                        akan dihapus dari keranjang kamu.
-                    </p>
-                </div>
-                <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-center gap-3">
-                    <button type="button" @click="modalHapusTerbuka = false"
-                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-lg transition text-gray-700">Batal</button>
-                    <button type="button" @click="konfirmasiHapus()"
-                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Hapus</button>
-                </div>
-            </div>
-        </div>
 
     </div>
 
@@ -744,16 +804,8 @@
                        2xl:max-w-6xl">
 
         <button type="submit" form="form-checkout"
-            class="flex w-full items-center justify-between rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
-
-            <span>
-                Order Now
-            </span>
-
-            <span>
-                Rp {{ number_format($totalBayar, 0, ',', '.') }}
-            </span>
-
+            class="flex w-full items-center justify-center rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
+            Order Now
         </button>
 
     </div>

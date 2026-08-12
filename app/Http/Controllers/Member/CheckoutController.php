@@ -52,6 +52,20 @@ class CheckoutController extends Controller
         $pajak = $this->hitungPajak($subtotal, $diskon);
         $totalBayar = max(0, $subtotal - $diskon + $pajak);
 
+        $voucherTerbaik = null;
+        if (! $voucherDipilih) {
+            $kandidatTerbaik = $voucherAktif
+                ->map(fn ($v) => [
+                    'voucher' => $v,
+                    'diskon' => $this->hitungDiskonVoucher($v, $items, $subtotal),
+                ])
+                ->filter(fn ($x) => $x['diskon'] > 0)
+                ->sortByDesc('diskon')
+                ->first();
+
+            $voucherTerbaik = $kandidatTerbaik ?: null;
+        }
+
         $metodeDipilih = Session::get(self::SESSION_METODE_KEY, self::METODE_PEMBAYARAN[0]);
 
         return view('member.checkout.index', [
@@ -64,6 +78,7 @@ class CheckoutController extends Controller
             'totalBayar' => $totalBayar,
             'voucherAktif' => $voucherAktif,
             'voucherDipilih' => $voucherDipilih,
+            'voucherTerbaik' => $voucherTerbaik,
             'metodePembayaranList' => self::METODE_PEMBAYARAN,
             'metodeDipilih' => $metodeDipilih,
             'storeNama' => self::NAMA_TOKO,
@@ -97,6 +112,20 @@ class CheckoutController extends Controller
         return back();
     }
 
+    public function metodePembayaranPage()
+    {
+        if (MemberCart::isEmpty()) {
+            return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
+        }
+
+        $metodeDipilih = Session::get(self::SESSION_METODE_KEY, self::METODE_PEMBAYARAN[0]);
+
+        return view('member.checkout.metode-pembayaran', [
+            'metodePembayaranList' => self::METODE_PEMBAYARAN,
+            'metodeDipilih' => $metodeDipilih,
+        ]);
+    }
+
     public function pilihMetodePembayaran(Request $request)
     {
         $validated = $request->validate([
@@ -105,7 +134,7 @@ class CheckoutController extends Controller
 
         Session::put(self::SESSION_METODE_KEY, $validated['metode_pembayaran']);
 
-        return back();
+        return redirect()->route('member.checkout.index');
     }
 
     public function store(Request $request)

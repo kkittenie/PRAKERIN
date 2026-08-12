@@ -1,10 +1,14 @@
 @extends('member.layout', ['title' => $bundling->nama_bundling])
 
+@php
+    $sedangUbah = (bool) $itemEdit;
+@endphp
+
 @section('content')
 
     <div x-data="{
-                    jumlah: 1,
-                    catatan: '',
+                    jumlah: {{ $itemEdit['jumlah'] ?? 1 }},
+                    catatan: @js($itemEdit['catatan'] ?? ''),
                     hargaSatuan: {{ (float) $bundling->harga }},
                     habis: {{ $habis ? 'true' : 'false' }},
 
@@ -38,7 +42,8 @@
                 @include('member.components.icon-cup', ['class' => 'h-20 w-20'])
             </div>
 
-            <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+            <a href="{{ $sedangUbah ? route('member.checkout.index') : route('member.menu') }}"
+                onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
                 class="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow-md transition active:scale-95 active:bg-gray-50"
                 aria-label="Kembali">
                 <span class="rotate-180">
@@ -130,7 +135,53 @@
 
             @if (Auth::guard('member')->check())
 
-                <form method="POST" action="{{ route('member.keranjang.tambah-bundling', $bundling) }}">
+                @if ($sedangUbah)
+
+                    <form method="POST" action="{{ route('member.keranjang.perbarui-bundling', $itemEdit['id']) }}">
+                        @csrf
+                        @method('PATCH')
+
+                        <input type="hidden" name="bundling_id" value="{{ $bundling->id }}">
+                        <input type="hidden" name="jumlah" :value="jumlah">
+                        <input type="hidden" name="catatan" :value="catatan">
+
+                        <div class="flex items-center gap-3">
+
+                            <div class="flex shrink-0 items-center gap-1.5 rounded-full bg-white">
+                                <button type="button" @click="kurangiJumlah()"
+                                    class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-brand-800 text-brand-800 transition active:scale-90"
+                                    aria-label="Kurangi jumlah">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                                        <path d="M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                                    </svg>
+                                </button>
+
+                                <span class="flex w-7 items-center justify-center text-base font-bold text-gray-900"
+                                    x-text="jumlah"></span>
+
+                                <button type="button" @click="tambahJumlah()"
+                                    class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm transition active:scale-90"
+                                    aria-label="Tambah jumlah">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
+                                            stroke-linecap="round" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <button type="submit"
+                                class="flex min-w-0 flex-1 items-center justify-center rounded-full bg-brand-800 px-6 py-4 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]"
+                                x-text="'Update – Rp ' + total.toLocaleString('id-ID')">
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                @else
+
+                <form method="POST" action="{{ route('member.keranjang.tambah-bundling', $bundling) }}"
+                    onsubmit="event.preventDefault(); kirimTambahKeranjang(this);">
                     @csrf
 
                     <input type="hidden" name="jumlah" :value="jumlah">
@@ -169,6 +220,8 @@
                     </div>
 
                 </form>
+
+                @endif
 
             @else
 

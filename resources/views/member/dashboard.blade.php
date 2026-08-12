@@ -290,4 +290,6 @@
         </div>
     </div>
 
+    @include('member.components.floating-cart')
+
 @endsection

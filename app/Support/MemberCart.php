@@ -59,6 +59,38 @@ class MemberCart
         Session::put(self::SESSION_KEY, array_values($items));
     }
 
+    /**
+     * Perbarui item yang sudah ada di keranjang (dipakai saat member membuka
+     * ulang halaman produk/bundling lewat "Change" di checkout). Berbeda
+     * dengan tambah(), ini tidak digabung dengan item lain — id item tetap
+     * sama, cuma field-nya yang ditimpa.
+     */
+    public static function perbarui(string $itemId, array $data): void
+    {
+        $items = self::items();
+
+        foreach ($items as &$item) {
+            if ($item['id'] === $itemId) {
+                $item = array_merge($item, $data);
+                break;
+            }
+        }
+        unset($item);
+
+        Session::put(self::SESSION_KEY, array_values($items));
+    }
+
+    public static function cariItem(string $itemId): ?array
+    {
+        foreach (self::items() as $item) {
+            if ($item['id'] === $itemId) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
     public static function ubahJumlah(string $itemId, int $jumlah): void
     {
         $items = self::items();

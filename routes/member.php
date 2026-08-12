@@ -51,9 +51,12 @@ Route::prefix('member')->name('member.')->group(function () {
         Route::post('/produk/{produk}/keranjang', [KeranjangController::class, 'tambah'])->name('keranjang.tambah');
         Route::post('/bundling/{bundling}/keranjang', [KeranjangController::class, 'tambahBundling'])->name('keranjang.tambah-bundling');
         Route::patch('/keranjang/{itemId}', [KeranjangController::class, 'ubahJumlah'])->name('keranjang.ubah-jumlah');
+        Route::patch('/keranjang/{itemId}/perbarui', [KeranjangController::class, 'perbarui'])->name('keranjang.perbarui');
+        Route::patch('/keranjang/{itemId}/perbarui-bundling', [KeranjangController::class, 'perbaruiBundling'])->name('keranjang.perbarui-bundling');
         Route::delete('/keranjang/{itemId}', [KeranjangController::class, 'hapus'])->name('keranjang.hapus');
 
         Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+        Route::get('/checkout/metode-pembayaran', [CheckoutController::class, 'metodePembayaranPage'])->name('checkout.metode-pembayaran.pilih');
         Route::post('/checkout/voucher', [CheckoutController::class, 'pilihVoucher'])->name('checkout.voucher');
         Route::post('/checkout/metode-pembayaran', [CheckoutController::class, 'pilihMetodePembayaran'])->name('checkout.metode-pembayaran');
         Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');

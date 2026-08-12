@@ -272,9 +272,250 @@
             </div>
         </dialog>
 
+        {{-- Sheet konfirmasi "Ditambahkan ke Keranjang" (fore-app style) --}}
+        <dialog id="sheet-tambah-keranjang"
+            class="sheet fixed inset-x-0 bottom-0 top-auto m-0 mx-auto max-h-[88vh] w-full max-w-md rounded-t-3xl border-0 p-0 shadow-2xl sm:max-w-xl md:max-w-2xl">
+
+            <div class="flex max-h-[88vh] flex-col">
+
+                {{-- Handle --}}
+                <div class="flex shrink-0 justify-center pb-1 pt-3">
+                    <span class="h-1 w-10 rounded-full bg-gray-200"></span>
+                </div>
+
+                <div class="overflow-y-auto px-5 pb-2 pt-2">
+
+                    <h3 class="text-center text-sm font-extrabold text-brand-700">
+                        Pilihan Menarik Lainnya
+                    </h3>
+
+                    {{-- Kartu item yang baru ditambahkan --}}
+                    <div class="mt-4 flex items-center gap-3 rounded-2xl border border-gray-100 p-3">
+                        <div class="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-50">
+                            <img id="tk-item-foto" src="" alt="" class="hidden h-full w-full object-cover">
+                            <div id="tk-item-foto-fallback"
+                                class="flex h-full w-full items-center justify-center text-brand-200">
+                                @include('member.components.icon-cup', ['class' => 'h-7 w-7'])
+                            </div>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-start justify-between gap-2">
+                                <p id="tk-item-nama" class="truncate text-sm font-bold text-gray-900"></p>
+                                <span id="tk-item-jumlah"
+                                    class="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full border border-gray-200 px-1.5 text-[11px] font-bold text-gray-600"></span>
+                            </div>
+                            <p id="tk-item-varian" class="mt-0.5 text-xs text-gray-400"></p>
+                            <p class="mt-1 flex items-center gap-1 text-xs font-bold text-brand-700">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5">
+                                    <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="3"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                Berhasil ditambahkan ke keranjang!
+                            </p>
+                        </div>
+                    </div>
+
+                    {{-- Cross-sell / bundle up --}}
+                    <div id="tk-bundle-section" class="mt-4 hidden rounded-2xl bg-amber-50/70 p-4">
+                        <p class="text-xs font-extrabold text-gray-900">Lengkapi Pesanan, Hemat Lebih Banyak!</p>
+
+                        <div class="mt-3 flex items-center gap-3 rounded-2xl bg-white p-2.5 shadow-sm">
+                            <div class="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-50">
+                                <img id="tk-saran-foto" src="" alt="" class="hidden h-full w-full object-cover">
+                                <div id="tk-saran-foto-fallback"
+                                    class="flex h-full w-full items-center justify-center text-brand-200">
+                                    @include('member.components.icon-cup', ['class' => 'h-6 w-6'])
+                                </div>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p id="tk-saran-nama" class="truncate text-xs font-bold text-gray-900"></p>
+                                <div class="mt-1 flex items-center gap-1.5">
+                                    <span id="tk-saran-harga-final" class="text-xs font-extrabold text-brand-700"></span>
+                                    <span id="tk-saran-harga-asli"
+                                        class="hidden text-[11px] text-gray-400 line-through"></span>
+                                </div>
+                            </div>
+                            <button type="button" id="tk-saran-tambah" onclick="tambahSaranSilang()"
+                                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm transition active:scale-90"
+                                aria-label="Tambah ke keranjang">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
+                                        stroke-linecap="round" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                {{-- Aksi --}}
+                <div class="shrink-0 border-t border-gray-100 px-5 pb-5 pt-3"
+                    style="padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));">
+                    <button type="button" id="tk-btn-lihat-keranjang" onclick="lihatKeranjangDariSheet()"
+                        class="w-full rounded-2xl bg-brand-800 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
+                        Lihat Keranjang
+                    </button>
+                    <button type="button" onclick="tambahItemLainDariSheet()"
+                        class="mt-2 w-full rounded-2xl border border-brand-800 py-3 text-sm font-bold text-brand-800 transition active:scale-[0.99]">
+                        Tambah Item Lain
+                    </button>
+                </div>
+
+            </div>
+        </dialog>
+
     </div>
 
     <script>
+        let __tkCheckoutUrl = null;
+        let __tkMenuUrl = null;
+
+        async function kirimTambahKeranjang(form) {
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    body: new FormData(form),
+                });
+
+                if (res.status === 401 || res.status === 419) {
+                    window.location.reload();
+                    return;
+                }
+
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert((data.message) || 'Gagal menambahkan ke keranjang.');
+                    return;
+                }
+
+                tampilkanSheetTambahKeranjang(data);
+            } catch (e) {
+                alert('Terjadi kesalahan, coba lagi.');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function tampilkanSheetTambahKeranjang(data) {
+            __tkCheckoutUrl = data.checkout_url;
+            __tkMenuUrl = data.menu_url;
+
+            document.getElementById('tk-item-nama').innerText = data.item.nama;
+            document.getElementById('tk-item-jumlah').innerText = 'x' + data.item.jumlah;
+
+            const varianTxt = data.item.ukuran || '';
+            const varianEl = document.getElementById('tk-item-varian');
+            varianEl.innerText = varianTxt;
+            varianEl.classList.toggle('hidden', !varianTxt);
+
+            const fotoEl = document.getElementById('tk-item-foto');
+            const fotoFallback = document.getElementById('tk-item-foto-fallback');
+            if (data.item.foto_url) {
+                fotoEl.src = data.item.foto_url;
+                fotoEl.classList.remove('hidden');
+                fotoFallback.classList.add('hidden');
+            } else {
+                fotoEl.classList.add('hidden');
+                fotoFallback.classList.remove('hidden');
+            }
+
+            const bundleSection = document.getElementById('tk-bundle-section');
+            const tombolSaran = document.getElementById('tk-saran-tambah');
+
+            if (data.suggestion) {
+                bundleSection.classList.remove('hidden');
+                document.getElementById('tk-saran-nama').innerText = data.suggestion.nama;
+                document.getElementById('tk-saran-harga-final').innerText =
+                    'Rp ' + Number(data.suggestion.harga_final).toLocaleString('id-ID');
+
+                const hargaAsliEl = document.getElementById('tk-saran-harga-asli');
+                if (data.suggestion.ada_promo) {
+                    hargaAsliEl.innerText = 'Rp ' + Number(data.suggestion.harga_asli).toLocaleString('id-ID');
+                    hargaAsliEl.classList.remove('hidden');
+                } else {
+                    hargaAsliEl.classList.add('hidden');
+                }
+
+                const saranFoto = document.getElementById('tk-saran-foto');
+                const saranFotoFallback = document.getElementById('tk-saran-foto-fallback');
+                if (data.suggestion.foto_url) {
+                    saranFoto.src = data.suggestion.foto_url;
+                    saranFoto.classList.remove('hidden');
+                    saranFotoFallback.classList.add('hidden');
+                } else {
+                    saranFoto.classList.add('hidden');
+                    saranFotoFallback.classList.remove('hidden');
+                }
+
+                tombolSaran.dataset.addUrl = data.suggestion.add_url;
+                tombolSaran.disabled = false;
+                tombolSaran.classList.remove('bg-gray-300');
+                tombolSaran.classList.add('bg-brand-800');
+                tombolSaran.innerHTML = '<svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>';
+            } else {
+                bundleSection.classList.add('hidden');
+            }
+
+            openSheet('sheet-tambah-keranjang');
+        }
+
+        async function tambahSaranSilang() {
+            const btn = document.getElementById('tk-saran-tambah');
+            const url = btn.dataset.addUrl;
+            if (!url || btn.disabled) return;
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                    body: new URLSearchParams({ jumlah: 1 }),
+                });
+
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert((data.message) || 'Gagal menambahkan ke keranjang.');
+                    btn.disabled = false;
+                    return;
+                }
+
+                __tkCheckoutUrl = data.checkout_url;
+                __tkMenuUrl = data.menu_url;
+
+                btn.classList.remove('bg-brand-800');
+                btn.classList.add('bg-gray-300');
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            } catch (e) {
+                btn.disabled = false;
+            }
+        }
+
+        function lihatKeranjangDariSheet() {
+            closeSheet('sheet-tambah-keranjang');
+            if (__tkCheckoutUrl) {
+                setTimeout(() => animateNavigate(__tkCheckoutUrl, 'forward'), 150);
+            }
+        }
+
+        function tambahItemLainDariSheet() {
+            closeSheet('sheet-tambah-keranjang');
+            if (__tkMenuUrl) {
+                setTimeout(() => animateNavigate(__tkMenuUrl, 'back'), 150);
+            }
+        }
+
         function bukaModalLoginRequired(namaFitur) {
             document.getElementById('login-required-msg').innerText = 'Silakan masuk atau daftar akun Saisho untuk mengakses fitur ' + namaFitur + '.';
             openSheet('modal-login-required');
