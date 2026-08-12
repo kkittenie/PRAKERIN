@@ -9,14 +9,14 @@
     <div>
 
         {{-- Promo Banner (1 big image, carousel like welcome page) + Greeting Card, stacked Fore-style --}}
-        <div class="-mx-5 sm:-mx-8 md:-mx-10 relative">
+        <div class="-mx-5 sm:mx-0 relative">
             {{-- Notification button, floating top-right over the banner --}}
             <button type="button" class="absolute right-4 top-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur transition hover:bg-black/40">
                 <svg viewBox="0 0 24 24" fill="none" class="h-[18px] w-[18px]"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
 
             @if (count($promoBanners))
-                <div id="promo-viewport" class="relative h-80 md:h-[380px] lg:h-[420px] landscape:h-64 md:landscape:h-72 w-full touch-pan-x overflow-hidden rounded-b-[1.5rem]">
+                <div id="promo-viewport" class="relative h-80 md:h-[380px] lg:h-[420px] landscape:h-64 md:landscape:h-72 w-full touch-pan-x overflow-hidden rounded-b-[1.5rem] sm:rounded-3xl">
                     <div id="promo-track" class="flex h-full transition-transform duration-[450ms] ease-out" style="width: {{ count($promoBanners) * 100 }}%;">
                         @foreach ($promoBanners as $banner)
                             <div class="relative h-full shrink-0" style="width: {{ 100 / count($promoBanners) }}%;">

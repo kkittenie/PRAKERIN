@@ -13,14 +13,9 @@ use Illuminate\Support\Facades\Log;
 
 class PesananPickupController extends Controller
 {
-    /**
-     * Daftar pesanan Pick Up yang masuk dari Member App. Kasir lihat semua
-     * pesanan yang masih berjalan (diproses/siap diambil) plus riwayat
-     * ringkas yang sudah selesai/dibatalkan.
-     */
     public function indeks(Request $request)
     {
-        $status = $request->query('status', 'aktif');
+        $status = $request->query('status', 'semua');
 
         $query = Transaksi::with(['detailTransaksi', 'member'])
             ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP);
@@ -32,9 +27,8 @@ class PesananPickupController extends Controller
         }
 
         $pesanan = $query->orderBy(
-            // Yang "Diproses" ditampilkan duluan (perlu aksi kasir), baru "Siap Diambil".
             DB::raw("FIELD(status_pesanan, '" . Transaksi::STATUS_DIPROSES . "', '" . Transaksi::STATUS_SIAP_DIAMBIL . "')")
-        )->latest()->get();
+        )->latest()->paginate(10)->withQueryString();
 
         $jumlahDiproses = Transaksi::where('asal_pesanan', Transaksi::ASAL_MEMBER_APP)
             ->where('status_pesanan', Transaksi::STATUS_DIPROSES)->count();
@@ -146,14 +140,6 @@ class PesananPickupController extends Controller
             return back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
         }
     }
-
-    /**
-     * Verifikasi kode pickup yang ditunjukkan member ke kasir. Ini titik
-     * serah-terima: pesanan ditandai Sudah Diambil, pembayaran dilunaskan,
-     * dan baru di sinilah member mendapat poin & stamp — sama seperti
-     * transaksi kasir biasa (TransaksiKasirController::bayar), supaya
-     * member tidak mendapat poin untuk pesanan yang batal/tidak diambil.
-     */
     public function verifikasiKode(Request $request)
     {
         $validated = $request->validate([

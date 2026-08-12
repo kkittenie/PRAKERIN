@@ -65,15 +65,32 @@
             }
          }">
 
-        {{-- Ringkasan --}}
-        <div class="grid grid-cols-2 lg:grid-cols-2 gap-4">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Diproses</p>
-                <p class="mt-1 text-2xl font-extrabold text-amber-600 dark:text-amber-400">{{ number_format($jumlahDiproses, 0, ',', '.') }}</p>
-            </div>
-            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Siap Diambil</p>
-                <p class="mt-1 text-2xl font-extrabold text-blue-600 dark:text-blue-400">{{ number_format($jumlahSiap, 0, ',', '.') }}</p>
+        {{-- Header & Filter --}}
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-1">Daftar Pesanan Pick Up</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Pesanan yang masuk dari Member App.</p>
+                </div>
+                <form method="GET" action="{{ route('pesanan-pickup.indeks') }}" id="searchForm"
+                    class="w-full sm:w-56">
+                    @php
+                        $tabs = [
+                            'semua' => 'Semua',
+                            'aktif' => 'Aktif',
+                            \App\Models\Transaksi::STATUS_DIPROSES => 'Diproses',
+                            \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => 'Siap Diambil',
+                            \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => 'Sudah Diambil',
+                            \App\Models\Transaksi::STATUS_DIBATALKAN => 'Dibatalkan',
+                        ];
+                    @endphp
+                    <select name="status" id="statusFilter" onchange="document.getElementById('searchForm').submit()"
+                        class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-900 transition">
+                        @foreach ($tabs as $value => $label)
+                            <option value="{{ $value }}" {{ $statusFilter === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </form>
             </div>
         </div>
 
@@ -155,63 +172,60 @@
             </div>
         </div>
 
-        <x-common.component-card title="Daftar Pesanan Pick Up" desc="Pesanan yang masuk dari Member App.">
-
-            {{-- Filter status --}}
-            <div class="flex flex-wrap gap-2">
-                @php
-                    $tabs = [
-                        'aktif' => 'Aktif',
-                        'semua' => 'Semua',
-                        \App\Models\Transaksi::STATUS_DIPROSES => 'Diproses',
-                        \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => 'Siap Diambil',
-                        \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => 'Sudah Diambil',
-                        \App\Models\Transaksi::STATUS_DIBATALKAN => 'Dibatalkan',
-                    ];
-                @endphp
-                @foreach ($tabs as $value => $label)
-                    <a href="{{ route('pesanan-pickup.indeks', ['status' => $value]) }}"
-                       class="px-4 py-2 rounded-xl text-xs font-semibold transition
-                       {{ $statusFilter === $value ? 'bg-brand-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700' }}">
-                        {{ $label }}
-                    </a>
-                @endforeach
-            </div>
+        <x-common.component-card>
 
             {{-- Tabel pesanan --}}
-            <div class="overflow-x-auto mt-4">
+            <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                            <th class="py-3.5 px-2 sm:hidden w-7 text-center"></th>
                             <th class="py-3.5 px-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Kode Pickup</th>
-                            <th class="py-3.5 px-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Pembeli</th>
-                            <th class="py-3.5 px-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Item</th>
+                            <th class="py-3.5 px-3 hidden sm:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Pembeli</th>
+                            <th class="py-3.5 px-3 hidden sm:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Item</th>
                             <th class="py-3.5 px-3 hidden md:table-cell text-right text-sm font-semibold text-gray-700 dark:text-gray-300">Total</th>
                             <th class="py-3.5 px-3 hidden lg:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Waktu Order</th>
-                            <th class="py-3.5 px-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
+                            <th class="py-3.5 px-3 hidden sm:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
                             <th class="py-3.5 px-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                        @forelse ($pesanan as $item)
-                            @php
-                                $statusBadge = [
-                                    \App\Models\Transaksi::STATUS_DIPROSES => ['label' => 'Diproses', 'class' => 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'],
-                                    \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => ['label' => 'Ready for Pickup', 'class' => 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400'],
-                                    \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => ['label' => 'Sudah Diambil', 'class' => 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400'],
-                                    \App\Models\Transaksi::STATUS_DIBATALKAN => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400'],
-                                ][$item->status_pesanan] ?? ['label' => '-', 'class' => 'bg-gray-100 text-gray-500'];
-                            @endphp
+                    @forelse ($pesanan as $item)
+                        @php
+                            $statusBadge = [
+                                \App\Models\Transaksi::STATUS_DIPROSES => ['label' => 'Diproses', 'class' => 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'],
+                                \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => ['label' => 'Ready for Pickup', 'class' => 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400'],
+                                \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => ['label' => 'Sudah Diambil', 'class' => 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400'],
+                                \App\Models\Transaksi::STATUS_DIBATALKAN => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400'],
+                            ][$item->status_pesanan] ?? ['label' => '-', 'class' => 'bg-gray-100 text-gray-500'];
+                        @endphp
+                        <tbody x-data="{ open: false }"
+                            class="divide-y divide-gray-100 dark:divide-gray-800 border-b border-gray-100 dark:border-gray-800">
                             <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition duration-200 text-gray-700 dark:text-gray-300 align-top">
-                                <td class="py-3.5 px-3">
-                                    <span class="font-mono text-xs font-bold tracking-widest text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">{{ $item->kode_pickup }}</span>
-                                    <span class="block mt-1 text-[11px] text-gray-400">{{ $item->kode_transaksi }}</span>
+                                <td class="py-3.5 px-2 sm:hidden text-center">
+                                    <button @click="open = !open" type="button"
+                                        class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center text-xs font-bold transition-transform duration-200"
+                                        :class="open ? 'rotate-90 bg-amber-500 text-white' : ''">
+                                        <span x-text="open ? '−' : '+'"></span>
+                                    </button>
                                 </td>
                                 <td class="py-3.5 px-3">
+                                    @if ($item->status_pesanan === \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL)
+                                        <span class="font-mono text-xs font-bold tracking-widest text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">{{ $item->kode_pickup }}</span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 font-mono text-xs font-bold tracking-widest text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md" title="Kode hanya terlihat di Member App">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                            ••••••
+                                        </span>
+                                    @endif
+                                    <span class="block mt-1 text-[11px] text-gray-400">{{ $item->kode_transaksi }}</span>
+                                </td>
+                                <td class="py-3.5 px-3 hidden sm:table-cell">
                                     <span class="block font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{{ $item->nama_pembeli }}</span>
                                     <span class="block text-xs text-gray-400">{{ $item->member->no_hp ?? '-' }}</span>
                                 </td>
-                                <td class="py-3.5 px-3">
+                                <td class="py-3.5 px-3 hidden sm:table-cell">
                                     <ul class="space-y-0.5 text-xs text-gray-600 dark:text-gray-300">
                                         @foreach ($item->detailTransaksi->filter(fn ($d) => is_null($d->bundling_id) || is_null($d->produk_id) || (float) $d->harga_satuan != 0 || (float) $d->subtotal != 0)->groupBy('nama_produk') as $namaProduk => $group)
                                             <li>{{ $group->sum('jumlah') }}x {{ $namaProduk }}</li>
@@ -227,7 +241,7 @@
                                 <td class="py-3.5 px-3 hidden lg:table-cell text-gray-500 dark:text-gray-400">
                                     {{ $item->created_at->translatedFormat('d M Y, H:i') }}
                                 </td>
-                                <td class="py-3.5 px-3 text-center">
+                                <td class="py-3.5 px-3 hidden sm:table-cell text-center">
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusBadge['class'] }}">
                                         {{ $statusBadge['label'] }}
                                     </span>
@@ -293,19 +307,67 @@
                                     @endcan
                                 </td>
                             </tr>
-                        @empty
+
+                            <!-- Dropdown Row for Hidden Mobile Columns -->
+                            <tr x-show="open" x-cloak x-transition
+                                class="sm:hidden bg-amber-50/50 dark:bg-amber-950/30 text-xs">
+                                <td colspan="3" class="p-4">
+                                    <div class="flex flex-col gap-3 text-gray-600 dark:text-gray-300 w-full">
+                                        <div>
+                                            <span class="text-gray-400 block text-[11px] mb-0.5">Pembeli</span>
+                                            <span class="font-semibold text-gray-800 dark:text-white">{{ $item->nama_pembeli }}</span>
+                                            <span class="block text-gray-400">{{ $item->member->no_hp ?? '-' }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-400 block text-[11px] mb-0.5">Item</span>
+                                            <ul class="space-y-0.5 text-gray-700 dark:text-gray-300">
+                                                @foreach ($item->detailTransaksi->filter(fn ($d) => is_null($d->bundling_id) || is_null($d->produk_id) || (float) $d->harga_satuan != 0 || (float) $d->subtotal != 0)->groupBy('nama_produk') as $namaProduk => $group)
+                                                    <li>{{ $group->sum('jumlah') }}x {{ $namaProduk }}</li>
+                                                @endforeach
+                                            </ul>
+                                            @if ($item->catatan_pesanan)
+                                                <p class="mt-1 italic text-gray-400">"{{ $item->catatan_pesanan }}"</p>
+                                            @endif
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <span class="text-gray-400 block text-[11px] mb-0.5">Total</span>
+                                                <span class="font-semibold text-gray-800 dark:text-white">Rp {{ number_format($item->total_bayar, 0, ',', '.') }}</span>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-400 block text-[11px] mb-0.5">Waktu Order</span>
+                                                <span class="font-semibold text-gray-800 dark:text-white">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-400 block text-[11px] mb-0.5">Status</span>
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusBadge['class'] }}">
+                                                {{ $statusBadge['label'] }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    @empty
+                        <tbody>
                             <tr>
-                                <td colspan="7" class="py-10 text-center text-sm text-gray-400">
+                                <td colspan="8" class="py-10 text-center text-sm text-gray-400">
                                     Belum ada pesanan pick up untuk filter ini.
                                 </td>
                             </tr>
-                        @endforelse
-                    </tbody>
+                        </tbody>
+                    @endforelse
                 </table>
             </div>
+
+            @if ($pesanan->hasPages())
+                <div class="mt-4 px-1">
+                    {{ $pesanan->onEachSide(1)->links() }}
+                </div>
+            @endif
         </x-common.component-card>
 
-        <!-- ========== MODAL: KONFIRMASI BATALKAN PESANAN ========== -->
         <div x-show="modalBatalTerbuka" x-cloak x-transition
             class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
             <div @click.away="modalBatalTerbuka = false"

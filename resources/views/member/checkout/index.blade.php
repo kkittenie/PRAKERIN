@@ -739,10 +739,9 @@
 
     <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-none
                        border-t border-gray-100 bg-white/95 px-5 py-4
-                       backdrop-blur sm:max-w-2xl sm:px-8 sm:pb-6
-                       md:max-w-4xl md:px-10
-                       lg:max-w-5xl
-                       xl:max-w-6xl">
+                       backdrop-blur sm:px-8 sm:pb-6
+                       md:px-10
+                       2xl:max-w-6xl">
 
         <button type="submit" form="form-checkout"
             class="flex w-full items-center justify-between rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">

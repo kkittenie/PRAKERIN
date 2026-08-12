@@ -10,12 +10,20 @@
             searching: false,
             scrolled: false,
             menuScrollerMaxHeight: 0,
+            chipsOffset: 16,
             updateMenuScrollerHeight() {
                 this.$nextTick(() => {
                     const el = this.$refs.menuScroller;
                     if (!el) return;
                     const top = el.getBoundingClientRect().top;
                     this.menuScrollerMaxHeight = Math.max(180, window.innerHeight - top - 72);
+                });
+            },
+            updateChipsOffset() {
+                this.$nextTick(() => {
+                    const header = this.$refs.compactHeader;
+                    const tinggiHeader = (this.scrolled && header) ? header.offsetHeight : 0;
+                    this.chipsOffset = tinggiHeader > 0 ? tinggiHeader + 16 : 16;
                 });
             },
             taglines: ['Freshly Baked Every Day', 'Skip The Line, Order Ahead', 'Your Favorite Cakes &amp; Bakes', 'Order Now, Pick Up Later'],
@@ -25,7 +33,7 @@
              setInterval(() => taglineIdx = (taglineIdx + 1) % taglines.length, 4500);
              $nextTick(() => {
                  updateMenuScrollerHeight();
-                 window.addEventListener('resize', () => updateMenuScrollerHeight());
+                 window.addEventListener('resize', () => { updateMenuScrollerHeight(); updateChipsOffset(); });
              });
          ">
 
@@ -39,7 +47,7 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 -translate-y-2"
-             class="pointer-events-none absolute inset-x-0 top-0 z-50">
+             class="pointer-events-none absolute inset-x-0 top-0 z-50" x-ref="compactHeader">
             <div class="bg-white px-5 pb-4 pt-3 shadow-sm sm:px-8 md:px-10">
                 <div class="mx-auto flex max-w-screen-xl items-start gap-3">
                     <a href="{{ route('member.beranda') }}"
@@ -137,7 +145,7 @@
 
         {{-- Category chips + search, merged in one row (search icon overlapping at the right) --}}
         @if ($kategoris->isNotEmpty() || $daftarBundling->isNotEmpty())
-            <div :class="scrolled ? 'mt-20' : 'mt-4'"
+            <div :style="`margin-top: ${chipsOffset}px`"
                  class="relative flex items-center gap-2 pb-8 transition-[margin] duration-200">
                 <div class="flex-1 overflow-x-auto" style="scrollbar-width:none;" x-show="! searching">
                     <div class="flex gap-2">
@@ -203,6 +211,7 @@
                  const isScrolled = $refs.menuScroller.scrollTop > 10;
                  if (scrolled !== isScrolled) {
                      scrolled = isScrolled;
+                     updateChipsOffset();
                      setTimeout(() => updateMenuScrollerHeight(), 240);
                  }
              "

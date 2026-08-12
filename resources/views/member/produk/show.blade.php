@@ -208,7 +208,7 @@
 
         </div>
 
-        <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:max-w-2xl sm:px-8 md:max-w-4xl md:px-10 lg:max-w-5xl xl:max-w-6xl"
+        <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 2xl:max-w-6xl"
             style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));">
 
             @if (Auth::guard('member')->check())

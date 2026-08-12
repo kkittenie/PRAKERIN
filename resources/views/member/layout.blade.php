@@ -158,9 +158,9 @@
         }
     </style>
 </head>
-<body class="h-full overflow-x-hidden bg-gray-50 font-outfit text-gray-800 antialiased">
+<body class="h-full overflow-x-hidden bg-gray-50 font-outfit text-gray-800 antialiased flex flex-col">
 
-    <div id="app-card" class="mx-auto flex min-h-screen w-full max-w-none sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl flex-col bg-white shadow-2xl sm:my-6 sm:min-h-0 sm:rounded-3xl sm:border sm:border-gray-200/80 transition-all duration-300">
+    <div id="app-card" class="mx-auto flex flex-1 w-full max-w-none 2xl:max-w-6xl flex-col bg-white sm:border-x sm:border-gray-200/80">
 
         {{-- Flash messages (toast, fixed, auto-dismiss) --}}
         @if (session('success') || session('error') || $errors->any())
@@ -177,7 +177,7 @@
         @endif
 
         {{-- Main Page Content --}}
-        <main class="flex flex-1 flex-col {{ request()->routeIs('member.profil') ? '' : 'px-5 sm:px-8 md:px-10' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-28 sm:pb-32' }}">
+        <main class="flex flex-1 flex-col {{ request()->routeIs('member.profil') ? '' : 'px-5 sm:px-8 md:px-10' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-6' }}">
             @yield('content')
         </main>
 
@@ -196,7 +196,7 @@
             };
         @endphp
         @unless(request()->routeIs('member.profil') || request()->routeIs('member.produk.show') || request()->routeIs('member.checkout.index'))
-        <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 z-30 w-full max-w-none sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl bg-white/95 backdrop-blur-md border-t border-gray-200/80 sm:rounded-b-3xl sm:bottom-6 sm:shadow-xl px-4 sm:px-8 py-2 transition-all duration-300">
+        <nav class="sticky bottom-0 z-30 w-full bg-white/95 backdrop-blur-md border-t border-gray-200/80 px-4 sm:px-8 py-2">
             <div class="grid grid-cols-4 gap-1 text-center">
                 
                 {{-- Home / Beranda --}}

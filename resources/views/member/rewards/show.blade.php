@@ -26,7 +26,7 @@
 @section('content')
 
     {{-- App-bar style header: back button on the left, title centered --}}
-    <div class="relative -mx-5 sm:-mx-8 md:-mx-10 -mt-6 flex items-center justify-center border-b border-gray-100 px-5 py-4">
+    <div class="relative -mx-5 sm:mx-0 -mt-6 flex items-center justify-center border-b border-gray-100 px-5 py-4 sm:rounded-t-3xl">
         <a href="{{ route('member.reward.index') }}"
            onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
            class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100">
@@ -36,7 +36,7 @@
     </div>
 
     {{-- Hero image: uses the reward image uploaded from the admin panel. --}}
-    <div class="relative -mx-5 sm:-mx-8 md:-mx-10 h-36 overflow-hidden bg-gradient-to-br {{ $isVoucher ? 'from-brand-100 to-brand-200' : 'from-orange-100 to-orange-200' }} md:h-48">
+    <div class="relative -mx-5 sm:mx-0 h-36 overflow-hidden bg-gradient-to-br {{ $isVoucher ? 'from-brand-100 to-brand-200' : 'from-orange-100 to-orange-200' }} md:h-48 sm:rounded-2xl">
         @if ($reward->gambar)
             <img
                 src="{{ asset('storage/' . $reward->gambar) }}"

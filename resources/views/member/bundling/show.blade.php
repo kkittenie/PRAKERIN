@@ -68,6 +68,12 @@
                 <h2 class="mt-1 text-lg font-extrabold leading-snug text-gray-900">
                     {{ $bundling->nama_bundling }}
                 </h2>
+                
+                <div class="mt-4">
+                    <p class="mt-1.5 text-xs leading-relaxed text-gray-500">
+                        {{ $bundling->deskripsi ?: '' }}
+                    </p>
+                </div>
 
                 <div class="mt-2 flex items-center gap-2">
                     <span class="text-base font-extrabold text-gray-900">
@@ -76,15 +82,6 @@
                 </div>
             </div>
 
-            <div class="mt-4">
-                <h3 class="text-xs font-bold text-gray-900">
-                    Deskripsi
-                </h3>
-
-                <p class="mt-1.5 text-xs leading-relaxed text-gray-500">
-                    {{ $bundling->deskripsi ?: 'Belum ada deskripsi untuk paket ini.' }}
-                </p>
-            </div>
 
             {{-- Isi paket --}}
             <div class="mt-4">
@@ -128,7 +125,7 @@
 
         </div>
 
-        <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:max-w-2xl sm:px-8 md:max-w-4xl md:px-10 lg:max-w-5xl xl:max-w-6xl"
+        <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 2xl:max-w-6xl"
             style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));">
 
             @if (Auth::guard('member')->check())
