@@ -768,7 +768,7 @@
 
                     <p class="text-[11px] font-semibold text-amber-800">
                         Kamu berpotensi dapat
-                        <span class="font-extrabold text-brand-700">{{ $poinPotensial }} Fore Points</span>
+                        <span class="font-extrabold text-brand-700">{{ $poinPotensial }} Saisho Points</span>
                     </p>
 
                 </div>
