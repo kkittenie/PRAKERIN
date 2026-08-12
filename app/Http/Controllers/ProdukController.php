@@ -88,7 +88,9 @@ class ProdukController extends Controller
 
     public function show(Produk $produk)
     {
-        //
+        $produk->load('kategori');
+
+        return view('pages.produk.show', compact('produk'));
     }
 
     public function edit(Produk $produk)

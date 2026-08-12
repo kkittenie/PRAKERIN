@@ -94,7 +94,10 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-2 sm:px-3 font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">
-                                    {{ $item->nama_produk }}
+                                    <a href="{{ route('produk.show', $item->id) }}"
+                                        class="hover:text-amber-600 dark:hover:text-amber-400 transition">
+                                        {{ $item->nama_produk }}
+                                    </a>
                                     <div class="sm:hidden text-[10px] text-gray-400 font-normal mt-0.5">
                                         {{ $item->kategori->nama_kategori ?? '-' }}
                                     </div>
@@ -144,6 +147,8 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-2 sm:px-3 text-right space-x-1 whitespace-nowrap">
+                                    <a href="{{ route('produk.show', $item->id) }}"
+                                        class="text-blue-600 dark:text-blue-400 font-semibold hover:underline text-xs sm:text-sm">Detail</a>
                                     <a href="{{ route('produk.edit', $item->id) }}"
                                         class="text-amber-600 dark:text-amber-400 font-semibold hover:underline text-xs sm:text-sm">Edit</a>
                                     <form action="{{ route('produk.destroy', $item->id) }}" method="POST" class="inline">
@@ -213,6 +218,12 @@
                                                 <span
                                                     class="font-bold {{ $item->stok <= $item->stok_minimum ? 'text-red-600' : 'text-green-600' }}">{{ $item->stok }}</span>
                                                 <span class="text-gray-400 text-[10px]">(Min: {{ $item->stok_minimum }})</span>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-400 block text-[11px] mb-0.5">Deskripsi</span>
+                                                <span class="text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                    {{ $item->deskripsi ?: '-' }}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
