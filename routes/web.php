@@ -27,6 +27,7 @@ use App\Http\Controllers\Member\StampController as MemberStampController;
 use App\Http\Controllers\VoucherKasirController;
 use App\Http\Controllers\StampRedemptionKasirController;
 use App\Http\Controllers\PesananPickupController;
+use App\Http\Controllers\BannerController;
 
 require __DIR__ . '/member.php';
 
@@ -80,6 +81,13 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('kategori-produk', KategoriProdukController::class)
         ->middleware('permission:lihat_kategori_produk|tambah_kategori_produk|edit_kategori_produk|hapus_kategori_produk');
+
+    Route::patch('/banner/{banner}/toggle-status', [BannerController::class, 'toggleStatus'])
+        ->name('banner.toggle-status')
+        ->middleware('permission:edit_banner');
+    
+    Route::resource('banner', BannerController::class)
+        ->middleware('permission:lihat_banner|tambah_banner|edit_banner|hapus_banner');    
 
     Route::patch('/produk/{produk}/toggle-status', [ProdukController::class, 'toggleStatus'])->name('produk.toggle-status');
 

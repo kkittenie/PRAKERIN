@@ -32,6 +32,7 @@ class MenuHelper
                     ['name' => 'Bundling', 'path' => '/bundling', 'permission' => 'lihat_bundling'],
                     ['name' => 'Satuan', 'path' => '/satuan', 'permission' => 'lihat_satuan'],
                     ['name' => 'Bahan Baku', 'path' => '/bahan-baku', 'permission' => 'lihat_stok'],
+                    ['name' => 'Banner', 'path' => '/banner', 'permission' => 'lihat_banner'],
                 ]
             ],
             [

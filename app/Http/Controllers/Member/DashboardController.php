@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Models\RewardKatalog;
+use App\Models\Banner;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -25,21 +26,15 @@ class DashboardController extends Controller
         ]);
     }
 
-    protected function promoBanners(): array
+    protected function promoBanners()
     {
-        return [
-            [
-                'gradient' => 'from-brand-700 via-brand-800 to-brand-900',
-                'gambar' => 'storage/banner/banner-1.jpeg',
-            ],
-            [
-                'gradient' => 'from-orange-500 via-orange-600 to-brand-800',
-                'gambar' => 'storage/banner/banner-2.jpeg',
-            ],
-            [
-                'gradient' => 'from-orange-600 via-orange-700 to-brand-900',
-                'gambar' => 'storage/banner/banner-3.jpeg',
-            ],
-        ];
+        return \App\Models\Banner::tampil()
+            ->orderBy('urutan')
+            ->get()
+            ->map(function ($banner) {
+                return [
+                    'gambar' => 'storage/' . $banner->gambar,
+                ];
+            });
     }
 }
