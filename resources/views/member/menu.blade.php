@@ -23,7 +23,7 @@
                 this.$nextTick(() => {
                     const header = this.$refs.compactHeader;
                     const tinggiHeader = (this.scrolled && header) ? header.offsetHeight : 0;
-                    this.chipsOffset = tinggiHeader > 0 ? tinggiHeader + 16 : 16;
+                    this.chipsOffset = tinggiHeader > 0 ? tinggiHeader - 8 : 16;
                 });
             },
             taglines: ['Freshly Baked Every Day', 'Skip The Line, Order Ahead', 'Your Favorite Cakes &amp; Bakes', 'Order Now, Pick Up Later'],
@@ -146,7 +146,7 @@
         {{-- Category chips + search, merged in one row (search icon overlapping at the right) --}}
         @if ($kategoris->isNotEmpty() || $daftarBundling->isNotEmpty())
             <div :style="`margin-top: ${chipsOffset}px`"
-                 class="relative flex items-center gap-2 pb-8 transition-[margin] duration-200">
+                 class="relative flex items-center gap-2 pb-4 transition-[margin] duration-200">
                 <div class="flex-1 overflow-x-auto" style="scrollbar-width:none;" x-show="! searching">
                     <div class="flex gap-2">
                         <button type="button" @click="activeKategori = 'semua'"

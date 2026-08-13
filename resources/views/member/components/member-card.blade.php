@@ -1,7 +1,19 @@
 @props(['member'])
 
 @php
-    $tierIcon = ['Bronze' => 'text-orange-200', 'Silver' => 'text-gray-100', 'Gold' => 'text-warning-200'][$member->level] ?? 'text-white/80';
+    // Warna ikon tier diambil dari pengaturan "Aturan Naik Level" di POS
+    // (warna_badge), bukan hardcode nama level, supaya tetap konsisten
+    // walau admin ganti nama/tambah level baru.
+    $tierIcon = match ($member->warna_badge_level ?? 'gray') {
+        'yellow' => 'text-yellow-200',
+        'slate' => 'text-slate-200',
+        'amber' => 'text-amber-200',
+        'blue' => 'text-blue-200',
+        'green' => 'text-green-200',
+        'purple' => 'text-purple-200',
+        'red' => 'text-red-200',
+        default => 'text-white/80',
+    };
     $progres = $member->progres_tier;
     $nomorSamar = str_repeat('•', max(0, strlen($member->no_hp) - 4)).substr($member->no_hp, -4);
 @endphp

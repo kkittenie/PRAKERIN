@@ -2,7 +2,9 @@
 
 @section('content')
 
-    <h1 class="text-center text-lg font-extrabold text-gray-900">Vouchers</h1>
+    <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-3 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10">
+        <h1 class="text-center text-lg font-extrabold text-gray-900">Vouchers</h1>
+    </div>
 
     <div class="mt-3 flex items-center justify-center gap-1.5 rounded-2xl border border-gray-100 bg-brand-25 py-2.5 text-xs text-gray-500">
         Poin kamu saat ini:

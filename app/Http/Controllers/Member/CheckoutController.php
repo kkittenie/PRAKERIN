@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Session;
 class CheckoutController extends Controller
 {
     private const NAMA_TOKO = 'Saisho Cake & Bakery';
-    private const ALAMAT_TOKO = 'Jl. Kemboja Jl. Tuparev No.1, Cirebon';
+    private const ALAMAT_TOKO = 'Jl. Kamboja No. 1 Tuparev, Cirebon';
     private const SESSION_VOUCHER_KEY = 'member_checkout_voucher_id';
     private const SESSION_METODE_KEY = 'member_checkout_metode_pembayaran';
 
@@ -112,9 +112,13 @@ class CheckoutController extends Controller
         return back();
     }
 
-    public function metodePembayaranPage()
+    public function metodePembayaranPage(Request $request)
     {
-        if (MemberCart::isEmpty()) {
+        $dariAkun = $request->query('from') === 'akun';
+
+        // Diakses dari alur checkout: tetap wajib ada keranjang aktif.
+        // Diakses dari Account (atur preferensi pembayaran): boleh kapan saja.
+        if (! $dariAkun && MemberCart::isEmpty()) {
             return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
         }
 
@@ -123,6 +127,7 @@ class CheckoutController extends Controller
         return view('member.checkout.metode-pembayaran', [
             'metodePembayaranList' => self::METODE_PEMBAYARAN,
             'metodeDipilih' => $metodeDipilih,
+            'dariAkun' => $dariAkun,
         ]);
     }
 
@@ -130,9 +135,14 @@ class CheckoutController extends Controller
     {
         $validated = $request->validate([
             'metode_pembayaran' => 'required|string|in:' . implode(',', self::METODE_PEMBAYARAN),
+            'from' => 'nullable|string|in:akun',
         ]);
 
         Session::put(self::SESSION_METODE_KEY, $validated['metode_pembayaran']);
+
+        if (($validated['from'] ?? null) === 'akun') {
+            return redirect()->route('member.akun')->with('success', 'Metode pembayaran berhasil diperbarui.');
+        }
 
         return redirect()->route('member.checkout.index');
     }

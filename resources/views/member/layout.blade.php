@@ -146,6 +146,18 @@
             animation: toastOut 0.2s ease forwards;
         }
 
+        /* Sticky page title bar (Account / Vouchers / Riwayat, etc.) — bleeds
+           full-width past the <main> padding so it sits flush under the
+           safe-area, stays pinned while the rest of the page scrolls under it. */
+        .page-sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
         /* ===== TABLET & LANDSCAPE RESPONSIVE ===== */
         /* Constrain dialog sheets on landscape / short viewports */
         @media (orientation: landscape) {

@@ -285,7 +285,7 @@
             @if ($jenis === 'pelanggan')
                 @php
                     $toko = '';
-                    $alamat = 'Jl. Kemboja Jl. Tuparev No.1, Kedungjaya, Kec. Kedawung, Kabupaten Cirebon';
+                    $alamat = 'Jl. Kamboja No. 1 Tuparev, Kedungjaya, Kec. Kedawung, Kabupaten Cirebon';
                     $subtotal = (float) $transaksi->subtotal;
                     $diskon = (float) $transaksi->diskon;
                     $diskonPersen = $subtotal > 0 ? ($diskon / $subtotal) * 100 : 0;
@@ -560,7 +560,7 @@
 
         if ($jenis === 'pelanggan') {
             $toko = "Saisho Cake & Bakery";
-            $alamat = "Jl. Kemboja Jl. Tuparev No.1, Kedungjaya, Kec. Kedawung, Kabupaten Cirebon";
+            $alamat = "Jl. Kamboja No. 1 Tuparev, Kedungjaya, Kec. Kedawung, Kabupaten Cirebon";
             $subtotal = (float) $transaksi->subtotal;
             $diskon = (float) $transaksi->diskon;
             $diskonPersen = $subtotal > 0 ? ($diskon / $subtotal) * 100 : 0;

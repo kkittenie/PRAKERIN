@@ -32,8 +32,7 @@ class AkunController extends Controller
             'nama' => ['required', 'string', 'max:100'],
             'email' => ['nullable', 'email', 'max:150', Rule::unique('members', 'email')->ignore($member->id)],
             'tanggal_lahir' => ['nullable', 'date'],
-            'gender' => ['nullable', Rule::in(['Laki-laki', 'Perempuan'])],
-            'foto' => ['nullable', 'image', 'max:2048'],
+            'foto' => ['nullable', 'image', 'max:8192'],
         ]);
 
         if ($request->hasFile('foto')) {
@@ -46,5 +45,22 @@ class AkunController extends Controller
         $member->update($data);
 
         return redirect()->route('member.akun')->with('success', 'Profil kamu berhasil diperbarui.');
+    }
+
+    public function hapusAkun(Request $request)
+    {
+        $member = Auth::guard('member')->user();
+
+        if ($member->foto) {
+            Storage::disk('public')->delete($member->foto);
+        }
+
+        $member->delete();
+
+        Auth::guard('member')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('member.welcome')->with('success', 'Akun kamu berhasil dihapus.');
     }
 }

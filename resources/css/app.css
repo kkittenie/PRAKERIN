@@ -8,6 +8,14 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+/* Alpine's x-cloak attribute does nothing on its own — it needs this rule
+   to actually hide elements until Alpine finishes initializing. Without it,
+   any x-show/x-cloak element (modals, dropdowns, etc.) flashes visible on
+   page load before Alpine evaluates its state. */
+[x-cloak] {
+  display: none !important;
+}
+
 
 @custom-variant dark (&:is(.dark *));
 

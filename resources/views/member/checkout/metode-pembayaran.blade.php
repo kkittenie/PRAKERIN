@@ -15,7 +15,8 @@
 
     <div
         class="checkout-sticky-header relative -mx-5 -mt-6 flex h-14 items-center justify-center border-b border-gray-100 px-5 sm:-mx-8 md:-mx-10">
-        <a href="{{ route('member.checkout.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+        <a href="{{ $dariAkun ? route('member.akun') : route('member.checkout.index') }}"
+            onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
             class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100">
             <span class="rotate-180">
                 @include('member.components.icon-chevron-right', ['class' => 'h-4 w-4'])
@@ -31,6 +32,9 @@
 
         <form method="POST" action="{{ route('member.checkout.metode-pembayaran') }}" class="space-y-2">
             @csrf
+            @if ($dariAkun)
+                <input type="hidden" name="from" value="akun">
+            @endif
 
             @foreach ($metodePembayaranList as $metode)
 

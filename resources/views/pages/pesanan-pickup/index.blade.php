@@ -226,9 +226,15 @@
                                     <span class="block text-xs text-gray-400">{{ $item->member->no_hp ?? '-' }}</span>
                                 </td>
                                 <td class="py-3.5 px-3 hidden sm:table-cell">
-                                    <ul class="space-y-0.5 text-xs text-gray-600 dark:text-gray-300">
-                                        @foreach ($item->detailTransaksi->filter(fn ($d) => is_null($d->bundling_id) || is_null($d->produk_id) || (float) $d->harga_satuan != 0 || (float) $d->subtotal != 0)->groupBy('nama_produk') as $namaProduk => $group)
-                                            <li>{{ $group->sum('jumlah') }}x {{ $namaProduk }}</li>
+                                    <ul class="space-y-1 text-xs text-gray-600 dark:text-gray-300">
+                                        @foreach ($item->detailTransaksi->filter(fn ($d) => is_null($d->bundling_id) || is_null($d->produk_id) || (float) $d->harga_satuan != 0 || (float) $d->subtotal != 0)->groupBy(fn ($d) => $d->nama_produk . '|' . $d->catatan) as $group)
+                                            @php $detail = $group->first(); @endphp
+                                            <li>
+                                                {{ $group->sum('jumlah') }}x {{ $detail->nama_produk }}
+                                                @if ($detail->catatan)
+                                                    <span class="block text-[11px] italic text-gray-400">{{ $detail->catatan }}</span>
+                                                @endif
+                                            </li>
                                         @endforeach
                                     </ul>
                                     @if ($item->catatan_pesanan)
@@ -320,9 +326,15 @@
                                         </div>
                                         <div>
                                             <span class="text-gray-400 block text-[11px] mb-0.5">Item</span>
-                                            <ul class="space-y-0.5 text-gray-700 dark:text-gray-300">
-                                                @foreach ($item->detailTransaksi->filter(fn ($d) => is_null($d->bundling_id) || is_null($d->produk_id) || (float) $d->harga_satuan != 0 || (float) $d->subtotal != 0)->groupBy('nama_produk') as $namaProduk => $group)
-                                                    <li>{{ $group->sum('jumlah') }}x {{ $namaProduk }}</li>
+                                            <ul class="space-y-1 text-gray-700 dark:text-gray-300">
+                                                @foreach ($item->detailTransaksi->filter(fn ($d) => is_null($d->bundling_id) || is_null($d->produk_id) || (float) $d->harga_satuan != 0 || (float) $d->subtotal != 0)->groupBy(fn ($d) => $d->nama_produk . '|' . $d->catatan) as $group)
+                                                    @php $detail = $group->first(); @endphp
+                                                    <li>
+                                                        {{ $group->sum('jumlah') }}x {{ $detail->nama_produk }}
+                                                        @if ($detail->catatan)
+                                                            <span class="block text-[11px] italic text-gray-400">{{ $detail->catatan }}</span>
+                                                        @endif
+                                                    </li>
                                                 @endforeach
                                             </ul>
                                             @if ($item->catatan_pesanan)

@@ -174,15 +174,29 @@
 
                         <div>
                             <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Kata Sandi</label>
-                            <input id="password" name="password" type="password" required minlength="6" placeholder="Minimal 6 karakter"
-                                   class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                            <div class="relative">
+                                <input id="password" name="password" type="password" required minlength="6" placeholder="Minimal 6 karakter"
+                                       class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                                <button type="button" onclick="togglePasswordVisibility('password', this)" aria-label="Tampilkan kata sandi"
+                                        class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
+                                    <svg class="eye-icon-show h-4.5 w-4.5" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
+                                    <svg class="eye-icon-hide hidden h-4.5 w-4.5" viewBox="0 0 24 24" fill="none"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M9.36 5.16A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-3.22 3.9M6.5 6.64C3.68 8.36 2 11 2 11a13.2 13.2 0 0 0 3.22 3.9A11 11 0 0 0 12 17c.86 0 1.68-.1 2.45-.28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                            </div>
                             @error('password') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label for="password_confirmation" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Konfirmasi Kata Sandi</label>
-                            <input id="password_confirmation" name="password_confirmation" type="password" required minlength="6" placeholder="Ulangi kata sandi"
-                                   class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                            <div class="relative">
+                                <input id="password_confirmation" name="password_confirmation" type="password" required minlength="6" placeholder="Ulangi kata sandi"
+                                       class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                                <button type="button" onclick="togglePasswordVisibility('password_confirmation', this)" aria-label="Tampilkan kata sandi"
+                                        class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
+                                    <svg class="eye-icon-show h-4.5 w-4.5" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
+                                    <svg class="eye-icon-hide hidden h-4.5 w-4.5" viewBox="0 0 24 24" fill="none"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M9.36 5.16A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-3.22 3.9M6.5 6.64C3.68 8.36 2 11 2 11a13.2 13.2 0 0 0 3.22 3.9A11 11 0 0 0 12 17c.86 0 1.68-.1 2.45-.28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                            </div>
                             <p id="password-error-text" class="mt-1 text-xs text-red-500 font-semibold hidden"></p>
                         </div>
 
@@ -202,6 +216,15 @@
         let currentStep = 1;
         let countdownTimer = null;
         let generatedOtpCode = '123456';
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const showing = input.type === 'text';
+            input.type = showing ? 'password' : 'text';
+            btn.querySelector('.eye-icon-show').classList.toggle('hidden', !showing);
+            btn.querySelector('.eye-icon-hide').classList.toggle('hidden', showing);
+            btn.setAttribute('aria-label', showing ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi');
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             const card = document.getElementById('app-card');

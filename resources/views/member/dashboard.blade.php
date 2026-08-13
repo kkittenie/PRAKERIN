@@ -2,6 +2,16 @@
 
 @php
     $waCs = '6282000768044';
+    $warnaBadgeTier = match ($member?->warna_badge_level ?? 'gray') {
+        'yellow' => 'bg-yellow-600',
+        'slate' => 'bg-slate-500',
+        'amber' => 'bg-amber-700',
+        'blue' => 'bg-blue-600',
+        'green' => 'bg-green-600',
+        'purple' => 'bg-purple-600',
+        'red' => 'bg-red-600',
+        default => 'bg-gray-500',
+    };
 @endphp
 
 @section('content')
@@ -21,34 +31,10 @@
                         @foreach ($promoBanners as $banner)
                             <div class="relative h-full shrink-0" style="width: {{ 100 / count($promoBanners) }}%;">
                                 @if (! empty($banner['gambar']))
-                                    <img src="{{ asset($banner['gambar']) }}" alt="{{ $banner['judul'] }}" class="absolute inset-0 h-full w-full object-cover object-center">
+                                    <img src="{{ asset($banner['gambar']) }}" alt="Promo Saisho" class="absolute inset-0 h-full w-full object-cover object-center">
                                 @else
                                     <div class="absolute inset-0 bg-gradient-to-br {{ $banner['gradient'] }}"></div>
                                 @endif
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/0"></div>
-
-                                <div class="relative z-10 flex h-full flex-col justify-end p-5 pb-14">
-                                    @if (! empty($banner['badge']))
-                                        <span class="mb-auto inline-block w-fit rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-800 shadow-sm">
-                                            {{ $banner['badge'] }}
-                                        </span>
-                                    @endif
-
-                                    <p class="text-[11px] font-semibold text-white/80">{{ $banner['periode'] }}</p>
-                                    <h3 class="mt-1 text-lg font-extrabold leading-tight text-white drop-shadow">{{ $banner['judul'] }}</h3>
-                                    <p class="mt-1 text-sm font-bold text-white">
-                                        Mulai dari
-                                        @if ($banner['harga_coret'])
-                                            <span class="ml-1 text-white/60 line-through">{{ $banner['harga_coret'] }}</span>
-                                        @endif
-                                        <span class="ml-1">{{ $banner['harga'] }}</span>
-                                    </p>
-
-                                    <span class="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur">
-                                        @include('member.components.icon-clock', ['class' => 'h-3.5 w-3.5'])
-                                        {{ $banner['waktu'] }}
-                                    </span>
-                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -56,7 +42,7 @@
                     @if (count($promoBanners) > 1)
                         <div id="promo-dots" class="pointer-events-none absolute inset-x-0 bottom-16 z-20 flex items-center justify-center gap-1.5">
                             @foreach ($promoBanners as $i => $banner)
-                                <button type="button" onclick="goToPromoSlide({{ $i }})" class="promo-dot pointer-events-auto h-1.5 rounded-full bg-white/50 transition-all {{ $i === 0 ? 'w-4 !bg-white' : 'w-1.5' }}" aria-label="Promo {{ $i + 1 }}"></button>
+                                <button type="button" onclick="goToPromoSlide({{ $i }})" class="promo-dot pointer-events-auto rounded-full bg-white/50 transition-all {{ $i === 0 ? 'h-2.5 w-2.5 !bg-white' : 'h-1.5 w-1.5' }}" aria-label="Promo {{ $i + 1 }}"></button>
                             @endforeach
                         </div>
                     @endif
@@ -78,8 +64,10 @@
                         current = index;
                         track.style.transform = `translateX(-${current * (100 / totalSlides)}%)`;
                         dots.forEach((dot, i) => {
-                            dot.classList.toggle('w-4', i === current);
+                            dot.classList.toggle('h-2.5', i === current);
+                            dot.classList.toggle('w-2.5', i === current);
                             dot.classList.toggle('!bg-white', i === current);
+                            dot.classList.toggle('h-1.5', i !== current);
                             dot.classList.toggle('w-1.5', i !== current);
                         });
                     };
@@ -110,6 +98,37 @@
                         startAuto();
                     }, { passive: true });
 
+                    // Drag pakai mouse (desktop/trackpad), biar geser tanpa klik titiknya juga bisa
+                    let mouseStartX = 0;
+                    let mouseDragging = false;
+
+                    viewport.addEventListener('mousedown', (e) => {
+                        mouseStartX = e.clientX;
+                        mouseDragging = true;
+                        stopAuto();
+                    });
+
+                    viewport.addEventListener('mousemove', (e) => {
+                        if (!mouseDragging) return;
+                        e.preventDefault();
+                    });
+
+                    window.addEventListener('mouseup', (e) => {
+                        if (!mouseDragging) return;
+                        const diffX = mouseStartX - e.clientX;
+                        if (diffX > 35) window.goToPromoSlide((current + 1) % totalSlides);
+                        else if (diffX < -35) window.goToPromoSlide((current - 1 + totalSlides) % totalSlides);
+                        mouseDragging = false;
+                        startAuto();
+                    });
+
+                    viewport.addEventListener('mouseleave', () => {
+                        if (mouseDragging) {
+                            mouseDragging = false;
+                            startAuto();
+                        }
+                    });
+
                     startAuto();
                 })();
             </script>
@@ -137,7 +156,7 @@
                                 {{ number_format($member->poin, 0, ',', '.') }} Poin
                             </span>
                             <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 py-1.5 pl-1.5 pr-3 text-xs font-bold text-gray-800">
-                                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-800 text-white">
+                                <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $warnaBadgeTier }} text-white">
                                     @include('member.components.icon-crown', ['class' => 'h-3.5 w-3.5'])
                                 </span>
                                 Tier {{ $member->level }}
@@ -184,10 +203,9 @@
                 <span class="pointer-events-none absolute right-8 bottom-9 h-2 w-2 rounded-full bg-orange-200"></span>
                 <span class="pointer-events-none absolute right-1 bottom-9 h-2.5 w-2.5 rounded-full bg-orange-200/80"></span>
                 <span class="relative block text-base font-extrabold leading-tight text-orange-700">Delivery</span>
-                <p class="relative mt-1 text-[11px] leading-snug text-gray-500">Pesan via WhatsApp,<br>kami antar</p>
+                <p class="relative mt-1 text-[11px] leading-snug text-gray-500">Pesan via Aplikasi<br>kami antar</p>
             </a>
         </div>
-        <p class="mt-2 text-center text-[11px] text-gray-400">Lihat menu untuk pick up, atau pesan delivery via WhatsApp</p>
 
         @auth('member')
             {{-- Aksi cepat member: tukar poin & riwayat --}}

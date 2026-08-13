@@ -11,11 +11,11 @@ class Member extends Authenticatable
 {
     use Notifiable, LogsActivity;
 
-    protected $fillable = ['nama', 'no_hp', 'email', 'tanggal_lahir', 'gender', 'foto', 'poin', 'password'];
+    protected $fillable = ['nama', 'no_hp', 'email', 'tanggal_lahir', 'foto', 'poin', 'password'];
 
     protected $hidden = ['password', 'remember_token'];
 
-    protected $appends = ['level'];
+    protected $appends = ['level', 'warna_badge_level'];
 
     protected function casts(): array
     {
@@ -27,18 +27,23 @@ class Member extends Authenticatable
 
     public function getKelengkapanProfilAttribute(): int
     {
-        $fields = [$this->email, $this->tanggal_lahir, $this->gender];
-        $terisi = count(array_filter($fields, fn ($f) => ! is_null($f) && $f !== ''));
+        $fields = [$this->email, $this->tanggal_lahir];
+        $terisi = count(array_filter($fields, fn($f) => !is_null($f) && $f !== ''));
 
-        return (int) round((1 + $terisi) / 4 * 100);
+        return (int) round((1 + $terisi) / 3 * 100);
+    }
+
+    protected function levelAktif(): ?MemberLevel
+    {
+        return MemberLevel::aktif()
+            ->where('minimal_poin', '<=', $this->poin)
+            ->reorder('minimal_poin', 'desc')
+            ->first();
     }
 
     public function getLevelAttribute(): string
     {
-        $level = MemberLevel::aktif()
-            ->where('minimal_poin', '<=', $this->poin)
-            ->reorder('minimal_poin', 'desc')
-            ->first();
+        $level = $this->levelAktif();
 
         if ($level) {
             return $level->nama_level;
@@ -47,6 +52,22 @@ class Member extends Authenticatable
         $levelTerendah = MemberLevel::aktif()->orderBy('minimal_poin')->first();
 
         return $levelTerendah->nama_level ?? 'Member';
+    }
+
+    // Warna badge (gray/amber/slate/yellow/blue/green/purple/red) dari
+    // pengaturan "Aturan Naik Level" di POS, buat mewarnai badge tier di
+    // member app supaya konsisten sama yang di-set admin.
+    public function getWarnaBadgeLevelAttribute(): string
+    {
+        $level = $this->levelAktif();
+
+        if ($level) {
+            return $level->warna_badge ?? 'gray';
+        }
+
+        $levelTerendah = MemberLevel::aktif()->orderBy('minimal_poin')->first();
+
+        return $levelTerendah->warna_badge ?? 'gray';
     }
 
     public function getProgresTierAttribute(): ?array
@@ -61,7 +82,7 @@ class Member extends Authenticatable
             ->orderBy('minimal_poin')
             ->first();
 
-        if (! $levelBerikutnya) {
+        if (!$levelBerikutnya) {
             return null;
         }
 

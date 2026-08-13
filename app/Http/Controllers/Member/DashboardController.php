@@ -29,24 +29,16 @@ class DashboardController extends Controller
     {
         return [
             [
-                'badge' => 'Baru',
-                'periode' => '1 - 31 Agustus 2026',
-                'judul' => 'Paket Sarapan Hemat',
-                'harga_coret' => 'Rp45K',
-                'harga' => 'Rp35K',
-                'waktu' => '7 - 11 Pagi',
                 'gradient' => 'from-brand-700 via-brand-800 to-brand-900',
-                'gambar' => 'storage/produk/chocolate-croissant.jpeg',
+                'gambar' => 'storage/banner/banner-1.jpeg',
             ],
             [
-                'badge' => 'Member Baru',
-                'periode' => 'Berlaku Selamanya',
-                'judul' => 'Bonus 50 Poin Pendaftaran',
-                'harga_coret' => null,
-                'harga' => 'Langsung cair',
-                'waktu' => 'Daftar sekarang',
                 'gradient' => 'from-orange-500 via-orange-600 to-brand-800',
-                'gambar' => 'storage/produk/chocolate-fudge-cake.jpeg',
+                'gambar' => 'storage/banner/banner-2.jpeg',
+            ],
+            [
+                'gradient' => 'from-orange-600 via-orange-700 to-brand-900',
+                'gambar' => 'storage/banner/banner-3.jpeg',
             ],
         ];
     }

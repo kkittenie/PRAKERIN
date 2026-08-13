@@ -30,7 +30,7 @@ class MenuController extends Controller
             'daftarBundling' => $daftarBundling,
             'waCs' => '6282000768044',
             'storeNama' => 'Saisho Cake & Bakery',
-            'storeAlamat' => 'Jl. Tuparev No. 12,Jl. Kemboja Jl. Tuparev No.1, Cirebon',
+            'storeAlamat' => 'Jl. Kamboja No. 1 Tuparev, Cirebon',
         ]);
     }
 }

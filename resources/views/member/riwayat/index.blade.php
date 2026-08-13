@@ -58,7 +58,9 @@
         }
     </style>
 
-    <h1 class="text-center text-lg font-extrabold text-gray-900">Riwayat</h1>
+    <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-3 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10">
+        <h1 class="text-center text-lg font-extrabold text-gray-900">Riwayat</h1>
+    </div>
 
     @if ($isEmpty)
         @include('member.components.empty-state', [

@@ -38,6 +38,7 @@ Route::prefix('member')->name('member.')->group(function () {
     Route::middleware('auth:member')->group(function () {
         Route::get('/profil', [AkunController::class, 'profil'])->name('profil');
         Route::post('/profil', [AkunController::class, 'updateProfil'])->name('profil.update');
+        Route::delete('/profil', [AkunController::class, 'hapusAkun'])->name('profil.hapus-akun');
 
         Route::get('/reward', [RewardController::class, 'index'])->name('reward.index');
         Route::get('/reward/{reward}', [RewardController::class, 'show'])->name('reward.show');
