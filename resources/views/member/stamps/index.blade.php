@@ -9,7 +9,6 @@
         <span class="font-bold text-brand-800">{{ number_format($member->poin, 0, ',', '.') }}</span>
     </div>
 
-    {{-- Same tab bar as the voucher catalog, so Stamp reads as a tab, not a separate page --}}
     <div class="mt-5 grid grid-cols-3 border-b border-gray-100">
         @foreach ([
             ['label' => 'Semua', 'href' => route('member.reward.index'), 'active' => false],
@@ -26,16 +25,13 @@
         @endforeach
     </div>
 
-    {{-- Everything below is fetched and injected as-is into the Stamp pane on the
-         Vouchers page (see rewards/index.blade.php), so this stays a self-contained
-         chunk that also works fine on its own when this page is opened directly. --}}
     <div id="stamp-tab-content" class="flex flex-1 flex-col">
 
     @if (! $program)
 
         @include('member.components.empty-state', [
             'title' => 'Belum Ada Program Stamp',
-            'description' => 'Sabar ya, program kumpulin stamp bakal dibuka lagi nanti.',
+            'description' => 'Cek lagi nanti ya! program stamp akan segera dibuka.',
             'icon' => 'icon-cake',
             'iconBg' => 'bg-orange-50',
             'iconColor' => 'text-orange-500',
@@ -51,7 +47,6 @@
             $bisaTukar = $penuh && ! $kuotaHabis;
         @endphp
 
-        {{-- Punch-card progress --}}
         <div class="mt-5 overflow-hidden rounded-3xl bg-gradient-to-br from-[#5a3c27] to-[#8b5e3c] p-5 text-white shadow-sm {{ $penuh ? 'stamp-card-penuh' : '' }}"
              id="stamp-program-data"
              data-nama-program="{{ $program->nama_program }}"
@@ -75,18 +70,14 @@
                 Setiap belanja min. Rp{{ number_format($program->minimal_pembelian, 0, ',', '.') }} = 1 stamp
             </p>
 
-            {{-- Stamp dots. The most recently earned dot (index === $current) gets the
-                 "latest" variant so it pops in bigger and keeps a soft glow pulse,
-                 making a freshly-earned stamp obviously stand out from older ones. --}}
             <div class="mt-4 grid grid-cols-5 md:grid-cols-10 gap-2.5">
                 @for ($i = 1; $i <= $target; $i++)
                     @php
                         $terisi = $i <= $current;
-                        $terbaru = $terisi && $i === $current;
                     @endphp
                     <span
-                        class="flex aspect-square items-center justify-center rounded-full {{ $terisi ? ($terbaru ? 'stamp-filled-latest' : 'stamp-filled') . ' bg-white text-brand-800 shadow-sm' : 'border-2 border-dashed border-white/35 text-white/35' }}"
-                        @if ($terisi && ! $terbaru) style="animation-delay: {{ ($i - 1) * 0.06 }}s" @endif
+                        class="flex aspect-square items-center justify-center rounded-full {{ $terisi ? 'stamp-dot-fill bg-white text-brand-800 shadow-sm' : 'border-2 border-dashed border-white/35 text-white/35' }}"
+                        @if ($terisi) style="animation-delay: {{ ($i - 1) * 0.09 }}s" @endif
                     >
                         @include('member.components.icon-cake', ['class' => 'h-4 w-4'])
                     </span>
@@ -109,7 +100,6 @@
             </div>
         @endif
 
-        {{-- Section header --}}
         <div class="mt-6 flex items-center justify-between">
             <h2 class="text-sm font-bold text-gray-900">Tukar Hadiah</h2>
             <span class="text-xs text-gray-400">{{ $program->hadiah->count() }} pilihan</span>
@@ -150,7 +140,6 @@
             @endforelse
         </div>
 
-        {{-- Shared confirmation dialog, filled in dynamically by bukaKonfirmasiTukarStamp() --}}
         <dialog id="konfirmasi-tukar-stamp" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto rounded-t-3xl border-0 p-0">
             <div class="flex shrink-0 justify-center pb-1 pt-3">
                 <span class="h-1 w-10 rounded-full bg-gray-200"></span>
@@ -175,16 +164,16 @@
 
     </div>
 
-    {{-- Kept outside #stamp-tab-content: when this page is opened directly this still
-         runs normally, and when the Vouchers page fetches this page for its Stamp tab,
-         it defines the same function itself (see rewards/index.blade.php) since injected
-         <script> tags don't execute. --}}
     <script>
         function bukaKonfirmasiTukarStamp(produkId, jumlah, namaProduk) {
             document.getElementById('konfirmasi-tukar-stamp-produk-id').value = produkId;
             document.getElementById('konfirmasi-tukar-stamp-nama').textContent = jumlah + 'x ' + namaProduk;
             openSheet('konfirmasi-tukar-stamp');
         }
+
+        document.querySelectorAll('#stamp-tab-content .stamp-dot-fill').forEach((dot) => {
+            dot.classList.add('stamp-pop');
+        });
     </script>
 
 @endsection

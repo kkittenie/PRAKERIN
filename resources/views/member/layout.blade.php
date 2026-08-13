@@ -8,7 +8,6 @@
     <title>{{ $title ?? 'Member' }} &middot; {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        /* Page-to-page transition (tab switch / navigation) */
         @keyframes pageEnterFromRight {
             0% { opacity: 0; transform: translateX(20px); }
             100% { opacity: 1; transform: translateX(0); }
@@ -24,7 +23,6 @@
             animation: pageEnterFromLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) ease-out forwards;
         }
 
-        /* One-time splash entrance the very first time the app is opened this session */
         @keyframes appSplashIn {
             0% { opacity: 0; transform: translateY(14px) scale(0.97); }
             100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -33,9 +31,6 @@
             animation: appSplashIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* Bottom-sheet dialogs (e.g. voucher T&C, stamp confirm) slide up + fade,
-           and their backdrop fades in behind them. Toggled via [data-open] so we
-           can animate the *close* too (native dialog.close() is instant). */
         dialog.sheet {
             transform: translateY(100%);
             opacity: 0;
@@ -71,7 +66,6 @@
             background: rgba(16, 24, 40, .4);
         }
 
-        /* Expandable rows (Menu Berlaku / Syarat & Ketentuan / Cara Pakai, etc.) */
         .expandable-row {
             transition: background-color 0.15s ease;
         }
@@ -89,36 +83,18 @@
             transform: rotate(90deg);
         }
 
-        /* Stamp dots pop in one-by-one when a filled stamp card is shown/updated. */
         @keyframes stampPop {
-            0% { transform: scale(0); opacity: 0; }
-            60% { transform: scale(1.18); opacity: 1; }
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.22); opacity: 1; }
+            65% { transform: scale(0.92); }
+            80% { transform: scale(1.08); }
+            92% { transform: scale(0.98); }
             100% { transform: scale(1); opacity: 1; }
         }
-        .stamp-filled {
-            animation: stampPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        .stamp-pop {
+            animation: stampPop 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
         }
 
-        /* The most recently earned stamp pops in a bit bigger and keeps a soft
-           glow ring pulsing around it for a couple of beats, so it reads as
-           "this one just got filled" instead of blending into the older dots. */
-        @keyframes stampPopLatest {
-            0% { transform: scale(0); opacity: 0; }
-            55% { transform: scale(1.3); opacity: 1; }
-            75% { transform: scale(0.95); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes stampGlow {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55); }
-            50% { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0); }
-        }
-        .stamp-filled-latest {
-            animation: stampPopLatest 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both,
-                       stampGlow 1.4s ease-out 0.5s 2;
-        }
-
-        /* When the punch-card just became full, give the header icon a little
-           celebratory wiggle so "stamp penuh" feels rewarding, not just a label change. */
         @keyframes stampCelebrate {
             0% { transform: scale(1) rotate(0deg); }
             25% { transform: scale(1.15) rotate(-10deg); }
@@ -130,7 +106,6 @@
             animation: stampCelebrate 1s ease-in-out 0.5s 1;
         }
 
-        /* Toast flash message: fixed di atas, ga dorong layout, auto slide-out */
         @keyframes toastIn {
             0% { opacity: 0; transform: translate(-50%, -12px); }
             100% { opacity: 1; transform: translate(-50%, 0); }
@@ -146,9 +121,6 @@
             animation: toastOut 0.2s ease forwards;
         }
 
-        /* Sticky page title bar (Account / Vouchers / Riwayat, etc.) — bleeds
-           full-width past the <main> padding so it sits flush under the
-           safe-area, stays pinned while the rest of the page scrolls under it. */
         .page-sticky-header {
             position: sticky;
             top: 0;
@@ -158,8 +130,6 @@
             -webkit-backdrop-filter: blur(10px);
         }
 
-        /* ===== TABLET & LANDSCAPE RESPONSIVE ===== */
-        /* Constrain dialog sheets on landscape / short viewports */
         @media (orientation: landscape) {
             dialog.sheet > div,
             dialog.modal-center > div {
