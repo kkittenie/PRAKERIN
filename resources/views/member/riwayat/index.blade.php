@@ -159,7 +159,6 @@
                                                 </span>
                                             @endif
                                         </div>
-                                        <p class="mt-0.5 text-xs text-gray-400">Kode pickup: <span class="font-mono font-bold text-gray-600">{{ $trx->kode_pickup }}</span></p>
                                     </div>
                                     @include('member.components.icon-chevron-right', ['class' => 'h-4 w-4 shrink-0 text-gray-300'])
                                 </a>

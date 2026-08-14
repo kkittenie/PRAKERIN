@@ -56,13 +56,17 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/transaksi/lunaskan/{id}', [TransaksiKasirController::class, 'lunaskanDitahan'])->name('transaksi.lunaskan');
     });
 
-    // Pesanan Pick Up (pesanan masuk dari Member App)
+    // Pesanan (pesanan masuk dari Member App)
     Route::middleware('permission:lihat_pesanan_pickup')->group(function () {
         Route::get('/pesanan-pickup', [PesananPickupController::class, 'indeks'])->name('pesanan-pickup.indeks');
+        Route::get('/pesanan-pickup/{transaksi}/detail', [PesananPickupController::class, 'detail'])->name('pesanan-pickup.detail');
     });
     Route::middleware('permission:edit_pesanan_pickup')->group(function () {
-        Route::post('/pesanan-pickup/verifikasi', [PesananPickupController::class, 'verifikasiKode'])->name('pesanan-pickup.verifikasi');
+        Route::patch('/pesanan-pickup/{transaksi}/konfirmasi-pembayaran', [PesananPickupController::class, 'konfirmasiPembayaran'])->name('pesanan-pickup.konfirmasi-pembayaran');
+        Route::patch('/pesanan-pickup/{transaksi}/tolak-pembayaran', [PesananPickupController::class, 'tolakPembayaran'])->name('pesanan-pickup.tolak-pembayaran');
+        Route::patch('/pesanan-pickup/{transaksi}/proses', [PesananPickupController::class, 'prosesPesanan'])->name('pesanan-pickup.proses');
         Route::patch('/pesanan-pickup/{transaksi}/siap', [PesananPickupController::class, 'tandaiSiap'])->name('pesanan-pickup.siap');
+        Route::patch('/pesanan-pickup/{transaksi}/selesai', [PesananPickupController::class, 'tandaiSudahDiambil'])->name('pesanan-pickup.selesai');
         Route::patch('/pesanan-pickup/{transaksi}/batal', [PesananPickupController::class, 'batalkan'])->name('pesanan-pickup.batal');
     });
 

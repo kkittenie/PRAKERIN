@@ -10,44 +10,158 @@ use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class PesananPickupController extends Controller
 {
     public function indeks(Request $request)
     {
-        $status = $request->query('status', 'semua');
+        $statusPesanan = $request->query('status_pesanan', 'semua');
+        $statusPembayaran = $request->query('status_pembayaran', 'semua');
+        $cari = $request->query('cari');
+        $tanggalMulai = $request->query('tanggal_mulai');
+        $tanggalSelesai = $request->query('tanggal_selesai');
 
         $query = Transaksi::with(['detailTransaksi', 'member'])
             ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP);
 
-        if ($status === 'aktif') {
-            $query->whereIn('status_pesanan', [Transaksi::STATUS_DIPROSES, Transaksi::STATUS_SIAP_DIAMBIL]);
-        } elseif ($status !== 'semua') {
-            $query->where('status_pesanan', $status);
+        if ($statusPesanan !== 'semua') {
+            $query->where('status_pesanan', $statusPesanan);
         }
 
-        $pesanan = $query->orderBy(
-            DB::raw("FIELD(status_pesanan, '" . Transaksi::STATUS_DIPROSES . "', '" . Transaksi::STATUS_SIAP_DIAMBIL . "')")
-        )->latest()->paginate(10)->withQueryString();
+        if ($statusPembayaran === 'lunas') {
+            $query->where('status_pembayaran', 'Lunas');
+        } elseif ($statusPembayaran === 'menunggu_konfirmasi') {
+            $query->whereNotNull('bukti_dikonfirmasi_pada')->where('status_pembayaran', '!=', 'Lunas');
+        } elseif ($statusPembayaran === 'menunggu_pembayaran') {
+            $query->whereNull('bukti_dikonfirmasi_pada')->where('status_pembayaran', '!=', 'Lunas');
+        }
 
-        $jumlahDiproses = Transaksi::where('asal_pesanan', Transaksi::ASAL_MEMBER_APP)
-            ->where('status_pesanan', Transaksi::STATUS_DIPROSES)->count();
-        $jumlahSiap = Transaksi::where('asal_pesanan', Transaksi::ASAL_MEMBER_APP)
-            ->where('status_pesanan', Transaksi::STATUS_SIAP_DIAMBIL)->count();
+        if ($cari) {
+            $query->where(function ($q) use ($cari) {
+                $q->where('kode_transaksi', 'like', "%{$cari}%")
+                  ->orWhere('nama_pembeli', 'like', "%{$cari}%");
+            });
+        }
+
+        if ($tanggalMulai) {
+            $query->whereDate('created_at', '>=', $tanggalMulai);
+        }
+        if ($tanggalSelesai) {
+            if ($tanggalMulai && $tanggalSelesai < $tanggalMulai) {
+                $tanggalSelesai = $tanggalMulai;
+            }
+            $query->whereDate('created_at', '<=', $tanggalSelesai);
+        }
+
+        $pesanan = $query->latest()->paginate(10)->withQueryString();
 
         return view('pages.pesanan-pickup.index', [
             'pesanan' => $pesanan,
-            'statusFilter' => $status,
-            'jumlahDiproses' => $jumlahDiproses,
-            'jumlahSiap' => $jumlahSiap,
+            'statusPesananFilter' => $statusPesanan,
+            'statusPembayaranFilter' => $statusPembayaran,
         ]);
     }
 
     /**
-     * Ubah status pesanan: Diproses -> Ready for Pickup. (Dari "Ready for
-     * Pickup" ke "Sudah Diambil" wajib lewat verifikasi kode di
-     * verifikasiKode(), bukan lewat sini, supaya kode pickup benar-benar
-     * dicek ke pembeli.)
+     * JSON API untuk modal detail (pola sama seperti LaporanController::detailTransaksi).
+     */
+    public function detail(Transaksi $transaksi)
+    {
+        abort_unless($transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP, 404);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $transaksi->load(['detailTransaksi.produk', 'member']),
+        ]);
+    }
+
+    /**
+     * Kasir mengonfirmasi bukti transfer/QRIS yang sudah dikunci member
+     * sebagai valid. Menandai pesanan Lunas.
+     */
+    public function konfirmasiPembayaran(Transaksi $transaksi)
+    {
+        abort_unless($transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP, 404);
+
+        if ($transaksi->status_pembayaran === 'Lunas') {
+            return back()->with('error', 'Pesanan ini sudah lunas.');
+        }
+        if (! $transaksi->bukti_dikonfirmasi_pada) {
+            return back()->with('error', 'Member belum mengonfirmasi bukti pembayaran.');
+        }
+
+        $transaksi->update([
+            'status_pembayaran' => 'Lunas',
+            'jumlah_diterima' => $transaksi->total_bayar,
+            'kembalian' => 0,
+        ]);
+
+        activity()->causedBy(auth()->user())->performedOn($transaksi)
+            ->log('mengonfirmasi bukti pembayaran pesanan pick up');
+
+        return back()->with('success', "Pembayaran pesanan {$transaksi->kode_transaksi} dikonfirmasi.");
+    }
+
+    /**
+     * Kasir menolak bukti transfer/QRIS yang tidak valid. Bukti dihapus &
+     * member diminta upload ulang lewat member app (form upload otomatis
+     * muncul lagi karena bukti_pembayaran jadi null).
+     */
+    public function tolakPembayaran(Request $request, Transaksi $transaksi)
+    {
+        abort_unless($transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP, 404);
+
+        $validated = $request->validate([
+            'alasan' => 'nullable|string|max:255',
+        ]);
+
+        if ($transaksi->status_pembayaran === 'Lunas') {
+            return back()->with('error', 'Pesanan ini sudah lunas, tidak bisa ditolak.');
+        }
+
+        if ($transaksi->bukti_pembayaran) {
+            Storage::disk('public')->delete($transaksi->bukti_pembayaran);
+        }
+
+        $transaksi->update([
+            'bukti_pembayaran' => null,
+            'bukti_dikonfirmasi_pada' => null,
+            'catatan_penolakan' => $validated['alasan'] ?: 'Bukti pembayaran tidak valid, silakan upload ulang.',
+        ]);
+
+        activity()->causedBy(auth()->user())->performedOn($transaksi)
+            ->log('menolak bukti pembayaran pesanan pick up');
+
+        return back()->with('success', "Bukti pembayaran {$transaksi->kode_transaksi} ditolak, member diminta upload ulang.");
+    }
+
+    /**
+     * Menandai pesanan mulai dikerjakan setelah pembayaran lunas. Titik ini
+     * juga jadi patokan kapan Tiket Produksi relevan dicetak (di modal).
+     */
+    public function prosesPesanan(Transaksi $transaksi)
+    {
+        abort_unless($transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP, 404);
+
+        if ($transaksi->status_pembayaran !== 'Lunas') {
+            return back()->with('error', 'Pembayaran belum dikonfirmasi.');
+        }
+        if ($transaksi->diproses_pada) {
+            return back()->with('error', 'Pesanan ini sudah diproses.');
+        }
+
+        $transaksi->update(['diproses_pada' => now()]);
+
+        activity()->causedBy(auth()->user())->performedOn($transaksi)
+            ->log('memproses pesanan pick up');
+
+        return back()->with('success', "Pesanan {$transaksi->kode_transaksi} mulai diproses.");
+    }
+
+    /**
+     * Ubah status pesanan: Diproses -> Ready for Pickup. Wajib sudah lunas
+     * & sudah lewat tahap "Proses Pesanan".
      *
      * Stok baru dikurangi di sini, bukan saat member checkout di app —
      * supaya stok toko mencerminkan barang yang benar-benar sudah disiapkan
@@ -59,6 +173,9 @@ class PesananPickupController extends Controller
 
         if ($transaksi->status_pesanan !== Transaksi::STATUS_DIPROSES) {
             return back()->with('error', 'Pesanan ini bukan berstatus Diproses.');
+        }
+        if ($transaksi->status_pembayaran !== 'Lunas' || ! $transaksi->diproses_pada) {
+            return back()->with('error', 'Selesaikan konfirmasi pembayaran & proses pesanan dulu.');
         }
 
         DB::beginTransaction();
@@ -140,43 +257,24 @@ class PesananPickupController extends Controller
             return back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
         }
     }
-    public function verifikasiKode(Request $request)
+
+    /**
+     * Pengganti verifikasiKode(): kasir tandai manual pesanan sudah
+     * diserahkan ke pembeli, tanpa perlu cek kode pickup lagi (kode pickup
+     * sudah tidak dipakai di alur ini).
+     */
+    public function tandaiSudahDiambil(Transaksi $transaksi)
     {
-        $validated = $request->validate([
-            'kode_pickup' => 'required|string|max:10',
-            'metode_pembayaran' => 'nullable|string|max:50',
-        ]);
+        abort_unless($transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP, 404);
+
+        if ($transaksi->status_pesanan !== Transaksi::STATUS_SIAP_DIAMBIL) {
+            return back()->with('error', 'Pesanan ini belum siap diambil.');
+        }
 
         DB::beginTransaction();
         try {
-            $transaksi = Transaksi::with(['member', 'detailTransaksi'])
-                ->where('kode_pickup', strtoupper(trim($validated['kode_pickup'])))
-                ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP)
-                ->lockForUpdate()
-                ->first();
-
-            if (! $transaksi) {
-                throw new \Exception('Kode pickup tidak ditemukan.');
-            }
-
-            if ($transaksi->status_pesanan === Transaksi::STATUS_SUDAH_DIAMBIL) {
-                throw new \Exception('Pesanan ini sudah pernah diambil sebelumnya.');
-            }
-
-            if ($transaksi->status_pesanan === Transaksi::STATUS_DIBATALKAN) {
-                throw new \Exception('Pesanan ini sudah dibatalkan.');
-            }
-
-            if ($transaksi->status_pesanan !== Transaksi::STATUS_SIAP_DIAMBIL) {
-                throw new \Exception('Pesanan ini belum siap diambil (masih Diproses).');
-            }
-
             $transaksi->update([
                 'status_pesanan' => Transaksi::STATUS_SUDAH_DIAMBIL,
-                'status_pembayaran' => 'Lunas',
-                'metode_pembayaran' => $validated['metode_pembayaran'] ?? 'Tunai',
-                'jumlah_diterima' => $transaksi->total_bayar,
-                'kembalian' => 0,
                 'diambil_pada' => now(),
             ]);
 
@@ -185,20 +283,13 @@ class PesananPickupController extends Controller
             DB::commit();
 
             activity()->causedBy(auth()->user())->performedOn($transaksi)
-                ->withProperties(['kode_pickup' => $transaksi->kode_pickup])
-                ->log('memverifikasi & menyerahkan pesanan pick up');
+                ->log('menyerahkan pesanan pick up');
 
-            return response()->json([
-                'status' => 'success',
-                'pesan' => "Pesanan {$transaksi->kode_transaksi} berhasil diserahkan ke {$transaksi->nama_pembeli}.",
-                'data' => $transaksi,
-            ]);
+            return back()->with('success', "Pesanan {$transaksi->kode_transaksi} berhasil diserahkan.");
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'pesan' => $e->getMessage(),
-            ], 422);
+            Log::error('Error tandai sudah diambil: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menandai sudah diambil: ' . $e->getMessage());
         }
     }
 

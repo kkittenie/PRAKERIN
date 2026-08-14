@@ -42,12 +42,15 @@ class Transaksi extends Model
         'catatan_pesanan',
         'siap_pada',
         'diambil_pada',
+        'diproses_pada',
+        'catatan_penolakan',
     ];
 
     protected $casts = [
         'siap_pada' => 'datetime',
         'diambil_pada' => 'datetime',
         'bukti_dikonfirmasi_pada' => 'datetime',
+        'diproses_pada' => 'datetime',
     ];
 
     /**
