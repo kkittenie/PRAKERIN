@@ -84,23 +84,23 @@
             <div id="carousel-track" class="carousel-track">
 
                 {{-- Slide 1 --}}
-                <div class="carousel-slide" data-title="Save More with Saisho Plan"
-                    data-desc="Subscribe to Saisho Plan for a rewarding coffee, bakery & cake experience">
-                    <img src="{{ asset('images/welcome-slide-1.png') }}" alt="Save More with Saisho Plan"
+                <div class="carousel-slide" data-title="Fresh Bakes, Sweeter Savings"
+                    data-desc="Join Saisho Plan and unlock exclusive perks on your favorite breads & cakes">
+                    <img src="{{ asset('images/welcome-slide-1.png') }}" alt="Fresh Bakes, Sweeter Savings"
                         class="absolute inset-0 w-full h-full object-cover object-center">
                 </div>
 
                 {{-- Slide 2 --}}
-                <div class="carousel-slide" data-title="All Your Favorites in One App"
-                    data-desc="Order fresh cakes, artisanal pastries and specialty coffee easily in Saisho App">
-                    <img src="{{ asset('images/welcome-slide-2.png') }}" alt="All Your Favorites in One App"
+                <div class="carousel-slide" data-title="Everything You Crave, One Tap Away"
+                    data-desc="From fresh cakes to artisanal pastries — order it all in Saisho App">
+                    <img src="{{ asset('images/welcome-slide-2.png') }}" alt="Everything You Crave, One Tap Away"
                         class="absolute inset-0 w-full h-full object-cover object-center">
                 </div>
 
                 {{-- Slide 3 --}}
-                <div class="carousel-slide" data-title="Collect Points & Redeem Rewards"
-                    data-desc="Earn points on every single purchase and exchange them for free delicious treats">
-                    <img src="{{ asset('images/welcome-slide-3.png') }}" alt="Collect Points & Redeem Rewards"
+                <div class="carousel-slide" data-title="Every Purchase Pays You Back"
+                    data-desc="Rack up points with every order and turn them into free treats you'll love">
+                    <img src="{{ asset('images/welcome-slide-3.png') }}" alt="Every Purchase Pays You Back"
                         class="absolute inset-0 w-full h-full object-cover object-center">
                 </div>
 
@@ -125,7 +125,7 @@
                 <h2 id="slide-title" class="text-xl font-extrabold tracking-tight text-[#5a3c27]">Save More with Saisho
                     Plan</h2>
                 <p id="slide-desc" class="mt-1 mb-4 text-xs leading-relaxed text-gray-500 max-w-xs mx-auto">Subscribe to
-                    Saisho Plan for a rewarding coffee, bakery & cake experience</p>
+                    Saisho Plan for a rewarding bakery & cake experience</p>
             </div>
 
             <div class="mt-auto px-6 pb-5 pt-2 flex flex-col items-center gap-2.5 sm:flex-row sm:justify-center sm:gap-4 sm:pb-8">

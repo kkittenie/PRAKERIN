@@ -57,7 +57,24 @@
         }
     </style>
 
-    <div x-data="{ tab: 'pesanan' }">
+    <div x-data="{
+            tab: 'pesanan',
+            order: ['pesanan', 'transaksi', 'voucher', 'stamp'],
+            touchStartX: 0,
+            touchStartY: 0,
+            onSwipeStart(e) {
+                this.touchStartX = e.touches[0].clientX;
+                this.touchStartY = e.touches[0].clientY;
+            },
+            onSwipeEnd(e) {
+                const dx = e.changedTouches[0].clientX - this.touchStartX;
+                const dy = e.changedTouches[0].clientY - this.touchStartY;
+                if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+                const i = this.order.indexOf(this.tab);
+                if (dx < 0 && i < this.order.length - 1) this.tab = this.order[i + 1];
+                if (dx > 0 && i > 0) this.tab = this.order[i - 1];
+            }
+        }">
         <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-0 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10">
             <h1 class="text-center text-lg font-extrabold text-gray-900">Riwayat</h1>
 
@@ -115,10 +132,10 @@
                 'iconColor' => 'text-gray-400',
             ])
         @else
-            <div class="mt-5">
+            <div class="mt-5" @touchstart="onSwipeStart($event)" @touchend="onSwipeEnd($event)">
 
             {{-- ================= TAB: PESANAN (pick up dari Member App) ================= --}}
-            <div x-show="tab === 'pesanan'" x-cloak class="pt-5">
+            <div x-show="tab === 'pesanan'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="pt-5">
                 @if ($pesanan->isEmpty())
                     @include('member.components.empty-state', [
                         'title' => 'Belum Ada Pesanan',
@@ -202,7 +219,7 @@
             </div>
 
             {{-- ================= TAB: RIWAYAT TRANSAKSI ================= --}}
-            <div x-show="tab === 'transaksi'" x-cloak class="pt-5">
+            <div x-show="tab === 'transaksi'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="pt-5">
                 @if ($transaksi->isEmpty())
                     @include('member.components.empty-state', [
                         'title' => 'Belum Ada Transaksi',
@@ -273,7 +290,7 @@
             </div>
 
             {{-- ================= TAB: VOUCHER (penukaran reward) ================= --}}
-            <div x-show="tab === 'voucher'" x-cloak class="pt-5">
+            <div x-show="tab === 'voucher'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="pt-5">
                 @if ($penukaran->isEmpty())
                     @include('member.components.empty-state', [
                         'title' => 'Belum Ada Penukaran Voucher',
@@ -335,7 +352,7 @@
             </div>
 
             {{-- ================= TAB: STAMP (penukaran hadiah stamp) ================= --}}
-            <div x-show="tab === 'stamp'" x-cloak class="pt-5">
+            <div x-show="tab === 'stamp'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="pt-5">
                 @if ($riwayatStamp->isEmpty())
                     @include('member.components.empty-state', [
                         'title' => 'Belum Ada Penukaran Stamp',
