@@ -249,7 +249,7 @@
         @endunless
 
         {{-- Login Required Dialog Modal for Guests --}}
-        <dialog id="modal-login-required" class="modal-center fixed inset-0 my-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 shadow-2xl border-0 sm:max-w-md md:max-w-lg">
+        <dialog id="modal-login-required" class="modal-center fixed inset-0 m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 shadow-2xl border-0 sm:max-w-md md:max-w-lg">
             <div class="p-6 text-center">
                 <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-800">
                     <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 15v2m0 4h.01M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Zm2 0V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -311,35 +311,6 @@
                     </div>
 
                     {{-- Cross-sell / bundle up --}}
-                    <div id="tk-bundle-section" class="mt-4 hidden rounded-2xl bg-amber-50/70 p-4">
-                        <p class="text-xs font-extrabold text-gray-900">Lengkapi Pesanan, Hemat Lebih Banyak!</p>
-
-                        <div class="mt-3 flex items-center gap-3 rounded-2xl bg-white p-2.5 shadow-sm">
-                            <div class="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-50">
-                                <img id="tk-saran-foto" src="" alt="" class="hidden h-full w-full object-cover">
-                                <div id="tk-saran-foto-fallback"
-                                    class="flex h-full w-full items-center justify-center text-brand-200">
-                                    @include('member.components.icon-cup', ['class' => 'h-6 w-6'])
-                                </div>
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p id="tk-saran-nama" class="truncate text-xs font-bold text-gray-900"></p>
-                                <div class="mt-1 flex items-center gap-1.5">
-                                    <span id="tk-saran-harga-final" class="text-xs font-extrabold text-brand-700"></span>
-                                    <span id="tk-saran-harga-asli"
-                                        class="hidden text-[11px] text-gray-400 line-through"></span>
-                                </div>
-                            </div>
-                            <button type="button" id="tk-saran-tambah" onclick="tambahSaranSilang()"
-                                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm transition active:scale-90"
-                                aria-label="Tambah ke keranjang">
-                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
-                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
-                                        stroke-linecap="round" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
 
                 </div>
 
@@ -422,79 +393,7 @@
                 fotoFallback.classList.remove('hidden');
             }
 
-            const bundleSection = document.getElementById('tk-bundle-section');
-            const tombolSaran = document.getElementById('tk-saran-tambah');
-
-            if (data.suggestion) {
-                bundleSection.classList.remove('hidden');
-                document.getElementById('tk-saran-nama').innerText = data.suggestion.nama;
-                document.getElementById('tk-saran-harga-final').innerText =
-                    'Rp ' + Number(data.suggestion.harga_final).toLocaleString('id-ID');
-
-                const hargaAsliEl = document.getElementById('tk-saran-harga-asli');
-                if (data.suggestion.ada_promo) {
-                    hargaAsliEl.innerText = 'Rp ' + Number(data.suggestion.harga_asli).toLocaleString('id-ID');
-                    hargaAsliEl.classList.remove('hidden');
-                } else {
-                    hargaAsliEl.classList.add('hidden');
-                }
-
-                const saranFoto = document.getElementById('tk-saran-foto');
-                const saranFotoFallback = document.getElementById('tk-saran-foto-fallback');
-                if (data.suggestion.foto_url) {
-                    saranFoto.src = data.suggestion.foto_url;
-                    saranFoto.classList.remove('hidden');
-                    saranFotoFallback.classList.add('hidden');
-                } else {
-                    saranFoto.classList.add('hidden');
-                    saranFotoFallback.classList.remove('hidden');
-                }
-
-                tombolSaran.dataset.addUrl = data.suggestion.add_url;
-                tombolSaran.disabled = false;
-                tombolSaran.classList.remove('bg-gray-300');
-                tombolSaran.classList.add('bg-brand-800');
-                tombolSaran.innerHTML = '<svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>';
-            } else {
-                bundleSection.classList.add('hidden');
-            }
-
             openSheet('sheet-tambah-keranjang');
-        }
-
-        async function tambahSaranSilang() {
-            const btn = document.getElementById('tk-saran-tambah');
-            const url = btn.dataset.addUrl;
-            if (!url || btn.disabled) return;
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    },
-                    body: new URLSearchParams({ jumlah: 1 }),
-                });
-
-                const data = await res.json();
-
-                if (!data.success) {
-                    alert((data.message) || 'Gagal menambahkan ke keranjang.');
-                    btn.disabled = false;
-                    return;
-                }
-
-                __tkCheckoutUrl = data.checkout_url;
-                __tkMenuUrl = data.menu_url;
-
-                btn.classList.remove('bg-brand-800');
-                btn.classList.add('bg-gray-300');
-                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-            } catch (e) {
-                btn.disabled = false;
-            }
         }
 
         function lihatKeranjangDariSheet() {

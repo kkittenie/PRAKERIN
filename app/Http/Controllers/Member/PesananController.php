@@ -47,6 +47,12 @@ class PesananController extends Controller
             'status_pesanan' => $transaksi->status_pesanan,
             'label' => Transaksi::labelStatusPesanan($transaksi->status_pesanan),
             'status_pembayaran' => $transaksi->status_pembayaran,
+            // Ikut dipantau supaya waktu kasir menolak/mengonfirmasi bukti
+            // pembayaran, halaman member ikut ke-refresh otomatis meski
+            // status_pesanan & status_pembayaran-nya sendiri belum berubah.
+            'bukti_pembayaran' => $transaksi->bukti_pembayaran,
+            'bukti_dikonfirmasi_pada' => optional($transaksi->bukti_dikonfirmasi_pada)->toJSON(),
+            'catatan_penolakan' => $transaksi->catatan_penolakan,
         ]);
     }
 

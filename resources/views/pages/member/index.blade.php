@@ -10,6 +10,11 @@
             formTerpilih: null,
             namaHapus: '',
 
+            modalResetTerbuka: false,
+            formResetTerpilih: null,
+            namaReset: '',
+            passwordBaruReset: '',
+
             bukaModalHapus(form, nama) {
                 this.formTerpilih = form;
                 this.namaHapus = nama;
@@ -22,6 +27,21 @@
                 }
 
                 this.modalHapusTerbuka = false;
+            },
+
+            bukaModalReset(form, nama, passwordBaru) {
+                this.formResetTerpilih = form;
+                this.namaReset = nama;
+                this.passwordBaruReset = passwordBaru;
+                this.modalResetTerbuka = true;
+            },
+
+            konfirmasiReset() {
+                if (this.formResetTerpilih) {
+                    this.formResetTerpilih.submit();
+                }
+
+                this.modalResetTerbuka = false;
             },
 
             memberCocok(nama, noHp) {
@@ -129,11 +149,7 @@
                         <th class="hidden py-3 lg:table-cell">
                             Email
                         </th>
-
-                        <th class="hidden py-3 lg:table-cell">
-                            Tanggal Lahir
-                        </th>
-
+                        
                         <th class="hidden py-3 sm:table-cell">
                             Poin
                         </th>
@@ -249,6 +265,33 @@
                                             Edit
 
                                         </a>
+
+                                    @endcan
+
+
+                                    @can('edit_member')
+
+                                        <form
+                                            action="{{ route('member.reset-password', $member) }}"
+                                            method="POST"
+                                            class="inline">
+
+                                            @csrf
+
+                                            <button
+                                                type="button"
+                                                @click="bukaModalReset(
+                                                    $el.closest('form'),
+                                                    @js($member->nama),
+                                                    @js(\App\Models\Member::toLocalNoHp($member->no_hp))
+                                                )"
+                                                class="text-xs font-semibold text-blue-600 hover:underline sm:text-sm dark:text-blue-400">
+
+                                                Reset Password
+
+                                            </button>
+
+                                        </form>
 
                                     @endcan
 
@@ -391,6 +434,82 @@
                 class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
 
                 Member tidak ditemukan.
+
+            </div>
+
+        </div>
+
+
+        {{-- Modal Reset Password --}}
+        <div
+            x-show="modalResetTerbuka"
+            x-cloak
+            x-transition
+            class="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
+
+            <div
+                @click.away="modalResetTerbuka = false"
+                class="w-full max-w-sm overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
+
+                <div class="p-6 text-center">
+
+                    <div
+                        class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-2xl font-bold text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+
+                        ⟳
+
+                    </div>
+
+                    <h3 class="text-base font-extrabold text-gray-900 dark:text-white">
+                        Reset Password Member?
+                    </h3>
+
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+
+                        Password member
+
+                        <span
+                            x-text="namaReset"
+                            class="font-semibold text-gray-700 dark:text-gray-300">
+                        </span>
+
+                        akan dikembalikan ke default:
+
+                        <span
+                            x-text="passwordBaruReset"
+                            class="font-semibold text-gray-700 dark:text-gray-300">
+                        </span>
+
+                        (sama dengan nomor HP).
+
+                    </p>
+
+                </div>
+
+
+                <div
+                    class="flex justify-center gap-3 border-t border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
+
+                    <button
+                        type="button"
+                        @click="modalResetTerbuka = false"
+                        class="rounded-lg bg-gray-200 px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
+
+                        Batal
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        @click="konfirmasiReset()"
+                        class="rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700">
+
+                        Reset Password
+
+                    </button>
+
+                </div>
 
             </div>
 

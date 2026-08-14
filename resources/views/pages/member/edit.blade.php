@@ -37,18 +37,6 @@
             @enderror
         </div>
 
-        <div class="mb-5">
-            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Tanggal Lahir <span class="text-gray-400 font-normal"></span>
-            </label>
-            <input type="date" name="tanggal_lahir"
-                value="{{ old('tanggal_lahir', optional($member->tanggal_lahir)->format('Y-m-d')) }}"
-                class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm dark:border-gray-700 dark:text-white/90" />
-            @error('tanggal_lahir')
-                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-            @enderror
-        </div>
-
         <div class="mb-6">
             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Poin saat ini</label>
             <input type="text" value="{{ $member->poin }} ({{ $member->level }})" disabled

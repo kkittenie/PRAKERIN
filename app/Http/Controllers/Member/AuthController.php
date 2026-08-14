@@ -17,17 +17,7 @@ class AuthController extends Controller
      */
     private function normalizeNoHp(string $noHp): string
     {
-        $noHp = trim($noHp);
-
-        if (str_starts_with($noHp, '0')) {
-            return '+62' . substr($noHp, 1);
-        }
-
-        if (!str_starts_with($noHp, '+')) {
-            return '+62' . $noHp;
-        }
-
-        return $noHp;
+        return Member::normalizeNoHp($noHp);
     }
 
     public function welcome()

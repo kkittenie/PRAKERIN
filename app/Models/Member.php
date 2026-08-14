@@ -17,6 +17,30 @@ class Member extends Authenticatable
 
     protected $appends = ['level', 'warna_badge_level'];
 
+    public static function normalizeNoHp(string $noHp): string
+    {
+        $noHp = preg_replace('/[^0-9+]/', '', trim($noHp));
+
+        if (str_starts_with($noHp, '0')) {
+            return '+62' . substr($noHp, 1);
+        }
+
+        if (!str_starts_with($noHp, '+')) {
+            return '+62' . $noHp;
+        }
+
+        return $noHp;
+    }
+
+    public static function toLocalNoHp(string $normalizedNoHp): string
+    {
+        if (str_starts_with($normalizedNoHp, '+62')) {
+            return '0' . substr($normalizedNoHp, 3);
+        }
+
+        return $normalizedNoHp;
+    }
+
     protected function casts(): array
     {
         return [

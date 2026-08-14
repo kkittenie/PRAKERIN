@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Member;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class MemberController extends Controller
 {
@@ -41,6 +42,14 @@ class MemberController extends Controller
      */
     public function store(Request $request)
     {
+        // Normalisasi no_hp ke format +62xxxx SEBELUM divalidasi & disimpan,
+        // supaya sama persis dengan format yang dipakai member app saat login.
+        // Kalau ini tidak dilakukan, no_hp bisa tersimpan mentah sesuai ketikan
+        // kasir (mis. "081234..." dengan spasi/strip/format beda-beda), sehingga
+        // password default (= no_hp) bisa tidak cocok saat member app membangun
+        // ulang no_hp dalam format +62 miliknya sendiri.
+        $request->merge(['no_hp' => Member::normalizeNoHp($request->no_hp)]);
+
         $request->validate([
             'nama' => 'required|string|max:255',
             'no_hp' => 'required|string|max:20|unique:members,no_hp',
@@ -59,17 +68,25 @@ class MemberController extends Controller
             'tanggal_lahir.before_or_equal' => 'Tanggal lahir tidak boleh melebihi hari ini.',
         ]);
 
+        // Password default pakai format LOKAL (0xxxx), bukan +62xxxx, biar
+        // gampang diinget & diketik member (no_hp di DB tetap disimpan +62xxxx).
+        $passwordDefault = Member::toLocalNoHp($request->no_hp);
+
         $member = Member::create([
             'nama' => $request->nama,
             'no_hp' => $request->no_hp,
             'email' => $request->email ?: null,
             'tanggal_lahir' => $request->tanggal_lahir ?: null,
             'poin' => 0,
+            // Default password saat member dibuat dari POS = nomor HP-nya sendiri
+            // (format lokal 0xxxx), supaya member bisa langsung login.
+            // Member disarankan mengganti password ini lewat menu "Change Password".
+            'password' => Hash::make($passwordDefault),
         ]);
 
         activity()->causedBy(auth()->user())->performedOn($member)->log("Menambah member: {$member->nama}");
 
-        return redirect()->route('member.index')->with('success', 'Member berhasil ditambahkan');
+        return redirect()->route('member.index')->with('success', "Member berhasil ditambahkan. Password default: {$passwordDefault} (sama dengan nomor HP).");
     }
 
     /**
@@ -93,6 +110,10 @@ class MemberController extends Controller
      */
     public function update(Request $request, Member $member)
     {
+        // Normalisasi juga saat edit, supaya no_hp tetap konsisten kalau admin
+        // mengubahnya (mis. dari "081234..." jadi format lain).
+        $request->merge(['no_hp' => Member::normalizeNoHp($request->no_hp)]);
+
         $request->validate([
             'nama' => 'required|string|max:255',
             'no_hp' => 'required|string|max:20|unique:members,no_hp,' . $member->id,
@@ -121,6 +142,24 @@ class MemberController extends Controller
         activity()->causedBy(auth()->user())->performedOn($member)->log("Mengubah member: {$member->nama}");
 
         return redirect()->route('member.index')->with('success', 'Member berhasil diupdate');
+    }
+
+    /**
+     * Reset password member kembali ke default (= no. HP format lokal 0xxxx).
+     * Dipakai dari tombol "Reset Password" di halaman daftar member, untuk
+     * member yang lupa password atau akunnya dibuat sebelum fix format no_hp.
+     */
+    public function resetPassword(Member $member)
+    {
+        $passwordBaru = Member::toLocalNoHp($member->no_hp);
+
+        $member->update([
+            'password' => Hash::make($passwordBaru),
+        ]);
+
+        activity()->causedBy(auth()->user())->performedOn($member)->log("Mereset password member: {$member->nama}");
+
+        return back()->with('success', "Password {$member->nama} berhasil direset ke: {$passwordBaru} (sama dengan nomor HP).");
     }
 
     /**

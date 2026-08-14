@@ -14,12 +14,6 @@
         <span class="w-8"></span>
     </div>
 
-    @if (session('success'))
-        <p class="mt-4 rounded-xl bg-green-50 px-4 py-3 text-center text-xs font-semibold text-green-700">
-            {{ session('success') }}
-        </p>
-    @endif
-
     <div class="mt-6 space-y-3">
         <a href="{{ route('member.settings.ubah-password') }}"
             onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"

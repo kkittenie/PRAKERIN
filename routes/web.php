@@ -132,6 +132,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('member', MemberController::class)
         ->middleware('permission:lihat_member|tambah_member|edit_member|hapus_member');
 
+    Route::post('/member/{member}/reset-password', [MemberController::class, 'resetPassword'])
+        ->name('member.reset-password')
+        ->middleware('permission:edit_member');
+
     Route::resource('transaksi-bahan-baku', TransaksiBahanBakuController::class)
         ->only(['index', 'create', 'store', 'show',])
         ->middleware('permission:lihat_stok|tambah_stok');

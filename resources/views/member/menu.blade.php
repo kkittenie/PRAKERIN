@@ -4,10 +4,24 @@
 
     <style>[x-cloak] { display: none !important; }</style>
 
+    @php
+        $searchIndex = [];
+        foreach ($daftarBundling as $bundling) {
+            $searchIndex[] = ['nama' => strtolower($bundling->nama_bundling), 'kategori' => 'bundling'];
+        }
+        foreach ($kategoris as $kategori) {
+            foreach ($kategori->produk as $produk) {
+                $searchIndex[] = ['nama' => strtolower($produk->nama_produk), 'kategori' => (string) $kategori->id];
+            }
+        }
+    @endphp
+
+    <script type="application/json" id="menu-search-index">{!! json_encode($searchIndex ?? []) !!}</script>
+
     <div x-data="{
             search: '',
             activeKategori: 'semua',
-            searching: false,
+            kategoriDropdown: false,
             scrolled: false,
             menuScrollerMaxHeight: 0,
             chipsOffset: 16,
@@ -25,6 +39,16 @@
                     const tinggiHeader = (this.scrolled && header) ? header.offsetHeight : 0;
                     this.chipsOffset = tinggiHeader > 0 ? tinggiHeader - 8 : 16;
                 });
+            },
+            menuIndex: JSON.parse(document.getElementById('menu-search-index').textContent),
+            cocokKategori(id) {
+                return this.menuIndex.some(item => item.kategori === id && item.nama.includes(this.search.toLowerCase()));
+            },
+            adaProdukTampil() {
+                return this.menuIndex.some(item =>
+                    (this.activeKategori === 'semua' || item.kategori === this.activeKategori) &&
+                    item.nama.includes(this.search.toLowerCase())
+                );
             },
             taglines: ['Freshly Baked Every Day', 'Skip The Line, Order Ahead', 'Your Favorite Cakes &amp; Bakes', 'Order Now, Pick Up Later'],
             taglineIdx: 0,
@@ -131,65 +155,73 @@
             </div>
         </div>
 
-        {{-- Category chips + search, merged in one row (search icon overlapping at the right) --}}
+        {{-- Search bar (permanen) + tombol filter kategori (dropdown) --}}
         @if ($kategoris->isNotEmpty() || $daftarBundling->isNotEmpty())
             <div :style="`margin-top: ${chipsOffset}px`"
                  class="relative flex items-center gap-2 pb-4 transition-[margin] duration-200">
-                <div class="flex-1 overflow-x-auto" style="scrollbar-width:none;" x-show="! searching">
-                    <div class="flex gap-2">
-                        <button type="button" @click="activeKategori = 'semua'"
-                                :class="activeKategori === 'semua' ? 'bg-brand-800 text-white border-brand-800' : 'bg-white text-gray-600 border-gray-200'"
-                                class="shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-bold transition">
-                            Semua Menu
-                        </button>
-                        @if ($daftarBundling->isNotEmpty())
-                            <button type="button" @click="activeKategori = 'bundling'"
-                                    :class="activeKategori === 'bundling' ? 'bg-brand-800 text-white border-brand-800' : 'bg-white text-gray-600 border-gray-200'"
-                                    class="shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-bold transition">
-                                Bundling
-                            </button>
-                        @endif
-                        @foreach ($kategoris as $kategori)
-                            <button type="button" @click="activeKategori = '{{ $kategori->id }}'"
-                                    :class="activeKategori === '{{ $kategori->id }}' ? 'bg-brand-800 text-white border-brand-800' : 'bg-white text-gray-600 border-gray-200'"
-                                    class="shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-bold transition">
-                                {{ $kategori->nama_kategori }}
-                            </button>
-                        @endforeach
-                        <div class="w-11 shrink-0" aria-hidden="true"></div>
-                    </div>
-                </div>
 
-                {{-- Search input, replaces the chip row when active --}}
-                <div x-show="searching" x-cloak
-                     x-transition:enter="transition ease-out duration-200"
-                     x-transition:enter-start="opacity-0"
-                     x-transition:enter-end="opacity-100"
-                     class="flex flex-1 items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 pr-11 shadow-sm">
+                {{-- Search input --}}
+                <div class="flex flex-1 items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
                     <svg class="h-4 w-4 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none">
                         <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
                         <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
-                    <input type="text" x-model="search" x-ref="searchInput" placeholder="Cari menu favoritmu..."
+                    <input type="text" x-model="search" placeholder="Cari menu..."
                            class="w-full border-0 bg-transparent p-0 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0">
                 </div>
 
-                {{-- Search toggle button, pinned at the right edge, overlapping the row --}}
-                <button type="button"
-                        @click="searching = ! searching; search = ''; if (searching) $nextTick(() => $refs.searchInput.focus());"
-                        class="absolute right-0 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition active:scale-90">
-                    <template x-if="! searching">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-                            <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                {{-- Tombol filter kategori --}}
+                <div class="relative shrink-0" @click.outside="kategoriDropdown = false">
+                    <button type="button" @click="kategoriDropdown = ! kategoriDropdown"
+                            :class="activeKategori !== 'semua' ? 'bg-brand-800 border-brand-800 text-white' : 'bg-white border-gray-200 text-gray-500'"
+                            class="flex h-[46px] w-[46px] items-center justify-center rounded-2xl border shadow-sm transition active:scale-90">
+                        <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
-                    </template>
-                    <template x-if="searching">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                            <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </template>
-                </button>
+                    </button>
+
+                    {{-- Dropdown kategori --}}
+                    <div x-show="kategoriDropdown" x-cloak
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="absolute right-0 top-[calc(100%+8px)] z-30 w-52 overflow-hidden rounded-2xl border border-gray-100 bg-white py-1.5 shadow-xl">
+
+                        <button type="button" @click="activeKategori = 'semua'; kategoriDropdown = false"
+                                :class="activeKategori === 'semua' ? 'bg-brand-50 text-brand-800' : 'text-gray-600'"
+                                class="flex w-full items-center justify-between px-4 py-2.5 text-left text-xs font-bold transition hover:bg-gray-50">
+                            Semua Menu
+                            <svg x-show="activeKategori === 'semua'" class="h-3.5 w-3.5 text-brand-800" viewBox="0 0 24 24" fill="none">
+                                <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+
+                        @if ($daftarBundling->isNotEmpty())
+                            <button type="button" @click="activeKategori = 'bundling'; kategoriDropdown = false"
+                                    :class="activeKategori === 'bundling' ? 'bg-brand-50 text-brand-800' : 'text-gray-600'"
+                                    class="flex w-full items-center justify-between px-4 py-2.5 text-left text-xs font-bold transition hover:bg-gray-50">
+                                Bundling
+                                <svg x-show="activeKategori === 'bundling'" class="h-3.5 w-3.5 text-brand-800" viewBox="0 0 24 24" fill="none">
+                                    <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        @endif
+
+                        @foreach ($kategoris as $kategori)
+                            <button type="button" @click="activeKategori = '{{ $kategori->id }}'; kategoriDropdown = false"
+                                    :class="activeKategori === '{{ $kategori->id }}' ? 'bg-brand-50 text-brand-800' : 'text-gray-600'"
+                                    class="flex w-full items-center justify-between px-4 py-2.5 text-left text-xs font-bold transition hover:bg-gray-50">
+                                {{ $kategori->nama_kategori }}
+                                <svg x-show="activeKategori === '{{ $kategori->id }}'" class="h-3.5 w-3.5 text-brand-800" viewBox="0 0 24 24" fill="none">
+                                    <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
             </div>
         @endif
 
@@ -209,7 +241,7 @@
 
         {{-- Menu sections, grouped by category --}}
         @if ($daftarBundling->isNotEmpty())
-            <div x-show="activeKategori === 'semua' || activeKategori === 'bundling'" class="mt-6 first:mt-2">
+            <div x-show="(activeKategori === 'semua' || activeKategori === 'bundling') && cocokKategori('bundling')" class="mt-6 first:mt-2">
                 <div class="flex items-center justify-between">
                     <h2 class="text-sm font-bold text-gray-900">Bundling</h2>
                     <span class="text-[11px] text-gray-400">{{ $daftarBundling->count() }} item</span>
@@ -259,7 +291,7 @@
         @endif
 
         @forelse ($kategoris as $kategori)
-            <div x-show="activeKategori === 'semua' || activeKategori === '{{ $kategori->id }}'" class="mt-6 first:mt-2">
+            <div x-show="(activeKategori === 'semua' || activeKategori === '{{ $kategori->id }}') && cocokKategori('{{ $kategori->id }}')" class="mt-6 first:mt-2">
                 <div class="flex items-center justify-between">
                     <h2 class="text-sm font-bold text-gray-900">{{ $kategori->nama_kategori }}</h2>
                     <span class="text-[11px] text-gray-400">{{ $kategori->produk->count() }} item</span>
@@ -325,7 +357,21 @@
             @endif
         @endforelse
 
-        <p class="mt-6 pb-5 text-center text-[11px] text-gray-400">Tap menu untuk lihat detail &amp; pesan Pick Up</p>
+        {{-- Hasil pencarian/filter kosong --}}
+        @if ($daftarBundling->isNotEmpty() || $kategoris->isNotEmpty())
+            <div x-show="! adaProdukTampil()" x-cloak class="mt-8 flex flex-col items-center rounded-2xl border border-gray-100 bg-white px-6 py-10 text-center">
+                <span class="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 text-gray-300">
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <p class="mt-3 text-sm font-bold text-gray-700">Produk tidak ditemukan</p>
+                <p class="mt-1 text-xs text-gray-400">Coba kata kunci lain atau pilih kategori berbeda.</p>
+            </div>
+        @endif
+
+        <p x-show="adaProdukTampil()" class="mt-6 pb-5 text-center text-[11px] text-gray-400">Tap menu untuk lihat detail &amp; pesan</p>
         </div>
     </div>
 

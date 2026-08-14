@@ -136,7 +136,7 @@
                                     <span class="block font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{{ $item->nama_pembeli }}</span>
                                     <span class="block text-xs text-gray-400">{{ $item->member->no_hp ?? '-' }}</span>
                                 </td>
-                                <td class="py-3.5 px-3 hidden md:table-cell text-right font-semibold text-gray-800 dark:text-gray-200">
+                                <td class="py-3.5 px-3 hidden md:table-cell text-left font-semibold text-gray-800 dark:text-gray-200">
                                     Rp {{ number_format($item->total_bayar, 0, ',', '.') }}
                                 </td>
                                 <td class="py-3.5 px-3 hidden lg:table-cell text-gray-500 dark:text-gray-400">
@@ -206,18 +206,17 @@
         </x-common.component-card>
 
         <!-- ========== MODAL DETAIL ========== -->
-        <div x-show="modalDetail" x-cloak class="fixed inset-0 z-9999 flex items-stretch sm:items-center justify-center sm:p-4"
+        <div x-show="modalDetail" x-cloak class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
             {{-- Backdrop --}}
-            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" @click="modalDetail = false"></div>
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" @click="modalDetail = false"></div>
 
-            {{-- Content: mobile = full-height sheet (aman dari bug 100vh browser),
-                 desktop (sm+) = dialog mengambang di tengah dengan max-h --}}
-            <div class="relative bg-white dark:bg-gray-900 border-0 sm:border border-gray-100 dark:border-gray-800 shadow-xl w-full sm:max-w-lg h-full sm:h-auto sm:max-h-[85vh] rounded-none sm:rounded-2xl overflow-hidden flex flex-col"
-                x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 sm:scale-95"
-                x-transition:enter-end="opacity-100 sm:scale-100">
+            {{-- Content --}}
+            <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col border border-gray-100 dark:border-gray-800"
+                x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100">
 
                 {{-- Loading --}}
                 <div class="p-12 flex items-center justify-center" x-show="loadingDetail">
@@ -248,17 +247,17 @@
                         <div class="overflow-y-auto min-h-0 flex-1 p-6 space-y-5">
 
                             {{-- Info Pesanan: kotak-kotak, sama kayak histori-transaksi --}}
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl p-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl p-3">
                                     <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Pembeli</p>
                                     <p class="font-semibold text-gray-800 dark:text-white text-sm truncate" x-text="detailData.nama_pembeli"></p>
                                     <p class="text-xs text-gray-400 mt-0.5 truncate" x-text="detailData.member?.no_hp || '-'"></p>
                                 </div>
-                                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl p-4">
+                                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl p-3">
                                     <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Waktu Order</p>
                                     <p class="font-semibold text-gray-800 dark:text-white text-sm" x-text="formatTanggal(detailData.created_at)"></p>
                                 </div>
-                                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl p-4">
+                                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl p-3">
                                     <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Status Pesanan</p>
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold w-fit"
                                         :class="{
@@ -268,7 +267,7 @@
                                             'bg-gray-100 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400': detailData.status_pesanan === 'dibatalkan',
                                         }" x-text="labelStatusPesanan(detailData.status_pesanan)"></span>
                                 </div>
-                                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl p-4">
+                                <div class="bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl p-3">
                                     <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Status Pembayaran</p>
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold w-fit"
                                         :class="detailData.status_pembayaran === 'Lunas' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400'"
@@ -284,7 +283,7 @@
                             </template>
 
                             {{-- Riwayat Waktu --}}
-                            <div class="border border-gray-100 dark:border-gray-800 rounded-xl p-4 space-y-1.5 text-xs">
+                            <div class="border border-gray-100 dark:border-gray-800 rounded-xl p-3 space-y-1.5 text-xs">
                                 <div class="flex justify-between"><span class="text-gray-400">Dipesan</span><span class="font-medium text-gray-700 dark:text-gray-300" x-text="formatTanggal(detailData.created_at)"></span></div>
                                 <template x-if="detailData.diproses_pada">
                                     <div class="flex justify-between"><span class="text-gray-400">Mulai Diproses</span><span class="font-medium text-gray-700 dark:text-gray-300" x-text="formatTanggal(detailData.diproses_pada)"></span></div>
@@ -299,35 +298,49 @@
 
                             {{-- Bukti Pembayaran (hanya kalau belum Lunas) --}}
                             <template x-if="detailData.status_pembayaran !== 'Lunas'">
-                                <div class="border border-gray-100 dark:border-gray-800 rounded-xl p-4 space-y-3">
+                                <div class="border border-gray-100 dark:border-gray-800 rounded-xl p-3 space-y-2">
                                     <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Bukti Pembayaran QRIS</h4>
                                     <template x-if="detailData.catatan_penolakan && !detailData.bukti_pembayaran">
                                         <p class="text-xs text-red-500 bg-red-50 dark:bg-red-500/10 rounded-lg p-2">
                                             Ditolak sebelumnya: <span x-text="detailData.catatan_penolakan"></span> — menunggu member upload ulang.
                                         </p>
                                     </template>
-                                    <template x-if="detailData.bukti_pembayaran">
-                                        <img :src="'/storage/' + detailData.bukti_pembayaran" class="w-full max-h-64 object-contain rounded-lg border border-gray-100 dark:border-gray-800">
-                                    </template>
                                     <template x-if="!detailData.bukti_pembayaran">
                                         <p class="text-xs text-gray-400">Member belum mengupload bukti pembayaran.</p>
                                     </template>
-                                    <template x-if="detailData.bukti_pembayaran && !detailData.bukti_dikonfirmasi_pada">
-                                        <p class="text-xs text-amber-600 dark:text-amber-400">Menunggu member mengonfirmasi bukti.</p>
-                                    </template>
 
-                                    <template x-if="detailData.bukti_dikonfirmasi_pada">
-                                        <div class="flex gap-2 pt-1">
-                                            <form :action="'/pesanan-pickup/' + detailData.id + '/konfirmasi-pembayaran'" method="POST" class="flex-1">
-                                                @csrf @method('PATCH')
-                                                <button type="submit" class="w-full py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-xs transition">
-                                                    Konfirmasi Pembayaran
-                                                </button>
-                                            </form>
-                                            <button type="button" @click="bukaModalTolak()"
-                                                class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs transition">
-                                                Tolak
+                                    <template x-if="detailData.bukti_pembayaran">
+                                        <div class="flex items-center gap-3">
+                                            <button type="button" @click="previewGambar = '/storage/' + detailData.bukti_pembayaran"
+                                                class="relative w-16 h-16 shrink-0 group block rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                                <img :src="'/storage/' + detailData.bukti_pembayaran" class="w-full h-full object-cover">
+                                                <span class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition flex items-center justify-center">
+                                                    <svg class="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                    </svg>
+                                                </span>
                                             </button>
+
+                                            <div class="min-w-0 flex-1">
+                                                <template x-if="!detailData.bukti_dikonfirmasi_pada">
+                                                    <p class="text-xs text-amber-600 dark:text-amber-400">Menunggu member mengonfirmasi bukti.</p>
+                                                </template>
+
+                                                <template x-if="detailData.bukti_dikonfirmasi_pada">
+                                                    <div class="flex flex-wrap gap-2">
+                                                        <form :action="'/pesanan-pickup/' + detailData.id + '/konfirmasi-pembayaran'" method="POST">
+                                                            @csrf @method('PATCH')
+                                                            <button type="submit" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-xs transition">
+                                                                Konfirmasi
+                                                            </button>
+                                                        </form>
+                                                        <button type="button" @click="bukaModalTolak()"
+                                                            class="px-3 py-1.5 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold rounded-lg text-xs transition">
+                                                            Tolak
+                                                        </button>
+                                                    </div>
+                                                </template>
+                                            </div>
                                         </div>
                                     </template>
                                 </div>
@@ -335,7 +348,7 @@
 
                             {{-- Daftar Item: tabel + card mobile, sama kayak histori-transaksi --}}
                             <div>
-                                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Item Pesanan</h4>
+                                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Item Pesanan</h4>
                                 <div class="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
                                     {{-- Desktop Table View --}}
                                     <div class="hidden sm:block">
@@ -343,9 +356,9 @@
                                             <thead>
                                                 <tr class="bg-gray-50 dark:bg-gray-800/50">
                                                     <th class="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Produk</th>
-                                                    <th class="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Harga</th>
+                                                    <th class="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Harga</th>
                                                     <th class="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Qty</th>
-                                                    <th class="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Subtotal</th>
+                                                    <th class="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Subtotal</th>
                                                 </tr>
                                             </thead>
                                             <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
@@ -355,9 +368,9 @@
                                                             <span x-text="item.nama_produk"></span>
                                                             <div x-show="item.catatan" class="text-[11px] text-amber-600 dark:text-amber-400 font-medium italic mt-0.5" x-text="'Catatan: ' + item.catatan"></div>
                                                         </td>
-                                                        <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400" x-text="'Rp ' + Number(item.harga_satuan).toLocaleString('id-ID')"></td>
+                                                        <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 whitespace-nowrap" x-text="'Rp ' + Number(item.harga_satuan).toLocaleString('id-ID')"></td>
                                                         <td class="px-4 py-3 text-center text-gray-600 dark:text-gray-400" x-text="item.jumlah"></td>
-                                                        <td class="px-4 py-3 text-right font-semibold text-gray-800 dark:text-white" x-text="'Rp ' + Number(item.subtotal).toLocaleString('id-ID')"></td>
+                                                        <td class="px-4 py-3 text-right font-semibold text-gray-800 dark:text-white whitespace-nowrap" x-text="'Rp ' + Number(item.subtotal).toLocaleString('id-ID')"></td>
                                                     </tr>
                                                 </template>
                                             </tbody>
@@ -383,7 +396,7 @@
                             </div>
 
                             {{-- Ringkasan Pembayaran --}}
-                            <div class="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-50 dark:border-amber-950/30 rounded-xl p-5 space-y-2">
+                            <div class="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-50 dark:border-amber-950/30 rounded-xl p-4 space-y-1.5">
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-500 dark:text-gray-400">Metode Pembayaran</span>
                                     <span class="font-medium text-gray-800 dark:text-white" x-text="detailData.metode_pembayaran"></span>
@@ -429,7 +442,7 @@
                         </div>
 
                         {{-- Footer (sticky) --}}
-                        <div class="flex flex-wrap items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 shrink-0">
+                        <div class="flex flex-wrap items-center justify-end gap-2 px-6 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 shrink-0">
 
                             {{-- Cetak Struk & Tiket Produksi: muncul mulai status Lunas --}}
                             <template x-if="detailData.status_pembayaran === 'Lunas'">
@@ -497,7 +510,8 @@
 
         <!-- ========== MODAL: KONFIRMASI BATALKAN ========== -->
         <div x-show="modalBatalTerbuka" x-cloak x-transition
-            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs overflow-y-auto z-[99999]">
+            <div class="flex items-center justify-center p-4" style="min-height: 100%">
             <div @click.away="modalBatalTerbuka = false"
                 class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800 max-h-[90vh] overflow-y-auto">
                 <div class="p-6 text-center">
@@ -517,11 +531,13 @@
                         class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Batalkan</button>
                 </div>
             </div>
+            </div>
         </div>
 
         <!-- ========== MODAL: ALASAN TOLAK PEMBAYARAN ========== -->
         <div x-show="modalTolakTerbuka" x-cloak x-transition
-            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs overflow-y-auto z-[99999]">
+            <div class="flex items-center justify-center p-4" style="min-height: 100%">
             <div @click.away="modalTolakTerbuka = false"
                 class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800 max-h-[90vh] overflow-y-auto">
                 <form :action="detailData ? '/pesanan-pickup/' + detailData.id + '/tolak-pembayaran' : '#'" method="POST">
@@ -547,6 +563,19 @@
                     </div>
                 </form>
             </div>
+            </div>
+        </div>
+
+        <!-- ========== MODAL: PREVIEW GAMBAR FULL ========== -->
+        <div x-show="previewGambar" x-cloak x-transition class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/80"
+            @click="previewGambar = null">
+            <button type="button" @click="previewGambar = null"
+                class="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <img :src="previewGambar" @click.stop class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl">
         </div>
 
     </div>
@@ -562,6 +591,7 @@
                 modalBatalTerbuka: false,
                 modalTolakTerbuka: false,
                 alasanTolak: '',
+                previewGambar: null,
 
                 async lihatDetail(id) {
                     this.modalDetail = true;

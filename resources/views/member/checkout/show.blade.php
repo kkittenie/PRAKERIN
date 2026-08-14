@@ -38,7 +38,7 @@
 
         {{-- Progress status --}}
         @unless ($dibatalkan)
-            <div class="mt-6 flex items-center">
+            <div class="mt-6 flex items-start">
                 @foreach ($steps as $key => $label)
                     @php
                         $idx = array_search($key, $urutan, true);
@@ -55,7 +55,7 @@
                         <p class="mt-2 max-w-[80px] text-[10px] font-bold {{ $selesai ? 'text-brand-800' : 'text-gray-400' }}">{{ $label }}</p>
                     </div>
                     @if (! $loop->last)
-                        <div class="-mt-6 h-0.5 flex-1 {{ $idx < $indexSekarang ? 'bg-brand-800' : 'bg-gray-200' }}"></div>
+                        <div class="mt-4 h-0.5 flex-1 {{ $idx < $indexSekarang ? 'bg-brand-800' : 'bg-gray-200' }}"></div>
                     @endif
                 @endforeach
             </div>

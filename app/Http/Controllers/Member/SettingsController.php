@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 
 class SettingsController extends Controller
 {
@@ -55,10 +54,11 @@ class SettingsController extends Controller
 
         $data = $request->validate([
             'password_lama' => ['required', 'string'],
-            'password_baru' => ['required', 'confirmed', Password::min(6)],
+            'password_baru' => ['required', 'confirmed', 'min:6'],
         ], [
             'password_lama.required' => 'Masukkan password lama kamu.',
             'password_baru.required' => 'Masukkan password baru kamu.',
+            'password_baru.min' => 'Password baru minimal 6 karakter.',
             'password_baru.confirmed' => 'Konfirmasi password baru tidak cocok.',
         ]);
 

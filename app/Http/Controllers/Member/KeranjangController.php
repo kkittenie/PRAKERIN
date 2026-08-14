@@ -48,7 +48,6 @@ class KeranjangController extends Controller
                     'ukuran' => $validated['ukuran'] ?: null,
                     'jumlah' => (int) $validated['jumlah'],
                 ],
-                'suggestion' => $this->saranSilang(excludeProdukIds: [$produk->id]),
                 'cart' => $this->ringkasanKeranjang(),
                 'checkout_url' => route('member.checkout.index'),
                 'menu_url' => route('member.menu'),
@@ -82,8 +81,6 @@ class KeranjangController extends Controller
         $pesan = "{$bundling->nama_bundling} ditambahkan ke keranjang.";
 
         if ($request->wantsJson()) {
-            $idProdukDalamBundling = $bundling->items()->pluck('produk_id')->all();
-
             return response()->json([
                 'success' => true,
                 'message' => $pesan,
@@ -93,7 +90,6 @@ class KeranjangController extends Controller
                     'ukuran' => null,
                     'jumlah' => (int) $validated['jumlah'],
                 ],
-                'suggestion' => $this->saranSilang(excludeProdukIds: $idProdukDalamBundling),
                 'cart' => $this->ringkasanKeranjang(),
                 'checkout_url' => route('member.checkout.index'),
                 'menu_url' => route('member.menu'),
@@ -196,39 +192,6 @@ class KeranjangController extends Controller
         MemberCart::hapus($itemId);
 
         return back()->with('success', 'Item dihapus dari keranjang.');
-    }
-
-    /**
-     * Ambil satu produk "cocok buat ditambahkan juga" untuk ditampilkan di
-     * sheet konfirmasi keranjang. Diprioritaskan produk yang lagi promo.
-     */
-    private function saranSilang(array $excludeProdukIds = []): ?array
-    {
-        $kandidat = Produk::with('promos')
-            ->where('status_aktif', true)
-            ->whereNotIn('id', $excludeProdukIds)
-            ->get();
-
-        if ($kandidat->isEmpty()) {
-            return null;
-        }
-
-        $saran = $kandidat->filter(fn ($p) => $p->promo_aktif)->shuffle()->first()
-            ?? $kandidat->shuffle()->first();
-
-        if (!$saran) {
-            return null;
-        }
-
-        return [
-            'id' => $saran->id,
-            'nama' => $saran->nama_produk,
-            'foto_url' => $saran->foto ? asset('storage/' . $saran->foto) : null,
-            'harga_asli' => (float) $saran->harga_jual,
-            'harga_final' => (float) $saran->harga_diskon,
-            'ada_promo' => (float) $saran->harga_diskon < (float) $saran->harga_jual,
-            'add_url' => route('member.keranjang.tambah', $saran),
-        ];
     }
 
     private function ringkasanKeranjang(): array
