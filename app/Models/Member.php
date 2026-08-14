@@ -11,7 +11,7 @@ class Member extends Authenticatable
 {
     use Notifiable, LogsActivity;
 
-    protected $fillable = ['nama', 'no_hp', 'email', 'tanggal_lahir', 'foto', 'poin', 'password'];
+    protected $fillable = ['nama', 'no_hp', 'email', 'foto', 'poin', 'password'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -21,16 +21,15 @@ class Member extends Authenticatable
     {
         return [
             'password' => 'hashed',
-            'tanggal_lahir' => 'date',
         ];
     }
 
     public function getKelengkapanProfilAttribute(): int
     {
-        $fields = [$this->email, $this->tanggal_lahir];
+        $fields = [$this->email];
         $terisi = count(array_filter($fields, fn($f) => !is_null($f) && $f !== ''));
 
-        return (int) round((1 + $terisi) / 3 * 100);
+        return (int) round((1 + $terisi) / 2 * 100);
     }
 
     protected function levelAktif(): ?MemberLevel
@@ -54,9 +53,6 @@ class Member extends Authenticatable
         return $levelTerendah->nama_level ?? 'Member';
     }
 
-    // Warna badge (gray/amber/slate/yellow/blue/green/purple/red) dari
-    // pengaturan "Aturan Naik Level" di POS, buat mewarnai badge tier di
-    // member app supaya konsisten sama yang di-set admin.
     public function getWarnaBadgeLevelAttribute(): string
     {
         $level = $this->levelAktif();

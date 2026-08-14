@@ -31,7 +31,6 @@ class AkunController extends Controller
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:100'],
             'email' => ['nullable', 'email', 'max:150', Rule::unique('members', 'email')->ignore($member->id)],
-            'tanggal_lahir' => ['nullable', 'date'],
             'foto' => ['nullable', 'image', 'max:8192'],
         ]);
 

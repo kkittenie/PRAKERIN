@@ -11,6 +11,7 @@ use App\Http\Controllers\Member\PesananController;
 use App\Http\Controllers\Member\ProdukController;
 use App\Http\Controllers\Member\RewardController;
 use App\Http\Controllers\Member\RiwayatController;
+use App\Http\Controllers\Member\SettingsController;
 use App\Http\Controllers\Member\StampController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,12 +34,18 @@ Route::prefix('member')->name('member.')->group(function () {
         Route::get('/daftar', [AuthController::class, 'tampilkanRegister'])->name('register');
         Route::post('/daftar', [AuthController::class, 'register'])->name('register.store');
         Route::post('/kirim-otp', [AuthController::class, 'kirimOtp'])->name('otp.send');
+        Route::post('/verifikasi-otp', [AuthController::class, 'verifikasiOtp'])->name('otp.verify');
     });
 
     Route::middleware('auth:member')->group(function () {
         Route::get('/profil', [AkunController::class, 'profil'])->name('profil');
         Route::post('/profil', [AkunController::class, 'updateProfil'])->name('profil.update');
         Route::delete('/profil', [AkunController::class, 'hapusAkun'])->name('profil.hapus-akun');
+
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::get('/settings/ubah-password', [SettingsController::class, 'ubahPassword'])->name('settings.ubah-password');
+        Route::post('/settings/verifikasi-password-lama', [SettingsController::class, 'verifikasiPasswordLama'])->name('settings.verifikasi-password-lama');
+        Route::post('/settings/ubah-password', [SettingsController::class, 'updatePassword'])->name('settings.ubah-password.update');
 
         Route::get('/reward', [RewardController::class, 'index'])->name('reward.index');
         Route::get('/reward/{reward}', [RewardController::class, 'show'])->name('reward.show');

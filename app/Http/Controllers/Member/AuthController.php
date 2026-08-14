@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Models\Member;
+use App\Models\OtpVerification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -11,6 +12,24 @@ use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
+    /**
+     * Normalisasi nomor HP ke format +62xxxx
+     */
+    private function normalizeNoHp(string $noHp): string
+    {
+        $noHp = trim($noHp);
+
+        if (str_starts_with($noHp, '0')) {
+            return '+62' . substr($noHp, 1);
+        }
+
+        if (!str_starts_with($noHp, '+')) {
+            return '+62' . $noHp;
+        }
+
+        return $noHp;
+    }
+
     public function welcome()
     {
         if (Auth::guard('member')->check()) {
@@ -33,14 +52,7 @@ class AuthController extends Controller
             'no_hp.required' => 'Nomor HP wajib diisi.',
         ]);
 
-        $noHp = trim($request->no_hp);
-
-        // Normalize phone number
-        if (str_starts_with($noHp, '0')) {
-            $noHp = '+62' . substr($noHp, 1);
-        } elseif (!str_starts_with($noHp, '+')) {
-            $noHp = '+62' . $noHp;
-        }
+        $noHp = $this->normalizeNoHp($request->no_hp);
 
         // Check if phone number already exists
         if (Member::where('no_hp', $noHp)->exists()) {
@@ -51,12 +63,19 @@ class AuthController extends Controller
         }
 
         // Generate 6 digit OTP
-        $otp = (string) rand(100000, 999999);
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        session([
-            'otp_code' => $otp,
-            'otp_phone' => $noHp,
-            'otp_expires_at' => now()->addMinutes(5)
+        // Hapus OTP lama yang belum dipakai untuk nomor ini
+        OtpVerification::where('no_hp', $noHp)
+            ->where('is_used', false)
+            ->delete();
+
+        // Simpan OTP baru ke database
+        OtpVerification::create([
+            'no_hp' => $noHp,
+            'otp' => $otp,
+            'expires_at' => now()->addMinutes(5),
+            'is_used' => false,
         ]);
 
         return response()->json([
@@ -64,6 +83,50 @@ class AuthController extends Controller
             'message' => 'Kode OTP berhasil dikirim ke nomor ' . $noHp,
             'otp' => $otp, // Exposed for demo display in modal
             'no_hp' => $noHp
+        ]);
+    }
+
+    /**
+     * Verifikasi kode OTP saat registrasi (Step 2)
+     */
+    public function verifikasiOtp(Request $request)
+    {
+        $request->validate([
+            'no_hp' => ['required', 'string', 'max:20'],
+            'otp' => ['required', 'string', 'size:6'],
+        ], [
+            'no_hp.required' => 'Nomor HP wajib diisi.',
+            'otp.required' => 'Kode OTP wajib diisi.',
+        ]);
+
+        $noHp = $this->normalizeNoHp($request->no_hp);
+
+        $otpVerification = OtpVerification::where('no_hp', $noHp)
+            ->where('otp', $request->otp)
+            ->where('is_used', false)
+            ->latest()
+            ->first();
+
+        if (!$otpVerification) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode OTP salah.',
+            ], 422);
+        }
+
+        if ($otpVerification->isExpired()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode OTP sudah kadaluarsa. Silakan minta OTP baru.',
+            ], 422);
+        }
+
+        // Tandai OTP sudah dipakai (dicek ulang saat submit form di Step 3)
+        $otpVerification->update(['is_used' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kode OTP valid.',
         ]);
     }
 
@@ -83,19 +146,17 @@ class AuthController extends Controller
             'otp.required' => 'Kode OTP wajib diisi.',
         ]);
 
-        // Verify OTP (allow session otp or fallback demo otp '123456')
-        $sessionOtp = session('otp_code');
-        $sessionPhone = session('otp_phone');
+        $noHp = $this->normalizeNoHp($data['no_hp']);
 
-        if ($data['otp'] !== '123456' && $data['otp'] !== $sessionOtp) {
+        // Verify OTP terhadap database (harus sudah diverifikasi di Step 2)
+        $otpVerification = OtpVerification::where('no_hp', $noHp)
+            ->where('otp', $data['otp'])
+            ->where('is_used', true)
+            ->latest()
+            ->first();
+
+        if (!$otpVerification || $otpVerification->isExpired()) {
             return back()->withErrors(['otp' => 'Kode OTP tidak valid atau sudah kadaluarsa.'])->withInput();
-        }
-
-        $noHp = trim($data['no_hp']);
-        if (str_starts_with($noHp, '0')) {
-            $noHp = '+62' . substr($noHp, 1);
-        } elseif (!str_starts_with($noHp, '+')) {
-            $noHp = '+62' . $noHp;
         }
 
         $member = Member::create([
@@ -105,8 +166,8 @@ class AuthController extends Controller
             'poin' => 0,
         ]);
 
-        // Clear OTP session
-        session()->forget(['otp_code', 'otp_phone', 'otp_expires_at']);
+        // Bersihkan OTP yang sudah dipakai untuk nomor ini
+        OtpVerification::where('no_hp', $noHp)->delete();
 
         Auth::guard('member')->login($member);
         $request->session()->regenerate();

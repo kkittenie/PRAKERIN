@@ -22,7 +22,7 @@
         @enderror
 
         <form method="POST" action="{{ route('member.profil.update') }}" enctype="multipart/form-data"
-            class="mt-5 flex flex-1 flex-col overflow-hidden pb-6" x-data="{ uploadingFoto: false }">
+            class="mt-5 flex flex-1 flex-col overflow-hidden" x-data="{ uploadingFoto: false }">
             @csrf
 
             {{-- Background abu: full-bleed otomatis, karena <main> di halaman ini sudah tanpa padding horizontal.
@@ -90,9 +90,7 @@
                     <div class="px-5">
                         @php $kelengkapan = $member->kelengkapan_profil; @endphp
                         <div class="px-0.5 pt-6 text-center">
-                            <p class="text-sm font-bold text-brand-800">Complete your profile and earn vouchers on your
-                                special day!</p>
-                            <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                            <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100">
                                 <div class="h-full rounded-full bg-brand-800 transition-all"
                                     style="width: {{ $kelengkapan }}%"></div>
                             </div>
@@ -113,24 +111,6 @@
                                     placeholder="Masukkan email kamu"
                                     class="mt-1.5 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
                                 @error('email')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-                            </div>
-
-                            <div>
-                                <label for="tanggal_lahir_tombol" class="text-xs font-semibold text-gray-500">Date of Birth</label>
-                                <button type="button" id="tanggal_lahir_tombol" onclick="bukaPilihTanggalLahir()"
-                                    class="mt-1.5 flex w-full items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-left text-sm outline-none transition focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
-                                    <span id="tanggal_lahir_label" class="{{ $member->tanggal_lahir ? 'text-gray-800' : 'text-gray-400' }}">
-                                        {{ $member->tanggal_lahir ? $member->tanggal_lahir->translatedFormat('d F Y') : 'Pilih tanggal lahir' }}
-                                    </span>
-                                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 shrink-0 text-gray-400">
-                                        <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8" />
-                                        <path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                                    </svg>
-                                </button>
-                                <input type="hidden" name="tanggal_lahir" id="tanggal_lahir"
-                                    value="{{ old('tanggal_lahir', $member->tanggal_lahir?->format('Y-m-d')) }}">
-                                @error('tanggal_lahir')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                             </div>
 
@@ -161,16 +141,20 @@
                         </button>
                     </div>
 
-                    {{-- Save button: full-bleed, tombolnya sendiri yang nyampe ujung (bukan cuma wadahnya) --}}
-                    <div class="mt-8">
-                        <button type="submit"
-                            class="w-full rounded-lg bg-brand-800 py-4 text-sm font-bold uppercase tracking-wide text-white">
-                            Save
-                        </button>
-                    </div>
+                    {{-- Spacer supaya konten terakhir nggak ketutup tombol Save yang fixed --}}
+                    <div class="h-24"></div>
 
                 </div>
                 {{-- Scrollable section ends here --}}
+
+                {{-- Save button: fixed di bawah, full-bleed nempel kiri-kanan --}}
+                <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-none border-t border-gray-100 bg-white 2xl:max-w-6xl"
+                    style="padding-bottom: env(safe-area-inset-bottom);">
+                    <button type="submit"
+                        class="block w-full bg-brand-800 py-4 text-sm font-bold uppercase tracking-wide text-white">
+                        Save
+                    </button>
+                </div>
 
         </form>
 
@@ -205,192 +189,6 @@
             @csrf
             @method('DELETE')
         </form>
-
-        <!-- ========== SHEET: PILIH TANGGAL LAHIR ========== -->
-        <dialog id="sheet-tanggal-lahir"
-            class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto rounded-t-3xl border-0 p-0">
-            <div class="flex flex-col">
-                <div class="flex justify-center pb-1 pt-3">
-                    <span class="h-1 w-10 rounded-full bg-gray-200"></span>
-                </div>
-
-                <h3 class="px-6 pt-3 text-center text-theme-md font-extrabold text-brand-800">Select Birth date</h3>
-
-                <div class="relative mt-5 px-6">
-                    {{-- Highlight band behind the centered row --}}
-                    <div class="pointer-events-none absolute inset-x-6 top-1/2 h-11 -translate-y-1/2 rounded-xl bg-brand-25"></div>
-                    {{-- Fade top & bottom so the wheel doesn't look like it cuts off abruptly --}}
-                    <div class="pointer-events-none absolute inset-x-6 inset-y-0 z-10"
-                        style="background: linear-gradient(to bottom, #fff, rgba(255,255,255,0) 24%, rgba(255,255,255,0) 76%, #fff);">
-                    </div>
-
-                    <div class="relative grid grid-cols-3 gap-2">
-                        <div id="kolom-hari" class="picker-kolom overflow-y-scroll" style="height:220px; scroll-snap-type:y mandatory;"></div>
-                        <div id="kolom-bulan" class="picker-kolom overflow-y-scroll" style="height:220px; scroll-snap-type:y mandatory;"></div>
-                        <div id="kolom-tahun" class="picker-kolom overflow-y-scroll" style="height:220px; scroll-snap-type:y mandatory;"></div>
-                    </div>
-                </div>
-
-                <div class="px-6 pb-6 pt-5">
-                    <button type="button" onclick="pilihTanggalLahir()"
-                        class="w-full rounded-lg bg-brand-800 py-3.5 text-sm font-bold uppercase tracking-wide text-white active:bg-brand-700">
-                        Choose
-                    </button>
-                </div>
-            </div>
-        </dialog>
-
-        <style>
-            .picker-kolom { scrollbar-width: none; }
-            .picker-kolom::-webkit-scrollbar { display: none; }
-        </style>
-
-        <script>
-            (function () {
-                var namaBulanSingkat = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-                var namaBulanPanjang = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                var tinggiBaris = 44; // px — must match the row height below (h-11)
-                var barisTampil = 5;  // must be odd, so there's a true center row
-                var paddingKolom = tinggiBaris * Math.floor(barisTampil / 2);
-
-                var tahunSekarang = new Date().getFullYear();
-                var tahunMin = tahunSekarang - 100;
-                var tahunMax = tahunSekarang;
-
-                var kolomHari = document.getElementById('kolom-hari');
-                var kolomBulan = document.getElementById('kolom-bulan');
-                var kolomTahun = document.getElementById('kolom-tahun');
-                var inputTanggalLahir = document.getElementById('tanggal_lahir');
-                var labelTanggalLahir = document.getElementById('tanggal_lahir_label');
-
-                if (!kolomHari || !kolomBulan || !kolomTahun || !inputTanggalLahir) return;
-
-                var pilih = { hari: 1, bulan: 0, tahun: tahunSekarang - 20 };
-
-                var nilaiAwal = inputTanggalLahir.value;
-                if (nilaiAwal) {
-                    var bagian = nilaiAwal.split('-');
-                    if (bagian.length === 3) {
-                        pilih = {
-                            tahun: parseInt(bagian[0], 10),
-                            bulan: parseInt(bagian[1], 10) - 1,
-                            hari: parseInt(bagian[2], 10)
-                        };
-                    }
-                }
-
-                function jumlahHariDiBulan(bulan, tahun) {
-                    return new Date(tahun, bulan + 1, 0).getDate();
-                }
-
-                function isiKolom(kolom, daftar, nilaiDipilih) {
-                    kolom.innerHTML = '';
-                    kolom.style.paddingTop = paddingKolom + 'px';
-                    kolom.style.paddingBottom = paddingKolom + 'px';
-                    var indexTerpilih = 0;
-                    daftar.forEach(function (item, i) {
-                        if (item.nilai === nilaiDipilih) indexTerpilih = i;
-                        var baris = document.createElement('div');
-                        baris.style.height = tinggiBaris + 'px';
-                        baris.style.scrollSnapAlign = 'center';
-                        baris.className = 'flex items-center justify-center text-sm text-gray-400 transition-all duration-150 tabular-nums';
-                        baris.textContent = item.label;
-                        baris.dataset.nilai = item.nilai;
-                        kolom.appendChild(baris);
-                    });
-                    kolom.scrollTop = indexTerpilih * tinggiBaris;
-                    perbaruiSorotan(kolom);
-                }
-
-                function perbaruiSorotan(kolom) {
-                    var index = Math.max(0, Math.min(kolom.children.length - 1, Math.round(kolom.scrollTop / tinggiBaris)));
-                    Array.from(kolom.children).forEach(function (baris, i) {
-                        baris.className = i === index
-                            ? 'flex items-center justify-center text-base font-bold text-brand-800 transition-all duration-150 tabular-nums'
-                            : 'flex items-center justify-center text-sm text-gray-400 transition-all duration-150 tabular-nums';
-                    });
-                    return index;
-                }
-
-                function nilaiTerpilih(kolom) {
-                    var index = Math.max(0, Math.min(kolom.children.length - 1, Math.round(kolom.scrollTop / tinggiBaris)));
-                    var baris = kolom.children[index];
-                    return baris ? parseInt(baris.dataset.nilai, 10) : 0;
-                }
-
-                var waktuScroll;
-                function pasangScrollListener(kolom, onSelesai) {
-                    kolom.addEventListener('scroll', function () {
-                        perbaruiSorotan(kolom);
-                        clearTimeout(waktuScroll);
-                        waktuScroll = setTimeout(function () {
-                            var index = perbaruiSorotan(kolom);
-                            kolom.scrollTo({ top: index * tinggiBaris, behavior: 'smooth' });
-                            if (onSelesai) onSelesai(nilaiTerpilih(kolom));
-                        }, 120);
-                    }, { passive: true });
-                }
-
-                function bangunHari() {
-                    var jumlah = jumlahHariDiBulan(pilih.bulan, pilih.tahun);
-                    if (pilih.hari > jumlah) pilih.hari = jumlah;
-                    var daftar = [];
-                    for (var h = 1; h <= jumlah; h++) daftar.push({ nilai: h, label: String(h) });
-                    isiKolom(kolomHari, daftar, pilih.hari);
-                }
-
-                function bangunBulan() {
-                    var daftar = namaBulanSingkat.map(function (nama, i) { return { nilai: i, label: nama }; });
-                    isiKolom(kolomBulan, daftar, pilih.bulan);
-                }
-
-                function bangunTahun() {
-                    var daftar = [];
-                    for (var t = tahunMin; t <= tahunMax; t++) daftar.push({ nilai: t, label: String(t) });
-                    isiKolom(kolomTahun, daftar, pilih.tahun);
-                }
-
-                pasangScrollListener(kolomHari, function (nilai) { pilih.hari = nilai; });
-                pasangScrollListener(kolomBulan, function (nilai) { pilih.bulan = nilai; bangunHari(); });
-                pasangScrollListener(kolomTahun, function (nilai) { pilih.tahun = nilai; bangunHari(); });
-
-                bangunBulan();
-                bangunTahun();
-                bangunHari();
-
-                window.bukaPilihTanggalLahir = function () {
-                    openSheet('sheet-tanggal-lahir');
-                    requestAnimationFrame(function () {
-                        requestAnimationFrame(function () {
-                            kolomHari.scrollTop = (pilih.hari - 1) * tinggiBaris;
-                            kolomBulan.scrollTop = pilih.bulan * tinggiBaris;
-                            kolomTahun.scrollTop = (pilih.tahun - tahunMin) * tinggiBaris;
-                            perbaruiSorotan(kolomHari);
-                            perbaruiSorotan(kolomBulan);
-                            perbaruiSorotan(kolomTahun);
-                        });
-                    });
-                };
-
-                window.pilihTanggalLahir = function () {
-                    pilih.hari = nilaiTerpilih(kolomHari);
-                    pilih.bulan = nilaiTerpilih(kolomBulan);
-                    pilih.tahun = nilaiTerpilih(kolomTahun);
-
-                    var hariStr = String(pilih.hari).padStart(2, '0');
-                    var bulanStr = String(pilih.bulan + 1).padStart(2, '0');
-                    inputTanggalLahir.value = pilih.tahun + '-' + bulanStr + '-' + hariStr;
-
-                    if (labelTanggalLahir) {
-                        labelTanggalLahir.textContent = pilih.hari + ' ' + namaBulanPanjang[pilih.bulan] + ' ' + pilih.tahun;
-                        labelTanggalLahir.classList.remove('text-gray-400');
-                        labelTanggalLahir.classList.add('text-gray-800');
-                    }
-
-                    closeSheet('sheet-tanggal-lahir');
-                };
-            })();
-        </script>
 
     </div>
 
