@@ -15,7 +15,6 @@
     $riwayatStamp = $riwayatStamp ?? collect();
     $pesanan = $pesanan ?? collect();
     $isEmpty = $penukaran->isEmpty() && $transaksi->isEmpty() && $riwayatStamp->isEmpty() && $pesanan->isEmpty();
-    $redeemCount = $penukaran->count() + $riwayatStamp->count();
 @endphp
 
 @section('content')
@@ -58,51 +57,65 @@
         }
     </style>
 
-    <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-3 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10">
-        <h1 class="text-center text-lg font-extrabold text-gray-900">Riwayat</h1>
-    </div>
+    <div x-data="{ tab: 'pesanan' }">
+        <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-0 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10">
+            <h1 class="text-center text-lg font-extrabold text-gray-900">Riwayat</h1>
 
-    @if ($isEmpty)
-        @include('member.components.empty-state', [
-            'title' => 'Belum Ada Riwayat',
-            'description' => 'Semua transaksi, penukaran reward, dan penukaran stamp kamu bakal kecatat di sini.',
-            'icon' => 'icon-clock',
-            'iconBg' => 'bg-gray-100',
-            'iconColor' => 'text-gray-400',
-        ])
-    @else
-        <div x-data="{ tab: 'pesanan' }" class="mt-5">
-            {{-- Fore-style underline tabs — same pattern as the Vouchers page. --}}
-            <div class="relative grid grid-cols-3 border-b border-gray-100">
-                <button
-                    type="button"
-                    @click="tab = 'pesanan'"
-                    :class="tab === 'pesanan' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
-                    class="relative pb-3 text-center text-[13px] font-bold transition"
-                >
-                    Pesanan
-                </button>
-                <button
-                    type="button"
-                    @click="tab = 'transaksi'"
-                    :class="tab === 'transaksi' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
-                    class="relative pb-3 text-center text-[13px] font-bold transition"
-                >
-                    Riwayat Transaksi
-                </button>
-                <button
-                    type="button"
-                    @click="tab = 'redeem'"
-                    :class="tab === 'redeem' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
-                    class="relative pb-3 text-center text-[13px] font-bold transition"
-                >
-                    Riwayat Redeem
-                </button>
-                <span
-                    class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/3 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
-                    :class="{ 'translate-x-0': tab === 'pesanan', 'translate-x-full': tab === 'transaksi', 'translate-x-[200%]': tab === 'redeem' }"
-                ></span>
-            </div>
+            @unless ($isEmpty)
+                {{-- Fore-style underline tabs — same pattern as the Vouchers page.
+                     Lives inside the sticky header so it pins under the title
+                     while the tab panels scroll underneath it. --}}
+                <div class="relative mt-4 grid grid-cols-4 border-b border-gray-100">
+                    <button
+                        type="button"
+                        @click="tab = 'pesanan'"
+                        :class="tab === 'pesanan' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
+                        class="relative pb-3 text-center text-[13px] font-bold transition"
+                    >
+                        Pesanan
+                    </button>
+                    <button
+                        type="button"
+                        @click="tab = 'transaksi'"
+                        :class="tab === 'transaksi' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
+                        class="relative pb-3 text-center text-[13px] font-bold transition"
+                    >
+                        Transaksi
+                    </button>
+                    <button
+                        type="button"
+                        @click="tab = 'voucher'"
+                        :class="tab === 'voucher' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
+                        class="relative pb-3 text-center text-[13px] font-bold transition"
+                    >
+                        Voucher
+                    </button>
+                    <button
+                        type="button"
+                        @click="tab = 'stamp'"
+                        :class="tab === 'stamp' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
+                        class="relative pb-3 text-center text-[13px] font-bold transition"
+                    >
+                        Stamp
+                    </button>
+                    <span
+                        class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/4 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
+                        :class="{ 'translate-x-0': tab === 'pesanan', 'translate-x-full': tab === 'transaksi', 'translate-x-[200%]': tab === 'voucher', 'translate-x-[300%]': tab === 'stamp' }"
+                    ></span>
+                </div>
+            @endunless
+        </div>
+
+        @if ($isEmpty)
+            @include('member.components.empty-state', [
+                'title' => 'Belum Ada Riwayat',
+                'description' => 'Semua transaksi, penukaran reward, dan penukaran stamp kamu bakal kecatat di sini.',
+                'icon' => 'icon-clock',
+                'iconBg' => 'bg-gray-100',
+                'iconColor' => 'text-gray-400',
+            ])
+        @else
+            <div class="mt-5">
 
             {{-- ================= TAB: PESANAN (pick up dari Member App) ================= --}}
             <div x-show="tab === 'pesanan'" x-cloak class="pt-5">
@@ -260,122 +273,124 @@
                 @endif
             </div>
 
-            {{-- ================= TAB: RIWAYAT REDEEM ================= --}}
-            <div x-show="tab === 'redeem'" x-cloak class="pt-5">
-                @if ($redeemCount === 0)
+            {{-- ================= TAB: VOUCHER (penukaran reward) ================= --}}
+            <div x-show="tab === 'voucher'" x-cloak class="pt-5">
+                @if ($penukaran->isEmpty())
                     @include('member.components.empty-state', [
-                        'title' => 'Belum Ada Penukaran',
-                        'description' => 'Penukaran reward dan stamp kamu bakal kecatat di sini.',
-                        'icon' => 'icon-gift',
+                        'title' => 'Belum Ada Penukaran Voucher',
+                        'description' => 'Penukaran voucher kamu bakal kecatat di sini.',
+                        'icon' => 'icon-ticket',
                         'iconBg' => 'bg-gray-100',
                         'iconColor' => 'text-gray-400',
                     ])
                 @else
-                    @if ($penukaran->isNotEmpty())
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-sm font-bold text-gray-900">Penukaran Reward</h2>
-                            <span class="text-xs text-gray-400">{{ $penukaran->count() }} riwayat</span>
-                        </div>
-                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
-                            @foreach ($penukaran as $item)
-                                <button
-                                    type="button"
-                                    onclick="bukaDetailRedeem(this)"
-                                    data-jenis="reward"
-                                    data-nama="{{ $item->reward->nama ?? 'Reward tidak ditemukan' }}"
-                                    data-status-label="{{ $statusBadge[$item->status]['label'] }}"
-                                    data-status-class="{{ $statusBadge[$item->status]['class'] }}"
-                                    data-tanggal="{{ $item->created_at->translatedFormat('d M Y, H:i') }}"
-                                    data-kode="{{ $item->kode_redeem }}"
-                                    data-extra-label="Poin Terpakai"
-                                    data-extra-value="-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin"
-                                    data-diambil="{{ $item->diambil_pada ? \Illuminate\Support\Carbon::parse($item->diambil_pada)->translatedFormat('d M Y, H:i') : '' }}"
-                                    class="redeem-voucher-ticket w-full border border-gray-100 text-left transition active:bg-gray-50"
-                                >
-                                    <div class="redeem-voucher-ticket__body">
-                                        <div class="flex items-start gap-3">
-                                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800">
-                                                @include('member.components.icon-gift', ['class' => 'h-5 w-5'])
-                                            </span>
-                                            <div class="min-w-0 flex-1">
-                                                <div class="flex items-start justify-between gap-2">
-                                                    <p class="truncate text-sm font-bold text-gray-900">{{ $item->reward->nama ?? 'Reward tidak ditemukan' }}</p>
-                                                    <span class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $statusBadge[$item->status]['class'] }}">
-                                                        {{ $statusBadge[$item->status]['label'] }}
-                                                    </span>
-                                                </div>
-                                                <p class="mt-0.5 text-xs text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="redeem-voucher-ticket__cut mt-3 pt-3">
-                                            <div class="flex items-center justify-between">
-                                                <div>
-                                                    <p class="text-[11px] text-gray-400">Kode redeem</p>
-                                                    <p class="font-mono text-sm font-bold tracking-widest text-gray-800">{{ $item->kode_redeem }}</p>
-                                                </div>
-                                                <p class="text-sm font-bold text-red-500">-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </button>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    @if ($riwayatStamp->isNotEmpty())
-                        <div class="{{ $penukaran->isNotEmpty() ? 'mt-7' : '' }} flex items-center justify-between">
-                            <h2 class="text-sm font-bold text-gray-900">Penukaran Stamp</h2>
-                            <span class="text-xs text-gray-400">{{ $riwayatStamp->count() }} riwayat</span>
-                        </div>
-                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
-                            @foreach ($riwayatStamp as $item)
-                                @php
-                                    $isCroissant = str_contains(strtolower($item->produk?->nama_produk ?? ''), 'croissant');
-                                @endphp
-                                <button
-                                    type="button"
-                                    onclick="bukaDetailRedeem(this)"
-                                    data-jenis="stamp"
-                                    data-nama="{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}"
-                                    data-status-label="{{ $statusBadge[$item->status]['label'] }}"
-                                    data-status-class="{{ $statusBadge[$item->status]['class'] }}"
-                                    data-tanggal="{{ $item->created_at->translatedFormat('d M Y, H:i') }}"
-                                    data-kode="{{ $item->kode_redeem }}"
-                                    data-extra-label="Program Stamp"
-                                    data-extra-value="{{ $item->stampProgram?->nama_program ?? 'Program Stamp' }}"
-                                    data-diambil="{{ $item->diambil_pada ? \Illuminate\Support\Carbon::parse($item->diambil_pada)->translatedFormat('d M Y, H:i') : '' }}"
-                                    class="w-full rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition active:bg-gray-50"
-                                >
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-bold text-gray-900">Penukaran Reward</h2>
+                        <span class="text-xs text-gray-400">{{ $penukaran->count() }} riwayat</span>
+                    </div>
+                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
+                        @foreach ($penukaran as $item)
+                            <button
+                                type="button"
+                                onclick="bukaDetailRedeem(this)"
+                                data-jenis="reward"
+                                data-nama="{{ $item->reward->nama ?? 'Reward tidak ditemukan' }}"
+                                data-status-label="{{ $statusBadge[$item->status]['label'] }}"
+                                data-status-class="{{ $statusBadge[$item->status]['class'] }}"
+                                data-tanggal="{{ $item->created_at->translatedFormat('d M Y, H:i') }}"
+                                data-kode="{{ $item->kode_redeem }}"
+                                data-extra-label="Poin Terpakai"
+                                data-extra-value="-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin"
+                                data-diambil="{{ $item->diambil_pada ? \Illuminate\Support\Carbon::parse($item->diambil_pada)->translatedFormat('d M Y, H:i') : '' }}"
+                                class="redeem-voucher-ticket w-full border border-gray-100 text-left transition active:bg-gray-50"
+                            >
+                                <div class="redeem-voucher-ticket__body">
                                     <div class="flex items-start gap-3">
-                                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800">
-                                            @if ($isCroissant)
-                                                @include('member.components.icon-cake', ['class' => 'h-5 w-5'])
-                                            @else
-                                                @include('member.components.icon-cake', ['class' => 'h-5 w-5'])
-                                            @endif
+                                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white">
+                                            @include('member.components.icon-ticket', ['class' => 'h-5 w-5'])
                                         </span>
                                         <div class="min-w-0 flex-1">
                                             <div class="flex items-start justify-between gap-2">
-                                                <p class="truncate text-sm font-bold text-gray-900">{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}</p>
+                                                <p class="truncate text-sm font-bold text-gray-900">{{ $item->reward->nama ?? 'Reward tidak ditemukan' }}</p>
                                                 <span class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $statusBadge[$item->status]['class'] }}">
                                                     {{ $statusBadge[$item->status]['label'] }}
                                                 </span>
                                             </div>
-                                            <p class="mt-0.5 text-xs text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }} &middot; {{ $item->stampProgram?->nama_program ?? 'Program Stamp' }}</p>
+                                            <p class="mt-0.5 text-xs text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</p>
                                         </div>
                                     </div>
-                                    <div class="mt-3 border-t border-dashed border-gray-100 pt-3">
-                                        <p class="text-[11px] text-gray-400">Kode redeem</p>
-                                        <p class="font-mono text-sm font-bold tracking-widest text-gray-800">{{ $item->kode_redeem }}</p>
+                                    <div class="redeem-voucher-ticket__cut mt-3 pt-3">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-[11px] text-gray-400">Kode redeem</p>
+                                                <p class="font-mono text-sm font-bold tracking-widest text-gray-800">{{ $item->kode_redeem }}</p>
+                                            </div>
+                                            <p class="text-sm font-bold text-red-500">-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin</p>
+                                        </div>
                                     </div>
-                                </button>
-                            @endforeach
-                        </div>
-                    @endif
+                                </div>
+                            </button>
+                        @endforeach
+                    </div>
                 @endif
             </div>
-        </div>
-    @endif
+
+            {{-- ================= TAB: STAMP (penukaran hadiah stamp) ================= --}}
+            <div x-show="tab === 'stamp'" x-cloak class="pt-5">
+                @if ($riwayatStamp->isEmpty())
+                    @include('member.components.empty-state', [
+                        'title' => 'Belum Ada Penukaran Stamp',
+                        'description' => 'Penukaran hadiah stamp kamu bakal kecatat di sini.',
+                        'icon' => 'icon-cake',
+                        'iconBg' => 'bg-gray-100',
+                        'iconColor' => 'text-gray-400',
+                    ])
+                @else
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-bold text-gray-900">Penukaran Stamp</h2>
+                        <span class="text-xs text-gray-400">{{ $riwayatStamp->count() }} riwayat</span>
+                    </div>
+                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
+                        @foreach ($riwayatStamp as $item)
+                            <button
+                                type="button"
+                                onclick="bukaDetailRedeem(this)"
+                                data-jenis="stamp"
+                                data-nama="{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}"
+                                data-status-label="{{ $statusBadge[$item->status]['label'] }}"
+                                data-status-class="{{ $statusBadge[$item->status]['class'] }}"
+                                data-tanggal="{{ $item->created_at->translatedFormat('d M Y, H:i') }}"
+                                data-kode="{{ $item->kode_redeem }}"
+                                data-extra-label="Program Stamp"
+                                data-extra-value="{{ $item->stampProgram?->nama_program ?? 'Program Stamp' }}"
+                                data-diambil="{{ $item->diambil_pada ? \Illuminate\Support\Carbon::parse($item->diambil_pada)->translatedFormat('d M Y, H:i') : '' }}"
+                                class="w-full rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition active:bg-gray-50"
+                            >
+                                <div class="flex items-start gap-3">
+                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 p-2 text-brand-800">
+                                        <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <p class="truncate text-sm font-bold text-gray-900">{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}</p>
+                                            <span class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $statusBadge[$item->status]['class'] }}">
+                                                {{ $statusBadge[$item->status]['label'] }}
+                                            </span>
+                                        </div>
+                                        <p class="mt-0.5 text-xs text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }} &middot; {{ $item->stampProgram?->nama_program ?? 'Program Stamp' }}</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3 border-t border-dashed border-gray-100 pt-3">
+                                    <p class="text-[11px] text-gray-400">Kode redeem</p>
+                                    <p class="font-mono text-sm font-bold tracking-widest text-gray-800">{{ $item->kode_redeem }}</p>
+                                </div>
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        @endif
+    </div>
 
     {{-- Bottom sheet: Detail Transaksi --}}
     <dialog id="sheet-detail-transaksi" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto max-h-[85vh] rounded-t-3xl border-0 p-0">
@@ -561,15 +576,11 @@
             statusEl.textContent = d.statusLabel;
             statusEl.className = 'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ' + d.statusClass;
 
-            const isCroissant = isStamp && (d.nama || '').toLowerCase().includes('croissant');
-
             const iconEl = document.getElementById('detail-redeem-icon');
-            iconEl.className = 'flex h-11 w-11 shrink-0 items-center justify-center rounded-full ' + (isStamp ? 'bg-brand-50 text-brand-800' : 'bg-brand-50 text-brand-800');
-            iconEl.innerHTML = isCroissant
-                ? `@include('member.components.icon-cake', ['class' => 'h-5 w-5'])`
-                : (isStamp
-                    ? `@include('member.components.icon-cake', ['class' => 'h-5 w-5'])`
-                    : `@include('member.components.icon-gift', ['class' => 'h-5 w-5'])`);
+            iconEl.className = 'flex h-11 w-11 shrink-0 items-center justify-center rounded-full ' + (isStamp ? 'bg-brand-50 p-2 text-brand-800' : 'bg-brand-800 text-white');
+            iconEl.innerHTML = isStamp
+                ? `<img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">`
+                : `@include('member.components.icon-ticket', ['class' => 'h-5 w-5'])`;
 
             const diambilRow = document.getElementById('detail-redeem-diambil-row');
             if (d.diambil) {

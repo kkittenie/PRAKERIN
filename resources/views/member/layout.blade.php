@@ -144,8 +144,11 @@
 
     <div id="app-card" class="mx-auto flex flex-1 w-full max-w-none 2xl:max-w-6xl flex-col bg-white sm:border-x sm:border-gray-200/80">
 
-        {{-- Flash messages (toast, fixed, auto-dismiss) --}}
-        @if (session('success') || session('error') || $errors->any())
+        {{-- Flash messages (toast, fixed, auto-dismiss). Dilewati di halaman
+             Status Pesanan karena halaman itu sudah punya alert sendiri
+             (Alpine, inline di dekat form bukti pembayaran) — biar nggak
+             muncul dobel. --}}
+        @if ((session('success') || session('error') || $errors->any()) && ! request()->routeIs('member.pesanan.show'))
             <div id="flash-toast"
                  class="toast-flash fixed top-4 left-1/2 z-50 flex w-[calc(100%-2.5rem)] max-w-sm items-start gap-2 rounded-2xl px-4 py-3 text-xs font-semibold shadow-lg border
                  {{ session('success') ? 'bg-brand-50 text-brand-800 border-brand-200' : 'bg-red-50 text-red-800 border-red-200' }}">
@@ -167,20 +170,22 @@
         @php
             $activeHome = request()->routeIs('member.beranda');
             $activeVoucher = request()->routeIs('member.reward*');
+            $activeMenu = request()->routeIs('member.menu') || request()->routeIs('member.bundling.show');
             $activeOrder = request()->routeIs('member.riwayat*');
             $activeAccount = request()->routeIs('member.akun');
             $currentTabIndex = match (true) {
                 $activeHome => 0,
                 $activeVoucher => 1,
-                $activeOrder => 2,
-                $activeAccount => 3,
+                $activeMenu => 2,
+                $activeOrder => 3,
+                $activeAccount => 4,
                 default => -1,
             };
         @endphp
         @unless(request()->routeIs('member.profil') || request()->routeIs('member.produk.show') || request()->routeIs('member.checkout.index'))
         <nav class="sticky bottom-0 z-30 w-full bg-white/95 backdrop-blur-md border-t border-gray-200/80 px-4 sm:px-8 py-2">
-            <div class="grid grid-cols-4 gap-1 text-center">
-                
+            <div class="grid grid-cols-5 items-end gap-1 text-center">
+
                 {{-- Home / Beranda --}}
                 <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 0);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeHome ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
                     <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeHome ? 'bg-brand-50 text-brand-800' : '' }}">
@@ -206,25 +211,33 @@
                     </a>
                 @endauth
 
+                {{-- Pesan / Pick Up (highlighted, center) --}}
+                <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);" class="relative flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeMenu ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
+                    <span class="flex h-8 w-8 items-center justify-center rounded-full {{ $activeMenu ? 'bg-brand-50 text-brand-800' : '' }}">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 10a4 4 0 0 1-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    Pesan
+                </a>
+
                 {{-- Your Order / Riwayat --}}
                 @auth('member')
-                    <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeOrder ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
+                    <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 3);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeOrder ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
                         <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeOrder ? 'bg-brand-50 text-brand-800' : '' }}">
                             <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </span>
-                        Your Order
+                        Activity
                     </a>
                 @else
                     <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold text-gray-400 hover:text-gray-600">
                         <span class="flex h-7 w-7 items-center justify-center">
                             <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </span>
-                        Your Order
+                        Activity
                     </a>
                 @endauth
 
                 {{-- Account / Akun --}}
-                <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 3);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeAccount ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
+                <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 4);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeAccount ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
                     <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeAccount ? 'bg-brand-50 text-brand-800' : '' }}">
                         <svg viewBox="0 0 24 24" fill="{{ $activeAccount ? 'currentColor' : 'none' }}" class="h-5 w-5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </span>

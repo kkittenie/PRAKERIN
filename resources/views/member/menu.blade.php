@@ -91,18 +91,6 @@
                 <h1 class="text-theme-sm font-bold text-white">Saisho Cake & Bakery</h1>
             </div>
 
-            {{-- Pick Up / Delivery segmented toggle (compact pill, centered) --}}
-            <div class="relative mx-auto mt-4 flex w-fit items-center gap-1 rounded-full border border-white/25 bg-white/10 p-1 backdrop-blur">
-                <span class="rounded-full bg-white px-5 py-1.5 text-xs font-bold text-brand-800 shadow-sm">
-                    Pick Up
-                </span>
-                <a href="https://wa.me/{{ $waCs }}?text={{ urlencode('Halo Saisho, saya mau pesan untuk diantar (delivery).') }}"
-                   target="_blank" rel="noopener"
-                   class="rounded-full px-5 py-1.5 text-xs font-bold text-white/80 transition hover:text-white">
-                    Delivery
-                </a>
-            </div>
-
             {{-- Rotating tagline, ticker-style: dark translucent pill, bakery-only
                  copy in English. Rotation at 4.5s per change so it's easy to read. --}}
             <div class="relative mx-auto mt-4 h-7 w-56 max-w-full overflow-hidden rounded-full bg-black/25"

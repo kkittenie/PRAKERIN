@@ -21,11 +21,8 @@ class CheckoutController extends Controller
     private const NAMA_TOKO = 'Saisho Cake & Bakery';
     private const ALAMAT_TOKO = 'Jl. Kamboja No. 1 Tuparev, Cirebon';
     private const SESSION_VOUCHER_KEY = 'member_checkout_voucher_id';
-    private const SESSION_METODE_KEY = 'member_checkout_metode_pembayaran';
 
     private const PAJAK_PERSEN = 5;
-
-    private const METODE_PEMBAYARAN = ['Tunai', 'QRIS'];
 
     public function index()
     {
@@ -66,8 +63,6 @@ class CheckoutController extends Controller
             $voucherTerbaik = $kandidatTerbaik ?: null;
         }
 
-        $metodeDipilih = Session::get(self::SESSION_METODE_KEY, self::METODE_PEMBAYARAN[0]);
-
         return view('member.checkout.index', [
             'member' => $member,
             'items' => $items,
@@ -79,8 +74,6 @@ class CheckoutController extends Controller
             'voucherAktif' => $voucherAktif,
             'voucherDipilih' => $voucherDipilih,
             'voucherTerbaik' => $voucherTerbaik,
-            'metodePembayaranList' => self::METODE_PEMBAYARAN,
-            'metodeDipilih' => $metodeDipilih,
             'storeNama' => self::NAMA_TOKO,
             'storeAlamat' => self::ALAMAT_TOKO,
             'poinPotensial' => $this->estimasiPoin($member, $totalBayar),
@@ -110,41 +103,6 @@ class CheckoutController extends Controller
         Session::put(self::SESSION_VOUCHER_KEY, (int) $validated['voucher_id']);
 
         return back();
-    }
-
-    public function metodePembayaranPage(Request $request)
-    {
-        $dariAkun = $request->query('from') === 'akun';
-
-        // Diakses dari alur checkout: tetap wajib ada keranjang aktif.
-        // Diakses dari Account (atur preferensi pembayaran): boleh kapan saja.
-        if (! $dariAkun && MemberCart::isEmpty()) {
-            return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
-        }
-
-        $metodeDipilih = Session::get(self::SESSION_METODE_KEY, self::METODE_PEMBAYARAN[0]);
-
-        return view('member.checkout.metode-pembayaran', [
-            'metodePembayaranList' => self::METODE_PEMBAYARAN,
-            'metodeDipilih' => $metodeDipilih,
-            'dariAkun' => $dariAkun,
-        ]);
-    }
-
-    public function pilihMetodePembayaran(Request $request)
-    {
-        $validated = $request->validate([
-            'metode_pembayaran' => 'required|string|in:' . implode(',', self::METODE_PEMBAYARAN),
-            'from' => 'nullable|string|in:akun',
-        ]);
-
-        Session::put(self::SESSION_METODE_KEY, $validated['metode_pembayaran']);
-
-        if (($validated['from'] ?? null) === 'akun') {
-            return redirect()->route('member.akun')->with('success', 'Metode pembayaran berhasil diperbarui.');
-        }
-
-        return redirect()->route('member.checkout.index');
     }
 
     public function store(Request $request)
@@ -185,8 +143,6 @@ class CheckoutController extends Controller
             $pajak = $this->hitungPajak($subtotal, $diskon);
             $totalBayar = max(0, $subtotal - $diskon + $pajak);
 
-            $metodePembayaran = Session::get(self::SESSION_METODE_KEY, self::METODE_PEMBAYARAN[0]);
-
             $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
             $kodePickup = Transaksi::buatKodePickupUnik();
 
@@ -203,7 +159,7 @@ class CheckoutController extends Controller
                 'total_bayar' => $totalBayar,
                 'jumlah_diterima' => $totalBayar,
                 'kembalian' => 0,
-                'metode_pembayaran' => $metodePembayaran,
+                'metode_pembayaran' => 'Transfer/QRIS',
                 'status_pembayaran' => 'Menunggu Pembayaran',
                 'asal_pesanan' => Transaksi::ASAL_MEMBER_APP,
                 'status_pesanan' => Transaksi::STATUS_DIPROSES,
@@ -261,7 +217,6 @@ class CheckoutController extends Controller
 
             MemberCart::kosongkan();
             Session::forget(self::SESSION_VOUCHER_KEY);
-            Session::forget(self::SESSION_METODE_KEY);
 
             return redirect()
                 ->route('member.pesanan.show', $transaksi)

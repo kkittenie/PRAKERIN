@@ -625,64 +625,6 @@
 
 
         {{-- ========================================================= --}}
-        {{-- METODE PEMBAYARAN --}}
-        {{-- ========================================================= --}}
-        <div class="mt-5">
-
-            <p class="text-xs font-bold text-gray-900">
-                Metode Pembayaran
-            </p>
-
-            {{-- Row ini navigasi ke halaman baru (bukan sheet) --}}
-            <a href="{{ route('member.checkout.metode-pembayaran.pilih') }}"
-                onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                class="mt-2 flex w-full items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-left transition active:bg-gray-50">
-
-                <span class="flex items-center gap-2.5 text-xs font-semibold text-gray-700">
-
-                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-
-                        @if ($metodeDipilih === 'QRIS')
-
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                                <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
-                                <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
-                                <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
-                                <path d="M14 14h3v3h-3zM19 14h2M14 19h2M19 17v4" stroke="currentColor" stroke-width="1.8"
-                                    stroke-linecap="round" />
-                            </svg>
-
-                        @else
-
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                                <rect x="2" y="6" width="20" height="13" rx="2" stroke="currentColor" stroke-width="1.8" />
-                                <path d="M2 10h20" stroke="currentColor" stroke-width="1.8" />
-                                <path d="M6 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                            </svg>
-
-                        @endif
-
-                    </span>
-
-                    {{ $metodeDipilih }}
-
-                </span>
-
-                <span class="text-gray-300">
-                    @include('member.components.icon-chevron-right', ['class' => 'h-3.5 w-3.5'])
-                </span>
-
-            </a>
-
-            <p class="mt-2 text-[10px] text-gray-400">
-                Pembayaran tetap dilakukan di kasir saat kamu mengambil pesanan —
-                ini cuma preferensi buat ditunjukkan ke kasir.
-            </p>
-
-        </div>
-
-
-        {{-- ========================================================= --}}
         {{-- RINCIAN PEMBAYARAN --}}
         {{-- ========================================================= --}}
         <div class="mt-5">

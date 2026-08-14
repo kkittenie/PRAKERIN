@@ -34,6 +34,8 @@ class Transaksi extends Model
         'kembalian',
         'metode_pembayaran',
         'status_pembayaran',
+        'bukti_pembayaran',
+        'bukti_dikonfirmasi_pada',
         'asal_pesanan',
         'status_pesanan',
         'kode_pickup',
@@ -45,6 +47,7 @@ class Transaksi extends Model
     protected $casts = [
         'siap_pada' => 'datetime',
         'diambil_pada' => 'datetime',
+        'bukti_dikonfirmasi_pada' => 'datetime',
     ];
 
     /**

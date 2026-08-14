@@ -57,12 +57,12 @@ Route::prefix('member')->name('member.')->group(function () {
         Route::delete('/keranjang/{itemId}', [KeranjangController::class, 'hapus'])->name('keranjang.hapus');
 
         Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-        Route::get('/checkout/metode-pembayaran', [CheckoutController::class, 'metodePembayaranPage'])->name('checkout.metode-pembayaran.pilih');
         Route::post('/checkout/voucher', [CheckoutController::class, 'pilihVoucher'])->name('checkout.voucher');
-        Route::post('/checkout/metode-pembayaran', [CheckoutController::class, 'pilihMetodePembayaran'])->name('checkout.metode-pembayaran');
         Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
         Route::get('/pesanan/{transaksi}', [PesananController::class, 'show'])->name('pesanan.show');
         Route::get('/pesanan/{transaksi}/status', [PesananController::class, 'status'])->name('pesanan.status');
+        Route::post('/pesanan/{transaksi}/bukti-pembayaran', [PesananController::class, 'uploadBukti'])->name('pesanan.upload-bukti');
+        Route::post('/pesanan/{transaksi}/konfirmasi-bukti', [PesananController::class, 'konfirmasiBukti'])->name('pesanan.konfirmasi-bukti');
     });
 });

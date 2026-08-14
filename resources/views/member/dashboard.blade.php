@@ -2,6 +2,10 @@
 
 @php
     $waCs = '6282000768044';
+
+    // Sama persis dengan mapping warna badge di halaman admin "Aturan Naik
+    // Level" (resources/views/pages/member-level/*.blade.php), supaya warna
+    // tier di member app konsisten dengan yang di-set admin di POS.
     $warnaBadgeTier = match ($member?->warna_badge_level ?? 'gray') {
         'yellow' => 'bg-yellow-600',
         'slate' => 'bg-slate-500',
@@ -150,8 +154,8 @@
 
                         <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-dashed border-gray-100 pt-4">
                             <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 py-1.5 pl-1.5 pr-3 text-xs font-bold text-gray-800">
-                                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-                                    @include('member.components.icon-cake', ['class' => 'h-3.5 w-3.5'])
+                                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-50 p-1 text-brand-700">
+                                    <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
                                 </span>
                                 {{ number_format($member->poin, 0, ',', '.') }} Poin
                             </span>
@@ -184,32 +188,9 @@
             </div>
         </div>
 
-        {{-- Pick Up / Delivery --}}
-        <h2 class="mb-3 mt-7 text-sm font-bold text-gray-900">Mau pesan di Saisho?</h2>
-        <div class="grid grid-cols-2 gap-3">
-            <a href="{{ route('member.menu') }}"
-               onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-               class="group relative overflow-hidden rounded-2xl border-2 border-brand-300 bg-gradient-to-br from-brand-50/70 to-white p-3.5 transition hover:border-brand-400 hover:shadow-theme-md">
-                <span class="pointer-events-none absolute -bottom-5 -right-5 h-16 w-16 rounded-full bg-brand-100/70"></span>
-                <span class="pointer-events-none absolute right-8 bottom-9 h-2 w-2 rounded-full bg-brand-200"></span>
-                <span class="pointer-events-none absolute right-1 bottom-9 h-2.5 w-2.5 rounded-full bg-brand-200/80"></span>
-                <span class="relative block text-base font-extrabold leading-tight text-brand-800">Pick Up</span>
-                <p class="relative mt-1 text-[11px] leading-snug text-gray-500">Pesan dulu, ambil<br>tanpa antre</p>
-            </a>
-            <a href="https://wa.me/{{ $waCs }}?text={{ urlencode('Halo Saisho, saya mau pesan untuk diantar (delivery).') }}"
-               target="_blank" rel="noopener"
-               class="group relative overflow-hidden rounded-2xl border-2 border-orange-300 bg-gradient-to-br from-orange-50/70 to-white p-3.5 transition hover:border-orange-400 hover:shadow-theme-md">
-                <span class="pointer-events-none absolute -bottom-5 -right-5 h-16 w-16 rounded-full bg-orange-100/70"></span>
-                <span class="pointer-events-none absolute right-8 bottom-9 h-2 w-2 rounded-full bg-orange-200"></span>
-                <span class="pointer-events-none absolute right-1 bottom-9 h-2.5 w-2.5 rounded-full bg-orange-200/80"></span>
-                <span class="relative block text-base font-extrabold leading-tight text-orange-700">Delivery</span>
-                <p class="relative mt-1 text-[11px] leading-snug text-gray-500">Pesan via Aplikasi<br>kami antar</p>
-            </a>
-        </div>
-
         @auth('member')
             {{-- Aksi cepat member: tukar poin & riwayat --}}
-            <div class="mt-5 grid grid-cols-2 gap-3">
+            <div class="mt-7 grid grid-cols-2 gap-3">
                 <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-brand-200">
                     <span class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-800">
                         @include('member.components.icon-gift', ['class' => 'h-5 w-5'])
@@ -261,7 +242,8 @@
                     <div class="mt-3 flex items-center gap-1.5">
                         @for ($i = 1; $i <= $stampDotCount; $i++)
                             @php $terisi = $i <= $stampCurrent; @endphp
-                            <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $terisi ? 'bg-white text-brand-800' : 'border-2 border-dashed border-white/35 text-white/35' }}">
+                            <span class="stamp-dot relative flex h-6 w-6 items-center justify-center rounded-full {{ $terisi ? 'stamp-dot-filled bg-white text-brand-800' : 'border-2 border-dashed border-white/35 text-white/35' }}"
+                                  @if ($terisi) style="animation-delay: {{ ($i - 1) * 0.12 }}s;" @endif>
                                 @include('member.components.icon-cake', ['class' => 'h-3 w-3'])
                             </span>
                         @endfor
@@ -278,8 +260,98 @@
                         @endif
                     </p>
                 </a>
+
+                <style>
+                    @keyframes stampPop {
+                        0% { transform: scale(0); opacity: 0; }
+                        55% { transform: scale(1.35); opacity: 1; }
+                        75% { transform: scale(0.9); }
+                        100% { transform: scale(1); opacity: 1; }
+                    }
+                    @keyframes stampBurstRing {
+                        0% { transform: scale(0.3); opacity: .9; }
+                        100% { transform: scale(2.2); opacity: 0; }
+                    }
+                    .stamp-dot-filled {
+                        animation: stampPop .5s cubic-bezier(.34,1.56,.64,1) both;
+                        transform: scale(0);
+                    }
+                    .stamp-dot-filled::before {
+                        content: '';
+                        position: absolute;
+                        inset: 0;
+                        border-radius: 9999px;
+                        background: radial-gradient(circle, rgba(255,255,255,.9) 0%, rgba(255,255,255,0) 70%);
+                        animation: stampBurstRing .5s ease-out both;
+                        animation-delay: inherit;
+                        pointer-events: none;
+                    }
+                </style>
             @endisset
         @endauth
+
+        {{-- Produk pilihan --}}
+        <div class="mt-7 flex items-center justify-between">
+            <h2 class="text-sm font-bold text-gray-900">Produk Pilihan</h2>
+            <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-1 text-xs font-bold text-brand-800 hover:underline">
+                Lihat semua
+                @include('member.components.icon-chevron-right', ['class' => 'h-3.5 w-3.5'])
+            </a>
+        </div>
+
+        <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            @forelse ($produkPilihan as $produk)
+                @php
+                    $hargaAsli = $produk->harga_jual;
+                    $hargaFinal = $produk->harga_diskon;
+                    $adaPromo = $hargaFinal < $hargaAsli;
+                    $habis = $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
+                @endphp
+                <a href="{{ route('member.produk.show', $produk) }}"
+                   onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                   class="block">
+                    <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
+                        @if ($produk->foto)
+                            <img src="{{ asset('storage/' . $produk->foto) }}" alt="{{ $produk->nama_produk }}"
+                                 class="h-full w-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        @endif
+                        <div class="{{ $produk->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
+                            @include('member.components.icon-cup', ['class' => 'h-10 w-10'])
+                        </div>
+                        @if ($adaPromo)
+                            <span class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">Promo</span>
+                        @endif
+                        @if ($habis)
+                            <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Perlu Diproduksi</span>
+                        @endif
+                    </div>
+
+                    <div class="pt-2">
+                        <p class="text-[10px] font-medium text-gray-400">{{ $produk->kategori->nama_kategori ?? '' }}</p>
+                        <p class="mt-0.5 text-xs font-bold leading-snug text-gray-900 line-clamp-2">{{ $produk->nama_produk }}</p>
+
+                        <div class="mt-2 flex items-center justify-between gap-1">
+                            <div class="min-w-0">
+                                @if ($adaPromo)
+                                    <p class="truncate text-[10px] text-gray-400 line-through">Rp {{ number_format($hargaAsli, 0, ',', '.') }}</p>
+                                @endif
+                                <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($hargaFinal, 0, ',', '.') }}</p>
+                            </div>
+
+                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm">
+                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            @empty
+                <div class="col-span-full rounded-2xl border border-gray-100 bg-white p-5 text-center text-xs font-medium text-gray-400">
+                    Belum ada produk tersedia saat ini.
+                </div>
+            @endforelse
+        </div>
 
         {{-- Reward unggulan --}}
         <div class="mt-7 flex items-center justify-between">

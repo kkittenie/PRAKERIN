@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\Produk;
 use App\Models\RewardKatalog;
 use App\Models\Banner;
 use Illuminate\Support\Facades\Auth;
@@ -19,9 +20,16 @@ class DashboardController extends Controller
             ->take(3)
             ->get();
 
+        $produkPilihan = Produk::with('kategori')
+            ->where('status_aktif', true)
+            ->inRandomOrder()
+            ->take(4)
+            ->get();
+
         return view('member.dashboard', [
             'member' => $member,
             'rewardUnggulan' => $rewardUnggulan,
+            'produkPilihan' => $produkPilihan,
             'promoBanners' => $this->promoBanners(),
         ]);
     }
