@@ -57,68 +57,29 @@
         }
     </style>
 
-    <div x-data="{
-            tab: 'pesanan',
-            order: ['pesanan', 'transaksi', 'voucher', 'stamp'],
-            touchStartX: 0,
-            touchStartY: 0,
-            onSwipeStart(e) {
-                this.touchStartX = e.touches[0].clientX;
-                this.touchStartY = e.touches[0].clientY;
-            },
-            onSwipeEnd(e) {
-                const dx = e.changedTouches[0].clientX - this.touchStartX;
-                const dy = e.changedTouches[0].clientY - this.touchStartY;
-                if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
-                const i = this.order.indexOf(this.tab);
-                if (dx < 0 && i < this.order.length - 1) this.tab = this.order[i + 1];
-                if (dx > 0 && i > 0) this.tab = this.order[i - 1];
-            }
-        }">
+    <div>
         <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-0 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10">
             <h1 class="text-center text-lg font-extrabold text-gray-900">Riwayat</h1>
 
             @unless ($isEmpty)
-                {{-- Fore-style underline tabs — same pattern as the Vouchers page.
-                     Lives inside the sticky header so it pins under the title
-                     while the tab panels scroll underneath it. --}}
+                {{-- Fore-style underline tabs. Same swipeable/draggable track pattern
+                     as the Vouchers page. Lives inside the sticky header so it pins
+                     under the title while the tab panels scroll underneath it. --}}
                 <div class="relative mt-4 grid grid-cols-4 border-b border-gray-100">
-                    <button
-                        type="button"
-                        @click="tab = 'pesanan'"
-                        :class="tab === 'pesanan' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
-                        class="relative pb-3 text-center text-[13px] font-bold transition"
-                    >
-                        Pesanan
-                    </button>
-                    <button
-                        type="button"
-                        @click="tab = 'transaksi'"
-                        :class="tab === 'transaksi' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
-                        class="relative pb-3 text-center text-[13px] font-bold transition"
-                    >
-                        Transaksi
-                    </button>
-                    <button
-                        type="button"
-                        @click="tab = 'voucher'"
-                        :class="tab === 'voucher' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
-                        class="relative pb-3 text-center text-[13px] font-bold transition"
-                    >
-                        Voucher
-                    </button>
-                    <button
-                        type="button"
-                        @click="tab = 'stamp'"
-                        :class="tab === 'stamp' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600'"
-                        class="relative pb-3 text-center text-[13px] font-bold transition"
-                    >
-                        Stamp
-                    </button>
-                    <span
-                        class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/4 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
-                        :class="{ 'translate-x-0': tab === 'pesanan', 'translate-x-full': tab === 'transaksi', 'translate-x-[200%]': tab === 'voucher', 'translate-x-[300%]': tab === 'stamp' }"
-                    ></span>
+                    @foreach ([
+                        'pesanan' => 'Pesanan',
+                        'transaksi' => 'Transaksi',
+                        'voucher' => 'Voucher',
+                        'stamp' => 'Stamp',
+                    ] as $key => $label)
+                        <button type="button" data-tab="{{ $key }}" onclick="switchRiwayatTab('{{ $key }}')"
+                                class="riwayat-tab relative pb-3 text-center text-[13px] font-bold transition {{ $key === 'pesanan' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
+                            {{ $label }}
+                        </button>
+                    @endforeach
+                    <span id="riwayat-tab-indicator"
+                          class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/4 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
+                          style="transform: translateX(0%);"></span>
                 </div>
             @endunless
         </div>
@@ -132,10 +93,12 @@
                 'iconColor' => 'text-gray-400',
             ])
         @else
-            <div class="mt-5" @touchstart="onSwipeStart($event)" @touchend="onSwipeEnd($event)">
+            {{-- Swipeable panes, same track/viewport pattern as the Vouchers page. --}}
+            <div id="riwayat-tab-viewport" class="relative flex flex-1 flex-col overflow-hidden">
+                <div id="riwayat-tab-track" class="flex flex-1 transition-transform duration-300 ease-out">
 
             {{-- ================= TAB: PESANAN (pick up dari Member App) ================= --}}
-            <div x-show="tab === 'pesanan'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="pt-5">
+            <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="0">
                 @if ($pesanan->isEmpty())
                     @include('member.components.empty-state', [
                         'title' => 'Belum Ada Pesanan',
@@ -219,7 +182,7 @@
             </div>
 
             {{-- ================= TAB: RIWAYAT TRANSAKSI ================= --}}
-            <div x-show="tab === 'transaksi'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="pt-5">
+            <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="1">
                 @if ($transaksi->isEmpty())
                     @include('member.components.empty-state', [
                         'title' => 'Belum Ada Transaksi',
@@ -290,7 +253,7 @@
             </div>
 
             {{-- ================= TAB: VOUCHER (penukaran reward) ================= --}}
-            <div x-show="tab === 'voucher'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="pt-5">
+            <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="2">
                 @if ($penukaran->isEmpty())
                     @include('member.components.empty-state', [
                         'title' => 'Belum Ada Penukaran Voucher',
@@ -352,7 +315,7 @@
             </div>
 
             {{-- ================= TAB: STAMP (penukaran hadiah stamp) ================= --}}
-            <div x-show="tab === 'stamp'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="pt-5">
+            <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="3">
                 @if ($riwayatStamp->isEmpty())
                     @include('member.components.empty-state', [
                         'title' => 'Belum Ada Penukaran Stamp',
@@ -404,6 +367,8 @@
                         @endforeach
                     </div>
                 @endif
+            </div>
+                </div>
             </div>
         @endif
     </div>
@@ -509,6 +474,77 @@
     </dialog>
 
     <script>
+        // Tab track/swipe — same pattern as the Vouchers page: a horizontal
+        // track of fixed-width panes, translateX'd into view, with tap and
+        // touch-drag both driving the same paint() function.
+        (function () {
+            const tabs = ['pesanan', 'transaksi', 'voucher', 'stamp'];
+            let current = 0;
+
+            const track = document.getElementById('riwayat-tab-track');
+            if (!track) return; // isEmpty state — no tabs rendered
+
+            const indicator = document.getElementById('riwayat-tab-indicator');
+            const buttons = document.querySelectorAll('.riwayat-tab');
+            const panes = document.querySelectorAll('.riwayat-tab-pane');
+            const viewport = document.getElementById('riwayat-tab-viewport');
+
+            const paneWidthPercent = 100 / tabs.length;
+            track.style.width = (tabs.length * 100) + '%';
+            panes.forEach((pane, i) => {
+                pane.style.width = paneWidthPercent + '%';
+                pane.style.pointerEvents = i === current ? 'auto' : 'none';
+            });
+
+            function paint() {
+                track.style.transform = `translateX(-${current * paneWidthPercent}%)`;
+                panes.forEach((pane, i) => {
+                    pane.style.pointerEvents = i === current ? 'auto' : 'none';
+                });
+                indicator.style.transform = `translateX(${current * 100}%)`;
+                buttons.forEach((btn, i) => {
+                    btn.classList.toggle('text-brand-800', i === current);
+                    btn.classList.toggle('text-gray-400', i !== current);
+                });
+            }
+
+            window.switchRiwayatTab = function (name) {
+                const idx = tabs.indexOf(name);
+                if (idx === -1 || idx === current) return;
+                current = idx;
+                paint();
+            };
+
+            // Swipe/drag gesture — same threshold-based approach as the Vouchers
+            // and welcome page carousels.
+            let startX = 0;
+            let dragging = false;
+
+            viewport.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                dragging = true;
+            }, { passive: true });
+
+            viewport.addEventListener('touchend', (e) => {
+                if (!dragging) return;
+                dragging = false;
+                const diffX = startX - e.changedTouches[0].clientX;
+                if (diffX > 40 && current < tabs.length - 1) {
+                    current += 1;
+                    paint();
+                } else if (diffX < -40 && current > 0) {
+                    current -= 1;
+                    paint();
+                }
+            }, { passive: true });
+
+            track.style.transition = 'none';
+            paint();
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                track.style.transition = '';
+            }));
+        })();
+
         // diskon_label disimpan di DB sebagai JSON string, mis. [{"nama":"Voucher (CEF-PJAY)","nilai":10000}]
         // (rincian tiap komponen diskon: promo produk, diskon manual, voucher). Fungsi ini mengubahnya
         // jadi teks nama yang enak dibaca, bukan JSON mentah.
