@@ -296,8 +296,8 @@
                                 </template>
                             </div>
 
-                            {{-- Bukti Pembayaran (hanya kalau belum Lunas) --}}
-                            <template x-if="detailData.status_pembayaran !== 'Lunas'">
+                            {{-- Bukti Pembayaran: tetap tampil sampai akhir buat referensi kasir --}}
+                            <template x-if="detailData.bukti_pembayaran || detailData.status_pembayaran !== 'Lunas'">
                                 <div class="border border-gray-100 dark:border-gray-800 rounded-xl p-3 space-y-2">
                                     <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Bukti Pembayaran QRIS</h4>
                                     <template x-if="detailData.catatan_penolakan && !detailData.bukti_pembayaran">
@@ -322,11 +322,14 @@
                                             </button>
 
                                             <div class="min-w-0 flex-1">
-                                                <template x-if="!detailData.bukti_dikonfirmasi_pada">
+                                                <template x-if="detailData.status_pembayaran === 'Lunas'">
+                                                    <p class="text-xs text-green-600 dark:text-green-400">Pembayaran sudah dikonfirmasi.</p>
+                                                </template>
+                                                <template x-if="detailData.status_pembayaran !== 'Lunas' && !detailData.bukti_dikonfirmasi_pada">
                                                     <p class="text-xs text-amber-600 dark:text-amber-400">Menunggu member mengonfirmasi bukti.</p>
                                                 </template>
 
-                                                <template x-if="detailData.bukti_dikonfirmasi_pada">
+                                                <template x-if="detailData.status_pembayaran !== 'Lunas' && detailData.bukti_dikonfirmasi_pada">
                                                     <div class="flex flex-wrap gap-2">
                                                         <form :action="'/pesanan-pickup/' + detailData.id + '/konfirmasi-pembayaran'" method="POST">
                                                             @csrf @method('PATCH')
