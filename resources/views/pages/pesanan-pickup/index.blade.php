@@ -299,10 +299,24 @@
                                     <span class="text-gray-500 dark:text-gray-400">Pajak</span>
                                     <span class="font-medium text-gray-800 dark:text-white" x-text="'Rp ' + Number(detailData.pajak).toLocaleString('id-ID')"></span>
                                 </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-500 dark:text-gray-400" x-text="'Diskon' + (detailData.diskon_label ? ' (' + detailData.diskon_label + ')' : '')"></span>
-                                    <span class="font-medium text-orange-600 dark:text-orange-400" x-text="'- Rp ' + Number(detailData.diskon).toLocaleString('id-ID')"></span>
-                                </div>
+                                <template x-if="Number(detailData.diskon) > 0">
+                                    <div>
+                                        <template x-if="detailData.diskon_label && (() => { try { return Array.isArray(JSON.parse(detailData.diskon_label)); } catch(e) { return false; } })()">
+                                            <template x-for="itemDiskon in JSON.parse(detailData.diskon_label)" :key="itemDiskon.nama">
+                                                <div class="flex justify-between text-sm">
+                                                    <span class="text-gray-500 dark:text-gray-400" x-text="itemDiskon.nama.replace(/^(?:Diskon|Voucher)\s*\((.+)\)$/, '$1')"></span>
+                                                    <span class="font-medium text-orange-600 dark:text-orange-400" x-text="'- Rp ' + Number(itemDiskon.nilai).toLocaleString('id-ID')"></span>
+                                                </div>
+                                            </template>
+                                        </template>
+                                        <template x-if="!detailData.diskon_label || !(() => { try { return Array.isArray(JSON.parse(detailData.diskon_label)); } catch(e) { return true; } })()">
+                                            <div class="flex justify-between text-sm">
+                                                <span class="text-gray-500 dark:text-gray-400" x-text="'Diskon' + (detailData.diskon_label ? ' (' + detailData.diskon_label + ')' : '')"></span>
+                                                <span class="font-medium text-orange-600 dark:text-orange-400" x-text="'- Rp ' + Number(detailData.diskon).toLocaleString('id-ID')"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
                                 <hr class="border-gray-200 dark:border-gray-800">
                                 <div class="flex justify-between text-base">
                                     <span class="font-bold text-gray-800 dark:text-white">Total Bayar</span>

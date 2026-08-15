@@ -29,6 +29,22 @@ class MemberCart
         return collect(self::items())->sum(fn ($item) => $item['harga_satuan'] * $item['jumlah']);
     }
 
+    public static function subtotalGross(): float
+    {
+        return collect(self::items())->sum(function ($item) {
+            $hargaAsal = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
+            return $hargaAsal * $item['jumlah'];
+        });
+    }
+
+    public static function totalDiskonProduk(): float
+    {
+        return collect(self::items())->sum(function ($item) {
+            $diskonProdukSatuan = (float) ($item['diskon_produk_satuan'] ?? 0);
+            return $diskonProdukSatuan * $item['jumlah'];
+        });
+    }
+
     public static function tambah(array $data): void
     {
         $data['produk_id'] = $data['produk_id'] ?? null;

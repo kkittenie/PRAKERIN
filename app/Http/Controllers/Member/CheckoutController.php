@@ -32,7 +32,9 @@ class CheckoutController extends Controller
         }
 
         $items = MemberCart::items();
-        $subtotal = MemberCart::subtotal();
+        $subtotalGross = MemberCart::subtotalGross();
+        $diskonProduk = MemberCart::totalDiskonProduk();
+        $subtotalNet = MemberCart::subtotal();
 
         $voucherAktif = PenukaranPoin::with('reward.produks')
             ->where('member_id', $member->id)
@@ -44,16 +46,17 @@ class CheckoutController extends Controller
         $voucherId = Session::get(self::SESSION_VOUCHER_KEY);
         $voucherDipilih = $voucherId ? $voucherAktif->firstWhere('id', $voucherId) : null;
 
-        $diskon = $voucherDipilih ? $this->hitungDiskonVoucher($voucherDipilih, $items, $subtotal) : 0;
-        $pajak = $this->hitungPajak($subtotal, $diskon);
-        $totalBayar = max(0, $subtotal - $diskon + $pajak);
+        $diskonVoucher = $voucherDipilih ? $this->hitungDiskonVoucher($voucherDipilih, $items, $subtotalNet) : 0;
+        $diskonTotal = $diskonProduk + $diskonVoucher;
+        $pajak = $this->hitungPajak($subtotalGross, $diskonTotal);
+        $totalBayar = max(0, $subtotalGross - $diskonTotal + $pajak);
 
         $voucherTerbaik = null;
         if (! $voucherDipilih) {
             $kandidatTerbaik = $voucherAktif
                 ->map(fn ($v) => [
                     'voucher' => $v,
-                    'diskon' => $this->hitungDiskonVoucher($v, $items, $subtotal),
+                    'diskon' => $this->hitungDiskonVoucher($v, $items, $subtotalNet),
                 ])
                 ->filter(fn ($x) => $x['diskon'] > 0)
                 ->sortByDesc('diskon')
@@ -64,11 +67,44 @@ class CheckoutController extends Controller
 
         $pajakInfo = $this->getPajakInfo();
 
+        // Hitung rincian diskon promo per nama promo (sama formatnya seperti POS & store())
+        $rincianDiskonProduk = [];
+        $promoGroupsIdx = [];
+        foreach ($items as $item) {
+            $diskonItemSatuan = (float) ($item['diskon_produk_satuan'] ?? 0);
+            if ($diskonItemSatuan > 0) {
+                $namaPromo   = $item['nama_promo'] ?? 'Promo';
+                $jenisPromo  = $item['jenis_promo'] ?? null;
+                $persenPromo = $item['persentase_promo'] ?? null;
+
+                $labelPromo = $namaPromo;
+                if ($jenisPromo === 'persentase' && $persenPromo) {
+                    $persenFormatted = rtrim(rtrim(number_format((float) $persenPromo, 2, ',', '.'), '0'), ',');
+                    $labelPromo .= ' (' . $persenFormatted . '%)';
+                }
+
+                if (!isset($promoGroupsIdx[$labelPromo])) {
+                    $promoGroupsIdx[$labelPromo] = 0;
+                }
+                $promoGroupsIdx[$labelPromo] += $diskonItemSatuan * $item['jumlah'];
+            }
+        }
+        foreach ($promoGroupsIdx as $labelPromo => $nilai) {
+            $rincianDiskonProduk[] = [
+                'nama' => $labelPromo,
+                'nilai' => (float) $nilai,
+            ];
+        }
+
         return view('member.checkout.index', [
             'member' => $member,
             'items' => $items,
-            'subtotal' => $subtotal,
-            'diskon' => $diskon,
+            'subtotal' => $subtotalGross,
+            'subtotalNet' => $subtotalNet,
+            'diskonProduk' => $diskonProduk,
+            'rincianDiskonProduk' => $rincianDiskonProduk,
+            'diskonVoucher' => $diskonVoucher,
+            'diskon' => $diskonTotal,
             'pajak' => $pajak,
             'pajakPersen' => $pajakInfo['persen'],
             'totalBayar' => $totalBayar,
@@ -119,13 +155,15 @@ class CheckoutController extends Controller
         ]);
 
         $items = MemberCart::items();
-        $subtotal = MemberCart::subtotal();
+        $subtotalGross = MemberCart::subtotalGross();
+        $diskonProduk = MemberCart::totalDiskonProduk();
+        $subtotalNet = MemberCart::subtotal();
         $voucherId = Session::get(self::SESSION_VOUCHER_KEY);
 
         DB::beginTransaction();
         try {
             $voucher = null;
-            $diskon = 0;
+            $diskonVoucher = 0;
 
             if ($voucherId) {
                 $voucher = PenukaranPoin::with('reward.produks')
@@ -138,11 +176,49 @@ class CheckoutController extends Controller
                     throw new \Exception('Voucher yang dipilih sudah tidak berlaku, silakan pilih ulang.');
                 }
 
-                $diskon = $this->hitungDiskonVoucher($voucher, $items, $subtotal);
+                $diskonVoucher = $this->hitungDiskonVoucher($voucher, $items, $subtotalNet);
             }
 
-            $pajak = $this->hitungPajak($subtotal, $diskon);
-            $totalBayar = max(0, $subtotal - $diskon + $pajak);
+            $diskonTotal = $diskonProduk + $diskonVoucher;
+            $pajak = $this->hitungPajak($subtotalGross, $diskonTotal);
+            $totalBayar = max(0, $subtotalGross - $diskonTotal + $pajak);
+
+            $rincianDiskon = [];
+            $promoGroups = [];
+            foreach ($items as $item) {
+                $diskonItemSatuan = (float) ($item['diskon_produk_satuan'] ?? 0);
+                if ($diskonItemSatuan > 0) {
+                    $namaPromo   = $item['nama_promo'] ?? 'Promo';
+                    $jenisPromo  = $item['jenis_promo'] ?? null;
+                    $persenPromo = $item['persentase_promo'] ?? null;
+
+                    // Buat label persis seperti POS: "Nama Promo (X%)" untuk persentase
+                    $labelPromo = $namaPromo;
+                    if ($jenisPromo === 'persentase' && $persenPromo) {
+                        $persenFormatted = rtrim(rtrim(number_format((float) $persenPromo, 2, ',', '.'), '0'), ',');
+                        $labelPromo .= ' (' . $persenFormatted . '%)';
+                    }
+
+                    if (!isset($promoGroups[$labelPromo])) {
+                        $promoGroups[$labelPromo] = 0;
+                    }
+                    $promoGroups[$labelPromo] += $diskonItemSatuan * $item['jumlah'];
+                }
+            }
+            foreach ($promoGroups as $labelPromo => $nilai) {
+                $rincianDiskon[] = [
+                    'nama' => $labelPromo,
+                    'nilai' => (float) $nilai,
+                ];
+            }
+            if ($voucher && $diskonVoucher > 0) {
+                $rincianDiskon[] = [
+                    'nama' => $voucher->reward->nama ?? 'Voucher',
+                    'nilai' => (float) $diskonVoucher,
+                ];
+            }
+
+            $diskonLabel = !empty($rincianDiskon) ? json_encode($rincianDiskon) : null;
 
             $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
 
@@ -151,11 +227,11 @@ class CheckoutController extends Controller
                 'nama_pembeli' => $member->nama,
                 'member_id' => $member->id,
                 'voucher_id' => $voucher?->id,
-                'subtotal' => $subtotal,
+                'subtotal' => $subtotalGross,
                 'pajak' => $pajak,
-                'diskon' => $diskon,
+                'diskon' => $diskonTotal,
                 'diskon_persen' => 0,
-                'diskon_label' => $voucher ? ($voucher->reward->nama ?? 'Voucher') : null,
+                'diskon_label' => $diskonLabel,
                 'total_bayar' => $totalBayar,
                 'jumlah_diterima' => $totalBayar,
                 'kembalian' => 0,
@@ -191,15 +267,17 @@ class CheckoutController extends Controller
                     $item['catatan'] ?? null,
                 ])->filter()->implode(' — '));
 
+                $hargaSatuanDetail = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
+
                 foreach ($pecahan as $bagian) {
                     DetailTransaksi::create([
                         'transaksi_id' => $transaksi->id,
                         'produk_id' => $produk->id,
                         'nama_produk' => $produk->nama_produk,
-                        'harga_satuan' => $item['harga_satuan'],
+                        'harga_satuan' => $hargaSatuanDetail,
                         'jumlah' => $bagian['jumlah'],
                         'catatan' => $catatanItem !== '' ? $catatanItem : null,
-                        'subtotal' => $item['harga_satuan'] * $bagian['jumlah'],
+                        'subtotal' => $hargaSatuanDetail * $bagian['jumlah'],
                         'butuh_produksi' => $bagian['butuh_produksi'],
                     ]);
                 }

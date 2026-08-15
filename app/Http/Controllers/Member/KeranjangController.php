@@ -21,9 +21,15 @@ class KeranjangController extends Controller
             'catatan' => 'nullable|string|max:255',
         ]);
 
-        $hargaSatuan = (float) $produk->harga_diskon;
+        $hargaAsli = (float) $produk->harga_jual;
+        $hargaDiskon = (float) $produk->harga_diskon;
+        $diskonSatuan = max(0, $hargaAsli - $hargaDiskon);
+
+        $hargaSatuan = $hargaDiskon;
+        $hargaAsal = $hargaAsli;
         if (($validated['ukuran'] ?? null) === 'Large') {
             $hargaSatuan += 3000;
+            $hargaAsal += 3000;
         }
 
         MemberCart::tambah([
@@ -31,6 +37,11 @@ class KeranjangController extends Controller
             'nama_produk' => $produk->nama_produk,
             'foto' => $produk->foto,
             'harga_satuan' => $hargaSatuan,
+            'harga_asal' => $hargaAsal,
+            'diskon_produk_satuan' => $diskonSatuan,
+            'nama_promo' => $produk->promo_aktif?->nama_promo,
+            'jenis_promo' => $produk->promo_aktif?->jenis_potongan,
+            'persentase_promo' => $produk->promo_aktif?->persentase,
             'ukuran' => $validated['ukuran'] ?? null,
             'catatan' => $validated['catatan'] ?? null,
             'jumlah' => $validated['jumlah'],
@@ -122,9 +133,15 @@ class KeranjangController extends Controller
                 ->with('error', 'Item keranjang tidak ditemukan, mungkin sudah dihapus.');
         }
 
-        $hargaSatuan = (float) $produk->harga_diskon;
+        $hargaAsli = (float) $produk->harga_jual;
+        $hargaDiskon = (float) $produk->harga_diskon;
+        $diskonSatuan = max(0, $hargaAsli - $hargaDiskon);
+
+        $hargaSatuan = $hargaDiskon;
+        $hargaAsal = $hargaAsli;
         if (($validated['ukuran'] ?? null) === 'Large') {
             $hargaSatuan += 3000;
+            $hargaAsal += 3000;
         }
 
         MemberCart::perbarui($itemId, [
@@ -132,6 +149,11 @@ class KeranjangController extends Controller
             'nama_produk' => $produk->nama_produk,
             'foto' => $produk->foto,
             'harga_satuan' => $hargaSatuan,
+            'harga_asal' => $hargaAsal,
+            'diskon_produk_satuan' => $diskonSatuan,
+            'nama_promo' => $produk->promo_aktif?->nama_promo,
+            'jenis_promo' => $produk->promo_aktif?->jenis_potongan,
+            'persentase_promo' => $produk->promo_aktif?->persentase,
             'ukuran' => $validated['ukuran'] ?? null,
             'catatan' => $validated['catatan'] ?? null,
             'jumlah' => $validated['jumlah'],

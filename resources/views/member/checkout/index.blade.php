@@ -140,9 +140,36 @@
                         {{-- Harga, Change, & stepper jumlah --}}
                         <div class="mt-2 flex items-center justify-between gap-3">
 
-                            <p class="text-sm font-extrabold text-gray-900">
-                                Rp {{ number_format($item['harga_satuan'] * $item['jumlah'], 0, ',', '.') }}
-                            </p>
+                            <div>
+                                @php
+                                    $itemDiskonSatuan = (float) ($item['diskon_produk_satuan'] ?? 0);
+                                    $itemHargaAsal   = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
+                                    $itemAdaDiskon   = $itemDiskonSatuan > 0;
+                                @endphp
+
+                                @if ($itemAdaDiskon)
+                                    {{-- Promo badge: nama promo + persen/nominal, sama seperti tampilan promo produk --}}
+                                    @php
+                                        $badgeLabel = $item['nama_promo'] ?? 'Promo';
+                                        if (($item['jenis_promo'] ?? null) === 'persentase' && ($item['persentase_promo'] ?? null)) {
+                                            $pFormatted = rtrim(rtrim(number_format((float) $item['persentase_promo'], 2, ',', '.'), '0'), ',');
+                                            $badgeLabel .= ' (' . $pFormatted . '%)';
+                                        }
+                                    @endphp
+                                    <div class="flex items-center gap-1.5 mb-0.5">
+                                        <span class="rounded px-1.5 py-0.5 text-[10px] font-extrabold bg-rose-100 text-rose-600">
+                                            {{ $badgeLabel }}
+                                        </span>
+                                        <span class="text-[11px] text-gray-400 line-through">
+                                            Rp {{ number_format($itemHargaAsal * $item['jumlah'], 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                @endif
+
+                                <p class="text-sm font-extrabold text-gray-900">
+                                    Rp {{ number_format($item['harga_satuan'] * $item['jumlah'], 0, ',', '.') }}
+                                </p>
+                            </div>
 
                             <div class="flex items-center gap-2">
 
@@ -648,16 +675,33 @@
                 </div>
 
 
-                @if ($diskon > 0)
+                @foreach ($rincianDiskonProduk ?? [] as $itemRincian)
 
                     <div class="flex justify-between text-xs text-gray-500">
 
                         <span>
-                            Diskon Voucher
+                            {{ $itemRincian['nama'] }}
                         </span>
 
                         <span class="font-semibold text-red-500">
-                            - Rp {{ number_format($diskon, 0, ',', '.') }}
+                            - Rp {{ number_format($itemRincian['nilai'], 0, ',', '.') }}
+                        </span>
+
+                    </div>
+
+                @endforeach
+
+
+                @if (($diskonVoucher ?? 0) > 0)
+
+                    <div class="flex justify-between text-xs text-gray-500">
+
+                        <span>
+                            {{ $voucherDipilih?->reward?->nama ?? 'Voucher' }}
+                        </span>
+
+                        <span class="font-semibold text-red-500">
+                            - Rp {{ number_format($diskonVoucher, 0, ',', '.') }}
                         </span>
 
                     </div>
@@ -726,7 +770,7 @@
 
                 <p class="mt-1 text-[11px] leading-relaxed text-gray-400">
                     Pesanan tidak bisa dibatalkan atau diubah lagi setelah dibuat. Datang ke
-                    kasir sesuai kode pickup untuk membayar dan mengambil pesanan kamu.
+                    kasir sesuai kode pickup untuk mengambil pesanan kamu.
                 </p>
 
             </div>

@@ -5,6 +5,7 @@
     <x-common.page-breadcrumb pageTitle="Promo Produk" />
 
     <div class="space-y-6" x-data="{
+            search: @js(request('search', '')),
             modalHapusTerbuka: false,
             formTerpilih: null,
             namaHapus: '',
@@ -18,27 +19,45 @@
                     this.formTerpilih.submit();
                 }
                 this.modalHapusTerbuka = false;
+            },
+            promoCocok(namaPromo) {
+                const keyword = this.search.trim().toLowerCase();
+                if (keyword === '') {
+                    return true;
+                }
+                return namaPromo.toLowerCase().includes(keyword);
+            },
+            promoAda() {
+                const keyword = this.search.trim().toLowerCase();
+                if (keyword === '') {
+                    return true;
+                }
+                return Array.from(
+                    this.$root.querySelectorAll('[data-promo]')
+                ).some(el => {
+                    const nama = (el.dataset.nama || '').toLowerCase();
+                    return nama.includes(keyword);
+                });
             }
         }">
 
         <x-common.component-card title="Data Promo">
 
             <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
-                <form method="GET" action="{{ route('promo.index') }}" id="searchForm" class="w-full sm:w-auto">
-                    <div class="relative w-full">
-                        <input type="text" id="search" name="search" value="{{ request('search') }}"
-                            placeholder="Cari promo..."
-                            class="w-full sm:w-80 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2.5 pl-10 pr-4 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 text-sm">
+                <div class="relative w-full sm:w-80">
+                    <input type="text"
+                        x-model="search"
+                        placeholder="Cari promo..."
+                        class="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2.5 pl-10 pr-4 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 text-sm">
 
-                        <span class="absolute left-3 top-3 text-gray-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M21 21l-4.3-4.3m0 0A7 7 0 1110 3a7 7 0 016.7 13.7z" />
-                            </svg>
-                        </span>
-                    </div>
-                </form>
+                    <span class="absolute left-3 top-3 text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-4.3-4.3m0 0A7 7 0 1110 3a7 7 0 016.7 13.7z" />
+                        </svg>
+                    </span>
+                </div>
 
                 <a href="{{ route('promo.create') }}"
                     class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white px-5 py-2.5 font-semibold text-sm transition shadow-xs">
@@ -111,7 +130,10 @@
                                 $diskonText = $persentaseFormatted . '%';
                             }
                         @endphp
-                        <tbody x-data="{ open: false }"
+                        <tbody data-promo
+                            data-nama="{{ $item->nama_promo }}"
+                            x-data="{ open: false }"
+                            x-show="promoCocok(@js($item->nama_promo))"
                             class="divide-y divide-gray-100 dark:divide-gray-800 border-b border-gray-100 dark:border-gray-800">
                             <tr
                                 class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition duration-200 text-gray-700 dark:text-gray-300">
@@ -242,6 +264,14 @@
                             </tr>
                         </tbody>
                     @endforelse
+
+                    <tbody x-show="search.trim() !== '' && !promoAda()" x-cloak>
+                        <tr>
+                            <td colspan="10" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                                Promo tidak ditemukan.
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
 
@@ -280,27 +310,6 @@
     </div>
 
     <script>
-let timer;
-const searchInput = document.getElementById('search');
-const searchForm = document.getElementById('searchForm');
-
-searchInput.addEventListener('keyup', function () {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-        searchForm.submit();
-    }, 400);
-});
-
-window.addEventListener('load', function () {
-    if (searchInput.value !== '') {
-        searchInput.focus();
-        searchInput.setSelectionRange(
-            searchInput.value.length,
-            searchInput.value.length
-        );
-    }
-});
-
 // ====== Update status promo otomatis tanpa refresh ======
 function hitungStatusPromo(mulai, selesai, statusAktif) {
     const now = new Date();

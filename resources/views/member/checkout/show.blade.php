@@ -93,9 +93,27 @@
                     <span>Subtotal</span>
                     <span class="font-semibold text-gray-800">Rp {{ number_format($transaksi->subtotal, 0, ',', '.') }}</span>
                 </div>
-                @if ($transaksi->diskon > 0)
+                @php
+                    $diskonItems = [];
+                    if (!empty($transaksi->diskon_label)) {
+                        $decoded = json_decode($transaksi->diskon_label, true);
+                        if (is_array($decoded)) {
+                            $diskonItems = $decoded;
+                        }
+                    }
+                    $stripDiskonPrefix = fn(string $nama): string =>
+                        preg_replace('/^(?:Diskon|Voucher)\s*\((.+)\)$/', '$1', $nama);
+                @endphp
+                @if (!empty($diskonItems))
+                    @foreach ($diskonItems as $itemDiskon)
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>{{ $stripDiskonPrefix($itemDiskon['nama']) }}</span>
+                            <span class="font-semibold text-red-500">- Rp {{ number_format($itemDiskon['nilai'], 0, ',', '.') }}</span>
+                        </div>
+                    @endforeach
+                @elseif ($transaksi->diskon > 0)
                     <div class="flex justify-between text-xs text-gray-500">
-                        <span>Diskon {{ $transaksi->diskon_label ? "({$transaksi->diskon_label})" : '' }}</span>
+                        <span>Diskon</span>
                         <span class="font-semibold text-red-500">- Rp {{ number_format($transaksi->diskon, 0, ',', '.') }}</span>
                     </div>
                 @endif
