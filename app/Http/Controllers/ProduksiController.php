@@ -279,6 +279,16 @@ class ProduksiController extends Controller
         return view('pages.produksi.show', compact('produksi'));
     }
 
+    public function label(Request $request, Produksi $produksi)
+    {
+        $produksi->load('produk');
+
+        $jumlah = (int) $request->query('jumlah', $produksi->jumlah_hasil);
+        $jumlah = max(1, min($jumlah, 500)); // guard biar gak dicetak ribuan sekaligus
+
+        return view('pages.produksi.label', compact('produksi', 'jumlah'));
+    }
+
     public function pdf(Request $request)
     {
         [$periode, $tanggalRef] = $this->resolvePeriode($request);

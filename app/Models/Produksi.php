@@ -23,6 +23,14 @@ class Produksi extends Model
             'jumlah_disesuaikan',
         ];
 
+    protected $casts = [
+        'jumlah_hasil' => 'integer',
+        'kebutuhan_produksi' => 'integer',
+        'jumlah_disesuaikan' => 'integer',
+        'kadaluarsa_jam' => 'integer',
+        'kadaluarsa_tanggal' => 'date',
+    ];
+
     public function produk()
     {
         return $this->belongsTo(Produk::class, 'produk_id');
@@ -40,27 +48,36 @@ class Produksi extends Model
 
     public function getIsKadaluarsaAttribute(): bool
     {
+        $batasWaktu = $this->kadaluarsa_waktu;
+
+        return $batasWaktu ? $batasWaktu->isPast() : false;
+    }
+
+    /**
+     * Waktu pasti kadaluarsa (Carbon object). Untuk tipe "jam" dihitung otomatis:
+     * tanggal produksi + jam produksi + kadaluarsa_jam.
+     */
+    public function getKadaluarsaWaktuAttribute(): ?\Carbon\Carbon
+    {
         if ($this->kadaluarsa_tipe === 'jam') {
             if (!$this->kadaluarsa_jam || !$this->jam_produksi) {
-                return false;
+                return null;
             }
 
-            $batasWaktu = \Carbon\Carbon::parse(
+            return \Carbon\Carbon::parse(
                 \Carbon\Carbon::parse($this->tanggal)->format('Y-m-d') . ' ' . $this->jam_produksi
-            )->addHours($this->kadaluarsa_jam);
-
-            return $batasWaktu->isPast();
+            )->addHours((int) $this->kadaluarsa_jam);
         }
 
         if ($this->kadaluarsa_tipe === 'tanggal') {
             if (!$this->kadaluarsa_tanggal) {
-                return false;
+                return null;
             }
 
-            return \Carbon\Carbon::parse($this->kadaluarsa_tanggal)->endOfDay()->isPast();
+            return \Carbon\Carbon::parse($this->kadaluarsa_tanggal)->endOfDay();
         }
 
-        return false;
+        return null;
     }
 
     public function getJumlahEfektifAttribute(): int
@@ -89,5 +106,22 @@ class Produksi extends Model
         }
 
         return '-';
+    }
+
+    /**
+     * Label kadaluarsa untuk dicetak di label barcode: selalu waktu pasti
+     * (bukan "X jam setelah produksi"). Contoh: produksi 10:00 + 2 jam -> "15-08-2026 12:00".
+     */
+    public function getKadaluarsaLabelCetakAttribute(): string
+    {
+        $waktu = $this->kadaluarsa_waktu;
+
+        if (!$waktu) {
+            return '-';
+        }
+
+        return $this->kadaluarsa_tipe === 'jam'
+            ? $waktu->format('d-m-Y H:i')
+            : $waktu->format('d-m-Y');
     }
 }
