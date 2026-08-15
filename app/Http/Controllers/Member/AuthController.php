@@ -124,11 +124,23 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
+            'username' => [
+                'required',
+                'string',
+                'max:50',
+                'min:3',
+                'regex:/^[a-zA-Z0-9_.]+$/',
+                'unique:members,username',
+            ],
             'no_hp' => ['required', 'string', 'max:20', 'unique:members,no_hp'],
             'password' => ['required', 'confirmed', Password::min(6)],
             'otp' => ['required', 'string'],
         ], [
             'nama.required' => 'Nama wajib diisi.',
+            'username.required' => 'Username wajib diisi.',
+            'username.min' => 'Username minimal 3 karakter.',
+            'username.regex' => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi).',
+            'username.unique' => 'Username ini sudah dipakai. Coba username lain.',
             'no_hp.required' => 'Nomor HP wajib diisi.',
             'no_hp.unique' => 'Nomor HP ini sudah terdaftar. Coba masuk saja.',
             'password.required' => 'Buat kata sandi dulu ya.',
@@ -151,6 +163,7 @@ class AuthController extends Controller
 
         $member = Member::create([
             'nama' => $data['nama'],
+            'username' => $data['username'],
             'no_hp' => $noHp,
             'password' => Hash::make($data['password']),
             'poin' => 0,

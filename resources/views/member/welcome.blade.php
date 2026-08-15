@@ -74,13 +74,39 @@
         .app-splash-in {
             animation: appSplashIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+
+        /* Plain CSS overrides for md+ layout — not dependent on Tailwind build/cache */
+        @media (min-width: 768px) {
+            #app-card {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                align-items: stretch;
+            }
+            #carousel-viewport {
+                aspect-ratio: unset;
+                height: 100%;
+            }
+            #text-col {
+                margin-top: 0;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 2rem;
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            #button-row {
+                margin-top: 0;
+            }
+        }
     </style>
 </head>
 
-<body class="h-full font-outfit antialiased overflow-x-hidden">
+<body class="h-full font-outfit antialiased overflow-x-hidden sm:flex sm:min-h-screen sm:items-stretch sm:justify-center">
     <div id="app-card"
-        class="mx-auto flex min-h-screen w-full max-w-none sm:max-w-2xl md:max-w-4xl lg:max-w-5xl flex-col bg-white shadow-2xl overflow-hidden sm:my-6 sm:min-h-0 sm:rounded-3xl sm:border sm:border-gray-200/80 transition-all duration-300 md:grid md:grid-cols-2 md:items-center">
-        <div id="carousel-viewport" class="relative w-full aspect-[3/4] sm:aspect-[4/3] md:aspect-square md:h-full overflow-hidden touch-pan-x bg-[#5a3c27] sm:rounded-t-3xl md:rounded-tr-none md:rounded-l-3xl">
+        class="mx-auto flex min-h-screen w-full max-w-none sm:max-w-2xl md:max-w-4xl lg:max-w-5xl flex-col bg-white shadow-2xl overflow-hidden transition-all duration-300 md:grid md:grid-cols-2 md:items-stretch">
+        <div id="carousel-viewport" class="relative w-full aspect-[3/4] sm:aspect-[4/3] md:aspect-auto md:h-full overflow-hidden touch-pan-x bg-[#5a3c27] sm:rounded-t-3xl md:rounded-tr-none md:rounded-l-3xl">
             <div id="carousel-track" class="carousel-track">
 
                 {{-- Slide 1 --}}
@@ -108,27 +134,29 @@
             <div class="hero-fade"></div>
         </div>
 
-        <div class="relative z-10 flex flex-1 flex-col -mt-24">
+        <div id="text-col" class="relative z-10 flex flex-1 flex-col -mt-24 justify-between md:mt-0 md:h-full md:justify-center md:gap-8 md:px-4">
 
-            <div class="pt-2 pb-1 flex items-center justify-center gap-1.5">
-                <button type="button" onclick="goToSlide(0)" id="dot-0"
-                    class="h-2 w-2 rounded-full bg-[#5a3c27] transition-all duration-300" aria-label="Slide 1"></button>
-                <button type="button" onclick="goToSlide(1)" id="dot-1"
-                    class="h-1.5 w-1.5 rounded-full bg-gray-300 transition-all duration-300"
-                    aria-label="Slide 2"></button>
-                <button type="button" onclick="goToSlide(2)" id="dot-2"
-                    class="h-1.5 w-1.5 rounded-full bg-gray-300 transition-all duration-300"
-                    aria-label="Slide 3"></button>
+            <div id="slide-block">
+                <div class="pt-2 pb-1 flex items-center justify-center gap-1.5">
+                    <button type="button" onclick="goToSlide(0)" id="dot-0"
+                        class="h-2 w-2 rounded-full bg-[#5a3c27] transition-all duration-300" aria-label="Slide 1"></button>
+                    <button type="button" onclick="goToSlide(1)" id="dot-1"
+                        class="h-1.5 w-1.5 rounded-full bg-gray-300 transition-all duration-300"
+                        aria-label="Slide 2"></button>
+                    <button type="button" onclick="goToSlide(2)" id="dot-2"
+                        class="h-1.5 w-1.5 rounded-full bg-gray-300 transition-all duration-300"
+                        aria-label="Slide 3"></button>
+                </div>
+
+                <div id="slide-text" class="w-full px-6 pt-2 pb-1 text-center">
+                    <h2 id="slide-title" class="text-xl font-extrabold tracking-tight text-[#5a3c27]">Save More with Saisho
+                        Plan</h2>
+                    <p id="slide-desc" class="mt-1 mb-4 text-xs leading-relaxed text-gray-500 max-w-xs mx-auto">Subscribe to
+                        Saisho Plan for a rewarding bakery & cake experience</p>
+                </div>
             </div>
 
-            <div id="slide-text" class="w-full px-6 pt-2 pb-1 text-center">
-                <h2 id="slide-title" class="text-xl font-extrabold tracking-tight text-[#5a3c27]">Save More with Saisho
-                    Plan</h2>
-                <p id="slide-desc" class="mt-1 mb-4 text-xs leading-relaxed text-gray-500 max-w-xs mx-auto">Subscribe to
-                    Saisho Plan for a rewarding bakery & cake experience</p>
-            </div>
-
-            <div class="mt-auto px-6 pb-5 pt-2 flex flex-col items-center gap-2.5 sm:flex-row sm:justify-center sm:gap-4 sm:pb-8">
+            <div id="button-row" class="px-6 pb-5 pt-2 flex flex-col items-center gap-2.5 sm:pb-8 md:pb-2">
 
                 <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                     class="w-full sm:w-auto sm:min-w-[200px] rounded-full bg-[#5a3c27] py-3 text-center text-base font-bold text-white shadow-lg transition hover:bg-[#4a3120] active:scale-[0.99]">
@@ -136,7 +164,7 @@
                 </a>
 
                 <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                    class="py-1 text-sm font-semibold text-[#5a3c27] hover:underline sm:py-3 sm:px-6 sm:rounded-full sm:border sm:border-[#5a3c27]/30 sm:hover:bg-[#5a3c27]/5">
+                    class="py-1 text-sm font-semibold text-[#5a3c27] hover:underline">
                     Skip This Step
                 </a>
             </div>

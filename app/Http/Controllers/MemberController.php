@@ -19,7 +19,7 @@ class MemberController extends Controller
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('nama', 'like', "%{$search}%")
-                        ->orWhere('no_hp', 'like', "%{$search}%");
+                        ->orWhere('username', 'like', "%{$search}%");
                 });
             })
             ->latest()
@@ -52,6 +52,7 @@ class MemberController extends Controller
 
         $request->validate([
             'nama' => 'required|string|max:255',
+            'username' => 'required|string|min:3|max:50|regex:/^[a-zA-Z0-9_.]+$/|unique:members,username',
             'no_hp' => 'required|string|max:20|unique:members,no_hp',
             'email' => 'nullable|email|max:255',
             'tanggal_lahir' => 'nullable|date|before_or_equal:today',
@@ -59,6 +60,10 @@ class MemberController extends Controller
             'nama.required' => 'Nama wajib diisi.',
             'nama.string' => 'Nama harus berupa teks.',
             'nama.max' => 'Nama maksimal 255 karakter.',
+            'username.required' => 'Username wajib diisi.',
+            'username.min' => 'Username minimal 3 karakter.',
+            'username.regex' => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi).',
+            'username.unique' => 'Username sudah digunakan.',
             'no_hp.required' => 'Nomor HP wajib diisi.',
             'no_hp.max' => 'Nomor HP maksimal 20 karakter.',
             'no_hp.unique' => 'Nomor HP sudah digunakan.',
@@ -74,6 +79,7 @@ class MemberController extends Controller
 
         $member = Member::create([
             'nama' => $request->nama,
+            'username' => $request->username,
             'no_hp' => $request->no_hp,
             'email' => $request->email ?: null,
             'tanggal_lahir' => $request->tanggal_lahir ?: null,
@@ -116,6 +122,7 @@ class MemberController extends Controller
 
         $request->validate([
             'nama' => 'required|string|max:255',
+            'username' => 'required|string|min:3|max:50|regex:/^[a-zA-Z0-9_.]+$/|unique:members,username,' . $member->id,
             'no_hp' => 'required|string|max:20|unique:members,no_hp,' . $member->id,
             'email' => 'nullable|email|max:255',
             'tanggal_lahir' => 'nullable|date|before_or_equal:today',
@@ -123,6 +130,10 @@ class MemberController extends Controller
             'nama.required' => 'Nama wajib diisi.',
             'nama.string' => 'Nama harus berupa teks.',
             'nama.max' => 'Nama maksimal 255 karakter.',
+            'username.required' => 'Username wajib diisi.',
+            'username.min' => 'Username minimal 3 karakter.',
+            'username.regex' => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi).',
+            'username.unique' => 'Username sudah digunakan.',
             'no_hp.required' => 'Nomor HP wajib diisi.',
             'no_hp.max' => 'Nomor HP maksimal 20 karakter.',
             'no_hp.unique' => 'Nomor HP sudah digunakan.',
@@ -134,6 +145,7 @@ class MemberController extends Controller
 
         $member->update([
             'nama' => $request->nama,
+            'username' => $request->username,
             'no_hp' => $request->no_hp,
             'email' => $request->email ?: null,
             'tanggal_lahir' => $request->tanggal_lahir ?: null,

@@ -30,8 +30,20 @@ class AkunController extends Controller
 
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:100'],
+            'username' => [
+                'required',
+                'string',
+                'min:3',
+                'max:50',
+                'regex:/^[a-zA-Z0-9_.]+$/',
+                Rule::unique('members', 'username')->ignore($member->id),
+            ],
             'email' => ['nullable', 'email', 'max:150', Rule::unique('members', 'email')->ignore($member->id)],
             'foto' => ['nullable', 'image', 'max:8192'],
+        ], [
+            'username.min' => 'Username minimal 3 karakter.',
+            'username.regex' => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi).',
+            'username.unique' => 'Username ini sudah dipakai. Coba username lain.',
         ]);
 
         if ($request->hasFile('foto')) {

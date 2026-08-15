@@ -106,6 +106,16 @@
                             </div>
 
                             <div>
+                                <label for="username" class="text-xs font-semibold text-gray-500">Username</label>
+                                <input type="text" name="username" id="username"
+                                    value="{{ old('username', $member->username) }}" placeholder="Buat username kamu"
+                                    oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()"
+                                    class="mt-1.5 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                                @error('username')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div>
                                 <label for="email" class="text-xs font-semibold text-gray-500">Email</label>
                                 <input type="email" name="email" id="email" value="{{ old('email', $member->email) }}"
                                     placeholder="Masukkan email kamu"

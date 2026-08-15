@@ -11,7 +11,7 @@ class Member extends Authenticatable
 {
     use Notifiable, LogsActivity;
 
-    protected $fillable = ['nama', 'no_hp', 'email', 'foto', 'poin', 'password'];
+    protected $fillable = ['nama', 'username', 'no_hp', 'email', 'foto', 'poin', 'password'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -141,7 +141,7 @@ class Member extends Authenticatable
     protected static function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['nama', 'no_hp', 'poin'])
+            ->logOnly(['nama', 'username', 'no_hp', 'poin'])
             ->logOnlyDirty()
             ->useLogName('member');
     }

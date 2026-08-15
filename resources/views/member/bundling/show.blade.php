@@ -225,7 +225,7 @@
 
             @else
 
-                <button type="button" onclick="bukaModalLoginRequired('pesan Pick Up')"
+                <button type="button" onclick="bukaModalLoginRequired('Pesan')"
                     class="flex w-full items-center justify-between rounded-2xl bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
                     <span>Login untuk Pesan</span>
                     <span x-text="'Rp ' + total.toLocaleString('id-ID')"></span>

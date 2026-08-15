@@ -20,7 +20,7 @@
                 </span>
                 <div class="min-w-0 flex-1">
                     <p class="truncate text-base font-bold uppercase">{{ $member->nama }}</p>
-                    <p class="text-xs text-white/80">{{ $member->no_hp }}</p>
+                    <p class="text-xs text-white/80">{{ $member->username ? '@' . $member->username : $member->no_hp }}</p>
                 </div>
                 <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 shrink-0 text-white/80"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>

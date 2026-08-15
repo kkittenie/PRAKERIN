@@ -248,6 +248,19 @@
                         </div>
 
                         <div>
+                            <label for="username"
+                                class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Username</label>
+                            <input id="username" name="username" type="text" value="{{ old('username') }}" required
+                                minlength="3" maxlength="50" placeholder="Contoh: budisantoso"
+                                oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()"
+                                class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                            <p class="mt-1 text-[11px] text-gray-400">Huruf, angka, titik, atau underscore. Tidak boleh sama
+                                dengan member lain.</p>
+                            @error('username')
+                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
                             <label for="password"
                                 class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Kata
                                 Sandi</label>
@@ -543,6 +556,7 @@
         // STEP 3: Submit Complete Form
         function submitRegisterStep3() {
             const nama = document.getElementById('nama').value.trim();
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const passwordConf = document.getElementById('password_confirmation').value;
             const errEl = document.getElementById('password-error-text');
@@ -550,6 +564,18 @@
 
             if (!nama) {
                 errEl.innerText = 'Silakan isi nama lengkap.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            if (!username || username.length < 3) {
+                errEl.innerText = 'Username minimal 3 karakter.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            if (!/^[a-zA-Z0-9_.]+$/.test(username)) {
+                errEl.innerText = 'Username hanya boleh huruf, angka, titik, dan underscore.';
                 errEl.classList.remove('hidden');
                 return;
             }

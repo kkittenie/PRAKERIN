@@ -545,9 +545,6 @@
             }));
         })();
 
-        // diskon_label disimpan di DB sebagai JSON string, mis. [{"nama":"Voucher (CEF-PJAY)","nilai":10000}]
-        // (rincian tiap komponen diskon: promo produk, diskon manual, voucher). Fungsi ini mengubahnya
-        // jadi teks nama yang enak dibaca, bukan JSON mentah.
         function formatDiskonLabel(raw) {
             if (!raw) return 'Diskon';
             try {

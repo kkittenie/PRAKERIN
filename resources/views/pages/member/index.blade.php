@@ -44,7 +44,7 @@
                 this.modalResetTerbuka = false;
             },
 
-            memberCocok(nama, noHp) {
+            memberCocok(nama, username) {
                 const keyword = this.search.trim().toLowerCase();
 
                 if (keyword === '') {
@@ -52,7 +52,7 @@
                 }
 
                 return nama.toLowerCase().includes(keyword) ||
-                       noHp.toLowerCase().includes(keyword);
+                       username.toLowerCase().includes(keyword);
             },
 
             memberAda() {
@@ -66,9 +66,9 @@
                     this.$root.querySelectorAll('[data-member]')
                 ).some(el => {
                     const nama = el.dataset.nama.toLowerCase();
-                    const noHp = el.dataset.noHp.toLowerCase();
+                    const username = (el.dataset.username || '').toLowerCase();
 
-                    return nama.includes(keyword) || noHp.includes(keyword);
+                    return nama.includes(keyword) || username.includes(keyword);
                 });
             }
         }">
@@ -96,7 +96,7 @@
 
                 <input type="text"
                     x-model="search"
-                    placeholder="Cari nama atau no. HP..."
+                    placeholder="Cari nama atau username..."
                     class="h-10 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-700 placeholder:text-gray-400 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
 
             </div>
@@ -143,6 +143,10 @@
                         </th>
 
                         <th class="hidden py-3 md:table-cell">
+                            Username
+                        </th>
+
+                        <th class="hidden py-3 md:table-cell">
                             No. HP
                         </th>
 
@@ -181,10 +185,11 @@
                         data-member
                         data-nama="{{ $member->nama }}"
                         data-no-hp="{{ $member->no_hp }}"
+                        data-username="{{ $member->username }}"
                         x-data="{ open: false }"
                         x-show="memberCocok(
                             @js($member->nama ?? ''),
-                            @js($member->no_hp ?? '')
+                            @js($member->username ?? '')
                         )"
                         class="divide-y divide-gray-100 border-b border-gray-100 dark:divide-gray-800 dark:border-gray-800">
 
@@ -210,6 +215,12 @@
                             {{-- Nama --}}
                             <td class="py-3.5 font-medium text-gray-800 dark:text-white/90">
                                 {{ $member->nama }}
+                            </td>
+
+
+                            {{-- Username --}}
+                            <td class="hidden py-3.5 text-gray-600 md:table-cell dark:text-gray-400">
+                                {{ $member->username ? '@' . $member->username : '-' }}
                             </td>
 
 
@@ -339,6 +350,20 @@
                             <td colspan="6" class="p-3.5">
 
                                 <div class="grid grid-cols-2 gap-3 text-gray-600 dark:text-gray-300">
+
+                                    {{-- Username --}}
+                                    <div>
+
+                                        <span class="text-gray-400">
+                                            Username:
+                                        </span>
+
+                                        <span class="font-semibold text-gray-800 dark:text-white">
+                                            {{ $member->username ? '@' . $member->username : '-' }}
+                                        </span>
+
+                                    </div>
+
 
                                     {{-- No HP --}}
                                     <div>

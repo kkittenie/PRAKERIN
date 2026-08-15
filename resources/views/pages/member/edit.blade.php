@@ -18,6 +18,18 @@
 
         <div class="mb-5">
             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Username <span class="text-red-500">*</span>
+            </label>
+            <input type="text" name="username" value="{{ old('username', $member->username) }}" required minlength="3"
+                maxlength="50"
+                class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm dark:border-gray-700 dark:text-white/90" />
+            @error('username')
+            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>@enderror
+            <p class="mt-1.5 text-xs text-gray-400">Harus unik, tidak boleh sama dengan member lain.</p>
+        </div>
+
+        <div class="mb-5">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                 No. HP <span class="text-red-500">*</span>
             </label>
             <input type="text" name="no_hp" value="{{ old('no_hp', $member->no_hp) }}" required
