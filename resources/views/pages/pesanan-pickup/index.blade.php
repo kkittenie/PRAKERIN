@@ -206,7 +206,7 @@
         </x-common.component-card>
 
         <!-- ========== MODAL DETAIL ========== -->
-        <div x-show="modalDetail" x-cloak class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        <div x-show="modalDetail" x-cloak class="fixed inset-0 z-[999999] flex items-center justify-center p-4"
             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
@@ -509,8 +509,8 @@
         </div>
 
         <!-- ========== MODAL: KONFIRMASI BATALKAN ========== -->
-        <div x-show="modalBatalTerbuka" x-cloak x-transition
-            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs overflow-y-auto z-[99999]">
+            <div x-show="modalBatalTerbuka" x-cloak x-transition
+                class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs overflow-y-auto z-[999999]">
             <div class="flex items-center justify-center p-4" style="min-height: 100%">
             <div @click.away="modalBatalTerbuka = false"
                 class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800 max-h-[90vh] overflow-y-auto">
@@ -536,7 +536,7 @@
 
         <!-- ========== MODAL: ALASAN TOLAK PEMBAYARAN ========== -->
         <div x-show="modalTolakTerbuka" x-cloak x-transition
-            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs overflow-y-auto z-[99999]">
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs overflow-y-auto z-[999999]">
             <div class="flex items-center justify-center p-4" style="min-height: 100%">
             <div @click.away="modalTolakTerbuka = false"
                 class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800 max-h-[90vh] overflow-y-auto">
