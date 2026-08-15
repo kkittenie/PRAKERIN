@@ -28,6 +28,7 @@ use App\Http\Controllers\VoucherKasirController;
 use App\Http\Controllers\StampRedemptionKasirController;
 use App\Http\Controllers\PesananPickupController;
 use App\Http\Controllers\BannerController;
+use App\Http\Controllers\PengaturanPajakController;
 
 require __DIR__ . '/member.php';
 
@@ -92,6 +93,23 @@ Route::middleware(['auth'])->group(function () {
     
     Route::resource('banner', BannerController::class)
         ->middleware('permission:lihat_banner|tambah_banner|edit_banner|hapus_banner');    
+
+    // Pengaturan Pajak
+    Route::middleware('permission:lihat_pajak')->group(function () {
+        Route::get('/pengaturan-pajak', [PengaturanPajakController::class, 'index'])->name('pengaturan-pajak.index');
+    });
+    Route::middleware('permission:tambah_pajak')->group(function () {
+        Route::get('/pengaturan-pajak/tambah', [PengaturanPajakController::class, 'create'])->name('pengaturan-pajak.create');
+        Route::post('/pengaturan-pajak', [PengaturanPajakController::class, 'store'])->name('pengaturan-pajak.store');
+    });
+    Route::middleware('permission:edit_pajak')->group(function () {
+        Route::get('/pengaturan-pajak/{id}/ubah', [PengaturanPajakController::class, 'edit'])->name('pengaturan-pajak.edit');
+        Route::put('/pengaturan-pajak/{id}', [PengaturanPajakController::class, 'update'])->name('pengaturan-pajak.update');
+        Route::patch('/pengaturan-pajak/{id}/toggle-status', [PengaturanPajakController::class, 'toggleStatus'])->name('pengaturan-pajak.toggle-status');
+    });
+    Route::middleware('permission:hapus_pajak')->group(function () {
+        Route::delete('/pengaturan-pajak/{id}', [PengaturanPajakController::class, 'destroy'])->name('pengaturan-pajak.destroy');
+    });
 
     Route::patch('/produk/{produk}/toggle-status', [ProdukController::class, 'toggleStatus'])->name('produk.toggle-status');
 

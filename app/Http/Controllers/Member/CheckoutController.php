@@ -15,14 +15,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use App\Models\PengaturanPajak;
 
 class CheckoutController extends Controller
 {
     private const NAMA_TOKO = 'Saisho Cake & Bakery';
     private const ALAMAT_TOKO = 'Jl. Kamboja No. 1 Tuparev, Cirebon';
     private const SESSION_VOUCHER_KEY = 'member_checkout_voucher_id';
-
-    private const PAJAK_PERSEN = 5;
 
     public function index()
     {
@@ -63,13 +62,15 @@ class CheckoutController extends Controller
             $voucherTerbaik = $kandidatTerbaik ?: null;
         }
 
+        $pajakInfo = $this->getPajakInfo();
+
         return view('member.checkout.index', [
             'member' => $member,
             'items' => $items,
             'subtotal' => $subtotal,
             'diskon' => $diskon,
             'pajak' => $pajak,
-            'pajakPersen' => self::PAJAK_PERSEN,
+            'pajakPersen' => $pajakInfo['persen'],
             'totalBayar' => $totalBayar,
             'voucherAktif' => $voucherAktif,
             'voucherDipilih' => $voucherDipilih,
@@ -333,16 +334,25 @@ class CheckoutController extends Controller
         return min($diskon, $basis);
     }
 
-    /**
-     * Hitung pajak otomatis dari (subtotal - diskon) — formula & persentase
-     * default sama dengan yang dipakai kasir di POS (5%), cuma di sini nggak
-     * bisa diubah manual karena member checkout sendiri tanpa kasir.
-     */
+    private function getPajakInfo(): array
+    {
+        $pajak = PengaturanPajak::getAktif();
+        if (!$pajak->status_aktif) {
+            return ['aktif' => false, 'persen' => 0];
+        }
+        return ['aktif' => true, 'persen' => (float) $pajak->persentase];
+    }
+
     private function hitungPajak(float $subtotal, float $diskon): float
     {
+        $info = $this->getPajakInfo();
+        if (!$info['aktif']) {
+            return 0;
+        }
+
         $basis = max(0, $subtotal - $diskon);
 
-        return round($basis * (self::PAJAK_PERSEN / 100));
+        return round($basis * ($info['persen'] / 100));
     }
 
     private function estimasiPoin(Member $member, float $totalBayar): int

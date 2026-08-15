@@ -17,6 +17,7 @@ use App\Models\StampProgram;
 use App\Models\MemberStamp;
 use App\Models\StampRedemption;
 use App\Models\PenukaranPoin;
+use App\Models\PengaturanPajak;
 
 class TransaksiKasirController extends Controller
 {
@@ -173,6 +174,7 @@ class TransaksiKasirController extends Controller
 
             $daftarDitahan = PesananDitahan::with(['transaksi.voucher.reward', 'transaksi.stampRedemptions.produk'])->orderBy('created_at', 'desc')->get();
             $daftarMember = \App\Models\Member::orderBy('nama')->get();
+            $pengaturanPajak = PengaturanPajak::getAktif();
 
             return view('pages.transaksi.indeks', [
                 'title' => 'Transaksi Kasir',
@@ -181,6 +183,7 @@ class TransaksiKasirController extends Controller
                 'daftarBundling' => $daftarBundling,
                 'daftarDitahan' => $daftarDitahan,
                 'daftarMember' => $daftarMember,
+                'pengaturanPajak' => $pengaturanPajak,
             ]);
         } catch (\Exception $e) {
             Log::error('Error pada indeks TransaksiKasirController: ' . $e->getMessage());
@@ -297,6 +300,11 @@ class TransaksiKasirController extends Controller
                 'total' => 'required|numeric',
                 'catatan' => 'nullable|string',
             ]);
+
+            $pengaturanPajak = PengaturanPajak::getAktif();
+            if (!$pengaturanPajak->status_aktif) {
+                $validated['pajak'] = 0;
+            }
 
             $namaPembeli = $validated['nama_pembeli'] ?? 'Pelanggan Umum';
 
@@ -653,6 +661,11 @@ class TransaksiKasirController extends Controller
                 'kembalian' => 'required|numeric',
                 'metode_pembayaran' => 'required|string',
             ]);
+
+            $pengaturanPajak = PengaturanPajak::getAktif();
+            if (!$pengaturanPajak->status_aktif) {
+                $validated['pajak'] = 0;
+            }
 
              $voucherDipakai = $this->validasiVoucherUntukTransaksi(
                 $validated['voucher_id'] ?? null,

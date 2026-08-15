@@ -965,7 +965,7 @@
                     </div>
 
                     <!-- Pajak -->
-                    <div
+                    <div x-show="pajakAktif"
                         class="px-3 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50/20 dark:bg-gray-800/10 flex flex-col gap-1.5 shrink-0">
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -995,7 +995,7 @@
                             </div>
                         </template>
                         <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
-                            x-show="pajak > 0">
+                            x-show="pajakAktif && pajak > 0">
                             <span>Pajak (<span x-text="pajakPersen"></span>%)</span>
                             <span class="font-semibold text-gray-800 dark:text-white" x-text="formatRupiah(pajak)"></span>
                         </div>
@@ -1569,7 +1569,9 @@
                 memberTerpilih: null,
                 catatan: '',
                 diskonPersen: '',
-                pajakPersen: '5',
+                pajakAktif: {{ $pengaturanPajak->status_aktif ? 'true' : 'false' }},
+                pajakPersenDefault: '{{ $pengaturanPajak->status_aktif ? $pengaturanPajak->persentase : '0' }}',
+                pajakPersen: '{{ $pengaturanPajak->status_aktif ? $pengaturanPajak->persentase : '0' }}',
 
                 // Voucher member
                 voucherTerpilih: null,
@@ -2385,6 +2387,7 @@
                 },
 
                 get pajak() {
+                    if (!this.pajakAktif) return 0;
                     const base = this.subtotal - this.nilaiDiskon;
                     return Math.max(0, Math.round(base * (this.parsePersen(this.pajakPersen) / 100)));
                 },
@@ -2822,7 +2825,7 @@
                     this.namaPembeli = '';
                     this.catatan = '';
                     this.diskonPersen = '';
-                    this.pajakPersen = '5';
+                    this.pajakPersen = this.pajakPersenDefault;
                     this.jumlahDiterima = '';
                     this.memberIdTerpilih = '';
                     this.memberTerpilih = null;

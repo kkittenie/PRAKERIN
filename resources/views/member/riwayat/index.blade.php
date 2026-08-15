@@ -12,6 +12,29 @@
         \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => ['label' => 'Sudah Diambil', 'class' => 'bg-green-50 text-green-600'],
         \App\Models\Transaksi::STATUS_DIBATALKAN => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 text-gray-500'],
     ];
+
+    // status_pesanan di DB langsung ke-set 'diproses' begitu pesanan dibuat
+    // (lihat CheckoutController), padahal pembayarannya belum tentu lunas/
+    // dikonfirmasi. Biar badge di sini nyambung sama step di halaman detail
+    // pesanan (member.pesanan.show), pakai logika yang sama: cek lunas &
+    // diproses_pada dulu sebelum jatuh balik ke status_pesanan asli.
+    $pesananStatusInfo = function ($trx) use ($statusPesananBadge) {
+        if ($trx->status_pesanan === \App\Models\Transaksi::STATUS_DIBATALKAN) {
+            return $statusPesananBadge[\App\Models\Transaksi::STATUS_DIBATALKAN];
+        }
+
+        $lunas = $trx->status_pembayaran === 'Lunas';
+
+        if (! $lunas) {
+            return ['label' => 'Menunggu Pembayaran', 'class' => 'bg-amber-50 text-amber-700'];
+        }
+
+        if (! $trx->diproses_pada) {
+            return ['label' => 'Dikonfirmasi', 'class' => 'bg-blue-50 text-blue-700'];
+        }
+
+        return $statusPesananBadge[$trx->status_pesanan] ?? null;
+    };
     $riwayatStamp = $riwayatStamp ?? collect();
     $riwayat = $riwayat ?? collect();
     $isEmpty = $penukaran->isEmpty() && $riwayat->isEmpty() && $riwayatStamp->isEmpty();
@@ -121,7 +144,7 @@
                         </div>
                         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
                             @foreach ($riwayatAktif as $trx)
-                                @php $pesananBadge = $statusPesananBadge[$trx->status_pesanan] ?? null; @endphp
+                                @php $pesananBadge = $pesananStatusInfo($trx); @endphp
                                 <a
                                     href="{{ route('member.pesanan.show', $trx) }}"
                                     onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
@@ -158,7 +181,7 @@
                                 @if ($isOnline)
                                     {{-- Pesanan online (sudah selesai/dibatalkan) — buka detail pesanan --}}
                                     @php
-                                        $pesananBadge = $statusPesananBadge[$trx->status_pesanan] ?? null;
+                                        $pesananBadge = $pesananStatusInfo($trx);
                                         $sudahDiambil = $trx->status_pesanan === \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL;
                                     @endphp
                                     <a
@@ -383,7 +406,7 @@
                         <span>Subtotal</span>
                         <span id="detail-trx-subtotal" class="font-medium text-gray-700">–</span>
                     </div>
-                    <div class="flex items-center justify-between text-gray-500">
+                    <div id="detail-trx-pajak-row" class="flex items-center justify-between text-gray-500">
                         <span>Pajak</span>
                         <span id="detail-trx-pajak" class="font-medium text-gray-700">–</span>
                     </div>
@@ -559,7 +582,16 @@
             const fmtRupiah = (n) => 'Rp' + Number(n || 0).toLocaleString('id-ID');
 
             document.getElementById('detail-trx-subtotal').textContent = fmtRupiah(d.subtotal);
-            document.getElementById('detail-trx-pajak').textContent = fmtRupiah(d.pajak);
+            
+            const pajakRow = document.getElementById('detail-trx-pajak-row');
+            const pajak = Number(d.pajak || 0);
+            if (pajak > 0) {
+                pajakRow.classList.remove('hidden');
+                document.getElementById('detail-trx-pajak').textContent = fmtRupiah(pajak);
+            } else {
+                pajakRow.classList.add('hidden');
+            }
+
             document.getElementById('detail-trx-total').textContent = fmtRupiah(d.total);
             document.getElementById('detail-trx-metode').textContent = d.metode || '-';
             document.getElementById('detail-trx-poin').textContent = '+' + Number(d.poin || 0).toLocaleString('id-ID') + ' poin';

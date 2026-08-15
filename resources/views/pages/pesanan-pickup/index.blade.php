@@ -295,7 +295,7 @@
                                     <span class="text-gray-500 dark:text-gray-400">Subtotal</span>
                                     <span class="font-medium text-gray-800 dark:text-white" x-text="'Rp ' + Number(detailData.subtotal).toLocaleString('id-ID')"></span>
                                 </div>
-                                <div class="flex justify-between text-sm">
+                                <div class="flex justify-between text-sm" x-show="detailData.pajak && Number(detailData.pajak) > 0">
                                     <span class="text-gray-500 dark:text-gray-400">Pajak</span>
                                     <span class="font-medium text-gray-800 dark:text-white" x-text="'Rp ' + Number(detailData.pajak).toLocaleString('id-ID')"></span>
                                 </div>
