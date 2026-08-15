@@ -65,7 +65,7 @@
 
         <div
             id="hasil-search-produk"
-            class="hasil-search absolute z-50 mt-1 hidden w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+            class="hasil-search absolute z-50 mt-1 hidden w-full max-h-72 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
         </div>
 
         <input type="hidden" name="produk_id" id="input-id-produk" value="{{ old('produk_id') }}">
@@ -73,6 +73,17 @@
         @error('produk_id')
             <small class="text-red-500">{{ $message }}</small>
         @enderror
+
+        {{-- Preview produk terpilih --}}
+        <div id="preview-produk-terpilih" class="hidden mt-3 flex items-center gap-3 rounded-xl border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-500/10 p-3">
+            <img id="preview-produk-foto" src="" class="w-14 h-14 rounded-lg object-cover border border-gray-200 dark:border-gray-700 bg-white">
+            <div class="min-w-0 flex-1">
+                <p id="preview-produk-nama" class="font-semibold text-gray-800 dark:text-white text-sm truncate"></p>
+                <p id="preview-produk-kode" class="text-xs text-gray-500 dark:text-gray-400"></p>
+            </div>
+            <button type="button" onclick="batalkanPilihProduk()"
+                class="shrink-0 text-gray-400 hover:text-red-500 transition text-lg leading-none px-1">&times;</button>
+        </div>
 
     </div>
 
@@ -95,12 +106,18 @@
             </label>
         </div>
 
+
         <div id="inputKadaluarsaTanggal">
             <input
                 type="date"
+                id="kadaluarsa_tanggal"
                 name="kadaluarsa_tanggal"
                 value="{{ old('kadaluarsa_tanggal') }}"
                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+
+            <p id="peringatanKadaluarsaTanggal" class="hidden text-xs text-red-600 mt-1">
+                Tanggal kadaluarsa tidak boleh sebelum tanggal produksi.
+            </p>
 
             @error('kadaluarsa_tanggal')
                 <small class="text-red-500">{{ $message }}</small>
@@ -111,6 +128,7 @@
             <div class="flex items-center gap-2">
                 <input
                     type="number"
+                    id="kadaluarsa_jam"
                     name="kadaluarsa_jam"
                     min="1"
                     placeholder="Contoh: 24"
@@ -118,6 +136,14 @@
                     class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                 <span class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">jam</span>
             </div>
+
+            <p id="peringatanKadaluarsaJam" class="hidden text-xs text-red-600 mt-1">
+                Jam kadaluarsa harus diisi (lebih dari 0).
+            </p>
+
+            <p id="infoWaktuKadaluarsa" class="hidden text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Produk akan kadaluarsa sekitar: <span class="font-semibold"></span>
+            </p>
 
             @error('kadaluarsa_jam')
                 <small class="text-red-500">{{ $message }}</small>
@@ -328,6 +354,10 @@ function tambahBarisBahan() {
                     Jumlah melebihi stok yang tersedia!
                 </p>
 
+                <p class="peringatan-kosong hidden text-xs text-red-600 mt-1">
+                    Jumlah dipakai harus diisi!
+                </p>
+
             </div>
 
         </div>
@@ -384,8 +414,11 @@ function aktifkanSearch(element) {
     const peringatanStok =
         element.querySelector('.peringatan-stok');
 
+    const peringatanKosong =
+        element.querySelector('.peringatan-kosong');
+
     inputJumlah.addEventListener('input', function () {
-        cekJumlahMelebihiStok(inputJumlah, peringatanStok);
+        cekJumlahMelebihiStok(inputJumlah, peringatanStok, peringatanKosong, inputId);
     });
 
     inputSearch.addEventListener('input', function () {
@@ -474,17 +507,53 @@ function aktifkanSearch(element) {
         });
 }
 
-                function aktifkanSearchProduk() {
+        function aktifkanSearchProduk() {
 
             const inputSearch = document.getElementById('input-search-produk');
             const hasilSearch = document.getElementById('hasil-search-produk');
             const inputId = document.getElementById('input-id-produk');
+            const preview = document.getElementById('preview-produk-terpilih');
+            const previewFoto = document.getElementById('preview-produk-foto');
+            const previewNama = document.getElementById('preview-produk-nama');
+            const previewKode = document.getElementById('preview-produk-kode');
+
+            function fotoUrl(produk) {
+                return produk.foto ? `/storage/${produk.foto}` : null;
+            }
+
+            function tampilkanPreview(produk) {
+                const url = fotoUrl(produk);
+                if (url) {
+                    previewFoto.src = url;
+                    previewFoto.classList.remove('hidden');
+                } else {
+                    previewFoto.src = '';
+                    previewFoto.classList.add('hidden');
+                }
+                previewNama.textContent = produk.nama_produk;
+                previewKode.textContent = `Kode: ${produk.kode_produk} · Stok: ${produk.stok}`;
+                preview.classList.remove('hidden');
+            }
+
+            window.batalkanPilihProduk = function () {
+                inputSearch.value = '';
+                inputId.value = '';
+                preview.classList.add('hidden');
+                inputSearch.focus();
+            };
+
+            // Kalau ada old('produk_id') pas validasi gagal, langsung tampilkan preview-nya.
+            if (inputId.value) {
+                const produkLama = daftarProduk.find(p => String(p.id) === String(inputId.value));
+                if (produkLama) tampilkanPreview(produkLama);
+            }
 
             inputSearch.addEventListener('input', function () {
 
                 const keyword = this.value.toLowerCase();
 
                 inputId.value = '';
+                preview.classList.add('hidden');
 
                 if (keyword.length === 0) {
                     hasilSearch.classList.add('hidden');
@@ -492,7 +561,8 @@ function aktifkanSearch(element) {
                 }
 
                 const hasil = daftarProduk.filter(function (produk) {
-                    return produk.nama_produk.toLowerCase().includes(keyword);
+                    return produk.nama_produk.toLowerCase().includes(keyword)
+                        || (produk.kode_produk || '').toLowerCase().includes(keyword);
                 });
 
                 hasilSearch.innerHTML = '';
@@ -505,12 +575,22 @@ function aktifkanSearch(element) {
                     `;
                 } else {
                     hasil.forEach(function (produk) {
+                        const url = fotoUrl(produk);
                         const item = document.createElement('button');
                         item.type = 'button';
-                        item.className = 'block w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700';
+                        item.className = 'flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-50 dark:border-gray-700 last:border-0';
                         item.innerHTML = `
-                            <div class="font-medium text-gray-800 dark:text-white">
-                                ${produk.nama_produk}
+                            ${url
+                                ? `<img src="${url}" class="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-600 shrink-0">`
+                                : `<div class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-300 dark:text-gray-500 shrink-0 text-xs">No Img</div>`
+                            }
+                            <div class="min-w-0 flex-1">
+                                <div class="font-medium text-gray-800 dark:text-white text-sm truncate">
+                                    ${produk.nama_produk}
+                                </div>
+                                <div class="text-xs text-gray-400 truncate">
+                                    ${produk.kode_produk ?? '-'} · Stok: ${produk.stok}
+                                </div>
                             </div>
                         `;
 
@@ -518,6 +598,7 @@ function aktifkanSearch(element) {
                             inputSearch.value = produk.nama_produk;
                             inputId.value = produk.id;
                             hasilSearch.classList.add('hidden');
+                            tampilkanPreview(produk);
                         });
 
                         hasilSearch.appendChild(item);
@@ -572,10 +653,11 @@ function aktifkanSearch(element) {
 
         }
 
-        function cekJumlahMelebihiStok(inputJumlah, peringatan) {
+        function cekJumlahMelebihiStok(inputJumlah, peringatan, peringatanKosong, inputId) {
 
             const stokMax = parseFloat(inputJumlah.dataset.stokMax || 0);
             const nilai = parseFloat(inputJumlah.value) || 0;
+            const sudahPilihBahan = !!(inputId && inputId.value);
 
             if (nilai > stokMax) {
                 peringatan.classList.remove('hidden');
@@ -583,6 +665,15 @@ function aktifkanSearch(element) {
             } else {
                 peringatan.classList.add('hidden');
                 inputJumlah.classList.remove('border-red-500');
+            }
+
+            if (peringatanKosong) {
+                if (sudahPilihBahan && nilai <= 0) {
+                    peringatanKosong.classList.remove('hidden');
+                    inputJumlah.classList.add('border-red-500');
+                } else {
+                    peringatanKosong.classList.add('hidden');
+                }
             }
 
             perbaruiTombolSubmitProduksi();
@@ -617,32 +708,98 @@ function aktifkanSearch(element) {
 
         });
 
-        function perbaruiTombolSubmitProduksi() {
-            const adaError = document.querySelectorAll('.peringatan-stok:not(.hidden)').length > 0;
-            const btn = document.getElementById('btnSubmitProduksi');
-            if (btn) {
-                btn.disabled = adaError;
-            }
+    function perbaruiTombolSubmitProduksi() {
+        const adaErrorStok = document.querySelectorAll('.peringatan-stok:not(.hidden)').length > 0;
+        const adaErrorKosong = document.querySelectorAll('.peringatan-kosong:not(.hidden)').length > 0;
+        const btn = document.getElementById('btnSubmitProduksi');
+        if (btn) {
+            btn.disabled = adaErrorStok || adaErrorKosong;
         }
+    }
 
     const tipeTanggal = document.getElementById('tipeTanggal');
     const tipeJam = document.getElementById('tipeJam');
     const inputTanggal = document.getElementById('inputKadaluarsaTanggal');
     const inputJam = document.getElementById('inputKadaluarsaJam');
+    const fieldTanggalProduksi = document.querySelector('input[name="tanggal"]');
+    const fieldJamProduksi = document.querySelector('input[name="jam_produksi"]');
+    const fieldKadaluarsaTanggal = document.getElementById('kadaluarsa_tanggal');
+    const fieldKadaluarsaJam = document.getElementById('kadaluarsa_jam');
+    const peringatanKadaluarsaTanggal = document.getElementById('peringatanKadaluarsaTanggal');
+    const peringatanKadaluarsaJam = document.getElementById('peringatanKadaluarsaJam');
+    const infoWaktuKadaluarsa = document.getElementById('infoWaktuKadaluarsa');
 
     function toggleKadaluarsa() {
         if (tipeJam.checked) {
             inputTanggal.classList.add('hidden');
             inputJam.classList.remove('hidden');
+            fieldKadaluarsaTanggal.value = '';
+            peringatanKadaluarsaTanggal.classList.add('hidden');
         } else {
             inputTanggal.classList.remove('hidden');
             inputJam.classList.add('hidden');
+            fieldKadaluarsaJam.value = '';
+            peringatanKadaluarsaJam.classList.add('hidden');
+            infoWaktuKadaluarsa.classList.add('hidden');
         }
+    }
+
+    function cekKadaluarsaTanggal() {
+        if (tipeJam.checked) return true;
+
+        const tglProduksi = fieldTanggalProduksi.value;
+        const tglKadaluarsa = fieldKadaluarsaTanggal.value;
+
+        if (tglProduksi && tglKadaluarsa && tglKadaluarsa < tglProduksi) {
+            peringatanKadaluarsaTanggal.classList.remove('hidden');
+            fieldKadaluarsaTanggal.classList.add('border-red-500');
+            return false;
+        }
+
+        peringatanKadaluarsaTanggal.classList.add('hidden');
+        fieldKadaluarsaTanggal.classList.remove('border-red-500');
+        return true;
+    }
+
+    function cekKadaluarsaJam() {
+        if (!tipeJam.checked) return true;
+
+        const nilaiJam = parseFloat(fieldKadaluarsaJam.value);
+
+        if (!fieldKadaluarsaJam.value || isNaN(nilaiJam) || nilaiJam <= 0) {
+            peringatanKadaluarsaJam.classList.remove('hidden');
+            fieldKadaluarsaJam.classList.add('border-red-500');
+            infoWaktuKadaluarsa.classList.add('hidden');
+            return false;
+        }
+
+        peringatanKadaluarsaJam.classList.add('hidden');
+        fieldKadaluarsaJam.classList.remove('border-red-500');
+
+        if (fieldTanggalProduksi.value && fieldJamProduksi.value) {
+            const mulai = new Date(`${fieldTanggalProduksi.value}T${fieldJamProduksi.value}`);
+            if (!isNaN(mulai.getTime())) {
+                mulai.setHours(mulai.getHours() + nilaiJam);
+                const pad = (n) => String(n).padStart(2, '0');
+                const teks = `${pad(mulai.getDate())}-${pad(mulai.getMonth() + 1)}-${mulai.getFullYear()} ${pad(mulai.getHours())}:${pad(mulai.getMinutes())}`;
+                infoWaktuKadaluarsa.querySelector('span').textContent = teks;
+                infoWaktuKadaluarsa.classList.remove('hidden');
+            }
+        }
+
+        return true;
     }
 
     tipeTanggal.addEventListener('change', toggleKadaluarsa);
     tipeJam.addEventListener('change', toggleKadaluarsa);
     window.addEventListener('load', toggleKadaluarsa);
+
+    fieldKadaluarsaTanggal.addEventListener('input', cekKadaluarsaTanggal);
+    fieldTanggalProduksi.addEventListener('input', cekKadaluarsaTanggal);
+    fieldKadaluarsaJam.addEventListener('input', cekKadaluarsaJam);
+    fieldTanggalProduksi.addEventListener('input', cekKadaluarsaJam);
+    fieldJamProduksi.addEventListener('input', cekKadaluarsaJam);
+    window.addEventListener('load', cekKadaluarsaJam);
 
     // ==== Batas Kebutuhan Produksi tidak boleh lebih dari Jumlah Hasil Produksi ====
     const inputHasil = document.getElementById('jumlah_hasil');
@@ -702,8 +859,32 @@ function aktifkanSearch(element) {
     inputKebutuhan.addEventListener('keyup', clampKebutuhan);
 
     if (formProduksi) {
-        formProduksi.addEventListener('submit', function () {
+        formProduksi.addEventListener('submit', function (e) {
             clampKebutuhan();
+
+            const kadaluarsaTanggalValid = cekKadaluarsaTanggal();
+            const kadaluarsaJamValid = cekKadaluarsaJam();
+
+            let semuaJumlahValid = true;
+            document.querySelectorAll('#bahan-container > div').forEach(function (baris) {
+                const inputId = baris.querySelector('.input-id-bahan');
+                const inputJumlah = baris.querySelector('.input-jumlah');
+                const peringatanKosong = baris.querySelector('.peringatan-kosong');
+
+                if (inputId && inputId.value) {
+                    const nilai = parseFloat(inputJumlah.value) || 0;
+                    if (nilai <= 0) {
+                        semuaJumlahValid = false;
+                        if (peringatanKosong) peringatanKosong.classList.remove('hidden');
+                        inputJumlah.classList.add('border-red-500');
+                    }
+                }
+            });
+
+            if (!kadaluarsaTanggalValid || !kadaluarsaJamValid || !semuaJumlahValid) {
+                e.preventDefault();
+                perbaruiTombolSubmitProduksi();
+            }
         });
     }
 

@@ -10,6 +10,37 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+    <div class="md:col-span-2">
+
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+        Produk
+        </p>
+
+        <div class="flex items-center gap-4">
+
+            @if($produksi->produk->foto)
+                <img src="{{ asset('storage/' . $produksi->produk->foto) }}"
+                    alt="{{ $produksi->produk->nama_produk }}"
+                    class="w-16 h-16 rounded-lg object-cover border border-gray-200 dark:border-gray-700 bg-white shrink-0">
+            @else
+                <div class="w-16 h-16 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-300 dark:text-gray-500 shrink-0 text-xs">
+                    No Img
+                </div>
+            @endif
+
+            <div class="min-w-0">
+                <p class="font-semibold text-gray-800 dark:text-white truncate">
+                    {{ $produksi->produk->nama_produk }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ $produksi->produk->kode_produk ?? '-' }}
+                </p>
+            </div>
+
+        </div>
+
+        </div>
+
 <div>
 
 <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -40,39 +71,32 @@ Jam Produksi
 Kadaluarsa
 </p>
 
-<p class="font-semibold text-red-600 dark:text-red-400">
-@if($produksi->kadaluarsa_tipe === 'jam')
-    {{ $produksi->kadaluarsa_jam }} jam setelah produksi
-@elseif($produksi->kadaluarsa_tanggal)
-    {{ \Carbon\Carbon::parse($produksi->kadaluarsa_tanggal)->format('d-m-Y') }}
-@else
-    -
-@endif
-</p>
+    <p class="font-semibold text-red-600 dark:text-red-400">
+        @if($produksi->kadaluarsa_tipe === 'jam')
+            {{ $produksi->kadaluarsa_jam }} jam setelah produksi
+            @if($produksi->kadaluarsa_waktu)
+                <span class="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                    (sekitar {{ $produksi->kadaluarsa_waktu->format('d-m-Y H:i') }})
+                </span>
+            @endif
+        @elseif($produksi->kadaluarsa_tanggal)
+            {{ \Carbon\Carbon::parse($produksi->kadaluarsa_tanggal)->format('d-m-Y') }}
+        @else
+            -
+        @endif
+    </p>
 
-</div>
+    </div>
 
-<div>
+    <div>
 
-<p class="text-sm text-gray-500 dark:text-gray-400">
-Produk
-</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400">
+    Jumlah Hasil
+    </p>
 
-<p class="font-semibold text-gray-800 dark:text-white">
-{{ $produksi->produk->nama_produk }}
-</p>
-
-</div>
-
-<div>
-
-<p class="text-sm text-gray-500 dark:text-gray-400">
-Jumlah Hasil
-</p>
-
-<p class="font-semibold text-green-600 dark:text-green-400">
-{{ $produksi->jumlah_hasil }}
-</p>
+    <p class="font-semibold text-green-600 dark:text-green-400">
+    {{ $produksi->jumlah_hasil }}
+    </p>
 
 </div>
 
@@ -154,16 +178,24 @@ Keterangan
 @endforeach
 </div>
 
-<div class="mt-6">
+    <div class="mt-6 flex flex-wrap items-center gap-3">
 
-<a
-href="{{ route('produksi.index') }}"
-class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+        <a href="{{ route('produksi.index') }}"
+            class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
 
-Kembali
+            Kembali
 
-</a>
+        </a>
 
+        <form action="{{ route('produksi.label', $produksi) }}" method="GET" target="_blank"
+            class="inline-flex items-center gap-2">
+            <input type="number" name="jumlah" min="1" max="500" value="{{ $produksi->jumlah_hasil }}"
+                class="w-20 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-2 py-2 text-sm text-center">
+            <button type="submit"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm transition whitespace-nowrap">
+                Cetak Label Barcode
+            </button>
+        </form>
 </div>
 
 </x-common.component-card>
