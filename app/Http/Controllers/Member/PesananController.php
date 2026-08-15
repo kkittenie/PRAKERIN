@@ -10,12 +10,6 @@ use Illuminate\Support\Facades\Storage;
 
 class PesananController extends Controller
 {
-    /**
-     * Halaman status pesanan pick up: Diproses -> Ready for Pickup ->
-     * Sudah Diambil, sekaligus menampilkan kode pickup buat ditunjukkan ke
-     * kasir. Dipolling ringan (meta refresh via JS) supaya status ke-update
-     * otomatis waktu kasir mengubahnya di POS.
-     */
     public function show(Transaksi $transaksi)
     {
         $member = Auth::guard('member')->user();
@@ -27,6 +21,28 @@ class PesananController extends Controller
 
         return view('member.pesanan.show', [
             'transaksi' => $transaksi->load('detailTransaksi'),
+        ]);
+    }
+
+    /**
+     * Halaman terpisah "Cara Pembayaran" (dulunya modal di halaman status
+     * pesanan) — nampilin kode QRIS buat di-scan. Ditutup akses begitu
+     * status_pembayaran sudah Lunas (di-acc kasir), sama seperti kartunya
+     * yang otomatis ilang dari halaman show waktu sudah Lunas.
+     */
+    public function caraPembayaran(Transaksi $transaksi)
+    {
+        $member = Auth::guard('member')->user();
+
+        abort_unless(
+            $transaksi->member_id === $member->id && $transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP,
+            404
+        );
+
+        abort_if($transaksi->status_pembayaran === 'Lunas', 404);
+
+        return view('member.pesanan.cara-pembayaran', [
+            'transaksi' => $transaksi,
         ]);
     }
 
@@ -48,11 +64,15 @@ class PesananController extends Controller
             'label' => Transaksi::labelStatusPesanan($transaksi->status_pesanan),
             'status_pembayaran' => $transaksi->status_pembayaran,
             // Ikut dipantau supaya waktu kasir menolak/mengonfirmasi bukti
-            // pembayaran, halaman member ikut ke-refresh otomatis meski
-            // status_pesanan & status_pembayaran-nya sendiri belum berubah.
+            // pembayaran, mulai proses pesanan, atau menandai siap diambil
+            // (yang otomatis generate kode pickup), halaman member ikut
+            // ke-refresh otomatis meski status_pesanan-nya sendiri belum
+            // berubah.
             'bukti_pembayaran' => $transaksi->bukti_pembayaran,
             'bukti_dikonfirmasi_pada' => optional($transaksi->bukti_dikonfirmasi_pada)->toJSON(),
             'catatan_penolakan' => $transaksi->catatan_penolakan,
+            'diproses_pada' => optional($transaksi->diproses_pada)->toJSON(),
+            'kode_pickup' => $transaksi->kode_pickup,
         ]);
     }
 
@@ -113,6 +133,10 @@ class PesananController extends Controller
         }
 
         $transaksi->update(['bukti_dikonfirmasi_pada' => now()]);
+
+        // Kabari dashboard POS supaya tab "Menunggu Konfirmasi" langsung
+        // update tanpa kasir perlu refresh manual.
+        event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
 
         return back()->with('success', 'Bukti pembayaran dikonfirmasi. Menunggu verifikasi dari toko.');
     }

@@ -13,8 +13,8 @@
         \App\Models\Transaksi::STATUS_DIBATALKAN => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 text-gray-500'],
     ];
     $riwayatStamp = $riwayatStamp ?? collect();
-    $pesanan = $pesanan ?? collect();
-    $isEmpty = $penukaran->isEmpty() && $transaksi->isEmpty() && $riwayatStamp->isEmpty() && $pesanan->isEmpty();
+    $riwayat = $riwayat ?? collect();
+    $isEmpty = $penukaran->isEmpty() && $riwayat->isEmpty() && $riwayatStamp->isEmpty();
 @endphp
 
 @section('content')
@@ -65,20 +65,19 @@
                 {{-- Fore-style underline tabs. Same swipeable/draggable track pattern
                      as the Vouchers page. Lives inside the sticky header so it pins
                      under the title while the tab panels scroll underneath it. --}}
-                <div class="relative mt-4 grid grid-cols-4 border-b border-gray-100">
+                <div class="relative mt-4 grid grid-cols-3 border-b border-gray-100">
                     @foreach ([
-                        'pesanan' => 'Pesanan',
-                        'transaksi' => 'Transaksi',
+                        'riwayat' => 'Order',
                         'voucher' => 'Voucher',
                         'stamp' => 'Stamp',
                     ] as $key => $label)
                         <button type="button" data-tab="{{ $key }}" onclick="switchRiwayatTab('{{ $key }}')"
-                                class="riwayat-tab relative pb-3 text-center text-[13px] font-bold transition {{ $key === 'pesanan' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
+                                class="riwayat-tab relative pb-3 text-center text-[13px] font-bold transition {{ $key === 'riwayat' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
                             {{ $label }}
                         </button>
                     @endforeach
                     <span id="riwayat-tab-indicator"
-                          class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/4 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
+                          class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/3 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
                           style="transform: translateX(0%);"></span>
                 </div>
             @endunless
@@ -87,7 +86,7 @@
         @if ($isEmpty)
             @include('member.components.empty-state', [
                 'title' => 'Belum Ada Riwayat',
-                'description' => 'Semua transaksi, penukaran reward, dan penukaran stamp kamu bakal kecatat di sini.',
+                'description' => 'Semua transaksi, penukaran reward, dan penukaran stamp kamu akan tercatat di sini.',
                 'icon' => 'icon-clock',
                 'iconBg' => 'bg-gray-100',
                 'iconColor' => 'text-gray-400',
@@ -97,12 +96,12 @@
             <div id="riwayat-tab-viewport" class="relative flex flex-1 flex-col overflow-hidden">
                 <div id="riwayat-tab-track" class="flex flex-1 transition-transform duration-300 ease-out">
 
-            {{-- ================= TAB: PESANAN (pick up dari Member App) ================= --}}
+            {{-- ================= TAB: RIWAYAT ================= --}}
             <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="0">
-                @if ($pesanan->isEmpty())
+                @if ($riwayat->isEmpty())
                     @include('member.components.empty-state', [
-                        'title' => 'Belum Ada Pesanan',
-                        'description' => 'Pesanan pick up kamu bakal kecatat di sini.',
+                        'title' => 'Belum Ada Riwayat',
+                        'description' => 'Pesanan & transaksi kamu akan tercatat di sini.',
                         'icon' => 'icon-clock',
                         'iconBg' => 'bg-gray-100',
                         'iconColor' => 'text-gray-400',
@@ -110,17 +109,18 @@
                 @else
                     @php
                         $statusAktif = [\App\Models\Transaksi::STATUS_DIPROSES, \App\Models\Transaksi::STATUS_SIAP_DIAMBIL];
-                        $pesananAktif = $pesanan->whereIn('status_pesanan', $statusAktif);
-                        $pesananSelesai = $pesanan->whereNotIn('status_pesanan', $statusAktif);
+                        $riwayatAktif = $riwayat->filter(fn ($trx) => $trx->asal_pesanan === \App\Models\Transaksi::ASAL_MEMBER_APP
+                            && in_array($trx->status_pesanan, $statusAktif));
+                        $riwayatLain = $riwayat->reject(fn ($trx) => $riwayatAktif->contains('id', $trx->id));
                     @endphp
 
-                    @if ($pesananAktif->isNotEmpty())
+                    @if ($riwayatAktif->isNotEmpty())
                         <div class="flex items-center justify-between">
                             <h2 class="text-sm font-bold text-gray-900">Pesanan Aktif</h2>
-                            <span class="text-xs text-gray-400">{{ $pesananAktif->count() }} pesanan</span>
+                            <span class="text-xs text-gray-400">{{ $riwayatAktif->count() }} pesanan</span>
                         </div>
                         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
-                            @foreach ($pesananAktif as $trx)
+                            @foreach ($riwayatAktif as $trx)
                                 @php $pesananBadge = $statusPesananBadge[$trx->status_pesanan] ?? null; @endphp
                                 <a
                                     href="{{ route('member.pesanan.show', $trx) }}"
@@ -139,6 +139,7 @@
                                                 </span>
                                             @endif
                                         </div>
+                                        <p class="mt-0.5 text-xs text-gray-400">Online &middot; {{ $trx->created_at->translatedFormat('d M Y, H:i') }}</p>
                                     </div>
                                     @include('member.components.icon-chevron-right', ['class' => 'h-4 w-4 shrink-0 text-gray-300'])
                                 </a>
@@ -146,114 +147,99 @@
                         </div>
                     @endif
 
-                    @if ($pesananSelesai->isNotEmpty())
-                        <div class="{{ $pesananAktif->isNotEmpty() ? 'mt-6' : '' }} flex items-center justify-between">
-                            <h2 class="text-sm font-bold text-gray-900">Riwayat Pesanan</h2>
-                            <span class="text-xs text-gray-400">{{ $pesananSelesai->count() }} pesanan</span>
+                    @if ($riwayatLain->isNotEmpty())
+                        <div class="{{ $riwayatAktif->isNotEmpty() ? 'mt-6' : '' }} flex items-center justify-between">
+                            <h2 class="text-sm font-bold text-gray-900">Riwayat</h2>
+                            <span class="text-xs text-gray-400">{{ $riwayatLain->count() }} riwayat</span>
                         </div>
                         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
-                            @foreach ($pesananSelesai as $trx)
-                                @php $pesananBadge = $statusPesananBadge[$trx->status_pesanan] ?? null; @endphp
-                                <a
-                                    href="{{ route('member.pesanan.show', $trx) }}"
-                                    onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                                    class="flex w-full items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition active:bg-gray-50"
-                                >
-                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800">
-                                        @include('member.components.icon-cake', ['class' => 'h-5 w-5'])
-                                    </span>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="flex items-center gap-2">
-                                            <p class="truncate text-sm font-bold text-gray-900">{{ $trx->kode_transaksi }}</p>
-                                            @if ($pesananBadge)
-                                                <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $pesananBadge['class'] }}">
-                                                    {{ $pesananBadge['label'] }}
-                                                </span>
-                                            @endif
+                            @foreach ($riwayatLain as $trx)
+                                @php $isOnline = $trx->asal_pesanan === \App\Models\Transaksi::ASAL_MEMBER_APP; @endphp
+                                @if ($isOnline)
+                                    {{-- Pesanan online (sudah selesai/dibatalkan) — buka detail pesanan --}}
+                                    @php
+                                        $pesananBadge = $statusPesananBadge[$trx->status_pesanan] ?? null;
+                                        $sudahDiambil = $trx->status_pesanan === \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL;
+                                    @endphp
+                                    <a
+                                        href="{{ route('member.pesanan.show', $trx) }}"
+                                        onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                        class="flex w-full items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition active:bg-gray-50"
+                                    >
+                                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800">
+                                            @include('member.components.icon-cake', ['class' => 'h-5 w-5'])
+                                        </span>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <p class="truncate text-sm font-bold text-gray-900">{{ $trx->kode_transaksi }}</p>
+                                                @if ($pesananBadge)
+                                                    <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $pesananBadge['class'] }}">
+                                                        {{ $pesananBadge['label'] }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <p class="mt-0.5 text-xs text-gray-400">Online &middot; {{ $trx->created_at->translatedFormat('d M Y, H:i') }}</p>
                                         </div>
-                                        <p class="mt-0.5 text-xs text-gray-400">{{ $trx->created_at->translatedFormat('d M Y, H:i') }} &middot; Rp{{ number_format($trx->total_bayar, 0, ',', '.') }}</p>
-                                    </div>
-                                    @include('member.components.icon-chevron-right', ['class' => 'h-4 w-4 shrink-0 text-gray-300'])
-                                </a>
+                                        <p class="shrink-0 text-sm font-bold {{ $sudahDiambil ? 'text-green-600' : 'text-gray-400' }}">
+                                            {{ $sudahDiambil ? '+' . number_format($trx->poin_didapat ?? 0, 0, ',', '.') . ' poin' : 'Rp' . number_format($trx->total_bayar, 0, ',', '.') }}
+                                        </p>
+                                    </a>
+                                @else
+                                    {{-- Transaksi offline (kasir/POS) — buka bottom sheet detail transaksi --}}
+                                    @php
+                                        $belumLunas = strtolower($trx->status_pembayaran ?? 'lunas') !== 'lunas';
+                                        $itemsJson = $trx->detailTransaksi
+                                            ->groupBy('nama_produk')
+                                            ->map(fn ($group) => [
+                                                'nama' => $group->first()->nama_produk,
+                                                'jumlah' => $group->sum('jumlah'),
+                                                'subtotal' => $group->sum('subtotal'),
+                                                'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
+                                            ])
+                                            ->values()
+                                            ->toJson();
+                                    @endphp
+                                    <button
+                                        type="button"
+                                        onclick="bukaDetailTransaksi(this)"
+                                        data-kode="{{ $trx->kode_transaksi }}"
+                                        data-tanggal="{{ $trx->created_at->translatedFormat('d M Y, H:i') }}"
+                                        data-status-label="{{ $belumLunas ? 'Belum Lunas' : 'Lunas' }}"
+                                        data-status-class="{{ $belumLunas ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600' }}"
+                                        data-metode="{{ $trx->metode_pembayaran ?? '-' }}"
+                                        data-subtotal="{{ $trx->subtotal }}"
+                                        data-pajak="{{ $trx->pajak }}"
+                                        data-diskon="{{ $trx->diskon }}"
+                                        data-diskon-label="{{ $trx->diskon_label }}"
+                                        data-total="{{ $trx->total_bayar }}"
+                                        data-poin="{{ $trx->poin_didapat ?? 0 }}"
+                                        data-items="{{ $itemsJson }}"
+                                        class="flex w-full items-center gap-3 rounded-2xl border {{ $belumLunas ? 'border-red-100' : 'border-gray-100' }} bg-white p-4 text-left shadow-sm transition active:bg-gray-50"
+                                    >
+                                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ $belumLunas ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-600' }}">
+                                            @if ($belumLunas)
+                                                @include('member.components.icon-clock', ['class' => 'h-5 w-5'])
+                                            @else
+                                                @include('member.components.icon-check-circle', ['class' => 'h-5 w-5'])
+                                            @endif
+                                        </span>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="truncate text-sm font-bold text-gray-900">{{ $trx->kode_transaksi }}</p>
+                                            <p class="mt-0.5 text-xs text-gray-400">Offline &middot; {{ $trx->created_at->translatedFormat('d M Y, H:i') }}</p>
+                                        </div>
+                                        <p class="shrink-0 text-sm font-bold {{ $belumLunas ? 'text-red-500' : 'text-green-600' }}">
+                                            {{ $belumLunas ? 'Rp' . number_format($trx->total_bayar, 0, ',', '.') : '+' . number_format($trx->poin_didapat ?? 0, 0, ',', '.') . ' poin' }}
+                                        </p>
+                                    </button>
+                                @endif
                             @endforeach
                         </div>
                     @endif
-                @endif
-            </div>
-
-            {{-- ================= TAB: RIWAYAT TRANSAKSI ================= --}}
-            <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="1">
-                @if ($transaksi->isEmpty())
-                    @include('member.components.empty-state', [
-                        'title' => 'Belum Ada Transaksi',
-                        'description' => 'Transaksi kamu bakal kecatat di sini.',
-                        'icon' => 'icon-clock',
-                        'iconBg' => 'bg-gray-100',
-                        'iconColor' => 'text-gray-400',
-                    ])
-                @else
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-sm font-bold text-gray-900">Riwayat Transaksi</h2>
-                        <span class="text-xs text-gray-400">{{ $transaksi->count() }} transaksi</span>
-                    </div>
-                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
-                        @foreach ($transaksi as $trx)
-                            @php
-                                $belumLunas = strtolower($trx->status_pembayaran ?? 'lunas') !== 'lunas';
-                                // Satu produk bisa punya lebih dari satu baris detail kalau
-                                // sebagian dipenuhi dari stok & sebagian lagi butuh diproduksi
-                                // (lihat CheckoutController::pecahJumlahProduksi()). Digabung
-                                // per nama produk supaya riwayat cuma menampilkan satu baris.
-                                $itemsJson = $trx->detailTransaksi
-                                    ->groupBy('nama_produk')
-                                    ->map(fn ($group) => [
-                                        'nama' => $group->first()->nama_produk,
-                                        'jumlah' => $group->sum('jumlah'),
-                                        'subtotal' => $group->sum('subtotal'),
-                                        'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
-                                    ])
-                                    ->values()
-                                    ->toJson();
-                            @endphp
-                            <button
-                                type="button"
-                                onclick="bukaDetailTransaksi(this)"
-                                data-kode="{{ $trx->kode_transaksi }}"
-                                data-tanggal="{{ $trx->created_at->translatedFormat('d M Y, H:i') }}"
-                                data-status-label="{{ $belumLunas ? 'Belum Lunas' : 'Lunas' }}"
-                                data-status-class="{{ $belumLunas ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600' }}"
-                                data-metode="{{ $trx->metode_pembayaran ?? '-' }}"
-                                data-subtotal="{{ $trx->subtotal }}"
-                                data-pajak="{{ $trx->pajak }}"
-                                data-diskon="{{ $trx->diskon }}"
-                                data-diskon-label="{{ $trx->diskon_label }}"
-                                data-total="{{ $trx->total_bayar }}"
-                                data-poin="{{ $trx->poin_didapat ?? 0 }}"
-                                data-items="{{ $itemsJson }}"
-                                class="flex w-full items-center gap-3 rounded-2xl border {{ $belumLunas ? 'border-red-100' : 'border-gray-100' }} bg-white p-4 text-left shadow-sm transition active:bg-gray-50"
-                            >
-                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ $belumLunas ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-600' }}">
-                                    @if ($belumLunas)
-                                        @include('member.components.icon-clock', ['class' => 'h-5 w-5'])
-                                    @else
-                                        @include('member.components.icon-check-circle', ['class' => 'h-5 w-5'])
-                                    @endif
-                                </span>
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-sm font-bold text-gray-900">{{ $trx->kode_transaksi }}</p>
-                                    <p class="mt-0.5 text-xs text-gray-400">{{ $trx->created_at->translatedFormat('d M Y, H:i') }} &middot; Rp{{ number_format($trx->total_bayar, 0, ',', '.') }}</p>
-                                </div>
-                                <p class="shrink-0 text-sm font-bold {{ $belumLunas ? 'text-red-500' : 'text-green-600' }}">
-                                    {{ $belumLunas ? 'Rp' . number_format($trx->total_bayar, 0, ',', '.') : '+' . number_format($trx->poin_didapat ?? 0, 0, ',', '.') . ' poin' }}
-                                </p>
-                            </button>
-                        @endforeach
-                    </div>
                 @endif
             </div>
 
             {{-- ================= TAB: VOUCHER (penukaran reward) ================= --}}
-            <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="2">
+            <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="1">
                 @if ($penukaran->isEmpty())
                     @include('member.components.empty-state', [
                         'title' => 'Belum Ada Penukaran Voucher',
@@ -315,7 +301,7 @@
             </div>
 
             {{-- ================= TAB: STAMP (penukaran hadiah stamp) ================= --}}
-            <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="3">
+            <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="2">
                 @if ($riwayatStamp->isEmpty())
                     @include('member.components.empty-state', [
                         'title' => 'Belum Ada Penukaran Stamp',
@@ -478,7 +464,7 @@
         // track of fixed-width panes, translateX'd into view, with tap and
         // touch-drag both driving the same paint() function.
         (function () {
-            const tabs = ['pesanan', 'transaksi', 'voucher', 'stamp'];
+            const tabs = ['riwayat', 'voucher', 'stamp'];
             let current = 0;
 
             const track = document.getElementById('riwayat-tab-track');

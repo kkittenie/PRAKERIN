@@ -126,7 +126,7 @@
                 </div>
             @endif
 
-            <div class="mt-5">
+            <!-- <div class="mt-5">
 
                 <h3 class="text-xs font-bold text-gray-900">
                     Pilihan Ukuran
@@ -170,7 +170,7 @@
 
                 </div>
 
-            </div>
+            </div> -->
 
             <div class="mt-5">
 

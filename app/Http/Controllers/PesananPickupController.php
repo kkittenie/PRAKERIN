@@ -56,6 +56,16 @@ class PesananPickupController extends Controller
 
         $pesanan = $query->latest()->paginate(10)->withQueryString();
 
+        // Dipanggil via fetch() dari dengarkanPembaruanRealtime() di
+        // index.blade.php tiap ada siaran real-time — cukup kirim balik
+        // HTML tabelnya saja (bukan seluruh halaman) supaya bisa disuntik
+        // langsung ke DOM tanpa reload.
+        if ($request->ajax()) {
+            return view('pages.pesanan-pickup._tabel', [
+                'pesanan' => $pesanan,
+            ]);
+        }
+
         return view('pages.pesanan-pickup.index', [
             'pesanan' => $pesanan,
             'statusPesananFilter' => $statusPesanan,
@@ -100,6 +110,8 @@ class PesananPickupController extends Controller
         activity()->causedBy(auth()->user())->performedOn($transaksi)
             ->log('mengonfirmasi bukti pembayaran pesanan pick up');
 
+        event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
+
         return back()->with('success', "Pembayaran pesanan {$transaksi->kode_transaksi} dikonfirmasi.");
     }
 
@@ -133,6 +145,8 @@ class PesananPickupController extends Controller
         activity()->causedBy(auth()->user())->performedOn($transaksi)
             ->log('menolak bukti pembayaran pesanan pick up');
 
+        event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
+
         return back()->with('success', "Bukti pembayaran {$transaksi->kode_transaksi} ditolak, member diminta upload ulang.");
     }
 
@@ -155,6 +169,8 @@ class PesananPickupController extends Controller
 
         activity()->causedBy(auth()->user())->performedOn($transaksi)
             ->log('memproses pesanan pick up');
+
+        event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
 
         return back()->with('success', "Pesanan {$transaksi->kode_transaksi} mulai diproses.");
     }
@@ -199,15 +215,21 @@ class PesananPickupController extends Controller
                 $produk->decrement('stok', $detail->jumlah);
             }
 
+            // Kode pickup baru digenerate di sini (bukan waktu member
+            // checkout) supaya kode yang ditunjukkan ke kasir cuma berlaku
+            // begitu pesanan beneran siap diambil.
             $transaksi->update([
                 'status_pesanan' => Transaksi::STATUS_SIAP_DIAMBIL,
                 'siap_pada' => now(),
+                'kode_pickup' => $transaksi->kode_pickup ?: Transaksi::buatKodePickupUnik(),
             ]);
 
             DB::commit();
 
             activity()->causedBy(auth()->user())->performedOn($transaksi)
                 ->log('menandai pesanan pick up siap diambil');
+
+            event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
 
             return back()->with('success', "Pesanan {$transaksi->kode_transaksi} ditandai siap diambil.");
         } catch (\Exception $e) {
@@ -250,6 +272,8 @@ class PesananPickupController extends Controller
             activity()->causedBy(auth()->user())->performedOn($transaksi)
                 ->log('membatalkan pesanan pick up dari member app');
 
+            event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
+
             return back()->with('success', "Pesanan {$transaksi->kode_transaksi} dibatalkan, stok & voucher dikembalikan.");
         } catch (\Exception $e) {
             DB::rollBack();
@@ -259,16 +283,37 @@ class PesananPickupController extends Controller
     }
 
     /**
-     * Pengganti verifikasiKode(): kasir tandai manual pesanan sudah
-     * diserahkan ke pembeli, tanpa perlu cek kode pickup lagi (kode pickup
-     * sudah tidak dipakai di alur ini).
+     * Kasir menandai pesanan sudah diserahkan ke pembeli. Wajib memasukkan
+     * kode pickup yang ditunjukkan member dari aplikasinya dulu, supaya
+     * pesanan nggak ketuker/diserahkan ke orang yang salah.
+     *
+     * Dipanggil via fetch() dari modal "Verifikasi Kode Pickup" di
+     * index.blade.php (bukan submit form biasa), supaya kalau kodenya
+     * salah, pesannya bisa ditampilkan di dalam modal itu sendiri tanpa
+     * modal ikut ketutup/halaman reload. Makanya semua respons di sini
+     * berupa JSON, bukan redirect back().
      */
-    public function tandaiSudahDiambil(Transaksi $transaksi)
+    public function tandaiSudahDiambil(Request $request, Transaksi $transaksi)
     {
         abort_unless($transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP, 404);
 
         if ($transaksi->status_pesanan !== Transaksi::STATUS_SIAP_DIAMBIL) {
-            return back()->with('error', 'Pesanan ini belum siap diambil.');
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pesanan ini belum siap diambil.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'kode_pickup' => 'required|string|max:6',
+        ]);
+
+        $kodeInput = strtoupper(trim($validated['kode_pickup']));
+        if (! $transaksi->kode_pickup || $kodeInput !== $transaksi->kode_pickup) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Kode pickup tidak sesuai. Minta pembeli menunjukkan kode dari aplikasi member.',
+            ], 422);
         }
 
         DB::beginTransaction();
@@ -285,11 +330,20 @@ class PesananPickupController extends Controller
             activity()->causedBy(auth()->user())->performedOn($transaksi)
                 ->log('menyerahkan pesanan pick up');
 
-            return back()->with('success', "Pesanan {$transaksi->kode_transaksi} berhasil diserahkan.");
+            event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "Pesanan {$transaksi->kode_transaksi} berhasil diserahkan.",
+                'data' => $transaksi->fresh()->load(['detailTransaksi.produk', 'member']),
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error tandai sudah diambil: ' . $e->getMessage());
-            return back()->with('error', 'Gagal menandai sudah diambil: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menandai sudah diambil: ' . $e->getMessage(),
+            ], 500);
         }
     }
 

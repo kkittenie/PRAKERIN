@@ -69,6 +69,7 @@ Route::prefix('member')->name('member.')->group(function () {
 
         Route::get('/pesanan/{transaksi}', [PesananController::class, 'show'])->name('pesanan.show');
         Route::get('/pesanan/{transaksi}/status', [PesananController::class, 'status'])->name('pesanan.status');
+        Route::get('/pesanan/{transaksi}/cara-pembayaran', [PesananController::class, 'caraPembayaran'])->name('pesanan.cara-pembayaran');
         Route::post('/pesanan/{transaksi}/bukti-pembayaran', [PesananController::class, 'uploadBukti'])->name('pesanan.upload-bukti');
         Route::post('/pesanan/{transaksi}/konfirmasi-bukti', [PesananController::class, 'konfirmasiBukti'])->name('pesanan.konfirmasi-bukti');
     });

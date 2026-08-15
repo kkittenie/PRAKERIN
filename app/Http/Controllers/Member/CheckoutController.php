@@ -144,7 +144,6 @@ class CheckoutController extends Controller
             $totalBayar = max(0, $subtotal - $diskon + $pajak);
 
             $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
-            $kodePickup = Transaksi::buatKodePickupUnik();
 
             $transaksi = Transaksi::create([
                 'kode_transaksi' => $kodeTransaksi,
@@ -163,7 +162,9 @@ class CheckoutController extends Controller
                 'status_pembayaran' => 'Menunggu Pembayaran',
                 'asal_pesanan' => Transaksi::ASAL_MEMBER_APP,
                 'status_pesanan' => Transaksi::STATUS_DIPROSES,
-                'kode_pickup' => $kodePickup,
+                // Kode pickup baru digenerate nanti waktu kasir menandai
+                // pesanan "Ready for Pickup" (lihat
+                // PesananPickupController::tandaiSiap()), bukan di sini.
                 'catatan_pesanan' => $request->input('catatan'),
             ]);
 
@@ -211,16 +212,19 @@ class CheckoutController extends Controller
                 ->withProperties([
                     'transaksi_id' => $transaksi->id,
                     'kode_transaksi' => $kodeTransaksi,
-                    'kode_pickup' => $kodePickup,
                 ])
                 ->log('membuat pesanan pick up dari member app');
 
             MemberCart::kosongkan();
             Session::forget(self::SESSION_VOUCHER_KEY);
 
+            // Kabari dashboard POS real-time supaya pesanan baru langsung
+            // muncul di halaman "Pesanan" kasir tanpa perlu refresh manual.
+            event(new \App\Events\PesananPickupUpdated($transaksi, 'baru'));
+
             return redirect()
                 ->route('member.pesanan.show', $transaksi)
-                ->with('success', 'Pesanan berhasil dibuat! Tunjukkan kode pickup ke kasir saat mengambil.');
+                ->with('success', 'Pesanan berhasil dibuat! Kami akan proses pesananmu segera.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error checkout member app: ' . $e->getMessage());

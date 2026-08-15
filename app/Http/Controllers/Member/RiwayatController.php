@@ -17,24 +17,16 @@ class RiwayatController extends Controller
             ->latest()
             ->get();
 
-        // Semua pesanan pick up dari Member App (tab "Pesanan" tersendiri) —
-        // aktif (Diproses/Ready for Pickup) maupun yang sudah selesai/dibatalkan.
-        // Dipisah dari tab Riwayat Transaksi biar nggak dobel & gampang dibuka
-        // lagi kalau halaman Status Pesanan-nya nggak sengaja ketutup.
-        $pesanan = $member->transaksi()
+        // Riwayat gabungan: pesanan pick up dari Member App (online) &
+        // transaksi kasir/POS (offline) ditampilkan dalam satu tab "Riwayat",
+        // dibedakan lewat label Online/Offline di masing-masing kartu.
+        // Pesanan yang masih aktif (Diproses/Ready for Pickup) dipisah ke
+        // section "Pesanan Aktif" di paling atas lewat blade, bukan di sini,
+        // supaya urutannya tetap stabil walau ada transaksi kasir yang lebih baru.
+        $riwayat = $member->transaksi()
             ->with('detailTransaksi')
-            ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP)
             ->latest()
-            ->take(20)
-            ->get();
-
-        // Riwayat Transaksi murni transaksi kasir (POS) — pesanan pick up
-        // ditampilkan di tab "Pesanan" di atas.
-        $transaksi = $member->transaksi()
-            ->with('detailTransaksi')
-            ->where('asal_pesanan', '!=', Transaksi::ASAL_MEMBER_APP)
-            ->latest()
-            ->take(20)
+            ->take(40)
             ->get();
 
         // Riwayat penukaran hadiah dari kartu stamp — terpisah dari $penukaran
@@ -47,8 +39,7 @@ class RiwayatController extends Controller
         return view('member.riwayat.index', [
             'member' => $member,
             'penukaran' => $penukaran,
-            'pesanan' => $pesanan,
-            'transaksi' => $transaksi,
+            'riwayat' => $riwayat,
             'riwayatStamp' => $riwayatStamp,
         ]);
     }

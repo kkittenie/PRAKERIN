@@ -254,8 +254,7 @@
                                 minlength="3" maxlength="50" placeholder="Contoh: budisantoso"
                                 oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()"
                                 class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
-                            <p class="mt-1 text-[11px] text-gray-400">Huruf, angka, titik, atau underscore. Tidak boleh sama
-                                dengan member lain.</p>
+                            <p class="mt-1 text-[11px] text-gray-400">Huruf, angka, titik, atau underscore.</p>
                             @error('username')
                             <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
                         </div>

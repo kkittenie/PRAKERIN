@@ -85,125 +85,12 @@
             </div>
         </div>
 
-        {{-- Tabel Pesanan --}}
-        <x-common.component-card>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                            <th class="py-3.5 px-2 sm:hidden w-7 text-center"></th>
-                            <th class="py-3.5 px-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Kode Transaksi</th>
-                            <th class="py-3.5 px-3 hidden sm:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Pembeli</th>
-                            <th class="py-3.5 px-3 hidden md:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Total</th>
-                            <th class="py-3.5 px-3 hidden lg:table-cell text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Waktu Order</th>
-                            <th class="py-3.5 px-3 hidden sm:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status Pesanan</th>
-                            <th class="py-3.5 px-3 hidden sm:table-cell text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status Pembayaran</th>
-                            <th class="py-3.5 px-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">Aksi</th>
-                        </tr>
-                    </thead>
-                    @forelse ($pesanan as $item)
-                        @php
-                            $statusBadge = [
-                                \App\Models\Transaksi::STATUS_DIPROSES => ['label' => 'Diproses', 'class' => 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'],
-                                \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => ['label' => 'Siap Diambil', 'class' => 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400'],
-                                \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => ['label' => 'Sudah Diambil', 'class' => 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400'],
-                                \App\Models\Transaksi::STATUS_DIBATALKAN => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400'],
-                            ][$item->status_pesanan] ?? ['label' => '-', 'class' => 'bg-gray-100 text-gray-500'];
-
-                            if ($item->status_pembayaran === 'Lunas') {
-                                $bayarBadge = ['label' => 'Lunas', 'class' => 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400'];
-                            } elseif ($item->bukti_dikonfirmasi_pada) {
-                                $bayarBadge = ['label' => 'Menunggu Konfirmasi', 'class' => 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'];
-                            } else {
-                                $bayarBadge = ['label' => 'Menunggu Pembayaran', 'class' => 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400'];
-                            }
-                        @endphp
-                        <tbody x-data="{ open: false }"
-                            class="divide-y divide-gray-100 dark:divide-gray-800 border-b border-gray-100 dark:border-gray-800">
-                            <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition duration-200 text-gray-700 dark:text-gray-300 align-top">
-                                <td class="py-3.5 px-2 sm:hidden text-center">
-                                    <button @click="open = !open" type="button"
-                                        class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center text-xs font-bold transition-transform duration-200"
-                                        :class="open ? 'rotate-90 bg-amber-500 text-white' : ''">
-                                        <span x-text="open ? '−' : '+'"></span>
-                                    </button>
-                                </td>
-                                <td class="py-3.5 px-3">
-                                    <span class="font-mono text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">{{ $item->kode_transaksi }}</span>
-                                    <div class="sm:hidden text-[11px] text-gray-500 font-normal mt-1">{{ $item->nama_pembeli }}</div>
-                                </td>
-                                <td class="py-3.5 px-3 hidden sm:table-cell">
-                                    <span class="block font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{{ $item->nama_pembeli }}</span>
-                                    <span class="block text-xs text-gray-400">{{ $item->member->no_hp ?? '-' }}</span>
-                                </td>
-                                <td class="py-3.5 px-3 hidden md:table-cell text-left font-semibold text-gray-800 dark:text-gray-200">
-                                    Rp {{ number_format($item->total_bayar, 0, ',', '.') }}
-                                </td>
-                                <td class="py-3.5 px-3 hidden lg:table-cell text-gray-500 dark:text-gray-400">
-                                    {{ $item->created_at->translatedFormat('d M Y, H:i') }}
-                                </td>
-                                <td class="py-3.5 px-3 hidden sm:table-cell text-center">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusBadge['class'] }}">
-                                        {{ $statusBadge['label'] }}
-                                    </span>
-                                </td>
-                                <td class="py-3.5 px-3 hidden sm:table-cell text-center">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $bayarBadge['class'] }}">
-                                        {{ $bayarBadge['label'] }}
-                                    </span>
-                                </td>
-                                <td class="py-3.5 px-3 text-right">
-                                    <button @click="lihatDetail({{ $item->id }})"
-                                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-semibold rounded-lg text-xs transition">
-                                        Detail
-                                    </button>
-                                </td>
-                            </tr>
-
-                            <!-- Dropdown Row for Mobile -->
-                            <tr x-show="open" x-cloak x-transition class="sm:hidden bg-amber-50/50 dark:bg-amber-950/30 text-xs">
-                                <td colspan="3" class="p-4">
-                                    <div class="flex flex-col gap-3 text-gray-600 dark:text-gray-300 w-full">
-                                        <div>
-                                            <span class="text-gray-400 block text-[11px] mb-0.5">Pembeli</span>
-                                            <span class="font-semibold text-gray-800 dark:text-white">{{ $item->nama_pembeli }}</span>
-                                        </div>
-                                        <div class="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <span class="text-gray-400 block text-[11px] mb-0.5">Total</span>
-                                                <span class="font-semibold text-gray-800 dark:text-white">Rp {{ number_format($item->total_bayar, 0, ',', '.') }}</span>
-                                            </div>
-                                            <div>
-                                                <span class="text-gray-400 block text-[11px] mb-0.5">Waktu Order</span>
-                                                <span class="font-semibold text-gray-800 dark:text-white">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="flex gap-2">
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusBadge['class'] }}">{{ $statusBadge['label'] }}</span>
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $bayarBadge['class'] }}">{{ $bayarBadge['label'] }}</span>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    @empty
-                        <tbody>
-                            <tr>
-                                <td colspan="7" class="py-10 text-center text-sm text-gray-400">
-                                    Belum ada pesanan untuk filter ini.
-                                </td>
-                            </tr>
-                        </tbody>
-                    @endforelse
-                </table>
-            </div>
-
-            @if ($pesanan->hasPages())
-                <div class="mt-4 px-1">
-                    {{ $pesanan->onEachSide(1)->links() }}
-                </div>
-            @endif
-        </x-common.component-card>
+        {{-- Tabel Pesanan: dibungkus id supaya bisa disuntik ulang lewat AJAX
+             tiap ada siaran real-time, tanpa reload seluruh halaman (lihat
+             dengarkanPembaruanRealtime() di bawah). --}}
+        <div id="tabel-pesanan-wrapper" class="rounded-2xl transition-shadow duration-700">
+            @include('pages.pesanan-pickup._tabel')
+        </div>
 
         <!-- ========== MODAL DETAIL ========== -->
         <div x-show="modalDetail" x-cloak class="fixed inset-0 z-[999999] flex items-center justify-center p-4"
@@ -479,14 +366,12 @@
                                 </form>
                             </template>
 
-                            {{-- Tandai Sudah Diambil --}}
+                            {{-- Tandai Sudah Diambil: wajib verifikasi kode pickup dulu --}}
                             <template x-if="detailData.status_pesanan === 'siap_diambil'">
-                                <form :action="'/pesanan-pickup/' + detailData.id + '/selesai'" method="POST">
-                                    @csrf @method('PATCH')
-                                    <button type="submit" class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white font-bold rounded-lg text-xs transition">
-                                        Tandai Sudah Diambil
-                                    </button>
-                                </form>
+                                <button type="button" @click="bukaModalSerahkan()"
+                                    class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white font-bold rounded-lg text-xs transition">
+                                    Tandai Sudah Diambil
+                                </button>
                             </template>
 
                             {{-- Batalkan: selama belum diambil/dibatalkan --}}
@@ -569,6 +454,55 @@
             </div>
         </div>
 
+        <!-- ========== MODAL: VERIFIKASI KODE PICKUP ========== -->
+        <div x-show="modalSerahkanTerbuka" x-cloak x-transition
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs overflow-y-auto z-[999999]">
+            <div class="flex items-center justify-center p-4" style="min-height: 100%">
+            <div @click.away="modalSerahkanTerbuka = false"
+                class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800 max-h-[90vh] overflow-y-auto">
+                {{-- Dikirim lewat fetch() (serahkanPesanan()), BUKAN submit form biasa,
+                     supaya kalau kode pickup salah, errornya bisa ditampilkan di dalam
+                     modal ini sendiri tanpa bikin modal ketutup / halaman reload. --}}
+                <form @submit.prevent="serahkanPesanan()">
+                    <div class="p-6">
+                        <div class="w-14 h-14 bg-green-100 dark:bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center rounded-full mx-auto mb-4">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                            </svg>
+                        </div>
+                        <h3 class="font-extrabold text-gray-900 dark:text-white text-base text-center">Verifikasi Kode Pickup</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                            Minta pembeli menunjukkan kode pickup dari aplikasi member, lalu masukkan kodenya sebelum menyerahkan pesanan
+                            <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="detailData?.kode_transaksi"></span>.
+                        </p>
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-4 mb-1">Kode Pickup</label>
+                        <input type="text" name="kode_pickup" x-model="kodePickupInput" maxlength="6" required
+                            placeholder="Contoh: A3F9K2" autocomplete="off" x-ref="inputKodePickup"
+                            @input="kodePickupInput = kodePickupInput.toUpperCase(); kodePickupError = ''"
+                            :class="kodePickupError ? 'border-red-400 dark:border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-green-500'"
+                            class="w-full px-3 py-2.5 text-center tracking-[0.3em] font-mono font-bold uppercase bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-lg border focus:outline-none focus:ring-2 focus:border-transparent">
+
+                        {{-- Alert error kode salah: tampil DI DALAM modal, modal tetap terbuka --}}
+                        <div x-show="kodePickupError" x-cloak x-transition
+                            class="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-xs font-medium">
+                            <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                            </svg>
+                            <span x-text="kodePickupError"></span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3">
+                        <button type="button" @click="modalSerahkanTerbuka = false" :disabled="prosesSerahkan"
+                            class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-bold text-xs rounded-lg transition text-gray-700 dark:text-gray-300 disabled:opacity-50">Batal</button>
+                        <button type="submit" :disabled="prosesSerahkan"
+                            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-lg transition shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
+                            x-text="prosesSerahkan ? 'Memproses...' : 'Serahkan Pesanan'"></button>
+                    </div>
+                </form>
+            </div>
+            </div>
+        </div>
+
         <!-- ========== MODAL: PREVIEW GAMBAR FULL ========== -->
         <div x-show="previewGambar" x-cloak x-transition class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/80"
             @click="previewGambar = null">
@@ -579,6 +513,17 @@
                 </svg>
             </button>
             <img :src="previewGambar" @click.stop class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl">
+        </div>
+
+        <!-- ========== TOAST SUKSES (khusus aksi via fetch, mis. serahkan pesanan) ========== -->
+        <div x-show="toastSukses" x-cloak x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="translate-y-4 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
+            x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-y-0 opacity-100"
+            x-transition:leave-end="translate-y-4 opacity-0" class="fixed top-5 right-5 z-[999999]">
+            <div class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] bg-green-600">
+                <span class="font-semibold text-lg">✓</span>
+                <span class="text-sm" x-text="toastSukses"></span>
+            </div>
         </div>
 
     </div>
@@ -593,8 +538,46 @@
                 loadingDetail: false,
                 modalBatalTerbuka: false,
                 modalTolakTerbuka: false,
+                modalSerahkanTerbuka: false,
                 alasanTolak: '',
+                kodePickupInput: '',
+                kodePickupError: '',
+                prosesSerahkan: false,
                 previewGambar: null,
+                toastSukses: '',
+
+                init() {
+                    this.dengarkanPembaruanRealtime();
+                },
+
+                dengarkanPembaruanRealtime() {
+                    if (! window.Echo) return;
+
+                    window.Echo.private('pesanan-pickup')
+                        .listen('.pesanan.updated', () => {
+                            clearTimeout(this._muatUlangTimer);
+                            this._muatUlangTimer = setTimeout(() => this.muatUlangTabel(), 400);
+                        });
+                },
+
+                async muatUlangTabel() {
+                    const wrapper = document.getElementById('tabel-pesanan-wrapper');
+                    if (! wrapper) return;
+
+                    try {
+                        const response = await fetch(window.location.href, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        });
+                        if (! response.ok) throw new Error('HTTP ' + response.status);
+
+                        wrapper.innerHTML = await response.text();
+
+                        wrapper.classList.add('ring-2', 'ring-amber-400');
+                        setTimeout(() => wrapper.classList.remove('ring-2', 'ring-amber-400'), 900);
+                    } catch (error) {
+                        console.error('Gagal memuat ulang tabel pesanan:', error);
+                    }
+                },
 
                 async lihatDetail(id) {
                     this.modalDetail = true;
@@ -618,6 +601,55 @@
                     this.modalTolakTerbuka = true;
                 },
 
+                bukaModalSerahkan() {
+                    this.kodePickupInput = '';
+                    this.kodePickupError = '';
+                    this.prosesSerahkan = false;
+                    this.modalSerahkanTerbuka = true;
+                    this.$nextTick(() => this.$refs.inputKodePickup?.focus());
+                },
+
+                async serahkanPesanan() {
+                    if (! this.detailData || this.prosesSerahkan) return;
+
+                    this.kodePickupError = '';
+                    this.prosesSerahkan = true;
+                    const kode = this.kodePickupInput.trim().toUpperCase();
+                    this.kodePickupInput = kode;
+
+                    try {
+                        const response = await fetch(`/pesanan-pickup/${this.detailData.id}/selesai`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '{{ csrf_token() }}',
+                            },
+                            body: JSON.stringify({ kode_pickup: kode }),
+                        });
+
+                        const json = await response.json().catch(() => null);
+
+                        if (! response.ok) {
+                            this.kodePickupError = json?.message || 'Gagal memverifikasi kode pickup.';
+                            this.$nextTick(() => this.$refs.inputKodePickup?.focus());
+                            return;
+                        }
+
+                        this.modalSerahkanTerbuka = false;
+                        this.modalDetail = false;
+                        this.detailData = null;
+                        this.muatUlangTabel();
+                        this.tampilkanToast(json?.message || 'Pesanan berhasil diserahkan.');
+                    } catch (error) {
+                        console.error('Gagal menyerahkan pesanan:', error);
+                        this.kodePickupError = 'Terjadi kesalahan koneksi, coba lagi.';
+                    } finally {
+                        this.prosesSerahkan = false;
+                    }
+                },
+
                 adaItemProduksi() {
                     return !! (this.detailData?.detail_transaksi || []).some(d => d.butuh_produksi);
                 },
@@ -639,6 +671,12 @@
                 cetakStruk(jenis) {
                     if (!this.detailData) return;
                     window.open(`/transaksi/cetak/${this.detailData.kode_transaksi}?jenis=${jenis}&print=true`, '_blank', 'width=400,height=700');
+                },
+
+                tampilkanToast(pesan) {
+                    this.toastSukses = pesan;
+                    clearTimeout(this._toastTimer);
+                    this._toastTimer = setTimeout(() => this.toastSukses = '', 3000);
                 }
             }
         }
