@@ -101,6 +101,11 @@ Kadaluarsa
 </div>
 
 <div>
+    <p class="text-sm text-gray-500 dark:text-gray-400">Rincian Ukuran</p>
+    <p class="font-semibold text-gray-800 dark:text-white">{{ $produksi->rincian_ukuran }}</p>
+</div>
+
+<div>
 
 <p class="text-sm text-gray-500 dark:text-gray-400">
 Kebutuhan Produksi

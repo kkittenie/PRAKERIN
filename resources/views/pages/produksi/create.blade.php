@@ -216,6 +216,33 @@ Pengambilan Bahan Baku <span class="text-red-500">*</span>
 
         </div>
 
+        {{-- Rincian Ukuran --}}
+        <div class="md:col-span-2">
+            <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+                Rincian Ukuran <span class="text-red-500">*</span>
+            </label>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Besar</label>
+                    <input type="number" id="jumlah_besar" name="jumlah_besar" value="{{ old('jumlah_besar', 0) }}" min="0"
+                        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    @error('jumlah_besar') <small class="text-red-500">{{ $message }}</small> @enderror
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Kecil</label>
+                    <input type="number" id="jumlah_kecil" name="jumlah_kecil" value="{{ old('jumlah_kecil', 0) }}" min="0"
+                        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    @error('jumlah_kecil') <small class="text-red-500">{{ $message }}</small> @enderror
+                </div>
+            </div>
+            <small id="infoRincianUkuran" class="text-gray-500 dark:text-gray-400">
+                Total Besar + Kecil harus sama dengan Jumlah Hasil Produksi.
+            </small>
+            <p id="peringatanRincianUkuran" class="hidden text-xs text-red-600 mt-1">
+                Total Besar + Kecil harus sama dengan Jumlah Hasil Produksi.
+            </p>
+        </div>
+
         {{-- Kebutuhan Produksi --}}
         <div>
 
@@ -708,14 +735,15 @@ function aktifkanSearch(element) {
 
         });
 
-    function perbaruiTombolSubmitProduksi() {
-        const adaErrorStok = document.querySelectorAll('.peringatan-stok:not(.hidden)').length > 0;
-        const adaErrorKosong = document.querySelectorAll('.peringatan-kosong:not(.hidden)').length > 0;
-        const btn = document.getElementById('btnSubmitProduksi');
-        if (btn) {
-            btn.disabled = adaErrorStok || adaErrorKosong;
+        function perbaruiTombolSubmitProduksi() {
+            const adaErrorStok = document.querySelectorAll('.peringatan-stok:not(.hidden)').length > 0;
+            const adaErrorKosong = document.querySelectorAll('.peringatan-kosong:not(.hidden)').length > 0;
+            const adaErrorRincianUkuran = !document.getElementById('peringatanRincianUkuran').classList.contains('hidden');
+            const btn = document.getElementById('btnSubmitProduksi');
+            if (btn) {
+                btn.disabled = adaErrorStok || adaErrorKosong || adaErrorRincianUkuran;
+            }
         }
-    }
 
     const tipeTanggal = document.getElementById('tipeTanggal');
     const tipeJam = document.getElementById('tipeJam');
@@ -850,6 +878,39 @@ function aktifkanSearch(element) {
         updateInfoKebutuhan(maxHasil);
     }
 
+    // ==== Rincian Ukuran: total Besar + Kecil harus = Jumlah Hasil Produksi ====
+    const inputBesar = document.getElementById('jumlah_besar');
+    const inputKecil = document.getElementById('jumlah_kecil');
+    const peringatanRincianUkuran = document.getElementById('peringatanRincianUkuran');
+
+    function cekRincianUkuran() {
+        const hasil = maxHasilSaatIni();
+        const besar = parseInt(inputBesar.value, 10) || 0;
+        const kecil = parseInt(inputKecil.value, 10) || 0;
+
+        if (besar + kecil !== hasil) {
+            peringatanRincianUkuran.classList.remove('hidden');
+            inputBesar.classList.add('border-red-500');
+            inputKecil.classList.add('border-red-500');
+            return false;
+        }
+
+        peringatanRincianUkuran.classList.add('hidden');
+        inputBesar.classList.remove('border-red-500');
+        inputKecil.classList.remove('border-red-500');
+        return true;
+    }
+
+    function cekRincianUkuranDanTombol() {
+        cekRincianUkuran();
+        perbaruiTombolSubmitProduksi();
+    }
+
+    inputBesar.addEventListener('input', cekRincianUkuranDanTombol);
+    inputKecil.addEventListener('input', cekRincianUkuranDanTombol);
+    inputHasil.addEventListener('input', cekRincianUkuranDanTombol);
+    window.addEventListener('load', cekRincianUkuranDanTombol);
+
     inputHasil.addEventListener('input', sinkronMax);
     inputHasil.addEventListener('change', sinkronMax);
 
@@ -864,6 +925,7 @@ function aktifkanSearch(element) {
 
             const kadaluarsaTanggalValid = cekKadaluarsaTanggal();
             const kadaluarsaJamValid = cekKadaluarsaJam();
+            const rincianUkuranValid = cekRincianUkuran();
 
             let semuaJumlahValid = true;
             document.querySelectorAll('#bahan-container > div').forEach(function (baris) {
@@ -881,7 +943,7 @@ function aktifkanSearch(element) {
                 }
             });
 
-            if (!kadaluarsaTanggalValid || !kadaluarsaJamValid || !semuaJumlahValid) {
+            if (!kadaluarsaTanggalValid || !kadaluarsaJamValid || !rincianUkuranValid || !semuaJumlahValid) {
                 e.preventDefault();
                 perbaruiTombolSubmitProduksi();
             }

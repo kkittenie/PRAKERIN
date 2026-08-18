@@ -169,6 +169,10 @@
                 <td class="val">{{ $item->kadaluarsa_label }}</td>
             </tr>
             <tr>
+                <td class="label">Rincian Ukuran</td>
+                <td class="val" colspan="5">{{ $item->rincian_ukuran }}</td>
+            </tr>
+            <tr>
                 <td class="label">Dibuat Oleh</td>
                 <td class="val" colspan="3">{{ $item->user->name ?? '-' }}</td>
                 <td class="label">Keterangan</td>

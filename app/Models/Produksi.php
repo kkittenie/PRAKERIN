@@ -13,6 +13,8 @@ class Produksi extends Model
             'jam_produksi',
             'produk_id',
             'jumlah_hasil',
+            'jumlah_besar',      
+            'jumlah_kecil',
             'kebutuhan_produksi',
             'user_id',
             'keterangan',
@@ -25,6 +27,8 @@ class Produksi extends Model
 
     protected $casts = [
         'jumlah_hasil' => 'integer',
+        'jumlah_besar' => 'integer',   
+        'jumlah_kecil' => 'integer',
         'kebutuhan_produksi' => 'integer',
         'jumlah_disesuaikan' => 'integer',
         'kadaluarsa_jam' => 'integer',
@@ -78,6 +82,21 @@ class Produksi extends Model
         }
 
         return null;
+    }
+
+    public function getRincianUkuranAttribute(): string
+    {
+        $bagian = [];
+
+        if ($this->jumlah_besar > 0) {
+            $bagian[] = $this->jumlah_besar . ' Besar';
+        }
+
+        if ($this->jumlah_kecil > 0) {
+            $bagian[] = $this->jumlah_kecil . ' Kecil';
+        }
+
+        return $bagian ? implode(', ', $bagian) : '-';
     }
 
     public function getJumlahEfektifAttribute(): int

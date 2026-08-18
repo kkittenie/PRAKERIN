@@ -183,6 +183,8 @@ class ProduksiController extends Controller
                 'jam_produksi' => 'required|date_format:H:i',
                 'produk_id' => 'required|exists:produks,id',
                 'jumlah_hasil' => 'required|integer|min:1',
+                'jumlah_besar' => 'required|integer|min:0',
+                'jumlah_kecil' => 'required|integer|min:0',
                 'kebutuhan_produksi' => 'nullable|integer|min:0|lte:jumlah_hasil',
                 'keterangan' => 'nullable|string',
 
@@ -228,6 +230,10 @@ class ProduksiController extends Controller
                 return back()->withInput()->with('error', 'Minimal pilih satu bahan baku yang digunakan.');
             }
 
+            if (((int) $request->jumlah_besar + (int) $request->jumlah_kecil) !== (int) $request->jumlah_hasil) {
+                return back()->withInput()->with('error', 'Jumlah Besar + Jumlah Kecil harus sama dengan Jumlah Hasil Produksi.');
+            }
+
             $produksi = null;
             DB::transaction(function () use ($request, &$produksi) {
                 $kebutuhanProduksi = (int) ($request->kebutuhan_produksi ?? 0);
@@ -237,6 +243,8 @@ class ProduksiController extends Controller
                     'jam_produksi' => $request->jam_produksi,
                     'produk_id' => $request->produk_id,
                     'jumlah_hasil' => $request->jumlah_hasil,
+                    'jumlah_besar' => $request->jumlah_besar,
+                    'jumlah_kecil' => $request->jumlah_kecil,
                     'kebutuhan_produksi' => $kebutuhanProduksi,
                     'user_id' => Auth::id(),
                     'keterangan' => $request->keterangan,
@@ -291,13 +299,18 @@ class ProduksiController extends Controller
                 ->withProperties([
                     'produk_id' => $request->produk_id,
                     'jumlah_hasil' => $request->jumlah_hasil,
+                    'jumlah_besar' => $request->jumlah_besar,
+                    'jumlah_kecil' => $request->jumlah_kecil,
                     'kebutuhan_produksi' => $request->kebutuhan_produksi ?? 0,
                     'bahan_baku_id' => $request->bahan_baku_id,
                     'jumlah_terpakai' => $request->jumlah_terpakai,
                 ])
                 ->log('menambahkan produksi');
 
-            return redirect()->route('produksi.index')->with('success', 'Produksi berhasil disimpan.');
+            return redirect()->route('produksi.index')->with(
+                'success',
+                "Produksi berhasil disimpan ({$produksi->jumlah_hasil} pcs: {$produksi->rincian_ukuran})."
+            );
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -376,6 +389,7 @@ class ProduksiController extends Controller
                     'Kadaluarsa',
                     'Produk',
                     'Jumlah Hasil',
+                    'Rincian Ukuran',
                     'Dibuat Oleh',
                     'Keterangan',
                     'Nama Bahan',
@@ -390,6 +404,7 @@ class ProduksiController extends Controller
                             $item->kadaluarsa_label,
                             $item->produk->nama_produk,
                             $item->jumlah_hasil,
+                            $item->rincian_ukuran,
                             $item->user->name,
                             $item->keterangan,
                             '-',
@@ -403,6 +418,7 @@ class ProduksiController extends Controller
                                 $item->kadaluarsa_label,
                                 $item->produk->nama_produk,
                                 $item->jumlah_hasil,
+                                $item->rincian_ukuran,
                                 $item->user->name,
                                 $item->keterangan,
                                 $detail->bahanBaku->nama_bahan,
