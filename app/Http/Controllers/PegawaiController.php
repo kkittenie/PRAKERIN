@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pegawai;
 use App\Models\User;
+use App\Support\ActivityLogHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -16,22 +17,26 @@ class PegawaiController extends Controller
      */
     public function index(Request $request)
     {
-        $search = $request->search;
+        try {
+            $search = $request->search;
 
-        $pegawai = Pegawai::when($search, function ($query) use ($search) {
+            $pegawai = Pegawai::when($search, function ($query) use ($search) {
 
-            $query->where('nama', 'like', "%{$search}%")
-                  ->orWhere('jabatan', 'like', "%{$search}%")
-                  ->orWhere('no_hp', 'like', "%{$search}%");
+                $query->where('nama', 'like', "%{$search}%")
+                      ->orWhere('jabatan', 'like', "%{$search}%")
+                      ->orWhere('no_hp', 'like', "%{$search}%");
 
-        })
-        ->latest()
-        ->paginate(10);
+            })
+            ->latest()
+            ->paginate(10);
 
-        return view(
-            'pages.pegawai.index',
-            compact('pegawai', 'search')
-        );
+            return view(
+                'pages.pegawai.index',
+                compact('pegawai', 'search')
+            );
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     /**
@@ -39,7 +44,11 @@ class PegawaiController extends Controller
      */
     public function create()
     {
-        return view('pages.pegawai.create');
+        try {
+            return view('pages.pegawai.create');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     /**
@@ -47,47 +56,51 @@ class PegawaiController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'nama' => 'required|string|max:100',
-            'no_hp' => 'required|regex:/^[0-9+\-\s()]+$/|max:20',
-            'alamat' => 'required|string',
-            'jabatan' => 'required|in:Admin,Kasir,Pegawai',
-            'tanggal_masuk' => 'required|date',
-            'status_aktif' => 'required|boolean',
-            'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'required|nullable|email|unique:users,email',
-            'password' => 'required|min:6',
-        ]);
-
-        DB::transaction(function () use ($request) {
-            $user = User::create([
-                'name' => $request->nama,
-                'username' => $request->username,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
-            $user->assignRole($request->jabatan);
-
-            Pegawai::create([
-                'nama' => $request->nama,
-                'no_hp' => $request->no_hp,
-                'alamat' => $request->alamat,
-                'jabatan' => $request->jabatan,
-                'tanggal_masuk' => $request->tanggal_masuk,
-                'status_aktif' => $request->status_aktif,
-                'user_id' => $user->id,
+        try {
+            $request->validate([
+                'nama' => 'required|string|max:100',
+                'no_hp' => 'required|regex:/^[0-9+\-\s()]+$/|max:20',
+                'alamat' => 'required|string',
+                'jabatan' => 'required|in:Admin,Kasir,Pegawai',
+                'tanggal_masuk' => 'required|date',
+                'status_aktif' => 'required|boolean',
+                'username' => 'required|string|max:255|unique:users,username',
+                'email' => 'required|nullable|email|unique:users,email',
+                'password' => 'required|min:6',
             ]);
 
-            activity()
-                ->performedOn($user)
-                ->causedBy(auth()->user())
-                ->withProperties(['username' => $user->username, 'nama' => $user->name])
-                ->log('menambahkan pegawai & akun');
-        });
+            DB::transaction(function () use ($request) {
+                $user = User::create([
+                    'name' => $request->nama,
+                    'username' => $request->username,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                ]);
+                $user->assignRole($request->jabatan);
 
-        return redirect()
-            ->route('pegawai.index')
-            ->with('success', 'Data pegawai & akun login berhasil ditambahkan.');
+                Pegawai::create([
+                    'nama' => $request->nama,
+                    'no_hp' => $request->no_hp,
+                    'alamat' => $request->alamat,
+                    'jabatan' => $request->jabatan,
+                    'tanggal_masuk' => $request->tanggal_masuk,
+                    'status_aktif' => $request->status_aktif,
+                    'user_id' => $user->id,
+                ]);
+
+                activity()
+                    ->performedOn($user)
+                    ->causedBy(auth()->user())
+                    ->withProperties(['username' => $user->username, 'nama' => $user->name])
+                    ->log('menambahkan pegawai & akun');
+            });
+
+            return redirect()
+                ->route('pegawai.index')
+                ->with('success', 'Data pegawai & akun login berhasil ditambahkan.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     /**
@@ -103,8 +116,12 @@ class PegawaiController extends Controller
      */
     public function edit(Pegawai $pegawai)
     {
-        $pegawai->load('user');
-        return view('pages.pegawai.edit', compact('pegawai'));
+        try {
+            $pegawai->load('user');
+            return view('pages.pegawai.edit', compact('pegawai'));
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     /**
@@ -112,42 +129,46 @@ class PegawaiController extends Controller
      */
     public function update(Request $request, Pegawai $pegawai)
     {
-        $request->validate([
-            'nama' => 'required|string|max:100',
-            'no_hp' => 'required|regex:/^[0-9+\-\s()]+$/|max:20',
-            'alamat' => 'required|string',
-            'jabatan' => 'required|in:Admin,Kasir,Pegawai',
-            'tanggal_masuk' => 'required|date',
-            'status_aktif' => 'required|boolean',
-            'username' => 'required|string|max:255|unique:users,username,' . optional($pegawai->user)->id,
-            'email' => 'required|nullable|email|unique:users,email,' . optional($pegawai->user)->id,
-            'password' => 'nullable|min:6',
-        ]);
-
-        DB::transaction(function () use ($request, $pegawai) {
-            $pegawai->update([
-                'nama' => $request->nama,
-                'no_hp' => $request->no_hp,
-                'alamat' => $request->alamat,
-                'jabatan' => $request->jabatan,
-                'tanggal_masuk' => $request->tanggal_masuk,
-                'status_aktif' => $request->status_aktif,
+        try {
+            $request->validate([
+                'nama' => 'required|string|max:100',
+                'no_hp' => 'required|regex:/^[0-9+\-\s()]+$/|max:20',
+                'alamat' => 'required|string',
+                'jabatan' => 'required|in:Admin,Kasir,Pegawai',
+                'tanggal_masuk' => 'required|date',
+                'status_aktif' => 'required|boolean',
+                'username' => 'required|string|max:255|unique:users,username,' . optional($pegawai->user)->id,
+                'email' => 'required|nullable|email|unique:users,email,' . optional($pegawai->user)->id,
+                'password' => 'nullable|min:6',
             ]);
 
-            if ($pegawai->user) {
-                $pegawai->user->name = $request->nama;
-                $pegawai->user->username = $request->username;
-                if ($request->filled('password')) {
-                    $pegawai->user->password = Hash::make($request->password);
-                }
-                $pegawai->user->save();
-                $pegawai->user->syncRoles([$request->jabatan]);
-            }
-        });
+            DB::transaction(function () use ($request, $pegawai) {
+                $pegawai->update([
+                    'nama' => $request->nama,
+                    'no_hp' => $request->no_hp,
+                    'alamat' => $request->alamat,
+                    'jabatan' => $request->jabatan,
+                    'tanggal_masuk' => $request->tanggal_masuk,
+                    'status_aktif' => $request->status_aktif,
+                ]);
 
-        return redirect()
-            ->route('pegawai.index')
-            ->with('success', 'Data pegawai berhasil diperbarui.');
+                if ($pegawai->user) {
+                    $pegawai->user->name = $request->nama;
+                    $pegawai->user->username = $request->username;
+                    if ($request->filled('password')) {
+                        $pegawai->user->password = Hash::make($request->password);
+                    }
+                    $pegawai->user->save();
+                    $pegawai->user->syncRoles([$request->jabatan]);
+                }
+            });
+
+            return redirect()
+                ->route('pegawai.index')
+                ->with('success', 'Data pegawai berhasil diperbarui.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     /**
@@ -155,10 +176,14 @@ class PegawaiController extends Controller
      */
     public function destroy(Pegawai $pegawai)
     {
-        $pegawai->delete();
+        try {
+            $pegawai->delete();
 
-        return redirect()
-            ->route('pegawai.index')
-            ->with('success', 'Data pegawai berhasil dihapus.');
+            return redirect()
+                ->route('pegawai.index')
+                ->with('success', 'Data pegawai berhasil dihapus.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 }

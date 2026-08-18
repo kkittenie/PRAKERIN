@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PengaturanPajak;
+use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -20,9 +21,8 @@ class PengaturanPajakController extends Controller
                 ->paginate(10);
 
             return view('pages.pengaturan-pajak.index', compact('pajak', 'search'));
-        } catch (\Exception $e) {
-            Log::error('Error pada index PengaturanPajakController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data pengaturan pajak.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -30,9 +30,8 @@ class PengaturanPajakController extends Controller
     {
         try {
             return view('pages.pengaturan-pajak.create');
-        } catch (\Exception $e) {
-            Log::error('Error pada create PengaturanPajakController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat halaman tambah pajak.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -72,11 +71,8 @@ class PengaturanPajakController extends Controller
             return redirect()
                 ->route('pengaturan-pajak.index')
                 ->with('success', 'Pengaturan pajak berhasil ditambahkan.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Error pada store PengaturanPajakController: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan pengaturan pajak.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -85,9 +81,8 @@ class PengaturanPajakController extends Controller
         try {
             $pajak = PengaturanPajak::findOrFail($id);
             return view('pages.pengaturan-pajak.edit', compact('pajak'));
-        } catch (\Exception $e) {
-            Log::error('Error pada edit PengaturanPajakController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat halaman edit pajak.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -129,11 +124,8 @@ class PengaturanPajakController extends Controller
             return redirect()
                 ->route('pengaturan-pajak.index')
                 ->with('success', 'Pengaturan pajak berhasil diperbarui.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Error pada update PengaturanPajakController: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui pengaturan pajak.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -162,9 +154,8 @@ class PengaturanPajakController extends Controller
             return redirect()
                 ->route('pengaturan-pajak.index')
                 ->with('success', 'Status pajak "' . $pajak->nama_pajak . '"' . ($newStatus ? ' berhasil diaktifkan.' : ' berhasil dinonaktifkan.'));
-        } catch (\Exception $e) {
-            Log::error('Error pada toggleStatus PengaturanPajakController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat mengubah status pajak.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -187,9 +178,8 @@ class PengaturanPajakController extends Controller
             return redirect()
                 ->route('pengaturan-pajak.index')
                 ->with('success', 'Pengaturan pajak berhasil dihapus.');
-        } catch (\Exception $e) {
-            Log::error('Error pada destroy PengaturanPajakController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus pengaturan pajak.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 }

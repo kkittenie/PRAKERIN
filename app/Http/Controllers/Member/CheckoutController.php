@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use App\Models\PengaturanPajak;
 
+use App\Support\ActivityLogHelper;
+
 class CheckoutController extends Controller
 {
     private const NAMA_TOKO = 'Saisho Cake & Bakery';
@@ -25,166 +27,52 @@ class CheckoutController extends Controller
 
     public function index()
     {
-        $member = Auth::guard('member')->user();
-
-        if (MemberCart::isEmpty()) {
-            return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
-        }
-
-        $items = MemberCart::items();
-        $subtotalGross = MemberCart::subtotalGross();
-        $diskonProduk = MemberCart::totalDiskonProduk();
-        $subtotalNet = MemberCart::subtotal();
-
-        $voucherAktif = PenukaranPoin::with('reward.produks')
-            ->where('member_id', $member->id)
-            ->whereHas('reward', fn ($q) => $q->where('jenis', 'voucher'))
-            ->aktifDigunakan()
-            ->latest()
-            ->get();
-
-        $voucherId = Session::get(self::SESSION_VOUCHER_KEY);
-        $voucherDipilih = $voucherId ? $voucherAktif->firstWhere('id', $voucherId) : null;
-
-        $diskonVoucher = $voucherDipilih ? $this->hitungDiskonVoucher($voucherDipilih, $items, $subtotalNet) : 0;
-        $diskonTotal = $diskonProduk + $diskonVoucher;
-        $pajak = $this->hitungPajak($subtotalGross, $diskonTotal);
-        $totalBayar = max(0, $subtotalGross - $diskonTotal + $pajak);
-
-        $voucherTerbaik = null;
-        if (! $voucherDipilih) {
-            $kandidatTerbaik = $voucherAktif
-                ->map(fn ($v) => [
-                    'voucher' => $v,
-                    'diskon' => $this->hitungDiskonVoucher($v, $items, $subtotalNet),
-                ])
-                ->filter(fn ($x) => $x['diskon'] > 0)
-                ->sortByDesc('diskon')
-                ->first();
-
-            $voucherTerbaik = $kandidatTerbaik ?: null;
-        }
-
-        $pajakInfo = $this->getPajakInfo();
-
-        // Hitung rincian diskon promo per nama promo (sama formatnya seperti POS & store())
-        $rincianDiskonProduk = [];
-        $promoGroupsIdx = [];
-        foreach ($items as $item) {
-            $diskonItemSatuan = (float) ($item['diskon_produk_satuan'] ?? 0);
-            if ($diskonItemSatuan > 0) {
-                $namaPromo   = $item['nama_promo'] ?? 'Promo';
-                $jenisPromo  = $item['jenis_promo'] ?? null;
-                $persenPromo = $item['persentase_promo'] ?? null;
-
-                $labelPromo = $namaPromo;
-                if ($jenisPromo === 'persentase' && $persenPromo) {
-                    $persenFormatted = rtrim(rtrim(number_format((float) $persenPromo, 2, ',', '.'), '0'), ',');
-                    $labelPromo .= ' (' . $persenFormatted . '%)';
-                }
-
-                if (!isset($promoGroupsIdx[$labelPromo])) {
-                    $promoGroupsIdx[$labelPromo] = 0;
-                }
-                $promoGroupsIdx[$labelPromo] += $diskonItemSatuan * $item['jumlah'];
-            }
-        }
-        foreach ($promoGroupsIdx as $labelPromo => $nilai) {
-            $rincianDiskonProduk[] = [
-                'nama' => $labelPromo,
-                'nilai' => (float) $nilai,
-            ];
-        }
-
-        return view('member.checkout.index', [
-            'member' => $member,
-            'items' => $items,
-            'subtotal' => $subtotalGross,
-            'subtotalNet' => $subtotalNet,
-            'diskonProduk' => $diskonProduk,
-            'rincianDiskonProduk' => $rincianDiskonProduk,
-            'diskonVoucher' => $diskonVoucher,
-            'diskon' => $diskonTotal,
-            'pajak' => $pajak,
-            'pajakPersen' => $pajakInfo['persen'],
-            'totalBayar' => $totalBayar,
-            'voucherAktif' => $voucherAktif,
-            'voucherDipilih' => $voucherDipilih,
-            'voucherTerbaik' => $voucherTerbaik,
-            'storeNama' => self::NAMA_TOKO,
-            'storeAlamat' => self::ALAMAT_TOKO,
-            'poinPotensial' => $this->estimasiPoin($member, $totalBayar),
-        ]);
-    }
-
-    public function pilihVoucher(Request $request)
-    {
-        $validated = $request->validate([
-            'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
-        ]);
-
-        if (empty($validated['voucher_id'])) {
-            Session::forget(self::SESSION_VOUCHER_KEY);
-            return back();
-        }
-
-        $member = Auth::guard('member')->user();
-        $milikMember = PenukaranPoin::where('id', $validated['voucher_id'])
-            ->where('member_id', $member->id)
-            ->exists();
-
-        if (! $milikMember) {
-            return back()->with('error', 'Voucher tidak ditemukan.');
-        }
-
-        Session::put(self::SESSION_VOUCHER_KEY, (int) $validated['voucher_id']);
-
-        return back();
-    }
-
-    public function store(Request $request)
-    {
-        $member = Auth::guard('member')->user();
-
-        if (MemberCart::isEmpty()) {
-            return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
-        }
-
-        $request->validate([
-            'catatan' => 'nullable|string|max:255',
-        ]);
-
-        $items = MemberCart::items();
-        $subtotalGross = MemberCart::subtotalGross();
-        $diskonProduk = MemberCart::totalDiskonProduk();
-        $subtotalNet = MemberCart::subtotal();
-        $voucherId = Session::get(self::SESSION_VOUCHER_KEY);
-
-        DB::beginTransaction();
         try {
-            $voucher = null;
-            $diskonVoucher = 0;
+            $member = Auth::guard('member')->user();
 
-            if ($voucherId) {
-                $voucher = PenukaranPoin::with('reward.produks')
-                    ->where('id', $voucherId)
-                    ->where('member_id', $member->id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $voucher || $voucher->status !== 'menunggu_diambil' || $voucher->sudahExpired()) {
-                    throw new \Exception('Voucher yang dipilih sudah tidak berlaku, silakan pilih ulang.');
-                }
-
-                $diskonVoucher = $this->hitungDiskonVoucher($voucher, $items, $subtotalNet);
+            if (MemberCart::isEmpty()) {
+                return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
             }
 
+            $items = MemberCart::items();
+            $subtotalGross = MemberCart::subtotalGross();
+            $diskonProduk = MemberCart::totalDiskonProduk();
+            $subtotalNet = MemberCart::subtotal();
+
+            $voucherAktif = PenukaranPoin::with('reward.produks')
+                ->where('member_id', $member->id)
+                ->whereHas('reward', fn ($q) => $q->where('jenis', 'voucher'))
+                ->aktifDigunakan()
+                ->latest()
+                ->get();
+
+            $voucherId = Session::get(self::SESSION_VOUCHER_KEY);
+            $voucherDipilih = $voucherId ? $voucherAktif->firstWhere('id', $voucherId) : null;
+
+            $diskonVoucher = $voucherDipilih ? $this->hitungDiskonVoucher($voucherDipilih, $items, $subtotalNet) : 0;
             $diskonTotal = $diskonProduk + $diskonVoucher;
             $pajak = $this->hitungPajak($subtotalGross, $diskonTotal);
             $totalBayar = max(0, $subtotalGross - $diskonTotal + $pajak);
 
-            $rincianDiskon = [];
-            $promoGroups = [];
+            $voucherTerbaik = null;
+            if (! $voucherDipilih) {
+                $kandidatTerbaik = $voucherAktif
+                    ->map(fn ($v) => [
+                        'voucher' => $v,
+                        'diskon' => $this->hitungDiskonVoucher($v, $items, $subtotalNet),
+                    ])
+                    ->filter(fn ($x) => $x['diskon'] > 0)
+                    ->sortByDesc('diskon')
+                    ->first();
+
+                $voucherTerbaik = $kandidatTerbaik ?: null;
+            }
+
+            $pajakInfo = $this->getPajakInfo();
+
+            // Hitung rincian diskon promo per nama promo (sama formatnya seperti POS & store())
+            $rincianDiskonProduk = [];
+            $promoGroupsIdx = [];
             foreach ($items as $item) {
                 $diskonItemSatuan = (float) ($item['diskon_produk_satuan'] ?? 0);
                 if ($diskonItemSatuan > 0) {
@@ -192,123 +80,249 @@ class CheckoutController extends Controller
                     $jenisPromo  = $item['jenis_promo'] ?? null;
                     $persenPromo = $item['persentase_promo'] ?? null;
 
-                    // Buat label persis seperti POS: "Nama Promo (X%)" untuk persentase
                     $labelPromo = $namaPromo;
                     if ($jenisPromo === 'persentase' && $persenPromo) {
                         $persenFormatted = rtrim(rtrim(number_format((float) $persenPromo, 2, ',', '.'), '0'), ',');
                         $labelPromo .= ' (' . $persenFormatted . '%)';
                     }
 
-                    if (!isset($promoGroups[$labelPromo])) {
-                        $promoGroups[$labelPromo] = 0;
+                    if (!isset($promoGroupsIdx[$labelPromo])) {
+                        $promoGroupsIdx[$labelPromo] = 0;
                     }
-                    $promoGroups[$labelPromo] += $diskonItemSatuan * $item['jumlah'];
+                    $promoGroupsIdx[$labelPromo] += $diskonItemSatuan * $item['jumlah'];
                 }
             }
-            foreach ($promoGroups as $labelPromo => $nilai) {
-                $rincianDiskon[] = [
+            foreach ($promoGroupsIdx as $labelPromo => $nilai) {
+                $rincianDiskonProduk[] = [
                     'nama' => $labelPromo,
                     'nilai' => (float) $nilai,
                 ];
             }
-            if ($voucher && $diskonVoucher > 0) {
-                $rincianDiskon[] = [
-                    'nama' => $voucher->reward->nama ?? 'Voucher',
-                    'nilai' => (float) $diskonVoucher,
-                ];
-            }
 
-            $diskonLabel = !empty($rincianDiskon) ? json_encode($rincianDiskon) : null;
-
-            $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
-
-            $transaksi = Transaksi::create([
-                'kode_transaksi' => $kodeTransaksi,
-                'nama_pembeli' => $member->nama,
-                'member_id' => $member->id,
-                'voucher_id' => $voucher?->id,
+            return view('member.checkout.index', [
+                'member' => $member,
+                'items' => $items,
                 'subtotal' => $subtotalGross,
-                'pajak' => $pajak,
+                'subtotalNet' => $subtotalNet,
+                'diskonProduk' => $diskonProduk,
+                'rincianDiskonProduk' => $rincianDiskonProduk,
+                'diskonVoucher' => $diskonVoucher,
                 'diskon' => $diskonTotal,
-                'diskon_persen' => 0,
-                'diskon_label' => $diskonLabel,
-                'total_bayar' => $totalBayar,
-                'jumlah_diterima' => $totalBayar,
-                'kembalian' => 0,
-                'metode_pembayaran' => 'Transfer/QRIS',
-                'status_pembayaran' => 'Menunggu Pembayaran',
-                'asal_pesanan' => Transaksi::ASAL_MEMBER_APP,
-                'status_pesanan' => Transaksi::STATUS_DIPROSES,
-                // Kode pickup baru digenerate nanti waktu kasir menandai
-                // pesanan "Ready for Pickup" (lihat
-                // PesananPickupController::tandaiSiap()), bukan di sini.
-                'catatan_pesanan' => $request->input('catatan'),
+                'pajak' => $pajak,
+                'pajakPersen' => $pajakInfo['persen'],
+                'totalBayar' => $totalBayar,
+                'voucherAktif' => $voucherAktif,
+                'voucherDipilih' => $voucherDipilih,
+                'voucherTerbaik' => $voucherTerbaik,
+                'storeNama' => self::NAMA_TOKO,
+                'storeAlamat' => self::ALAMAT_TOKO,
+                'poinPotensial' => $this->estimasiPoin($member, $totalBayar),
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    public function pilihVoucher(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
             ]);
 
-            if ($voucher) {
-                $voucher->update([
-                    'status' => 'selesai',
-                    'diambil_pada' => now(),
-                    'transaksi_id' => $transaksi->id,
-                ]);
+            if (empty($validated['voucher_id'])) {
+                Session::forget(self::SESSION_VOUCHER_KEY);
+                return back();
             }
 
-            foreach ($items as $item) {
-                if (! empty($item['bundling_id'])) {
-                    $this->prosesItemBundlingCheckout($transaksi, $item);
-                    continue;
+            $member = Auth::guard('member')->user();
+            $milikMember = PenukaranPoin::where('id', $validated['voucher_id'])
+                ->where('member_id', $member->id)
+                ->exists();
+
+            if (! $milikMember) {
+                return back()->with('error', 'Voucher tidak ditemukan.');
+            }
+
+            Session::put(self::SESSION_VOUCHER_KEY, (int) $validated['voucher_id']);
+
+            return back();
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    public function store(Request $request)
+    {
+        try {
+            $member = Auth::guard('member')->user();
+
+            if (MemberCart::isEmpty()) {
+                return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
+            }
+
+            $request->validate([
+                'catatan' => 'nullable|string|max:255',
+            ]);
+
+            $items = MemberCart::items();
+            $subtotalGross = MemberCart::subtotalGross();
+            $diskonProduk = MemberCart::totalDiskonProduk();
+            $subtotalNet = MemberCart::subtotal();
+            $voucherId = Session::get(self::SESSION_VOUCHER_KEY);
+
+            DB::beginTransaction();
+            try {
+                $voucher = null;
+                $diskonVoucher = 0;
+
+                if ($voucherId) {
+                    $voucher = PenukaranPoin::with('reward.produks')
+                        ->where('id', $voucherId)
+                        ->where('member_id', $member->id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (! $voucher || $voucher->status !== 'menunggu_diambil' || $voucher->sudahExpired()) {
+                        throw new \Exception('Voucher yang dipilih sudah tidak berlaku, silakan pilih ulang.');
+                    }
+
+                    $diskonVoucher = $this->hitungDiskonVoucher($voucher, $items, $subtotalNet);
                 }
 
-                $produk = Produk::lockForUpdate()->findOrFail($item['produk_id']);
-                $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah']);
+                $diskonTotal = $diskonProduk + $diskonVoucher;
+                $pajak = $this->hitungPajak($subtotalGross, $diskonTotal);
+                $totalBayar = max(0, $subtotalGross - $diskonTotal + $pajak);
 
-                $catatanItem = trim(collect([
-                    $item['ukuran'] ?? null,
-                    $item['catatan'] ?? null,
-                ])->filter()->implode(' — '));
+                $rincianDiskon = [];
+                $promoGroups = [];
+                foreach ($items as $item) {
+                    $diskonItemSatuan = (float) ($item['diskon_produk_satuan'] ?? 0);
+                    if ($diskonItemSatuan > 0) {
+                        $namaPromo   = $item['nama_promo'] ?? 'Promo';
+                        $jenisPromo  = $item['jenis_promo'] ?? null;
+                        $persenPromo = $item['persentase_promo'] ?? null;
 
-                $hargaSatuanDetail = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
+                        // Buat label persis seperti POS: "Nama Promo (X%)" untuk persentase
+                        $labelPromo = $namaPromo;
+                        if ($jenisPromo === 'persentase' && $persenPromo) {
+                            $persenFormatted = rtrim(rtrim(number_format((float) $persenPromo, 2, ',', '.'), '0'), ',');
+                            $labelPromo .= ' (' . $persenFormatted . '%)';
+                        }
 
-                foreach ($pecahan as $bagian) {
-                    DetailTransaksi::create([
+                        if (!isset($promoGroups[$labelPromo])) {
+                            $promoGroups[$labelPromo] = 0;
+                        }
+                        $promoGroups[$labelPromo] += $diskonItemSatuan * $item['jumlah'];
+                    }
+                }
+                foreach ($promoGroups as $labelPromo => $nilai) {
+                    $rincianDiskon[] = [
+                        'nama' => $labelPromo,
+                        'nilai' => (float) $nilai,
+                    ];
+                }
+                if ($voucher && $diskonVoucher > 0) {
+                    $rincianDiskon[] = [
+                        'nama' => $voucher->reward->nama ?? 'Voucher',
+                        'nilai' => (float) $diskonVoucher,
+                    ];
+                }
+
+                $diskonLabel = !empty($rincianDiskon) ? json_encode($rincianDiskon) : null;
+
+                $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
+
+                $transaksi = Transaksi::create([
+                    'kode_transaksi' => $kodeTransaksi,
+                    'nama_pembeli' => $member->nama,
+                    'member_id' => $member->id,
+                    'voucher_id' => $voucher?->id,
+                    'subtotal' => $subtotalGross,
+                    'pajak' => $pajak,
+                    'diskon' => $diskonTotal,
+                    'diskon_persen' => 0,
+                    'diskon_label' => $diskonLabel,
+                    'total_bayar' => $totalBayar,
+                    'jumlah_diterima' => $totalBayar,
+                    'kembalian' => 0,
+                    'metode_pembayaran' => 'Transfer/QRIS',
+                    'status_pembayaran' => 'Menunggu Pembayaran',
+                    'asal_pesanan' => Transaksi::ASAL_MEMBER_APP,
+                    'status_pesanan' => Transaksi::STATUS_DIPROSES,
+                    // Kode pickup baru digenerate nanti waktu kasir menandai
+                    // pesanan "Ready for Pickup" (lihat
+                    // PesananPickupController::tandaiSiap()), bukan di sini.
+                    'catatan_pesanan' => $request->input('catatan'),
+                ]);
+
+                if ($voucher) {
+                    $voucher->update([
+                        'status' => 'selesai',
+                        'diambil_pada' => now(),
                         'transaksi_id' => $transaksi->id,
-                        'produk_id' => $produk->id,
-                        'nama_produk' => $produk->nama_produk,
-                        'harga_satuan' => $hargaSatuanDetail,
-                        'jumlah' => $bagian['jumlah'],
-                        'catatan' => $catatanItem !== '' ? $catatanItem : null,
-                        'subtotal' => $hargaSatuanDetail * $bagian['jumlah'],
-                        'butuh_produksi' => $bagian['butuh_produksi'],
                     ]);
                 }
+
+                foreach ($items as $item) {
+                    if (! empty($item['bundling_id'])) {
+                        $this->prosesItemBundlingCheckout($transaksi, $item);
+                        continue;
+                    }
+
+                    $produk = Produk::lockForUpdate()->findOrFail($item['produk_id']);
+                    $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah']);
+
+                    $catatanItem = trim(collect([
+                        $item['ukuran'] ?? null,
+                        $item['catatan'] ?? null,
+                    ])->filter()->implode(' — '));
+
+                    $hargaSatuanDetail = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
+
+                    foreach ($pecahan as $bagian) {
+                        DetailTransaksi::create([
+                            'transaksi_id' => $transaksi->id,
+                            'produk_id' => $produk->id,
+                            'nama_produk' => $produk->nama_produk,
+                            'harga_satuan' => $hargaSatuanDetail,
+                            'jumlah' => $bagian['jumlah'],
+                            'catatan' => $catatanItem !== '' ? $catatanItem : null,
+                            'subtotal' => $hargaSatuanDetail * $bagian['jumlah'],
+                            'butuh_produksi' => $bagian['butuh_produksi'],
+                        ]);
+                    }
+                }
+
+                DB::commit();
+
+                activity()
+                    ->causedBy($member)
+                    ->performedOn($transaksi)
+                    ->withProperties([
+                        'transaksi_id' => $transaksi->id,
+                        'kode_transaksi' => $kodeTransaksi,
+                    ])
+                    ->log('membuat pesanan pick up dari member app');
+
+                MemberCart::kosongkan();
+                Session::forget(self::SESSION_VOUCHER_KEY);
+
+                // Kabari dashboard POS real-time supaya pesanan baru langsung
+                // muncul di halaman "Pesanan" kasir tanpa perlu refresh manual.
+                event(new \App\Events\PesananPickupUpdated($transaksi, 'baru'));
+
+                return redirect()
+                    ->route('member.pesanan.show', $transaksi)
+                    ->with('success', 'Pesanan berhasil dibuat! Kami akan proses pesananmu segera.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Error checkout member app: ' . $e->getMessage());
+
+                return ActivityLogHelper::handleException($e, 'Error checkout member app: ' . $e->getMessage());
             }
-
-            DB::commit();
-
-            activity()
-                ->causedBy($member)
-                ->performedOn($transaksi)
-                ->withProperties([
-                    'transaksi_id' => $transaksi->id,
-                    'kode_transaksi' => $kodeTransaksi,
-                ])
-                ->log('membuat pesanan pick up dari member app');
-
-            MemberCart::kosongkan();
-            Session::forget(self::SESSION_VOUCHER_KEY);
-
-            // Kabari dashboard POS real-time supaya pesanan baru langsung
-            // muncul di halaman "Pesanan" kasir tanpa perlu refresh manual.
-            event(new \App\Events\PesananPickupUpdated($transaksi, 'baru'));
-
-            return redirect()
-                ->route('member.pesanan.show', $transaksi)
-                ->with('success', 'Pesanan berhasil dibuat! Kami akan proses pesananmu segera.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error checkout member app: ' . $e->getMessage());
-
-            return back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
     private function prosesItemBundlingCheckout(Transaksi $transaksi, array $item): void

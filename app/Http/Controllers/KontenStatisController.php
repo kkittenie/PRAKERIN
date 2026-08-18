@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\KontenStatis;
+use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -16,33 +17,41 @@ class KontenStatisController extends Controller
 
     public function index()
     {
-        $kontenList = KontenStatis::whereIn('slug', array_keys($this->slugDiizinkan))->get()->keyBy('slug');
-        return view('pages.konten-statis.index', compact('kontenList'));
+        try {
+            $kontenList = KontenStatis::whereIn('slug', array_keys($this->slugDiizinkan))->get()->keyBy('slug');
+            return view('pages.konten-statis.index', compact('kontenList'));
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function edit($slug)
     {
-        if (!array_key_exists($slug, $this->slugDiizinkan)) {
-            abort(404);
+        try {
+            if (!array_key_exists($slug, $this->slugDiizinkan)) {
+                abort(404);
+            }
+
+            $konten = KontenStatis::firstOrNew(
+                ['slug' => $slug],
+                ['judul' => $this->slugDiizinkan[$slug], 'konten' => '']
+            );
+
+            $judul = $this->slugDiizinkan[$slug];
+
+            return view('pages.konten-statis.edit', compact('konten', 'judul', 'slug'));
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
-
-        $konten = KontenStatis::firstOrNew(
-            ['slug' => $slug],
-            ['judul' => $this->slugDiizinkan[$slug], 'konten' => '']
-        );
-
-        $judul = $this->slugDiizinkan[$slug];
-
-        return view('pages.konten-statis.edit', compact('konten', 'judul', 'slug'));
     }
 
     public function update(Request $request, $slug)
     {
-        if (!array_key_exists($slug, $this->slugDiizinkan)) {
-            abort(404);
-        }
-
         try {
+            if (!array_key_exists($slug, $this->slugDiizinkan)) {
+                abort(404);
+            }
+
             $validated = $request->validate([
                 'judul'  => 'required|string|max:255',
                 'konten' => 'nullable|string',
@@ -63,9 +72,8 @@ class KontenStatisController extends Controller
             return redirect()
                 ->route('konten-statis.index')
                 ->with('success', 'Konten "' . $this->slugDiizinkan[$slug] . '" berhasil disimpan.');
-        } catch (\Exception $e) {
-            Log::error('Error update KontenStatisController: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan konten.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 }

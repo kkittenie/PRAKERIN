@@ -26,23 +26,38 @@ class NonaktifkanPromoKadaluwarsa extends Command
      */
     public function handle()
     {
-        $promoKadaluwarsa = Promo::where('status_aktif', true)
-            ->whereNotNull('selesai_berlaku')
-            ->where('selesai_berlaku', '<', now())
-            ->get();
+        try {
+            $promoKadaluwarsa = Promo::where('status_aktif', true)
+                ->whereNotNull('selesai_berlaku')
+                ->where('selesai_berlaku', '<', now())
+                ->get();
 
-        foreach ($promoKadaluwarsa as $promo) {
-            $promo->update(['status_aktif' => false]);
+            foreach ($promoKadaluwarsa as $promo) {
+                $promo->update(['status_aktif' => false]);
 
+                activity()
+                    ->performedOn($promo)
+                    ->withProperties(['selesai_berlaku' => $promo->selesai_berlaku])
+                    ->log('promo otomatis dinonaktifkan karena kadaluwarsa');
+            }
+            
+            $jumlah = $promoKadaluwarsa->count();
+            $this->info("Berhasil menonaktifkan {$jumlah} promo yang sudah kadaluwarsa.");
+
+            return self::SUCCESS;
+        } catch (\Throwable $e) {
             activity()
-                ->performedOn($promo)
-                ->withProperties(['selesai_berlaku' => $promo->selesai_berlaku])
-                ->log('promo otomatis dinonaktifkan karena kadaluwarsa');
-        }
-        
-        $jumlah = $promoKadaluwarsa->count();
-        $this->info("Berhasil menonaktifkan {$jumlah} promo yang sudah kadaluwarsa.");
+                ->withProperties([
+                    'error_message' => $e->getMessage(),
+                    'exception' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'command' => $this->signature,
+                ])
+                ->log('Error pada command promo:tandai-kadaluwarsa: ' . $e->getMessage());
 
-        return self::SUCCESS;
+            $this->error('Gagal menonaktifkan promo kadaluwarsa: ' . $e->getMessage());
+            return self::FAILURE;
+        }
     }
 }

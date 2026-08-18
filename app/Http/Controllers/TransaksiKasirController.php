@@ -7,6 +7,7 @@ use App\Models\Produk;
 use App\Models\PesananDitahan;
 use App\Models\Transaksi;
 use App\Models\DetailTransaksi;
+use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -185,15 +186,8 @@ class TransaksiKasirController extends Controller
                 'daftarMember' => $daftarMember,
                 'pengaturanPajak' => $pengaturanPajak,
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error pada indeks TransaksiKasirController: ' . $e->getMessage());
-            activity()
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'error' => $e->getMessage(),
-                ])
-                ->log('gagal memuat data transaksi');
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data transaksi: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
     private function prosesItemBundlingTransaksi(Transaksi $transaksi, array $item): void
@@ -214,7 +208,6 @@ class TransaksiKasirController extends Controller
             'butuh_produksi' => false,
         ]);
 
-        // 2. Entry Komponen Produk (Stok & Struk Dapur)
         foreach ($bundling->items as $bundlingItem) {
             $produk = $bundlingItem->produk;
             if (!$produk) {
@@ -406,20 +399,9 @@ class TransaksiKasirController extends Controller
                 'data' => $pesanan->load('transaksi'),
                 'kode_transaksi' => $kodeTransaksi,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error pada simpanDitahan TransaksiKasirController: ' . $e->getMessage());
-            activity()
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'error' => $e->getMessage(),
-                    'request_data' => $request->all(),
-                ])
-                ->log('gagal menahan pesanan');
-            return response()->json([
-                'status' => 'error',
-                'pesan' => 'Gagal menahan pesanan: ' . $e->getMessage()
-            ], 500);
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -431,18 +413,8 @@ class TransaksiKasirController extends Controller
                 'status' => 'success',
                 'data' => $daftarDitahan
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error pada ambilDitahan TransaksiKasirController: ' . $e->getMessage());
-            activity()
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'error' => $e->getMessage(),
-                ])
-                ->log('gagal mengambil data pesanan ditahan');
-            return response()->json([
-                'status' => 'error',
-                'pesan' => 'Gagal mengambil data pesanan ditahan: ' . $e->getMessage()
-            ], 500);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -478,20 +450,9 @@ class TransaksiKasirController extends Controller
                 'pesan' => 'Pesanan berhasil dilanjutkan.',
                 'data' => $pesanan
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error pada pulihkanDitahan TransaksiKasirController: ' . $e->getMessage());
-            activity()
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'error' => $e->getMessage(),
-                    'pesanan_id' => $id,
-                ])
-                ->log('gagal memulihkan pesanan ditahan');
-            return response()->json([
-                'status' => 'error',
-                'pesan' => 'Gagal memulihkan pesanan ditahan: ' . $e->getMessage()
-            ], 500);
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -504,7 +465,7 @@ class TransaksiKasirController extends Controller
             if ($pesanan->transaksi) {
                 $detailTransaksi = DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->get();
                 $this->kembalikanStokDariDetail($detailTransaksi);
- 
+
                 $this->kembalikanRewardStampDariTransaksi($pesanan->transaksi);
 
                 DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->delete();
@@ -528,22 +489,12 @@ class TransaksiKasirController extends Controller
                 'status' => 'success',
                 'pesan' => 'Pesanan ditahan berhasil dihapus.'
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error pada hapusDitahan TransaksiKasirController: ' . $e->getMessage());
-            activity()
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'error' => $e->getMessage(),
-                    'pesanan_id' => $id,
-                ])
-                ->log('gagal menghapus pesanan ditahan');
-            return response()->json([
-                'status' => 'error',
-                'pesan' => 'Gagal menghapus pesanan ditahan: ' . $e->getMessage()
-            ], 500);
+            return ActivityLogHelper::handleException($e);
         }
     }
+
     public function lunaskanDitahan(Request $request, $id)
     {
         DB::beginTransaction();
@@ -624,20 +575,9 @@ class TransaksiKasirController extends Controller
                 'kode_transaksi' => $transaksi->kode_transaksi,
                 'data' => $transaksi
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error pada lunaskanDitahan TransaksiKasirController: ' . $e->getMessage());
-            activity()
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'error' => $e->getMessage(),
-                    'request_data' => $request->all(),
-                ])
-                ->log('gagal melunaskan pesanan');
-            return response()->json([
-                'status' => 'error',
-                'pesan' => 'Gagal melunaskan pesanan: ' . $e->getMessage()
-            ], 500);
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -677,7 +617,7 @@ class TransaksiKasirController extends Controller
                 $validated['member_id'] ?? null
             );
 
-             $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
+              $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
 
             $transaksi = Transaksi::create([
                 'kode_transaksi' => $kodeTransaksi,
@@ -810,20 +750,9 @@ class TransaksiKasirController extends Controller
                 'kode_transaksi' => $kodeTransaksi,
                 'data' => $transaksi
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error pada bayar TransaksiKasirController: ' . $e->getMessage());
-            activity()
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'error' => $e->getMessage(),
-                    'request_data' => $request->all(),
-                ])
-                ->log('gagal memproses transaksi');
-            return response()->json([
-                'status' => 'error',
-                'pesan' => 'Gagal memproses transaksi: ' . $e->getMessage()
-            ], 500);
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -837,17 +766,8 @@ class TransaksiKasirController extends Controller
                 'transaksi' => $transaksi,
                 'jenis' => $jenis,
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error pada cetak TransaksiKasirController: ' . $e->getMessage());
-            activity()
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'error' => $e->getMessage(),
-                    'kode_transaksi' => $kodeTransaksi,
-                ])
-                ->log('gagal mencetak struk transaksi');
-            abort(404, 'Transaksi tidak ditemukan.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
-
 }

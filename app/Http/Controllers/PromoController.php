@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Promo;
 use App\Models\Produk;
+use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -22,9 +23,8 @@ class PromoController extends Controller
                 ->paginate(10);
 
             return view('pages.promo.index', compact('promo', 'search'));
-        } catch (\Exception $e) {
-            Log::error('Error pada indeks PromoController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data promo.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -33,9 +33,8 @@ class PromoController extends Controller
         try {
             $promo = Promo::with(['produks.kategori'])->findOrFail($id);
             return view('pages.promo.show', compact('promo'));
-        } catch (\Exception $e) {
-            Log::error('Error pada lihat PromoController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat detail promo.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -44,17 +43,14 @@ class PromoController extends Controller
         try {
             $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
             return view('pages.promo.create', compact('produks'));
-        } catch (\Exception $e) {
-            Log::error('Error pada tambah PromoController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat halaman tambah promo.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
     public function simpan(Request $request)
     {
         try {
-            // Jaga-jaga: normalisasi koma (format Indonesia) menjadi titik
-            // untuk field numerik, seandainya JS di client tidak jalan.
             $this->normalisasiInputKoma($request);
 
             $validated = $request->validate([
@@ -97,11 +93,8 @@ class PromoController extends Controller
             return redirect()
                 ->route('promo.index')
                 ->with('success', 'Promo berhasil ditambahkan.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Error pada simpan PromoController: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan promo.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -113,9 +106,8 @@ class PromoController extends Controller
             $selectedProduks = $promo->produks->pluck('id')->toArray();
 
             return view('pages.promo.edit', compact('promo', 'produks', 'selectedProduks'));
-        } catch (\Exception $e) {
-            Log::error('Error pada ubah PromoController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat halaman edit promo.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -124,8 +116,6 @@ class PromoController extends Controller
         try {
             $promo = Promo::findOrFail($id);
 
-            // Jaga-jaga: normalisasi koma (format Indonesia) menjadi titik
-            // untuk field numerik, seandainya JS di client tidak jalan.
             $this->normalisasiInputKoma($request);
 
             $validated = $request->validate([
@@ -168,11 +158,8 @@ class PromoController extends Controller
             return redirect()
                 ->route('promo.index')
                 ->with('success', 'Promo berhasil diperbarui.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            Log::error('Error pada perbarui PromoController: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui promo.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -195,9 +182,8 @@ class PromoController extends Controller
             return redirect()
                 ->route('promo.index')
                 ->with('success', 'Status promo "' . $promo->nama_promo . '"' . ($promo->status_aktif ? ' berhasil diaktifkan.' : ' berhasil dinonaktifkan.'));
-        } catch (\Exception $e) {
-            Log::error('Error pada toggleStatus PromoController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat mengubah status promo.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
@@ -222,16 +208,13 @@ class PromoController extends Controller
             return redirect()
                 ->route('promo.index')
                 ->with('success', 'Promo berhasil dihapus.');
-        } catch (\Exception $e) {
-            Log::error('Error pada hapus PromoController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus promo.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
     /**
-     * Ubah pemisah desimal koma (format Indonesia, mis. "15,5") menjadi
-     * titik (format standar PHP, mis. "15.5") pada field-field numerik,
-     * sebagai fallback jika hidden input dari JS tidak terkirim.
+     * Normalisasi input koma
      */
     private function normalisasiInputKoma(Request $request): void
     {

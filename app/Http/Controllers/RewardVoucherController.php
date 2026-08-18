@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Produk;
 use App\Models\RewardKatalog;
+use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -29,164 +30,190 @@ class RewardVoucherController extends Controller
                 'title' => 'Reward Voucher',
                 'vouchers' => $vouchers,
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error index RewardVoucherController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data reward voucher.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
     public function create()
     {
-        $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
+        try {
+            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
 
-        return view('pages.reward-voucher.create', [
-            'title' => 'Tambah Reward Voucher',
-            'produks' => $produks,
-        ]);
+            return view('pages.reward-voucher.create', [
+                'title' => 'Tambah Reward Voucher',
+                'produks' => $produks,
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function show(RewardKatalog $rewardVoucher)
     {
-        abort_unless($rewardVoucher->jenis === 'voucher', 404);
+        try {
+            abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
-        $rewardVoucher->load('produks.kategori');
+            $rewardVoucher->load('produks.kategori');
 
-        return view('pages.reward-voucher.show', [
-            'title' => 'Detail Reward Voucher',
-            'voucher' => $rewardVoucher,
-        ]);
+            return view('pages.reward-voucher.show', [
+                'title' => 'Detail Reward Voucher',
+                'voucher' => $rewardVoucher,
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function store(Request $request)
     {
-        $validated = $this->validasi($request);
+        try {
+            $validated = $this->validasi($request);
 
-        $pathGambar = null;
-        if ($request->hasFile('gambar')) {
-            $pathGambar = $request->file('gambar')->store('reward', 'public');
+            $pathGambar = null;
+            if ($request->hasFile('gambar')) {
+                $pathGambar = $request->file('gambar')->store('reward', 'public');
+            }
+
+            $voucher = RewardKatalog::create([
+                'nama' => $validated['nama'],
+                'jenis' => 'voucher',
+                'deskripsi' => $validated['deskripsi'] ?? null,
+                'gambar' => $pathGambar,
+                'poin_dibutuhkan' => $validated['poin_dibutuhkan'],
+                'stok' => $validated['stok'] ?? null,
+                'status_aktif' => (bool) $request->boolean('status_aktif'),
+                'jenis_potongan' => $validated['jenis_potongan'],
+                'nominal_potongan' => $validated['jenis_potongan'] === 'nominal' ? $validated['nominal_potongan'] : 0,
+                'persentase' => $validated['jenis_potongan'] === 'persentase' ? $validated['persentase'] : 0,
+                'maksimal_potongan' => $validated['jenis_potongan'] === 'persentase' ? ($validated['maksimal_potongan'] ?? null) : null,
+                'min_pembelian' => $validated['min_pembelian'] ?? 0,
+                'masa_berlaku_hari' => $validated['masa_berlaku_hari'] ?? null,
+            ]);
+
+            $voucher->produks()->sync($validated['produk_ids']);
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($voucher)
+                ->withProperties($voucher->toArray() + ['produk_ids' => $validated['produk_ids']])
+                ->log('Menambahkan reward voucher: ' . $voucher->nama);
+
+            return redirect()->route('reward-voucher.index')->with('success', 'Reward voucher berhasil ditambahkan.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
-
-        $voucher = RewardKatalog::create([
-            'nama' => $validated['nama'],
-            'jenis' => 'voucher',
-            'deskripsi' => $validated['deskripsi'] ?? null,
-            'gambar' => $pathGambar,
-            'poin_dibutuhkan' => $validated['poin_dibutuhkan'],
-            'stok' => $validated['stok'] ?? null,
-            'status_aktif' => (bool) $request->boolean('status_aktif'),
-            'jenis_potongan' => $validated['jenis_potongan'],
-            'nominal_potongan' => $validated['jenis_potongan'] === 'nominal' ? $validated['nominal_potongan'] : 0,
-            'persentase' => $validated['jenis_potongan'] === 'persentase' ? $validated['persentase'] : 0,
-            'maksimal_potongan' => $validated['jenis_potongan'] === 'persentase' ? ($validated['maksimal_potongan'] ?? null) : null,
-            'min_pembelian' => $validated['min_pembelian'] ?? 0,
-            'masa_berlaku_hari' => $validated['masa_berlaku_hari'] ?? null,
-        ]);
-
-        $voucher->produks()->sync($validated['produk_ids']);
-
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($voucher)
-            ->withProperties($voucher->toArray() + ['produk_ids' => $validated['produk_ids']])
-            ->log('Menambahkan reward voucher: ' . $voucher->nama);
-
-        return redirect()->route('reward-voucher.index')->with('success', 'Reward voucher berhasil ditambahkan.');
     }
 
     public function edit(RewardKatalog $rewardVoucher)
     {
-        abort_unless($rewardVoucher->jenis === 'voucher', 404);
+        try {
+            abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
-        $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
-        $selectedProduks = $rewardVoucher->produks->pluck('id')->toArray();
+            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
+            $selectedProduks = $rewardVoucher->produks->pluck('id')->toArray();
 
-        return view('pages.reward-voucher.edit', [
-            'title' => 'Edit Reward Voucher',
-            'voucher' => $rewardVoucher,
-            'produks' => $produks,
-            'selectedProduks' => $selectedProduks,
-        ]);
+            return view('pages.reward-voucher.edit', [
+                'title' => 'Edit Reward Voucher',
+                'voucher' => $rewardVoucher,
+                'produks' => $produks,
+                'selectedProduks' => $selectedProduks,
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function update(Request $request, RewardKatalog $rewardVoucher)
     {
-        abort_unless($rewardVoucher->jenis === 'voucher', 404);
+        try {
+            abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
-        $validated = $this->validasi($request);
+            $validated = $this->validasi($request);
 
-        $dataUpdate = [
-            'nama' => $validated['nama'],
-            'deskripsi' => $validated['deskripsi'] ?? null,
-            'poin_dibutuhkan' => $validated['poin_dibutuhkan'],
-            'stok' => $validated['stok'] ?? null,
-            'status_aktif' => (bool) $request->boolean('status_aktif'),
-            'jenis_potongan' => $validated['jenis_potongan'],
-            'nominal_potongan' => $validated['jenis_potongan'] === 'nominal' ? $validated['nominal_potongan'] : 0,
-            'persentase' => $validated['jenis_potongan'] === 'persentase' ? $validated['persentase'] : 0,
-            'maksimal_potongan' => $validated['jenis_potongan'] === 'persentase' ? ($validated['maksimal_potongan'] ?? null) : null,
-            'min_pembelian' => $validated['min_pembelian'] ?? 0,
-            'masa_berlaku_hari' => $validated['masa_berlaku_hari'] ?? null,
-        ];
+            $dataUpdate = [
+                'nama' => $validated['nama'],
+                'deskripsi' => $validated['deskripsi'] ?? null,
+                'poin_dibutuhkan' => $validated['poin_dibutuhkan'],
+                'stok' => $validated['stok'] ?? null,
+                'status_aktif' => (bool) $request->boolean('status_aktif'),
+                'jenis_potongan' => $validated['jenis_potongan'],
+                'nominal_potongan' => $validated['jenis_potongan'] === 'nominal' ? $validated['nominal_potongan'] : 0,
+                'persentase' => $validated['jenis_potongan'] === 'persentase' ? $validated['persentase'] : 0,
+                'maksimal_potongan' => $validated['jenis_potongan'] === 'persentase' ? ($validated['maksimal_potongan'] ?? null) : null,
+                'min_pembelian' => $validated['min_pembelian'] ?? 0,
+                'masa_berlaku_hari' => $validated['masa_berlaku_hari'] ?? null,
+            ];
 
-        if ($request->hasFile('gambar')) {
-            // Hapus gambar lama dulu supaya file lama tidak menumpuk di server
-            if ($rewardVoucher->gambar && Storage::disk('public')->exists($rewardVoucher->gambar)) {
-                Storage::disk('public')->delete($rewardVoucher->gambar);
+            if ($request->hasFile('gambar')) {
+                if ($rewardVoucher->gambar && Storage::disk('public')->exists($rewardVoucher->gambar)) {
+                    Storage::disk('public')->delete($rewardVoucher->gambar);
+                }
+
+                $dataUpdate['gambar'] = $request->file('gambar')->store('reward', 'public');
             }
 
-            $dataUpdate['gambar'] = $request->file('gambar')->store('reward', 'public');
+            $rewardVoucher->update($dataUpdate);
+
+            $rewardVoucher->produks()->sync($validated['produk_ids']);
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($rewardVoucher)
+                ->withProperties($rewardVoucher->toArray() + ['produk_ids' => $validated['produk_ids']])
+                ->log('Memperbarui reward voucher: ' . $rewardVoucher->nama);
+
+            return redirect()->route('reward-voucher.index')->with('success', 'Reward voucher berhasil diperbarui.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
-
-        $rewardVoucher->update($dataUpdate);
-
-        $rewardVoucher->produks()->sync($validated['produk_ids']);
-
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($rewardVoucher)
-            ->withProperties($rewardVoucher->toArray() + ['produk_ids' => $validated['produk_ids']])
-            ->log('Memperbarui reward voucher: ' . $rewardVoucher->nama);
-
-        return redirect()->route('reward-voucher.index')->with('success', 'Reward voucher berhasil diperbarui.');
     }
 
     public function toggleStatus(RewardKatalog $rewardVoucher)
     {
-        abort_unless($rewardVoucher->jenis === 'voucher', 404);
+        try {
+            abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
-        $rewardVoucher->status_aktif = !$rewardVoucher->status_aktif;
-        $rewardVoucher->save();
+            $rewardVoucher->status_aktif = !$rewardVoucher->status_aktif;
+            $rewardVoucher->save();
 
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($rewardVoucher)
-            ->withProperties(['status_aktif' => $rewardVoucher->status_aktif])
-            ->log('Mengubah status reward voucher: ' . $rewardVoucher->nama);
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($rewardVoucher)
+                ->withProperties(['status_aktif' => $rewardVoucher->status_aktif])
+                ->log('Mengubah status reward voucher: ' . $rewardVoucher->nama);
 
-        return back()->with('success', 'Status reward voucher berhasil diubah.');
+            return back()->with('success', 'Status reward voucher berhasil diubah.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function destroy(RewardKatalog $rewardVoucher)
     {
-        abort_unless($rewardVoucher->jenis === 'voucher', 404);
+        try {
+            abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
-        if ($rewardVoucher->penukaran()->exists()) {
-            return back()->with('error', 'Voucher ini sudah pernah ditukar oleh member dan tidak bisa dihapus. Nonaktifkan saja agar riwayat penukaran tetap tersimpan.');
+            if ($rewardVoucher->penukaran()->exists()) {
+                return back()->with('error', 'Voucher ini sudah pernah ditukar oleh member dan tidak bisa dihapus. Nonaktifkan saja agar riwayat penukaran tetap tersimpan.');
+            }
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($rewardVoucher)
+                ->withProperties($rewardVoucher->toArray())
+                ->log('Menghapus reward voucher: ' . $rewardVoucher->nama);
+
+            if ($rewardVoucher->gambar && Storage::disk('public')->exists($rewardVoucher->gambar)) {
+                Storage::disk('public')->delete($rewardVoucher->gambar);
+            }
+
+            $rewardVoucher->delete();
+
+            return back()->with('success', 'Reward voucher berhasil dihapus.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
-
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($rewardVoucher)
-            ->withProperties($rewardVoucher->toArray())
-            ->log('Menghapus reward voucher: ' . $rewardVoucher->nama);
-
-        if ($rewardVoucher->gambar && Storage::disk('public')->exists($rewardVoucher->gambar)) {
-            Storage::disk('public')->delete($rewardVoucher->gambar);
-        }
-
-        $rewardVoucher->delete();
-
-        return back()->with('success', 'Reward voucher berhasil dihapus.');
     }
 
     private function validasi(Request $request): array

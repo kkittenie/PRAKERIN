@@ -14,59 +14,74 @@ class BersihkanDiskonLabelRusak extends Command
 
     public function handle(): int
     {
-        $dryRun = (bool) $this->option('dry-run');
-        $totalDiperbaiki = 0;
+        try {
+            $dryRun = (bool) $this->option('dry-run');
+            $totalDiperbaiki = 0;
 
-        foreach ([Transaksi::class, PesananDitahan::class] as $modelClass) {
-            $query = $modelClass::whereNotNull('diskon_label')->where('diskon_label', '!=', '');
+            foreach ([Transaksi::class, PesananDitahan::class] as $modelClass) {
+                $query = $modelClass::whereNotNull('diskon_label')->where('diskon_label', '!=', '');
 
-            $query->each(function ($record) use (&$totalDiperbaiki, $dryRun, $modelClass) {
-                $decoded = json_decode($record->diskon_label, true);
-                if (!is_array($decoded)) {
-                    return;
-                }
-
-                $berubah = false;
-                foreach ($decoded as &$item) {
-                    if (!isset($item['nama']) || !is_string($item['nama'])) {
-                        continue;
+                $query->each(function ($record) use (&$totalDiperbaiki, $dryRun, $modelClass) {
+                    $decoded = json_decode($record->diskon_label, true);
+                    if (!is_array($decoded)) {
+                        return;
                     }
 
-                    if (preg_match('/\s*\((\d+(?:,\d+)?)%\)\s*$/', $item['nama'], $m)) {
-                        $persen = (float) str_replace(',', '.', $m[1]);
-                        if ($persen > 100) {
-                            $item['nama'] = trim(preg_replace('/\s*\(\d+(?:,\d+)?%\)\s*$/', '', $item['nama']));
-                            $berubah = true;
+                    $berubah = false;
+                    foreach ($decoded as &$item) {
+                        if (!isset($item['nama']) || !is_string($item['nama'])) {
+                            continue;
+                        }
+
+                        if (preg_match('/\s*\((\d+(?:,\d+)?)%\)\s*$/', $item['nama'], $m)) {
+                            $persen = (float) str_replace(',', '.', $m[1]);
+                            if ($persen > 100) {
+                                $item['nama'] = trim(preg_replace('/\s*\(\d+(?:,\d+)?%\)\s*$/', '', $item['nama']));
+                                $berubah = true;
+                            }
                         }
                     }
-                }
-                unset($item);
+                    unset($item);
 
-                if ($berubah) {
-                    $totalDiperbaiki++;
-                    $labelBaru = json_encode($decoded);
-                    $this->line(sprintf(
-                        '[%s#%d] %s -> %s',
-                        class_basename($modelClass),
-                        $record->id,
-                        $record->diskon_label,
-                        $labelBaru
-                    ));
+                    if ($berubah) {
+                        $totalDiperbaiki++;
+                        $labelBaru = json_encode($decoded);
+                        $this->line(sprintf(
+                            '[%s#%d] %s -> %s',
+                            class_basename($modelClass),
+                            $record->id,
+                            $record->diskon_label,
+                            $labelBaru
+                        ));
 
-                    if (!$dryRun) {
-                        $record->diskon_label = $labelBaru;
-                        $record->save();
+                        if (!$dryRun) {
+                            $record->diskon_label = $labelBaru;
+                            $record->save();
+                        }
                     }
-                }
-            });
-        }
+                });
+            }
 
-        if ($totalDiperbaiki === 0) {
-            $this->info('Tidak ada diskon_label yang rusak ditemukan.');
-        } else {
-            $this->info(($dryRun ? '[DRY RUN] ' : '') . "Selesai. {$totalDiperbaiki} baris diperbaiki.");
-        }
+            if ($totalDiperbaiki === 0) {
+                $this->info('Tidak ada diskon_label yang rusak ditemukan.');
+            } else {
+                $this->info(($dryRun ? '[DRY RUN] ' : '') . "Selesai. {$totalDiperbaiki} baris diperbaiki.");
+            }
 
-        return Command::SUCCESS;
+            return Command::SUCCESS;
+        } catch (\Throwable $e) {
+            activity()
+                ->withProperties([
+                    'error_message' => $e->getMessage(),
+                    'exception' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'command' => $this->signature,
+                ])
+                ->log('Error pada command diskon:bersihkan-label: ' . $e->getMessage());
+
+            $this->error('Gagal membersihkan diskon label: ' . $e->getMessage());
+            return Command::FAILURE;
+        }
     }
 }

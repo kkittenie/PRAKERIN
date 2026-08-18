@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MemberLevel;
+use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -24,102 +25,125 @@ class MemberLevelController extends Controller
                 'title' => 'Aturan Naik Level',
                 'levels' => $levels,
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error index MemberLevelController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data level membership.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
     public function create()
     {
-        return view('pages.member-level.create', [
-            'title' => 'Tambah Level Membership',
-        ]);
+        try {
+            return view('pages.member-level.create', [
+                'title' => 'Tambah Level Membership',
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function store(Request $request)
     {
-        $validated = $this->validasi($request);
+        try {
+            $validated = $this->validasi($request);
 
-        $level = MemberLevel::create([
-            'nama_level' => $validated['nama_level'],
-            'minimal_poin' => $validated['minimal_poin'],
-            'warna_badge' => $validated['warna_badge'] ?? 'gray',
-            'status_aktif' => $request->boolean('status_aktif'),
-        ]);
+            $level = MemberLevel::create([
+                'nama_level' => $validated['nama_level'],
+                'minimal_poin' => $validated['minimal_poin'],
+                'warna_badge' => $validated['warna_badge'] ?? 'gray',
+                'status_aktif' => $request->boolean('status_aktif'),
+            ]);
 
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($level)
-            ->withProperties($level->toArray())
-            ->log('Menambahkan level membership: ' . $level->nama_level);
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($level)
+                ->withProperties($level->toArray())
+                ->log('Menambahkan level membership: ' . $level->nama_level);
 
-        return redirect()->route('member-level.index')->with('success', 'Level membership berhasil ditambahkan.');
+            return redirect()->route('member-level.index')->with('success', 'Level membership berhasil ditambahkan.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function edit(MemberLevel $memberLevel)
     {
-        return view('pages.member-level.edit', [
-            'title' => 'Edit Level Membership',
-            'level' => $memberLevel,
-        ]);
+        try {
+            return view('pages.member-level.edit', [
+                'title' => 'Edit Level Membership',
+                'level' => $memberLevel,
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function update(Request $request, MemberLevel $memberLevel)
     {
-        $validated = $this->validasi($request, $memberLevel->id);
+        try {
+            $validated = $this->validasi($request, $memberLevel->id);
 
-        $memberLevel->update([
-            'nama_level' => $validated['nama_level'],
-            'minimal_poin' => $validated['minimal_poin'],
-            'warna_badge' => $validated['warna_badge'] ?? $memberLevel->warna_badge,
-            'status_aktif' => $request->boolean('status_aktif'),
-        ]);
+            $memberLevel->update([
+                'nama_level' => $validated['nama_level'],
+                'minimal_poin' => $validated['minimal_poin'],
+                'warna_badge' => $validated['warna_badge'] ?? $memberLevel->warna_badge,
+                'status_aktif' => $request->boolean('status_aktif'),
+            ]);
 
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($memberLevel)
-            ->withProperties($memberLevel->toArray())
-            ->log('Memperbarui level membership: ' . $memberLevel->nama_level);
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($memberLevel)
+                ->withProperties($memberLevel->toArray())
+                ->log('Memperbarui level membership: ' . $memberLevel->nama_level);
 
-        return redirect()->route('member-level.index')->with('success', 'Level membership berhasil diperbarui.');
+            return redirect()->route('member-level.index')->with('success', 'Level membership berhasil diperbarui.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function toggleStatus(MemberLevel $memberLevel)
     {
-        $akanDinonaktifkan = $memberLevel->status_aktif;
+        try {
+            $akanDinonaktifkan = $memberLevel->status_aktif;
 
-        if ($akanDinonaktifkan && MemberLevel::aktif()->count() <= 1) {
-            return back()->with('error', 'Tidak bisa menonaktifkan level ini karena ini satu-satunya level aktif. Minimal harus ada 1 level aktif supaya semua member tetap punya level.');
+            if ($akanDinonaktifkan && MemberLevel::aktif()->count() <= 1) {
+                return back()->with('error', 'Tidak bisa menonaktifkan level ini karena ini satu-satunya level aktif. Minimal harus ada 1 level aktif supaya semua member tetap punya level.');
+            }
+
+            $memberLevel->status_aktif = !$memberLevel->status_aktif;
+            $memberLevel->save();
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($memberLevel)
+                ->withProperties(['status_aktif' => $memberLevel->status_aktif])
+                ->log('Mengubah status level membership: ' . $memberLevel->nama_level);
+
+            return back()->with('success', 'Status level membership berhasil diubah.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
-
-        $memberLevel->status_aktif = !$memberLevel->status_aktif;
-        $memberLevel->save();
-
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($memberLevel)
-            ->withProperties(['status_aktif' => $memberLevel->status_aktif])
-            ->log('Mengubah status level membership: ' . $memberLevel->nama_level);
-
-        return back()->with('success', 'Status level membership berhasil diubah.');
     }
 
     public function destroy(MemberLevel $memberLevel)
     {
-        if ($memberLevel->status_aktif && MemberLevel::aktif()->count() <= 1) {
-            return back()->with('error', 'Tidak bisa menghapus level ini karena ini satu-satunya level aktif. Minimal harus ada 1 level aktif supaya semua member tetap punya level.');
+        try {
+            if ($memberLevel->status_aktif && MemberLevel::aktif()->count() <= 1) {
+                return back()->with('error', 'Tidak bisa menghapus level ini karena ini satu-satunya level aktif. Minimal harus ada 1 level aktif supaya semua member tetap punya level.');
+            }
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($memberLevel)
+                ->withProperties($memberLevel->toArray())
+                ->log('Menghapus level membership: ' . $memberLevel->nama_level);
+
+            $memberLevel->delete();
+
+            return back()->with('success', 'Level membership berhasil dihapus.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
-
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($memberLevel)
-            ->withProperties($memberLevel->toArray())
-            ->log('Menghapus level membership: ' . $memberLevel->nama_level);
-
-        $memberLevel->delete();
-
-        return back()->with('success', 'Level membership berhasil dihapus.');
     }
 
     private function validasi(Request $request, ?int $ignoreId = null): array

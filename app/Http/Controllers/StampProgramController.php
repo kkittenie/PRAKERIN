@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Produk;
 use App\Models\StampProgram;
 use App\Models\StampProgramHadiah;
+use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -30,179 +31,205 @@ class StampProgramController extends Controller
                 'title' => 'Reward Stamp',
                 'programs' => $programs,
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error index StampProgramController: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data program stamp.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
     public function create()
     {
-        $produks = Produk::where('status_aktif', true)->orderBy('nama_produk')->get();
+        try {
+            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk')->get();
 
-        return view('pages.stamp-program.create', [
-            'title' => 'Tambah Reward Stamp',
-            'produks' => $produks,
-        ]);
+            return view('pages.stamp-program.create', [
+                'title' => 'Tambah Reward Stamp',
+                'produks' => $produks,
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function store(Request $request)
     {
-        $validated = $this->validasi($request);
+        try {
+            $validated = $this->validasi($request);
 
-        DB::transaction(function () use ($validated, $request) {
-            if (!empty($validated['status_aktif'])) {
-                StampProgram::where('status_aktif', true)->update(['status_aktif' => false]);
-            }
+            DB::transaction(function () use ($validated, $request) {
+                if (!empty($validated['status_aktif'])) {
+                    StampProgram::where('status_aktif', true)->update(['status_aktif' => false]);
+                }
 
-            $program = StampProgram::create([
-                'nama_program' => $validated['nama_program'],
-                'deskripsi' => $validated['deskripsi'] ?? null,
-                'minimal_pembelian' => $validated['minimal_pembelian'],
-                'jumlah_stamp_dibutuhkan' => $validated['jumlah_stamp_dibutuhkan'],
-                'maksimal_redeem' => $validated['maksimal_redeem'] ?? null,
-                'tanggal_mulai' => $validated['tanggal_mulai'] ?? null,
-                'tanggal_berakhir' => $validated['tanggal_berakhir'] ?? null,
-                'status_aktif' => (bool) ($validated['status_aktif'] ?? false),
-            ]);
-
-            $produkIds = $request->input('produk_hadiah', []);
-            $jumlahHadiah = $request->input('jumlah_hadiah', []);
-
-            foreach ($produkIds as $index => $produkId) {
-                StampProgramHadiah::create([
-                    'stamp_program_id' => $program->id,
-                    'produk_id' => $produkId,
-                    'jumlah' => $jumlahHadiah[$index] ?? 1,
+                $program = StampProgram::create([
+                    'nama_program' => $validated['nama_program'],
+                    'deskripsi' => $validated['deskripsi'] ?? null,
+                    'minimal_pembelian' => $validated['minimal_pembelian'],
+                    'jumlah_stamp_dibutuhkan' => $validated['jumlah_stamp_dibutuhkan'],
+                    'maksimal_redeem' => $validated['maksimal_redeem'] ?? null,
+                    'tanggal_mulai' => $validated['tanggal_mulai'] ?? null,
+                    'tanggal_berakhir' => $validated['tanggal_berakhir'] ?? null,
+                    'status_aktif' => (bool) ($validated['status_aktif'] ?? false),
                 ]);
-            }
 
-            activity()
-                ->causedBy(auth()->user())
-                ->performedOn($program)
-                ->withProperties($program->toArray())
-                ->log('Menambahkan program stamp: ' . $program->nama_program);
-        });
+                $produkIds = $request->input('produk_hadiah', []);
+                $jumlahHadiah = $request->input('jumlah_hadiah', []);
 
-        return redirect()->route('stamp-program.index')->with('success', 'Program stamp berhasil ditambahkan.');
+                foreach ($produkIds as $index => $produkId) {
+                    StampProgramHadiah::create([
+                        'stamp_program_id' => $program->id,
+                        'produk_id' => $produkId,
+                        'jumlah' => $jumlahHadiah[$index] ?? 1,
+                    ]);
+                }
+
+                activity()
+                    ->causedBy(auth()->user())
+                    ->performedOn($program)
+                    ->withProperties($program->toArray())
+                    ->log('Menambahkan program stamp: ' . $program->nama_program);
+            });
+
+            return redirect()->route('stamp-program.index')->with('success', 'Program stamp berhasil ditambahkan.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function show(StampProgram $stampProgram)
     {
-        $stampProgram->load(['hadiah.produk', 'redemptions']);
+        try {
+            $stampProgram->load(['hadiah.produk', 'redemptions']);
 
-        return view('pages.stamp-program.show', [
-            'title' => 'Detail Reward Stamp',
-            'program' => $stampProgram,
-        ]);
+            return view('pages.stamp-program.show', [
+                'title' => 'Detail Reward Stamp',
+                'program' => $stampProgram,
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function edit(StampProgram $stampProgram)
     {
-        $produks = Produk::where('status_aktif', true)->orderBy('nama_produk')->get();
-        $stampProgram->load('hadiah.produk');
+        try {
+            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk')->get();
+            $stampProgram->load('hadiah.produk');
 
-        return view('pages.stamp-program.edit', [
-            'title' => 'Edit Reward Stamp',
-            'program' => $stampProgram,
-            'produks' => $produks,
-            'hadiahTerpilih' => $stampProgram->hadiah,
-        ]);
+            return view('pages.stamp-program.edit', [
+                'title' => 'Edit Reward Stamp',
+                'program' => $stampProgram,
+                'produks' => $produks,
+                'hadiahTerpilih' => $stampProgram->hadiah,
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     public function update(Request $request, StampProgram $stampProgram)
     {
-        $validated = $this->validasi($request);
+        try {
+            $validated = $this->validasi($request);
 
-        DB::transaction(function () use ($validated, $request, $stampProgram) {
-            if (!empty($validated['status_aktif'])) {
-                StampProgram::where('id', '!=', $stampProgram->id)
-                    ->where('status_aktif', true)
-                    ->update(['status_aktif' => false]);
+            DB::transaction(function () use ($validated, $request, $stampProgram) {
+                if (!empty($validated['status_aktif'])) {
+                    StampProgram::where('id', '!=', $stampProgram->id)
+                        ->where('status_aktif', true)
+                        ->update(['status_aktif' => false]);
+                }
+
+                $stampProgram->update([
+                    'nama_program' => $validated['nama_program'],
+                    'deskripsi' => $validated['deskripsi'] ?? null,
+                    'minimal_pembelian' => $validated['minimal_pembelian'],
+                    'jumlah_stamp_dibutuhkan' => $validated['jumlah_stamp_dibutuhkan'],
+                    'maksimal_redeem' => $validated['maksimal_redeem'] ?? null,
+                    'tanggal_mulai' => $validated['tanggal_mulai'] ?? null,
+                    'tanggal_berakhir' => $validated['tanggal_berakhir'] ?? null,
+                    'status_aktif' => (bool) ($validated['status_aktif'] ?? false),
+                ]);
+
+                StampProgramHadiah::where('stamp_program_id', $stampProgram->id)->delete();
+
+                $produkIds = $request->input('produk_hadiah', []);
+                $jumlahHadiah = $request->input('jumlah_hadiah', []);
+
+                foreach ($produkIds as $index => $produkId) {
+                    StampProgramHadiah::create([
+                        'stamp_program_id' => $stampProgram->id,
+                        'produk_id' => $produkId,
+                        'jumlah' => $jumlahHadiah[$index] ?? 1,
+                    ]);
+                }
+
+                activity()
+                    ->causedBy(auth()->user())
+                    ->performedOn($stampProgram)
+                    ->withProperties($stampProgram->toArray())
+                    ->log('Memperbarui program stamp: ' . $stampProgram->nama_program);
+            });
+
+            return redirect()->route('stamp-program.index')->with('success', 'Program stamp berhasil diperbarui.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    public function toggleStatus(StampProgram $stampProgram)
+    {
+        try {
+            $akanAktif = !$stampProgram->status_aktif;
+
+            if ($akanAktif && $stampProgram->tanggal_berakhir && now()->startOfDay()->gt($stampProgram->tanggal_berakhir)) {
+                return back()->with('error', 'Program "' . $stampProgram->nama_program . '" tidak bisa diaktifkan karena tanggal berakhirnya (' . $stampProgram->tanggal_berakhir->format('d-m-Y') . ') sudah lewat. Ubah dulu tanggal berakhirnya lewat menu Edit.');
             }
 
-            $stampProgram->update([
-                'nama_program' => $validated['nama_program'],
-                'deskripsi' => $validated['deskripsi'] ?? null,
-                'minimal_pembelian' => $validated['minimal_pembelian'],
-                'jumlah_stamp_dibutuhkan' => $validated['jumlah_stamp_dibutuhkan'],
-                'maksimal_redeem' => $validated['maksimal_redeem'] ?? null,
-                'tanggal_mulai' => $validated['tanggal_mulai'] ?? null,
-                'tanggal_berakhir' => $validated['tanggal_berakhir'] ?? null,
-                'status_aktif' => (bool) ($validated['status_aktif'] ?? false),
-            ]);
+            DB::transaction(function () use ($stampProgram, $akanAktif) {
+                if ($akanAktif) {
+                    StampProgram::where('id', '!=', $stampProgram->id)
+                        ->where('status_aktif', true)
+                        ->update(['status_aktif' => false]);
+                }
 
-            StampProgramHadiah::where('stamp_program_id', $stampProgram->id)->delete();
+                $stampProgram->status_aktif = $akanAktif;
+                $stampProgram->save();
 
-            $produkIds = $request->input('produk_hadiah', []);
-            $jumlahHadiah = $request->input('jumlah_hadiah', []);
+                activity()
+                    ->causedBy(auth()->user())
+                    ->performedOn($stampProgram)
+                    ->withProperties(['status_aktif' => $stampProgram->status_aktif])
+                    ->log('Mengubah status program stamp: ' . $stampProgram->nama_program);
+            });
 
-            foreach ($produkIds as $index => $produkId) {
-                StampProgramHadiah::create([
-                    'stamp_program_id' => $stampProgram->id,
-                    'produk_id' => $produkId,
-                    'jumlah' => $jumlahHadiah[$index] ?? 1,
-                ]);
+            $pesan = $akanAktif
+                ? 'Program stamp diaktifkan. Program aktif lainnya (jika ada) otomatis dinonaktifkan karena cuma 1 yang boleh aktif.'
+                : 'Program stamp dinonaktifkan.';
+
+            return back()->with('success', $pesan);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    public function destroy(StampProgram $stampProgram)
+    {
+        try {
+            if ($stampProgram->redemptions()->exists()) {
+                return back()->with('error', 'Program stamp ini sudah pernah ditukar member dan tidak bisa dihapus. Nonaktifkan saja agar riwayat penukaran tetap tersimpan.');
             }
 
             activity()
                 ->causedBy(auth()->user())
                 ->performedOn($stampProgram)
                 ->withProperties($stampProgram->toArray())
-                ->log('Memperbarui program stamp: ' . $stampProgram->nama_program);
-        });
+                ->log('Menghapus program stamp: ' . $stampProgram->nama_program);
 
-        return redirect()->route('stamp-program.index')->with('success', 'Program stamp berhasil diperbarui.');
-    }
+            $stampProgram->delete();
 
-    public function toggleStatus(StampProgram $stampProgram)
-    {
-        $akanAktif = !$stampProgram->status_aktif;
-
-        // Jangan biarkan program yang masa berlakunya sudah lewat diaktifkan dari toggle index.
-        if ($akanAktif && $stampProgram->tanggal_berakhir && now()->startOfDay()->gt($stampProgram->tanggal_berakhir)) {
-            return back()->with('error', 'Program "' . $stampProgram->nama_program . '" tidak bisa diaktifkan karena tanggal berakhirnya (' . $stampProgram->tanggal_berakhir->format('d-m-Y') . ') sudah lewat. Ubah dulu tanggal berakhirnya lewat menu Edit.');
+            return back()->with('success', 'Program stamp berhasil dihapus.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
-
-        DB::transaction(function () use ($stampProgram, $akanAktif) {
-            if ($akanAktif) {
-                StampProgram::where('id', '!=', $stampProgram->id)
-                    ->where('status_aktif', true)
-                    ->update(['status_aktif' => false]);
-            }
-
-            $stampProgram->status_aktif = $akanAktif;
-            $stampProgram->save();
-
-            activity()
-                ->causedBy(auth()->user())
-                ->performedOn($stampProgram)
-                ->withProperties(['status_aktif' => $stampProgram->status_aktif])
-                ->log('Mengubah status program stamp: ' . $stampProgram->nama_program);
-        });
-
-        $pesan = $akanAktif
-            ? 'Program stamp diaktifkan. Program aktif lainnya (jika ada) otomatis dinonaktifkan karena cuma 1 yang boleh aktif.'
-            : 'Program stamp dinonaktifkan.';
-
-        return back()->with('success', $pesan);
-    }
-
-    public function destroy(StampProgram $stampProgram)
-    {
-        if ($stampProgram->redemptions()->exists()) {
-            return back()->with('error', 'Program stamp ini sudah pernah ditukar member dan tidak bisa dihapus. Nonaktifkan saja agar riwayat penukaran tetap tersimpan.');
-        }
-
-        activity()
-            ->causedBy(auth()->user())
-            ->performedOn($stampProgram)
-            ->withProperties($stampProgram->toArray())
-            ->log('Menghapus program stamp: ' . $stampProgram->nama_program);
-
-        $stampProgram->delete();
-
-        return back()->with('success', 'Program stamp berhasil dihapus.');
     }
 
     private function validasi(Request $request): array

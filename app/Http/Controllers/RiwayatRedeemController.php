@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PenukaranPoin;
+use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -58,23 +59,21 @@ class RiwayatRedeemController extends Controller
                 'riwayat' => $riwayat,
                 'ringkasan' => $ringkasan,
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error index RiwayatRedeemController: '.$e->getMessage());
-
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data riwayat redeem.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
     }
 
     public function updateStatus(Request $request, PenukaranPoin $riwayatRedeem)
     {
-        $validated = $request->validate([
-            'status' => 'required|in:'.implode(',', self::STATUS_BISA_DIUBAH),
-        ], [
-            'status.required' => 'Status wajib dipilih.',
-            'status.in' => 'Status tidak valid.',
-        ]);
-
         try {
+            $validated = $request->validate([
+                'status' => 'required|in:'.implode(',', self::STATUS_BISA_DIUBAH),
+            ], [
+                'status.required' => 'Status wajib dipilih.',
+                'status.in' => 'Status tidak valid.',
+            ]);
+
             DB::transaction(function () use ($validated, $riwayatRedeem) {
                 $penukaran = PenukaranPoin::with('reward')
                     ->lockForUpdate()
@@ -96,8 +95,6 @@ class RiwayatRedeemController extends Controller
                     return;
                 }
 
-                // Dibatalkan: kembalikan poin ke member dan stok reward (kalau stoknya terbatas)
-                // supaya reward tidak hilang percuma saat proses redeem dibatalkan admin.
                 $member = $penukaran->member()->lockForUpdate()->first();
                 $member?->increment('poin', $penukaran->poin_terpakai);
 
@@ -112,16 +109,10 @@ class RiwayatRedeemController extends Controller
                     ->performedOn($penukaran)
                     ->log('Membatalkan redeem '.$penukaran->kode_redeem.', poin dikembalikan ke member');
             });
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
-            // Dilempar oleh abort_unless() di atas (mis. status sudah diproses) —
-            // biarkan pesan aslinya sampai ke user, jangan ditutupi pesan generik.
-            return redirect()->back()->with('error', $e->getMessage());
-        } catch (\Exception $e) {
-            Log::error('Error updateStatus RiwayatRedeemController: '.$e->getMessage());
 
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui status redeem.');
+            return redirect()->back()->with('success', 'Status redeem berhasil diperbarui.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
-
-        return redirect()->back()->with('success', 'Status redeem berhasil diperbarui.');
     }
 }

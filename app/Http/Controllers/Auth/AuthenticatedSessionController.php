@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Support\ActivityLogHelper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,56 +15,67 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): View
+    public function create()
     {
-        return view('pages.auth.signin');
+        try {
+            return view('pages.auth.signin');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request)
     {
-        $request->authenticate();
+        try {
+            $request->authenticate();
 
-        $request->session()->regenerate();
+            $request->session()->regenerate();
 
-        $user = Auth::user();
+            $user = Auth::user();
 
-        activity()
-            ->causedBy($user)
-            ->performedOn($user)
-            ->withProperties([
-                'user' => $user->name,
-                'email' => $user->email,
-            ])
-            ->log('Login ke sistem');
+            activity()
+                ->causedBy($user)
+                ->performedOn($user)
+                ->withProperties([
+                    'user' => $user->name,
+                    'email' => $user->email,
+                ])
+                ->log('Login ke sistem');
 
-        return redirect()->intended(route('dashboard', absolute: false));
+            return redirect()->intended(route('dashboard', absolute: false));
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request)
     {
+        try {
+            $user = Auth::user();
+            activity()
+                ->causedBy($user)
+                ->performedOn($user)
+                ->withProperties([
+                    'user' => $user->name,
+                    'email' => $user->email,
+                ])
+                ->log('Logout dari sistem');
 
-        $user = Auth::user();
-        activity()
-            ->causedBy($user)
-            ->performedOn($user)
-            ->withProperties([
-                'user' => $user->name,
-                'email' => $user->email,
-            ])
-            ->log('Logout dari sistem');
+            Auth::guard('web')->logout();
 
-        Auth::guard('web')->logout();
+            $request->session()->invalidate();
 
-        $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
-        $request->session()->regenerateToken();
-
-        return redirect('/');
+            return redirect('/');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 }

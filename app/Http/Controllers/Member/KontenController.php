@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Models\KontenStatis;
+use App\Support\ActivityLogHelper;
 
 class KontenController extends Controller
 {
@@ -15,14 +16,18 @@ class KontenController extends Controller
 
     public function show($slug)
     {
-        if (!array_key_exists($slug, $this->judulMap)) {
-            abort(404);
+        try {
+            if (!array_key_exists($slug, $this->judulMap)) {
+                abort(404);
+            }
+
+            $konten = KontenStatis::where('slug', $slug)->first();
+
+            $judulHalaman = $this->judulMap[$slug];
+
+            return view('member.konten-statis', compact('konten', 'judulHalaman', 'slug'));
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
         }
-
-        $konten = KontenStatis::where('slug', $slug)->first();
-
-        $judulHalaman = $this->judulMap[$slug];
-
-        return view('member.konten-statis', compact('konten', 'judulHalaman', 'slug'));
     }
 }

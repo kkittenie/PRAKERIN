@@ -9,10 +9,14 @@ class ActivityLogController extends Controller
 {
     public function index()
     {
-        $logs = Activity::with(['causer.roles'])
-            ->latest()
-            ->paginate(15);
+        try {
+            $logs = Activity::with(['causer.roles'])
+                ->latest()
+                ->paginate(15);
 
-        return view('pages.activity.index', compact('logs'));
+            return view('pages.activity.index', compact('logs'));
+        } catch (\Throwable $e) {
+            return \App\Support\ActivityLogHelper::handleException($e);
+        }
     }
 }

@@ -28,16 +28,31 @@ class UpdateStatusProduksi extends Command
      */
     public function handle()
     {
-        Produksi::where('status', '!=', 'kadaluarsa')
-            ->get()
-            ->each(function ($produksi) {
-                if ($produksi->is_kadaluarsa) {
-                    $produksi->status = 'kadaluarsa';
-                    $produksi->save();
-                }
-            });
+        try {
+            Produksi::where('status', '!=', 'kadaluarsa')
+                ->get()
+                ->each(function ($produksi) {
+                    if ($produksi->is_kadaluarsa) {
+                        $produksi->status = 'kadaluarsa';
+                        $produksi->save();
+                    }
+                });
 
-        $this->info('Status produksi telah diperbarui');
-        return Command::SUCCESS;
+            $this->info('Status produksi telah diperbarui');
+            return Command::SUCCESS;
+        } catch (\Throwable $e) {
+            activity()
+                ->withProperties([
+                    'error_message' => $e->getMessage(),
+                    'exception' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'command' => $this->signature,
+                ])
+                ->log('Error pada command produksi:update-status: ' . $e->getMessage());
+
+            $this->error('Gagal memperbarui status produksi: ' . $e->getMessage());
+            return Command::FAILURE;
+        }
     }
 }
