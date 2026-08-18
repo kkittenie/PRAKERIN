@@ -16,7 +16,11 @@ use App\Http\Controllers\Member\SettingsController;
 use App\Http\Controllers\Member\StampController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('member')->name('member.')->group(function () {
+Route::prefix('mobile')->name('member.')->group(function () {
+
+    Route::get('/', function () {
+        return redirect()->route('member.welcome');
+    });
 
     Route::get('/welcome', [AuthController::class, 'welcome'])->name('welcome');
 

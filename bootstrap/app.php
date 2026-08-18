@@ -29,7 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->redirectGuestsTo(function ($request) {
-            return $request->is('member/*')
+            return $request->is('mobile/*')
                 ? route('member.login')
                 : route('login');
         });

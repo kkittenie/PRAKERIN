@@ -250,7 +250,7 @@ class AuthController extends Controller
 
             $intendedUrl = $request->session()->pull('url.intended');
 
-            if ($intendedUrl && str_starts_with(parse_url($intendedUrl, PHP_URL_PATH) ?? '', '/member')) {
+            if ($intendedUrl && str_starts_with(parse_url($intendedUrl, PHP_URL_PATH) ?? '', '/mobile')) {
                 return redirect()->to($intendedUrl)->with('success', 'Berhasil masuk. Selamat datang kembali, ' . Auth::guard('member')->user()->nama . '!');
             }
 
