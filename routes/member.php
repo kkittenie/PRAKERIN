@@ -6,6 +6,7 @@ use App\Http\Controllers\Member\BundlingController;
 use App\Http\Controllers\Member\CheckoutController;
 use App\Http\Controllers\Member\DashboardController;
 use App\Http\Controllers\Member\KeranjangController;
+use App\Http\Controllers\Member\KontenController;
 use App\Http\Controllers\Member\MenuController;
 use App\Http\Controllers\Member\PesananController;
 use App\Http\Controllers\Member\ProdukController;
@@ -22,6 +23,7 @@ Route::prefix('member')->name('member.')->group(function () {
     Route::get('/beranda', [DashboardController::class, 'index'])->name('beranda');
     Route::get('/menu', [MenuController::class, 'index'])->name('menu');
     Route::get('/akun', [AkunController::class, 'index'])->name('akun');
+    Route::get('/info/{slug}', [KontenController::class, 'show'])->name('konten.show');
 
     Route::get('/produk/{produk}', [ProdukController::class, 'show'])->name('produk.show');
     Route::get('/bundling/{bundling}', [BundlingController::class, 'show'])->name('bundling.show');

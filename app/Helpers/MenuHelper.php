@@ -34,6 +34,7 @@ class MenuHelper
                     ['name' => 'Bahan Baku', 'path' => '/bahan-baku', 'permission' => 'lihat_stok'],
                     ['name' => 'Banner', 'path' => '/banner', 'permission' => 'lihat_banner'],
                     ['name' => 'Pengaturan Pajak', 'path' => '/pengaturan-pajak', 'permission' => 'lihat_pajak'],
+                    ['name' => 'Konten Statis', 'path' => '/konten-statis'],
                 ]
             ],
             [

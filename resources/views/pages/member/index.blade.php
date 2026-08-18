@@ -236,14 +236,6 @@
                             </td>
 
 
-                            {{-- Tanggal Lahir --}}
-                            <td class="hidden py-3.5 text-gray-600 lg:table-cell dark:text-gray-400">
-                                {{ $member->tanggal_lahir
-                                    ? \Carbon\Carbon::parse($member->tanggal_lahir)->format('d/m/Y')
-                                    : '-' }}
-                            </td>
-
-
                             {{-- Poin --}}
                             <td class="hidden py-3.5 text-gray-600 sm:table-cell dark:text-gray-400">
                                 {{ number_format($member->poin ?? 0, 0, ',', '.') }}
@@ -289,7 +281,7 @@
 
                                             @csrf
 
-                                            <button
+                                            <!-- <button
                                                 type="button"
                                                 @click="bukaModalReset(
                                                     $el.closest('form'),
@@ -300,7 +292,7 @@
 
                                                 Reset Password
 
-                                            </button>
+                                            </button> -->
 
                                         </form>
 

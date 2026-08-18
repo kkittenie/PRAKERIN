@@ -156,6 +156,10 @@
                 </div>
 
                 <p class="text-center text-xs leading-relaxed text-gray-500 mt-6">
+                    Dengan mendaftar, kamu menyetujui <a href="{{ route('member.konten.show', 'terms-conditions') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="font-bold text-brand-800 hover:underline">Terms & Condition</a> dan <a href="{{ route('member.konten.show', 'privacy-policy') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="font-bold text-brand-800 hover:underline">Privacy Policy</a>.
+                </p>
+
+                <p class="text-center text-xs leading-relaxed text-gray-500 mt-2">
                     Sudah punya akun member? <a href="{{ route('member.login') }}"
                         onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
                         class="font-bold text-brand-800 hover:underline">Masuk di sini</a>

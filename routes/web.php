@@ -29,6 +29,7 @@ use App\Http\Controllers\StampRedemptionKasirController;
 use App\Http\Controllers\PesananPickupController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\PengaturanPajakController;
+use App\Http\Controllers\KontenStatisController;
 
 require __DIR__ . '/member.php';
 
@@ -110,6 +111,11 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('permission:hapus_pajak')->group(function () {
         Route::delete('/pengaturan-pajak/{id}', [PengaturanPajakController::class, 'destroy'])->name('pengaturan-pajak.destroy');
     });
+
+    // Konten Statis
+    Route::get('/konten-statis', [KontenStatisController::class, 'index'])->name('konten-statis.index');
+    Route::get('/konten-statis/{slug}/edit', [KontenStatisController::class, 'edit'])->name('konten-statis.edit');
+    Route::put('/konten-statis/{slug}', [KontenStatisController::class, 'update'])->name('konten-statis.update');
 
     Route::patch('/produk/{produk}/toggle-status', [ProdukController::class, 'toggleStatus'])->name('produk.toggle-status');
 

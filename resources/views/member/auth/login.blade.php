@@ -109,7 +109,7 @@
 
         {{-- Bottom Terms Notice --}}
         <p class="text-center text-xs leading-relaxed text-gray-500 mt-6">
-            By signing in to Saisho app, you agree to the <a href="#" class="font-bold text-brand-800 hover:underline">Terms & Condition</a> and <a href="#" class="font-bold text-brand-800 hover:underline">Privacy Policy</a>
+            By signing in to Saisho app, you agree to the <a href="{{ route('member.konten.show', 'terms-conditions') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="font-bold text-brand-800 hover:underline">Terms & Condition</a> and <a href="{{ route('member.konten.show', 'privacy-policy') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="font-bold text-brand-800 hover:underline">Privacy Policy</a>
         </p>
 
     </div>
