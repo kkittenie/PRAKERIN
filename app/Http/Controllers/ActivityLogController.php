@@ -10,7 +10,11 @@ class ActivityLogController extends Controller
     public function index()
     {
         try {
-            $logs = Activity::with(['causer.roles'])
+            $logs = Activity::with(['causer' => function ($morphTo) {
+                $morphTo->morphWith([
+                    \App\Models\User::class => ['roles'],
+                ]);
+            }])
                 ->latest()
                 ->paginate(15);
 

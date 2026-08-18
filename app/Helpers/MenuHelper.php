@@ -79,9 +79,9 @@ class MenuHelper
                 'icon' => 'laporan',
                 'subItems' => [
                     ['name' => 'Histori Transaksi', 'path' => '/histori-transaksi', 'permission' => 'lihat_laporan'],
+                    ['name' => 'Notifikasi', 'path' => '/notifikasi'],
                     ['name' => 'Laporan Penjualan', 'path' => '/laporan-penjualan', 'permission' => 'lihat_laporan'],
                     ['name' => 'Activity Log', 'path' => '/activity-Log', 'permission' => 'lihat_activity_log'],
-                    ['name' => 'Notifikasi', 'path' => '/notifikasi'],
                 ],
             ],
         ];

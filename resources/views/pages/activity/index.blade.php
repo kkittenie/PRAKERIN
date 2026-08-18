@@ -41,12 +41,23 @@
                             </td>
                             <td class="px-4 sm:px-6 py-3.5 text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
                                 {{ $log->created_at->format('d M Y H:i') }}</td>
+                            @php
+                                $causerNama = $log->causer?->name ?? $log->causer?->nama ?? ($log->causer ? 'User' : 'Sistem');
+                                $causerRole = '-';
+                                if ($log->causer) {
+                                    if ($log->causer instanceof \App\Models\Member) {
+                                        $causerRole = 'Member';
+                                    } elseif (isset($log->causer->roles)) {
+                                        $causerRole = $log->causer->roles->first()?->name ?? 'User';
+                                    }
+                                }
+                            @endphp
                             <td class="px-4 sm:px-6 py-3.5 font-semibold text-gray-800 dark:text-white">
-                                {{ $log->causer?->name ?? '-' }}</td>
+                                {{ $causerNama }}</td>
                             <td class="px-6 py-3.5 hidden md:table-cell">
                                 <span
                                     class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
-                                    {{ $log->causer?->roles->first()?->name ?? '-' }}
+                                    {{ $causerRole }}
                                 </span>
                             </td>
                             <td class="px-6 py-3.5 hidden sm:table-cell text-gray-600 dark:text-gray-300">
@@ -60,7 +71,7 @@
                                         <span class="text-gray-400">Role:</span>
                                         <span
                                             class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400 ml-1">
-                                            {{ $log->causer?->roles->first()?->name ?? '-' }}
+                                            {{ $causerRole }}
                                         </span>
                                     </div>
                                     <div><span class="text-gray-400">Aktivitas:</span> <span
