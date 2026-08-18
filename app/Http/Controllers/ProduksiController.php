@@ -113,6 +113,28 @@ class ProduksiController extends Controller
             });
     }
 
+    public function liveStatus()
+    {
+        try {
+            $produksiKadaluarsa = Produksi::with('produk')
+                ->whereColumn('jumlah_disesuaikan', '<', 'jumlah_hasil')
+                ->get()
+                ->filter(fn ($item) => $item->is_kadaluarsa);
+
+            return response()->json([
+                'status' => 'success',
+                'count_kadaluarsa' => $produksiKadaluarsa->count(),
+                'items' => $produksiKadaluarsa->map(fn ($item) => [
+                    'id' => $item->id,
+                    'produk' => optional($item->produk)->nama_produk,
+                    'sisa' => $item->sisa_belum_disesuaikan,
+                ])->values(),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
     public function index(Request $request)
     {
         try {

@@ -23,17 +23,24 @@ use App\Http\Controllers\StampProgramController;
 use App\Http\Controllers\RewardVoucherController;
 use App\Http\Controllers\RiwayatRedeemController;
 use App\Http\Controllers\MemberLevelController;
-use App\Http\Controllers\Member\StampController as MemberStampController;
+use App\Http\Controllers\Mobile\StampController as MemberStampController;
 use App\Http\Controllers\VoucherKasirController;
 use App\Http\Controllers\StampRedemptionKasirController;
 use App\Http\Controllers\PesananPickupController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\PengaturanPajakController;
 use App\Http\Controllers\KontenStatisController;
+use App\Http\Controllers\NotificationController;
 
-require __DIR__ . '/member.php';
+require __DIR__ . '/mobile.php';
 
 Route::middleware(['auth'])->group(function () {
+
+    // Notifikasi Real-time
+    Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifikasi/unread-json', [NotificationController::class, 'unreadJson'])->name('notifications.unread-json');
+    Route::post('/notifikasi/baca-semua', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
 
     // Dashboard Utama (Beranda)
     Route::get('/', [DashboardController::class, 'index'])
@@ -125,7 +132,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('bahan-baku', BahanBakuController::class)
         ->middleware('permission:lihat_stok|tambah_stok|edit_stok|hapus_stok');
 
-    // Laporan Produksi
+    // Laporan Produksi & Live Status Realtime
+    Route::get('/produksi/live-status', [ProduksiController::class, 'liveStatus'])
+        ->name('produksi.live-status');
+
     Route::middleware('permission:lihat_laporan')->group(function () {
 
         Route::get('/produksi/pdf', [ProduksiController::class, 'pdf'])

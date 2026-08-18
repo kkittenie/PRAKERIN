@@ -352,15 +352,37 @@
         const searchInput = document.getElementById('search');
 
         window.addEventListener('load', function () {
-            if (searchInput.value !== '') {
+            if (searchInput && searchInput.value !== '') {
                 searchInput.focus();
                 searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
             }
         });
 
+        // Real-time polling tanpa reload halaman
+        let lastKadaluarsaCount = {{ $produksiKadaluarsa->count() }};
         setInterval(() => {
-            location.reload();
-        }, 30000); // Refresh setiap 30 detik (30000 ms)
+            fetch('{{ route('produksi.live-status') }}')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.count_kadaluarsa !== lastKadaluarsaCount) {
+                        lastKadaluarsaCount = data.count_kadaluarsa;
+                        // Fetch & update tabel secara halus tanpa reload seluruh halaman
+                        fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                            .then(res => res.text())
+                            .then(html => {
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html');
+                                const newContainer = doc.querySelector('.space-y-6');
+                                const currentContainer = document.querySelector('.space-y-6');
+                                if (newContainer && currentContainer) {
+                                    currentContainer.innerHTML = newContainer.innerHTML;
+                                }
+                            })
+                            .catch(() => {});
+                    }
+                })
+                .catch(() => {});
+        }, 5000);
     </script>
 
 @endsection
