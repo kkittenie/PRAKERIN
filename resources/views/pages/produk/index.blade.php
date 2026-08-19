@@ -91,18 +91,13 @@
                                 <div class="text-xs text-gray-400 mt-0.5 font-medium">Min {{ $item->stok_minimum }}</div>
                             </td>
                             <td class="text-center">
-                                <div class="flex flex-col items-center gap-1.5">
-                                    <form action="{{ route('produk.toggle-status', $item->id) }}" method="POST" class="inline">
-                                        @csrf @method('PATCH')
-                                        <label class="relative inline-flex items-center cursor-pointer" title="Klik untuk mengaktifkan/menonaktifkan produk">
-                                            <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
-                                            <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
-                                        </label>
-                                    </form>
-                                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $item->status_aktif ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400' }}">
-                                        {{ $item->status_aktif ? 'Aktif' : 'Nonaktif' }}
-                                    </span>
-                                </div>
+                                <form action="{{ route('produk.toggle-status', $item->id) }}" method="POST" class="inline">
+                                    @csrf @method('PATCH')
+                                    <label class="relative inline-flex items-center cursor-pointer" title="Klik untuk mengaktifkan/menonaktifkan produk">
+                                        <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
+                                        <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
+                                    </label>
+                                </form>
                             </td>
                             <td class="text-center">
                                 @if($item->stok <= 0 || $item->status_ketersediaan == 'perlu_diproduksi')

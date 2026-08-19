@@ -102,22 +102,13 @@
                                     </span>
                                 </td>
                                 <td class="text-center">
-                                    <div class="flex flex-col items-center gap-1.5">
-                                        <form action="{{ route('promo.toggle-status', $item->id) }}" method="POST" class="inline">
-                                            @csrf @method('PATCH')
-                                            <label class="relative inline-flex items-center cursor-pointer" title="Klik untuk mengaktifkan/menonaktifkan promo">
-                                                <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
-                                                <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
-                                            </label>
-                                        </form>
-                                        <span class="promo-status-badge inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $badgeColor }}"
-                                            data-mulai="{{ $item->mulai_berlaku }}"
-                                            data-selesai="{{ $item->selesai_berlaku }}"
-                                            data-status-aktif="{{ $item->status_aktif ? '1' : '0' }}"
-                                            data-variant="row">
-                                            {{ $status }}
-                                        </span>
-                                    </div>
+                                    <form action="{{ route('promo.toggle-status', $item->id) }}" method="POST" class="inline">
+                                        @csrf @method('PATCH')
+                                        <label class="relative inline-flex items-center cursor-pointer" title="Klik untuk mengaktifkan/menonaktifkan promo">
+                                            <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
+                                            <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
+                                        </label>
+                                    </form>
                                 </td>
                                 <td class="text-right whitespace-nowrap">
                                     <div class="inline-flex items-center gap-0.5 justify-end">
