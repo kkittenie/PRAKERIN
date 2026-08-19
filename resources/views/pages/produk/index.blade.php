@@ -143,15 +143,15 @@
                                     </div>
                                 </td>
                                 <td class="py-3 px-3 hidden lg:table-cell text-center">
-                                    @if($item->stok <= 0 || $item->status_ketersediaan == 'perlu_diproduksi')
-                                        <span
-                                            class="inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-xs text-orange-700 dark:text-orange-400">Perlu
-                                            Diproduksi</span>
-                                    @else
-                                        <span
-                                            class="inline-flex rounded-full bg-emerald-100 dark:bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">Ready</span>
-                                    @endif
-                                </td>
+                                     @if($item->stok <= 0 || $item->status_ketersediaan == 'perlu_diproduksi')
+                                         <span
+                                             class="inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-xs text-orange-700 dark:text-orange-400">Perlu
+                                             Diproduksi</span>
+                                     @else
+                                         <span
+                                             class="inline-flex rounded-full bg-emerald-100 dark:bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">Ready</span>
+                                     @endif
+                                 </td>
                                 <td class="py-3 px-2 sm:px-3 text-right space-x-1 whitespace-nowrap">
                                     <a href="{{ route('produk.show', $item->id) }}"
                                         class="text-blue-600 dark:text-blue-400 font-semibold hover:underline text-xs sm:text-sm">Detail</a>

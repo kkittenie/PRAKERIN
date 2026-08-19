@@ -212,9 +212,12 @@
                                     @php
                                         $belumLunas = strtolower($trx->status_pembayaran ?? 'lunas') !== 'lunas';
                                         $itemsJson = $trx->detailTransaksi
-                                            ->groupBy('nama_produk')
+                                            ->groupBy(function ($item) {
+                                                return $item->nama_produk . '_' . ($item->ukuran ?? 'std');
+                                            })
                                             ->map(fn ($group) => [
                                                 'nama' => $group->first()->nama_produk,
+                                                'ukuran' => $group->first()->ukuran,
                                                 'jumlah' => $group->sum('jumlah'),
                                                 'subtotal' => $group->sum('subtotal'),
                                                 'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
@@ -618,7 +621,7 @@
                     const row = document.createElement('div');
                     row.className = 'py-3';
                     row.innerHTML = `
-                        <p class="text-theme-sm font-semibold leading-snug text-gray-800">${item.jumlah}x ${item.nama}</p>
+                        <p class="text-theme-sm font-semibold leading-snug text-gray-800">${item.jumlah}x ${item.nama} ${item.ukuran ? `<span class="text-brand-800 font-extrabold text-[11px] ml-1">(${item.ukuran})</span>` : ''}</p>
                         ${item.catatan ? `<p class="mt-0.5 text-xs text-gray-400">${item.catatan}</p>` : ''}
                         <p class="mt-1 text-right text-theme-sm font-semibold text-gray-700">${fmtRupiah(item.subtotal)}</p>
                     `;

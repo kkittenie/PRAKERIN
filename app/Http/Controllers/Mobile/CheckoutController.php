@@ -273,10 +273,8 @@ class CheckoutController extends Controller
                     $produk = Produk::lockForUpdate()->findOrFail($item['produk_id']);
                     $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah']);
 
-                    $catatanItem = trim(collect([
-                        $item['ukuran'] ?? null,
-                        $item['catatan'] ?? null,
-                    ])->filter()->implode(' — '));
+                    $catatanItem = $item['catatan'] ?? null;
+                    $ukuranItem = $item['ukuran'] ?? null;
 
                     $hargaSatuanDetail = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
 
@@ -285,6 +283,7 @@ class CheckoutController extends Controller
                             'transaksi_id' => $transaksi->id,
                             'produk_id' => $produk->id,
                             'nama_produk' => $produk->nama_produk,
+                            'ukuran' => $ukuranItem,
                             'harga_satuan' => $hargaSatuanDetail,
                             'jumlah' => $bagian['jumlah'],
                             'catatan' => $catatanItem !== '' ? $catatanItem : null,

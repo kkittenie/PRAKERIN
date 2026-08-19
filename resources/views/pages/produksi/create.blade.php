@@ -206,6 +206,7 @@ Pengambilan Bahan Baku <span class="text-red-500">*</span>
         type="number"
         id="jumlah_hasil"
         name="jumlah_hasil"
+        placeholder="10"
         value="{{ old('jumlah_hasil') }}"
         min="1"
         class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
@@ -224,51 +225,48 @@ Pengambilan Bahan Baku <span class="text-red-500">*</span>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Besar</label>
-                    <input type="number" id="jumlah_besar" name="jumlah_besar" value="{{ old('jumlah_besar', 0) }}" min="0"
+                    <input type="number" id="jumlah_besar" name="jumlah_besar" placeholder="5" value="{{ old('jumlah_besar') }}" min="0"
                         class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                     @error('jumlah_besar') <small class="text-red-500">{{ $message }}</small> @enderror
                 </div>
                 <div>
                     <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Kecil</label>
-                    <input type="number" id="jumlah_kecil" name="jumlah_kecil" value="{{ old('jumlah_kecil', 0) }}" min="0"
+                    <input type="number" id="jumlah_kecil" name="jumlah_kecil" placeholder="5" value="{{ old('jumlah_kecil') }}" min="0"
                         class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                     @error('jumlah_kecil') <small class="text-red-500">{{ $message }}</small> @enderror
                 </div>
             </div>
-            <small id="infoRincianUkuran" class="text-gray-500 dark:text-gray-400">
-                Total Besar + Kecil harus sama dengan Jumlah Hasil Produksi.
-            </small>
             <p id="peringatanRincianUkuran" class="hidden text-xs text-red-600 mt-1">
                 Total Besar + Kecil harus sama dengan Jumlah Hasil Produksi.
             </p>
         </div>
 
         {{-- Kebutuhan Produksi --}}
-        <div>
-
-        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
-
-        Kebutuhan Produksi
-
-        </label>
-
-        <input
-        type="number"
-        id="kebutuhan_produksi"
-        name="kebutuhan_produksi"
-        value="{{ old('kebutuhan_produksi', 0) }}"
-        min="0"
-        max="{{ old('jumlah_hasil') ?: 0 }}"
-        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-
-        <small id="infoKebutuhan" class="text-gray-500 dark:text-gray-400">
-            Jumlah stok produk yang akan dipakai/dikurangi untuk kebutuhan produksi ini. Tidak boleh lebih dari jumlah hasil produksi.
-        </small>
-
-        @error('kebutuhan_produksi')
-        <small class="block text-red-500">{{ $message }}</small>
-        @enderror
-
+        <div class="md:col-span-2">
+            <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+                Kebutuhan Produksi (Ukuran)
+            </label>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Kebutuhan Besar</label>
+                    <input type="number" id="kebutuhan_besar" name="kebutuhan_besar" placeholder="1" value="{{ old('kebutuhan_besar') }}" min="0"
+                        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    @error('kebutuhan_besar') <small class="text-red-500">{{ $message }}</small> @enderror
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Kebutuhan Kecil</label>
+                    <input type="number" id="kebutuhan_kecil" name="kebutuhan_kecil" placeholder="1" value="{{ old('kebutuhan_kecil') }}" min="0"
+                        class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    @error('kebutuhan_kecil') <small class="text-red-500">{{ $message }}</small> @enderror
+                </div>
+            </div>
+            <input type="hidden" id="kebutuhan_produksi" name="kebutuhan_produksi" value="{{ old('kebutuhan_produksi') }}">
+            <small id="infoKebutuhan" class="text-gray-500 dark:text-gray-400 mt-1 block">
+                Jumlah stok produk yang akan dipakai/dikurangi untuk kebutuhan produksi ini (tidak boleh melebihi hasil produksi masing-masing ukuran).
+            </small>
+            <p id="peringatanKebutuhanUkuran" class="hidden text-xs text-red-600 mt-1">
+                Kebutuhan Besar/Kecil tidak boleh melebihi Hasil Produksi Besar/Kecil.
+            </p>
         </div>
 
         <div>
@@ -881,7 +879,11 @@ function aktifkanSearch(element) {
     // ==== Rincian Ukuran: total Besar + Kecil harus = Jumlah Hasil Produksi ====
     const inputBesar = document.getElementById('jumlah_besar');
     const inputKecil = document.getElementById('jumlah_kecil');
+    const inputKebutuhanBesar = document.getElementById('kebutuhan_besar');
+    const inputKebutuhanKecil = document.getElementById('kebutuhan_kecil');
+    const inputKebutuhanTotal = document.getElementById('kebutuhan_produksi');
     const peringatanRincianUkuran = document.getElementById('peringatanRincianUkuran');
+    const peringatanKebutuhanUkuran = document.getElementById('peringatanKebutuhanUkuran');
 
     function cekRincianUkuran() {
         const hasil = maxHasilSaatIni();
@@ -901,15 +903,50 @@ function aktifkanSearch(element) {
         return true;
     }
 
-    function cekRincianUkuranDanTombol() {
+    function hitungDanCekKebutuhanUkuran() {
+        const hasilBesar = parseInt(inputBesar.value, 10) || 0;
+        const hasilKecil = parseInt(inputKecil.value, 10) || 0;
+        const kebBesar = parseInt(inputKebutuhanBesar.value, 10) || 0;
+        const kebKecil = parseInt(inputKebutuhanKecil.value, 10) || 0;
+
+        inputKebutuhanTotal.value = kebBesar + kebKecil;
+
+        let valid = true;
+        if (kebBesar > hasilBesar) {
+            inputKebutuhanBesar.classList.add('border-red-500');
+            valid = false;
+        } else {
+            inputKebutuhanBesar.classList.remove('border-red-500');
+        }
+
+        if (kebKecil > hasilKecil) {
+            inputKebutuhanKecil.classList.add('border-red-500');
+            valid = false;
+        } else {
+            inputKebutuhanKecil.classList.remove('border-red-500');
+        }
+
+        if (!valid) {
+            peringatanKebutuhanUkuran.classList.remove('hidden');
+        } else {
+            peringatanKebutuhanUkuran.classList.add('hidden');
+        }
+
+        return valid;
+    }
+
+    function cekSemuaUkuranDanTombol() {
         cekRincianUkuran();
+        hitungDanCekKebutuhanUkuran();
         perbaruiTombolSubmitProduksi();
     }
 
-    inputBesar.addEventListener('input', cekRincianUkuranDanTombol);
-    inputKecil.addEventListener('input', cekRincianUkuranDanTombol);
-    inputHasil.addEventListener('input', cekRincianUkuranDanTombol);
-    window.addEventListener('load', cekRincianUkuranDanTombol);
+    inputBesar.addEventListener('input', cekSemuaUkuranDanTombol);
+    inputKecil.addEventListener('input', cekSemuaUkuranDanTombol);
+    inputHasil.addEventListener('input', cekSemuaUkuranDanTombol);
+    inputKebutuhanBesar.addEventListener('input', cekSemuaUkuranDanTombol);
+    inputKebutuhanKecil.addEventListener('input', cekSemuaUkuranDanTombol);
+    window.addEventListener('load', cekSemuaUkuranDanTombol);
 
     inputHasil.addEventListener('input', sinkronMax);
     inputHasil.addEventListener('change', sinkronMax);

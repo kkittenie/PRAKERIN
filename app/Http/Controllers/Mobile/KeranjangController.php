@@ -22,16 +22,20 @@ class KeranjangController extends Controller
                 'catatan' => 'nullable|string|max:255',
             ]);
 
-            $hargaAsli = (float) $produk->harga_jual;
-            $hargaDiskon = (float) $produk->harga_diskon;
-            $diskonSatuan = max(0, $hargaAsli - $hargaDiskon);
+            $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? 'Kecil') : null;
+            $hargaAsal = $produk->getHarga($ukuran);
 
-            $hargaSatuan = $hargaDiskon;
-            $hargaAsal = $hargaAsli;
-            if (($validated['ukuran'] ?? null) === 'Large') {
-                $hargaSatuan += 3000;
-                $hargaAsal += 3000;
+            $diskonSatuan = 0;
+            if ($produk->promo_aktif) {
+                if ($produk->promo_aktif->jenis_potongan === 'nominal') {
+                    $diskonSatuan = (float) $produk->promo_aktif->nominal_potongan;
+                } else {
+                    $diskonSatuan = ((float) ($produk->promo_aktif->persentase ?? 0) / 100) * $hargaAsal;
+                }
             }
+
+            $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
+            $validated['ukuran'] = $ukuran;
 
             MemberCart::tambah([
                 'produk_id' => $produk->id,
@@ -142,16 +146,20 @@ class KeranjangController extends Controller
                     ->with('error', 'Item keranjang tidak ditemukan, mungkin sudah dihapus.');
             }
 
-            $hargaAsli = (float) $produk->harga_jual;
-            $hargaDiskon = (float) $produk->harga_diskon;
-            $diskonSatuan = max(0, $hargaAsli - $hargaDiskon);
+            $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? 'Kecil') : null;
+            $hargaAsal = $produk->getHarga($ukuran);
 
-            $hargaSatuan = $hargaDiskon;
-            $hargaAsal = $hargaAsli;
-            if (($validated['ukuran'] ?? null) === 'Large') {
-                $hargaSatuan += 3000;
-                $hargaAsal += 3000;
+            $diskonSatuan = 0;
+            if ($produk->promo_aktif) {
+                if ($produk->promo_aktif->jenis_potongan === 'nominal') {
+                    $diskonSatuan = (float) $produk->promo_aktif->nominal_potongan;
+                } else {
+                    $diskonSatuan = ((float) ($produk->promo_aktif->persentase ?? 0) / 100) * $hargaAsal;
+                }
             }
+
+            $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
+            $validated['ukuran'] = $ukuran;
 
             MemberCart::perbarui($itemId, [
                 'produk_id' => $produk->id,

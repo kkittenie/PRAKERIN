@@ -332,10 +332,16 @@
 
                                 <div class="mt-2 flex items-center justify-between gap-1">
                                     <div class="min-w-0">
-                                        @if ($adaPromo)
-                                            <p class="truncate text-[10px] text-gray-400 line-through">Rp {{ number_format($hargaAsli, 0, ',', '.') }}</p>
+                                        @if ($produk->punya_ukuran)
+                                            <p class="truncate text-xs font-extrabold text-gray-900">
+                                                Rp {{ number_format($produk->harga_kecil, 0, ',', '.') }} - Rp {{ number_format($produk->harga_besar, 0, ',', '.') }}
+                                            </p>
+                                        @else
+                                            @if ($adaPromo)
+                                                <p class="truncate text-[10px] text-gray-400 line-through">Rp {{ number_format($hargaAsli, 0, ',', '.') }}</p>
+                                            @endif
+                                            <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($hargaFinal, 0, ',', '.') }}</p>
                                         @endif
-                                        <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($hargaFinal, 0, ',', '.') }}</p>
                                     </div>
 
                                     <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm">

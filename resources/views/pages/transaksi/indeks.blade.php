@@ -276,19 +276,46 @@
                                                             </div>
                                                         </template>
                                                     </div>
-                                                    <div class="flex items-center justify-between">
-                                                        <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
-                                                            x-text="formatRupiah(produk.promo_aktif ? produk.harga_diskon : produk.harga_jual)"></span>
-                                                        <button @click="tambahKeKeranjang(produk)"
-                                                            title="Tambah ke keranjang"
-                                                            class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                                viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    stroke-width="2.5" d="M12 4v16m8-8H4" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
+                                                    <template x-if="produk.punya_ukuran == 1 || produk.punya_ukuran === true">
+                                                        <div class="grid grid-cols-2 gap-1.5 items-center">
+                                                            <!-- Kecil -->
+                                                            <button type="button" @click.stop="tambahKeKeranjang(produk, 'Kecil')"
+                                                                title="Tambah Ukuran Kecil"
+                                                                class="flex flex-col items-center justify-center py-1.5 px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
+                                                                <div class="flex items-center justify-center gap-1 w-full leading-none">
+                                                                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800/90 dark:text-amber-300 group-hover/sz:text-white/90">Kecil</span>
+                                                                    <span class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 group-hover/sz:text-white">+</span>
+                                                                </div>
+                                                                <span class="font-extrabold text-[11px] text-amber-900 dark:text-amber-200 group-hover/sz:text-white leading-tight mt-0.5" x-text="formatRupiah(produk.harga_kecil)"></span>
+                                                            </button>
+                                                            <!-- Besar -->
+                                                            <button type="button" @click.stop="tambahKeKeranjang(produk, 'Besar')"
+                                                                title="Tambah Ukuran Besar"
+                                                                class="flex flex-col items-center justify-center py-1.5 px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
+                                                                <div class="flex items-center justify-center gap-1 w-full leading-none">
+                                                                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800/90 dark:text-amber-300 group-hover/sz:text-white/90">Besar</span>
+                                                                    <span class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 group-hover/sz:text-white">+</span>
+                                                                </div>
+                                                                <span class="font-extrabold text-[11px] text-amber-900 dark:text-amber-200 group-hover/sz:text-white leading-tight mt-0.5" x-text="formatRupiah(produk.harga_besar)"></span>
+                                                            </button>
+                                                        </div>
+                                                    </template>
+
+                                                    <template x-if="!(produk.punya_ukuran == 1 || produk.punya_ukuran === true)">
+                                                        <div class="flex items-center justify-between">
+                                                            <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
+                                                                x-text="formatRupiah(produk.promo_aktif ? produk.harga_diskon : produk.harga_jual)"></span>
+                                                            <button @click.stop="tambahKeKeranjang(produk)"
+                                                                title="Tambah ke keranjang"
+                                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
+                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                                    viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </template>
                                                 </div>
                                             </div>
                                         </div>
@@ -876,6 +903,11 @@
                                         <div class="flex items-center gap-1.5 flex-wrap">
                                             <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate"
                                                 x-text="item.nama_produk"></h5>
+                                            <template x-if="item.ukuran">
+                                                <span
+                                                    class="shrink-0 text-[9px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-700/50"
+                                                    x-text="'Ukuran: ' + item.ukuran"></span>
+                                            </template>
                                             <template x-if="item.is_reward_stamp">
                                                 <span
                                                     class="shrink-0 text-[9px] font-bold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 px-1.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-500/25">Reward
@@ -1175,7 +1207,11 @@
                         <template x-for="item in keranjang" :key="item.key">
                             <div class="flex justify-between items-start gap-4">
                                 <div class="min-w-0 flex-1">
-                                    <p class="font-bold text-xs text-gray-900 dark:text-white" x-text="item.nama_produk">
+                                    <p class="font-bold text-xs text-gray-900 dark:text-white">
+                                        <span x-text="item.nama_produk"></span>
+                                        <template x-if="item.ukuran">
+                                            <span class="text-amber-600 dark:text-amber-400 font-extrabold text-[10px] ml-1" x-text="'(' + item.ukuran + ')'"></span>
+                                        </template>
                                     </p>
                                     <p class="text-xxs text-gray-400 dark:text-gray-500">
                                         <span x-text="item.jumlah"></span> x <span
@@ -1538,6 +1574,39 @@
                         class="px-5 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-xl transition shadow-xs">
                         Selesai
                     </button>
+        <!-- ========== MODAL: PILIH UKURAN PRODUK ========== -->
+        <div x-show="modalPilihUkuranTerbuka"
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4"
+            x-transition x-cloak>
+            <div @click.away="modalPilihUkuranTerbuka = false"
+                class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+                <div class="bg-amber-800 dark:bg-amber-900 text-white p-4 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-extrabold text-sm">Pilih Ukuran Produk</h3>
+                        <p class="text-white/80 text-xs mt-0.5"
+                            x-text="produkUkuranTerpilih ? produkUkuranTerpilih.nama_produk : ''">
+                        </p>
+                    </div>
+                    <button @click="modalPilihUkuranTerbuka = false"
+                        class="text-white hover:text-gray-200 font-bold text-lg leading-none">&times;</button>
+                </div>
+
+                <div class="p-5 flex flex-col gap-3">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pilih varian ukuran untuk produk ini:</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" @click="pilihUkuran('Kecil')"
+                            class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-amber-600 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition">
+                            <span class="font-bold text-sm text-amber-900 dark:text-amber-300">Kecil</span>
+                            <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 mt-1"
+                                x-text="formatRupiah(produkUkuranTerpilih?.harga_kecil || 0)"></span>
+                        </button>
+                        <button type="button" @click="pilihUkuran('Besar')"
+                            class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-amber-600 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition">
+                            <span class="font-bold text-sm text-amber-900 dark:text-amber-300">Besar</span>
+                            <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 mt-1"
+                                x-text="formatRupiah(produkUkuranTerpilih?.harga_besar || 0)"></span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1607,8 +1676,10 @@
                 modalSuksesTerbuka: false,
                 modalKonfirmasiHapusTerbuka: false,
                 modalPilihPromoTerbuka: false,
+                modalPilihUkuranTerbuka: false,
                 modalVoucherTerbuka: false,
                 itemPromoTerpilih: null,
+                produkUkuranTerpilih: null,
                 idPesananAkanDihapus: null,
 
                 // Data sukses (untuk struk)
@@ -1950,20 +2021,31 @@
                     return index !== -1 && this.keranjang[index] === item;
                 },
 
-                buatItemKeranjang(produk, jumlah, perluProduksi) {
-                    const hargaAsli = parseFloat(produk.harga_jual);
+                buatItemKeranjang(produk, jumlah, perluProduksi, ukuran = null) {
+                    let hargaAsli = parseFloat(produk.harga_jual || 0);
+                    if (produk.punya_ukuran) {
+                        if (ukuran === 'Besar') {
+                            hargaAsli = parseFloat(produk.harga_besar || 0);
+                        } else if (ukuran === 'Kecil') {
+                            hargaAsli = parseFloat(produk.harga_kecil || 0);
+                        } else {
+                            hargaAsli = parseFloat(produk.harga_kecil || produk.harga_besar || 0);
+                            ukuran = 'Kecil';
+                        }
+                    }
                     const promosTersedia = (produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0)
                         ? produk.promos_aktif_semua
                         : (produk.promo_aktif ? [produk.promo_aktif] : []);
-                    const barisLain = this.keranjang.find(i => i.produk_id === produk.id);
+                    const barisLain = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null));
                     const promosTerpilihIds = barisLain
                         ? [...barisLain.promos_terpilih_ids]
                         : promosTersedia.map(p => p.id);
 
                     return {
-                        key: produk.id + '_' + (perluProduksi ? 'produksi' : 'ready'),
+                        key: produk.id + '_' + (ukuran || 'std') + '_' + (perluProduksi ? 'produksi' : 'ready'),
                         produk_id: produk.id,
                         nama_produk: produk.nama_produk,
+                        ukuran: ukuran,
                         harga_jual: hargaAsli,
                         harga_jual_asli: hargaAsli,
                         promo_aktif: produk.promo_aktif,
@@ -2412,39 +2494,59 @@
                     return new Intl.NumberFormat('id-ID').format(this.jumlahDiterimaNum);
                 },
 
-                tambahKeKeranjang(produk) {
+                bukaModalPilihUkuran(produk) {
+                    this.produkUkuranTerpilih = produk;
+                    this.modalPilihUkuranTerbuka = true;
+                },
+                pilihUkuran(ukuran) {
+                    if (this.produkUkuranTerpilih) {
+                        const p = this.produkUkuranTerpilih;
+                        this.modalPilihUkuranTerbuka = false;
+                        this.produkUkuranTerpilih = null;
+                        this.tambahKeKeranjang(p, ukuran);
+                    }
+                },
+                tambahKeKeranjang(produk, ukuran = null) {
+                    const isPunyaUkuran = !produk.is_bundling && (produk.punya_ukuran == 1 || produk.punya_ukuran === true);
+                    if (isPunyaUkuran && !ukuran) {
+                        this.bukaModalPilihUkuran(produk);
+                        return;
+                    }
+
                     const manualProduksi = produk.status_ketersediaan === 'perlu_diproduksi';
 
                     if (manualProduksi) {
-                        const item = this.keranjang.find(i => i.produk_id === produk.id && i.butuh_produksi);
+                        const item = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && i.butuh_produksi);
                         if (item) {
                             item.jumlah++;
                         } else {
-                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true));
+                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true, ukuran));
                         }
                         this.tambahToast('Produk ditambahkan (Perlu Diproduksi).', 'sukses');
                         return;
                     }
 
-                    const readyItem = this.keranjang.find(i => i.produk_id === produk.id && !i.butuh_produksi);
+                    const totalReadyDipakai = this.keranjang
+                        .filter(i => i.produk_id === produk.id && !i.butuh_produksi)
+                        .reduce((sum, i) => sum + i.jumlah, 0);
                     const stokTersedia = parseFloat(produk.stok) || 0;
-                    const sudahReady = readyItem ? readyItem.jumlah : 0;
 
-                    if (sudahReady < stokTersedia) {
+                    if (totalReadyDipakai < stokTersedia) {
+                        const readyItem = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && !i.butuh_produksi);
                         if (readyItem) {
                             readyItem.jumlah++;
                         } else {
-                            this.keranjang.push(this.buatItemKeranjang(produk, 1, false));
+                            this.keranjang.push(this.buatItemKeranjang(produk, 1, false, ukuran));
                         }
                         this.tambahToast('Produk ditambahkan.', 'sukses');
                     } else {
-                        const produksiItem = this.keranjang.find(i => i.produk_id === produk.id && i.butuh_produksi);
+                        const produksiItem = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && i.butuh_produksi);
                         if (produksiItem) {
                             produksiItem.jumlah++;
                         } else {
-                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true));
+                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true, ukuran));
                         }
-                        this.tambahToast('Produk ditambahkan (Perlu Diproduksi).', 'sukses');
+                        this.tambahToast('Stok ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
                     }
                 },
                 tambahBundlingKeKeranjang(bundling) {
@@ -2483,19 +2585,27 @@
                         return;
                     }
 
+                    if (item.butuh_produksi) {
+                        item.jumlah++;
+                        return;
+                    }
+
                     const produk = this.daftarProduk.find(p => p.id === item.produk_id);
                     const stokTersedia = produk ? (parseFloat(produk.stok) || 0) : 0;
+                    const totalReadyDipakai = this.keranjang
+                        .filter(i => i.produk_id === item.produk_id && !i.butuh_produksi)
+                        .reduce((sum, i) => sum + i.jumlah, 0);
 
-                    if (item.jumlah < stokTersedia) {
+                    if (totalReadyDipakai < stokTersedia) {
                         item.jumlah++;
                     } else {
-                        const produksiItem = this.keranjang.find(i => i.produk_id === item.produk_id && i.butuh_produksi);
+                        const produksiItem = this.keranjang.find(i => i.produk_id === item.produk_id && (i.ukuran || null) === (item.ukuran || null) && i.butuh_produksi);
                         if (produksiItem) {
                             produksiItem.jumlah++;
                         } else if (produk) {
-                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true));
+                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true, item.ukuran));
                         }
-                        this.tambahToast('Stok sudah habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                        this.tambahToast('Stok ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
                     }
                 },
                 kurangiJumlah(item) { if (item.jumlah > 1) item.jumlah--; else this.hapusItem(item); },

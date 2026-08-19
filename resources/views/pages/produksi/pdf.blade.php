@@ -170,7 +170,7 @@
             </tr>
             <tr>
                 <td class="label">Rincian Ukuran</td>
-                <td class="val" colspan="5">{{ $item->rincian_ukuran }}</td>
+                <td class="val" colspan="5">Hasil: {{ $item->rincian_ukuran }} &bull; Kebutuhan: {{ $item->rincian_kebutuhan_ukuran }}</td>
             </tr>
             <tr>
                 <td class="label">Dibuat Oleh</td>

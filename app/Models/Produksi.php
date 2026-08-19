@@ -16,6 +16,8 @@ class Produksi extends Model
             'jumlah_besar',      
             'jumlah_kecil',
             'kebutuhan_produksi',
+            'kebutuhan_besar',
+            'kebutuhan_kecil',
             'user_id',
             'keterangan',
             'kadaluarsa_tipe',
@@ -30,6 +32,8 @@ class Produksi extends Model
         'jumlah_besar' => 'integer',   
         'jumlah_kecil' => 'integer',
         'kebutuhan_produksi' => 'integer',
+        'kebutuhan_besar' => 'integer',
+        'kebutuhan_kecil' => 'integer',
         'jumlah_disesuaikan' => 'integer',
         'kadaluarsa_jam' => 'integer',
         'kadaluarsa_tanggal' => 'date',
@@ -94,6 +98,21 @@ class Produksi extends Model
 
         if ($this->jumlah_kecil > 0) {
             $bagian[] = $this->jumlah_kecil . ' Kecil';
+        }
+
+        return $bagian ? implode(', ', $bagian) : '-';
+    }
+
+    public function getRincianKebutuhanUkuranAttribute(): string
+    {
+        $bagian = [];
+
+        if ($this->kebutuhan_besar > 0) {
+            $bagian[] = $this->kebutuhan_besar . ' Besar';
+        }
+
+        if ($this->kebutuhan_kecil > 0) {
+            $bagian[] = $this->kebutuhan_kecil . ' Kecil';
         }
 
         return $bagian ? implode(', ', $bagian) : '-';

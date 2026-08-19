@@ -13,16 +13,16 @@
 
     <div x-data="{
                     jumlah: {{ $itemEdit['jumlah'] ?? 1 }},
-                    ukuran: @js($itemEdit['ukuran'] ?? ''),
+                    ukuran: @js($itemEdit['ukuran'] ?? ($produk->punya_ukuran ? 'Kecil' : '')),
                     catatan: @js($itemEdit['catatan'] ?? ''),
-                    hargaDasar: {{ $hargaFinal }},
-                    ukuranExtra: 0,
-                    minimalBelanja: {{ (float) $minimalBelanja }},
-                    poinPerKelipatan: {{ (int) $poinPerKelipatan }},
-                    habis: {{ $habis ? 'true' : 'false' }},
-
+                    punyaUkuran: {{ $produk->punya_ukuran ? 'true' : 'false' }},
+                    hargaKecil: {{ (float) ($produk->harga_kecil ?? 0) }},
+                    hargaBesar: {{ (float) ($produk->harga_besar ?? 0) }},
                     get hargaSatuan() {
-                        return this.hargaDasar + (this.ukuran === 'Large' ? 3000 : 0);
+                        if (this.punyaUkuran) {
+                            return this.ukuran === 'Besar' ? this.hargaBesar : this.hargaKecil;
+                        }
+                        return this.hargaDasar;
                     },
 
                     get total() {
@@ -126,51 +126,43 @@
                 </div>
             @endif
 
-            <!-- <div class="mt-5">
+            @if ($produk->punya_ukuran)
+                <div class="mt-5">
+                    <h3 class="text-xs font-bold text-gray-900">
+                        Pilihan Ukuran
+                    </h3>
 
-                <h3 class="text-xs font-bold text-gray-900">
-                    Pilihan Ukuran
-                    <span class="font-medium text-gray-400">
-                        (opsional)
-                    </span>
-                </h3>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                        {{-- Kecil --}}
+                        <button type="button" @click="ukuran = 'Kecil'" :class="
+                                        ukuran === 'Kecil'
+                                            ? 'border-brand-800 bg-brand-50 text-brand-800'
+                                            : 'border-gray-200 text-gray-600'
+                                    " class="rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]">
+                            <span class="block text-xs font-bold">
+                                Kecil
+                            </span>
+                            <span class="block text-[11px] font-semibold text-gray-500">
+                                Rp {{ number_format($produk->harga_kecil, 0, ',', '.') }}
+                            </span>
+                        </button>
 
-                <div class="mt-2 grid grid-cols-2 gap-2">
-
-                    {{-- Regular --}}
-                    <button type="button" @click="ukuran = ''" :class="
-                                    ukuran === ''
-                                        ? 'border-brand-800 bg-brand-50 text-brand-800'
-                                        : 'border-gray-200 text-gray-600'
-                                " class="rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]">
-                        <span class="block text-xs font-bold">
-                            Regular
-                        </span>
-
-                        <span class="block text-[11px] text-gray-400">
-                            Ukuran standar
-                        </span>
-                    </button>
-
-
-                    {{-- Large --}}
-                    <button type="button" @click="ukuran = 'Large'" :class="
-                                    ukuran === 'Large'
-                                        ? 'border-brand-800 bg-brand-50 text-brand-800'
-                                        : 'border-gray-200 text-gray-600'
-                                " class="rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]">
-                        <span class="block text-xs font-bold">
-                            Large
-                        </span>
-
-                        <span class="block text-[11px] text-gray-400">
-                            + Rp 3.000
-                        </span>
-                    </button>
-
+                        {{-- Besar --}}
+                        <button type="button" @click="ukuran = 'Besar'" :class="
+                                        ukuran === 'Besar'
+                                            ? 'border-brand-800 bg-brand-50 text-brand-800'
+                                            : 'border-gray-200 text-gray-600'
+                                    " class="rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]">
+                            <span class="block text-xs font-bold">
+                                Besar
+                            </span>
+                            <span class="block text-[11px] font-semibold text-gray-500">
+                                Rp {{ number_format($produk->harga_besar, 0, ',', '.') }}
+                            </span>
+                        </button>
+                    </div>
                 </div>
-
-            </div> -->
+            @endif
 
             <div class="mt-5">
 

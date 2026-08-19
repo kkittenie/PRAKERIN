@@ -12,7 +12,7 @@
             jenisPotongan: '{{ old('jenis_potongan', 'persentase') }}',
             persentaseDisplay: '{{ old('persentase') ? str_replace('.', ',', old('persentase')) : '' }}',
             nominalDisplay: '{{ old('nominal_potongan') ? number_format(old('nominal_potongan'), 0, ',', '.') : '' }}',
-            minPembelianDisplay: '{{ old('min_pembelian') ? number_format(old('min_pembelian'), 0, ',', '.') : '0' }}',
+            minPembelianDisplay: '{{ old('min_pembelian') ? number_format(old('min_pembelian'), 0, ',', '.') : '' }}',
             getRawNumber(val) {
                 return (val || '').toString().replace(/\D/g, '') || '0';
             },

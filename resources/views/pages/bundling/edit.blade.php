@@ -50,12 +50,18 @@
             Harga Bundling <span class="text-red-500">*</span>
         </label>
 
-        <input
-            type="text"
-            inputmode="numeric"
-            name="harga"
-            value="{{ number_format((int) old('harga', $bundling->harga), 0, ',', '.') }}"
-            class="input-rupiah w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+        <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-sm">
+                Rp
+            </span>
+            <input
+                type="text"
+                inputmode="numeric"
+                name="harga"
+                placeholder="25.000"
+                value="{{ number_format((int) old('harga', $bundling->harga), 0, ',', '.') }}"
+                class="input-rupiah w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-10 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+        </div>
 
         @error('harga')
             <small class="text-red-500">{{ $message }}</small>

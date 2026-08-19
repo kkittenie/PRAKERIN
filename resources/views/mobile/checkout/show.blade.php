@@ -78,7 +78,12 @@
                 @foreach ($transaksi->detailTransaksi as $detail)
                     <div class="flex items-center justify-between p-3">
                         <div class="min-w-0">
-                            <p class="truncate text-xs font-bold text-gray-900">{{ $detail->jumlah }}x {{ $detail->nama_produk }}</p>
+                            <p class="truncate text-xs font-bold text-gray-900">
+                                {{ $detail->jumlah }}x {{ $detail->nama_produk }}
+                                @if (!empty($detail->ukuran))
+                                    <span class="text-brand-800 font-extrabold text-[11px] ml-1">({{ $detail->ukuran }})</span>
+                                @endif
+                            </p>
                             @if ($detail->catatan)
                                 <p class="truncate text-[11px] text-gray-400">{{ $detail->catatan }}</p>
                             @endif

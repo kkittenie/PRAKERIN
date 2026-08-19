@@ -86,7 +86,7 @@ class ProdukController extends Controller
 
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
             if ($validated['punya_ukuran']) {
-                $validated['harga_jual'] = null;
+                $validated['harga_jual'] = 0;
             } else {
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
@@ -180,7 +180,7 @@ class ProdukController extends Controller
 
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
             if ($validated['punya_ukuran']) {
-                $validated['harga_jual'] = null;
+                $validated['harga_jual'] = 0;
             } else {
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;

@@ -13,6 +13,7 @@ class DetailTransaksi extends Model
         'produk_id',
         'bundling_id',
         'nama_produk',
+        'ukuran',
         'harga_satuan',
         'jumlah',
         'catatan',

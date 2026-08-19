@@ -99,12 +99,18 @@
                         Harga Jual <span class="text-red-500">*</span>
                     </label>
 
-                    <input
-                        type="text"
-                        inputmode="numeric"
-                        name="harga_jual"
-                        value="{{ number_format((int) old('harga_jual', $produk->harga_jual), 0, ',', '.') }}"
-                        class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-sm">
+                            Rp
+                        </span>
+                        <input
+                            type="text"
+                            inputmode="numeric"
+                            name="harga_jual"
+                            placeholder="10.000"
+                            value="{{ number_format((int) old('harga_jual', $produk->harga_jual), 0, ',', '.') }}"
+                            class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-10 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    </div>
 
                     @error('harga_jual')
                         <small class="text-red-500">{{ $message }}</small>
@@ -125,7 +131,7 @@
                         <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Produk ini punya varian ukuran (Besar/Kecil)</span>
                     </label>
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">
-                        Kalau dicentang, harga jual produk akan dipisah berdasarkan ukuran Besar dan Kecil (dipakai di menu Produksi & Kasir).
+                        Kalau dicentang, harga jual produk akan dipisah berdasarkan ukuran Besar dan Kecil.
                     </span>
                     @error('punya_ukuran')
                         <small class="text-red-500">{{ $message }}</small>
@@ -137,12 +143,18 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Harga Besar <span class="text-red-500">*</span>
                     </label>
-                    <input
-                        type="text"
-                        inputmode="numeric"
-                        name="harga_besar"
-                        value="{{ number_format((int) old('harga_besar', $produk->harga_besar ?? 0), 0, ',', '.') }}"
-                        class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-sm">
+                            Rp
+                        </span>
+                        <input
+                            type="text"
+                            inputmode="numeric"
+                            name="harga_besar"
+                            placeholder="15.000"
+                            value="{{ number_format((int) old('harga_besar', $produk->harga_besar ?? 0), 0, ',', '.') }}"
+                            class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-10 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    </div>
                     @error('harga_besar')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
@@ -153,12 +165,18 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Harga Kecil <span class="text-red-500">*</span>
                     </label>
-                    <input
-                        type="text"
-                        inputmode="numeric"
-                        name="harga_kecil"
-                        value="{{ number_format((int) old('harga_kecil', $produk->harga_kecil ?? 0), 0, ',', '.') }}"
-                        class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-sm">
+                            Rp
+                        </span>
+                        <input
+                            type="text"
+                            inputmode="numeric"
+                            name="harga_kecil"
+                            placeholder="10.000"
+                            value="{{ number_format((int) old('harga_kecil', $produk->harga_kecil ?? 0), 0, ',', '.') }}"
+                            class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-10 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    </div>
                     @error('harga_kecil')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
@@ -170,12 +188,18 @@
                         Harga Modal <span class="text-red-500">*</span>
                     </label>
 
-                    <input
-                        type="text"
-                        inputmode="numeric"
-                        name="harga_modal"
-                        value="{{ number_format((int) old('harga_modal', $produk->harga_modal), 0, ',', '.') }}"
-                        class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-sm">
+                            Rp
+                        </span>
+                        <input
+                            type="text"
+                            inputmode="numeric"
+                            name="harga_modal"
+                            placeholder="8.000"
+                            value="{{ number_format((int) old('harga_modal', $produk->harga_modal), 0, ',', '.') }}"
+                            class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-10 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    </div>
 
                     @error('harga_modal')
                         <small class="text-red-500">{{ $message }}</small>
@@ -191,6 +215,7 @@
                     <input
                         type="number"
                         name="stok"
+                        placeholder="1"
                         value="{{ old('stok',$produk->stok) }}"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
@@ -208,6 +233,7 @@
                     <input
                         type="number"
                         name="stok_minimum"
+                        placeholder="1"
                         value="{{ old('stok_minimum',$produk->stok_minimum) }}"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 

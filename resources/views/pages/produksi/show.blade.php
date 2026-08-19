@@ -112,7 +112,7 @@ Kebutuhan Produksi
 </p>
 
 <p class="font-semibold text-amber-600 dark:text-amber-400">
-{{ $produksi->kebutuhan_produksi ?: 0 }}
+{{ $produksi->kebutuhan_produksi ?: 0 }} pcs @if($produksi->rincian_kebutuhan_ukuran !== '-') ({{ $produksi->rincian_kebutuhan_ukuran }}) @endif
 </p>
 
 </div>

@@ -91,17 +91,46 @@
 
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Ketersediaan</p>
-                        <p class="mt-0.5">
-                            @if($produk->stok <= 0 || $produk->status_ketersediaan == 'perlu_diproduksi')
-                                <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
-                                    ⚠ Perlu Diproduksi
-                                </span>
+                        <div class="mt-0.5">
+                            @if($produk->punya_ukuran)
+                                <div class="flex flex-col gap-1.5">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 w-12">Besar:</span>
+                                        @if($produk->stok <= 0 || $produk->status_ketersediaan == 'perlu_diproduksi')
+                                            <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
+                                                ⚠ Perlu Diproduksi
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                                ✓ Stok Ada
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 w-12">Kecil:</span>
+                                        @if($produk->stok <= 0 || $produk->status_ketersediaan == 'perlu_diproduksi')
+                                            <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
+                                                ⚠ Perlu Diproduksi
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                                ✓ Stok Ada
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
                             @else
-                                <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                                    ✓ Stok Ada
-                                </span>
+                                @if($produk->stok <= 0 || $produk->status_ketersediaan == 'perlu_diproduksi')
+                                    <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
+                                        ⚠ Perlu Diproduksi
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                        ✓ Stok Ada
+                                    </span>
+                                @endif
                             @endif
-                        </p>
+                        </div>
                     </div>
 
                     <div class="sm:col-span-2">

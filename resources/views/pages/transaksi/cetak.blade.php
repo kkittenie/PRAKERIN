@@ -298,11 +298,13 @@
                             }
                             return true;
                         })
-                        ->groupBy('nama_produk')
-                        ->map(function ($group) {
+                        ->groupBy(function ($item) {
+                            return $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : '');
+                        })
+                        ->map(function ($group, $key) {
                             $first = $group->first();
                             return (object) [
-                                'nama_produk' => $first->nama_produk,
+                                'nama_produk' => $key,
                                 'harga_satuan' => $first->harga_satuan,
                                 'jumlah' => $group->sum('jumlah'),
                                 'subtotal' => $group->sum('subtotal'),
@@ -442,8 +444,11 @@
                 </div>
                 <div class="border-top-dashed border-bottom-dashed" style="padding:8px 0;">
                     @forelse ($itemsDapur as $index => $item)
+                        @php
+                            $namaDapur = $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : '');
+                        @endphp
                         <div class="item-row margin-bottom-sm" style="font-size:12px;">
-                            <span class="item-name"><strong>{{ $index + 1 }}. {{ $item->nama_produk }}</strong></span>
+                            <span class="item-name"><strong>{{ $index + 1 }}. {{ $namaDapur }}</strong></span>
                             <span class="item-qty" style="font-weight:bold;">x{{ $item->jumlah }}</span>
                         </div>
                         @if ($item->catatan)
@@ -573,11 +578,13 @@
                     }
                     return true;
                 })
-                ->groupBy('nama_produk')
-                ->map(function ($group) {
+                ->groupBy(function ($item) {
+                    return $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : '');
+                })
+                ->map(function ($group, $key) {
                     $first = $group->first();
                     return (object) [
-                        'nama_produk' => $first->nama_produk,
+                        'nama_produk' => $key,
                         'harga_satuan' => $first->harga_satuan,
                         'jumlah' => $group->sum('jumlah'),
                         'subtotal' => $group->sum('subtotal'),
@@ -659,8 +666,9 @@
 
             $idx = 1;
             foreach ($itemsDapur as $item) {
+                $namaDapurText = $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : '');
                 $prefix = $idx . ". ";
-                $nameFull = $prefix . $item->nama_produk;
+                $nameFull = $prefix . $namaDapurText;
                 $rightQty = "x" . $item->jumlah;
                 $indent = str_repeat(' ', mb_strlen($prefix));
 

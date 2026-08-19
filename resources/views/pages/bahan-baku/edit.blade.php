@@ -91,6 +91,7 @@
                     step="0.01"
                     name="stok"
                     id="inputStok"
+                    placeholder="1"
                     value="{{ $stokTampil }}"
                     class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
@@ -110,6 +111,7 @@
                     step="0.01"
                     name="stok_minimum"
                     id="inputStokMinimum"
+                    placeholder="1"
                     value="{{ $stokMinTampil }}"
                     class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                                 

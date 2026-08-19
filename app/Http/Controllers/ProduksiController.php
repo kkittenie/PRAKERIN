@@ -185,6 +185,8 @@ class ProduksiController extends Controller
                 'jumlah_hasil' => 'required|integer|min:1',
                 'jumlah_besar' => 'required|integer|min:0',
                 'jumlah_kecil' => 'required|integer|min:0',
+                'kebutuhan_besar' => 'nullable|integer|min:0',
+                'kebutuhan_kecil' => 'nullable|integer|min:0',
                 'kebutuhan_produksi' => 'nullable|integer|min:0|lte:jumlah_hasil',
                 'keterangan' => 'nullable|string',
 
@@ -234,9 +236,19 @@ class ProduksiController extends Controller
                 return back()->withInput()->with('error', 'Jumlah Besar + Jumlah Kecil harus sama dengan Jumlah Hasil Produksi.');
             }
 
+            $kebutuhanBesar = (int) ($request->kebutuhan_besar ?? 0);
+            $kebutuhanKecil = (int) ($request->kebutuhan_kecil ?? 0);
+            $kebutuhanTotal = $kebutuhanBesar + $kebutuhanKecil;
+
+            if ($kebutuhanBesar > (int) $request->jumlah_besar) {
+                return back()->withInput()->with('error', 'Kebutuhan Besar tidak boleh melebihi Jumlah Besar hasil produksi.');
+            }
+            if ($kebutuhanKecil > (int) $request->jumlah_kecil) {
+                return back()->withInput()->with('error', 'Kebutuhan Kecil tidak boleh melebihi Jumlah Kecil hasil produksi.');
+            }
+
             $produksi = null;
-            DB::transaction(function () use ($request, &$produksi) {
-                $kebutuhanProduksi = (int) ($request->kebutuhan_produksi ?? 0);
+            DB::transaction(function () use ($request, $kebutuhanTotal, $kebutuhanBesar, $kebutuhanKecil, &$produksi) {
 
                 $produksi = Produksi::create([
                     'tanggal' => $request->tanggal,
@@ -245,7 +257,9 @@ class ProduksiController extends Controller
                     'jumlah_hasil' => $request->jumlah_hasil,
                     'jumlah_besar' => $request->jumlah_besar,
                     'jumlah_kecil' => $request->jumlah_kecil,
-                    'kebutuhan_produksi' => $kebutuhanProduksi,
+                    'kebutuhan_produksi' => $kebutuhanTotal,
+                    'kebutuhan_besar' => $kebutuhanBesar,
+                    'kebutuhan_kecil' => $kebutuhanKecil,
                     'user_id' => Auth::id(),
                     'keterangan' => $request->keterangan,
                     'kadaluarsa_tipe' => $request->kadaluarsa_tipe,
@@ -279,11 +293,11 @@ class ProduksiController extends Controller
                 $produk = Produk::lockForUpdate()->findOrFail($request->produk_id);
                 $produk->increment('stok', $request->jumlah_hasil);
 
-                if ($kebutuhanProduksi > 0) {
-                    if ($produk->stok < $kebutuhanProduksi) {
+                if ($kebutuhanTotal > 0) {
+                    if ($produk->stok < $kebutuhanTotal) {
                         throw new Exception("Stok {$produk->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
                     }
-                    $produk->decrement('stok', $kebutuhanProduksi);
+                    $produk->decrement('stok', $kebutuhanTotal);
                 }
 
                 if ($produk->stok > 0 && $produk->status_ketersediaan === 'perlu_diproduksi') {

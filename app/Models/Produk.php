@@ -112,16 +112,17 @@ class Produk extends Model
 
     public function getHargaDiskonAttribute()
     {
+        $hargaDasar = $this->getHarga();
         $promo = $this->promo_aktif;
         if ($promo) {
             if ($promo->jenis_potongan === 'nominal') {
                 $diskon = $promo->nominal_potongan;
             } else {
-                $diskon = (($promo->persentase ?? 0) / 100) * $this->harga_jual;
+                $diskon = (($promo->persentase ?? 0) / 100) * $hargaDasar;
             }
-            return max(0, $this->harga_jual - $diskon);
+            return max(0, $hargaDasar - $diskon);
         }
-        return $this->harga_jual;
+        return $hargaDasar;
     }
 
     public function promoProdukEvents()
@@ -130,19 +131,20 @@ class Produk extends Model
     }
 
     /**
-     * Ambil harga produk sesuai ukuran (Besar/Kecil), fallback ke harga_jual kalau produk gak punya varian ukuran.
+     * Ambil harga produk sesuai ukuran (Besar/Kecil), fallback ke harga_kecil/harga_jual kalau ukuran gak dispesifikasikan.
      */
     public function getHarga(?string $ukuran = null): float
     {
         if ($this->punya_ukuran) {
             if ($ukuran === 'Besar') {
-                return (float) $this->harga_besar;
+                return (float) ($this->harga_besar ?? 0);
             }
             if ($ukuran === 'Kecil') {
-                return (float) $this->harga_kecil;
+                return (float) ($this->harga_kecil ?? 0);
             }
+            return (float) ($this->harga_kecil ?? $this->harga_besar ?? $this->harga_jual ?? 0);
         }
 
-        return (float) $this->harga_jual;
+        return (float) ($this->harga_jual ?? 0);
     }
 }
