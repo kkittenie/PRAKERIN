@@ -217,8 +217,18 @@
             aspect-ratio: 1 / 1 !important;
             flex-shrink: 0 !important;
             display: block;
+        }
+        .sdt-table tbody td.text-center img,
+        .sdt-table tbody td img.mx-auto {
             margin-left: auto;
             margin-right: auto;
+        }
+        .flex > img,
+        .inline-flex > img,
+        .sdt-table tbody td .flex img,
+        .sdt-table tbody td .inline-flex img {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
         }
 
         /* ===== EXPANDABLE RESPONSIVE CHILD ROWS FOR MOBILE ===== */
