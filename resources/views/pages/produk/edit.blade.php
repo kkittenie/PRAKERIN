@@ -94,7 +94,7 @@
                 </div>
 
                {{-- Harga Jual --}}
-                <div>
+                <div id="wrapper-harga-jual">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Harga Jual <span class="text-red-500">*</span>
                     </label>
@@ -312,11 +312,13 @@
     const checkboxUkuran = document.getElementById('punya_ukuran');
     const wrapperBesar = document.getElementById('wrapper-harga-besar');
     const wrapperKecil = document.getElementById('wrapper-harga-kecil');
+    const wrapperHargaJual = document.getElementById('wrapper-harga-jual');
 
     function toggleFieldUkuran() {
         const tampil = checkboxUkuran.checked;
         wrapperBesar.classList.toggle('hidden', !tampil);
         wrapperKecil.classList.toggle('hidden', !tampil);
+        wrapperHargaJual.classList.toggle('hidden', tampil);
     }
 
     checkboxUkuran.addEventListener('change', toggleFieldUkuran);

@@ -61,7 +61,7 @@ class ProdukController extends Controller
                 'kode_produk' => 'required|max:50|unique:produks,kode_produk',
                 'nama_produk' => 'required|max:100',
                 'deskripsi' => 'nullable|string|max:1000',
-                'harga_jual' => 'required|numeric|min:0',
+                'harga_jual' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
                 'punya_ukuran' => 'nullable|boolean',
                 'harga_besar' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
                 'harga_kecil' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
@@ -85,7 +85,9 @@ class ProdukController extends Controller
             }
 
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
-            if (!$validated['punya_ukuran']) {
+            if ($validated['punya_ukuran']) {
+                $validated['harga_jual'] = null;
+            } else {
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
             }
@@ -146,7 +148,7 @@ class ProdukController extends Controller
                 ],
                 'nama_produk' => 'required|max:100',
                 'deskripsi' => 'nullable|string|max:1000',
-                'harga_jual' => 'required|numeric|min:0',
+                'harga_jual' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
                 'punya_ukuran' => 'nullable|boolean',
                 'harga_besar' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
                 'harga_kecil' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
@@ -177,7 +179,9 @@ class ProdukController extends Controller
             }
 
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
-            if (!$validated['punya_ukuran']) {
+            if ($validated['punya_ukuran']) {
+                $validated['harga_jual'] = null;
+            } else {
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
             }
