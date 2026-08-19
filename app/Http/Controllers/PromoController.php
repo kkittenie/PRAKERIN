@@ -20,7 +20,7 @@ class PromoController extends Controller
                     $query->where('nama_promo', 'like', "%{$search}%");
                 })
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             return view('pages.promo.index', compact('promo', 'search'));
         } catch (\Throwable $e) {

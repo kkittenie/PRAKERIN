@@ -16,7 +16,7 @@ class ActivityLogController extends Controller
                 ]);
             }])
                 ->latest()
-                ->paginate(15);
+                ->get();
 
             return view('pages.activity.index', compact('logs'));
         } catch (\Throwable $e) {

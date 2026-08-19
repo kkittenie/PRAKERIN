@@ -28,7 +28,7 @@ class PegawaiController extends Controller
 
             })
             ->latest()
-            ->paginate(10);
+            ->get();
 
             return view(
                 'pages.pegawai.index',

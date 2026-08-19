@@ -19,7 +19,7 @@ class KategoriProdukController extends Controller
                     $query->where('nama_kategori', 'like', "%{$search}%");
                 })
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             return view('pages.kategori-produk.index', compact('kategori', 'search'));
         } catch (\Throwable $e) {

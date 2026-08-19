@@ -45,7 +45,7 @@ class RiwayatRedeemController extends Controller
                 ->when($tanggalMulai, fn ($q) => $q->whereDate('created_at', '>=', $tanggalMulai))
                 ->when($tanggalSelesai, fn ($q) => $q->whereDate('created_at', '<=', $tanggalSelesai));
 
-            $riwayat = $query->latest()->paginate(10)->withQueryString();
+            $riwayat = $query->latest()->get();
 
             $ringkasan = [
                 'total' => PenukaranPoin::count(),

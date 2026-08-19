@@ -24,7 +24,7 @@ class ProdukController extends Controller
                         ->orWhere('kode_produk', 'like', "%{$search}%");
                 })
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             return view('pages.produk.index', compact('produk', 'search'));
         } catch (\Throwable $e) {

@@ -20,7 +20,7 @@ class BahanBakuController extends Controller
                     $query->where('nama_bahan', 'like', "%{$search}%");
                 })
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             return view(
                 'pages.bahan-baku.index',

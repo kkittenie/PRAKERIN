@@ -94,27 +94,38 @@
             <div id="chartPenjualan" class="min-h-[350px] w-full"></div>
         </div>
 
-        {{-- Produk Terlaris --}}
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 overflow-hidden">
-            <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-800">
+        {{-- Produk Terlaris DataTables --}}
+        <div class="sdt-card rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden space-y-4">
+            <div class="px-6 pt-5">
                 <h3 class="text-lg font-bold text-gray-800 dark:text-white">🏆 Produk Terlaris</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400">10 produk dengan penjualan tertinggi sepanjang waktu</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">10 produk dengan penjualan tertinggi sepanjang waktu</p>
             </div>
-            <!-- Unified Responsive Table -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+
+            <div class="sdt-toolbar">
+                <div class="sdt-toolbar-left">
+                    <div class="sdt-search">
+                        <span class="sdt-search-icon">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m2.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/></svg>
+                        </span>
+                        <input type="text" class="sdt-search-input" placeholder="Cari produk terlaris...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="sdt-table-wrap">
+                <table id="produkTerlarisTable" class="sdt-table">
                     <thead>
-                        <tr class="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
-                            <th class="text-left px-4 sm:px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider w-12">#</th>
-                            <th class="text-left px-4 sm:px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Nama Produk</th>
-                            <th class="text-right px-4 sm:px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">Total Terjual</th>
-                            <th class="text-right px-4 sm:px-6 py-3 font-semibold text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider hidden sm:table-cell">Total Pendapatan</th>
+                        <tr>
+                            <th class="py-3 w-12">#</th>
+                            <th class="py-3">Nama Produk</th>
+                            <th class="py-3 text-right">Total Terjual</th>
+                            <th class="py-3 text-right">Total Pendapatan</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
-                        @forelse($produkTerlaris as $index => $produk)
-                        <tr class="hover:bg-amber-50/30 dark:hover:bg-amber-950/20 transition-colors">
-                            <td class="px-4 sm:px-6 py-4">
+                    <tbody>
+                        @foreach($produkTerlaris as $index => $produk)
+                        <tr>
+                            <td>
                                 @if($index < 3)
                                     <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold
                                         {{ $index === 0 ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' : ($index === 1 ? 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400' : 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400') }}">
@@ -124,27 +135,23 @@
                                     <span class="text-gray-400 dark:text-gray-500 font-medium pl-2">{{ $index + 1 }}</span>
                                 @endif
                             </td>
-                            <td class="px-4 sm:px-6 py-4 font-medium text-gray-800 dark:text-gray-200">
-                                {{ $produk->nama_produk }}
-                                <div class="sm:hidden text-[11px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">Rp {{ number_format($produk->total_pendapatan, 0, ',', '.') }}</div>
-                            </td>
-                            <td class="px-4 sm:px-6 py-4 text-right">
+                            <td class="font-medium text-gray-800 dark:text-gray-200">{{ $produk->nama_produk }}</td>
+                            <td class="text-right">
                                 <span class="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold">
                                     {{ number_format($produk->total_terjual, 0, ',', '.') }}
                                     <span class="text-gray-400 dark:text-gray-500 text-xs font-normal">pcs</span>
                                 </span>
                             </td>
-                            <td class="px-4 sm:px-6 py-4 text-right font-bold text-gray-900 dark:text-white hidden sm:table-cell">Rp {{ number_format($produk->total_pendapatan, 0, ',', '.') }}</td>
+                            <td class="text-right font-bold text-gray-900 dark:text-white">Rp {{ number_format($produk->total_pendapatan, 0, ',', '.') }}</td>
                         </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
-                                Belum ada data penjualan.
-                            </td>
-                        </tr>
-                        @endforelse
+                        @endforeach
                     </tbody>
                 </table>
+            </div>
+
+            <div class="sdt-footer">
+                <div class="sdt-info"></div>
+                <div class="sdt-pagination"></div>
             </div>
         </div>
     </div>
@@ -152,6 +159,12 @@
 
 @push('scripts')
 <script>
+$(document).ready(function() {
+    initSaishoDataTable('produkTerlarisTable', {
+        emptyText: 'Belum ada data penjualan'
+    });
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     const labels = @json($labelGrafik);
     const data = @json($dataGrafik);

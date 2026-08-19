@@ -50,7 +50,7 @@ class LaporanController extends Controller
                 }
             }
 
-            $transaksiList = $query->paginate(15)->withQueryString();
+            $transaksiList = $query->get();
 
             return view('pages.laporan.histori-transaksi', [
                 'title' => 'Histori Transaksi',

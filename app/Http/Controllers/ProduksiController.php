@@ -145,7 +145,7 @@ class ProduksiController extends Controller
 
             $produksi = $this->filteredProduksiQuery($request, $periode, $tanggalRef)
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             $produksiKadaluarsa = Produksi::with('produk')
                 ->get()

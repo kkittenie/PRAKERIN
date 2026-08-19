@@ -18,7 +18,7 @@ class PengaturanPajakController extends Controller
                     $query->where('nama_pajak', 'like', "%{$search}%");
                 })
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             return view('pages.pengaturan-pajak.index', compact('pajak', 'search'));
         } catch (\Throwable $e) {

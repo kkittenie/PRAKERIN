@@ -25,7 +25,7 @@ class StampProgramController extends Controller
                 ->when($statusFilter === 'aktif', fn ($q) => $q->where('status_aktif', true))
                 ->when($statusFilter === 'nonaktif', fn ($q) => $q->where('status_aktif', false))
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             return view('pages.stamp-program.index', [
                 'title' => 'Reward Stamp',

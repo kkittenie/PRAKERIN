@@ -22,7 +22,7 @@ class BundlingController extends Controller
                     $query->where('nama_bundling', 'like', "%{$search}%");
                 })
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             return view('pages.bundling.index', compact('bundling', 'search'));
         } catch (\Throwable $e) {

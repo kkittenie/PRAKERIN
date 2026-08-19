@@ -25,8 +25,7 @@ class MemberController extends Controller
                     });
                 })
                 ->latest()
-                ->paginate(10)
-                ->withQueryString();
+                ->get();
 
             return view('pages.member.index', compact('members', 'search'));
         } catch (\Throwable $e) {

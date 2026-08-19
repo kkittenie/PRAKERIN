@@ -19,7 +19,7 @@ class MemberLevelController extends Controller
                     $query->where('nama_level', 'like', "%{$search}%");
                 })
                 ->orderBy('minimal_poin')
-                ->paginate(10);
+                ->get();
 
             return view('pages.member-level.index', [
                 'title' => 'Aturan Naik Level',

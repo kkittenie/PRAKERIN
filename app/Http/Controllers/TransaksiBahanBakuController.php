@@ -46,8 +46,7 @@ class TransaksiBahanBakuController extends Controller
             })
             ->latest('tanggal')
             ->latest('id')
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
 
             return view(
                 'pages.transaksi-bahan-baku.index',

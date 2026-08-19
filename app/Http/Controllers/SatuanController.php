@@ -34,7 +34,7 @@ class SatuanController extends Controller
                 $query->where('nama', 'like', "%{$search}%");
             })
             ->latest()
-            ->paginate(10);
+            ->get();
 
             return view('pages.satuan.index', compact('satuan'));
         } catch (\Throwable $e) {

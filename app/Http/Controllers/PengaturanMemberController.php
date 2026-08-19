@@ -19,7 +19,7 @@ class PengaturanMemberController extends Controller
 
             $pengaturanMember = $query
                 ->latest()
-                ->paginate(10);
+                ->get();
             
             return view('pages.pengaturan-member.index', compact('pengaturanMember'));
         } catch (\Throwable $e) {

@@ -24,7 +24,7 @@ class RewardVoucherController extends Controller
                 ->when($statusFilter === 'aktif', fn ($q) => $q->where('status_aktif', true))
                 ->when($statusFilter === 'nonaktif', fn ($q) => $q->where('status_aktif', false))
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             return view('pages.reward-voucher.index', [
                 'title' => 'Reward Voucher',

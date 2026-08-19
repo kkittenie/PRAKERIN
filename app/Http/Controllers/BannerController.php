@@ -21,7 +21,7 @@ class BannerController extends Controller
                 })
                 ->orderBy('urutan')
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             return view('pages.banner.index', compact('banner', 'search'));
         } catch (\Throwable $e) {

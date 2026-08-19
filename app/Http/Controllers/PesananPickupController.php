@@ -56,7 +56,7 @@ class PesananPickupController extends Controller
                 $query->whereDate('created_at', '<=', $tanggalSelesai);
             }
 
-            $pesanan = $query->latest()->paginate(10)->withQueryString();
+            $pesanan = $query->latest()->get();
 
             if ($request->ajax()) {
                 return view('pages.pesanan-pickup._tabel', [

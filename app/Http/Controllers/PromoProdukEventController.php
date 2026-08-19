@@ -19,7 +19,7 @@ class PromoProdukEventController extends Controller
                     $query->where('nama_event', 'like', "%{$search}%");
                 })
                 ->latest()
-                ->paginate(10);
+                ->get();
 
             return view('pages.promo-event.index', compact('promoEvent', 'search'));
         } catch (\Throwable $e) {
