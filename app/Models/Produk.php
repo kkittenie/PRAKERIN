@@ -20,6 +20,15 @@ class Produk extends Model
         'foto',
         'status_aktif',
         'status_ketersediaan',
+        'punya_ukuran',
+        'harga_besar',
+        'harga_kecil',
+    ];
+
+    protected $casts = [
+        'punya_ukuran' => 'boolean',
+        'harga_besar' => 'decimal:2',
+        'harga_kecil' => 'decimal:2',
     ];
 
     protected $appends = [
@@ -113,5 +122,27 @@ class Produk extends Model
             return max(0, $this->harga_jual - $diskon);
         }
         return $this->harga_jual;
+    }
+
+    public function promoProdukEvents()
+    {
+        return $this->hasMany(PromoProdukEvent::class);
+    }
+
+    /**
+     * Ambil harga produk sesuai ukuran (Besar/Kecil), fallback ke harga_jual kalau produk gak punya varian ukuran.
+     */
+    public function getHarga(?string $ukuran = null): float
+    {
+        if ($this->punya_ukuran) {
+            if ($ukuran === 'Besar') {
+                return (float) $this->harga_besar;
+            }
+            if ($ukuran === 'Kecil') {
+                return (float) $this->harga_kecil;
+            }
+        }
+
+        return (float) $this->harga_jual;
     }
 }

@@ -31,6 +31,7 @@ use App\Http\Controllers\BannerController;
 use App\Http\Controllers\PengaturanPajakController;
 use App\Http\Controllers\KontenStatisController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PromoProdukEventController;
 
 require __DIR__ . '/mobile.php';
 
@@ -202,6 +203,24 @@ Route::middleware(['auth'])->group(function () {
     });
     Route::middleware('permission:hapus_promo')->group(function () {
         Route::delete('/promo/{id}', [PromoController::class, 'hapus'])->name('promo.destroy');
+    });
+
+    // Promo Produk Event
+    Route::middleware('permission:lihat_promo_event')->group(function () {
+        Route::get('/promo-event', [PromoProdukEventController::class, 'indeks'])->name('promo-event.index');
+        Route::get('/promo-event/{id}', [PromoProdukEventController::class, 'lihat'])->whereNumber('id')->name('promo-event.show');
+        Route::get('/promo-event/{id}/ubah', [PromoProdukEventController::class, 'ubah'])->whereNumber('id')->name('promo-event.edit');
+    });
+    Route::middleware('permission:tambah_promo_event')->group(function () {
+        Route::get('/promo-event/tambah', [PromoProdukEventController::class, 'tambah'])->name('promo-event.create');
+        Route::post('/promo-event', [PromoProdukEventController::class, 'simpan'])->name('promo-event.store');
+    });
+    Route::middleware('permission:edit_promo_event')->group(function () {
+        Route::put('/promo-event/{id}', [PromoProdukEventController::class, 'perbarui'])->name('promo-event.update');
+        Route::patch('/promo-event/{id}/toggle-status', [PromoProdukEventController::class, 'toggleStatus'])->name('promo-event.toggle-status');
+    });
+    Route::middleware('permission:hapus_promo_event')->group(function () {
+        Route::delete('/promo-event/{id}', [PromoProdukEventController::class, 'hapus'])->name('promo-event.destroy');
     });
 
     // calendar

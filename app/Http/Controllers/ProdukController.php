@@ -62,6 +62,9 @@ class ProdukController extends Controller
                 'nama_produk' => 'required|max:100',
                 'deskripsi' => 'nullable|string|max:1000',
                 'harga_jual' => 'required|numeric|min:0',
+                'punya_ukuran' => 'nullable|boolean',
+                'harga_besar' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
+                'harga_kecil' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
                 'harga_modal' => 'required|numeric|min:0',
                 'stok' => 'required|integer|min:0',
                 'stok_minimum' => 'required|integer|min:0',
@@ -79,6 +82,12 @@ class ProdukController extends Controller
 
             if ($request->hasFile('foto')) {
                 $validated['foto'] = $request->file('foto')->store(self::FOTO_PATH, 'public');
+            }
+
+            $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
+            if (!$validated['punya_ukuran']) {
+                $validated['harga_besar'] = null;
+                $validated['harga_kecil'] = null;
             }
 
             $produk = Produk::create($validated);
@@ -138,6 +147,9 @@ class ProdukController extends Controller
                 'nama_produk' => 'required|max:100',
                 'deskripsi' => 'nullable|string|max:1000',
                 'harga_jual' => 'required|numeric|min:0',
+                'punya_ukuran' => 'nullable|boolean',
+                'harga_besar' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
+                'harga_kecil' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
                 'harga_modal' => 'required|numeric|min:0',
                 'stok' => 'required|integer|min:0',
                 'stok_minimum' => 'required|integer|min:0',
@@ -162,6 +174,12 @@ class ProdukController extends Controller
                 $validated['foto'] = $request
                     ->file('foto')
                     ->store(self::FOTO_PATH, 'public');
+            }
+
+            $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
+            if (!$validated['punya_ukuran']) {
+                $validated['harga_besar'] = null;
+                $validated['harga_kecil'] = null;
             }
 
             $produk->update($validated);

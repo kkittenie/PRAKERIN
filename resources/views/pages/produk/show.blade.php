@@ -50,7 +50,12 @@
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Harga Jual</p>
                         <p class="font-semibold text-green-600 dark:text-green-400">
-                            Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}
+                            @if($produk->punya_ukuran)
+                                Besar: Rp {{ number_format($produk->harga_besar, 0, ',', '.') }} &nbsp;/&nbsp;
+                                Kecil: Rp {{ number_format($produk->harga_kecil, 0, ',', '.') }}
+                            @else
+                                Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}
+                            @endif
                         </p>
                     </div>
 

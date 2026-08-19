@@ -106,7 +106,13 @@
                                 <td class="py-3 px-3 hidden md:table-cell">{{ $item->kategori->nama_kategori ?? '-' }}</td>
                                 <td
                                     class="py-3 px-2 sm:px-3 text-right font-bold text-amber-700 dark:text-amber-400 text-xs sm:text-sm whitespace-nowrap">
-                                    Rp {{ number_format($item->harga_jual, 0, ',', '.') }}</td>
+                                    @if($item->punya_ukuran)
+                                        <div class="text-xs">Besar: Rp {{ number_format($item->harga_besar, 0, ',', '.') }}</div>
+                                        <div class="text-xs">Kecil: Rp {{ number_format($item->harga_kecil, 0, ',', '.') }}</div>
+                                    @else
+                                        Rp {{ number_format($item->harga_jual, 0, ',', '.') }}
+                                    @endif
+                                    </td>
                                 <td class="py-3 px-3 hidden sm:table-cell text-center">
                                     @if($item->stok <= $item->stok_minimum)
                                         <span

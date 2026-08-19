@@ -2,7 +2,7 @@
 
 @section('content')
 
-    <x-common.page-breadcrumb pageTitle="Promo Produk" />
+    <x-common.page-breadcrumb pageTitle="Potongan Harga" />
 
     <div class="space-y-6" x-data="{
             search: @js(request('search', '')),

@@ -43,7 +43,8 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'Transaksi Bahan Baku', 'path' => '/transaksi-bahan-baku', 'permission' => 'lihat_stok'],
                     ['name' => 'Produksi', 'path' => '/produksi', 'permission' => 'lihat_produksi'],
-                    ['name' => 'Promo Produk', 'path' => '/promo', 'permission' => 'lihat_promo'],
+                    ['name' => 'Potongan Harga', 'path' => '/promo', 'permission' => 'lihat_promo'],
+                    ['name' => 'Promo Produk', 'path' => '/promo-event', 'permission' => 'lihat_promo_event'],
                 ],
             ],
 

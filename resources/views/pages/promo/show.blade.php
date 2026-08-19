@@ -2,7 +2,7 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Detail Promo" parentTitle="Promo Produk" :parentUrl="route('promo.index')" />
+<x-common.page-breadcrumb pageTitle="Detail Promo" parentTitle="Potongan Harga" :parentUrl="route('promo.index')" />
 
 @php
     $now = now();

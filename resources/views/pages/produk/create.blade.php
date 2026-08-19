@@ -110,6 +110,59 @@
                     @enderror
                 </div>
 
+                {{-- Punya Varian Ukuran --}}
+                <div class="md:col-span-2">
+                    <label class="flex items-center gap-3 h-12 cursor-pointer">
+                        <input type="hidden" name="punya_ukuran" value="0">
+                        <input
+                            type="checkbox"
+                            id="punya_ukuran"
+                            name="punya_ukuran"
+                            value="1"
+                            class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                            {{ old('punya_ukuran') == '1' ? 'checked' : '' }}>
+                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Produk ini punya varian ukuran (Besar/Kecil)</span>
+                    </label>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">
+                        Kalau dicentang, harga jual produk akan dipisah berdasarkan ukuran Besar dan Kecil (dipakai di menu Produksi & Kasir).
+                    </span>
+                    @error('punya_ukuran')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
+                {{-- Harga Besar --}}
+                <div id="wrapper-harga-besar" class="hidden">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Harga Besar <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        inputmode="numeric"
+                        name="harga_besar"
+                        value="{{ old('harga_besar') ? number_format((int) old('harga_besar'), 0, ',', '.') : '' }}"
+                        class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    @error('harga_besar')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
+                {{-- Harga Kecil --}}
+                <div id="wrapper-harga-kecil" class="hidden">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Harga Kecil <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        inputmode="numeric"
+                        name="harga_kecil"
+                        value="{{ old('harga_kecil') ? number_format((int) old('harga_kecil'), 0, ',', '.') : '' }}"
+                        class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    @error('harga_kecil')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
                 {{-- Harga Modal --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -242,6 +295,20 @@
 </div>
 
     <script>
+
+    const checkboxUkuran = document.getElementById('punya_ukuran');
+    const wrapperBesar = document.getElementById('wrapper-harga-besar');
+    const wrapperKecil = document.getElementById('wrapper-harga-kecil');
+
+    function toggleFieldUkuran() {
+        const tampil = checkboxUkuran.checked;
+        wrapperBesar.classList.toggle('hidden', !tampil);
+        wrapperKecil.classList.toggle('hidden', !tampil);
+    }
+
+    checkboxUkuran.addEventListener('change', toggleFieldUkuran);
+    window.addEventListener('load', toggleFieldUkuran);
+
     document.querySelectorAll('.input-rupiah').forEach(function (input) {
 
         input.addEventListener('input', function (e) {
