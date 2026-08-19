@@ -104,7 +104,6 @@
                             <th class="py-3 text-center">Poin Dipakai</th>
                             <th class="py-3">Tanggal Redeem</th>
                             <th class="py-3 text-center">Status</th>
-                            <th class="py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -140,29 +139,6 @@
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusBadge['class'] }}">
                                         {{ $statusBadge['label'] }}
                                     </span>
-                                </td>
-                                <td class="text-right whitespace-nowrap">
-                                    @can('edit_reward')
-                                        @if($item->status === 'menunggu_diambil')
-                                            <div class="inline-flex gap-1">
-                                                <form action="{{ route('riwayat-redeem.update-status', $item->id) }}" method="POST" class="inline">
-                                                    @csrf @method('PATCH')
-                                                    <input type="hidden" name="status" value="selesai">
-                                                    <button type="button" @click="bukaModalAksi($el.closest('form'), 'selesai', '{{ $item->kode_redeem }}')" class="text-green-600 dark:text-green-400 font-semibold hover:underline text-xs">Tandai Selesai</button>
-                                                </form>
-                                                <span class="text-gray-300">|</span>
-                                                <form action="{{ route('riwayat-redeem.update-status', $item->id) }}" method="POST" class="inline">
-                                                    @csrf @method('PATCH')
-                                                    <input type="hidden" name="status" value="dibatalkan">
-                                                    <button type="button" @click="bukaModalAksi($el.closest('form'), 'dibatalkan', '{{ $item->kode_redeem }}')" class="text-red-500 font-semibold hover:underline text-xs">Batalkan</button>
-                                                </form>
-                                            </div>
-                                        @else
-                                            <span class="text-xs text-gray-400">{{ $item->diambil_pada?->translatedFormat('d M Y, H:i') ?? '-' }}</span>
-                                        @endif
-                                    @else
-                                        <span class="text-xs text-gray-400">-</span>
-                                    @endcan
                                 </td>
                             </tr>
                         @endforeach

@@ -28,10 +28,10 @@
             <table id="activityLogTable" class="sdt-table">
                 <thead>
                     <tr>
-                        <th class="py-3" style="width: 18%;">Waktu</th>
-                        <th class="py-3" style="width: 15%;">User</th>
-                        <th class="py-3" style="width: 12%;">Role</th>
-                        <th class="py-3" style="width: 55%;">Aktivitas</th>
+                        <th class="py-3" style="width: 22%;">Waktu</th>
+                        <th class="py-3" style="width: 18%;">User</th>
+                        <th class="py-3 text-center" style="width: 15%;">Role</th>
+                        <th class="py-3" style="width: 45%;">Aktivitas</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -49,13 +49,13 @@
                         @endphp
                         <tr>
                             <td class="text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">{{ $log->created_at->format('d M Y H:i') }}</td>
-                            <td class="font-semibold text-gray-800 dark:text-white">{{ $causerNama }}</td>
-                            <td>
+                            <td class="font-semibold text-gray-800 dark:text-white whitespace-nowrap">{{ $causerNama }}</td>
+                            <td class="text-center whitespace-nowrap">
                                 <span class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
                                     {{ $causerRole }}
                                 </span>
                             </td>
-                            <td class="text-gray-600 dark:text-gray-300 text-sm">{{ $log->description }}</td>
+                            <td class="text-gray-600 dark:text-gray-300 text-xs sm:text-sm break-words">{{ $log->description }}</td>
                         </tr>
                     @endforeach
                 </tbody>
