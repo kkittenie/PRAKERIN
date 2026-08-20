@@ -21,59 +21,45 @@
             }
         }">
 
-        {{-- Summary Cards --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Total Redeem</p>
-                <p class="mt-1 text-2xl font-extrabold text-gray-900 dark:text-white">{{ number_format($ringkasan['total'], 0, ',', '.') }}</p>
-            </div>
-            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Menunggu Diambil</p>
-                <p class="mt-1 text-2xl font-extrabold text-amber-600 dark:text-amber-400">{{ number_format($ringkasan['menunggu_diambil'], 0, ',', '.') }}</p>
-            </div>
-            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Selesai</p>
-                <p class="mt-1 text-2xl font-extrabold text-green-600 dark:text-green-400">{{ number_format($ringkasan['selesai'], 0, ',', '.') }}</p>
-            </div>
-            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-                <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Dibatalkan</p>
-                <p class="mt-1 text-2xl font-extrabold text-gray-500 dark:text-gray-400">{{ number_format($ringkasan['dibatalkan'], 0, ',', '.') }}</p>
-            </div>
-        </div>
-
         {{-- Filter Card --}}
-        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6">
-            <form method="GET" action="{{ route('riwayat-redeem.index') }}" id="filterForm" class="flex flex-col lg:flex-row lg:items-end gap-3 flex-wrap">
-                <div class="w-full sm:w-44">
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
-                    <select name="status" class="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2.5 px-4 text-sm">
-                        <option value="">Semua Status</option>
-                        <option value="menunggu_diambil" {{ request('status') === 'menunggu_diambil' ? 'selected' : '' }}>Menunggu Diambil</option>
-                        <option value="selesai" {{ request('status') === 'selesai' ? 'selected' : '' }}>Selesai</option>
-                        <option value="dibatalkan" {{ request('status') === 'dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
-                    </select>
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-6">
+            <div class="flex flex-col lg:flex-row lg:items-end gap-4">
+                <div class="flex-1">
+                    <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-1">Riwayat Redeem</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Lihat semua riwayat penukaran reward oleh member.</p>
                 </div>
-                <div class="w-full sm:w-40">
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Jenis Reward</label>
-                    <select name="jenis" class="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2.5 px-4 text-sm">
-                        <option value="">Semua Jenis</option>
-                        <option value="voucher" {{ request('jenis') === 'voucher' ? 'selected' : '' }}>Voucher</option>
-                        <option value="produk" {{ request('jenis') === 'produk' ? 'selected' : '' }}>Produk</option>
-                    </select>
-                </div>
-                <div class="w-full sm:w-40">
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Dari Tanggal</label>
-                    <input type="date" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}" class="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2.5 px-4 text-sm">
-                </div>
-                <div class="w-full sm:w-40">
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sampai Tanggal</label>
-                    <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}" class="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2.5 px-4 text-sm">
-                </div>
-                <div class="flex gap-2">
-                    <button type="submit" class="px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white font-semibold rounded-xl text-sm transition shadow-xs whitespace-nowrap">Terapkan</button>
-                    <a href="{{ route('riwayat-redeem.index') }}" class="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold rounded-xl text-sm transition border border-gray-200 dark:border-gray-700 whitespace-nowrap">Reset</a>
-                </div>
-            </form>
+                <form method="GET" action="{{ route('riwayat-redeem.index') }}" class="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full md:w-auto flex-wrap">
+                    <div class="flex-1 md:flex-initial">
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
+                        <select name="status" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
+                            <option value="">Semua Status</option>
+                            <option value="menunggu_diambil" {{ request('status') === 'menunggu_diambil' ? 'selected' : '' }}>Menunggu Diambil</option>
+                            <option value="selesai" {{ request('status') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                            <option value="dibatalkan" {{ request('status') === 'dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 md:flex-initial">
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Jenis Reward</label>
+                        <select name="jenis" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
+                            <option value="">Semua Jenis</option>
+                            <option value="voucher" {{ request('jenis') === 'voucher' ? 'selected' : '' }}>Voucher</option>
+                            <option value="produk" {{ request('jenis') === 'produk' ? 'selected' : '' }}>Produk</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 md:flex-initial">
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Dari Tanggal</label>
+                        <input type="date" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
+                    </div>
+                    <div class="flex-1 md:flex-initial">
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sampai Tanggal</label>
+                        <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
+                    </div>
+                    <div class="flex gap-2 justify-end mt-2 md:mt-0">
+                        <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">Filter</button>
+                        <a href="{{ route('riwayat-redeem.index') }}" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-600 dark:text-gray-300 font-semibold rounded-lg text-sm transition border border-gray-200 dark:border-gray-700">Reset</a>
+                    </div>
+                </form>
+            </div>
         </div>
 
         {{-- DataTables Card --}}

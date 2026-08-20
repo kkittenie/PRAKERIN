@@ -172,8 +172,7 @@
 
         /* Alignment synchronization */
         .sdt-table thead th.text-right,
-        .sdt-table tbody td.text-right,
-        .sdt-table thead th:last-child {
+        .sdt-table tbody td.text-right {
             text-align: right !important;
         }
         .sdt-table thead th.text-center,
