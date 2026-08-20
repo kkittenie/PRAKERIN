@@ -592,7 +592,25 @@
                         });
                         if (! response.ok) throw new Error('HTTP ' + response.status);
 
+                        // Matiin instance DataTable yang lama dulu sebelum tabelnya
+                        // diganti, biar nggak nyangkut/leak.
+                        if (window.jQuery && $.fn.DataTable.isDataTable('#pesananPickupTable')) {
+                            $('#pesananPickupTable').DataTable().destroy();
+                        }
+
                         wrapper.innerHTML = await response.text();
+
+                        // <script> yang masuk lewat innerHTML nggak otomatis
+                        // dieksekusi browser, jadi initSaishoDataTable() di
+                        // _tabel.blade.php nggak pernah kepanggil tanpa ini —
+                        // itu sebabnya paginasi ilang & semua data numpuk keliatan
+                        // sekaligus tiap ada update real-time. Bikin ulang tiap
+                        // <script> tag-nya biar beneran dieksekusi.
+                        wrapper.querySelectorAll('script').forEach((skripLama) => {
+                            const skripBaru = document.createElement('script');
+                            skripBaru.textContent = skripLama.textContent;
+                            skripLama.replaceWith(skripBaru);
+                        });
 
                         wrapper.classList.add('ring-2', 'ring-amber-400');
                         setTimeout(() => wrapper.classList.remove('ring-2', 'ring-amber-400'), 900);
