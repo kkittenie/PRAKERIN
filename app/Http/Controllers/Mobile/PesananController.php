@@ -154,7 +154,7 @@ class PesananController extends Controller
 
             // Kabari dashboard POS supaya tab "Menunggu Konfirmasi" langsung
             // update tanpa kasir perlu refresh manual.
-            event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
+            \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update')));
 
             return back()->with('success', 'Bukti pembayaran dikonfirmasi. Menunggu verifikasi dari toko.');
         } catch (\Throwable $e) {

@@ -116,7 +116,7 @@ class PesananPickupController extends Controller
             activity()->causedBy(auth()->user())->performedOn($transaksi)
                 ->log('mengonfirmasi bukti pembayaran pesanan pick up');
 
-            event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
+            \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'lunas')));
 
             return back()->with('success', "Pembayaran pesanan {$transaksi->kode_transaksi} dikonfirmasi.");
         } catch (\Throwable $e) {
@@ -154,7 +154,7 @@ class PesananPickupController extends Controller
             activity()->causedBy(auth()->user())->performedOn($transaksi)
                 ->log('menolak bukti pembayaran pesanan pick up');
 
-            event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
+            \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'tolak_bukti')));
 
             return back()->with('success', "Bukti pembayaran {$transaksi->kode_transaksi} ditolak, member diminta upload ulang.");
         } catch (\Throwable $e) {
@@ -182,7 +182,7 @@ class PesananPickupController extends Controller
             activity()->causedBy(auth()->user())->performedOn($transaksi)
                 ->log('memproses pesanan pick up');
 
-            event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
+            \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'diproses')));
 
             return back()->with('success', "Pesanan {$transaksi->kode_transaksi} mulai diproses.");
         } catch (\Throwable $e) {
@@ -238,7 +238,7 @@ class PesananPickupController extends Controller
                 activity()->causedBy(auth()->user())->performedOn($transaksi)
                     ->log('menandai pesanan pick up siap diambil');
 
-                event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
+                \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'siap')));
 
                 return back()->with('success', "Pesanan {$transaksi->kode_transaksi} ditandai siap diambil.");
             } catch (\Exception $e) {
@@ -281,7 +281,7 @@ class PesananPickupController extends Controller
                 activity()->causedBy(auth()->user())->performedOn($transaksi)
                     ->log('membatalkan pesanan pick up dari member app');
 
-                event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
+                \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'batal')));
 
                 return back()->with('success', "Pesanan {$transaksi->kode_transaksi} dibatalkan, stok & voucher dikembalikan.");
             } catch (\Exception $e) {
@@ -335,7 +335,7 @@ class PesananPickupController extends Controller
                 activity()->causedBy(auth()->user())->performedOn($transaksi)
                     ->log('menyerahkan pesanan pick up');
 
-                event(new \App\Events\PesananPickupUpdated($transaksi, 'update'));
+                \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'selesai')));
 
                 return response()->json([
                     'status' => 'success',

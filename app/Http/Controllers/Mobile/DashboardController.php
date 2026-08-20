@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Produk;
 use App\Models\RewardKatalog;
 use App\Models\Banner;
+use App\Models\MemberLevel;
 use App\Support\ActivityLogHelper;
 use Illuminate\Support\Facades\Auth;
 
@@ -33,6 +34,7 @@ class DashboardController extends Controller
                 'rewardUnggulan' => $rewardUnggulan,
                 'produkPilihan' => $produkPilihan,
                 'promoBanners' => $this->promoBanners(),
+                'semuaTier' => MemberLevel::aktif()->get(),
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

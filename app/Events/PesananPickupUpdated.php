@@ -10,21 +10,6 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-/**
- * Disiarkan tiap kali ada pesanan pick up (dari Member App) yang baru
- * masuk atau statusnya berubah, supaya halaman POS "Pesanan" (pesanan-
- * pickup.indeks) bisa update sendiri tanpa kasir harus refresh manual.
- *
- * Payload sengaja diringkas (bukan seluruh model Transaksi) — cukup buat
- * frontend memutuskan perlu muat ulang atau tidak, detail lengkapnya tetap
- * diambil lewat endpoint /pesanan-pickup/{id}/detail yang sudah ada.
- *
- * Pakai ShouldBroadcastNow (bukan ShouldBroadcast) supaya siaran dikirim
- * langsung di request yang sama, tanpa bergantung ke queue worker
- * (php artisan queue:work) yang terpisah — kalau worker itu nggak
- * jalan, event ShouldBroadcast biasa cuma numpuk di tabel `jobs` dan
- * nggak pernah terkirim ke kasir.
- */
 class PesananPickupUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
@@ -40,15 +25,27 @@ class PesananPickupUpdated implements ShouldBroadcastNow
     public string $statusPembayaran;
 
     /**
-     * @param  string  $tipe  'baru' (pesanan baru masuk) atau 'update' (status/pembayaran berubah)
+     * Aksi spesifik yang barusan dilakukan kasir (lunas/tolak_bukti/diproses/
+     * siap/batal/selesai) atau 'baru' waktu member checkout. Dipakai sama
+     * App\Listeners\KirimNotifikasiMemberPesanan buat nentuin pesan notifikasi
+     * apa yang perlu dikirim ke member — nggak bisa ditebak cuma dari
+     * statusPesanan/statusPembayaran soalnya beberapa aksi (mis. tolak bukti)
+     * nggak selalu ganti kolom status itu sendiri.
      */
-    public function __construct(Transaksi $transaksi, string $tipe = 'update')
+    public ?string $aksi;
+
+    /**
+     * @param  string  $tipe  'baru' (pesanan baru masuk) atau 'update' (status/pembayaran berubah)
+     * @param  string|null  $aksi  lihat properti $aksi di atas
+     */
+    public function __construct(Transaksi $transaksi, string $tipe = 'update', ?string $aksi = null)
     {
         $this->tipe = $tipe;
         $this->transaksiId = $transaksi->id;
         $this->kodeTransaksi = $transaksi->kode_transaksi;
         $this->statusPesanan = $transaksi->status_pesanan;
         $this->statusPembayaran = $transaksi->status_pembayaran;
+        $this->aksi = $aksi ?? ($tipe === 'baru' ? 'baru' : null);
     }
 
     public function broadcastOn(): array

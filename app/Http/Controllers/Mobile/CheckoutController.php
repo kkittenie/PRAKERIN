@@ -320,7 +320,7 @@ class CheckoutController extends Controller
 
                 // Kabari dashboard POS real-time supaya pesanan baru langsung
                 // muncul di halaman "Pesanan" kasir tanpa perlu refresh manual.
-                event(new \App\Events\PesananPickupUpdated($transaksi, 'baru'));
+                \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'baru')));
 
                 return redirect()
                     ->route('member.pesanan.show', $transaksi)

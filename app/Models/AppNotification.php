@@ -13,6 +13,7 @@ class AppNotification extends Model
 
     protected $fillable = [
         'user_id',
+        'member_id',
         'type',
         'title',
         'desc',
@@ -28,5 +29,15 @@ class AppNotification extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class);
+    }
+
+    public function scopeUntukMember($query, int $memberId)
+    {
+        return $query->where('member_id', $memberId);
     }
 }

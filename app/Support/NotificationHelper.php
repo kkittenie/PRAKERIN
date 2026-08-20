@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\AppNotification;
 use App\Models\BahanBaku;
+use App\Models\MemberDeviceToken;
 use App\Models\PesananDitahan;
 use App\Models\Produk;
 use App\Models\Produksi;
@@ -143,6 +144,107 @@ class NotificationHelper
             'icon_type' => $iconType,
             'is_read' => false,
         ]);
+    }
+
+    /**
+     * Ambil notifikasi in-app milik satu member (buat halaman
+     * /mobile/notifikasi & badge unread di lonceng beranda).
+     */
+    public static function getNotifikasiMember(int $memberId, int $limit = 50)
+    {
+        return AppNotification::untukMember($memberId)
+            ->latest()
+            ->limit($limit)
+            ->get();
+    }
+
+    public static function hitungBelumDibacaMember(int $memberId): int
+    {
+        return AppNotification::untukMember($memberId)->where('is_read', false)->count();
+    }
+
+    /**
+     * Bikin notifikasi in-app buat member + kirim push notification (FCM)
+     * ke HP-nya, biar kaya notif WA: tetap masuk walau aplikasinya ditutup.
+     */
+    public static function untukMember(int $memberId, string $title, string $desc, string $type = 'pesanan', ?string $url = null, string $iconType = 'info'): AppNotification
+    {
+        $notif = AppNotification::create([
+            'member_id' => $memberId,
+            'title' => $title,
+            'desc' => $desc,
+            'type' => $type,
+            'url' => $url,
+            'icon_type' => $iconType,
+            'is_read' => false,
+        ]);
+
+        $tokens = MemberDeviceToken::where('member_id', $memberId)->pluck('token')->all();
+
+        if (! empty($tokens)) {
+            $tokensGagal = (new FcmService())->kirimKeTokens($tokens, $title, $desc, [
+                'notification_id' => (string) $notif->id,
+                'url' => $url ?? '',
+                'type' => $type,
+            ]);
+
+            if (! empty($tokensGagal)) {
+                MemberDeviceToken::whereIn('token', $tokensGagal)->delete();
+            }
+        }
+
+        return $notif;
+    }
+
+    /**
+     * Pesan notifikasi buat member berdasarkan aksi kasir di halaman
+     * Pesanan Pickup. Dipanggil dari App\Listeners\KirimNotifikasiMemberPesanan
+     * (yang listen ke event PesananPickupUpdated).
+     *
+     * @return array{0: string, 1: string, 2: string}|null  [title, desc, icon_type] atau null kalau aksi ini nggak perlu dinotifikasikan ke member
+     */
+    public static function pesanUntukAksiPesanan(Transaksi $transaksi, string $aksi): ?array
+    {
+        $kode = $transaksi->kode_transaksi;
+
+        return match ($aksi) {
+            'baru' => [
+                'Pesanan diterima',
+                "Pesanan {$kode} kamu sudah kami terima, selesaikan pembayaran ya.",
+                'info',
+            ],
+            'lunas' => [
+                'Pembayaran dikonfirmasi',
+                "Pembayaran pesanan {$kode} sudah dikonfirmasi toko. Pesanan kamu segera diproses.",
+                'success',
+            ],
+            'tolak_bukti' => [
+                'Bukti pembayaran ditolak',
+                ($transaksi->catatan_penolakan ?: 'Bukti pembayaran tidak valid') . ". Silakan upload ulang bukti pembayaran {$kode}.",
+                'error',
+            ],
+            'diproses' => [
+                'Pesanan sedang diproses',
+                "Pesanan {$kode} kamu sedang disiapkan oleh toko.",
+                'info',
+            ],
+            'siap' => [
+                'Pesanan siap diambil!',
+                "Pesanan {$kode} sudah siap. Tunjukkan kode pickup " . ($transaksi->kode_pickup ?? '-') . " ke kasir ya.",
+                'success',
+            ],
+            'batal' => [
+                'Pesanan dibatalkan',
+                "Pesanan {$kode} dibatalkan oleh toko.",
+                'error',
+            ],
+            'selesai' => [
+                'Pesanan selesai',
+                "Pesanan {$kode} sudah kamu ambil. Terima kasih sudah belanja di Saisho!",
+                'success',
+            ],
+            default => null,
+        };
     }
 
     private static function getIconHtml(string $iconType): string

@@ -89,7 +89,7 @@
                     @empty
                         @include('mobile.components.empty-state', [
                             'title' => 'Belum Ada Voucher',
-                            'description' => 'Diskon-diskon menarik bakal muncul di tab ini duluan.',
+                            'description' => 'Diskon-diskon menarik akan muncul di tab ini.',
                             'icon' => 'icon-ticket',
                             'iconBg' => 'bg-brand-50',
                             'iconColor' => 'text-brand-800',

@@ -3,9 +3,6 @@
 @php
     $waCs = '6282000768044';
 
-    // Sama persis dengan mapping warna badge di halaman admin "Aturan Naik
-    // Level" (resources/views/pages/member-level/*.blade.php), supaya warna
-    // tier di member app konsisten dengan yang di-set admin di POS.
     $warnaBadgeTier = match ($member?->warna_badge_level ?? 'gray') {
         'yellow' => 'bg-yellow-600',
         'slate' => 'bg-slate-500',
@@ -16,6 +13,19 @@
         'red' => 'bg-red-600',
         default => 'bg-gray-500',
     };
+
+    $warnaTierMap = fn ($warna) => match ($warna) {
+        'yellow' => 'bg-yellow-600',
+        'slate' => 'bg-slate-500',
+        'amber' => 'bg-amber-700',
+        'blue' => 'bg-blue-600',
+        'green' => 'bg-green-600',
+        'purple' => 'bg-purple-600',
+        'red' => 'bg-red-600',
+        default => 'bg-gray-500',
+    };
+
+    $progresTier = $member?->progres_tier;
 @endphp
 
 @section('content')
@@ -25,9 +35,11 @@
         {{-- Promo Banner (1 big image, carousel like welcome page) + Greeting Card, stacked Fore-style --}}
         <div class="-mx-5 sm:mx-0 relative">
             {{-- Notification button, floating top-right over the banner --}}
-            <button type="button" class="absolute right-4 top-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur transition hover:bg-black/40">
+            <a href="{{ route('member.notifikasi.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                class="absolute right-4 top-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur transition hover:bg-black/40">
                 <svg viewBox="0 0 24 24" fill="none" class="h-[18px] w-[18px]"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
+                <span id="notif-unread-dot" class="hidden absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-red-500 ring-2 ring-black/30"></span>
+            </a>
 
             @if (count($promoBanners))
                 <div id="promo-viewport" class="relative h-80 md:h-[380px] lg:h-[420px] landscape:h-64 md:landscape:h-72 w-full touch-pan-x overflow-hidden rounded-b-[1.5rem] sm:rounded-3xl">
@@ -153,18 +165,20 @@
                         <p class="mt-0.5 text-xs text-gray-400">Terima kasih sudah jadi pelanggan setia Saisho.</p>
 
                         <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-dashed border-gray-100 pt-4">
-                            <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 py-1.5 pl-1.5 pr-3 text-xs font-bold text-gray-800">
+                            <button type="button" onclick="openSheet('sheet-info-poin')"
+                                    class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 py-1.5 pl-1.5 pr-3 text-xs font-bold text-gray-800 transition active:scale-95">
                                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-50 p-1 text-brand-700">
                                     <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
                                 </span>
                                 {{ number_format($member->poin, 0, ',', '.') }} Poin
-                            </span>
-                            <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 py-1.5 pl-1.5 pr-3 text-xs font-bold text-gray-800">
+                            </button>
+                            <button type="button" onclick="openSheet('sheet-info-tier')"
+                                    class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 py-1.5 pl-1.5 pr-3 text-xs font-bold text-gray-800 transition active:scale-95">
                                 <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $warnaBadgeTier }} text-white">
                                     @include('mobile.components.icon-crown', ['class' => 'h-3.5 w-3.5'])
                                 </span>
                                 Tier {{ $member->level }}
-                            </span>
+                            </button>
                         </div>
                     </div>
                 @else
@@ -387,5 +401,139 @@
     </div>
 
     @include('mobile.components.floating-cart')
+
+    {{-- Bottom sheet: Info Poin --}}
+    <dialog id="sheet-info-poin" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto max-h-[82vh] rounded-t-3xl border-0 p-0">
+        <div class="flex max-h-[82vh] flex-col">
+            <div class="flex shrink-0 justify-center pb-1 pt-3">
+                <span class="h-1 w-10 rounded-full bg-gray-200"></span>
+            </div>
+            <div class="overflow-y-auto px-6 pb-2 pt-3">
+                <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 p-2 text-brand-700">
+                    <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
+                </span>
+                <h3 class="mt-3 text-center text-theme-md font-bold text-brand-700">Poin Kamu</h3>
+                <p class="mt-1 text-center text-theme-sm text-gray-500">
+                    Saat ini kamu punya <span class="font-bold text-gray-800">{{ number_format($member->poin ?? 0, 0, ',', '.') }} poin</span>
+                </p>
+                <div class="mt-4 text-theme-sm leading-relaxed text-gray-700">
+                    <ol class="list-decimal space-y-2 pl-4">
+                        <li>Poin didapat otomatis setiap transaksi selesai, sesuai aturan perolehan poin yang berlaku saat itu (menyesuaikan jumlah belanja).</li>
+                        <li>Poin bisa ditukar dengan voucher diskon atau produk gratis di halaman Tukar Poin.</li>
+                        <li>Poin tidak hangus selama akun member kamu tetap aktif.</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="shrink-0 px-6 pb-6 pt-4">
+                <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); closeSheet('sheet-info-poin'); setTimeout(() => animateNavigate('{{ route('member.reward.index') }}', 'forward'), 150);"
+                   class="block w-full rounded-full bg-brand-700 py-3.5 text-center text-theme-sm font-semibold text-white active:bg-brand-800">
+                    Tukar Poin Sekarang
+                </a>
+                <button type="button" onclick="closeSheet('sheet-info-poin')" class="mt-1 w-full rounded-full py-3 text-theme-sm font-medium text-gray-500">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    {{-- Bottom sheet: Info Tier --}}
+    <dialog id="sheet-info-tier" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto max-h-[82vh] rounded-t-3xl border-0 p-0">
+        <div class="flex max-h-[82vh] flex-col">
+            <div class="flex shrink-0 justify-center pb-1 pt-3">
+                <span class="h-1 w-10 rounded-full bg-gray-200"></span>
+            </div>
+            <div class="overflow-y-auto px-6 pb-2 pt-3">
+                <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full {{ $warnaBadgeTier }} text-white">
+                    @include('mobile.components.icon-crown', ['class' => 'h-6 w-6'])
+                </span>
+                <h3 class="mt-3 text-center text-theme-md font-bold text-brand-700">Tier {{ $member->level ?? '-' }}</h3>
+
+                @if ($progresTier)
+                    <p class="mt-1 text-center text-theme-sm text-gray-500">
+                        {{ $progresTier['poin_dibutuhkan'] }} poin lagi menuju Tier {{ $progresTier['tier_berikutnya'] }}
+                    </p>
+                    <div class="mt-3">
+                        <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                            <div class="h-full rounded-full {{ $warnaBadgeTier }}" style="width: {{ $progresTier['persen'] }}%"></div>
+                        </div>
+                    </div>
+                @else
+                    <p class="mt-1 text-center text-theme-sm text-gray-500">Kamu sudah berada di tier tertinggi ✨</p>
+                @endif
+
+                <div class="mt-5 text-theme-sm leading-relaxed text-gray-700">
+                    <p class="font-bold text-gray-800">Kenapa perlu naik tier?</p>
+                    <p class="mt-1 text-gray-500">Semakin tinggi tier kamu, semakin banyak keuntungan dan promo eksklusif yang bisa kamu nikmati di Saisho.</p>
+                </div>
+
+                @if (isset($semuaTier) && $semuaTier->isNotEmpty())
+                    <div class="mt-4 space-y-2">
+                        @foreach ($semuaTier as $tier)
+                            @php
+                                $iniTierSaatIni = $tier->nama_level === ($member->level ?? null);
+                            @endphp
+                            <div class="flex items-center justify-between rounded-xl border {{ $iniTierSaatIni ? 'border-brand-300 bg-brand-50' : 'border-gray-100' }} px-3 py-2.5">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $warnaTierMap($tier->warna_badge) }} text-white">
+                                        @include('mobile.components.icon-crown', ['class' => 'h-3.5 w-3.5'])
+                                    </span>
+                                    <span class="text-theme-sm font-semibold {{ $iniTierSaatIni ? 'text-brand-700' : 'text-gray-800' }}">{{ $tier->nama_level }}</span>
+                                </div>
+                                <span class="text-theme-xs text-gray-400">Min. {{ number_format($tier->minimal_poin, 0, ',', '.') }} poin</span>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+            <div class="shrink-0 px-6 pb-6 pt-4">
+                <button type="button" onclick="closeSheet('sheet-info-tier')"
+                        class="w-full rounded-full bg-brand-700 py-3.5 text-theme-sm font-semibold text-white active:bg-brand-800">
+                    Mengerti
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        // Badge titik merah di lonceng notifikasi — polling ringan tiap 20
+        // detik selagi halaman beranda kebuka (fetch JSON kecil, bukan reload
+        // halaman) supaya member tau ada notif baru walau nggak dikirim push.
+        (() => {
+            const dot = document.getElementById('notif-unread-dot');
+            if (!dot) return;
+
+            const cekUnread = () => {
+                fetch("{{ route('member.notifikasi.unread-count') }}", {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                })
+                    .then((res) => res.ok ? res.json() : null)
+                    .then((data) => {
+                        if (!data) return;
+                        dot.classList.toggle('hidden', data.unread <= 0);
+                    })
+                    .catch(() => {});
+            };
+
+            cekUnread();
+            setInterval(cekUnread, 20000);
+        })();
+
+        window.daftarkanFcmToken = function (token) {
+            if (!token) return;
+            fetch("{{ route('member.notifikasi.token') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({ token: token, platform: 'android' }),
+            }).catch(() => {});
+        };
+
+        if (window.Android && typeof window.Android.getFcmToken === 'function') {
+            const token = window.Android.getFcmToken();
+            if (token) window.daftarkanFcmToken(token);
+        }
+    </script>
 
 @endsection

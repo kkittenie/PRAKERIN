@@ -18,6 +18,7 @@
                     punyaUkuran: {{ $produk->punya_ukuran ? 'true' : 'false' }},
                     hargaKecil: {{ (float) ($produk->harga_kecil ?? 0) }},
                     hargaBesar: {{ (float) ($produk->harga_besar ?? 0) }},
+                    hargaDasar: {{ (float) $hargaFinal }},
                     get hargaSatuan() {
                         if (this.punyaUkuran) {
                             return this.ukuran === 'Besar' ? this.hargaBesar : this.hargaKecil;

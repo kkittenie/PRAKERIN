@@ -8,6 +8,7 @@ use App\Http\Controllers\Mobile\DashboardController;
 use App\Http\Controllers\Mobile\KeranjangController;
 use App\Http\Controllers\Mobile\KontenController;
 use App\Http\Controllers\Mobile\MenuController;
+use App\Http\Controllers\Mobile\NotificationController;
 use App\Http\Controllers\Mobile\PesananController;
 use App\Http\Controllers\Mobile\ProdukController;
 use App\Http\Controllers\Mobile\RewardController;
@@ -58,6 +59,12 @@ Route::prefix('mobile')->name('member.')->group(function () {
         Route::post('/reward/{reward}/tukar', [RewardController::class, 'redeem'])->name('reward.tukar');
 
         Route::get('/riwayat', [RiwayatController::class, 'index'])->name('riwayat');
+
+        Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifikasi.index');
+        Route::get('/notifikasi/unread-count', [NotificationController::class, 'unreadCount'])->name('notifikasi.unread-count');
+        Route::post('/notifikasi/{notification}/baca', [NotificationController::class, 'read'])->name('notifikasi.baca');
+        Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifikasi.baca-semua');
+        Route::post('/notifikasi/token', [NotificationController::class, 'daftarkanToken'])->name('notifikasi.token');
 
         Route::get('/stamps', [StampController::class, 'index'])->name('stamps.index');
         Route::post('/stamps/redeem', [StampController::class, 'redeem'])->name('stamps.redeem');

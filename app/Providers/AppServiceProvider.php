@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,6 +12,9 @@ class AppServiceProvider extends ServiceProvider
     protected $listen = [
         App\Events\StatusProduksiUpdate::class => [
             App\Listeners\UpdateStatusProduksi::class,
+        ],
+        App\Events\PesananPickupUpdated::class => [
+            App\Listeners\KirimNotifikasiMemberPesanan::class,
         ],
     ];
     /**
@@ -26,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        URL::forceRootUrl(config('app.url'));
+
         RedirectIfAuthenticated::redirectUsing(function ($request) {
             if (Auth::guard('member')->check()) {
                 return route('member.beranda');
