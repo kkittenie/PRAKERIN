@@ -85,7 +85,7 @@ class StampRedemptionKasirController extends Controller
             'gambar' => $produk?->foto ? asset('storage/' . $produk->foto) : null,
             'jumlah' => $redemption->jumlah,
             'butuh_produksi' => $produk
-                ? ($produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0)
+                ? $produk->habisSemuaUkuran()
                 : false,
         ];
     }

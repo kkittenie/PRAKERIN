@@ -16,7 +16,7 @@ class ProdukController extends Controller
     {
         try {
             abort_unless($produk->status_aktif, 404);
-            $habis = $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
+            $habis = $produk->habisSemuaUkuran();
 
             $pengaturan = PengaturanMember::where('status_aktif', true)->first();
 
@@ -32,7 +32,6 @@ class ProdukController extends Controller
 
             try {
                 if ($punyaUkuran) {
-                    // Produk dengan ukuran: hitung harga asli & harga setelah promo per ukuran.
                     $hargaKecilAsli = (float) ($produk->harga_kecil ?? 0);
                     $hargaBesarAsli = (float) ($produk->harga_besar ?? 0);
                     $hargaKecilFinal = $produk->hargaSetelahPromo('Kecil');
@@ -56,7 +55,6 @@ class ProdukController extends Controller
                     $adaPromo = $hargaFinal < $hargaAsli;
                 }
             } catch (\Throwable $e) {
-                // Kalau gagal hitung harga/promo, jangan sampai halaman detail produk gagal total.
                 Log::error('Gagal hitung harga/promo produk di detail mobile', [
                     'produk_id' => $produk->id,
                     'error' => $e->getMessage(),

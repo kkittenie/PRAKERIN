@@ -124,10 +124,6 @@ class PesananPickupController extends Controller
         }
     }
 
-    /**
-     * Kasir menolak bukti transfer/QRIS yang tidak valid. Bukti dihapus &
-     * member diminta upload ulang lewat member app.
-     */
     public function tolakPembayaran(Request $request, Transaksi $transaksi)
     {
         try {
@@ -162,9 +158,6 @@ class PesananPickupController extends Controller
         }
     }
 
-    /**
-     * Menandai pesanan mulai dikerjakan setelah pembayaran lunas.
-     */
     public function prosesPesanan(Transaksi $transaksi)
     {
         try {
@@ -190,10 +183,6 @@ class PesananPickupController extends Controller
         }
     }
 
-    /**
-     * Ubah status pesanan: Diproses -> Ready for Pickup. Wajib sudah lunas
-     * & sudah lewat tahap "Proses Pesanan".
-     */
     public function tandaiSiap(Transaksi $transaksi)
     {
         try {
@@ -220,11 +209,23 @@ class PesananPickupController extends Controller
                         continue;
                     }
 
-                    if ($produk->stok < $detail->jumlah) {
+                    $stokTersediaUntukUkuran = $produk->stokUntukUkuran($detail->ukuran);
+                    if ($stokTersediaUntukUkuran < $detail->jumlah) {
                         throw new \Exception("Stok untuk produk '{$produk->nama_produk}' tidak mencukupi untuk disiapkan.");
                     }
 
-                    $produk->decrement('stok', $detail->jumlah);
+                    try {
+                        // Kurangi stok sesuai ukuran (Besar/Kecil) yang dipesan member.
+                        $produk->decrementStokUkuran($detail->ukuran, $detail->jumlah);
+                    } catch (\Throwable $e) {
+                        Log::error('Gagal mengurangi stok saat menandai pesanan pickup siap', [
+                            'produk_id' => $produk->id,
+                            'ukuran' => $detail->ukuran,
+                            'jumlah' => $detail->jumlah,
+                            'error' => $e->getMessage(),
+                        ]);
+                        throw $e;
+                    }
                 }
 
                 $transaksi->update([
@@ -265,7 +266,17 @@ class PesananPickupController extends Controller
                 if ($transaksi->status_pesanan === Transaksi::STATUS_SIAP_DIAMBIL) {
                     foreach ($transaksi->detailTransaksi as $detail) {
                         if (! $detail->butuh_produksi && $detail->produk_id) {
-                            $detail->produk?->increment('stok', $detail->jumlah);
+                            try {
+                                $detail->produk?->incrementStokUkuran($detail->ukuran, $detail->jumlah);
+                            } catch (\Throwable $e) {
+                                Log::error('Gagal mengembalikan stok saat membatalkan pesanan pickup', [
+                                    'produk_id' => $detail->produk_id,
+                                    'ukuran' => $detail->ukuran,
+                                    'jumlah' => $detail->jumlah,
+                                    'error' => $e->getMessage(),
+                                ]);
+                                throw $e;
+                            }
                         }
                     }
                 }
@@ -294,9 +305,6 @@ class PesananPickupController extends Controller
         }
     }
 
-    /**
-     * Kasir menandai pesanan sudah diserahkan ke pembeli.
-     */
     public function tandaiSudahDiambil(Request $request, Transaksi $transaksi)
     {
         try {
@@ -355,9 +363,6 @@ class PesananPickupController extends Controller
         }
     }
 
-    /**
-     * Poin & stamp helper
-     */
     private function berikanPoinDanStamp(Transaksi $transaksi): void
     {
         if (! $transaksi->member_id) {

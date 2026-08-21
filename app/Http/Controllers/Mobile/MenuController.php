@@ -26,7 +26,6 @@ class MenuController extends Controller
                 foreach ($kategori->produk as $produk) {
                     try {
                         if ($produk->punya_ukuran) {
-                            // Produk dengan ukuran: tampilkan harga ukuran Kecil saja di listing.
                             $hargaAsli = (float) ($produk->harga_kecil ?? 0);
                             $hargaFinal = $produk->hargaSetelahPromo('Kecil');
                         } else {
@@ -37,9 +36,8 @@ class MenuController extends Controller
                         $produk->harga_tampil_asli = $hargaAsli;
                         $produk->harga_tampil_final = $hargaFinal;
                         $produk->ada_promo_tampil = $hargaFinal < $hargaAsli;
-                        $produk->habis_tampil = $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
+                        $produk->habis_tampil = $produk->habisSemuaUkuran();
                     } catch (\Throwable $e) {
-                        // Kalau gagal hitung harga/promo untuk 1 produk, jangan sampai gagalkan seluruh halaman.
                         Log::error('Gagal hitung harga/promo produk di menu mobile', [
                             'produk_id' => $produk->id,
                             'error' => $e->getMessage(),

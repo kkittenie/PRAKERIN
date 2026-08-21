@@ -66,7 +66,10 @@ class ProdukController extends Controller
                 'harga_besar' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
                 'harga_kecil' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
                 'harga_modal' => 'required|numeric|min:0',
-                'stok' => 'required|integer|min:0',
+                'stok' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
+                'punya_ukuran' => 'nullable|boolean',
+                'stok_besar' => 'nullable|required_if:punya_ukuran,1|integer|min:0',
+                'stok_kecil' => 'nullable|required_if:punya_ukuran,1|integer|min:0',
                 'stok_minimum' => 'required|integer|min:0',
                 'status_aktif' => 'required|boolean',
                 'status_ketersediaan' => [
@@ -76,20 +79,25 @@ class ProdukController extends Controller
                 'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
+            $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
+            if ($validated['punya_ukuran']) {
+                $validated['harga_jual'] = 0;
+                $validated['stok_besar'] = (int) ($validated['stok_besar'] ?? 0);
+                $validated['stok_kecil'] = (int) ($validated['stok_kecil'] ?? 0);
+                $validated['stok'] = $validated['stok_besar'] + $validated['stok_kecil'];
+            } else {
+                $validated['harga_besar'] = null;
+                $validated['harga_kecil'] = null;
+                $validated['stok_besar'] = null;
+                $validated['stok_kecil'] = null;
+            }
+
             $validated['status_ketersediaan'] = $validated['stok'] <= 0
                 ? 'perlu_diproduksi'
                 : 'stok_ada';
 
             if ($request->hasFile('foto')) {
                 $validated['foto'] = $request->file('foto')->store(self::FOTO_PATH, 'public');
-            }
-
-            $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
-            if ($validated['punya_ukuran']) {
-                $validated['harga_jual'] = 0;
-            } else {
-                $validated['harga_besar'] = null;
-                $validated['harga_kecil'] = null;
             }
 
             $produk = Produk::create($validated);
@@ -103,6 +111,8 @@ class ProdukController extends Controller
                     'kategori_id' => $validated['kategori_id'],
                     'harga_jual' => $validated['harga_jual'],
                     'stok' => $validated['stok'],
+                    'stok_besar' => $validated['stok_besar'] ?? null,
+                    'stok_kecil' => $validated['stok_kecil'] ?? null,
                 ])
                 ->log('menambahkan produk');
 
@@ -153,7 +163,9 @@ class ProdukController extends Controller
                 'harga_besar' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
                 'harga_kecil' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
                 'harga_modal' => 'required|numeric|min:0',
-                'stok' => 'required|integer|min:0',
+                'stok' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
+                'stok_besar' => 'nullable|required_if:punya_ukuran,1|integer|min:0',
+                'stok_kecil' => 'nullable|required_if:punya_ukuran,1|integer|min:0',
                 'stok_minimum' => 'required|integer|min:0',
                 'status_aktif' => 'required|boolean',
                 'status_ketersediaan' => [
@@ -162,10 +174,6 @@ class ProdukController extends Controller
                 ],
                 'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
-
-            $validated['status_ketersediaan'] = $validated['stok'] <= 0
-                ? 'perlu_diproduksi'
-                : 'stok_ada';
 
             if ($request->hasFile('foto')) {
 
@@ -181,10 +189,19 @@ class ProdukController extends Controller
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
             if ($validated['punya_ukuran']) {
                 $validated['harga_jual'] = 0;
+                $validated['stok_besar'] = (int) ($validated['stok_besar'] ?? 0);
+                $validated['stok_kecil'] = (int) ($validated['stok_kecil'] ?? 0);
+                $validated['stok'] = $validated['stok_besar'] + $validated['stok_kecil'];
             } else {
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
+                $validated['stok_besar'] = null;
+                $validated['stok_kecil'] = null;
             }
+
+            $validated['status_ketersediaan'] = $validated['stok'] <= 0
+                ? 'perlu_diproduksi'
+                : 'stok_ada';
 
             $produk->update($validated);
 
@@ -197,6 +214,8 @@ class ProdukController extends Controller
                     'kategori_id' => $validated['kategori_id'],
                     'harga_jual' => $validated['harga_jual'],
                     'stok' => $validated['stok'],
+                    'stok_besar' => $validated['stok_besar'] ?? null,
+                    'stok_kecil' => $validated['stok_kecil'] ?? null,
                 ])
                 ->log('memperbarui produk');
 

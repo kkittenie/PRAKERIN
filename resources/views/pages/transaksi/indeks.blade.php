@@ -1993,7 +1993,20 @@
                 },
 
                 butuhProduksi(produk) {
-                    return produk.status_ketersediaan === 'perlu_diproduksi' || parseFloat(produk.stok) <= 0;
+                    return produk.status_ketersediaan === 'perlu_diproduksi' || this.stokUntukUkuran(produk, null) <= 0;
+                },
+
+                // Ambil stok sesuai ukuran (Besar/Kecil) — kalau produk tidak
+                // punya varian ukuran, kembalikan stok gabungan seperti biasa.
+                stokUntukUkuran(produk, ukuran) {
+                    if (!produk) return 0;
+                    const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
+                    if (punyaUkuran) {
+                        if (ukuran === 'Besar') return parseFloat(produk.stok_besar) || 0;
+                        if (ukuran === 'Kecil') return parseFloat(produk.stok_kecil) || 0;
+                        return (parseFloat(produk.stok_besar) || 0) + (parseFloat(produk.stok_kecil) || 0);
+                    }
+                    return parseFloat(produk.stok) || 0;
                 },
 
                 itemButuhProduksi(item) {
@@ -2053,7 +2066,7 @@
                         promos_terpilih_ids: promosTerpilihIds,
                         foto: produk.foto,
                         jumlah: jumlah,
-                        stok: produk.stok,
+                        stok: this.stokUntukUkuran(produk, ukuran),
                         status_ketersediaan: produk.status_ketersediaan,
                         butuh_produksi: perluProduksi,
                         catatan: ''
@@ -2527,9 +2540,9 @@
                     }
 
                     const totalReadyDipakai = this.keranjang
-                        .filter(i => i.produk_id === produk.id && !i.butuh_produksi)
+                        .filter(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && !i.butuh_produksi)
                         .reduce((sum, i) => sum + i.jumlah, 0);
-                    const stokTersedia = parseFloat(produk.stok) || 0;
+                    const stokTersedia = this.stokUntukUkuran(produk, ukuran);
 
                     if (totalReadyDipakai < stokTersedia) {
                         const readyItem = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && !i.butuh_produksi);
@@ -2591,9 +2604,9 @@
                     }
 
                     const produk = this.daftarProduk.find(p => p.id === item.produk_id);
-                    const stokTersedia = produk ? (parseFloat(produk.stok) || 0) : 0;
+                    const stokTersedia = this.stokUntukUkuran(produk, item.ukuran);
                     const totalReadyDipakai = this.keranjang
-                        .filter(i => i.produk_id === item.produk_id && !i.butuh_produksi)
+                        .filter(i => i.produk_id === item.produk_id && (i.ukuran || null) === (item.ukuran || null) && !i.butuh_produksi)
                         .reduce((sum, i) => sum + i.jumlah, 0);
 
                     if (totalReadyDipakai < stokTersedia) {
@@ -2943,6 +2956,22 @@
                     this.daftarRewardStampAktif = [];
                 },
 
+                // Tambah stok lokal (Besar/Kecil sesuai ukuran) + kolom stok
+                // gabungan, supaya tampilan kartu produk tetap sinkron tanpa
+                // perlu reload data dari server.
+                _sesuaikanStokLokal(produk, ukuran, delta) {
+                    if (!produk) return;
+                    const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
+                    if (punyaUkuran) {
+                        if (ukuran === 'Besar') {
+                            produk.stok_besar = (parseFloat(produk.stok_besar) || 0) + delta;
+                        } else if (ukuran === 'Kecil') {
+                            produk.stok_kecil = (parseFloat(produk.stok_kecil) || 0) + delta;
+                        }
+                    }
+                    produk.stok = (parseFloat(produk.stok) || 0) + delta;
+                },
+
                 kembalikanStokFrontend(itemPesanan) {
                     (itemPesanan || []).forEach(item => {
                         if (item.is_bundling) {
@@ -2956,7 +2985,7 @@
                         }
                         const p = this.daftarProduk.find(x => x.id === item.produk_id);
                         if (p && !this.itemButuhProduksi(item)) {
-                            p.stok = parseFloat(p.stok) + parseFloat(item.jumlah);
+                            this._sesuaikanStokLokal(p, item.ukuran, parseFloat(item.jumlah));
                         }
                     });
                 },
@@ -2973,7 +3002,7 @@
                         }
                         const p = this.daftarProduk.find(x => x.id === item.produk_id);
                         if (p && !this.itemButuhProduksi(item)) {
-                            p.stok = parseFloat(p.stok) - parseFloat(item.jumlah);
+                            this._sesuaikanStokLokal(p, item.ukuran, -parseFloat(item.jumlah));
                         }
                     });
                 },

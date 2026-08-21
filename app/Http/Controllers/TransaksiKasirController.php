@@ -135,7 +135,9 @@ class TransaksiKasirController extends Controller
 
     private function butuhProduksi(Produk $produk): bool
     {
-        return $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
+        // Kalau produk punya varian ukuran, dianggap perlu produksi hanya
+        // kalau SEMUA ukuran (Besar & Kecil) sedang habis.
+        return $produk->habisSemuaUkuran();
     }
 
     private function tentukanPerluProduksi(Produk $produk, array $item): bool
@@ -144,7 +146,9 @@ class TransaksiKasirController extends Controller
             return true;
         }
 
-        return (bool) ($item['butuh_produksi'] ?? ((float) $produk->stok <= 0));
+        // Kalau produk punya varian ukuran, cek stok sesuai ukuran yang dipilih
+        // di item (Besar/Kecil), bukan stok gabungan.
+        return (bool) ($item['butuh_produksi'] ?? ($produk->stokUntukUkuran($item['ukuran'] ?? null) <= 0));
     }
 
     public function indeks()
@@ -267,9 +271,20 @@ class TransaksiKasirController extends Controller
                 continue;
             }
             if (!$detail->butuh_produksi) {
-                $produk = Produk::find($detail->produk_id);
-                if ($produk) {
-                    $produk->increment('stok', $detail->jumlah);
+                try {
+                    $produk = Produk::find($detail->produk_id);
+                    if ($produk) {
+                        // Kembalikan ke stok ukuran (Besar/Kecil) yang sama dengan
+                        // saat dikurangi, supaya stok per ukuran tetap sinkron.
+                        $produk->incrementStokUkuran($detail->ukuran, $detail->jumlah);
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('Gagal mengembalikan stok dari detail transaksi', [
+                        'detail_transaksi_id' => $detail->id ?? null,
+                        'produk_id' => $detail->produk_id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
                 }
             }
         }
@@ -344,20 +359,33 @@ class TransaksiKasirController extends Controller
 
                  $produk = Produk::findOrFail($item['produk_id']);
                 $perluProduksi = $this->tentukanPerluProduksi($produk, $item);
-
-                if (!$perluProduksi && $produk->stok < $item['jumlah']) {
-                    throw new \Exception("Stok untuk produk '{$produk->nama_produk}' tidak mencukupi (Tersedia: {$produk->stok}, Diminta: {$item['jumlah']})");
-                }
+                $ukuranItem = $item['ukuran'] ?? null;
 
                 if (!$perluProduksi) {
-                    $produk->decrement('stok', $item['jumlah']);
+                    $stokTersediaUntukUkuran = $produk->stokUntukUkuran($ukuranItem);
+                    if ($stokTersediaUntukUkuran < $item['jumlah']) {
+                        throw new \Exception("Stok untuk produk '{$produk->nama_produk}'" . ($ukuranItem ? " ukuran {$ukuranItem}" : '') . " tidak mencukupi (Tersedia: {$stokTersediaUntukUkuran}, Diminta: {$item['jumlah']})");
+                    }
+
+                    try {
+                        // Kurangi stok sesuai ukuran (Besar/Kecil) yang dipilih kasir.
+                        $produk->decrementStokUkuran($ukuranItem, $item['jumlah']);
+                    } catch (\Throwable $e) {
+                        Log::error('Gagal mengurangi stok saat menahan pesanan', [
+                            'produk_id' => $produk->id,
+                            'ukuran' => $ukuranItem,
+                            'jumlah' => $item['jumlah'],
+                            'error' => $e->getMessage(),
+                        ]);
+                        throw $e;
+                    }
                 }
 
                 $detail = DetailTransaksi::create([
                     'transaksi_id' => $transaksi->id,
                     'produk_id' => $produk->id,
                     'nama_produk' => $produk->nama_produk,
-                    'ukuran' => $item['ukuran'] ?? null,
+                    'ukuran' => $ukuranItem,
                     'harga_satuan' => $item['harga_jual'],
                     'jumlah' => $item['jumlah'],
                     'catatan' => $item['catatan'] ?? null,
@@ -710,20 +738,33 @@ class TransaksiKasirController extends Controller
 
                  $produk = Produk::findOrFail($item['produk_id']);
                 $perluProduksi = $this->tentukanPerluProduksi($produk, $item);
-
-                if (!$perluProduksi && $produk->stok < $item['jumlah']) {
-                    throw new \Exception("Stok untuk produk '{$produk->nama_produk}' tidak mencukupi (Tersedia: {$produk->stok}, Diminta: {$item['jumlah']})");
-                }
+                $ukuranItem = $item['ukuran'] ?? null;
 
                 if (!$perluProduksi) {
-                    $produk->decrement('stok', $item['jumlah']);
+                    $stokTersediaUntukUkuran = $produk->stokUntukUkuran($ukuranItem);
+                    if ($stokTersediaUntukUkuran < $item['jumlah']) {
+                        throw new \Exception("Stok untuk produk '{$produk->nama_produk}'" . ($ukuranItem ? " ukuran {$ukuranItem}" : '') . " tidak mencukupi (Tersedia: {$stokTersediaUntukUkuran}, Diminta: {$item['jumlah']})");
+                    }
+
+                    try {
+                        // Kurangi stok sesuai ukuran (Besar/Kecil) yang dipilih kasir.
+                        $produk->decrementStokUkuran($ukuranItem, $item['jumlah']);
+                    } catch (\Throwable $e) {
+                        Log::error('Gagal mengurangi stok saat transaksi kasir', [
+                            'produk_id' => $produk->id,
+                            'ukuran' => $ukuranItem,
+                            'jumlah' => $item['jumlah'],
+                            'error' => $e->getMessage(),
+                        ]);
+                        throw $e;
+                    }
                 }
 
                 $detail = DetailTransaksi::create([
                     'transaksi_id' => $transaksi->id,
                     'produk_id' => $produk->id,
                     'nama_produk' => $produk->nama_produk,
-                    'ukuran' => $item['ukuran'] ?? null,
+                    'ukuran' => $ukuranItem,
                     'harga_satuan' => $item['harga_jual'],
                     'jumlah' => $item['jumlah'],
                     'catatan' => $item['catatan'] ?? null,

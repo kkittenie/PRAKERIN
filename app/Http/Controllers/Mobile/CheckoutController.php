@@ -271,10 +271,9 @@ class CheckoutController extends Controller
                     }
 
                     $produk = Produk::lockForUpdate()->findOrFail($item['produk_id']);
-                    $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah']);
-
                     $catatanItem = $item['catatan'] ?? null;
                     $ukuranItem = $item['ukuran'] ?? null;
+                    $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah'], $ukuranItem);
 
                     $hargaSatuanDetail = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
 
@@ -376,13 +375,15 @@ class CheckoutController extends Controller
             }
         }
     }
-    private function pecahJumlahProduksi(Produk $produk, int $jumlah): array
+    private function pecahJumlahProduksi(Produk $produk, int $jumlah, ?string $ukuran = null): array
     {
         if ($produk->status_ketersediaan === 'perlu_diproduksi') {
             return [['jumlah' => $jumlah, 'butuh_produksi' => true]];
         }
 
-        $stokTersedia = max(0, (int) floor((float) $produk->stok));
+        // Kalau produk punya varian ukuran, cek stok sesuai ukuran yang dipilih
+        // (Besar/Kecil), bukan stok gabungan.
+        $stokTersedia = max(0, (int) floor((float) $produk->stokUntukUkuran($ukuran)));
 
         if ($stokTersedia >= $jumlah) {
             return [['jumlah' => $jumlah, 'butuh_produksi' => false]];

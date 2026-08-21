@@ -207,7 +207,7 @@
                 </div>
 
                 {{-- Stok --}}
-                <div>
+                <div id="wrapper-stok">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Stok Awal
                     </label>
@@ -220,6 +220,42 @@
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
 
                     @error('stok')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
+                {{-- Stok Besar --}}
+                <div id="wrapper-stok-besar" class="hidden">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Stok Besar
+                    </label>
+
+                    <input
+                        type="number"
+                        name="stok_besar"
+                        placeholder="1"
+                        value="{{ old('stok_besar', $produk->stok_besar) }}"
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+
+                    @error('stok_besar')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
+                {{-- Stok Kecil --}}
+                <div id="wrapper-stok-kecil" class="hidden">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Stok Kecil
+                    </label>
+
+                    <input
+                        type="number"
+                        name="stok_kecil"
+                        placeholder="1"
+                        value="{{ old('stok_kecil', $produk->stok_kecil) }}"
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+
+                    @error('stok_kecil')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>
@@ -339,12 +375,18 @@
     const wrapperBesar = document.getElementById('wrapper-harga-besar');
     const wrapperKecil = document.getElementById('wrapper-harga-kecil');
     const wrapperHargaJual = document.getElementById('wrapper-harga-jual');
+    const wrapperStok = document.getElementById('wrapper-stok');
+    const wrapperStokBesar = document.getElementById('wrapper-stok-besar');
+    const wrapperStokKecil = document.getElementById('wrapper-stok-kecil');
 
     function toggleFieldUkuran() {
         const tampil = checkboxUkuran.checked;
         wrapperBesar.classList.toggle('hidden', !tampil);
         wrapperKecil.classList.toggle('hidden', !tampil);
         wrapperHargaJual.classList.toggle('hidden', tampil);
+        wrapperStokBesar.classList.toggle('hidden', !tampil);
+        wrapperStokKecil.classList.toggle('hidden', !tampil);
+        wrapperStok.classList.toggle('hidden', tampil);
     }
 
     checkboxUkuran.addEventListener('change', toggleFieldUkuran);

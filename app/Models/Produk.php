@@ -16,6 +16,8 @@ class Produk extends Model
         'harga_jual',
         'harga_modal',
         'stok',
+        'stok_besar',
+        'stok_kecil',
         'stok_minimum',
         'foto',
         'status_aktif',
@@ -29,6 +31,8 @@ class Produk extends Model
         'punya_ukuran' => 'boolean',
         'harga_besar' => 'decimal:2',
         'harga_kecil' => 'decimal:2',
+        'stok_besar' => 'integer',
+        'stok_kecil' => 'integer',
     ];
 
     protected $appends = [
@@ -115,10 +119,6 @@ class Produk extends Model
         return $this->hargaSetelahPromo();
     }
 
-    /**
-     * Hitung harga setelah promo untuk ukuran tertentu (Besar/Kecil).
-     * Kalau produk tidak punya ukuran, parameter $ukuran diabaikan.
-     */
     public function hargaSetelahPromo(?string $ukuran = null): float
     {
         $hargaDasar = $this->getHarga($ukuran);
@@ -139,9 +139,6 @@ class Produk extends Model
         return $this->hasMany(PromoProdukEvent::class);
     }
 
-    /**
-     * Ambil harga produk sesuai ukuran (Besar/Kecil), fallback ke harga_kecil/harga_jual kalau ukuran gak dispesifikasikan.
-     */
     public function getHarga(?string $ukuran = null): float
     {
         if ($this->punya_ukuran) {
@@ -155,5 +152,80 @@ class Produk extends Model
         }
 
         return (float) ($this->harga_jual ?? 0);
+    }
+
+    public function stokUntukUkuran(?string $ukuran = null): int
+    {
+        if ($this->punya_ukuran) {
+            if ($ukuran === 'Besar') {
+                return (int) ($this->stok_besar ?? 0);
+            }
+            if ($ukuran === 'Kecil') {
+                return (int) ($this->stok_kecil ?? 0);
+            }
+            return (int) ($this->stok_besar ?? 0) + (int) ($this->stok_kecil ?? 0);
+        }
+
+        return (int) $this->stok;
+    }
+
+    public function habisUntukUkuran(?string $ukuran = null): bool
+    {
+        return $this->status_ketersediaan === 'perlu_diproduksi' || $this->stokUntukUkuran($ukuran) <= 0;
+    }
+
+    public function habisSemuaUkuran(): bool
+    {
+        if (!$this->punya_ukuran) {
+            return $this->habisUntukUkuran();
+        }
+
+        if ($this->status_ketersediaan === 'perlu_diproduksi') {
+            return true;
+        }
+
+        return (int) ($this->stok_besar ?? 0) <= 0 && (int) ($this->stok_kecil ?? 0) <= 0;
+    }
+
+    public function decrementStokUkuran(?string $ukuran, int $jumlah): void
+    {
+        if ($jumlah <= 0) {
+            return;
+        }
+
+        if ($this->punya_ukuran && $ukuran === 'Besar') {
+            $this->decrement('stok_besar', $jumlah);
+            $this->decrement('stok', $jumlah);
+            return;
+        }
+
+        if ($this->punya_ukuran && $ukuran === 'Kecil') {
+            $this->decrement('stok_kecil', $jumlah);
+            $this->decrement('stok', $jumlah);
+            return;
+        }
+
+        $this->decrement('stok', $jumlah);
+    }
+
+    public function incrementStokUkuran(?string $ukuran, int $jumlah): void
+    {
+        if ($jumlah <= 0) {
+            return;
+        }
+
+        if ($this->punya_ukuran && $ukuran === 'Besar') {
+            $this->increment('stok_besar', $jumlah);
+            $this->increment('stok', $jumlah);
+            return;
+        }
+
+        if ($this->punya_ukuran && $ukuran === 'Kecil') {
+            $this->increment('stok_kecil', $jumlah);
+            $this->increment('stok', $jumlah);
+            return;
+        }
+
+        $this->increment('stok', $jumlah);
     }
 }

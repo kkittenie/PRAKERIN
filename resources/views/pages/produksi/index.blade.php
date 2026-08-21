@@ -4,7 +4,7 @@
 
     <x-common.page-breadcrumb pageTitle="Produksi" />
 
-    <div class="space-y-6" x-data="{ modalOpen: false, produksiId: null, produksiNama: '', jumlahMax: 0, sisaBelum: 0 }">
+    <div class="space-y-6" x-data="{ modalOpen: false, produksiId: null, produksiNama: '', jumlahMax: 0, sisaBelum: 0, punyaUkuran: false, ukuran: 'Besar', stokBesar: 0, stokKecil: 0 }">
 
         @if($produksiKadaluarsa->count() > 0)
             <div class="p-4 rounded-2xl border border-red-200 dark:border-red-500/20 bg-red-50/80 dark:bg-red-500/10 backdrop-blur-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -140,7 +140,7 @@
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         </a>
                                         @if($item->perlu_tindakan)
-                                            <button type="button" title="Kurangi Stok" @click="modalOpen = true; produksiId = {{ $item->id }}; produksiNama = '{{ addslashes($item->produk->nama_produk) }}'; sisaBelum = {{ (int) $item->sisa_belum_disesuaikan }}; jumlahMax = {{ (int) min($item->sisa_belum_disesuaikan, $item->produk->stok) }}" class="inline-flex items-center justify-center px-2 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 transition">Kurangi Stok</button>
+                                            <button type="button" title="Kurangi Stok" @click="modalOpen = true; produksiId = {{ $item->id }}; produksiNama = '{{ addslashes($item->produk->nama_produk) }}'; sisaBelum = {{ (int) $item->sisa_belum_disesuaikan }}; punyaUkuran = {{ $item->produk->punya_ukuran ? 'true' : 'false' }}; stokBesar = {{ (int) ($item->produk->stok_besar ?? 0) }}; stokKecil = {{ (int) ($item->produk->stok_kecil ?? 0) }}; ukuran = 'Besar'; jumlahMax = punyaUkuran ? Math.min(sisaBelum, stokBesar) : {{ (int) min($item->sisa_belum_disesuaikan, $item->produk->stok) }}" class="inline-flex items-center justify-center px-2 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 transition">Kurangi Stok</button>
                                         @endif
                                     </div>
                                 </td>
@@ -163,6 +163,24 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4" x-text="'Produk: ' + produksiNama"></p>
                 <form :action="'/produksi/' + produksiId + '/kurangi-stok'" method="POST">
                     @csrf
+                    <template x-if="punyaUkuran">
+                        <div class="mb-3">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ukuran</label>
+                            <div class="flex gap-2">
+                                <button type="button" @click="ukuran = 'Besar'; jumlahMax = Math.min(sisaBelum, stokBesar)"
+                                    :class="ukuran === 'Besar' ? 'bg-brand-500 text-white border-brand-500' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'"
+                                    class="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition">
+                                    Besar <span class="font-normal" x-text="'(' + stokBesar + ' pcs)'"></span>
+                                </button>
+                                <button type="button" @click="ukuran = 'Kecil'; jumlahMax = Math.min(sisaBelum, stokKecil)"
+                                    :class="ukuran === 'Kecil' ? 'bg-brand-500 text-white border-brand-500' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'"
+                                    class="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition">
+                                    Kecil <span class="font-normal" x-text="'(' + stokKecil + ' pcs)'"></span>
+                                </button>
+                            </div>
+                            <input type="hidden" name="ukuran" :value="ukuran">
+                        </div>
+                    </template>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jumlah yang dikurangi (pcs)</label>
                     <input type="number" name="jumlah" min="1" :max="jumlahMax" required class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-gray-900 dark:text-white mb-1">
                     <p class="text-xs text-gray-400 mb-4" x-text="'Sisa belum disesuaikan: ' + sisaBelum + ' pcs (maks input: ' + jumlahMax + ' pcs)'"></p>

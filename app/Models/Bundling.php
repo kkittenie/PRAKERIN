@@ -38,7 +38,7 @@ class Bundling extends Model
             if (!$produk) {
                 continue;
             }
-            if ($produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0 || (float) $produk->stok < (float) $item->qty) {
+            if ($produk->habisSemuaUkuran() || $produk->stokUntukUkuran() < (float) $item->qty) {
                 return true;
             }
         }

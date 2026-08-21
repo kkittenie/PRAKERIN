@@ -10,6 +10,7 @@ use App\Events\StatusProduksiUpdate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Support\ActivityLogHelper;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -17,10 +18,6 @@ use Exception;
 
 class ProduksiController extends Controller
 {
-    /**
-     * Resolve periode & tanggal referensi dari request.
-     * Dipakai bareng oleh index(), pdf(), dan excel() biar filternya selalu selaras.
-     */
     private function resolvePeriode(Request $request): array
     {
         $periode = $request->periode ?? 'semua';
@@ -291,13 +288,53 @@ class ProduksiController extends Controller
                 }
 
                 $produk = Produk::lockForUpdate()->findOrFail($request->produk_id);
-                $produk->increment('stok', $request->jumlah_hasil);
 
-                if ($kebutuhanTotal > 0) {
-                    if ($produk->stok < $kebutuhanTotal) {
-                        throw new Exception("Stok {$produk->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                try {
+                    if ($produk->punya_ukuran) {
+                        // Produk punya varian ukuran: tambah & kurangi stok Besar/Kecil
+                        // secara terpisah sesuai rincian hasil & kebutuhan produksi.
+                        if ((int) $request->jumlah_besar > 0) {
+                            $produk->incrementStokUkuran('Besar', (int) $request->jumlah_besar);
+                        }
+                        if ((int) $request->jumlah_kecil > 0) {
+                            $produk->incrementStokUkuran('Kecil', (int) $request->jumlah_kecil);
+                        }
+                        $produk->refresh();
+
+                        if ($kebutuhanBesar > 0) {
+                            if ($produk->stok_besar < $kebutuhanBesar) {
+                                throw new Exception("Stok Besar {$produk->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                            }
+                            $produk->decrementStokUkuran('Besar', $kebutuhanBesar);
+                        }
+                        if ($kebutuhanKecil > 0) {
+                            if ($produk->stok_kecil < $kebutuhanKecil) {
+                                throw new Exception("Stok Kecil {$produk->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                            }
+                            $produk->decrementStokUkuran('Kecil', $kebutuhanKecil);
+                        }
+
+                        $produk->refresh();
+                    } else {
+                        $produk->increment('stok', $request->jumlah_hasil);
+
+                        if ($kebutuhanTotal > 0) {
+                            if ($produk->stok < $kebutuhanTotal) {
+                                throw new Exception("Stok {$produk->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                            }
+                            $produk->decrement('stok', $kebutuhanTotal);
+                        }
                     }
-                    $produk->decrement('stok', $kebutuhanTotal);
+                } catch (\Throwable $e) {
+                    Log::error('Gagal memperbarui stok saat membuat tiket produksi', [
+                        'produk_id' => $produk->id,
+                        'jumlah_besar' => $request->jumlah_besar,
+                        'jumlah_kecil' => $request->jumlah_kecil,
+                        'kebutuhan_besar' => $kebutuhanBesar,
+                        'kebutuhan_kecil' => $kebutuhanKecil,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
                 }
 
                 if ($produk->stok > 0 && $produk->status_ketersediaan === 'perlu_diproduksi') {
@@ -471,8 +508,11 @@ class ProduksiController extends Controller
     public function kurangiStok(Request $request, Produksi $produksi)
     {
         try {
+            $produk = $produksi->produk;
+
             $request->validate([
                 'jumlah' => 'required|integer|min:1',
+                'ukuran' => [$produk && $produk->punya_ukuran ? 'required' : 'nullable', 'in:Besar,Kecil'],
             ]);
 
             $sisa = $produksi->sisa_belum_disesuaikan;
@@ -481,19 +521,25 @@ class ProduksiController extends Controller
                 return back()->with('error', "Jumlah melebihi sisa yang belum disesuaikan ({$sisa} pcs).");
             }
 
-            if ($request->jumlah > $produksi->produk->stok) {
+            $ukuran = $produk && $produk->punya_ukuran ? $request->ukuran : null;
+            $stokTersediaUntukUkuran = $produk ? $produk->stokUntukUkuran($ukuran) : 0;
+
+            if ($request->jumlah > $stokTersediaUntukUkuran) {
                 return back()->with('error', 'Jumlah yang dikurangi melebihi stok produk saat ini.');
             }
 
-            DB::transaction(function () use ($request, $produksi) {
-                $produksi->produk->decrement('stok', $request->jumlah);
+            DB::transaction(function () use ($request, $produksi, $ukuran) {
+                $produksi->produk->decrementStokUkuran($ukuran, $request->jumlah);
                 $produksi->increment('jumlah_disesuaikan', $request->jumlah);
             });
 
             activity()
                 ->causedBy(auth()->user())
                 ->performedOn($produksi)
-                ->withProperties(['jumlah_dikurangi' => $request->jumlah])
+                ->withProperties([
+                    'jumlah_dikurangi' => $request->jumlah,
+                    'ukuran' => $ukuran,
+                ])
                 ->log('menyesuaikan stok produk kadaluwarsa');
 
             return back()->with('success', "Stok produk \"{$produksi->produk->nama_produk}\" berhasil dikurangi {$request->jumlah} pcs.");
