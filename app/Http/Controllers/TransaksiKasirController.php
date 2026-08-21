@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\PengaturanMember;
 use App\Models\Member;
 use App\Models\Bundling;
+use App\Models\PromoProdukEvent;
 use App\Models\StampProgram;
 use App\Models\MemberStamp;
 use App\Models\StampRedemption;
@@ -177,6 +178,10 @@ class TransaksiKasirController extends Controller
                     return $bundling;
                 });
 
+            $daftarPromoEvent = PromoProdukEvent::with('produk')
+                ->berlaku()
+                ->get();
+
             $daftarDitahan = PesananDitahan::with(['transaksi.voucher.reward', 'transaksi.stampRedemptions.produk'])->orderBy('created_at', 'desc')->get();
             $daftarMember = \App\Models\Member::orderBy('nama')->get();
             $pengaturanPajak = PengaturanPajak::getAktif();
@@ -186,6 +191,7 @@ class TransaksiKasirController extends Controller
                 'daftarProduk' => $daftarProduk,
                 'daftarKategori' => $daftarKategori,
                 'daftarBundling' => $daftarBundling,
+                'daftarPromoEvent' => $daftarPromoEvent,
                 'daftarDitahan' => $daftarDitahan,
                 'daftarMember' => $daftarMember,
                 'pengaturanPajak' => $pengaturanPajak,
@@ -261,6 +267,74 @@ class TransaksiKasirController extends Controller
                     'butuh_produksi' => true,
                 ]);
             }
+        }
+    }
+
+    private function prosesItemPromoEventTransaksi(Transaksi $transaksi, array $item): void
+    {
+        $promoEventId = (int) $item['promo_event_id'];
+        $jumlahEvent = (int) $item['jumlah'];
+        $promoEvent = PromoProdukEvent::with('produk')->findOrFail($promoEventId);
+        $produk = $promoEvent->produk;
+
+        DetailTransaksi::create([
+            'transaksi_id' => $transaksi->id,
+            'produk_id' => null,
+            'promo_event_id' => $promoEvent->id,
+            'nama_produk' => $promoEvent->nama_event,
+            'harga_satuan' => $promoEvent->harga_event,
+            'jumlah' => $jumlahEvent,
+            'catatan' => $item['catatan'] ?? null,
+            'subtotal' => $promoEvent->harga_event * $jumlahEvent,
+            'butuh_produksi' => false,
+        ]);
+
+        if (!$produk) {
+            return;
+        }
+
+        $totalDibutuhkan = $promoEvent->isi_event * $jumlahEvent;
+        $statusManualProduksi = $produk->status_ketersediaan === 'perlu_diproduksi';
+
+        $jumlahReady = 0;
+        $jumlahProduksi = $totalDibutuhkan;
+
+        if (!$statusManualProduksi) {
+            $stokTersedia = max(0, (float) $produk->stok);
+            $jumlahReady = min($stokTersedia, $totalDibutuhkan);
+            $jumlahProduksi = $totalDibutuhkan - $jumlahReady;
+
+            if ($jumlahReady > 0) {
+                $produk->decrement('stok', $jumlahReady);
+            }
+        }
+
+        if ($jumlahReady > 0) {
+            DetailTransaksi::create([
+                'transaksi_id' => $transaksi->id,
+                'produk_id' => $produk->id,
+                'promo_event_id' => $promoEvent->id,
+                'nama_produk' => $produk->nama_produk,
+                'harga_satuan' => 0,
+                'jumlah' => $jumlahReady,
+                'catatan' => null,
+                'subtotal' => 0,
+                'butuh_produksi' => false,
+            ]);
+        }
+
+        if ($jumlahProduksi > 0) {
+            DetailTransaksi::create([
+                'transaksi_id' => $transaksi->id,
+                'produk_id' => $produk->id,
+                'promo_event_id' => $promoEvent->id,
+                'nama_produk' => $produk->nama_produk,
+                'harga_satuan' => 0,
+                'jumlah' => $jumlahProduksi,
+                'catatan' => null,
+                'subtotal' => 0,
+                'butuh_produksi' => true,
+            ]);
         }
     }
 
@@ -352,8 +426,13 @@ class TransaksiKasirController extends Controller
                     continue;
                 }
 
-                 if (!empty($item['is_bundling']) && !empty($item['bundling_id'])) {
+                if (!empty($item['is_bundling']) && !empty($item['bundling_id'])) {
                     $this->prosesItemBundlingTransaksi($transaksi, $item);
+                    continue;
+                }
+
+                if (!empty($item['is_promo_event']) && !empty($item['promo_event_id'])) {
+                    $this->prosesItemPromoEventTransaksi($transaksi, $item);
                     continue;
                 }
 
@@ -733,6 +812,11 @@ class TransaksiKasirController extends Controller
 
                  if (!empty($item['is_bundling']) && !empty($item['bundling_id'])) {
                     $this->prosesItemBundlingTransaksi($transaksi, $item);
+                    continue;
+                }
+
+                if (!empty($item['is_promo_event']) && !empty($item['promo_event_id'])) {
+                    $this->prosesItemPromoEventTransaksi($transaksi, $item);
                     continue;
                 }
 

@@ -29,6 +29,11 @@ class PromoProdukEvent extends Model
         'status_aktif' => 'boolean',
     ];
 
+    protected $appends = [
+        'stok_tersedia',
+        'perlu_diproduksi',
+    ];
+
     public function produk()
     {
         return $this->belongsTo(Produk::class);
@@ -40,5 +45,28 @@ class PromoProdukEvent extends Model
 
         return $this->status_aktif
             && $sekarang->between($this->mulai_berlaku, $this->selesai_berlaku);
+    }
+
+        public function scopeBerlaku($query)
+    {
+        $now = now();
+
+        return $query->where('status_aktif', true)
+            ->where('mulai_berlaku', '<=', $now)
+            ->where('selesai_berlaku', '>=', $now);
+    }
+
+    public function getStokTersediaAttribute(): int
+    {
+        if (!$this->produk || $this->isi_event <= 0) {
+            return 0;
+        }
+
+        return intdiv((int) $this->produk->stok, (int) $this->isi_event);
+    }
+
+    public function getPerluDiproduksiAttribute(): bool
+    {
+        return $this->stok_tersedia <= 0;
     }
 }

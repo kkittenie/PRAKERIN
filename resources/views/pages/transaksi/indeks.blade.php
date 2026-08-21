@@ -89,6 +89,11 @@
                                 class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap flex items-center gap-1.5">
                                 <span>Bundling</span>
                             </button>
+                            <button @click="modeTampilan = 'promo_event'; halamanProduk = 1"
+                                :class="modeTampilan === 'promo_event' ? 'bg-amber-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800'"
+                                class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap flex items-center gap-1.5">
+                                <span>Promo Event</span>
+                            </button>
                         </div>
 
                         <div class="flex flex-wrap items-center gap-3">
@@ -135,6 +140,21 @@
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Stok Tersedia</button>
                                 <button @click="filterBundling = 'habis'; halamanProduk = 1"
                                     :class="filterBundling === 'habis' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Perlu
+                                    Diproduksi</button>
+                            </div>
+
+                            <!-- Filter Status Ketersediaan (mode promo_event) -->
+                            <div class="flex items-center gap-1 bg-white dark:bg-gray-900 p-1 rounded-lg border border-gray-100 dark:border-gray-800 shrink-0"
+                                x-show="modeTampilan === 'promo_event'">
+                                <button @click="filterPromoEvent = 'semua'; halamanProduk = 1"
+                                    :class="filterPromoEvent === 'semua' ? 'bg-slate-900 dark:bg-gray-800 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Semua</button>
+                                <button @click="filterPromoEvent = 'tersedia'; halamanProduk = 1"
+                                    :class="filterPromoEvent === 'tersedia' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Stok Tersedia</button>
+                                <button @click="filterPromoEvent = 'habis'; halamanProduk = 1"
+                                    :class="filterPromoEvent === 'habis' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Perlu
                                     Diproduksi</button>
                             </div>
@@ -381,6 +401,64 @@
                             </template>
                         </div>
 
+
+                                                <!-- ===== MODE PROMO EVENT ===== -->
+                        <div x-show="modeTampilan === 'promo_event' && produkTersaring.length === 0"
+                            class="h-full flex flex-col items-center justify-center py-16 text-center">
+                            <svg class="w-14 h-14 text-gray-300 dark:text-gray-700 mb-3" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                            <p class="text-gray-400 dark:text-gray-500 font-semibold text-sm">Belum ada promo event yang berlaku</p>
+                        </div>
+                        <div x-show="modeTampilan === 'promo_event' && produkTersaring.length > 0"
+                            class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
+                            <template x-for="promoEvent in produkTersaring" :key="promoEvent.id">
+                                <div
+                                    class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
+                                    <div @click="tambahPromoEventKeKeranjang(promoEvent)" title="Klik untuk tambah ke keranjang"
+                                        class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden cursor-pointer">
+                                        <img :src="getFotoUrl(promoEvent.produk ? promoEvent.produk.foto : null)" x-on:error="handleFotoError($event)"
+                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            alt="Promo Event">
+                                        <div class="absolute top-2 left-2 z-5">
+                                            <span
+                                                class="bg-rose-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Promo
+                                                Event</span>
+                                        </div>
+                                        <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
+                                            :class="promoEventPerluDiproduksi(promoEvent) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
+                                            x-text="promoEventPerluDiproduksi(promoEvent) ? 'Perlu Diproduksi' : ('Stok: ' + stokPromoEventTersedia(promoEvent))">
+                                        </div>
+                                    </div>
+                                    <div class="p-4 flex-1 flex flex-col justify-between gap-3">
+                                        <div>
+                                            <p
+                                                class="text-xxs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+                                                Promo Event</p>
+                                            <h3 class="font-bold text-gray-900 dark:text-white text-sm mt-0.5 line-clamp-2"
+                                                x-text="promoEvent.nama_event"></h3>
+                                            <p class="text-xs text-gray-400 dark:text-gray-500"
+                                                x-text="promoEvent.produk ? promoEvent.produk.nama_produk : ''"></p>
+                                        </div>
+                                        <div
+                                            class="flex items-center justify-between mt-auto pt-2 border-t border-gray-50 dark:border-gray-800">
+                                            <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
+                                                x-text="formatRupiah(promoEvent.harga_event)"></span>
+                                            <button @click="tambahPromoEventKeKeranjang(promoEvent)"
+                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                        d="M12 4v16m8-8H4" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
                     </div>
 
                     <!-- Product Pagination Bar (dipakai bareng untuk produk & bundling) -->
@@ -390,7 +468,7 @@
                             Menampilkan <span class="font-bold text-gray-800 dark:text-white"
                                 x-text="produkDitampilkan.length"></span> dari
                             <span class="font-bold text-gray-800 dark:text-white" x-text="semuaItemModeAktif.length"></span>
-                            <span x-text="modeTampilan === 'bundling' ? 'bundling' : 'produk'"></span>
+                                <span x-text="modeTampilan === 'bundling' ? 'bundling' : (modeTampilan === 'promo_event' ? 'promo event' : 'produk')"></span>
                         </span>
                         <div class="flex items-center gap-1.5">
                             <button @click="if(halamanProduk > 1) halamanProduk--" :disabled="halamanProduk <= 1"
@@ -1622,12 +1700,14 @@
                 daftarProduk: @json($daftarProduk),
                 daftarKategori: @json($daftarKategori),
                 daftarBundling: @json($daftarBundling),
+                daftarPromoEvent: @json($daftarPromoEvent),
                 daftarMember: @json($daftarMember),
                 kataKunciPencarian: '',
                 kategoriTerpilih: 'semua',
                 modeTampilan: 'produk',
                 filterKetersediaan: 'semua',
                 filterBundling: 'semua',
+                filterPromoEvent: 'semua',
                 itemsPerPage: '10',
                 halamanProduk: 1,
 
@@ -2075,12 +2155,18 @@
                 normalisasiItemKeranjang(items) {
                     return (items || []).map(item => {
                         const produk = this.daftarProduk.find(p => p.id === item.produk_id);
-                        const promosTersedia = item.promos_tersedia || (produk && produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0 ? produk.promos_aktif_semua : (item.promo_aktif ? [item.promo_aktif] : []));
+                        const promosTersedia = (item.is_bundling || item.is_promo_event)
+                            ? (item.promos_tersedia || [])
+                            : (item.promos_tersedia || (produk && produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0 ? produk.promos_aktif_semua : (item.promo_aktif ? [item.promo_aktif] : [])));
                         const promosTerpilihIds = item.promos_terpilih_ids || promosTersedia.map(p => p.id);
                         let foto = item.foto;
                         if (item.is_bundling && !foto) {
                             const bundling = this.daftarBundling.find(b => b.id === item.bundling_id);
                             if (bundling) foto = bundling.gambar;
+                        }
+                        if (item.is_promo_event && !foto) {
+                            const promoEvent = this.daftarPromoEvent.find(pe => pe.id === item.promo_event_id);
+                            if (promoEvent && promoEvent.produk) foto = promoEvent.produk.foto;
                         }
 
                         return {
@@ -2141,8 +2227,25 @@
                     });
                 },
 
+                get semuaPromoEventTersaring() {
+                    return this.daftarPromoEvent.filter(pe => {
+                        const cocokCari = pe.nama_event.toLowerCase().includes(this.kataKunciPencarian.toLowerCase());
+
+                        let cocokFilter = true;
+                        if (this.filterPromoEvent === 'tersedia') {
+                            cocokFilter = !this.promoEventPerluDiproduksi(pe);
+                        } else if (this.filterPromoEvent === 'habis') {
+                            cocokFilter = this.promoEventPerluDiproduksi(pe);
+                        }
+
+                        return cocokCari && cocokFilter;
+                    });
+                },
+
                 get semuaItemModeAktif() {
-                    return this.modeTampilan === 'bundling' ? this.semuaBundlingTersaring : this.semuaProdukTersaring;
+                    if (this.modeTampilan === 'bundling') return this.semuaBundlingTersaring;
+                    if (this.modeTampilan === 'promo_event') return this.semuaPromoEventTersaring;
+                    return this.semuaProdukTersaring;
                 },
 
                 stokBundlingTersedia(bundling) {
@@ -2166,6 +2269,18 @@
                         if (!p) return true;
                         return p.status_ketersediaan === 'perlu_diproduksi' || (parseFloat(p.stok) || 0) <= 0 || (parseFloat(p.stok) || 0) < it.qty;
                     });
+                },
+
+                stokPromoEventTersedia(promoEvent) {
+                    const p = this.daftarProduk.find(x => x.id === promoEvent.produk_id);
+                    const stokP = p ? (parseFloat(p.stok) || 0) : 0;
+                    return Math.floor(stokP / Math.max(1, promoEvent.isi_event));
+                },
+
+                promoEventPerluDiproduksi(promoEvent) {
+                    const p = this.daftarProduk.find(x => x.id === promoEvent.produk_id);
+                    if (!p) return true;
+                    return p.status_ketersediaan === 'perlu_diproduksi' || (parseFloat(p.stok) || 0) <= 0 || (parseFloat(p.stok) || 0) < promoEvent.isi_event;
                 },
 
                 get totalHalamanProduk() {
@@ -2562,6 +2677,7 @@
                         this.tambahToast('Stok ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
                     }
                 },
+
                 tambahBundlingKeKeranjang(bundling) {
                     const perluDiproduksi = this.bundlingPerluDiproduksi(bundling);
                     const existing = this.keranjang.find(i => i.is_bundling && i.bundling_id === bundling.id);
@@ -2592,8 +2708,39 @@
                     this.tambahToast(perluDiproduksi ? 'Bundling ditambahkan (Perlu Diproduksi).' : 'Bundling ditambahkan.', 'sukses');
                 },
 
+                tambahPromoEventKeKeranjang(promoEvent) {
+                    const perluDiproduksi = this.promoEventPerluDiproduksi(promoEvent);
+                    const existing = this.keranjang.find(i => i.is_promo_event && i.promo_event_id === promoEvent.id);
+
+                    if (existing) {
+                        existing.jumlah++;
+                    } else {
+                        this.keranjang.push({
+                            key: 'promo_event_' + promoEvent.id,
+                            promo_event_id: promoEvent.id,
+                            produk_id: promoEvent.produk_id,
+                            isi_event: promoEvent.isi_event,
+                            is_promo_event: true,
+                            nama_produk: promoEvent.nama_event,
+                            harga_jual: parseFloat(promoEvent.harga_event),
+                            harga_jual_asli: parseFloat(promoEvent.harga_event),
+                            foto: promoEvent.produk ? promoEvent.produk.foto : null,
+                            jumlah: 1,
+                            butuh_produksi: perluDiproduksi,
+                            catatan: ''
+                        });
+                    }
+
+                    this.tambahToast(perluDiproduksi ? 'Promo event ditambahkan (Perlu Diproduksi).' : 'Promo event ditambahkan.', 'sukses');
+                },
+
                 tambahJumlah(item) {
                     if (item.is_bundling) {
+                        item.jumlah++;
+                        return;
+                    }
+
+                    if (item.is_promo_event) {
                         item.jumlah++;
                         return;
                     }
@@ -2983,6 +3130,13 @@
                             });
                             return;
                         }
+                        if (item.is_promo_event) {
+                            if (!item.butuh_produksi) {
+                                const p = this.daftarProduk.find(x => x.id === item.produk_id);
+                                if (p) p.stok = parseFloat(p.stok) + (parseFloat(item.isi_event) * parseFloat(item.jumlah));
+                            }
+                            return;
+                        }
                         const p = this.daftarProduk.find(x => x.id === item.produk_id);
                         if (p && !this.itemButuhProduksi(item)) {
                             this._sesuaikanStokLokal(p, item.ukuran, parseFloat(item.jumlah));
@@ -2998,6 +3152,13 @@
                                     if (p) p.stok = parseFloat(p.stok) - (parseFloat(komponen.qty) * parseFloat(item.jumlah));
                                 }
                             });
+                            return;
+                        }
+                        if (item.is_promo_event) {
+                            if (!item.butuh_produksi) {
+                                const p = this.daftarProduk.find(x => x.id === item.produk_id);
+                                if (p) p.stok = parseFloat(p.stok) - (parseFloat(item.isi_event) * parseFloat(item.jumlah));
+                            }
                             return;
                         }
                         const p = this.daftarProduk.find(x => x.id === item.produk_id);
