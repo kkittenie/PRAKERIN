@@ -165,7 +165,7 @@
                 <td class="val">{{ $item->jumlah_hasil }} pcs</td>
                 <td class="label">Kebutuhan Produksi</td>
                 <td class="val">{{ $item->kebutuhan_produksi ?: 0 }} pcs</td>
-                <td class="label">Kadaluarsa</td>
+                <td class="label">Kadaluwarsa</td>
                 <td class="val">{{ $item->kadaluarsa_label }}</td>
             </tr>
             <tr>

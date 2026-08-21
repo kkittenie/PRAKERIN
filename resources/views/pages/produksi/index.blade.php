@@ -6,21 +6,19 @@
 
     <div class="space-y-6" x-data="{ modalOpen: false, produksiId: null, produksiNama: '', jumlahMax: 0, sisaBelum: 0, punyaUkuran: false, ukuran: 'Besar', stokBesar: 0, stokKecil: 0 }">
 
-        @if($produksiKadaluarsa->count() > 0)
-            <div class="p-4 rounded-2xl border border-red-200 dark:border-red-500/20 bg-red-50/80 dark:bg-red-500/10 backdrop-blur-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div class="flex items-start md:items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0 font-bold">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-sm text-red-900 dark:text-red-300">Peringatan Produk Kadaluwarsa!</h4>
-                        <p class="text-xs text-red-700 dark:text-red-400 mt-0.5">
-                            Terdapat <span class="font-bold">{{ $produksiKadaluarsa->count() }} batch produksi</span> yang sudah kadaluwarsa dan belum disesuaikan stoknya.
-                        </p>
-                    </div>
+        <div id="banner-produksi-kadaluwarsa" class="{{ $produksiKadaluarsa->count() > 0 ? '' : 'hidden' }} p-4 rounded-2xl border border-red-200 dark:border-red-500/20 bg-red-50/80 dark:bg-red-500/10 backdrop-blur-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start md:items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0 font-bold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-red-900 dark:text-red-300">Peringatan Produk Kadaluwarsa!</h4>
+                    <p class="text-xs text-red-700 dark:text-red-400 mt-0.5">
+                        Terdapat <span class="font-bold"><span id="banner-produksi-kadaluwarsa-count">{{ $produksiKadaluarsa->count() }}</span> batch produksi</span> yang sudah kadaluwarsa dan belum disesuaikan stoknya.
+                    </p>
                 </div>
             </div>
-        @endif
+        </div>
 
         {{-- Top Filter Card --}}
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-6">
@@ -39,8 +37,8 @@
                         <select name="status"
                             class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
                             <option value="semua" {{ $status === 'semua' ? 'selected' : '' }}>Semua Status</option>
-                            <option value="kadaluarsa" {{ $status === 'kadaluarsa' ? 'selected' : '' }}>Kadaluarsa</option>
-                            <option value="aktif" {{ $status === 'aktif' ? 'selected' : '' }}>Belum Kadaluarsa</option>
+                            <option value="kadaluarsa" {{ $status === 'kadaluarsa' ? 'selected' : '' }}>Kadaluwarsa</option>
+                            <option value="aktif" {{ $status === 'aktif' ? 'selected' : '' }}>Belum Kadaluwarsa</option>
                         </select>
                     </div>
 
@@ -113,20 +111,20 @@
                     </thead>
                     <tbody>
                         @foreach($produksi as $index => $item)
-                            <tr class="{{ $item->perlu_tindakan ? 'bg-red-50/70 dark:bg-red-500/10' : '' }}">
+                            <tr data-produksi-row
+                                data-kadaluarsa-waktu="{{ $item->kadaluarsa_waktu ? $item->kadaluarsa_waktu->toIso8601String() : '' }}"
+                                data-sisa="{{ (int) $item->sisa_belum_disesuaikan }}"
+                                class="{{ $item->perlu_tindakan ? 'bg-red-50/70 dark:bg-red-500/10' : '' }}">
                                 <td>{{ $index + 1 }}</td>
                                 <td class="text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td>
                                 <td class="font-medium text-gray-800 dark:text-white">
                                     {{ $item->produk->nama_produk }}
-                                    @if($item->perlu_tindakan)
-                                        <span class="inline-flex items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400">
-                                            Kadaluarsa · sisa {{ $item->sisa_belum_disesuaikan }} pcs
-                                        </span>
-                                    @elseif($item->is_kadaluarsa)
-                                        <span class="inline-flex items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400">
-                                            Kadaluarsa
-                                        </span>
-                                    @endif
+                                    <span class="produksi-badge-tindakan inline-flex items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400 {{ $item->perlu_tindakan ? '' : 'hidden' }}">
+                                        Kadaluwarsa · sisa {{ $item->sisa_belum_disesuaikan }} pcs
+                                    </span>
+                                    <span class="produksi-badge-plain inline-flex items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400 {{ ($item->is_kadaluarsa && !$item->perlu_tindakan) ? '' : 'hidden' }}">
+                                        Kadaluwarsa
+                                    </span>
                                 </td>
                                 <td class="text-center">
                                     <span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-3 py-1 text-green-700 dark:text-green-400 text-xs font-bold">{{ $item->jumlah_hasil }} pcs</span>
@@ -139,9 +137,7 @@
                                         <a href="{{ route('produksi.show', $item->id) }}" title="Detail" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         </a>
-                                        @if($item->perlu_tindakan)
-                                            <button type="button" title="Kurangi Stok" @click="modalOpen = true; produksiId = {{ $item->id }}; produksiNama = '{{ addslashes($item->produk->nama_produk) }}'; sisaBelum = {{ (int) $item->sisa_belum_disesuaikan }}; punyaUkuran = {{ $item->produk->punya_ukuran ? 'true' : 'false' }}; stokBesar = {{ (int) ($item->produk->stok_besar ?? 0) }}; stokKecil = {{ (int) ($item->produk->stok_kecil ?? 0) }}; ukuran = 'Besar'; jumlahMax = punyaUkuran ? Math.min(sisaBelum, stokBesar) : {{ (int) min($item->sisa_belum_disesuaikan, $item->produk->stok) }}" class="inline-flex items-center justify-center px-2 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 transition">Kurangi Stok</button>
-                                        @endif
+                                        <button type="button" title="Kurangi Stok" @click="modalOpen = true; produksiId = {{ $item->id }}; produksiNama = '{{ addslashes($item->produk->nama_produk) }}'; sisaBelum = {{ (int) $item->sisa_belum_disesuaikan }}; punyaUkuran = {{ $item->produk->punya_ukuran ? 'true' : 'false' }}; stokBesar = {{ (int) ($item->produk->stok_besar ?? 0) }}; stokKecil = {{ (int) ($item->produk->stok_kecil ?? 0) }}; ukuran = 'Besar'; jumlahMax = punyaUkuran ? Math.min(sisaBelum, stokBesar) : {{ (int) min($item->sisa_belum_disesuaikan, $item->produk->stok) }}" class="produksi-btn-kurangi inline-flex items-center justify-center px-2 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 transition {{ $item->perlu_tindakan ? '' : 'hidden' }}">Kurangi Stok</button>
                                     </div>
                                 </td>
                             </tr>
@@ -203,5 +199,39 @@
             columnDefs: [{ orderable: false, targets: -1 }]
         });
     });
+
+    // Jalan tiap detik: begitu waktu kadaluwarsa sebuah batch produksi lewat dari waktu sekarang,
+    // badge, highlight baris, tombol "Kurangi Stok", dan banner peringatan otomatis update tanpa refresh.
+    function perbaruiKadaluwarsaProduksi() {
+        const sekarang = new Date();
+        let jumlahPerluTindakan = 0;
+
+        document.querySelectorAll('[data-produksi-row]').forEach(function (row) {
+            const waktu = row.dataset.kadaluarsaWaktu;
+            const sisa = parseInt(row.dataset.sisa || '0', 10);
+            const kadaluarsa = !!waktu && sekarang > new Date(waktu);
+            const perluTindakan = kadaluarsa && sisa > 0;
+
+            const badgeTindakan = row.querySelector('.produksi-badge-tindakan');
+            const badgePlain = row.querySelector('.produksi-badge-plain');
+            const btnKurangi = row.querySelector('.produksi-btn-kurangi');
+
+            if (badgeTindakan) badgeTindakan.classList.toggle('hidden', !perluTindakan);
+            if (badgePlain) badgePlain.classList.toggle('hidden', !(kadaluarsa && !perluTindakan));
+            if (btnKurangi) btnKurangi.classList.toggle('hidden', !perluTindakan);
+            row.classList.toggle('bg-red-50/70', perluTindakan);
+            row.classList.toggle('dark:bg-red-500/10', perluTindakan);
+
+            if (perluTindakan) jumlahPerluTindakan++;
+        });
+
+        const banner = document.getElementById('banner-produksi-kadaluwarsa');
+        const bannerCount = document.getElementById('banner-produksi-kadaluwarsa-count');
+        if (banner) banner.classList.toggle('hidden', jumlahPerluTindakan === 0);
+        if (bannerCount) bannerCount.textContent = jumlahPerluTindakan;
+    }
+
+    document.addEventListener('DOMContentLoaded', perbaruiKadaluwarsaProduksi);
+    setInterval(perbaruiKadaluwarsaProduksi, 1000);
 </script>
 @endpush

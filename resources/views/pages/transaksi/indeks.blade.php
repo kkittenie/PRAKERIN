@@ -1794,12 +1794,12 @@
                     // Cek pertama kali saat halaman dibuka
                     this.perbaruiPromoKadaluwarsa();
 
-                    // Jalan tiap 5 detik: kalau ada promo yang selesai_berlaku-nya
+                    // Jalan tiap detik: kalau ada promo yang selesai_berlaku-nya
                     // sudah lewat dari waktu sekarang, badge/harga diskonnya otomatis
                     // hilang dari layar tanpa perlu refresh browser.
                     this._intervalPromoKadaluwarsa = setInterval(() => {
                         this.perbaruiPromoKadaluwarsa();
-                    }, 5000);
+                    }, 1000);
                 },
 
                 // Menentukan apakah sebuah objek promo masih berlaku dibanding waktu sekarang (jam di browser kasir)

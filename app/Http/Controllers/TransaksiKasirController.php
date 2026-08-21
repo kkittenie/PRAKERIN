@@ -51,7 +51,7 @@ class TransaksiKasirController extends Controller
         }
 
         if ($voucher->sudahExpired()) {
-            throw new \Exception('Voucher ini sudah kedaluwarsa.');
+            throw new \Exception('Voucher ini sudah kadaluwarsa.');
         }
 
         return $voucher;

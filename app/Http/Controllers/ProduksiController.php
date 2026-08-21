@@ -25,8 +25,6 @@ class ProduksiController extends Controller
 
         switch ($periode) {
             case 'semua':
-                // Tidak ada filter tanggal sama sekali, tanggalRef cuma dipakai
-                // sebagai nilai default kalau user beralih ke periode lain di form.
                 $periode = 'semua';
                 $tanggalRef = Carbon::now();
                 break;
@@ -175,13 +173,16 @@ class ProduksiController extends Controller
     public function store(Request $request)
     {
         try {
+            $produkDipilih = Produk::find($request->produk_id);
+            $punyaUkuran = (bool) ($produkDipilih->punya_ukuran ?? false);
+
             $request->validate([
                 'tanggal' => 'required|date',
                 'jam_produksi' => 'required|date_format:H:i',
                 'produk_id' => 'required|exists:produks,id',
                 'jumlah_hasil' => 'required|integer|min:1',
-                'jumlah_besar' => 'required|integer|min:0',
-                'jumlah_kecil' => 'required|integer|min:0',
+                'jumlah_besar' => [$punyaUkuran ? 'required' : 'nullable', 'integer', 'min:0'],
+                'jumlah_kecil' => [$punyaUkuran ? 'required' : 'nullable', 'integer', 'min:0'],
                 'kebutuhan_besar' => 'nullable|integer|min:0',
                 'kebutuhan_kecil' => 'nullable|integer|min:0',
                 'kebutuhan_produksi' => 'nullable|integer|min:0|lte:jumlah_hasil',
@@ -229,31 +230,47 @@ class ProduksiController extends Controller
                 return back()->withInput()->with('error', 'Minimal pilih satu bahan baku yang digunakan.');
             }
 
-            if (((int) $request->jumlah_besar + (int) $request->jumlah_kecil) !== (int) $request->jumlah_hasil) {
-                return back()->withInput()->with('error', 'Jumlah Besar + Jumlah Kecil harus sama dengan Jumlah Hasil Produksi.');
-            }
+            if ($punyaUkuran) {
+                if (((int) $request->jumlah_besar + (int) $request->jumlah_kecil) !== (int) $request->jumlah_hasil) {
+                    return back()->withInput()->with('error', 'Jumlah Besar + Jumlah Kecil harus sama dengan Jumlah Hasil Produksi.');
+                }
 
-            $kebutuhanBesar = (int) ($request->kebutuhan_besar ?? 0);
-            $kebutuhanKecil = (int) ($request->kebutuhan_kecil ?? 0);
-            $kebutuhanTotal = $kebutuhanBesar + $kebutuhanKecil;
+                $jumlahBesar = (int) $request->jumlah_besar;
+                $jumlahKecil = (int) $request->jumlah_kecil;
 
-            if ($kebutuhanBesar > (int) $request->jumlah_besar) {
-                return back()->withInput()->with('error', 'Kebutuhan Besar tidak boleh melebihi Jumlah Besar hasil produksi.');
-            }
-            if ($kebutuhanKecil > (int) $request->jumlah_kecil) {
-                return back()->withInput()->with('error', 'Kebutuhan Kecil tidak boleh melebihi Jumlah Kecil hasil produksi.');
+                $kebutuhanBesar = (int) ($request->kebutuhan_besar ?? 0);
+                $kebutuhanKecil = (int) ($request->kebutuhan_kecil ?? 0);
+                $kebutuhanTotal = $kebutuhanBesar + $kebutuhanKecil;
+
+                if ($kebutuhanBesar > $jumlahBesar) {
+                    return back()->withInput()->with('error', 'Kebutuhan Besar tidak boleh melebihi Jumlah Besar hasil produksi.');
+                }
+                if ($kebutuhanKecil > $jumlahKecil) {
+                    return back()->withInput()->with('error', 'Kebutuhan Kecil tidak boleh melebihi Jumlah Kecil hasil produksi.');
+                }
+            } else {
+                // Produk tanpa ukuran: tidak ada rincian Besar/Kecil, cukup jumlah hasil & kebutuhan biasa.
+                $jumlahBesar = 0;
+                $jumlahKecil = 0;
+                $kebutuhanBesar = 0;
+                $kebutuhanKecil = 0;
+                $kebutuhanTotal = (int) ($request->kebutuhan_produksi ?? 0);
+
+                if ($kebutuhanTotal > (int) $request->jumlah_hasil) {
+                    return back()->withInput()->with('error', 'Kebutuhan Produksi tidak boleh melebihi Jumlah Hasil Produksi.');
+                }
             }
 
             $produksi = null;
-            DB::transaction(function () use ($request, $kebutuhanTotal, $kebutuhanBesar, $kebutuhanKecil, &$produksi) {
+            DB::transaction(function () use ($request, $kebutuhanTotal, $kebutuhanBesar, $kebutuhanKecil, $jumlahBesar, $jumlahKecil, &$produksi) {
 
                 $produksi = Produksi::create([
                     'tanggal' => $request->tanggal,
                     'jam_produksi' => $request->jam_produksi,
                     'produk_id' => $request->produk_id,
                     'jumlah_hasil' => $request->jumlah_hasil,
-                    'jumlah_besar' => $request->jumlah_besar,
-                    'jumlah_kecil' => $request->jumlah_kecil,
+                    'jumlah_besar' => $jumlahBesar,
+                    'jumlah_kecil' => $jumlahKecil,
                     'kebutuhan_produksi' => $kebutuhanTotal,
                     'kebutuhan_besar' => $kebutuhanBesar,
                     'kebutuhan_kecil' => $kebutuhanKecil,
@@ -293,11 +310,11 @@ class ProduksiController extends Controller
                     if ($produk->punya_ukuran) {
                         // Produk punya varian ukuran: tambah & kurangi stok Besar/Kecil
                         // secara terpisah sesuai rincian hasil & kebutuhan produksi.
-                        if ((int) $request->jumlah_besar > 0) {
-                            $produk->incrementStokUkuran('Besar', (int) $request->jumlah_besar);
+                        if ($jumlahBesar > 0) {
+                            $produk->incrementStokUkuran('Besar', $jumlahBesar);
                         }
-                        if ((int) $request->jumlah_kecil > 0) {
-                            $produk->incrementStokUkuran('Kecil', (int) $request->jumlah_kecil);
+                        if ($jumlahKecil > 0) {
+                            $produk->incrementStokUkuran('Kecil', $jumlahKecil);
                         }
                         $produk->refresh();
 
@@ -328,8 +345,8 @@ class ProduksiController extends Controller
                 } catch (\Throwable $e) {
                     Log::error('Gagal memperbarui stok saat membuat tiket produksi', [
                         'produk_id' => $produk->id,
-                        'jumlah_besar' => $request->jumlah_besar,
-                        'jumlah_kecil' => $request->jumlah_kecil,
+                        'jumlah_besar' => $jumlahBesar,
+                        'jumlah_kecil' => $jumlahKecil,
                         'kebutuhan_besar' => $kebutuhanBesar,
                         'kebutuhan_kecil' => $kebutuhanKecil,
                         'error' => $e->getMessage(),
@@ -350,17 +367,21 @@ class ProduksiController extends Controller
                 ->withProperties([
                     'produk_id' => $request->produk_id,
                     'jumlah_hasil' => $request->jumlah_hasil,
-                    'jumlah_besar' => $request->jumlah_besar,
-                    'jumlah_kecil' => $request->jumlah_kecil,
-                    'kebutuhan_produksi' => $request->kebutuhan_produksi ?? 0,
+                    'jumlah_besar' => $jumlahBesar,
+                    'jumlah_kecil' => $jumlahKecil,
+                    'kebutuhan_produksi' => $kebutuhanTotal,
                     'bahan_baku_id' => $request->bahan_baku_id,
                     'jumlah_terpakai' => $request->jumlah_terpakai,
                 ])
                 ->log('menambahkan produksi');
 
+            $keteranganJumlah = $punyaUkuran
+                ? "{$produksi->jumlah_hasil} pcs: {$produksi->rincian_ukuran}"
+                : "{$produksi->jumlah_hasil} pcs";
+
             return redirect()->route('produksi.index')->with(
                 'success',
-                "Produksi berhasil disimpan ({$produksi->jumlah_hasil} pcs: {$produksi->rincian_ukuran})."
+                "Produksi berhasil disimpan ({$keteranganJumlah})."
             );
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -384,7 +405,7 @@ class ProduksiController extends Controller
             $produksi->load('produk');
 
             $jumlah = (int) $request->query('jumlah', $produksi->jumlah_hasil);
-            $jumlah = max(1, min($jumlah, 500)); // guard biar gak dicetak ribuan sekaligus
+            $jumlah = max(1, min($jumlah, 500));
 
             return view('pages.produksi.label', compact('produksi', 'jumlah'));
         } catch (\Throwable $e) {

@@ -68,7 +68,7 @@ Jam Produksi
 <div>
 
 <p class="text-sm text-gray-500 dark:text-gray-400">
-Kadaluarsa
+Kadaluwarsa
 </p>
 
     <p class="font-semibold text-red-600 dark:text-red-400">

@@ -66,7 +66,7 @@
                                     $status = 'Belum Mulai';
                                     $badgeColor = 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400';
                                 } elseif ($item->selesai_berlaku && $now > $item->selesai_berlaku) {
-                                    $status = 'Kedaluwarsa';
+                                    $status = 'Kadaluwarsa';
                                     $badgeColor = 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400';
                                 } else {
                                     $status = 'Aktif';
@@ -86,8 +86,11 @@
                                         <span class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">Selamanya</span>
                                     @endif
                                 </td>
-                                <td class="text-center">
-                                    <form action="{{ route('pengaturan-member.toggle-status', $item->id) }}" method="POST" class="inline">
+                                <td class="text-center" data-promo-status-cell data-selesai="{{ $item->selesai_berlaku ? $item->selesai_berlaku->toIso8601String() : '' }}">
+                                    <span class="promo-expired-badge inline-flex items-center rounded-full bg-red-100 dark:bg-red-500/10 px-3 py-1 text-xs font-medium text-red-700 dark:text-red-400 {{ ($item->selesai_berlaku && $now > $item->selesai_berlaku) ? '' : 'hidden' }}">
+                                        Kadaluwarsa
+                                    </span>
+                                    <form action="{{ route('pengaturan-member.toggle-status', $item->id) }}" method="POST" class="promo-toggle-form inline {{ ($item->selesai_berlaku && $now > $item->selesai_berlaku) ? 'hidden' : '' }}">
                                         @csrf @method('PATCH')
                                         <label class="relative inline-flex items-center cursor-pointer">
                                             <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
@@ -148,5 +151,23 @@
             columnDefs: [{ orderable: false, targets: -1 }]
         });
     });
+
+    // Jalan tiap detik: begitu selesai_berlaku sebuah aturan member lewat dari waktu sekarang,
+    // toggle aktif/nonaktif otomatis diganti jadi badge "Kadaluwarsa" tanpa perlu refresh.
+    function perbaruiKadaluwarsaPromo() {
+        const sekarang = new Date();
+        document.querySelectorAll('[data-promo-status-cell]').forEach(function (cell) {
+            const selesai = cell.dataset.selesai;
+            const badge = cell.querySelector('.promo-expired-badge');
+            const form = cell.querySelector('.promo-toggle-form');
+            const kadaluwarsa = !!selesai && sekarang > new Date(selesai);
+
+            if (badge) badge.classList.toggle('hidden', !kadaluwarsa);
+            if (form) form.classList.toggle('hidden', kadaluwarsa);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', perbaruiKadaluwarsaPromo);
+    setInterval(perbaruiKadaluwarsaPromo, 1000);
 </script>
 @endpush

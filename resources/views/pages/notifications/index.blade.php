@@ -44,7 +44,7 @@
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <h2 class="text-lg font-bold text-gray-800 dark:text-white">Pusat Notifikasi</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Daftar pemberitahuan stok, produksi kadaluarsa, dan update sistem.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Daftar pemberitahuan stok, produksi kadaluwarsa, dan update sistem.</p>
             </div>
             <div class="flex items-center gap-3">
                 <div class="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 text-xs font-semibold">

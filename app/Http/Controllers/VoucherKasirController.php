@@ -79,7 +79,7 @@ class VoucherKasirController extends Controller
             if ($penukaran->sudahExpired()) {
                 return response()->json([
                     'status' => 'error',
-                    'pesan' => 'Voucher ini sudah kedaluwarsa.',
+                    'pesan' => 'Voucher ini sudah kadaluwarsa.',
                 ], 422);
             }
 

@@ -226,7 +226,7 @@
                     <div class="label-barcode">
                         <svg id="barcode-{{ $i }}"></svg>
                     </div>
-                    <div class="label-kadaluarsa">Kadaluarsa: {{ $produksi->kadaluarsa_label_cetak }}</div>
+                    <div class="label-kadaluarsa">Kadaluwarsa: {{ $produksi->kadaluarsa_label_cetak }}</div>
                 </div>
             </div>
         @endfor

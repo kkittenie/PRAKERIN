@@ -49,6 +49,6 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
-            return back()->with('error', 'Sesi kamu sudah kedaluwarsa (halaman kebuka kelamaan). Silakan coba klik/kirim lagi.');
+            return back()->with('error', 'Sesi kamu sudah kadaluwarsa. Silakan coba klik/kirim lagi.');
         });
     })->create();

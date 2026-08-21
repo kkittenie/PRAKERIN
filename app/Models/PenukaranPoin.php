@@ -56,9 +56,6 @@ class PenukaranPoin extends Model
         return $this->belongsTo(Transaksi::class, 'transaksi_id');
     }
 
-    /**
-     * Voucher yang masih bisa dipakai: belum diambil/dipakai dan belum kedaluwarsa.
-     */
     public function scopeAktifDigunakan($query)
     {
         return $query->where('status', 'menunggu_diambil')

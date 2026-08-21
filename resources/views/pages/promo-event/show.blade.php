@@ -43,7 +43,7 @@
             } elseif ($now < $promoEvent->mulai_berlaku) {
                 $status = 'Belum Mulai'; $badgeColor = 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400';
             } elseif ($now > $promoEvent->selesai_berlaku) {
-                $status = 'Kedaluwarsa'; $badgeColor = 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400';
+                $status = 'Kadaluwarsa'; $badgeColor = 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400';
             } else {
                 $status = 'Aktif'; $badgeColor = 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400';
             }
