@@ -57,6 +57,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/transaksi/voucher/validasi', [VoucherKasirController::class, 'validasiKode'])->name('transaksi.voucher.validasi');
         Route::get('/transaksi/reward-stamp/member/{member}', [StampRedemptionKasirController::class, 'daftarAktif'])->name('transaksi.reward-stamp.member');
         Route::post('/transaksi/reward-stamp/validasi', [StampRedemptionKasirController::class, 'validasiKode'])->name('transaksi.reward-stamp.validasi');
+        Route::get('/transaksi/promo-status', [TransaksiKasirController::class, 'promoStatus'])->name('transaksi.promo-status');
     });
     Route::middleware('permission:tambah_transaksi')->group(function () {
         Route::post('/transaksi/tahan', [TransaksiKasirController::class, 'simpanDitahan'])->name('transaksi.tahan');

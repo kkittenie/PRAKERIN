@@ -77,7 +77,7 @@
             <div>
                 <div class="flex items-center gap-3">
                     <h2 class="text-xl font-extrabold text-gray-900 dark:text-white">{{ $promo->nama_promo }}</h2>
-                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold {{ $badgeColor }}">
+                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold {{ $badgeColor }}" id="badgeStatusPromo" data-selesai="{{ $promo->selesai_berlaku ? $promo->selesai_berlaku->toIso8601String() : '' }}" data-status-aktif="{{ $promo->status_aktif ? '1' : '0' }}" data-mulai="{{ $promo->mulai_berlaku ? $promo->mulai_berlaku->toIso8601String() : '' }}">
                         {{ $status }}
                     </span>
                 </div>
@@ -95,7 +95,7 @@
                     <span>Edit Promo</span>
                 </a>
 
-                <form action="{{ route('promo.toggle-status', $promo->id) }}" method="POST" class="inline">
+                <form action="{{ route('promo.toggle-status', $promo->id) }}" method="POST" class="inline {{ ($promo->selesai_berlaku && $now > $promo->selesai_berlaku) ? 'hidden' : '' }}" id="formToggleStatus" data-promo-toggle-wrapper data-selesai="{{ $promo->selesai_berlaku ? $promo->selesai_berlaku->toIso8601String() : '' }}">
                     @csrf @method('PATCH')
                     <button type="submit"
                         class="inline-flex items-center gap-2 rounded-xl border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-2 text-xs font-semibold transition">
@@ -259,3 +259,44 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    // Jalan tiap detik: begitu promo ini lewat selesai_berlaku, badge status ganti
+    // jadi "Kadaluwarsa" dan tombol Aktifkan/Nonaktifkan otomatis hilang tanpa refresh.
+    function perbaruiStatusDetailPromo() {
+        const sekarang = new Date();
+        const badge = document.getElementById('badgeStatusPromo');
+        const toggleForm = document.querySelector('[data-promo-toggle-wrapper]');
+        if (!badge) return;
+
+        const selesai = badge.dataset.selesai;
+        const mulai = badge.dataset.mulai;
+        const statusAktif = badge.dataset.statusAktif === '1';
+        const kadaluwarsa = !!selesai && sekarang > new Date(selesai);
+
+        let label, warna;
+        if (!statusAktif) {
+            label = 'Nonaktif';
+            warna = 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400';
+        } else if (mulai && sekarang < new Date(mulai)) {
+            label = 'Belum Mulai';
+            warna = 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400';
+        } else if (kadaluwarsa) {
+            label = 'Kadaluwarsa';
+            warna = 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400';
+        } else {
+            label = 'Aktif';
+            warna = 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400';
+        }
+
+        badge.className = 'inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ' + warna;
+        badge.textContent = label;
+
+        if (toggleForm) toggleForm.classList.toggle('hidden', kadaluwarsa);
+    }
+
+    document.addEventListener('DOMContentLoaded', perbaruiStatusDetailPromo);
+    setInterval(perbaruiStatusDetailPromo, 1000);
+</script>
+@endpush

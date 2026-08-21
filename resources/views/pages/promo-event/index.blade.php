@@ -59,19 +59,6 @@
                         @foreach($promoEvent as $index => $item)
                             @php
                                 $now = now();
-                                if (!$item->status_aktif) {
-                                    $status = 'Nonaktif';
-                                    $badgeColor = 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400';
-                                } elseif ($now < $item->mulai_berlaku) {
-                                    $status = 'Belum Mulai';
-                                    $badgeColor = 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400';
-                                } elseif ($now > $item->selesai_berlaku) {
-                                    $status = 'Kadaluwarsa';
-                                    $badgeColor = 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400';
-                                } else {
-                                    $status = 'Aktif';
-                                    $badgeColor = 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400';
-                                }
                             @endphp
                             <tr>
                                 <td>{{ $index + 1 }}</td>
@@ -82,8 +69,12 @@
                                 <td class="text-center text-xs">{{ $item->isi_normal }} pcs &rarr; {{ $item->isi_event }} pcs</td>
                                 <td class="text-center font-bold text-brand-600 dark:text-brand-400 whitespace-nowrap">Rp {{ number_format($item->harga_event, 0, ',', '.') }}</td>
                                 <td class="text-center text-xs">{{ $item->mulai_berlaku->format('d M Y H:i') }} - {{ $item->selesai_berlaku->format('d M Y H:i') }}</td>
-                                <td class="text-center">
-                                    <form action="{{ route('promo-event.toggle-status', $item->id) }}" method="POST" class="inline">
+                                <td class="text-center" data-promo-event-status-cell
+                                    data-selesai="{{ $item->selesai_berlaku ? $item->selesai_berlaku->toIso8601String() : '' }}">
+                                    <span class="promo-event-expired-badge items-center rounded-full bg-red-100 dark:bg-red-500/10 px-3 py-1 text-xs font-medium text-red-700 dark:text-red-400 {{ ($item->selesai_berlaku && $now > $item->selesai_berlaku) ? 'inline-flex' : 'hidden' }}">
+                                        Kadaluwarsa
+                                    </span>
+                                    <form action="{{ route('promo-event.toggle-status', $item->id) }}" method="POST" class="promo-event-toggle-form {{ ($item->selesai_berlaku && $now > $item->selesai_berlaku) ? 'hidden' : 'inline' }}">
                                         @csrf @method('PATCH')
                                         <label class="relative inline-flex items-center cursor-pointer" title="Klik untuk mengaktifkan/menonaktifkan">
                                             <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
@@ -147,5 +138,29 @@
             columnDefs: [{ orderable: false, targets: -1 }]
         });
     });
+
+    // Jalan tiap detik: begitu selesai_berlaku sebuah promo event lewat dari waktu sekarang,
+    // toggle aktif/nonaktif otomatis diganti jadi badge "Kadaluwarsa" tanpa perlu refresh.
+    function perbaruiKadaluwarsaPromoEvent() {
+        const sekarang = new Date();
+        document.querySelectorAll('[data-promo-event-status-cell]').forEach(function (cell) {
+            const selesai = cell.dataset.selesai;
+            const badge = cell.querySelector('.promo-event-expired-badge');
+            const form = cell.querySelector('.promo-event-toggle-form');
+            const kadaluwarsa = !!selesai && sekarang > new Date(selesai);
+
+            if (badge) {
+                badge.classList.toggle('hidden', !kadaluwarsa);
+                badge.classList.toggle('inline-flex', kadaluwarsa);
+            }
+            if (form) {
+                form.classList.toggle('hidden', kadaluwarsa);
+                form.classList.toggle('inline', !kadaluwarsa);
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', perbaruiKadaluwarsaPromoEvent);
+    setInterval(perbaruiKadaluwarsaPromoEvent, 1000);
 </script>
 @endpush

@@ -4,6 +4,7 @@ use App\Http\Controllers\Mobile\AkunController;
 use App\Http\Controllers\Mobile\AuthController;
 use App\Http\Controllers\Mobile\BundlingController;
 use App\Http\Controllers\Mobile\PromoEventController;
+use App\Http\Controllers\Mobile\PromoStatusController;
 use App\Http\Controllers\Mobile\CheckoutController;
 use App\Http\Controllers\Mobile\DashboardController;
 use App\Http\Controllers\Mobile\KeranjangController;
@@ -28,6 +29,7 @@ Route::prefix('mobile')->name('member.')->group(function () {
 
     Route::get('/beranda', [DashboardController::class, 'index'])->name('beranda');
     Route::get('/menu', [MenuController::class, 'index'])->name('menu');
+    Route::get('/promo-status', [PromoStatusController::class, 'index'])->name('promo-status');
     Route::get('/akun', [AkunController::class, 'index'])->name('akun');
     Route::get('/info/{slug}', [KontenController::class, 'show'])->name('konten.show');
 

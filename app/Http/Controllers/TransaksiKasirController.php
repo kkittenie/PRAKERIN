@@ -200,6 +200,42 @@ class TransaksiKasirController extends Controller
             return ActivityLogHelper::handleException($e);
         }
     }
+
+    // Dipanggil berkala (polling) dari halaman kasir supaya promo & promo event
+    // yang baru ditambahkan/diubah/dihapus admin ikut ke-refresh tanpa reload halaman.
+    // Kadaluwarsa per detik tetap dihitung di JS pakai mulai_berlaku/selesai_berlaku,
+    // endpoint ini cuma nyuplai data promo TERKINI dari database.
+    public function promoStatus()
+    {
+        try {
+            $daftarProduk = Produk::with('promos')
+                ->where('status_aktif', true)
+                ->get()
+                ->map(function ($produk) {
+                    return [
+                        'id' => $produk->id,
+                        'promos_aktif_semua' => $produk->promos_aktif_semua->values(),
+                        'promo_aktif' => $produk->promo_aktif,
+                        'harga_diskon' => $produk->harga_diskon,
+                    ];
+                });
+
+            $daftarPromoEvent = PromoProdukEvent::with('produk')
+                ->berlaku()
+                ->get();
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'produk' => $daftarProduk,
+                    'promo_event' => $daftarPromoEvent,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
     private function prosesItemBundlingTransaksi(Transaksi $transaksi, array $item): void
     {
         $bundlingId = (int) $item['bundling_id'];

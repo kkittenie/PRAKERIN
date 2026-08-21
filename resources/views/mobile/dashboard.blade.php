@@ -323,7 +323,8 @@
                 @endphp
                 <a href="{{ route('member.produk.show', $produk) }}"
                    onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                   class="block">
+                   class="block"
+                   @unless($produk->punya_ukuran) data-produk-id="{{ $produk->id }}" @endunless>
                     <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
                         @if ($produk->foto)
                             <img src="{{ asset('storage/' . $produk->foto) }}" alt="{{ $produk->nama_produk }}"
@@ -332,9 +333,7 @@
                         <div class="{{ $produk->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
                             @include('mobile.components.icon-cup', ['class' => 'h-10 w-10'])
                         </div>
-                        @if ($adaPromo)
-                            <span class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">Promo</span>
-                        @endif
+                        <span data-promo-badge class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm" style="{{ $adaPromo ? '' : 'display:none' }}">Promo</span>
                         @if ($habis)
                             <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Perlu Diproduksi</span>
                         @endif
@@ -351,10 +350,8 @@
                                         Rp {{ number_format($produk->harga_kecil, 0, ',', '.') }} - Rp {{ number_format($produk->harga_besar, 0, ',', '.') }}
                                     </p>
                                 @else
-                                    @if ($adaPromo)
-                                        <p class="truncate text-[10px] text-gray-400 line-through">Rp {{ number_format($hargaAsli, 0, ',', '.') }}</p>
-                                    @endif
-                                    <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($hargaFinal, 0, ',', '.') }}</p>
+                                    <p data-harga-asli class="truncate text-[10px] text-gray-400 line-through" style="{{ $adaPromo ? '' : 'display:none' }}">Rp {{ number_format($hargaAsli, 0, ',', '.') }}</p>
+                                    <p data-harga-final class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($hargaFinal, 0, ',', '.') }}</p>
                                 @endif
                             </div>
 
@@ -534,6 +531,41 @@
             const token = window.Android.getFcmToken();
             if (token) window.daftarkanFcmToken(token);
         }
+
+        // Live update badge & harga "Promo" di grid Produk Pilihan: kalau promo
+        // kadaluwarsa/dihapus atau ada promo baru dari admin, langsung kelihatan
+        // di layar member tanpa perlu reload halaman.
+        (function () {
+            const kartuProduk = document.querySelectorAll('[data-produk-id]');
+            if (!kartuProduk.length) return;
+            const produkIds = Array.from(kartuProduk).map(el => el.dataset.produkId);
+
+            const formatRupiah = (n) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+
+            const sinkronPromo = () => {
+                fetch("{{ route('member.promo-status') }}?produk_ids=" + produkIds.join(','))
+                    .then(r => r.json())
+                    .then(r => {
+                        if (r.status !== 'success') return;
+                        kartuProduk.forEach(el => {
+                            const data = r.data.produk[el.dataset.produkId];
+                            if (!data) return;
+
+                            const badge = el.querySelector('[data-promo-badge]');
+                            const hargaAsli = el.querySelector('[data-harga-asli]');
+                            const hargaFinal = el.querySelector('[data-harga-final]');
+
+                            if (badge) badge.style.display = data.ada_promo ? '' : 'none';
+                            if (hargaAsli) hargaAsli.style.display = data.ada_promo ? '' : 'none';
+                            if (hargaFinal) hargaFinal.textContent = formatRupiah(data.harga_final);
+                            if (hargaAsli) hargaAsli.textContent = formatRupiah(data.harga_asli);
+                        });
+                    })
+                    .catch(() => {});
+            };
+
+            setInterval(sinkronPromo, 15000);
+        })();
     </script>
 
 @endsection

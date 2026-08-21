@@ -11,6 +11,8 @@
                     catatan: @js($itemEdit['catatan'] ?? ''),
                     hargaSatuan: {{ (float) $promoEvent->harga_event }},
                     habis: {{ $habis ? 'true' : 'false' }},
+                    promoEventId: {{ $promoEvent->id }},
+                    berakhir: false,
 
                     get total() {
                         return this.hargaSatuan * this.jumlah;
@@ -26,8 +28,27 @@
                         if (this.jumlah > 1) {
                             this.jumlah--;
                         }
+                    },
+
+                    // Poll berkala: kalau promo event ini kadaluwarsa/dinonaktifkan
+                    // admin selagi dibuka, tombol beli otomatis kekunci + kasih notice,
+                    // tanpa perlu member reload halaman sendiri.
+                    cekStatusPromoEvent() {
+                        fetch(`{{ route('member.promo-status') }}?produk_ids=`)
+                            .then(r => r.json())
+                            .then(r => {
+                                if (r.status !== 'success') return;
+                                const aktif = r.data.promo_event.find(pe => pe.id === this.promoEventId);
+                                if (!aktif) {
+                                    this.berakhir = true;
+                                    return;
+                                }
+                                this.hargaSatuan = aktif.harga_event;
+                                this.habis = aktif.perlu_diproduksi;
+                            })
+                            .catch(() => {});
                     }
-                }" class="relative">
+                }" x-init="setInterval(() => cekStatusPromoEvent(), 10000)" class="relative">
 
         {{-- Foto produk asli --}}
         <div class="relative -mx-5 -mt-6 aspect-square w-auto overflow-hidden bg-gray-50 sm:-mx-8 md:-mx-10">
@@ -55,11 +76,9 @@
                 Promo Event
             </span>
 
-            @if ($habis)
-                <span class="absolute left-4 bottom-4 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
-                    Perlu Diproduksi
-                </span>
-            @endif
+            <span x-show="habis" x-cloak class="absolute left-4 bottom-4 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
+                Perlu Diproduksi
+            </span>
 
         </div>
 
@@ -75,10 +94,18 @@
                 </h2>
 
                 <div class="mt-2 flex items-center gap-2">
-                    <span class="text-base font-extrabold text-gray-900">
+                    <span class="text-base font-extrabold text-gray-900" x-text="'Rp ' + hargaSatuan.toLocaleString('id-ID')">
                         Rp {{ number_format($promoEvent->harga_event, 0, ',', '.') }}
                     </span>
                 </div>
+            </div>
+
+            {{-- Banner: promo event berakhir selagi dibuka --}}
+            <div x-show="berakhir" x-cloak class="mt-4 flex items-start gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-rose-800">
+                @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
+                <p class="text-[11px] font-semibold leading-relaxed">
+                    Yah, promo event ini baru saja berakhir. Yuk cek menu lain yang masih tersedia.
+                </p>
             </div>
 
             {{-- Highlight deal --}}
@@ -91,15 +118,13 @@
                 </p>
             </div>
 
-            @if ($habis)
-                <div class="mt-4 flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">
-                    @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
-                    <p class="text-[11px] font-semibold leading-relaxed">
-                        Stok produk untuk promo ini sedang kurang/habis, pesanan tetap bisa dibuat & akan
-                        diproduksi dulu di dapur — waktu tunggu bisa lebih lama dari biasanya.
-                    </p>
-                </div>
-            @endif
+            <div x-show="habis" x-cloak class="mt-4 flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">
+                @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
+                <p class="text-[11px] font-semibold leading-relaxed">
+                    Stok produk untuk promo ini sedang kurang/habis, pesanan tetap bisa dibuat & akan
+                    diproduksi dulu di dapur — waktu tunggu bisa lebih lama dari biasanya.
+                </p>
+            </div>
 
             <div class="mt-5">
                 <h3 class="text-xs font-bold text-gray-900">
@@ -156,9 +181,10 @@
                                 </button>
                             </div>
 
-                            <button type="submit"
+                            <button type="submit" :disabled="berakhir"
+                                :class="berakhir ? 'opacity-50 cursor-not-allowed' : ''"
                                 class="flex min-w-0 flex-1 items-center justify-center rounded-full bg-brand-800 px-6 py-4 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]"
-                                x-text="'Update – Rp ' + total.toLocaleString('id-ID')">
+                                x-text="berakhir ? 'Promo sudah berakhir' : ('Update – Rp ' + total.toLocaleString('id-ID'))">
                             </button>
 
                         </div>
@@ -168,7 +194,8 @@
                 @else
 
                 <form method="POST" action="{{ route('member.keranjang.tambah-promo-event', $promoEvent) }}"
-                    onsubmit="event.preventDefault(); kirimTambahKeranjang(this);">
+                    onsubmit="event.preventDefault(); if (!this.dataset.berakhir || this.dataset.berakhir !== 'true') kirimTambahKeranjang(this);"
+                    x-effect="$el.dataset.berakhir = berakhir">
                     @csrf
 
                     <input type="hidden" name="jumlah" :value="jumlah">
@@ -198,10 +225,11 @@
                             </button>
                         </div>
 
-                        <button type="submit"
+                        <button type="submit" :disabled="berakhir"
+                            :class="berakhir ? 'opacity-50 cursor-not-allowed' : ''"
                             class="flex min-w-0 flex-1 items-center justify-between rounded-full bg-brand-800 px-6 py-4 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
-                            <span>Add</span>
-                            <span x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
+                            <span x-text="berakhir ? 'Promo sudah berakhir' : 'Add'"></span>
+                            <span x-show="!berakhir" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                         </button>
 
                     </div>

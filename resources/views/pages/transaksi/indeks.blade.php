@@ -214,7 +214,7 @@
                                                 <div
                                                     class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
                                                     <div class="h-5"></div>
-                                                    <div class="flex items-center justify-between">
+                                                    <div class="h-11 flex items-center justify-between">
                                                         <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                             x-text="formatRupiah(produk.harga)"></span>
                                                         <button @click="tambahBundlingKeKeranjang(produk)"
@@ -264,7 +264,7 @@
                                                 <div
                                                     class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
                                                     <div class="h-5"></div>
-                                                    <div class="flex items-center justify-between">
+                                                    <div class="h-11 flex items-center justify-between">
                                                         <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                             x-text="formatRupiah(produk.harga_event)"></span>
                                                         <button @click="tambahPromoEventKeKeranjang(produk)"
@@ -347,11 +347,11 @@
                                                         </template>
                                                     </div>
                                                     <template x-if="produk.punya_ukuran == 1 || produk.punya_ukuran === true">
-                                                        <div class="grid grid-cols-2 gap-1.5 items-center">
+                                                        <div class="h-11 grid grid-cols-2 gap-1.5">
                                                             <!-- Kecil -->
                                                             <button type="button" @click.stop="tambahKeKeranjang(produk, 'Kecil')"
                                                                 title="Tambah Ukuran Kecil"
-                                                                class="flex flex-col items-center justify-center py-1.5 px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
+                                                                class="h-full flex flex-col items-center justify-center px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
                                                                 <div class="flex items-center justify-center gap-1 w-full leading-none">
                                                                     <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800/90 dark:text-amber-300 group-hover/sz:text-white/90">Kecil</span>
                                                                     <span class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 group-hover/sz:text-white">+</span>
@@ -361,7 +361,7 @@
                                                             <!-- Besar -->
                                                             <button type="button" @click.stop="tambahKeKeranjang(produk, 'Besar')"
                                                                 title="Tambah Ukuran Besar"
-                                                                class="flex flex-col items-center justify-center py-1.5 px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
+                                                                class="h-full flex flex-col items-center justify-center px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
                                                                 <div class="flex items-center justify-center gap-1 w-full leading-none">
                                                                     <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800/90 dark:text-amber-300 group-hover/sz:text-white/90">Besar</span>
                                                                     <span class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 group-hover/sz:text-white">+</span>
@@ -372,7 +372,7 @@
                                                     </template>
 
                                                     <template x-if="!(produk.punya_ukuran == 1 || produk.punya_ukuran === true)">
-                                                        <div class="flex items-center justify-between">
+                                                        <div class="h-11 flex items-center justify-between">
                                                             <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                                 x-text="formatRupiah(produk.promo_aktif ? produk.harga_diskon : produk.harga_jual)"></span>
                                                             <button @click.stop="tambahKeKeranjang(produk)"
@@ -1844,12 +1844,58 @@
                     // Cek pertama kali saat halaman dibuka
                     this.perbaruiPromoKadaluwarsa();
 
-                    // Jalan tiap detik: kalau ada promo yang selesai_berlaku-nya
+                    // Jalan tiap detik: kalau ada promo/promo event yang selesai_berlaku-nya
                     // sudah lewat dari waktu sekarang, badge/harga diskonnya otomatis
                     // hilang dari layar tanpa perlu refresh browser.
                     this._intervalPromoKadaluwarsa = setInterval(() => {
                         this.perbaruiPromoKadaluwarsa();
                     }, 1000);
+
+                    // Jalan tiap 15 detik: tarik ulang data promo & promo event dari
+                    // server, biar promo/promo event yang baru ditambahin, diedit,
+                    // atau dinonaktifkan admin ikut nongol/ilang tanpa reload halaman.
+                    this._intervalSinkronPromo = setInterval(() => {
+                        this.sinkronPromoDariServer();
+                    }, 15000);
+                },
+
+                sinkronPromoDariServer() {
+                    fetch("{{ route('transaksi.promo-status') }}")
+                        .then(r => r.json())
+                        .then(r => {
+                            if (r.status !== 'success') return;
+
+                            // 1. Sinkronkan promo (potongan harga) per produk
+                            const petaPromoProduk = {};
+                            r.data.produk.forEach(p => { petaPromoProduk[p.id] = p; });
+
+                            this.daftarProduk.forEach(produk => {
+                                const segar = petaPromoProduk[produk.id];
+                                if (!segar) return;
+                                produk.promos_aktif_semua = segar.promos_aktif_semua;
+                                produk.promo_aktif = segar.promo_aktif;
+                                produk.harga_diskon = segar.harga_diskon;
+                            });
+
+                            // 2. Sinkronkan daftar promo event yang sedang berlaku
+                            this.daftarPromoEvent = r.data.promo_event;
+
+                            // 3. Ikut perbarui promo yang nempel di item keranjang
+                            this.keranjang.forEach(item => {
+                                const produkSegar = petaPromoProduk[item.produk_id];
+                                if (produkSegar) {
+                                    item.promos_tersedia = produkSegar.promos_aktif_semua;
+                                    if (item.promos_terpilih_ids) {
+                                        const idTersedia = item.promos_tersedia.map(p => p.id);
+                                        item.promos_terpilih_ids = item.promos_terpilih_ids.filter(id => idTersedia.includes(id));
+                                    }
+                                    if (!item.promos_tersedia || item.promos_tersedia.length === 0) {
+                                        item.promo_aktif = produkSegar.promo_aktif;
+                                    }
+                                }
+                            });
+                        })
+                        .catch(() => {});
                 },
 
                 // Menentukan apakah sebuah objek promo masih berlaku dibanding waktu sekarang (jam di browser kasir)
@@ -1857,6 +1903,14 @@
                     if (!promo || !promo.status_aktif) return false;
                     if (promo.mulai_berlaku && new Date(promo.mulai_berlaku) > sekarang) return false;
                     if (promo.selesai_berlaku && new Date(promo.selesai_berlaku) <= sekarang) return false;
+                    return true;
+                },
+
+                // Sama seperti _promoMasihBerlaku, tapi buat promo event (field wajib mulai_berlaku & selesai_berlaku)
+                _promoEventMasihBerlaku(promoEvent, sekarang) {
+                    if (!promoEvent || !promoEvent.status_aktif) return false;
+                    if (promoEvent.mulai_berlaku && new Date(promoEvent.mulai_berlaku) > sekarang) return false;
+                    if (promoEvent.selesai_berlaku && new Date(promoEvent.selesai_berlaku) <= sekarang) return false;
                     return true;
                 },
 
@@ -1909,6 +1963,12 @@
                             item.promo_aktif = null;
                         }
                     });
+
+                    // 3. Promo Event: buang dari daftar begitu selesai_berlaku-nya lewat
+                    // atau dinonaktifkan, biar kartunya otomatis hilang dari grid kasir.
+                    if (this.daftarPromoEvent && this.daftarPromoEvent.length > 0) {
+                        this.daftarPromoEvent = this.daftarPromoEvent.filter(pe => this._promoEventMasihBerlaku(pe, sekarang));
+                    }
                 },
 
                 parsePersen(v) {
@@ -2202,6 +2262,34 @@
                         jumlah: jumlah,
                         stok: this.stokUntukUkuran(produk, ukuran),
                         status_ketersediaan: produk.status_ketersediaan,
+                        butuh_produksi: perluProduksi,
+                        catatan: ''
+                    };
+                },
+
+                // Susun status kebutuhan produksi per komponen bundling
+                // berdasarkan stok produk saat ini — dipakai buat preview
+                // stok lokal (held order) & badge di keranjang.
+                komponenBundlingSaatIni(bundling) {
+                    return (bundling.items || []).map(i => {
+                        const p = this.daftarProduk.find(x => x.id === i.produk_id);
+                        const stokP = p ? (parseFloat(p.stok) || 0) : 0;
+                        const subButuh = p ? (p.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < i.qty) : true;
+                        return { produk_id: i.produk_id, qty: i.qty, butuh_produksi: subButuh };
+                    });
+                },
+
+                buatItemBundlingKeranjang(bundling, jumlah, perluProduksi) {
+                    return {
+                        key: 'bundling_' + bundling.id + '_' + (perluProduksi ? 'produksi' : 'ready'),
+                        bundling_id: bundling.id,
+                        is_bundling: true,
+                        nama_produk: bundling.nama_bundling,
+                        harga_jual: parseFloat(bundling.harga),
+                        harga_jual_asli: parseFloat(bundling.harga),
+                        foto: bundling.gambar,
+                        items: this.komponenBundlingSaatIni(bundling),
+                        jumlah: jumlah,
                         butuh_produksi: perluProduksi,
                         catatan: ''
                     };
@@ -2747,37 +2835,46 @@
                     }
                 },
 
+                // Bundling yang butuh produksi (karena salah satu komponennya
+                // habis) dipisah jadi baris keranjang sendiri dari bundling
+                // yang ready, sama seperti produk biasa — supaya kasir bisa
+                // lihat jelas mana yang siap & mana yang perlu diproduksi.
                 tambahBundlingKeKeranjang(bundling) {
-                    const existing = this.keranjang.find(i => i.is_bundling && i.bundling_id === bundling.id);
+                    const manualProduksi = this.bundlingPerluDiproduksi(bundling) && this.stokBundlingTersedia(bundling) <= 0;
 
-                    if (existing) {
-                        existing.jumlah++;
-                        existing.butuh_produksi = this.statusProduksiBundling(bundling, existing.jumlah);
-                        this.tambahToast(existing.butuh_produksi ? 'Bundling ditambahkan (Perlu Diproduksi).' : 'Bundling ditambahkan.', 'sukses');
+                    if (manualProduksi) {
+                        const item = this.keranjang.find(i => i.is_bundling && i.bundling_id === bundling.id && i.butuh_produksi);
+                        if (item) {
+                            item.jumlah++;
+                        } else {
+                            this.keranjang.push(this.buatItemBundlingKeranjang(bundling, 1, true));
+                        }
+                        this.tambahToast('Bundling ditambahkan (Perlu Diproduksi).', 'sukses');
                         return;
                     }
 
-                    const perluDiproduksi = this.statusProduksiBundling(bundling, 1);
-                    this.keranjang.push({
-                        key: 'bundling_' + bundling.id,
-                        bundling_id: bundling.id,
-                        is_bundling: true,
-                        nama_produk: bundling.nama_bundling,
-                        harga_jual: parseFloat(bundling.harga),
-                        harga_jual_asli: parseFloat(bundling.harga),
-                        foto: bundling.gambar,
-                        items: (bundling.items || []).map(i => {
-                            const p = this.daftarProduk.find(x => x.id === i.produk_id);
-                            const stokP = p ? (parseFloat(p.stok) || 0) : 0;
-                            const subButuh = p ? (p.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < i.qty) : true;
-                            return { produk_id: i.produk_id, qty: i.qty, butuh_produksi: subButuh };
-                        }),
-                        jumlah: 1,
-                        butuh_produksi: perluDiproduksi,
-                        catatan: ''
-                    });
+                    const totalReadyDipakai = this.keranjang
+                        .filter(i => i.is_bundling && i.bundling_id === bundling.id && !i.butuh_produksi)
+                        .reduce((sum, i) => sum + i.jumlah, 0);
+                    const stokTersedia = this.stokBundlingTersedia(bundling);
 
-                    this.tambahToast(perluDiproduksi ? 'Bundling ditambahkan (Perlu Diproduksi).' : 'Bundling ditambahkan.', 'sukses');
+                    if (totalReadyDipakai < stokTersedia) {
+                        const readyItem = this.keranjang.find(i => i.is_bundling && i.bundling_id === bundling.id && !i.butuh_produksi);
+                        if (readyItem) {
+                            readyItem.jumlah++;
+                        } else {
+                            this.keranjang.push(this.buatItemBundlingKeranjang(bundling, 1, false));
+                        }
+                        this.tambahToast('Bundling ditambahkan.', 'sukses');
+                    } else {
+                        const produksiItem = this.keranjang.find(i => i.is_bundling && i.bundling_id === bundling.id && i.butuh_produksi);
+                        if (produksiItem) {
+                            produksiItem.jumlah++;
+                        } else {
+                            this.keranjang.push(this.buatItemBundlingKeranjang(bundling, 1, true));
+                        }
+                        this.tambahToast('Stok bundling ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                    }
                 },
 
                 tambahPromoEventKeKeranjang(promoEvent) {
@@ -2811,14 +2908,27 @@
 
                 tambahJumlah(item) {
                     if (item.is_bundling) {
-                        const sebelumnyaButuhProduksi = !!item.butuh_produksi;
-                        item.jumlah++;
+                        if (item.butuh_produksi) {
+                            item.jumlah++;
+                            return;
+                        }
+
                         const bundling = this.daftarBundling.find(b => b.id === item.bundling_id);
-                        if (bundling) {
-                            item.butuh_produksi = this.statusProduksiBundling(bundling, item.jumlah);
-                            if (!sebelumnyaButuhProduksi && item.butuh_produksi) {
-                                this.tambahToast('Stok bundling ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                        const stokTersedia = bundling ? this.stokBundlingTersedia(bundling) : 0;
+                        const totalReadyDipakai = this.keranjang
+                            .filter(i => i.is_bundling && i.bundling_id === item.bundling_id && !i.butuh_produksi)
+                            .reduce((sum, i) => sum + i.jumlah, 0);
+
+                        if (totalReadyDipakai < stokTersedia) {
+                            item.jumlah++;
+                        } else {
+                            const produksiItem = this.keranjang.find(i => i.is_bundling && i.bundling_id === item.bundling_id && i.butuh_produksi);
+                            if (produksiItem) {
+                                produksiItem.jumlah++;
+                            } else if (bundling) {
+                                this.keranjang.push(this.buatItemBundlingKeranjang(bundling, 1, true));
                             }
+                            this.tambahToast('Stok bundling ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
                         }
                         return;
                     }

@@ -102,10 +102,10 @@
                                     </span>
                                 </td>
                                 <td class="text-center" data-promo-status-cell data-selesai="{{ $item->selesai_berlaku ? $item->selesai_berlaku->toIso8601String() : '' }}">
-                                    <span class="promo-expired-badge inline-flex items-center rounded-full bg-red-100 dark:bg-red-500/10 px-3 py-1 text-xs font-medium text-red-700 dark:text-red-400 {{ ($item->selesai_berlaku && $now > $item->selesai_berlaku) ? '' : 'hidden' }}">
+                                    <span class="promo-expired-badge items-center rounded-full bg-red-100 dark:bg-red-500/10 px-3 py-1 text-xs font-medium text-red-700 dark:text-red-400 {{ ($item->selesai_berlaku && $now > $item->selesai_berlaku) ? 'inline-flex' : 'hidden' }}">
                                         Kadaluwarsa
                                     </span>
-                                    <form action="{{ route('promo.toggle-status', $item->id) }}" method="POST" class="promo-toggle-form inline {{ ($item->selesai_berlaku && $now > $item->selesai_berlaku) ? 'hidden' : '' }}">
+                                    <form action="{{ route('promo.toggle-status', $item->id) }}" method="POST" class="promo-toggle-form {{ ($item->selesai_berlaku && $now > $item->selesai_berlaku) ? 'hidden' : 'inline' }}">
                                         @csrf @method('PATCH')
                                         <label class="relative inline-flex items-center cursor-pointer" title="Klik untuk mengaktifkan/menonaktifkan promo">
                                             <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
@@ -170,8 +170,6 @@
         });
     });
 
-    // Jalan tiap detik: begitu selesai_berlaku sebuah promo lewat dari waktu sekarang,
-    // toggle aktif/nonaktif otomatis diganti jadi badge "Kadaluwarsa" tanpa perlu refresh.
     function perbaruiKadaluwarsaPromo() {
         const sekarang = new Date();
         document.querySelectorAll('[data-promo-status-cell]').forEach(function (cell) {
@@ -180,8 +178,14 @@
             const form = cell.querySelector('.promo-toggle-form');
             const kadaluwarsa = !!selesai && sekarang > new Date(selesai);
 
-            if (badge) badge.classList.toggle('hidden', !kadaluwarsa);
-            if (form) form.classList.toggle('hidden', kadaluwarsa);
+            if (badge) {
+                badge.classList.toggle('hidden', !kadaluwarsa);
+                badge.classList.toggle('inline-flex', kadaluwarsa);
+            }
+            if (form) {
+                form.classList.toggle('hidden', kadaluwarsa);
+                form.classList.toggle('inline', !kadaluwarsa);
+            }
         });
     }
 
