@@ -9,6 +9,9 @@
         foreach ($daftarBundling as $bundling) {
             $searchIndex[] = ['nama' => strtolower($bundling->nama_bundling), 'kategori' => 'bundling'];
         }
+        foreach ($daftarPromoEvent as $promoEvent) {
+            $searchIndex[] = ['nama' => strtolower($promoEvent->nama_event), 'kategori' => 'promo_event'];
+        }
         foreach ($kategoris as $kategori) {
             foreach ($kategori->produk as $produk) {
                 $searchIndex[] = ['nama' => strtolower($produk->nama_produk), 'kategori' => (string) $kategori->id];
@@ -210,6 +213,17 @@
                             </button>
                         @endif
 
+                        @if ($daftarPromoEvent->isNotEmpty())
+                            <button type="button" @click="activeKategori = 'promo_event'; kategoriDropdown = false"
+                                    :class="activeKategori === 'promo_event' ? 'bg-brand-50 text-brand-800' : 'text-gray-600'"
+                                    class="flex w-full items-center justify-between px-4 py-2.5 text-left text-xs font-bold transition hover:bg-gray-50">
+                                Promo Event
+                                <svg x-show="activeKategori === 'promo_event'" class="h-3.5 w-3.5 text-brand-800" viewBox="0 0 24 24" fill="none">
+                                    <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        @endif
+
                         @foreach ($kategoris as $kategori)
                             <button type="button" @click="activeKategori = '{{ $kategori->id }}'; kategoriDropdown = false"
                                     :class="activeKategori === '{{ $kategori->id }}' ? 'bg-brand-50 text-brand-800' : 'text-gray-600'"
@@ -275,6 +289,56 @@
                                 <div class="mt-2 flex items-center justify-between gap-1">
                                     <div class="min-w-0">
                                         <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($bundling->harga, 0, ',', '.') }}</p>
+                                    </div>
+
+                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm">
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        @if ($daftarPromoEvent->isNotEmpty())
+            <div x-show="(activeKategori === 'semua' || activeKategori === 'promo_event') && cocokKategori('promo_event')" class="mt-6 first:mt-2">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-gray-900">Promo Event</h2>
+                    <span class="text-[11px] text-gray-400">{{ $daftarPromoEvent->count() }} item</span>
+                </div>
+                <div class="mt-1 border-t border-dashed border-gray-100"></div>
+
+                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    @foreach ($daftarPromoEvent as $promoEvent)
+                        <a href="{{ route('member.promo-event.show', $promoEvent) }}"
+                           onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                           x-show="'{{ addslashes(strtolower($promoEvent->nama_event)) }}'.includes(search.toLowerCase())"
+                           class="block">
+                            <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
+                                @if ($promoEvent->produk && $promoEvent->produk->foto)
+                                    <img src="{{ asset('storage/' . $promoEvent->produk->foto) }}" alt="{{ $promoEvent->nama_event }}"
+                                         class="h-full w-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                @endif
+                                <div class="{{ ($promoEvent->produk && $promoEvent->produk->foto) ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
+                                    @include('mobile.components.icon-cake', ['class' => 'h-10 w-10'])
+                                </div>
+                                <span class="absolute left-2 top-2 rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">Promo Event</span>
+                                @if ($promoEvent->perlu_diproduksi)
+                                    <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Perlu Diproduksi</span>
+                                @endif
+                            </div>
+
+                            <div class="pt-2">
+                                <p class="text-[10px] font-medium text-gray-400">{{ $promoEvent->produk->nama_produk ?? '' }}</p>
+                                <p class="mt-0.5 text-xs font-bold leading-snug text-gray-900 line-clamp-2">{{ $promoEvent->nama_event }}</p>
+
+                                <div class="mt-2 flex items-center justify-between gap-1">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($promoEvent->harga_event, 0, ',', '.') }}</p>
                                     </div>
 
                                     <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm">

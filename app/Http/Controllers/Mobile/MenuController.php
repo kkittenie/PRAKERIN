@@ -56,10 +56,15 @@ class MenuController extends Controller
                 ->where('status_aktif', true)
                 ->get();
 
+            $daftarPromoEvent = \App\Models\PromoProdukEvent::with('produk')
+                ->berlaku()
+                ->get();
+
             return view('mobile.menu', [
                 'kategoris' => $kategoris,
                 'totalProduk' => $totalProduk,
                 'daftarBundling' => $daftarBundling,
+                'daftarPromoEvent' => $daftarPromoEvent,
                 'waCs' => '6282000768044',
                 'storeNama' => 'Saisho Cake & Bakery',
                 'storeAlamat' => 'Jl. Kamboja No. 1 Tuparev, Cirebon',

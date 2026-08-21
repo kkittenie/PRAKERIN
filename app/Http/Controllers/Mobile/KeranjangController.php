@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mobile;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bundling;
+use App\Models\PromoProdukEvent;
 use App\Models\Produk;
 use App\Support\MemberCart;
 use App\Support\ActivityLogHelper;
@@ -124,6 +125,49 @@ class KeranjangController extends Controller
         }
     }
 
+    public function tambahPromoEvent(Request $request, PromoProdukEvent $promoEvent)
+    {
+        try {
+            abort_unless($promoEvent->sedang_berlangsung, 404);
+
+            $validated = $request->validate([
+                'jumlah' => 'required|integer|min:1|max:50',
+                'catatan' => 'nullable|string|max:255',
+            ]);
+
+            MemberCart::tambah([
+                'promo_event_id' => $promoEvent->id,
+                'produk_id' => $promoEvent->produk_id,
+                'isi_event' => $promoEvent->isi_event,
+                'nama_produk' => $promoEvent->nama_event,
+                'foto' => $promoEvent->produk?->foto,
+                'harga_satuan' => (float) $promoEvent->harga_event,
+                'ukuran' => null,
+                'catatan' => $validated['catatan'] ?? null,
+                'jumlah' => $validated['jumlah'],
+            ]);
+
+            $pesan = "{$promoEvent->nama_event} ditambahkan ke keranjang.";
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $pesan,
+                    'cart' => [
+                        'jumlah' => MemberCart::jumlahItem(),
+                        'subtotal' => MemberCart::subtotal(),
+                    ],
+                    'checkout_url' => route('member.checkout.index'),
+                    'menu_url' => route('member.menu'),
+                ]);
+            }
+
+            return redirect()->route('member.menu')->with('success', $pesan);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
     /**
      * Perbarui item produk yang sudah ada di keranjang — dipakai dari
      * halaman produk saat member membukanya lewat "Change" di checkout.
@@ -217,6 +261,43 @@ class KeranjangController extends Controller
             return redirect()
                 ->route('member.checkout.index')
                 ->with('success', "{$bundling->nama_bundling} diperbarui.");
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    public function perbaruiPromoEvent(Request $request, string $itemId)
+    {
+        try {
+            $validated = $request->validate([
+                'promo_event_id' => 'required|integer|exists:promo_produk_events,id',
+                'jumlah' => 'required|integer|min:1|max:50',
+                'catatan' => 'nullable|string|max:255',
+            ]);
+
+            $promoEvent = PromoProdukEvent::with('produk')->findOrFail($validated['promo_event_id']);
+            abort_unless($promoEvent->sedang_berlangsung, 404);
+
+            if (! MemberCart::cariItem($itemId)) {
+                return redirect()->route('member.promo-event.show', $promoEvent)
+                    ->with('error', 'Item keranjang tidak ditemukan, mungkin sudah dihapus.');
+            }
+
+            MemberCart::perbarui($itemId, [
+                'promo_event_id' => $promoEvent->id,
+                'produk_id' => $promoEvent->produk_id,
+                'isi_event' => $promoEvent->isi_event,
+                'nama_produk' => $promoEvent->nama_event,
+                'foto' => $promoEvent->produk?->foto,
+                'harga_satuan' => (float) $promoEvent->harga_event,
+                'ukuran' => null,
+                'catatan' => $validated['catatan'] ?? null,
+                'jumlah' => $validated['jumlah'],
+            ]);
+
+            return redirect()
+                ->route('member.checkout.index')
+                ->with('success', "{$promoEvent->nama_event} diperbarui.");
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

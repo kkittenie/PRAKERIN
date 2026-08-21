@@ -1652,6 +1652,10 @@
                         class="px-5 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-xl transition shadow-xs">
                         Selesai
                     </button>
+                </div>
+            </div>
+        </div>
+
         <!-- ========== MODAL: PILIH UKURAN PRODUK ========== -->
         <div x-show="modalPilihUkuranTerbuka"
             class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4"

@@ -174,9 +174,13 @@
                             <div class="flex items-center gap-2">
 
                                 @php
-                                    $urlUbahItem = $item['bundling_id']
-                                        ? route('member.bundling.show', $item['bundling_id']) . '?edit=' . $item['id']
-                                        : route('member.produk.show', $item['produk_id']) . '?edit=' . $item['id'];
+                                    if (!empty($item['bundling_id'])) {
+                                        $urlUbahItem = route('member.bundling.show', $item['bundling_id']) . '?edit=' . $item['id'];
+                                    } elseif (!empty($item['promo_event_id'])) {
+                                        $urlUbahItem = route('member.promo-event.show', $item['promo_event_id']) . '?edit=' . $item['id'];
+                                    } else {
+                                        $urlUbahItem = route('member.produk.show', $item['produk_id']) . '?edit=' . $item['id'];
+                                    }
                                 @endphp
 
                                 <a href="{{ $urlUbahItem }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"

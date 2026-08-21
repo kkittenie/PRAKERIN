@@ -3,6 +3,7 @@
 use App\Http\Controllers\Mobile\AkunController;
 use App\Http\Controllers\Mobile\AuthController;
 use App\Http\Controllers\Mobile\BundlingController;
+use App\Http\Controllers\Mobile\PromoEventController;
 use App\Http\Controllers\Mobile\CheckoutController;
 use App\Http\Controllers\Mobile\DashboardController;
 use App\Http\Controllers\Mobile\KeranjangController;
@@ -32,6 +33,7 @@ Route::prefix('mobile')->name('member.')->group(function () {
 
     Route::get('/produk/{produk}', [ProdukController::class, 'show'])->name('produk.show');
     Route::get('/bundling/{bundling}', [BundlingController::class, 'show'])->name('bundling.show');
+    Route::get('/promo-event/{promoEvent}', [PromoEventController::class, 'show'])->name('promo-event.show');
 
     Route::match(['get', 'post'], '/keluar', [AuthController::class, 'logout'])->name('logout');
 
@@ -71,9 +73,11 @@ Route::prefix('mobile')->name('member.')->group(function () {
 
         Route::post('/produk/{produk}/keranjang', [KeranjangController::class, 'tambah'])->name('keranjang.tambah');
         Route::post('/bundling/{bundling}/keranjang', [KeranjangController::class, 'tambahBundling'])->name('keranjang.tambah-bundling');
+        Route::post('/promo-event/{promoEvent}/keranjang', [KeranjangController::class, 'tambahPromoEvent'])->name('keranjang.tambah-promo-event');
         Route::patch('/keranjang/{itemId}', [KeranjangController::class, 'ubahJumlah'])->name('keranjang.ubah-jumlah');
         Route::patch('/keranjang/{itemId}/perbarui', [KeranjangController::class, 'perbarui'])->name('keranjang.perbarui');
         Route::patch('/keranjang/{itemId}/perbarui-bundling', [KeranjangController::class, 'perbaruiBundling'])->name('keranjang.perbarui-bundling');
+        Route::patch('/keranjang/{itemId}/perbarui-promo-event', [KeranjangController::class, 'perbaruiPromoEvent'])->name('keranjang.perbarui-promo-event');
         Route::delete('/keranjang/{itemId}', [KeranjangController::class, 'hapus'])->name('keranjang.hapus');
 
         Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');

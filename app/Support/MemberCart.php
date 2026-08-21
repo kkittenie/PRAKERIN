@@ -49,6 +49,7 @@ class MemberCart
     {
         $data['produk_id'] = $data['produk_id'] ?? null;
         $data['bundling_id'] = $data['bundling_id'] ?? null;
+        $data['promo_event_id'] = $data['promo_event_id'] ?? null;
 
         $items = self::items();
 
@@ -57,6 +58,7 @@ class MemberCart
             if (
                 ($item['produk_id'] ?? null) === $data['produk_id']
                 && ($item['bundling_id'] ?? null) === $data['bundling_id']
+                && ($item['promo_event_id'] ?? null) === $data['promo_event_id']
                 && ($item['ukuran'] ?? null) === ($data['ukuran'] ?? null)
                 && ($item['catatan'] ?? null) === ($data['catatan'] ?? null)
             ) {

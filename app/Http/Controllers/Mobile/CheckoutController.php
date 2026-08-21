@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mobile;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bundling;
+use App\Models\PromoProdukEvent;
 use App\Models\DetailTransaksi;
 use App\Models\Member;
 use App\Models\PenukaranPoin;
@@ -270,6 +271,11 @@ class CheckoutController extends Controller
                         continue;
                     }
 
+                    if (! empty($item['promo_event_id'])) {
+                        $this->prosesItemPromoEventCheckout($transaksi, $item);
+                        continue;
+                    }
+
                     $produk = Produk::lockForUpdate()->findOrFail($item['produk_id']);
                     $catatanItem = $item['catatan'] ?? null;
                     $ukuranItem = $item['ukuran'] ?? null;
@@ -375,6 +381,47 @@ class CheckoutController extends Controller
             }
         }
     }
+
+    private function prosesItemPromoEventCheckout(Transaksi $transaksi, array $item): void
+    {
+        $promoEvent = PromoProdukEvent::with('produk')->findOrFail($item['promo_event_id']);
+        $jumlahEvent = (int) $item['jumlah'];
+        $produk = $promoEvent->produk;
+
+        DetailTransaksi::create([
+            'transaksi_id' => $transaksi->id,
+            'produk_id' => null,
+            'promo_event_id' => $promoEvent->id,
+            'nama_produk' => $promoEvent->nama_event,
+            'harga_satuan' => $item['harga_satuan'],
+            'jumlah' => $jumlahEvent,
+            'catatan' => $item['catatan'] ?? null,
+            'subtotal' => $item['harga_satuan'] * $jumlahEvent,
+            'butuh_produksi' => false,
+        ]);
+
+        if (! $produk) {
+            return;
+        }
+
+        $totalDibutuhkan = $promoEvent->isi_event * $jumlahEvent;
+        $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan);
+
+        foreach ($pecahan as $bagian) {
+            DetailTransaksi::create([
+                'transaksi_id' => $transaksi->id,
+                'produk_id' => $produk->id,
+                'promo_event_id' => $promoEvent->id,
+                'nama_produk' => $produk->nama_produk,
+                'harga_satuan' => 0,
+                'jumlah' => $bagian['jumlah'],
+                'catatan' => null,
+                'subtotal' => 0,
+                'butuh_produksi' => $bagian['butuh_produksi'],
+            ]);
+        }
+    }
+
     private function pecahJumlahProduksi(Produk $produk, int $jumlah, ?string $ukuran = null): array
     {
         if ($produk->status_ketersediaan === 'perlu_diproduksi') {
