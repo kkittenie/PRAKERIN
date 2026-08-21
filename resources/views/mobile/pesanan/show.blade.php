@@ -9,8 +9,6 @@
         \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => 'Ready for Pickup',
         \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => 'Sudah Diambil',
     ];
-    // Ikon beda-beda per tahap biar gampang dipindai sekilas, nggak cuma
-    // centang/titik polos kayak sebelumnya.
     $stepIcons = [
         'menunggu_pembayaran' => 'mobile.components.icon-clock',
         'pembayaran_dikonfirmasi' => 'mobile.components.icon-receipt-check',
@@ -20,10 +18,6 @@
     ];
     $urutan = array_keys($steps);
 
-    // menunggu_pembayaran -> pembayaran_dikonfirmasi -> (status_pesanan asli:
-    // diproses/siap_diambil/sudah_diambil). "Pembayaran Dikonfirmasi" adalah
-    // jeda antara bukti divalidasi kasir (Lunas) dengan kasir benar-benar
-    // mulai mengerjakan pesanan (diproses_pada).
     if (! $lunas) {
         $statusSekarang = 'menunggu_pembayaran';
     } elseif (! $transaksi->diproses_pada) {

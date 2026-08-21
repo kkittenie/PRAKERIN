@@ -301,10 +301,10 @@
                 <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                     @foreach ($kategori->produk as $produk)
                         @php
-                            $hargaAsli = $produk->harga_jual;
-                            $hargaFinal = $produk->harga_diskon;
-                            $adaPromo = $hargaFinal < $hargaAsli;
-                            $habis = $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
+                            $hargaAsli = $produk->harga_tampil_asli;
+                            $hargaFinal = $produk->harga_tampil_final;
+                            $adaPromo = $produk->ada_promo_tampil;
+                            $habis = $produk->habis_tampil;
                         @endphp
                         <a href="{{ route('member.produk.show', $produk) }}"
                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
@@ -332,16 +332,10 @@
 
                                 <div class="mt-2 flex items-center justify-between gap-1">
                                     <div class="min-w-0">
-                                        @if ($produk->punya_ukuran)
-                                            <p class="truncate text-xs font-extrabold text-gray-900">
-                                                Rp {{ number_format($produk->harga_kecil, 0, ',', '.') }} - Rp {{ number_format($produk->harga_besar, 0, ',', '.') }}
-                                            </p>
-                                        @else
-                                            @if ($adaPromo)
-                                                <p class="truncate text-[10px] text-gray-400 line-through">Rp {{ number_format($hargaAsli, 0, ',', '.') }}</p>
-                                            @endif
-                                            <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($hargaFinal, 0, ',', '.') }}</p>
+                                        @if ($adaPromo)
+                                            <p class="truncate text-[10px] text-gray-400 line-through">Rp {{ number_format($hargaAsli, 0, ',', '.') }}</p>
                                         @endif
+                                        <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($hargaFinal, 0, ',', '.') }}</p>
                                     </div>
 
                                     <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm">

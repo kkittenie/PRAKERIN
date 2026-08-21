@@ -102,7 +102,7 @@
                                             </span>
                                         @else
                                             <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                                                ✓ Stok Ada
+                                                ✓ {{ $produk->stok }} tersedia
                                             </span>
                                         @endif
                                     </div>
@@ -114,10 +114,13 @@
                                             </span>
                                         @else
                                             <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                                                ✓ Stok Ada
+                                                ✓ {{ $produk->stok }} tersedia
                                             </span>
                                         @endif
                                     </div>
+                                    <p class="text-[11px] text-gray-400 dark:text-gray-500">
+                                        Stok Besar &amp; Kecil masih digabung (belum dipisah per ukuran).
+                                    </p>
                                 </div>
                             @else
                                 @if($produk->stok <= 0 || $produk->status_ketersediaan == 'perlu_diproduksi')

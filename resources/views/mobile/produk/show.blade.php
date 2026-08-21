@@ -1,9 +1,6 @@
 @extends('mobile.layout', ['title' => $produk->nama_produk])
 
 @php
-    $hargaAsli = (float) $produk->harga_jual;
-    $hargaFinal = (float) $produk->harga_diskon;
-    $adaPromo = $hargaFinal < $hargaAsli;
     $minimalBelanja = $pengaturan?->minimal_belanja ?? 0;
     $poinPerKelipatan = $pengaturan?->poin ?? 0;
     $sedangUbah = (bool) $itemEdit;
@@ -16,8 +13,8 @@
                     ukuran: @js($itemEdit['ukuran'] ?? ($produk->punya_ukuran ? 'Kecil' : '')),
                     catatan: @js($itemEdit['catatan'] ?? ''),
                     punyaUkuran: {{ $produk->punya_ukuran ? 'true' : 'false' }},
-                    hargaKecil: {{ (float) ($produk->harga_kecil ?? 0) }},
-                    hargaBesar: {{ (float) ($produk->harga_besar ?? 0) }},
+                    hargaKecil: {{ (float) ($punyaUkuran ? $hargaKecilFinal : 0) }},
+                    hargaBesar: {{ (float) ($punyaUkuran ? $hargaBesarFinal : 0) }},
                     hargaDasar: {{ (float) $hargaFinal }},
                     get hargaSatuan() {
                         if (this.punyaUkuran) {
@@ -103,17 +100,19 @@
                     </p>
                 </div>
 
-                <div class="mt-2 flex items-center gap-2">
-                    @if ($adaPromo)
-                        <span class="text-xs text-gray-400 line-through">
-                            Rp {{ number_format($hargaAsli, 0, ',', '.') }}
-                        </span>
-                    @endif
+                @unless ($punyaUkuran)
+                    <div class="mt-2 flex items-center gap-2">
+                        @if ($adaPromo)
+                            <span class="text-xs text-gray-400 line-through">
+                                Rp {{ number_format($hargaAsli, 0, ',', '.') }}
+                            </span>
+                        @endif
 
-                    <span class="text-base font-extrabold text-gray-900">
-                        Rp {{ number_format($hargaFinal, 0, ',', '.') }}
-                    </span>
-                </div>
+                        <span class="text-base font-extrabold text-gray-900">
+                            Rp {{ number_format($hargaFinal, 0, ',', '.') }}
+                        </span>
+                    </div>
+                @endunless
             </div>
 
 
@@ -143,8 +142,13 @@
                             <span class="block text-xs font-bold">
                                 Kecil
                             </span>
+                            @if ($adaPromoKecil)
+                                <span class="block text-[10px] font-semibold text-gray-400 line-through">
+                                    Rp {{ number_format($hargaKecilAsli, 0, ',', '.') }}
+                                </span>
+                            @endif
                             <span class="block text-[11px] font-semibold text-gray-500">
-                                Rp {{ number_format($produk->harga_kecil, 0, ',', '.') }}
+                                Rp {{ number_format($hargaKecilFinal, 0, ',', '.') }}
                             </span>
                         </button>
 
@@ -157,8 +161,13 @@
                             <span class="block text-xs font-bold">
                                 Besar
                             </span>
+                            @if ($adaPromoBesar)
+                                <span class="block text-[10px] font-semibold text-gray-400 line-through">
+                                    Rp {{ number_format($hargaBesarAsli, 0, ',', '.') }}
+                                </span>
+                            @endif
                             <span class="block text-[11px] font-semibold text-gray-500">
-                                Rp {{ number_format($produk->harga_besar, 0, ',', '.') }}
+                                Rp {{ number_format($hargaBesarFinal, 0, ',', '.') }}
                             </span>
                         </button>
                     </div>

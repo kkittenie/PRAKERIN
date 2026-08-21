@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Bundling;
 use App\Models\KategoriProduk;
 use App\Support\ActivityLogHelper;
+use Illuminate\Support\Facades\Log;
 
 class MenuController extends Controller
 {
@@ -20,6 +21,37 @@ class MenuController extends Controller
                 ->get()
                 ->filter(fn ($kategori) => $kategori->produk->isNotEmpty())
                 ->values();
+
+            foreach ($kategoris as $kategori) {
+                foreach ($kategori->produk as $produk) {
+                    try {
+                        if ($produk->punya_ukuran) {
+                            // Produk dengan ukuran: tampilkan harga ukuran Kecil saja di listing.
+                            $hargaAsli = (float) ($produk->harga_kecil ?? 0);
+                            $hargaFinal = $produk->hargaSetelahPromo('Kecil');
+                        } else {
+                            $hargaAsli = (float) $produk->harga_jual;
+                            $hargaFinal = (float) $produk->harga_diskon;
+                        }
+
+                        $produk->harga_tampil_asli = $hargaAsli;
+                        $produk->harga_tampil_final = $hargaFinal;
+                        $produk->ada_promo_tampil = $hargaFinal < $hargaAsli;
+                        $produk->habis_tampil = $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
+                    } catch (\Throwable $e) {
+                        // Kalau gagal hitung harga/promo untuk 1 produk, jangan sampai gagalkan seluruh halaman.
+                        Log::error('Gagal hitung harga/promo produk di menu mobile', [
+                            'produk_id' => $produk->id,
+                            'error' => $e->getMessage(),
+                        ]);
+
+                        $produk->harga_tampil_asli = (float) $produk->harga_jual;
+                        $produk->harga_tampil_final = (float) $produk->harga_jual;
+                        $produk->ada_promo_tampil = false;
+                        $produk->habis_tampil = true;
+                    }
+                }
+            }
 
             $totalProduk = $kategoris->sum(fn ($kategori) => $kategori->produk->count());
             $daftarBundling = Bundling::with('items.produk')

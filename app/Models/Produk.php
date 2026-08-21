@@ -90,7 +90,7 @@ class Produk extends Model
             return $this->promos->filter($isPromoBerlaku)->sortByDesc(function ($p) {
                 return $p->jenis_potongan === 'nominal'
                     ? $p->nominal_potongan
-                    : (($p->persentase ?? 0) / 100 * $this->harga_jual);
+                    : (($p->persentase ?? 0) / 100 * $this->getHarga());
             })->first();
         }
 
@@ -105,14 +105,23 @@ class Produk extends Model
             ->sortByDesc(function ($p) {
                 return $p->jenis_potongan === 'nominal'
                     ? $p->nominal_potongan
-                    : (($p->persentase ?? 0) / 100 * $this->harga_jual);
+                    : (($p->persentase ?? 0) / 100 * $this->getHarga());
             })
             ->first();
     }
 
     public function getHargaDiskonAttribute()
     {
-        $hargaDasar = $this->getHarga();
+        return $this->hargaSetelahPromo();
+    }
+
+    /**
+     * Hitung harga setelah promo untuk ukuran tertentu (Besar/Kecil).
+     * Kalau produk tidak punya ukuran, parameter $ukuran diabaikan.
+     */
+    public function hargaSetelahPromo(?string $ukuran = null): float
+    {
+        $hargaDasar = $this->getHarga($ukuran);
         $promo = $this->promo_aktif;
         if ($promo) {
             if ($promo->jenis_potongan === 'nominal') {

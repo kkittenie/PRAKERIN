@@ -47,4 +47,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 ])
                 ->log('problem pada bagian ' . request()->path());
         });
+
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
+            return back()->with('error', 'Sesi kamu sudah kedaluwarsa (halaman kebuka kelamaan). Silakan coba klik/kirim lagi.');
+        });
     })->create();
