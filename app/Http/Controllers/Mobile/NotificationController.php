@@ -12,21 +12,12 @@ use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
-    /**
-     * Halaman daftar semua notifikasi member (lonceng di beranda ngarah
-     * ke sini). Buka halaman ini otomatis nandain semua notif dibaca,
-     * sama kaya WA.
-     */
     public function index()
     {
         try {
             $member = Auth::guard('member')->user();
 
             $notifikasi = NotificationHelper::getNotifikasiMember($member->id);
-
-            AppNotification::untukMember($member->id)
-                ->where('is_read', false)
-                ->update(['is_read' => true]);
 
             return view('mobile.notifikasi.index', [
                 'member' => $member,
@@ -36,11 +27,6 @@ class NotificationController extends Controller
             return ActivityLogHelper::handleException($e);
         }
     }
-
-    /**
-     * Dipanggil lewat fetch() polling di beranda buat nampilin badge titik
-     * merah di lonceng — cukup jumlahnya aja, ringan.
-     */
     public function unreadCount()
     {
         $member = Auth::guard('member')->user();
@@ -50,10 +36,6 @@ class NotificationController extends Controller
         ]);
     }
 
-    /**
-     * Tandai satu notifikasi dibaca (dipanggil pas member tap salah satu
-     * item, sebelum diarahkan ke url tujuannya).
-     */
     public function read(AppNotification $notification)
     {
         $member = Auth::guard('member')->user();
@@ -71,14 +53,8 @@ class NotificationController extends Controller
 
         AppNotification::untukMember($member->id)->where('is_read', false)->update(['is_read' => true]);
 
-        return back();
+        return response()->json(['status' => 'success']);
     }
-
-    /**
-     * Dipanggil dari JS di WebView (window.Android.getFcmToken(), lihat
-     * AndroidBridge.kt) setelah member login, buat daftarin token FCM
-     * device-nya supaya bisa dikirimin push notification.
-     */
     public function daftarkanToken(Request $request)
     {
         $member = Auth::guard('member')->user();

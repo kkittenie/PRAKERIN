@@ -11,15 +11,20 @@
 
 @section('content')
 
-    <div class="-mt-6 flex flex-none items-center justify-between px-0 pt-6">
+    <div class="-mt-6 relative flex flex-none items-center justify-center px-0 pt-6">
         <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-            class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-brand-800 text-brand-800">
+            class="absolute left-0 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border-2 border-brand-800 text-brand-800">
             <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
                 <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
         </a>
         <h1 class="text-base font-extrabold text-brand-800">Notifikasi</h1>
-        <span class="w-8"></span>
+        @if ($notifikasi->contains(fn ($n) => ! $n->is_read))
+            <button type="button" id="btn-baca-semua" onclick="tandaiSemuaDibaca()"
+                class="absolute right-0 top-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] font-bold text-brand-800 underline underline-offset-2">
+                Tandai dibaca
+            </button>
+        @endif
     </div>
 
     @if ($notifikasi->isEmpty())
@@ -37,7 +42,7 @@
         <div class="mt-5 space-y-2">
             @foreach ($notifikasi as $notif)
                 @php $icon = $iconMap[$notif->icon_type] ?? $iconMap['info']; @endphp
-                <a href="{{ $notif->url ?: '#' }}"
+                <a href="{{ $notif->url ?: '#' }}" data-notif-item data-notif-id="{{ $notif->id }}"
                     onclick="event.preventDefault(); tandaiNotifDibaca({{ $notif->id }}, '{{ $notif->url ?: '' }}');"
                     class="flex items-start gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-xs transition active:scale-[0.99] {{ ! $notif->is_read ? 'ring-1 ring-brand-100' : '' }}">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ $icon['bg'] }}">
@@ -49,7 +54,7 @@
                         <div class="flex items-center justify-between gap-2">
                             <p class="truncate text-sm font-bold text-gray-800">{{ $notif->title }}</p>
                             @unless ($notif->is_read)
-                                <span class="h-2 w-2 shrink-0 rounded-full bg-brand-800"></span>
+                                <span data-notif-dot class="h-2 w-2 shrink-0 rounded-full bg-brand-800"></span>
                             @endunless
                         </div>
                         <p class="mt-0.5 text-xs leading-relaxed text-gray-500">{{ $notif->desc }}</p>
@@ -61,13 +66,42 @@
     @endif
 
     <script>
-        // Notifikasi di halaman ini otomatis ditandai dibaca semua waktu
-        // halaman dibuka (lihat NotificationController@index), jadi di sini
-        // tap kartu cuma perlu langsung navigasi ke url tujuannya.
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
         function tandaiNotifDibaca(id, url) {
+            fetch(`{{ url('mobile/notifikasi') }}/${id}/baca`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            }).catch(() => {});
+
             if (url) {
                 animateNavigate(url, 'forward');
             }
+        }
+
+        function tandaiSemuaDibaca() {
+            const btn = document.getElementById('btn-baca-semua');
+            if (btn) btn.disabled = true;
+
+            fetch("{{ route('member.notifikasi.baca-semua') }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+                .then((res) => (res.ok ? res.json() : Promise.reject()))
+                .then(() => {
+                    document.querySelectorAll('[data-notif-dot]').forEach((el) => el.remove());
+                    document.querySelectorAll('[data-notif-item]').forEach((el) => el.classList.remove('ring-1', 'ring-brand-100'));
+                    btn?.classList.add('invisible');
+                })
+                .catch(() => {
+                    if (btn) btn.disabled = false;
+                });
         }
     </script>
 
