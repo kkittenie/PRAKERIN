@@ -48,12 +48,40 @@
 
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
-                            Jumlah Produk
+                            Jenis Produk
                         </p>
-                        <p class="font-semibold text-amber-600 dark:text-amber-400">
-                            {{ $bundling->jumlah_produk }} pcs
+                        <p class="font-semibold text-gray-800 dark:text-white">
+                            @if($bundling->jenis_produk === 'khusus_bundling')
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                                    Produk Khusus Bundling
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                    Produk Biasa
+                                </span>
+                            @endif
                         </p>
                     </div>
+
+                    @if($bundling->jenis_produk === 'khusus_bundling')
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Total Isi Bundling
+                            </p>
+                            <p class="font-bold text-amber-600 dark:text-amber-400 text-base">
+                                {{ $bundling->total_qty_khusus ?? $bundling->items->sum('qty') }} pcs
+                            </p>
+                        </div>
+                    @else
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Jumlah Produk
+                            </p>
+                            <p class="font-semibold text-amber-600 dark:text-amber-400">
+                                {{ $bundling->jumlah_produk }} pcs
+                            </p>
+                        </div>
+                    @endif
 
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -89,6 +117,12 @@
 
         <x-common.component-card title="Isi Bundling">
 
+            @if($bundling->jenis_produk === 'khusus_bundling')
+                <div class="mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-semibold">
+                    💡 <strong>Produk Khusus Bundling:</strong> Pembeli dapat memilih total <span class="text-amber-700 dark:text-amber-400 font-extrabold text-sm">{{ $bundling->total_qty_khusus ?? $bundling->items->sum('qty') }} pcs</span> dari daftar varian rasa di bawah ini di aplikasi mobile.
+                </div>
+            @endif
+
             <!-- Desktop Table View -->
             <div class="hidden sm:block overflow-x-auto">
                 <table class="w-full">
@@ -96,7 +130,9 @@
                         <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
                             <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
                             <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Produk</th>
-                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Qty Bundling</th>
+                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                {{ $bundling->jenis_produk === 'khusus_bundling' ? 'Status Varian' : 'Qty Bundling' }}
+                            </th>
                             <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status Stok Produk</th>
                         </tr>
                     </thead>
@@ -109,7 +145,13 @@
                             <tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
                                 <td class="py-4">{{ $loop->iteration }}</td>
                                 <td class="font-medium text-gray-800 dark:text-white">{{ $p ? $p->nama_produk : '-' }}</td>
-                                <td class="text-center font-bold text-amber-700 dark:text-amber-400">{{ $item->qty }} pcs</td>
+                                <td class="text-center font-bold text-amber-700 dark:text-amber-400">
+                                    @if($bundling->jenis_produk === 'khusus_bundling')
+                                        <span class="inline-flex rounded-full bg-amber-100 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300">Varian Rasa</span>
+                                    @else
+                                        {{ $item->qty }} pcs
+                                    @endif
+                                </td>
                                 <td class="text-center">
                                     @if($stokHabis)
                                         <span class="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-500/15 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:text-red-400">
@@ -139,7 +181,11 @@
                             <span class="font-bold text-gray-800 dark:text-white text-sm">{{ $p ? $p->nama_produk : '-' }}</span>
                             <span
                                 class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
-                                {{ $item->qty }} pcs
+                                @if($bundling->jenis_produk === 'khusus_bundling')
+                                    Varian Rasa
+                                @else
+                                    {{ $item->qty }} pcs
+                                @endif
                             </span>
                         </div>
                         <div>
@@ -156,6 +202,7 @@
                     </div>
                 @endforeach
             </div>
+
 
             <div class="mt-6 flex justify-end gap-3">
 

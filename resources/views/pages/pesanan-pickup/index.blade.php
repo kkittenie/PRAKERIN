@@ -262,9 +262,15 @@
                                                             <template x-if="item.butuh_produksi">
                                                                 <span class="ml-1.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
                                                             </template>
-                                                            <div x-show="item.isi_label" class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-                                                                Isi: <span x-text="item.isi_label"></span>
-                                                                <span x-show="item.komponen_perlu_produksi" class="ml-1 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
+                                                            <div x-show="item.isi_label" class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                                                                <div class="mb-0.5">Isi:</div>
+                                                                <template x-for="k in item.isi_komponen" :key="k.nama_produk">
+                                                                    <div class="mb-0.5">
+                                                                        <div class="font-bold text-gray-700 dark:text-gray-200" x-text="k.nama_produk + ' x' + k.jumlah"></div>
+                                                                        <div x-show="k.catatan" class="text-amber-600 dark:text-amber-400 font-medium italic" x-text="'Catatan: ' + k.catatan"></div>
+                                                                    </div>
+                                                                </template>
+                                                                <span x-show="item.komponen_perlu_produksi" class="mt-0.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
                                                             </div>
                                                             <div x-show="item.catatan" class="text-[11px] text-amber-600 dark:text-amber-400 font-medium italic mt-0.5" x-text="'Catatan: ' + item.catatan"></div>
                                                         </td>
@@ -297,8 +303,14 @@
                                                     <span x-text="item.jumlah + ' x Rp ' + Number(item.harga_satuan).toLocaleString('id-ID')"></span>
                                                 </div>
                                                 <div x-show="item.isi_label" class="text-[11px] text-gray-500 dark:text-gray-400">
-                                                    Isi: <span x-text="item.isi_label"></span>
-                                                    <span x-show="item.komponen_perlu_produksi" class="ml-1 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[9px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
+                                                    <div class="mb-0.5">Isi:</div>
+                                                    <template x-for="k in item.isi_komponen" :key="k.nama_produk">
+                                                        <div class="mb-0.5">
+                                                            <div class="font-bold text-gray-700 dark:text-gray-200" x-text="k.nama_produk + ' x' + k.jumlah"></div>
+                                                            <div x-show="k.catatan" class="text-amber-600 dark:text-amber-400 font-medium italic" x-text="'Catatan: ' + k.catatan"></div>
+                                                        </div>
+                                                    </template>
+                                                    <span x-show="item.komponen_perlu_produksi" class="mt-0.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[9px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
                                                 </div>
                                                 <div x-show="item.catatan" class="text-[11px] text-amber-600 dark:text-amber-400 font-medium italic" x-text="'Catatan: ' + item.catatan"></div>
                                             </div>
@@ -730,8 +742,9 @@
                             if (existing) {
                                 existing.jumlah += k.jumlah;
                                 existing.butuh_produksi = existing.butuh_produksi || k.butuh_produksi;
+                                existing.catatan = existing.catatan || k.catatan || null;
                             } else {
-                                gabung.set(k.nama_produk, { nama_produk: k.nama_produk, jumlah: k.jumlah, butuh_produksi: k.butuh_produksi });
+                                gabung.set(k.nama_produk, { nama_produk: k.nama_produk, jumlah: k.jumlah, butuh_produksi: k.butuh_produksi, catatan: k.catatan || null });
                             }
                         }
                         return Array.from(gabung.values());
@@ -745,7 +758,7 @@
                                 .map(k => `${k.nama_produk} x${k.jumlah}`)
                                 .join(', ');
                             const perluProduksi = komponen.some(k => k.butuh_produksi);
-                            return { ...item, isi_label: isiLabel, komponen_perlu_produksi: perluProduksi };
+                            return { ...item, isi_label: isiLabel, isi_komponen: komponen, komponen_perlu_produksi: perluProduksi };
                         });
                 },
 

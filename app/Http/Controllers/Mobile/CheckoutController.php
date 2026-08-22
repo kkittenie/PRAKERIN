@@ -364,13 +364,41 @@ class CheckoutController extends Controller
             'butuh_produksi' => false,
         ]);
 
+        // Cek jika ada pilihan/catatan khusus dari mobile customer
+        $pilihanKhusus = $item['pilihan_khusus'] ?? [];
+        $mapCatatanPilihan = [];
+        $mapQtyPilihan = [];
+        if (is_array($pilihanKhusus)) {
+            foreach ($pilihanKhusus as $p) {
+                if (isset($p['produk_id'])) {
+                    if (!empty($p['catatan'])) {
+                        $mapCatatanPilihan[$p['produk_id']] = $p['catatan'];
+                    }
+                    if (!empty($p['qty'])) {
+                        $mapQtyPilihan[$p['produk_id']] = (int) $p['qty'];
+                    }
+                }
+            }
+        }
+
         foreach ($bundling->items as $bundlingItem) {
             $produk = $bundlingItem->produk;
             if (! $produk) {
                 continue;
             }
 
-            $totalDibutuhkan = $bundlingItem->qty * $jumlahBundling;
+            // Lock produk untuk update transaksi & stok aman
+            $produk = Produk::lockForUpdate()->find($produk->id);
+            if (!$produk) continue;
+
+            $qtySatuBundling = $mapQtyPilihan[$produk->id] ?? $bundlingItem->qty;
+            $totalDibutuhkan = $qtySatuBundling * $jumlahBundling;
+            $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
+
+            // Catatan: stok komponen bundling BELUM dikurangi di sini. Sama
+            // seperti item reguler, pengurangan stok baru terjadi nanti waktu
+            // kasir memproses pesanan (lihat PesananPickupController::tandaiSiap()),
+            // bukan langsung saat pesanan baru masuk.
             $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, null, $stokTerpakai);
 
             foreach ($pecahan as $bagian) {
@@ -381,7 +409,7 @@ class CheckoutController extends Controller
                     'nama_produk' => $produk->nama_produk,
                     'harga_satuan' => 0,
                     'jumlah' => $bagian['jumlah'],
-                    'catatan' => null,
+                    'catatan' => $catatanProduk !== '' ? $catatanProduk : null,
                     'subtotal' => 0,
                     'butuh_produksi' => $bagian['butuh_produksi'],
                 ]);

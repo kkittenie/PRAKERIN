@@ -33,9 +33,11 @@ class BundlingController extends Controller
     public function create()
     {
         try {
+            $produkBiasa = Produk::reguler()->orderBy('nama_produk')->get();
+            $produkKhusus = Produk::khususBundling()->orderBy('nama_produk')->get();
             $produk = Produk::orderBy('nama_produk')->get();
 
-            return view('pages.bundling.create', compact('produk'));
+            return view('pages.bundling.create', compact('produk', 'produkBiasa', 'produkKhusus'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -66,11 +68,13 @@ class BundlingController extends Controller
                 'harga' => 'required|integer|min:1',
                 'deskripsi' => 'nullable|string',
                 'status_aktif' => 'nullable|boolean',
+                'jenis_produk' => 'required|in:biasa,khusus_bundling',
+                'total_qty_khusus' => 'required_if:jenis_produk,khusus_bundling|nullable|integer|min:1',
                 'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'produk_id' => 'required|array|min:1',
                 'produk_id.*' => ['required', 'distinct', 'exists:produks,id'],
-                'qty' => 'required|array|min:1',
-                'qty.*' => 'required|integer|min:1',
+                'qty' => 'nullable|array',
+                'qty.*' => 'nullable|integer|min:1',
             ]);
 
             DB::transaction(function () use ($request, &$bundling) {
@@ -84,6 +88,9 @@ class BundlingController extends Controller
                     'nama_bundling' => $request->nama_bundling,
                     'harga' => $request->harga,
                     'deskripsi' => $request->deskripsi,
+                    'status_aktif' => $request->boolean('status_aktif', true),
+                    'jenis_produk' => $request->jenis_produk,
+                    'total_qty_khusus' => $request->jenis_produk === 'khusus_bundling' ? (int) $request->total_qty_khusus : null,
                     'gambar' => $pathGambar,
                 ]);
 
@@ -95,7 +102,7 @@ class BundlingController extends Controller
                     BundlingItem::create([
                         'bundling_id' => $bundling->id,
                         'produk_id' => $produkId,
-                        'qty' => $request->qty[$i],
+                        'qty' => isset($request->qty[$i]) ? (int) $request->qty[$i] : 1,
                     ]);
                 }
             });
@@ -123,9 +130,11 @@ class BundlingController extends Controller
     {
         try {
             $bundling->load('items.produk');
+            $produkBiasa = Produk::reguler()->orderBy('nama_produk')->get();
+            $produkKhusus = Produk::khususBundling()->orderBy('nama_produk')->get();
             $produk = Produk::orderBy('nama_produk')->get();
 
-            return view('pages.bundling.edit', compact('bundling', 'produk'));
+            return view('pages.bundling.edit', compact('bundling', 'produk', 'produkBiasa', 'produkKhusus'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -142,11 +151,13 @@ class BundlingController extends Controller
                 'harga' => 'required|integer|min:1',
                 'deskripsi' => 'nullable|string',
                 'status_aktif' => 'nullable|boolean',
+                'jenis_produk' => 'required|in:biasa,khusus_bundling',
+                'total_qty_khusus' => 'required_if:jenis_produk,khusus_bundling|nullable|integer|min:1',
                 'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'produk_id' => 'required|array|min:1',
                 'produk_id.*' => ['required', 'distinct', 'exists:produks,id'],
-                'qty' => 'required|array|min:1',
-                'qty.*' => 'required|integer|min:1',
+                'qty' => 'nullable|array',
+                'qty.*' => 'nullable|integer|min:1',
             ]);
 
             DB::transaction(function () use ($request, $bundling) {
@@ -155,6 +166,9 @@ class BundlingController extends Controller
                     'nama_bundling' => $request->nama_bundling,
                     'harga' => $request->harga,
                     'deskripsi' => $request->deskripsi,
+                    'jenis_produk' => $request->jenis_produk,
+                    'total_qty_khusus' => $request->jenis_produk === 'khusus_bundling' ? (int) $request->total_qty_khusus : null,
+                    'status_aktif' => $request->boolean('status_aktif', true),
                 ];
 
                 if ($request->hasFile('gambar')) {
@@ -172,7 +186,7 @@ class BundlingController extends Controller
                     BundlingItem::create([
                         'bundling_id' => $bundling->id,
                         'produk_id' => $produkId,
-                        'qty' => $request->qty[$i],
+                        'qty' => isset($request->qty[$i]) ? (int) $request->qty[$i] : 1,
                     ]);
                 }
             });

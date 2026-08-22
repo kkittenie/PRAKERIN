@@ -87,7 +87,19 @@ class KeranjangController extends Controller
             $validated = $request->validate([
                 'jumlah' => 'required|integer|min:1|max:50',
                 'catatan' => 'nullable|string|max:255',
+                'pilihan_khusus' => 'nullable|array',
+                'pilihan_khusus.*.produk_id' => 'required_with:pilihan_khusus|integer|exists:produks,id',
+                // Boleh 0: form selalu ngirim baris utk SEMUA item bundling
+                // (termasuk varian yang gak dipilih member). Baris qty 0
+                // difilter di bawah, bukan ditolak validasi di sini.
+                'pilihan_khusus.*.qty' => 'required_with:pilihan_khusus|integer|min:0',
+                'pilihan_khusus.*.catatan' => 'nullable|string|max:255',
             ]);
+
+            $pilihanKhusus = collect($validated['pilihan_khusus'] ?? [])
+                ->filter(fn ($p) => (int) ($p['qty'] ?? 0) > 0)
+                ->values()
+                ->all();
 
             MemberCart::tambah([
                 'bundling_id' => $bundling->id,
@@ -97,6 +109,7 @@ class KeranjangController extends Controller
                 'ukuran' => null,
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
+                'pilihan_khusus' => $pilihanKhusus,
             ]);
 
             $pesan = "{$bundling->nama_bundling} ditambahkan ke keranjang.";
@@ -244,6 +257,13 @@ class KeranjangController extends Controller
                 'bundling_id' => 'required|integer|exists:bundlings,id',
                 'jumlah' => 'required|integer|min:1|max:50',
                 'catatan' => 'nullable|string|max:255',
+                'pilihan_khusus' => 'nullable|array',
+                'pilihan_khusus.*.produk_id' => 'required_with:pilihan_khusus|integer|exists:produks,id',
+                // Boleh 0: form selalu ngirim baris utk SEMUA item bundling
+                // (termasuk varian yang gak dipilih member). Baris qty 0
+                // difilter di bawah, bukan ditolak validasi di sini.
+                'pilihan_khusus.*.qty' => 'required_with:pilihan_khusus|integer|min:0',
+                'pilihan_khusus.*.catatan' => 'nullable|string|max:255',
             ]);
 
             $bundling = Bundling::findOrFail($validated['bundling_id']);
@@ -254,6 +274,11 @@ class KeranjangController extends Controller
                     ->with('error', 'Item keranjang tidak ditemukan, mungkin sudah dihapus.');
             }
 
+            $pilihanKhusus = collect($validated['pilihan_khusus'] ?? [])
+                ->filter(fn ($p) => (int) ($p['qty'] ?? 0) > 0)
+                ->values()
+                ->all();
+
             MemberCart::perbarui($itemId, [
                 'bundling_id' => $bundling->id,
                 'nama_produk' => $bundling->nama_bundling,
@@ -262,6 +287,7 @@ class KeranjangController extends Controller
                 'ukuran' => null,
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
+                'pilihan_khusus' => $pilihanKhusus,
             ]);
 
             return redirect()

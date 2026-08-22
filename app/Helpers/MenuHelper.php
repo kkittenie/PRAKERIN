@@ -29,6 +29,7 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'Kategori Produk', 'path' => '/kategori-produk', 'permission' => 'lihat_kategori_produk'],
                     ['name' => 'Produk', 'path' => '/produk', 'permission' => 'lihat_produk'],
+                    ['name' => 'Produk Khusus Bundling', 'path' => '/produk-khusus-bundling', 'permission' => 'lihat_produk'],
                     ['name' => 'Bundling', 'path' => '/bundling', 'permission' => 'lihat_bundling'],
                     ['name' => 'Satuan', 'path' => '/satuan', 'permission' => 'lihat_satuan'],
                     ['name' => 'Bahan Baku', 'path' => '/bahan-baku', 'permission' => 'lihat_stok'],

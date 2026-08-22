@@ -15,6 +15,7 @@ class MenuController extends Controller
         try {
             $kategoris = KategoriProduk::with(['produk' => function ($query) {
                 $query->where('status_aktif', true)
+                    ->reguler()
                     ->orderBy('nama_produk');
             }])
                 ->orderBy('nama_kategori')

@@ -463,16 +463,25 @@
                             return (bool) $item->butuh_produksi;
                         })
                         ->map(function ($item) use ($headerBundlingDapur, $headerPromoEventDapur) {
+                            // Catatan pesanan umum (dari header paket) DAN catatan per
+                            // produk/varian (dari $item->catatan) dua-duanya perlu
+                            // muncul di tiket dapur, jadi digabung — jangan saling
+                            // menimpa (dulu pakai "?:" yang bikin catatan per produk
+                            // hilang kalau catatan pesanan umum juga diisi).
                             $catatanPaket = null;
                             if ($item->bundling_id && $headerBundlingDapur->has($item->bundling_id)) {
                                 $catatanPaket = $headerBundlingDapur->get($item->bundling_id)->catatan;
                             } elseif ($item->promo_event_id && $headerPromoEventDapur->has($item->promo_event_id)) {
                                 $catatanPaket = $headerPromoEventDapur->get($item->promo_event_id)->catatan;
                             }
+                            $catatanGabung = collect([$catatanPaket, $item->catatan])
+                                ->filter(fn ($c) => filled($c))
+                                ->unique()
+                                ->implode(' | ');
                             return (object) [
                                 'nama_produk' => $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : ''),
                                 'jumlah' => $item->jumlah,
-                                'catatan' => $catatanPaket ?: $item->catatan,
+                                'catatan' => $catatanGabung,
                             ];
                         })
                         // Gabung baris produk yang sama (mis. "pecahan" dari bundling
@@ -738,16 +747,22 @@
                     return (bool) $item->butuh_produksi;
                 })
                 ->map(function ($item) use ($headerBundlingDapur, $headerPromoEventDapur) {
+                    // Gabung catatan pesanan umum & catatan per produk/varian —
+                    // jangan saling menimpa (lihat catatan versi HTML di atas).
                     $catatanPaket = null;
                     if ($item->bundling_id && $headerBundlingDapur->has($item->bundling_id)) {
                         $catatanPaket = $headerBundlingDapur->get($item->bundling_id)->catatan;
                     } elseif ($item->promo_event_id && $headerPromoEventDapur->has($item->promo_event_id)) {
                         $catatanPaket = $headerPromoEventDapur->get($item->promo_event_id)->catatan;
                     }
+                    $catatanGabung = collect([$catatanPaket, $item->catatan])
+                        ->filter(fn ($c) => filled($c))
+                        ->unique()
+                        ->implode(' | ');
                     return (object) [
                         'nama_produk' => $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : ''),
                         'jumlah' => $item->jumlah,
-                        'catatan' => $catatanPaket ?: $item->catatan,
+                        'catatan' => $catatanGabung,
                     ];
                 })
                 // Gabung baris produk yang sama (mis. "pecahan" dari bundling &

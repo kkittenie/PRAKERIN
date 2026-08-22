@@ -22,6 +22,7 @@ class Produk extends Model
         'foto',
         'status_aktif',
         'status_ketersediaan',
+        'is_khusus_bundling',
         'punya_ukuran',
         'harga_besar',
         'harga_kecil',
@@ -29,6 +30,7 @@ class Produk extends Model
 
     protected $casts = [
         'punya_ukuran' => 'boolean',
+        'is_khusus_bundling' => 'boolean',
         'harga_besar' => 'decimal:2',
         'harga_kecil' => 'decimal:2',
         'stok_besar' => 'integer',
@@ -40,6 +42,16 @@ class Produk extends Model
         'promos_aktif_semua',
         'harga_diskon'
     ];
+
+    public function scopeReguler($query)
+    {
+        return $query->where('is_khusus_bundling', false);
+    }
+
+    public function scopeKhususBundling($query)
+    {
+        return $query->where('is_khusus_bundling', true);
+    }
 
     public function kategori()
     {

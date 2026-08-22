@@ -157,6 +157,7 @@ class TransaksiKasirController extends Controller
         try {
             $daftarProduk = Produk::with(['kategori', 'promos'])
                 ->where('status_aktif', true)
+                ->reguler()
                 ->get();
 
             $daftarKategori = KategoriProduk::all();
@@ -220,13 +221,43 @@ class TransaksiKasirController extends Controller
             'butuh_produksi' => $perluProduksiBundling,
         ]);
 
+        // Kalau bundling ini "khusus" (bebas pilih varian rasa), kasir milih
+        // sendiri qty & catatan tiap varian lewat modal di POS — dikirim di
+        // item['pilihan_khusus']. Kalau bundling biasa (bukan khusus), array
+        // ini kosong dan kita fallback ke qty tetap dari bundling_items
+        // seperti semula.
+        $pilihanKhusus = $item['pilihan_khusus'] ?? [];
+        $mapQtyPilihan = [];
+        $mapCatatanPilihan = [];
+        if (is_array($pilihanKhusus)) {
+            foreach ($pilihanKhusus as $p) {
+                if (isset($p['produk_id'])) {
+                    if (isset($p['qty']) && (int) $p['qty'] > 0) {
+                        $mapQtyPilihan[(int) $p['produk_id']] = (int) $p['qty'];
+                    }
+                    if (!empty($p['catatan'])) {
+                        $mapCatatanPilihan[(int) $p['produk_id']] = $p['catatan'];
+                    }
+                }
+            }
+        }
+
         foreach ($bundling->items as $bundlingItem) {
             $produk = $bundlingItem->produk;
             if (!$produk) {
                 continue;
             }
 
-            $totalDibutuhkan = $bundlingItem->qty * $jumlahBundling;
+            // Kalau ada pilihan varian khusus, qty per produk ikut pilihan
+            // kasir (varian yang tidak dipilih otomatis di-skip / qty 0).
+            // Kalau tidak ada (bundling biasa), pakai qty tetap dari paket.
+            $qtySatuBundling = $mapQtyPilihan[$produk->id] ?? (empty($pilihanKhusus) ? $bundlingItem->qty : 0);
+            if ($qtySatuBundling <= 0) {
+                continue;
+            }
+
+            $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
+            $totalDibutuhkan = $qtySatuBundling * $jumlahBundling;
             $statusManualProduksi = $produk->status_ketersediaan === 'perlu_diproduksi';
 
             $jumlahReady = 0;
@@ -250,7 +281,7 @@ class TransaksiKasirController extends Controller
                     'nama_produk' => $produk->nama_produk,
                     'harga_satuan' => 0,
                     'jumlah' => $jumlahReady,
-                    'catatan' => null,
+                    'catatan' => $catatanProduk,
                     'subtotal' => 0,
                     'butuh_produksi' => false,
                 ]);
@@ -264,7 +295,7 @@ class TransaksiKasirController extends Controller
                     'nama_produk' => $produk->nama_produk,
                     'harga_satuan' => 0,
                     'jumlah' => $jumlahProduksi,
-                    'catatan' => null,
+                    'catatan' => $catatanProduk,
                     'subtotal' => 0,
                     'butuh_produksi' => true,
                 ]);

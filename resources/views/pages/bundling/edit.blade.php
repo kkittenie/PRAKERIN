@@ -68,6 +68,51 @@
         @enderror
     </div>
 
+    {{-- Jenis Produk Bundling --}}
+    <div class="md:col-span-2">
+        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+            Jenis Produk Dalam Bundling <span class="text-red-500">*</span>
+        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label class="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 cursor-pointer hover:border-brand-500 transition">
+                <input type="radio" name="jenis_produk" value="biasa" class="w-4 h-4 text-brand-600 focus:ring-brand-500" {{ old('jenis_produk', $bundling->jenis_produk ?? 'biasa') === 'biasa' ? 'checked' : '' }} onchange="gantiJenisProduk('biasa')">
+                <div>
+                    <span class="block font-bold text-sm text-gray-900 dark:text-white">Produk Biasa</span>
+                    <span class="block text-xs text-gray-500">Mengambil dari katalog produk reguler/biasa</span>
+                </div>
+            </label>
+            <label class="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 cursor-pointer hover:border-amber-500 transition">
+                <input type="radio" name="jenis_produk" value="khusus_bundling" class="w-4 h-4 text-amber-600 focus:ring-amber-500" {{ old('jenis_produk', $bundling->jenis_produk) === 'khusus_bundling' ? 'checked' : '' }} onchange="gantiJenisProduk('khusus_bundling')">
+                <div>
+                    <span class="block font-bold text-sm text-gray-900 dark:text-white">Produk Khusus Bundling</span>
+                    <span class="block text-xs text-gray-500">Varian rasa khusus yang dapat dipilih pembeli di mobile</span>
+                </div>
+            </label>
+        </div>
+        @error('jenis_produk')
+            <small class="text-red-500">{{ $message }}</small>
+        @enderror
+    </div>
+
+    {{-- Total Qty Pilihan Khusus (hanya tampil jika Produk Khusus Bundling) --}}
+    <div id="wrapper-total-qty-khusus" class="{{ old('jenis_produk', $bundling->jenis_produk) === 'khusus_bundling' ? '' : 'hidden' }}">
+        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+            Total Isi Bundling<span class="text-red-500">*</span>
+        </label>
+        <input
+            type="number"
+            min="1"
+            name="total_qty_khusus"
+            placeholder="Contoh: 6 (Pembeli dapat memilih 6 pcs varian rasa)"
+            value="{{ old('total_qty_khusus', $bundling->total_qty_khusus ?? 6) }}"
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+        <small class="text-gray-400">Total jumlah produk yang wajib dipilih pembeli di mobile.</small>
+        @error('total_qty_khusus')
+            <small class="text-red-500 block">{{ $message }}</small>
+        @enderror
+    </div>
+
+
     {{-- Status Bundling --}}
     <div>
         <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
@@ -174,8 +219,27 @@
 </div>
 
 <script>
-    const daftarProduk = @json($produk);
+    const produkBiasa = @json($produkBiasa);
+    const produkKhusus = @json($produkKhusus);
+    let jenisProdukAktif = "{{ old('jenis_produk', $bundling->jenis_produk ?? 'biasa') }}";
+    let daftarProduk = jenisProdukAktif === 'khusus_bundling' ? produkKhusus : produkBiasa;
+
+    function gantiJenisProduk(jenis) {
+        jenisProdukAktif = jenis;
+        daftarProduk = jenis === 'khusus_bundling' ? produkKhusus : produkBiasa;
+        
+        const wrapper = document.getElementById('wrapper-total-qty-khusus');
+        if (wrapper) {
+            wrapper.classList.toggle('hidden', jenis !== 'khusus_bundling');
+        }
+
+        const container = document.getElementById('produk-container');
+        container.innerHTML = '';
+        tambahBarisProduk();
+    }
 </script>
+
+
 
 <script>
 
@@ -184,6 +248,7 @@ const tombolTambah = document.getElementById('btn-tambah-produk');
 
 function tambahBarisProduk() {
 
+    const isKhusus = jenisProdukAktif === 'khusus_bundling';
     const div = document.createElement('div');
 
     div.className =
@@ -193,7 +258,7 @@ function tambahBarisProduk() {
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-            <div class="md:col-span-2 relative">
+            <div class="${isKhusus ? 'md:col-span-3' : 'md:col-span-2'} relative col-search-produk">
 
                 <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Cari Produk
@@ -216,7 +281,7 @@ function tambahBarisProduk() {
 
             </div>
 
-            <div>
+            <div class="col-qty-produk ${isKhusus ? 'hidden' : ''}">
 
                 <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Qty

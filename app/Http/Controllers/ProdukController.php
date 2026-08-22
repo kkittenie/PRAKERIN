@@ -19,6 +19,7 @@ class ProdukController extends Controller
             $search = $request->search;
 
             $produk = Produk::with('kategori')
+                ->reguler()
                 ->when($search, function ($query) use ($search) {
                     $query->where('nama_produk', 'like', "%{$search}%")
                         ->orWhere('kode_produk', 'like', "%{$search}%");

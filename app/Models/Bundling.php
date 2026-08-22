@@ -14,6 +14,8 @@ class Bundling extends Model
         'harga',
         'deskripsi',
         'status_aktif',
+        'jenis_produk',
+        'total_qty_khusus',
         'gambar',
     ];
 
