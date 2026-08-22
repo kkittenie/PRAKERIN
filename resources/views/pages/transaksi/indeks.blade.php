@@ -179,7 +179,7 @@
                             class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
                             <template x-for="produk in produkTersaring"
                                 :key="(produk.is_bundling ? 'bd_' : (produk.is_promo_event ? 'pe_' : 'pr_')) + produk.id">
-                                <div>
+                                <div class="min-w-0">
                                     <!-- Kartu Bundling (kalau item ini adalah bundling) -->
                                     <template x-if="produk.is_bundling">
                                         <div
@@ -191,9 +191,15 @@
                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                     alt="Bundling">
                                                 <div class="absolute top-2 left-2 z-5">
-                                                    <span
-                                                        class="bg-emerald-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Paket
-                                                        Bundling</span>
+                                                    <template x-if="!bundlingPerluDiproduksi(produk)">
+                                                        <span
+                                                            class="bg-emerald-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Ready</span>
+                                                    </template>
+                                                    <template x-if="bundlingPerluDiproduksi(produk)">
+                                                        <span
+                                                            class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu
+                                                            Diproduksi</span>
+                                                    </template>
                                                 </div>
                                                 <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                                     :class="bundlingPerluDiproduksi(produk) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
@@ -214,7 +220,7 @@
                                                 <div
                                                     class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
                                                     <div class="h-5"></div>
-                                                    <div class="h-11 flex items-center justify-between">
+                                                    <div class="flex items-center justify-between">
                                                         <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                             x-text="formatRupiah(produk.harga)"></span>
                                                         <button @click="tambahBundlingKeKeranjang(produk)"
@@ -242,9 +248,15 @@
                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                     alt="Promo Event">
                                                 <div class="absolute top-2 left-2 z-5">
-                                                    <span
-                                                        class="bg-rose-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Promo
-                                                        Event</span>
+                                                    <template x-if="!promoEventPerluDiproduksi(produk)">
+                                                        <span
+                                                            class="bg-emerald-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Ready</span>
+                                                    </template>
+                                                    <template x-if="promoEventPerluDiproduksi(produk)">
+                                                        <span
+                                                            class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu
+                                                            Diproduksi</span>
+                                                    </template>
                                                 </div>
                                                 <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                                     :class="promoEventPerluDiproduksi(produk) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
@@ -264,7 +276,7 @@
                                                 <div
                                                     class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
                                                     <div class="h-5"></div>
-                                                    <div class="h-11 flex items-center justify-between">
+                                                    <div class="flex items-center justify-between">
                                                         <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                             x-text="formatRupiah(produk.harga_event)"></span>
                                                         <button @click="tambahPromoEventKeKeranjang(produk)"
@@ -347,11 +359,11 @@
                                                         </template>
                                                     </div>
                                                     <template x-if="produk.punya_ukuran == 1 || produk.punya_ukuran === true">
-                                                        <div class="h-11 grid grid-cols-2 gap-1.5">
+                                                        <div class="grid grid-cols-2 gap-1.5 items-center">
                                                             <!-- Kecil -->
                                                             <button type="button" @click.stop="tambahKeKeranjang(produk, 'Kecil')"
                                                                 title="Tambah Ukuran Kecil"
-                                                                class="h-full flex flex-col items-center justify-center px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
+                                                                class="flex flex-col items-center justify-center py-1.5 px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
                                                                 <div class="flex items-center justify-center gap-1 w-full leading-none">
                                                                     <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800/90 dark:text-amber-300 group-hover/sz:text-white/90">Kecil</span>
                                                                     <span class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 group-hover/sz:text-white">+</span>
@@ -361,7 +373,7 @@
                                                             <!-- Besar -->
                                                             <button type="button" @click.stop="tambahKeKeranjang(produk, 'Besar')"
                                                                 title="Tambah Ukuran Besar"
-                                                                class="h-full flex flex-col items-center justify-center px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
+                                                                class="flex flex-col items-center justify-center py-1.5 px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
                                                                 <div class="flex items-center justify-center gap-1 w-full leading-none">
                                                                     <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800/90 dark:text-amber-300 group-hover/sz:text-white/90">Besar</span>
                                                                     <span class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 group-hover/sz:text-white">+</span>
@@ -372,7 +384,7 @@
                                                     </template>
 
                                                     <template x-if="!(produk.punya_ukuran == 1 || produk.punya_ukuran === true)">
-                                                        <div class="h-11 flex items-center justify-between">
+                                                        <div class="flex items-center justify-between">
                                                             <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                                 x-text="formatRupiah(produk.promo_aktif ? produk.harga_diskon : produk.harga_jual)"></span>
                                                             <button @click.stop="tambahKeKeranjang(produk)"
@@ -408,16 +420,22 @@
                             class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
                             <template x-for="bundling in produkTersaring" :key="bundling.id">
                                 <div
-                                    class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
+                                    class="min-w-0 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
                                     <div @click="tambahBundlingKeKeranjang(bundling)" title="Klik untuk tambah ke keranjang"
                                         class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden cursor-pointer">
                                         <img :src="getFotoUrl(bundling.gambar)" x-on:error="handleFotoError($event)"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             alt="Bundling">
                                         <div class="absolute top-2 left-2 z-5">
-                                            <span
-                                                class="bg-emerald-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Paket
-                                                Bundling</span>
+                                            <template x-if="!bundlingPerluDiproduksi(bundling)">
+                                                <span
+                                                    class="bg-emerald-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Ready</span>
+                                            </template>
+                                            <template x-if="bundlingPerluDiproduksi(bundling)">
+                                                <span
+                                                    class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu
+                                                    Diproduksi</span>
+                                            </template>
                                         </div>
                                         <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                             :class="bundlingPerluDiproduksi(bundling) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
@@ -429,22 +447,25 @@
                                             <p
                                                 class="text-xxs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
                                                 Bundling</p>
-                                            <h3 class="font-bold text-gray-900 dark:text-white text-sm mt-0.5 line-clamp-2"
+                                            <h3 class="font-bold text-gray-900 dark:text-white text-sm mt-0.5 line-clamp-2 min-h-[2.5rem]"
                                                 x-text="bundling.nama_bundling"></h3>
                                             <p class="text-xs text-gray-400 dark:text-gray-500"
                                                 x-text="bundling.kode_bundling"></p>
                                         </div>
                                         <div
-                                            class="flex items-center justify-between mt-auto pt-2 border-t border-gray-50 dark:border-gray-800">
-                                            <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
-                                                x-text="formatRupiah(bundling.harga)"></span>
-                                            <button @click="tambahBundlingKeKeranjang(bundling)"
-                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                                        d="M12 4v16m8-8H4" />
-                                                </svg>
-                                            </button>
+                                            class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
+                                            <div class="h-5"></div>
+                                            <div class="flex items-center justify-between">
+                                                <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
+                                                    x-text="formatRupiah(bundling.harga)"></span>
+                                                <button @click="tambahBundlingKeKeranjang(bundling)"
+                                                    class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                            d="M12 4v16m8-8H4" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -466,16 +487,22 @@
                             class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
                             <template x-for="promoEvent in produkTersaring" :key="promoEvent.id">
                                 <div
-                                    class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
+                                    class="min-w-0 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
                                     <div @click="tambahPromoEventKeKeranjang(promoEvent)" title="Klik untuk tambah ke keranjang"
                                         class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden cursor-pointer">
                                         <img :src="getFotoUrl(promoEvent.produk ? promoEvent.produk.foto : null)" x-on:error="handleFotoError($event)"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             alt="Promo Event">
                                         <div class="absolute top-2 left-2 z-5">
-                                            <span
-                                                class="bg-rose-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Promo
-                                                Event</span>
+                                            <template x-if="!promoEventPerluDiproduksi(promoEvent)">
+                                                <span
+                                                    class="bg-emerald-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Ready</span>
+                                            </template>
+                                            <template x-if="promoEventPerluDiproduksi(promoEvent)">
+                                                <span
+                                                    class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu
+                                                    Diproduksi</span>
+                                            </template>
                                         </div>
                                         <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                             :class="promoEventPerluDiproduksi(promoEvent) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
@@ -487,22 +514,25 @@
                                             <p
                                                 class="text-xxs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
                                                 Promo Event</p>
-                                            <h3 class="font-bold text-gray-900 dark:text-white text-sm mt-0.5 line-clamp-2"
+                                            <h3 class="font-bold text-gray-900 dark:text-white text-sm mt-0.5 line-clamp-2 min-h-[2.5rem]"
                                                 x-text="promoEvent.nama_event"></h3>
                                             <p class="text-xs text-gray-400 dark:text-gray-500"
                                                 x-text="promoEvent.produk ? promoEvent.produk.nama_produk : ''"></p>
                                         </div>
                                         <div
-                                            class="flex items-center justify-between mt-auto pt-2 border-t border-gray-50 dark:border-gray-800">
-                                            <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
-                                                x-text="formatRupiah(promoEvent.harga_event)"></span>
-                                            <button @click="tambahPromoEventKeKeranjang(promoEvent)"
-                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                                        d="M12 4v16m8-8H4" />
-                                                </svg>
-                                            </button>
+                                            class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
+                                            <div class="h-5"></div>
+                                            <div class="flex items-center justify-between">
+                                                <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
+                                                    x-text="formatRupiah(promoEvent.harga_event)"></span>
+                                                <button @click="tambahPromoEventKeKeranjang(promoEvent)"
+                                                    class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                            d="M12 4v16m8-8H4" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1844,58 +1874,12 @@
                     // Cek pertama kali saat halaman dibuka
                     this.perbaruiPromoKadaluwarsa();
 
-                    // Jalan tiap detik: kalau ada promo/promo event yang selesai_berlaku-nya
+                    // Jalan tiap 5 detik: kalau ada promo yang selesai_berlaku-nya
                     // sudah lewat dari waktu sekarang, badge/harga diskonnya otomatis
                     // hilang dari layar tanpa perlu refresh browser.
                     this._intervalPromoKadaluwarsa = setInterval(() => {
                         this.perbaruiPromoKadaluwarsa();
-                    }, 1000);
-
-                    // Jalan tiap 15 detik: tarik ulang data promo & promo event dari
-                    // server, biar promo/promo event yang baru ditambahin, diedit,
-                    // atau dinonaktifkan admin ikut nongol/ilang tanpa reload halaman.
-                    this._intervalSinkronPromo = setInterval(() => {
-                        this.sinkronPromoDariServer();
-                    }, 15000);
-                },
-
-                sinkronPromoDariServer() {
-                    fetch("{{ route('transaksi.promo-status') }}")
-                        .then(r => r.json())
-                        .then(r => {
-                            if (r.status !== 'success') return;
-
-                            // 1. Sinkronkan promo (potongan harga) per produk
-                            const petaPromoProduk = {};
-                            r.data.produk.forEach(p => { petaPromoProduk[p.id] = p; });
-
-                            this.daftarProduk.forEach(produk => {
-                                const segar = petaPromoProduk[produk.id];
-                                if (!segar) return;
-                                produk.promos_aktif_semua = segar.promos_aktif_semua;
-                                produk.promo_aktif = segar.promo_aktif;
-                                produk.harga_diskon = segar.harga_diskon;
-                            });
-
-                            // 2. Sinkronkan daftar promo event yang sedang berlaku
-                            this.daftarPromoEvent = r.data.promo_event;
-
-                            // 3. Ikut perbarui promo yang nempel di item keranjang
-                            this.keranjang.forEach(item => {
-                                const produkSegar = petaPromoProduk[item.produk_id];
-                                if (produkSegar) {
-                                    item.promos_tersedia = produkSegar.promos_aktif_semua;
-                                    if (item.promos_terpilih_ids) {
-                                        const idTersedia = item.promos_tersedia.map(p => p.id);
-                                        item.promos_terpilih_ids = item.promos_terpilih_ids.filter(id => idTersedia.includes(id));
-                                    }
-                                    if (!item.promos_tersedia || item.promos_tersedia.length === 0) {
-                                        item.promo_aktif = produkSegar.promo_aktif;
-                                    }
-                                }
-                            });
-                        })
-                        .catch(() => {});
+                    }, 5000);
                 },
 
                 // Menentukan apakah sebuah objek promo masih berlaku dibanding waktu sekarang (jam di browser kasir)
@@ -1903,14 +1887,6 @@
                     if (!promo || !promo.status_aktif) return false;
                     if (promo.mulai_berlaku && new Date(promo.mulai_berlaku) > sekarang) return false;
                     if (promo.selesai_berlaku && new Date(promo.selesai_berlaku) <= sekarang) return false;
-                    return true;
-                },
-
-                // Sama seperti _promoMasihBerlaku, tapi buat promo event (field wajib mulai_berlaku & selesai_berlaku)
-                _promoEventMasihBerlaku(promoEvent, sekarang) {
-                    if (!promoEvent || !promoEvent.status_aktif) return false;
-                    if (promoEvent.mulai_berlaku && new Date(promoEvent.mulai_berlaku) > sekarang) return false;
-                    if (promoEvent.selesai_berlaku && new Date(promoEvent.selesai_berlaku) <= sekarang) return false;
                     return true;
                 },
 
@@ -1963,12 +1939,6 @@
                             item.promo_aktif = null;
                         }
                     });
-
-                    // 3. Promo Event: buang dari daftar begitu selesai_berlaku-nya lewat
-                    // atau dinonaktifkan, biar kartunya otomatis hilang dari grid kasir.
-                    if (this.daftarPromoEvent && this.daftarPromoEvent.length > 0) {
-                        this.daftarPromoEvent = this.daftarPromoEvent.filter(pe => this._promoEventMasihBerlaku(pe, sekarang));
-                    }
                 },
 
                 parsePersen(v) {
@@ -2266,34 +2236,6 @@
                         catatan: ''
                     };
                 },
-
-                // Susun status kebutuhan produksi per komponen bundling
-                // berdasarkan stok produk saat ini — dipakai buat preview
-                // stok lokal (held order) & badge di keranjang.
-                komponenBundlingSaatIni(bundling) {
-                    return (bundling.items || []).map(i => {
-                        const p = this.daftarProduk.find(x => x.id === i.produk_id);
-                        const stokP = p ? (parseFloat(p.stok) || 0) : 0;
-                        const subButuh = p ? (p.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < i.qty) : true;
-                        return { produk_id: i.produk_id, qty: i.qty, butuh_produksi: subButuh };
-                    });
-                },
-
-                buatItemBundlingKeranjang(bundling, jumlah, perluProduksi) {
-                    return {
-                        key: 'bundling_' + bundling.id + '_' + (perluProduksi ? 'produksi' : 'ready'),
-                        bundling_id: bundling.id,
-                        is_bundling: true,
-                        nama_produk: bundling.nama_bundling,
-                        harga_jual: parseFloat(bundling.harga),
-                        harga_jual_asli: parseFloat(bundling.harga),
-                        foto: bundling.gambar,
-                        items: this.komponenBundlingSaatIni(bundling),
-                        jumlah: jumlah,
-                        butuh_produksi: perluProduksi,
-                        catatan: ''
-                    };
-                },
                 normalisasiItemKeranjang(items) {
                     return (items || []).map(item => {
                         const produk = this.daftarProduk.find(p => p.id === item.produk_id);
@@ -2430,14 +2372,6 @@
                     const p = this.daftarProduk.find(x => x.id === promoEvent.produk_id);
                     if (!p) return true;
                     return p.status_ketersediaan === 'perlu_diproduksi' || (parseFloat(p.stok) || 0) <= 0 || (parseFloat(p.stok) || 0) < promoEvent.isi_event;
-                },
-
-                statusProduksiBundling(bundling, jumlah) {
-                    return this.bundlingPerluDiproduksi(bundling) || jumlah > this.stokBundlingTersedia(bundling);
-                },
-
-                statusProduksiPromoEvent(promoEvent, jumlah) {
-                    return this.promoEventPerluDiproduksi(promoEvent) || jumlah > this.stokPromoEventTersedia(promoEvent);
                 },
 
                 get totalHalamanProduk() {
@@ -2835,12 +2769,29 @@
                     }
                 },
 
-                // Bundling yang butuh produksi (karena salah satu komponennya
-                // habis) dipisah jadi baris keranjang sendiri dari bundling
-                // yang ready, sama seperti produk biasa — supaya kasir bisa
-                // lihat jelas mana yang siap & mana yang perlu diproduksi.
+                buatItemBundlingKeranjang(bundling, jumlah, perluProduksi) {
+                    return {
+                        key: 'bundling_' + bundling.id + '_' + (perluProduksi ? 'produksi' : 'ready'),
+                        bundling_id: bundling.id,
+                        is_bundling: true,
+                        nama_produk: bundling.nama_bundling,
+                        harga_jual: parseFloat(bundling.harga),
+                        harga_jual_asli: parseFloat(bundling.harga),
+                        foto: bundling.gambar,
+                        items: (bundling.items || []).map(i => {
+                            const p = this.daftarProduk.find(x => x.id === i.produk_id);
+                            const stokP = p ? (parseFloat(p.stok) || 0) : 0;
+                            const subButuh = p ? (p.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < i.qty) : true;
+                            return { produk_id: i.produk_id, qty: i.qty, butuh_produksi: subButuh };
+                        }),
+                        jumlah: jumlah,
+                        butuh_produksi: perluProduksi,
+                        catatan: ''
+                    };
+                },
+
                 tambahBundlingKeKeranjang(bundling) {
-                    const manualProduksi = this.bundlingPerluDiproduksi(bundling) && this.stokBundlingTersedia(bundling) <= 0;
+                    const manualProduksi = this.bundlingPerluDiproduksi(bundling);
 
                     if (manualProduksi) {
                         const item = this.keranjang.find(i => i.is_bundling && i.bundling_id === bundling.id && i.butuh_produksi);
@@ -2877,19 +2828,9 @@
                     }
                 },
 
-                tambahPromoEventKeKeranjang(promoEvent) {
-                    const existing = this.keranjang.find(i => i.is_promo_event && i.promo_event_id === promoEvent.id);
-
-                    if (existing) {
-                        existing.jumlah++;
-                        existing.butuh_produksi = this.statusProduksiPromoEvent(promoEvent, existing.jumlah);
-                        this.tambahToast(existing.butuh_produksi ? 'Promo event ditambahkan (Perlu Diproduksi).' : 'Promo event ditambahkan.', 'sukses');
-                        return;
-                    }
-
-                    const perluDiproduksi = this.statusProduksiPromoEvent(promoEvent, 1);
-                    this.keranjang.push({
-                        key: 'promo_event_' + promoEvent.id,
+                buatItemPromoEventKeranjang(promoEvent, jumlah, perluProduksi) {
+                    return {
+                        key: 'promo_event_' + promoEvent.id + '_' + (perluProduksi ? 'produksi' : 'ready'),
                         promo_event_id: promoEvent.id,
                         produk_id: promoEvent.produk_id,
                         isi_event: promoEvent.isi_event,
@@ -2898,12 +2839,48 @@
                         harga_jual: parseFloat(promoEvent.harga_event),
                         harga_jual_asli: parseFloat(promoEvent.harga_event),
                         foto: promoEvent.produk ? promoEvent.produk.foto : null,
-                        jumlah: 1,
-                        butuh_produksi: perluDiproduksi,
+                        jumlah: jumlah,
+                        butuh_produksi: perluProduksi,
                         catatan: ''
-                    });
+                    };
+                },
 
-                    this.tambahToast(perluDiproduksi ? 'Promo event ditambahkan (Perlu Diproduksi).' : 'Promo event ditambahkan.', 'sukses');
+                tambahPromoEventKeKeranjang(promoEvent) {
+                    const manualProduksi = this.promoEventPerluDiproduksi(promoEvent);
+
+                    if (manualProduksi) {
+                        const item = this.keranjang.find(i => i.is_promo_event && i.promo_event_id === promoEvent.id && i.butuh_produksi);
+                        if (item) {
+                            item.jumlah++;
+                        } else {
+                            this.keranjang.push(this.buatItemPromoEventKeranjang(promoEvent, 1, true));
+                        }
+                        this.tambahToast('Promo event ditambahkan (Perlu Diproduksi).', 'sukses');
+                        return;
+                    }
+
+                    const totalReadyDipakai = this.keranjang
+                        .filter(i => i.is_promo_event && i.promo_event_id === promoEvent.id && !i.butuh_produksi)
+                        .reduce((sum, i) => sum + i.jumlah, 0);
+                    const stokTersedia = this.stokPromoEventTersedia(promoEvent);
+
+                    if (totalReadyDipakai < stokTersedia) {
+                        const readyItem = this.keranjang.find(i => i.is_promo_event && i.promo_event_id === promoEvent.id && !i.butuh_produksi);
+                        if (readyItem) {
+                            readyItem.jumlah++;
+                        } else {
+                            this.keranjang.push(this.buatItemPromoEventKeranjang(promoEvent, 1, false));
+                        }
+                        this.tambahToast('Promo event ditambahkan.', 'sukses');
+                    } else {
+                        const produksiItem = this.keranjang.find(i => i.is_promo_event && i.promo_event_id === promoEvent.id && i.butuh_produksi);
+                        if (produksiItem) {
+                            produksiItem.jumlah++;
+                        } else {
+                            this.keranjang.push(this.buatItemPromoEventKeranjang(promoEvent, 1, true));
+                        }
+                        this.tambahToast('Stok promo event ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                    }
                 },
 
                 tambahJumlah(item) {
@@ -2914,7 +2891,9 @@
                         }
 
                         const bundling = this.daftarBundling.find(b => b.id === item.bundling_id);
-                        const stokTersedia = bundling ? this.stokBundlingTersedia(bundling) : 0;
+                        if (!bundling) { item.jumlah++; return; }
+
+                        const stokTersedia = this.stokBundlingTersedia(bundling);
                         const totalReadyDipakai = this.keranjang
                             .filter(i => i.is_bundling && i.bundling_id === item.bundling_id && !i.butuh_produksi)
                             .reduce((sum, i) => sum + i.jumlah, 0);
@@ -2925,7 +2904,7 @@
                             const produksiItem = this.keranjang.find(i => i.is_bundling && i.bundling_id === item.bundling_id && i.butuh_produksi);
                             if (produksiItem) {
                                 produksiItem.jumlah++;
-                            } else if (bundling) {
+                            } else {
                                 this.keranjang.push(this.buatItemBundlingKeranjang(bundling, 1, true));
                             }
                             this.tambahToast('Stok bundling ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
@@ -2934,14 +2913,29 @@
                     }
 
                     if (item.is_promo_event) {
-                        const sebelumnyaButuhProduksi = !!item.butuh_produksi;
-                        item.jumlah++;
+                        if (item.butuh_produksi) {
+                            item.jumlah++;
+                            return;
+                        }
+
                         const promoEvent = this.daftarPromoEvent.find(pe => pe.id === item.promo_event_id);
-                        if (promoEvent) {
-                            item.butuh_produksi = this.statusProduksiPromoEvent(promoEvent, item.jumlah);
-                            if (!sebelumnyaButuhProduksi && item.butuh_produksi) {
-                                this.tambahToast('Stok promo event ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                        if (!promoEvent) { item.jumlah++; return; }
+
+                        const stokTersedia = this.stokPromoEventTersedia(promoEvent);
+                        const totalReadyDipakai = this.keranjang
+                            .filter(i => i.is_promo_event && i.promo_event_id === item.promo_event_id && !i.butuh_produksi)
+                            .reduce((sum, i) => sum + i.jumlah, 0);
+
+                        if (totalReadyDipakai < stokTersedia) {
+                            item.jumlah++;
+                        } else {
+                            const produksiItem = this.keranjang.find(i => i.is_promo_event && i.promo_event_id === item.promo_event_id && i.butuh_produksi);
+                            if (produksiItem) {
+                                produksiItem.jumlah++;
+                            } else {
+                                this.keranjang.push(this.buatItemPromoEventKeranjang(promoEvent, 1, true));
                             }
+                            this.tambahToast('Stok promo event ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
                         }
                         return;
                     }

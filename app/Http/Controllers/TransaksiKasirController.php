@@ -51,7 +51,7 @@ class TransaksiKasirController extends Controller
         }
 
         if ($voucher->sudahExpired()) {
-            throw new \Exception('Voucher ini sudah kadaluwarsa.');
+            throw new \Exception('Voucher ini sudah kedaluwarsa.');
         }
 
         return $voucher;
@@ -200,47 +200,13 @@ class TransaksiKasirController extends Controller
             return ActivityLogHelper::handleException($e);
         }
     }
-
-    // Dipanggil berkala (polling) dari halaman kasir supaya promo & promo event
-    // yang baru ditambahkan/diubah/dihapus admin ikut ke-refresh tanpa reload halaman.
-    // Kadaluwarsa per detik tetap dihitung di JS pakai mulai_berlaku/selesai_berlaku,
-    // endpoint ini cuma nyuplai data promo TERKINI dari database.
-    public function promoStatus()
-    {
-        try {
-            $daftarProduk = Produk::with('promos')
-                ->where('status_aktif', true)
-                ->get()
-                ->map(function ($produk) {
-                    return [
-                        'id' => $produk->id,
-                        'promos_aktif_semua' => $produk->promos_aktif_semua->values(),
-                        'promo_aktif' => $produk->promo_aktif,
-                        'harga_diskon' => $produk->harga_diskon,
-                    ];
-                });
-
-            $daftarPromoEvent = PromoProdukEvent::with('produk')
-                ->berlaku()
-                ->get();
-
-            return response()->json([
-                'status' => 'success',
-                'data' => [
-                    'produk' => $daftarProduk,
-                    'promo_event' => $daftarPromoEvent,
-                ],
-            ]);
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
-        }
-    }
-
     private function prosesItemBundlingTransaksi(Transaksi $transaksi, array $item): void
     {
         $bundlingId = (int) $item['bundling_id'];
         $jumlahBundling = (int) $item['jumlah'];
         $bundling = Bundling::with('items.produk')->findOrFail($bundlingId);
+
+        $perluProduksiBundling = (bool) ($item['butuh_produksi'] ?? false);
 
         DetailTransaksi::create([
             'transaksi_id' => $transaksi->id,
@@ -251,7 +217,7 @@ class TransaksiKasirController extends Controller
             'jumlah' => $jumlahBundling,
             'catatan' => $item['catatan'] ?? null,
             'subtotal' => $bundling->harga * $jumlahBundling,
-            'butuh_produksi' => false,
+            'butuh_produksi' => $perluProduksiBundling,
         ]);
 
         foreach ($bundling->items as $bundlingItem) {
@@ -313,6 +279,8 @@ class TransaksiKasirController extends Controller
         $promoEvent = PromoProdukEvent::with('produk')->findOrFail($promoEventId);
         $produk = $promoEvent->produk;
 
+        $perluProduksiEvent = (bool) ($item['butuh_produksi'] ?? false);
+
         DetailTransaksi::create([
             'transaksi_id' => $transaksi->id,
             'produk_id' => null,
@@ -322,7 +290,7 @@ class TransaksiKasirController extends Controller
             'jumlah' => $jumlahEvent,
             'catatan' => $item['catatan'] ?? null,
             'subtotal' => $promoEvent->harga_event * $jumlahEvent,
-            'butuh_produksi' => false,
+            'butuh_produksi' => $perluProduksiEvent,
         ]);
 
         if (!$produk) {

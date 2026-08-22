@@ -293,10 +293,15 @@
                     $pajakPersen = ($subtotal - $diskon) > 0 ? ($pajak / ($subtotal - $diskon)) * 100 : 0;
                     $itemsPelanggan = $transaksi->detailTransaksi
                         ->filter(function ($item) {
-                            if (!is_null($item->bundling_id) && !is_null($item->produk_id) && (float) $item->harga_satuan == 0 && (float) $item->subtotal == 0) {
-                                return false;
-                            }
-                            return true;
+                            // Baris pecahan bahan baku internal (dibuat otomatis untuk
+                            // tracking stok per komponen bundling/promo event) punya
+                            // produk_id terisi SEKALIGUS bundling_id/promo_event_id
+                            // terisi, dan harga & subtotalnya 0 (sudah termasuk di
+                            // baris ringkasan bundling/promo event-nya). Baris itu
+                            // bukan item yang dijual terpisah ke pelanggan, jadi
+                            // jangan ikut ditampilkan di struk.
+                            $adalahKomponenInternal = ($item->bundling_id || $item->promo_event_id) && $item->produk_id && (float) $item->harga_satuan == 0 && (float) $item->subtotal == 0;
+                            return !$adalahKomponenInternal;
                         })
                         ->groupBy(function ($item) {
                             return $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : '');
@@ -430,6 +435,19 @@
             @elseif ($jenis === 'dapur')
                 @php
                     $itemsDapur = $transaksi->detailTransaksi->filter(function ($item) {
+                        // Baris ringkasan paket (bundling/promo event) punya
+                        // bundling_id/promo_event_id terisi TAPI produk_id kosong —
+                        // ini cuma nama paketnya, bukan produk yang harus dibikin,
+                        // jadi jangan pernah dicetak ke dapur.
+                        $adalahBarisPaket = ($item->bundling_id || $item->promo_event_id) && is_null($item->produk_id);
+                        if ($adalahBarisPaket) {
+                            return false;
+                        }
+
+                        // Sisanya: baris produk biasa ATAU baris pecahan produk
+                        // asli di dalam paket (produk_id terisi) — ini yang
+                        // dicetak kalau butuh produksi, karena nama_produk-nya
+                        // sudah nama produk asli, bukan nama paket.
                         return (bool) $item->butuh_produksi;
                     })->values();
                 @endphp
@@ -573,10 +591,15 @@
             $pajakPersen = ($subtotal - $diskon) > 0 ? ($pajak / ($subtotal - $diskon)) * 100 : 0;   
             $itemsPelangganTeks = $transaksi->detailTransaksi
                 ->filter(function ($item) {
-                    if (!is_null($item->bundling_id) && !is_null($item->produk_id) && (float) $item->harga_satuan == 0 && (float) $item->subtotal == 0) {
-                        return false;
-                    }
-                    return true;
+                    // Baris pecahan bahan baku internal (dibuat otomatis untuk
+                    // tracking stok per komponen bundling/promo event) punya
+                    // produk_id terisi SEKALIGUS bundling_id/promo_event_id
+                    // terisi, dan harga & subtotalnya 0 (sudah termasuk di
+                    // baris ringkasan bundling/promo event-nya). Baris itu
+                    // bukan item yang dijual terpisah ke pelanggan, jadi
+                    // jangan ikut ditampilkan di struk.
+                    $adalahKomponenInternal = ($item->bundling_id || $item->promo_event_id) && $item->produk_id && (float) $item->harga_satuan == 0 && (float) $item->subtotal == 0;
+                    return !$adalahKomponenInternal;
                 })
                 ->groupBy(function ($item) {
                     return $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : '');
@@ -653,6 +676,19 @@
 
         } else {
             $itemsDapur = $transaksi->detailTransaksi->filter(function ($item) {
+                // Baris ringkasan paket (bundling/promo event) punya
+                // bundling_id/promo_event_id terisi TAPI produk_id kosong —
+                // ini cuma nama paketnya, bukan produk yang harus dibikin,
+                // jadi jangan pernah dicetak ke dapur.
+                $adalahBarisPaket = ($item->bundling_id || $item->promo_event_id) && is_null($item->produk_id);
+                if ($adalahBarisPaket) {
+                    return false;
+                }
+
+                // Sisanya: baris produk biasa ATAU baris pecahan produk
+                // asli di dalam paket (produk_id terisi) — ini yang
+                // dicetak kalau butuh produksi, karena nama_produk-nya
+                // sudah nama produk asli, bukan nama paket.
                 return (bool) $item->butuh_produksi;
             })->values();
 
