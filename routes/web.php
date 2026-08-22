@@ -32,6 +32,7 @@ use App\Http\Controllers\PengaturanPajakController;
 use App\Http\Controllers\KontenStatisController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PromoProdukEventController;
+use App\Http\Controllers\UkuranController;
 
 require __DIR__ . '/mobile.php';
 
@@ -126,11 +127,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/konten-statis/{slug}/edit', [KontenStatisController::class, 'edit'])->name('konten-statis.edit');
     Route::put('/konten-statis/{slug}', [KontenStatisController::class, 'update'])->name('konten-statis.update');
 
-    Route::patch('/produk-khusus-bundling/{produk}/toggle-status', [\App\Http\Controllers\ProdukKhususBundlingController::class, 'toggleStatus'])->name('produk-khusus-bundling.toggle-status');
-    Route::resource('produk-khusus-bundling', \App\Http\Controllers\ProdukKhususBundlingController::class)
-        ->parameters(['produk-khusus-bundling' => 'produk'])
-        ->middleware('permission:lihat_produk|tambah_produk|edit_produk|hapus_produk');
-
     Route::patch('/produk/{produk}/toggle-status', [ProdukController::class, 'toggleStatus'])->name('produk.toggle-status');
 
     Route::resource('produk', ProdukController::class)
@@ -191,6 +187,14 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/satuan/ajax', [SatuanController::class, 'storeAjax'])
         ->name('satuan.storeAjax')
         ->middleware('permission:tambah_satuan');
+
+    Route::resource('ukuran', UkuranController::class)
+        ->middleware('permission:lihat_ukuran|tambah_ukuran|edit_ukuran|hapus_ukuran');
+
+    Route::patch('/ukuran/{id}/toggle-status', [UkuranController::class, 'toggleStatus'])
+        ->name('ukuran.toggle-status')
+        ->middleware('permission:edit_ukuran');
+
 
 
     // Promo Produk
