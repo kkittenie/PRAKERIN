@@ -14,20 +14,33 @@ class BundlingController extends Controller
 {
     public function index(Request $request)
     {
-        try {
-            $search = $request->search;
+        if ($request->ajax()) {
+            try {
+                $query = Bundling::with('items.produk');
 
-            $bundling = Bundling::with('items.produk')
-                ->when($search, function ($query) use ($search) {
-                    $query->where('nama_bundling', 'like', "%{$search}%");
-                })
-                ->latest()
-                ->get();
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->addColumn('gambar_html', fn($item) => view('pages.bundling.partials.gambar', compact('item'))->render())
+                    ->addColumn('nama_bundling_html', fn($item) => view('pages.bundling.partials.nama', compact('item'))->render())
+                    ->editColumn('kode_bundling', fn($item) => view('pages.bundling.partials.kode', compact('item'))->render())
+                    ->addColumn('harga_html', fn($item) => view('pages.bundling.partials.harga', compact('item'))->render())
+                    ->addColumn('jumlah_produk_html', fn($item) => view('pages.bundling.partials.jumlah_produk', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('pages.bundling.partials.status', compact('item'))->render())
+                    ->addColumn('ketersediaan_html', fn($item) => view('pages.bundling.partials.ketersediaan', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('pages.bundling.partials.aksi', compact('item'))->render())
+                    ->rawColumns(['gambar_html', 'nama_bundling_html', 'kode_bundling', 'harga_html', 'jumlah_produk_html', 'status_html', 'ketersediaan_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
 
-            return view('pages.bundling.index', compact('bundling', 'search'));
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data bundling.'], 500);
+            }
         }
+
+        return view('pages.bundling.index');
     }
 
     public function create()

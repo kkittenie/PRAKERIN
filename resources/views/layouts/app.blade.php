@@ -407,7 +407,7 @@
             const infoEl = wrapper.find('.sdt-info');
             const paginationEl = wrapper.find('.sdt-pagination');
 
-            const dt = $table.DataTable(Object.assign({
+            const baseOptions = {
                 paging: true,
                 searching: true,
                 ordering: true,
@@ -423,19 +423,40 @@
                     renderPagination(this.api());
                     renderInfo(this.api());
                     renderEmptyState(this.api(), options.emptyText || 'Belum ada data');
+                    if (typeof options.onDraw === 'function') {
+                        options.onDraw(this.api());
+                    }
                 }
-            }, options.dtOptions || {}));
+            };
 
-            // Search binding
+            if (options.serverSide) {
+                baseOptions.serverSide = true;
+                baseOptions.processing = true;
+                if (options.ajax) {
+                    baseOptions.ajax = options.ajax;
+                }
+                if (options.columns) {
+                    baseOptions.columns = options.columns;
+                }
+            }
+
+            const dt = $table.DataTable(Object.assign(baseOptions, options.dtOptions || {}));
+
+            // Search binding with debounce
             if (searchInput.length) {
-                searchInput.on('input', function() {
-                    dt.search(this.value).draw();
+                let searchTimer = null;
+                searchInput.off('input keyup search').on('input keyup search', function() {
+                    const val = this.value;
+                    clearTimeout(searchTimer);
+                    searchTimer = setTimeout(function() {
+                        dt.search(val).draw();
+                    }, 300);
                 });
             }
 
             // Page size binding
             if (pageSizeSelect.length) {
-                pageSizeSelect.on('change', function() {
+                pageSizeSelect.off('change').on('change', function() {
                     dt.page.len(parseInt(this.value)).draw();
                 });
             }
@@ -462,9 +483,9 @@
                 html += '<button class="sdt-pg-next" ' + (info.page === info.pages - 1 ? 'disabled' : '') + '>&rsaquo;</button>';
                 paginationEl.html(html);
 
-                paginationEl.find('button[data-page]').on('click', function() { dt.page(parseInt($(this).data('page'))).draw(false); });
-                paginationEl.find('.sdt-pg-prev').on('click', function() { dt.page('previous').draw(false); });
-                paginationEl.find('.sdt-pg-next').on('click', function() { dt.page('next').draw(false); });
+                paginationEl.find('button[data-page]').off('click').on('click', function() { dt.page(parseInt($(this).data('page'))).draw(false); });
+                paginationEl.find('.sdt-pg-prev').off('click').on('click', function() { dt.page('previous').draw(false); });
+                paginationEl.find('.sdt-pg-next').off('click').on('click', function() { dt.page('next').draw(false); });
             }
 
             function renderEmptyState(api, text) {
@@ -484,8 +505,9 @@
                 }
             }
 
-            // Initial draw
-            dt.draw();
+            if (!options.serverSide) {
+                dt.draw();
+            }
 
             return dt;
         }

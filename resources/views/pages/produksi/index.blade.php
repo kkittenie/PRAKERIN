@@ -109,40 +109,7 @@
                             <th class="py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach($produksi as $index => $item)
-                            <tr data-produksi-row
-                                data-kadaluarsa-waktu="{{ $item->kadaluarsa_waktu ? $item->kadaluarsa_waktu->toIso8601String() : '' }}"
-                                data-sisa="{{ (int) $item->sisa_belum_disesuaikan }}"
-                                class="{{ $item->perlu_tindakan ? 'bg-red-50/70 dark:bg-red-500/10' : '' }}">
-                                <td>{{ $index + 1 }}</td>
-                                <td class="text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td>
-                                <td class="font-medium text-gray-800 dark:text-white">
-                                    {{ $item->produk->nama_produk }}
-                                    <span class="produksi-badge-tindakan items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400 {{ $item->perlu_tindakan ? 'inline-flex' : 'hidden' }}">
-                                        Kadaluwarsa · sisa {{ $item->sisa_belum_disesuaikan }} pcs
-                                    </span>
-                                    <span class="produksi-badge-plain items-center ml-2 rounded-full bg-red-100 dark:bg-red-500/20 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:text-red-400 {{ ($item->is_kadaluarsa && !$item->perlu_tindakan) ? 'inline-flex' : 'hidden' }}">
-                                        Kadaluwarsa
-                                    </span>
-                                </td>
-                                <td class="text-center">
-                                    <span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-3 py-1 text-green-700 dark:text-green-400 text-xs font-bold">{{ $item->jumlah_hasil }} pcs</span>
-                                    <div class="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">{{ $item->rincian_ukuran }}</div>
-                                </td>
-                                <td>{{ $item->user->name }}</td>
-                                <td class="text-xs text-gray-600 dark:text-gray-400">{{ $item->keterangan ?: '-' }}</td>
-                                <td class="text-right whitespace-nowrap">
-                                    <div class="inline-flex items-center gap-0.5 justify-end">
-                                        <a href="{{ route('produksi.show', $item->id) }}" title="Detail" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        </a>
-                                        <button type="button" title="Kurangi Stok" @click="modalOpen = true; produksiId = {{ $item->id }}; produksiNama = '{{ addslashes($item->produk->nama_produk) }}'; sisaBelum = {{ (int) $item->sisa_belum_disesuaikan }}; punyaUkuran = {{ $item->produk->punya_ukuran ? 'true' : 'false' }}; stokBesar = {{ (int) ($item->produk->stok_besar ?? 0) }}; stokKecil = {{ (int) ($item->produk->stok_kecil ?? 0) }}; ukuran = 'Besar'; jumlahMax = punyaUkuran ? Math.min(sisaBelum, stokBesar) : {{ (int) min($item->sisa_belum_disesuaikan, $item->produk->stok) }}" class="produksi-btn-kurangi items-center justify-center px-2 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 transition {{ $item->perlu_tindakan ? 'inline-flex' : 'hidden' }}">Kurangi Stok</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
 
@@ -195,8 +162,28 @@
 <script>
     $(document).ready(function() {
         initSaishoDataTable('produksiTable', {
+            serverSide: true,
+            ajax: {
+                url: '{{ route('produksi.index') }}',
+                data: function(d) {
+                    d.status = $('select[name="status"]').val();
+                    d.periode = $('select[name="periode"]').val();
+                    d.tanggal_ref = $('input[name="tanggal_ref"]:not(:disabled)').val();
+                }
+            },
+            columns: [
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'tanggal', name: 'tanggal' },
+                { data: 'produk_html', name: 'produk.nama_produk' },
+                { data: 'hasil_html', name: 'jumlah_hasil', className: 'text-center' },
+                { data: 'user.name', name: 'user.name', defaultContent: '-' },
+                { data: 'keterangan', name: 'keterangan' },
+                { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
+            ],
             emptyText: 'Belum ada data produksi',
-            columnDefs: [{ orderable: false, targets: -1 }]
+            onDraw: function() {
+                perbaruiKadaluwarsaProduksi();
+            }
         });
     });
 

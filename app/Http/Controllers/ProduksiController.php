@@ -132,15 +132,42 @@ class ProduksiController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->ajax()) {
+            try {
+                [$periode, $tanggalRef] = $this->resolvePeriode($request);
+                $query = $this->filteredProduksiQuery($request, $periode, $tanggalRef);
+
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->editColumn('tanggal', fn($item) => view('pages.produksi.partials.tanggal', compact('item'))->render())
+                    ->addColumn('produk_html', fn($item) => view('pages.produksi.partials.produk', compact('item'))->render())
+                    ->addColumn('hasil_html', fn($item) => view('pages.produksi.partials.hasil', compact('item'))->render())
+                    ->editColumn('user.name', fn($item) => e(optional($item->user)->name ?? '-'))
+                    ->editColumn('keterangan', fn($item) => view('pages.produksi.partials.keterangan', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('pages.produksi.partials.aksi', compact('item'))->render())
+                    ->setRowAttr([
+                        'data-produksi-row' => '',
+                        'data-kadaluarsa-waktu' => fn($item) => $item->kadaluarsa_waktu ? $item->kadaluarsa_waktu->toIso8601String() : '',
+                        'data-sisa' => fn($item) => (int) $item->sisa_belum_disesuaikan,
+                    ])
+                    ->setRowClass(fn($item) => $item->perlu_tindakan ? 'bg-red-50/70 dark:bg-red-500/10' : '')
+                    ->rawColumns(['tanggal', 'produk_html', 'hasil_html', 'keterangan', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
+
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data produksi.'], 500);
+            }
+        }
+
         try {
             $search = $request->search;
             $status = $request->status ?? 'semua';
 
             [$periode, $tanggalRef] = $this->resolvePeriode($request);
-
-            $produksi = $this->filteredProduksiQuery($request, $periode, $tanggalRef)
-                ->latest()
-                ->get();
 
             $produksiKadaluarsa = Produksi::with('produk')
                 ->get()
@@ -151,7 +178,7 @@ class ProduksiController extends Controller
 
             return view(
                 'pages.produksi.index',
-                compact('produksi', 'search', 'status', 'periode', 'tanggalRef', 'produksiKadaluarsa')
+                compact('search', 'status', 'periode', 'tanggalRef', 'produksiKadaluarsa')
             );
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

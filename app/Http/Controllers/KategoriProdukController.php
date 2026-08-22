@@ -11,20 +11,28 @@ class KategoriProdukController extends Controller
 {
     public function index(Request $request)
     {
-        try {
-            $search = $request->search;
+        if ($request->ajax()) {
+            try {
+                $query = KategoriProduk::withCount('produk');
 
-            $kategori = KategoriProduk::withCount('produk')
-                ->when($search, function ($query) use ($search) {
-                    $query->where('nama_kategori', 'like', "%{$search}%");
-                })
-                ->latest()
-                ->get();
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->editColumn('nama_kategori', fn($item) => view('pages.kategori-produk.partials.nama', compact('item'))->render())
+                    ->addColumn('produk_count_html', fn($item) => view('pages.kategori-produk.partials.produk_count', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('pages.kategori-produk.partials.aksi', compact('item'))->render())
+                    ->rawColumns(['nama_kategori', 'produk_count_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
 
-            return view('pages.kategori-produk.index', compact('kategori', 'search'));
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data kategori.'], 500);
+            }
         }
+
+        return view('pages.kategori-produk.index');
     }
 
     public function create()

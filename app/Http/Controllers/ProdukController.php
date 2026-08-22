@@ -15,22 +15,31 @@ class ProdukController extends Controller
 
     public function index(Request $request)
     {
-        try {
-            $search = $request->search;
+        if ($request->ajax()) {
+            try {
+                $query = Produk::with('kategori')->reguler();
 
-            $produk = Produk::with('kategori')
-                ->reguler()
-                ->when($search, function ($query) use ($search) {
-                    $query->where('nama_produk', 'like', "%{$search}%")
-                        ->orWhere('kode_produk', 'like', "%{$search}%");
-                })
-                ->latest()
-                ->get();
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addColumn('foto', fn($item) => view('pages.produk.partials.foto', compact('item'))->render())
+                    ->addColumn('nama_produk', fn($item) => view('pages.produk.partials.nama', compact('item'))->render())
+                    ->addColumn('harga_jual_html', fn($item) => view('pages.produk.partials.harga', compact('item'))->render())
+                    ->addColumn('stok_html', fn($item) => view('pages.produk.partials.stok', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('pages.produk.partials.status', compact('item'))->render())
+                    ->addColumn('ketersediaan_html', fn($item) => view('pages.produk.partials.ketersediaan', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('pages.produk.partials.aksi', compact('item'))->render())
+                    ->rawColumns(['foto', 'nama_produk', 'harga_jual_html', 'stok_html', 'status_html', 'ketersediaan_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
 
-            return view('pages.produk.index', compact('produk', 'search'));
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data produk.'], 500);
+            }
         }
+
+        return view('pages.produk.index');
     }
 
     public function toggleStatus(Produk $produk)

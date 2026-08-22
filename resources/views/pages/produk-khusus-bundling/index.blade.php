@@ -56,66 +56,7 @@
                             <th class="py-3.5 text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach($produk as $item)
-                        <tr>
-                            <td class="text-center">
-                                @if($item->foto)
-                                    <img src="{{ asset('storage/' . $item->foto) }}" class="w-11 h-11 aspect-square rounded-xl object-cover border mx-auto shadow-xs shrink-0">
-                                @else
-                                    <div class="w-11 h-11 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 text-sm font-bold mx-auto bg-gray-50 dark:bg-gray-800">-</div>
-                                @endif
-                            </td>
-                            <td class="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">
-                                <a href="{{ route('produk-khusus-bundling.show', $item->id) }}" class="hover:text-amber-600 dark:hover:text-amber-400 transition">
-                                    {{ $item->nama_produk }}
-                                </a>
-                            </td>
-                            <td class="font-mono text-sm text-gray-600 dark:text-gray-400">{{ $item->kode_produk }}</td>
-                            <td class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $item->kategori->nama_kategori ?? '-' }}</td>
-                            <td class="text-center">
-                                @if($item->stok <= $item->stok_minimum)
-                                    <span class="inline-flex rounded-full bg-red-100 dark:bg-red-500/10 px-3 py-1 text-xs font-bold text-red-700 dark:text-red-400">{{ $item->stok }}</span>
-                                @else
-                                    <span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-3 py-1 text-xs font-bold text-green-700 dark:text-green-400">{{ $item->stok }}</span>
-                                @endif
-                                <div class="text-xs text-gray-400 mt-0.5 font-medium">Min {{ $item->stok_minimum }}</div>
-                            </td>
-                            <td class="text-center">
-                                <form action="{{ route('produk-khusus-bundling.toggle-status', $item->id) }}" method="POST" class="inline">
-                                    @csrf @method('PATCH')
-                                    <label class="relative inline-flex items-center cursor-pointer" title="Klik untuk mengaktifkan/menonaktifkan produk">
-                                        <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
-                                        <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
-                                    </label>
-                                </form>
-                            </td>
-                            <td class="text-center">
-                                @if($item->stok <= 0 || $item->status_ketersediaan == 'perlu_diproduksi')
-                                    <span class="inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-3 py-1 text-xs font-semibold text-orange-700 dark:text-orange-400">Perlu Diproduksi</span>
-                                @else
-                                    <span class="inline-flex rounded-full bg-emerald-100 dark:bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">Ready</span>
-                                @endif
-                            </td>
-                            <td class="text-right whitespace-nowrap">
-                                <div class="inline-flex items-center gap-0.5 justify-end">
-                                    <a href="{{ route('produk-khusus-bundling.show', $item->id) }}" title="Detail" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    </a>
-                                    <a href="{{ route('produk-khusus-bundling.edit', $item->id) }}" title="Edit" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    </a>
-                                    <form action="{{ route('produk-khusus-bundling.destroy', $item->id) }}" method="POST" class="inline">
-                                        @csrf @method('DELETE')
-                                        <button type="button" title="Hapus" @click="bukaModalHapus($el.closest('form'), '{{ addslashes($item->nama_produk) }}')" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
 
@@ -150,10 +91,19 @@
 <script>
     $(document).ready(function() {
         initSaishoDataTable('produkKhususTable', {
-            emptyText: 'Belum ada produk khusus bundling',
-            columnDefs: [
-                { orderable: false, targets: [0, -1] }
-            ]
+            serverSide: true,
+            ajax: '{{ route('produk-khusus-bundling.index') }}',
+            columns: [
+                { data: 'foto', name: 'foto', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'nama_produk_html', name: 'nama_produk' },
+                { data: 'kode_produk', name: 'kode_produk', className: 'font-mono text-sm text-gray-600 dark:text-gray-400' },
+                { data: 'kategori.nama_kategori', name: 'kategori.nama_kategori', defaultContent: '-', className: 'text-sm font-medium text-gray-700 dark:text-gray-300' },
+                { data: 'stok_html', name: 'stok', className: 'text-center' },
+                { data: 'status_html', name: 'status_aktif', className: 'text-center' },
+                { data: 'ketersediaan_html', name: 'status_ketersediaan', className: 'text-center' },
+                { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
+            ],
+            emptyText: 'Belum ada produk khusus bundling'
         });
     });
 </script>
