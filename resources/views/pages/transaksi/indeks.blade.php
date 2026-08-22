@@ -1938,10 +1938,6 @@
                 produkUkuranTerpilih: null,
                 idPesananAkanDihapus: null,
 
-                // Modal pilih varian rasa bundling khusus (mis. bundling isi 4
-                // rasa bebas pilih). Dibuka waktu klik bundling yang
-                // jenis_produk-nya 'khusus_bundling', mirip alur pilih varian
-                // di aplikasi member/mobile.
                 bundlingUntukVarian: null,
                 varianModalQty: {},
                 varianModalCatatan: {},

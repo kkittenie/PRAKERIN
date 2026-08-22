@@ -83,10 +83,31 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                @if($item->stok <= $item->stok_minimum)
-                                    <span class="inline-flex rounded-full bg-red-100 dark:bg-red-500/10 px-3 py-1 text-xs font-bold text-red-700 dark:text-red-400">{{ $item->stok }}</span>
+                                @if($item->punya_ukuran)
+                                    <div class="flex flex-col items-center gap-1">
+                                        <div class="whitespace-nowrap">
+                                            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 mr-1">Besar:</span>
+                                            @if($item->stok_besar <= $item->stok_minimum)
+                                                <span class="inline-flex rounded-full bg-red-100 dark:bg-red-500/10 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:text-red-400">{{ $item->stok_besar }}</span>
+                                            @else
+                                                <span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-2.5 py-0.5 text-xs font-bold text-green-700 dark:text-green-400">{{ $item->stok_besar }}</span>
+                                            @endif
+                                        </div>
+                                        <div class="whitespace-nowrap">
+                                            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 mr-1">Kecil:</span>
+                                            @if($item->stok_kecil <= $item->stok_minimum)
+                                                <span class="inline-flex rounded-full bg-red-100 dark:bg-red-500/10 px-2.5 py-0.5 text-xs font-bold text-red-700 dark:text-red-400">{{ $item->stok_kecil }}</span>
+                                            @else
+                                                <span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-2.5 py-0.5 text-xs font-bold text-green-700 dark:text-green-400">{{ $item->stok_kecil }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
                                 @else
-                                    <span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-3 py-1 text-xs font-bold text-green-700 dark:text-green-400">{{ $item->stok }}</span>
+                                    @if($item->stok <= $item->stok_minimum)
+                                        <span class="inline-flex rounded-full bg-red-100 dark:bg-red-500/10 px-3 py-1 text-xs font-bold text-red-700 dark:text-red-400">{{ $item->stok }}</span>
+                                    @else
+                                        <span class="inline-flex rounded-full bg-green-100 dark:bg-green-500/10 px-3 py-1 text-xs font-bold text-green-700 dark:text-green-400">{{ $item->stok }}</span>
+                                    @endif
                                 @endif
                                 <div class="text-xs text-gray-400 mt-0.5 font-medium">Min {{ $item->stok_minimum }}</div>
                             </td>

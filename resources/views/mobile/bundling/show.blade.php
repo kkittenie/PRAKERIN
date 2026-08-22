@@ -7,9 +7,6 @@
 
     // Inisialisasi awal untuk Alpine JS
     $initialVarian = [];
-    // Catatan per varian (produk_id => catatan) supaya kalau lagi edit item
-    // yang sudah ada catatannya, input catatan-nya ke-prefill, bukan kosong
-    // (kalau kosong terus disubmit ulang, catatan lama malah ketimpa hilang).
     $initialVarianCatatan = [];
     if ($isKhusus) {
         if ($itemEdit && !empty($itemEdit['pilihan_khusus'])) {
@@ -105,7 +102,7 @@
             </a>
 
             <span class="absolute left-4 top-16 rounded-full bg-amber-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
-                Bundling {{ $isKhusus ? 'Khusus' : '' }}
+                Bundling
             </span>
 
             @if ($habis)
