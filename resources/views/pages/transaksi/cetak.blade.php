@@ -434,22 +434,60 @@
                 </div>
             @elseif ($jenis === 'dapur')
                 @php
-                    $itemsDapur = $transaksi->detailTransaksi->filter(function ($item) {
-                        // Baris ringkasan paket (bundling/promo event) punya
-                        // bundling_id/promo_event_id terisi TAPI produk_id kosong —
-                        // ini cuma nama paketnya, bukan produk yang harus dibikin,
-                        // jadi jangan pernah dicetak ke dapur.
-                        $adalahBarisPaket = ($item->bundling_id || $item->promo_event_id) && is_null($item->produk_id);
-                        if ($adalahBarisPaket) {
-                            return false;
-                        }
+                    // Baris header paket (bundling/promo event) nyimpen catatan asli
+                    // dari pembeli (mis. rincian rasa) — dipetakan per
+                    // bundling_id/promo_event_id supaya bisa ditempelkan lagi ke
+                    // baris pecahan produknya di bawah.
+                    $headerBundlingDapur = $transaksi->detailTransaksi
+                        ->filter(fn ($i) => $i->bundling_id && is_null($i->produk_id))
+                        ->keyBy('bundling_id');
+                    $headerPromoEventDapur = $transaksi->detailTransaksi
+                        ->filter(fn ($i) => $i->promo_event_id && is_null($i->produk_id))
+                        ->keyBy('promo_event_id');
 
-                        // Sisanya: baris produk biasa ATAU baris pecahan produk
-                        // asli di dalam paket (produk_id terisi) — ini yang
-                        // dicetak kalau butuh produksi, karena nama_produk-nya
-                        // sudah nama produk asli, bukan nama paket.
-                        return (bool) $item->butuh_produksi;
-                    })->values();
+                    $itemsDapur = $transaksi->detailTransaksi
+                        ->filter(function ($item) {
+                            // Baris ringkasan paket (bundling/promo event) punya
+                            // bundling_id/promo_event_id terisi TAPI produk_id kosong —
+                            // ini cuma nama paketnya, bukan produk yang harus dibikin,
+                            // jadi jangan pernah dicetak ke dapur.
+                            $adalahBarisPaket = ($item->bundling_id || $item->promo_event_id) && is_null($item->produk_id);
+                            if ($adalahBarisPaket) {
+                                return false;
+                            }
+
+                            // Sisanya: baris produk biasa ATAU baris pecahan produk
+                            // asli di dalam paket (produk_id terisi) — ini yang
+                            // dicetak kalau butuh produksi, karena nama_produk-nya
+                            // sudah nama produk asli, bukan nama paket.
+                            return (bool) $item->butuh_produksi;
+                        })
+                        ->map(function ($item) use ($headerBundlingDapur, $headerPromoEventDapur) {
+                            $catatanPaket = null;
+                            if ($item->bundling_id && $headerBundlingDapur->has($item->bundling_id)) {
+                                $catatanPaket = $headerBundlingDapur->get($item->bundling_id)->catatan;
+                            } elseif ($item->promo_event_id && $headerPromoEventDapur->has($item->promo_event_id)) {
+                                $catatanPaket = $headerPromoEventDapur->get($item->promo_event_id)->catatan;
+                            }
+                            return (object) [
+                                'nama_produk' => $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : ''),
+                                'jumlah' => $item->jumlah,
+                                'catatan' => $catatanPaket ?: $item->catatan,
+                            ];
+                        })
+                        // Gabung baris produk yang sama (mis. "pecahan" dari bundling
+                        // & promo event berbeda yang sama-sama butuh produksi) jadi
+                        // satu baris, jumlahnya dijumlahkan, biar tidak dobel/kepisah
+                        // di tiket dapur.
+                        ->groupBy('nama_produk')
+                        ->map(function ($group, $nama) {
+                            return (object) [
+                                'nama_produk' => $nama,
+                                'jumlah' => $group->sum('jumlah'),
+                                'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
+                            ];
+                        })
+                        ->values();
                 @endphp
                 <div class="text-center border-bottom-dashed" style="padding-bottom:10px; margin-bottom:10px;">
                     <h2 style="margin:0; font-size:16px; font-weight:700;">SAISHO CAKE & BAKERY</h2>
@@ -462,11 +500,8 @@
                 </div>
                 <div class="border-top-dashed border-bottom-dashed" style="padding:8px 0;">
                     @forelse ($itemsDapur as $index => $item)
-                        @php
-                            $namaDapur = $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : '');
-                        @endphp
                         <div class="item-row margin-bottom-sm" style="font-size:12px;">
-                            <span class="item-name"><strong>{{ $index + 1 }}. {{ $namaDapur }}</strong></span>
+                            <span class="item-name"><strong>{{ $index + 1 }}. {{ $item->nama_produk }}</strong></span>
                             <span class="item-qty" style="font-weight:bold;">x{{ $item->jumlah }}</span>
                         </div>
                         @if ($item->catatan)
@@ -675,22 +710,59 @@
             $struk .= centerWrapStruk("Sampai ketemu di pesanan berikutnya! ^^");
 
         } else {
-            $itemsDapur = $transaksi->detailTransaksi->filter(function ($item) {
-                // Baris ringkasan paket (bundling/promo event) punya
-                // bundling_id/promo_event_id terisi TAPI produk_id kosong —
-                // ini cuma nama paketnya, bukan produk yang harus dibikin,
-                // jadi jangan pernah dicetak ke dapur.
-                $adalahBarisPaket = ($item->bundling_id || $item->promo_event_id) && is_null($item->produk_id);
-                if ($adalahBarisPaket) {
-                    return false;
-                }
+            // Baris header paket (bundling/promo event) nyimpen catatan asli
+            // dari pembeli — dipetakan per bundling_id/promo_event_id supaya
+            // bisa ditempelkan lagi ke baris pecahan produknya di bawah.
+            $headerBundlingDapur = $transaksi->detailTransaksi
+                ->filter(fn ($i) => $i->bundling_id && is_null($i->produk_id))
+                ->keyBy('bundling_id');
+            $headerPromoEventDapur = $transaksi->detailTransaksi
+                ->filter(fn ($i) => $i->promo_event_id && is_null($i->produk_id))
+                ->keyBy('promo_event_id');
 
-                // Sisanya: baris produk biasa ATAU baris pecahan produk
-                // asli di dalam paket (produk_id terisi) — ini yang
-                // dicetak kalau butuh produksi, karena nama_produk-nya
-                // sudah nama produk asli, bukan nama paket.
-                return (bool) $item->butuh_produksi;
-            })->values();
+            $itemsDapur = $transaksi->detailTransaksi
+                ->filter(function ($item) {
+                    // Baris ringkasan paket (bundling/promo event) punya
+                    // bundling_id/promo_event_id terisi TAPI produk_id kosong —
+                    // ini cuma nama paketnya, bukan produk yang harus dibikin,
+                    // jadi jangan pernah dicetak ke dapur.
+                    $adalahBarisPaket = ($item->bundling_id || $item->promo_event_id) && is_null($item->produk_id);
+                    if ($adalahBarisPaket) {
+                        return false;
+                    }
+
+                    // Sisanya: baris produk biasa ATAU baris pecahan produk
+                    // asli di dalam paket (produk_id terisi) — ini yang
+                    // dicetak kalau butuh produksi, karena nama_produk-nya
+                    // sudah nama produk asli, bukan nama paket.
+                    return (bool) $item->butuh_produksi;
+                })
+                ->map(function ($item) use ($headerBundlingDapur, $headerPromoEventDapur) {
+                    $catatanPaket = null;
+                    if ($item->bundling_id && $headerBundlingDapur->has($item->bundling_id)) {
+                        $catatanPaket = $headerBundlingDapur->get($item->bundling_id)->catatan;
+                    } elseif ($item->promo_event_id && $headerPromoEventDapur->has($item->promo_event_id)) {
+                        $catatanPaket = $headerPromoEventDapur->get($item->promo_event_id)->catatan;
+                    }
+                    return (object) [
+                        'nama_produk' => $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : ''),
+                        'jumlah' => $item->jumlah,
+                        'catatan' => $catatanPaket ?: $item->catatan,
+                    ];
+                })
+                // Gabung baris produk yang sama (mis. "pecahan" dari bundling &
+                // promo event berbeda yang sama-sama butuh produksi) jadi satu
+                // baris, jumlahnya dijumlahkan, biar tidak dobel/kepisah di
+                // tiket dapur.
+                ->groupBy('nama_produk')
+                ->map(function ($group, $nama) {
+                    return (object) [
+                        'nama_produk' => $nama,
+                        'jumlah' => $group->sum('jumlah'),
+                        'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
+                    ];
+                })
+                ->values();
 
             $struk .= centerLineStruk("SAISHO CAKE & BAKERY");
             $struk .= centerLineStruk("TIKET PRODUKSI");
@@ -702,9 +774,8 @@
 
             $idx = 1;
             foreach ($itemsDapur as $item) {
-                $namaDapurText = $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : '');
                 $prefix = $idx . ". ";
-                $nameFull = $prefix . $namaDapurText;
+                $nameFull = $prefix . $item->nama_produk;
                 $rightQty = "x" . $item->jumlah;
                 $indent = str_repeat(' ', mb_strlen($prefix));
 

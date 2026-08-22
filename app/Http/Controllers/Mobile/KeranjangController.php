@@ -153,6 +153,12 @@ class KeranjangController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => $pesan,
+                    'item' => [
+                        'nama' => $promoEvent->nama_event,
+                        'foto_url' => $promoEvent->produk?->foto ? asset('storage/' . $promoEvent->produk->foto) : null,
+                        'ukuran' => null,
+                        'jumlah' => (int) $validated['jumlah'],
+                    ],
                     'cart' => [
                         'jumlah' => MemberCart::jumlahItem(),
                         'subtotal' => MemberCart::subtotal(),

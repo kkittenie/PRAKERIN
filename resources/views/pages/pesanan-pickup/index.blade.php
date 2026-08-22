@@ -252,7 +252,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
-                                                <template x-for="item in (detailData.detail_transaksi || [])" :key="item.id">
+                                                <template x-for="item in itemPesananUtama()" :key="item.id">
                                                     <tr class="text-gray-700 dark:text-gray-300">
                                                         <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">
                                                             <span x-text="item.nama_produk"></span>
@@ -262,6 +262,10 @@
                                                             <template x-if="item.butuh_produksi">
                                                                 <span class="ml-1.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
                                                             </template>
+                                                            <div x-show="item.isi_label" class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                                                                Isi: <span x-text="item.isi_label"></span>
+                                                                <span x-show="item.komponen_perlu_produksi" class="ml-1 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
+                                                            </div>
                                                             <div x-show="item.catatan" class="text-[11px] text-amber-600 dark:text-amber-400 font-medium italic mt-0.5" x-text="'Catatan: ' + item.catatan"></div>
                                                         </td>
                                                         <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400 whitespace-nowrap" x-text="'Rp ' + Number(item.harga_satuan).toLocaleString('id-ID')"></td>
@@ -275,7 +279,7 @@
 
                                     {{-- Mobile Card View --}}
                                     <div class="block sm:hidden divide-y divide-gray-100 dark:divide-gray-800 p-3">
-                                        <template x-for="item in (detailData.detail_transaksi || [])" :key="item.id">
+                                        <template x-for="item in itemPesananUtama()" :key="item.id">
                                             <div class="py-2.5 space-y-1">
                                                 <div class="flex justify-between items-start gap-2">
                                                     <div>
@@ -291,6 +295,10 @@
                                                 </div>
                                                 <div class="flex justify-between items-center text-[11px] text-gray-500 dark:text-gray-400">
                                                     <span x-text="item.jumlah + ' x Rp ' + Number(item.harga_satuan).toLocaleString('id-ID')"></span>
+                                                </div>
+                                                <div x-show="item.isi_label" class="text-[11px] text-gray-500 dark:text-gray-400">
+                                                    Isi: <span x-text="item.isi_label"></span>
+                                                    <span x-show="item.komponen_perlu_produksi" class="ml-1 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[9px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
                                                 </div>
                                                 <div x-show="item.catatan" class="text-[11px] text-amber-600 dark:text-amber-400 font-medium italic" x-text="'Catatan: ' + item.catatan"></div>
                                             </div>
@@ -694,6 +702,51 @@
                     } finally {
                         this.prosesSerahkan = false;
                     }
+                },
+
+                itemPesananUtama() {
+                    // Baris "pecahan" produksi (produk penyusun bundling/promo event,
+                    // harga_satuan 0) cuma dipakai internal buat tracking stok — jangan
+                    // ditampilkan sebagai baris terpisah di modal, bikin bingung kasir.
+                    // Sebagai gantinya, gabung jadi keterangan "Isi: ..." di baris utamanya.
+                    const semua = this.detailData?.detail_transaksi || [];
+
+                    const isKomponen = (item) => !!item.produk_id && (!!item.bundling_id || !!item.promo_event_id);
+
+                    const komponenUntuk = (parent) => {
+                        const cocok = semua.filter(item => {
+                            if (!isKomponen(item)) return false;
+                            if (parent.bundling_id) return item.bundling_id === parent.bundling_id;
+                            if (parent.promo_event_id) return item.promo_event_id === parent.promo_event_id;
+                            return false;
+                        });
+
+                        // Satu produk komponen bisa kepecah jadi beberapa baris
+                        // (mis. sebagian sudah ready, sisanya perlu diproduksi) —
+                        // gabung jadi satu per nama produk biar tidak dobel.
+                        const gabung = new Map();
+                        for (const k of cocok) {
+                            const existing = gabung.get(k.nama_produk);
+                            if (existing) {
+                                existing.jumlah += k.jumlah;
+                                existing.butuh_produksi = existing.butuh_produksi || k.butuh_produksi;
+                            } else {
+                                gabung.set(k.nama_produk, { nama_produk: k.nama_produk, jumlah: k.jumlah, butuh_produksi: k.butuh_produksi });
+                            }
+                        }
+                        return Array.from(gabung.values());
+                    };
+
+                    return semua
+                        .filter(item => !isKomponen(item))
+                        .map(item => {
+                            const komponen = (item.bundling_id || item.promo_event_id) ? komponenUntuk(item) : [];
+                            const isiLabel = komponen
+                                .map(k => `${k.nama_produk} x${k.jumlah}`)
+                                .join(', ');
+                            const perluProduksi = komponen.some(k => k.butuh_produksi);
+                            return { ...item, isi_label: isiLabel, komponen_perlu_produksi: perluProduksi };
+                        });
                 },
 
                 adaItemProduksi() {

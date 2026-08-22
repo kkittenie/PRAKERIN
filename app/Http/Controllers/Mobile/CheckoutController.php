@@ -265,21 +265,28 @@ class CheckoutController extends Controller
                     ]);
                 }
 
+                // Lacak stok yang "sudah kepakai" oleh item lain di checkout ini
+                // (per produk_id + ukuran), supaya kalau ada 2 item berbeda yang
+                // rebutan stok produk yang sama, item kedua tidak baca stok mentah
+                // dari DB (yang belum berkurang) — bisa bikin status "perlu
+                // diproduksi" salah hitung.
+                $stokTerpakai = [];
+
                 foreach ($items as $item) {
                     if (! empty($item['bundling_id'])) {
-                        $this->prosesItemBundlingCheckout($transaksi, $item);
+                        $this->prosesItemBundlingCheckout($transaksi, $item, $stokTerpakai);
                         continue;
                     }
 
                     if (! empty($item['promo_event_id'])) {
-                        $this->prosesItemPromoEventCheckout($transaksi, $item);
+                        $this->prosesItemPromoEventCheckout($transaksi, $item, $stokTerpakai);
                         continue;
                     }
 
                     $produk = Produk::lockForUpdate()->findOrFail($item['produk_id']);
                     $catatanItem = $item['catatan'] ?? null;
                     $ukuranItem = $item['ukuran'] ?? null;
-                    $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah'], $ukuranItem);
+                    $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah'], $ukuranItem, $stokTerpakai);
 
                     $hargaSatuanDetail = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
 
@@ -340,7 +347,7 @@ class CheckoutController extends Controller
             return ActivityLogHelper::handleException($e);
         }
     }
-    private function prosesItemBundlingCheckout(Transaksi $transaksi, array $item): void
+    private function prosesItemBundlingCheckout(Transaksi $transaksi, array $item, array &$stokTerpakai): void
     {
         $bundling = Bundling::with('items.produk')->findOrFail($item['bundling_id']);
         $jumlahBundling = (int) $item['jumlah'];
@@ -364,7 +371,7 @@ class CheckoutController extends Controller
             }
 
             $totalDibutuhkan = $bundlingItem->qty * $jumlahBundling;
-            $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan);
+            $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, null, $stokTerpakai);
 
             foreach ($pecahan as $bagian) {
                 DetailTransaksi::create([
@@ -382,7 +389,7 @@ class CheckoutController extends Controller
         }
     }
 
-    private function prosesItemPromoEventCheckout(Transaksi $transaksi, array $item): void
+    private function prosesItemPromoEventCheckout(Transaksi $transaksi, array $item, array &$stokTerpakai): void
     {
         $promoEvent = PromoProdukEvent::with('produk')->findOrFail($item['promo_event_id']);
         $jumlahEvent = (int) $item['jumlah'];
@@ -405,7 +412,7 @@ class CheckoutController extends Controller
         }
 
         $totalDibutuhkan = $promoEvent->isi_event * $jumlahEvent;
-        $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan);
+        $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, null, $stokTerpakai);
 
         foreach ($pecahan as $bagian) {
             DetailTransaksi::create([
@@ -422,7 +429,13 @@ class CheckoutController extends Controller
         }
     }
 
-    private function pecahJumlahProduksi(Produk $produk, int $jumlah, ?string $ukuran = null): array
+    /**
+     * @param array<string,int> $stokTerpakai Referensi array "sudah kepakai" per
+     *        produk (key: "{produk_id}|{ukuran}"), diakumulasi selama satu
+     *        proses checkout supaya item-item yang berebut produk yang sama
+     *        tidak sama-sama membaca stok mentah dari DB.
+     */
+    private function pecahJumlahProduksi(Produk $produk, int $jumlah, ?string $ukuran, array &$stokTerpakai): array
     {
         if ($produk->status_ketersediaan === 'perlu_diproduksi') {
             return [['jumlah' => $jumlah, 'butuh_produksi' => true]];
@@ -430,15 +443,20 @@ class CheckoutController extends Controller
 
         // Kalau produk punya varian ukuran, cek stok sesuai ukuran yang dipilih
         // (Besar/Kecil), bukan stok gabungan.
-        $stokTersedia = max(0, (int) floor((float) $produk->stokUntukUkuran($ukuran)));
+        $kunci = $produk->id . '|' . ($ukuran ?? '-');
+        $sudahDipakai = $stokTerpakai[$kunci] ?? 0;
+        $stokTersedia = max(0, (int) floor((float) $produk->stokUntukUkuran($ukuran)) - $sudahDipakai);
 
         if ($stokTersedia >= $jumlah) {
+            $stokTerpakai[$kunci] = $sudahDipakai + $jumlah;
             return [['jumlah' => $jumlah, 'butuh_produksi' => false]];
         }
 
         if ($stokTersedia <= 0) {
             return [['jumlah' => $jumlah, 'butuh_produksi' => true]];
         }
+
+        $stokTerpakai[$kunci] = $sudahDipakai + $stokTersedia;
 
         return [
             ['jumlah' => $stokTersedia, 'butuh_produksi' => false],

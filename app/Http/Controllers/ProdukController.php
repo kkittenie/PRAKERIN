@@ -88,8 +88,8 @@ class ProdukController extends Controller
             } else {
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
-                $validated['stok_besar'] = null;
-                $validated['stok_kecil'] = null;
+                $validated['stok_besar'] = 0;
+                $validated['stok_kecil'] = 0;
             }
 
             $validated['status_ketersediaan'] = $validated['stok'] <= 0
@@ -195,8 +195,8 @@ class ProdukController extends Controller
             } else {
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
-                $validated['stok_besar'] = null;
-                $validated['stok_kecil'] = null;
+                $validated['stok_besar'] = 0;
+                $validated['stok_kecil'] = 0;
             }
 
             $validated['status_ketersediaan'] = $validated['stok'] <= 0
