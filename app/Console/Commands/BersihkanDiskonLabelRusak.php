@@ -70,7 +70,7 @@ class BersihkanDiskonLabelRusak extends Command
 
             return Command::SUCCESS;
         } catch (\Throwable $e) {
-            activity()
+            activity('error')
                 ->withProperties([
                     'error_message' => $e->getMessage(),
                     'exception' => get_class($e),

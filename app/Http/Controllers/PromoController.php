@@ -18,66 +18,14 @@ class PromoController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('nama_promo_html', function ($item) {
-                        return '<a href="' . route('promo.show', $item->id) . '" class="hover:text-amber-600 dark:hover:text-amber-400 transition font-semibold text-gray-900 dark:text-white">' . e($item->nama_promo) . '</a>';
-                    })
-                    ->addColumn('diskon_html', function ($item) {
-                        if ($item->jenis_potongan === 'nominal') {
-                            return 'Rp ' . number_format($item->nominal_potongan, 0, ',', '.');
-                        }
-                        $persentaseFormatted = rtrim(rtrim(number_format($item->persentase, 2, ',', '.'), '0'), ',');
-                        return $persentaseFormatted . '%';
-                    })
-                    ->addColumn('min_pembelian_html', function ($item) {
-                        return $item->min_pembelian > 0 ? 'Rp ' . number_format($item->min_pembelian, 0, ',', '.') : '-';
-                    })
-                    ->addColumn('mulai_berlaku_html', function ($item) {
-                        return $item->mulai_berlaku ? $item->mulai_berlaku->format('d M Y H:i') : '-';
-                    })
-                    ->addColumn('selesai_berlaku_html', function ($item) {
-                        if ($item->selesai_berlaku) {
-                            return $item->selesai_berlaku->format('d M Y H:i');
-                        }
-                        return '<span class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">Selamanya</span>';
-                    })
-                    ->addColumn('jumlah_produk_html', function ($item) {
-                        return '<span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-800 dark:text-amber-400">' . $item->produks_count . ' Produk</span>';
-                    })
-                    ->addColumn('status_html', function ($item) {
-                        $now = now();
-                        $isKadaluwarsa = $item->selesai_berlaku && $now > $item->selesai_berlaku;
-                        $selesaiIso = $item->selesai_berlaku ? $item->selesai_berlaku->toIso8601String() : '';
-
-                        $badgeExpired = '<span class="promo-expired-badge items-center rounded-full bg-red-100 dark:bg-red-500/10 px-3 py-1 text-xs font-medium text-red-700 dark:text-red-400 ' . ($isKadaluwarsa ? 'inline-flex' : 'hidden') . '">Kadaluwarsa</span>';
-
-                        $checked = $item->status_aktif ? 'checked' : '';
-                        $csrf = csrf_field();
-                        $method = method_field('PATCH');
-                        $url = route('promo.toggle-status', $item->id);
-
-                        $toggleForm = '<form action="' . $url . '" method="POST" class="promo-toggle-form ' . ($isKadaluwarsa ? 'hidden' : 'inline') . '">' . $csrf . $method .
-                                      '<label class="relative inline-flex items-center cursor-pointer" title="Klik untuk mengaktifkan/menonaktifkan promo">' .
-                                      '<input type="checkbox" class="sr-only peer" onchange="this.form.submit()" ' . $checked . '>' .
-                                      '<div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[\'\'] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>' .
-                                      '</label></form>';
-
-                        return '<div data-promo-status-cell data-selesai="' . $selesaiIso . '">' . $badgeExpired . $toggleForm . '</div>';
-                    })
-                    ->addColumn('aksi', function ($item) {
-                        $showUrl = route('promo.show', $item->id);
-                        $editUrl = route('promo.edit', $item->id);
-                        $destroyUrl = route('promo.destroy', $item->id);
-                        $csrf = csrf_field();
-                        $method = method_field('DELETE');
-                        $namaEscaped = e(addslashes($item->nama_promo));
-
-                        return '<div class="inline-flex items-center gap-0.5 justify-end">' .
-                               '<a href="' . $showUrl . '" title="Detail" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition"><svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></a>' .
-                               '<a href="' . $editUrl . '" title="Edit" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition"><svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></a>' .
-                               '<form action="' . $destroyUrl . '" method="POST" class="inline">' . $csrf . $method .
-                               '<button type="button" title="Hapus" @click="bukaModalHapus($el.closest(\'form\'), \'' . $namaEscaped . '\')" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition"><svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>' .
-                               '</form></div>';
-                    })
+                    ->addColumn('nama_promo_html', fn($item) => view('pages.promo.partials.nama', compact('item'))->render())
+                    ->addColumn('diskon_html', fn($item) => view('pages.promo.partials.diskon', compact('item'))->render())
+                    ->addColumn('min_pembelian_html', fn($item) => view('pages.promo.partials.min_pembelian', compact('item'))->render())
+                    ->addColumn('mulai_berlaku_html', fn($item) => view('pages.promo.partials.mulai_berlaku', compact('item'))->render())
+                    ->addColumn('selesai_berlaku_html', fn($item) => view('pages.promo.partials.selesai_berlaku', compact('item'))->render())
+                    ->addColumn('jumlah_produk_html', fn($item) => view('pages.promo.partials.jumlah_produk', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('pages.promo.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('pages.promo.partials.aksi', compact('item'))->render())
                     ->rawColumns(['nama_promo_html', 'diskon_html', 'selesai_berlaku_html', 'jumlah_produk_html', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
