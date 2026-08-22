@@ -12,6 +12,7 @@ class DetailTransaksi extends Model
         'transaksi_id',
         'produk_id',
         'bundling_id',
+        'promo_event_id',
         'nama_produk',
         'ukuran',
         'harga_satuan',

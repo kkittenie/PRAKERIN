@@ -269,9 +269,9 @@
                                                         class="text-xxs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
                                                         Promo Event</p>
                                                     <h3 class="font-bold text-gray-900 dark:text-white text-sm mt-0.5 line-clamp-2 min-h-[2.5rem]"
-                                                        x-text="produk.nama_event"></h3>
-                                                    <p class="text-xs text-gray-400 dark:text-gray-500"
-                                                        x-text="produk.produk ? produk.produk.nama_produk : ''"></p>
+                                                        x-text="produk.produk ? produk.produk.nama_produk : produk.nama_event"></h3>
+                                                    <p class="text-xs text-gray-400 dark:text-gray-500 truncate"
+                                                        x-text="produk.nama_event"></p>
                                                 </div>
                                                 <div
                                                     class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
@@ -515,9 +515,9 @@
                                                 class="text-xxs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
                                                 Promo Event</p>
                                             <h3 class="font-bold text-gray-900 dark:text-white text-sm mt-0.5 line-clamp-2 min-h-[2.5rem]"
-                                                x-text="promoEvent.nama_event"></h3>
-                                            <p class="text-xs text-gray-400 dark:text-gray-500"
-                                                x-text="promoEvent.produk ? promoEvent.produk.nama_produk : ''"></p>
+                                                x-text="promoEvent.produk ? promoEvent.produk.nama_produk : promoEvent.nama_event"></h3>
+                                            <p class="text-xs text-gray-400 dark:text-gray-500 truncate"
+                                                x-text="promoEvent.nama_event"></p>
                                         </div>
                                         <div
                                             class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
