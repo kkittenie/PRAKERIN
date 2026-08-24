@@ -51,8 +51,14 @@
                         <p class="text-sm text-gray-500 dark:text-gray-400">Harga Jual</p>
                         <p class="font-semibold text-green-600 dark:text-green-400">
                             @if($produk->punya_ukuran)
-                                Besar: Rp {{ number_format($produk->harga_besar, 0, ',', '.') }} &nbsp;/&nbsp;
-                                Kecil: Rp {{ number_format($produk->harga_kecil, 0, ',', '.') }}
+                                @php $daftar = $produk->daftar_ukuran; @endphp
+                                @if(count($daftar))
+                                    @foreach($daftar as $u)
+                                        <span class="block">{{ $u['nama'] }}: Rp {{ number_format($u['harga'], 0, ',', '.') }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="text-xs text-gray-400 italic font-normal">Belum ada ukuran</span>
+                                @endif
                             @else
                                 Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}
                             @endif
@@ -62,19 +68,39 @@
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Harga Modal</p>
                         <p class="font-semibold text-gray-800 dark:text-white">
-                            Rp {{ number_format($produk->harga_modal, 0, ',', '.') }}
+                            @if($produk->punya_ukuran)
+                                @php $daftar = $produk->daftar_ukuran; @endphp
+                                @if(count($daftar))
+                                    @foreach($daftar as $u)
+                                        <span class="block">{{ $u['nama'] }}: Rp {{ number_format($u['harga_modal'], 0, ',', '.') }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="text-xs text-gray-400 italic font-normal">Belum ada ukuran</span>
+                                @endif
+                            @else
+                                Rp {{ number_format($produk->harga_modal, 0, ',', '.') }}
+                            @endif
                         </p>
                     </div>
 
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Stok</p>
-                        <p class="font-semibold {{ $produk->stok <= $produk->stok_minimum ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                            {{ $produk->stok }}
-                            <span class="text-gray-400 font-normal text-xs">(Min: {{ $produk->stok_minimum }})</span>
-                        </p>
                         @if($produk->punya_ukuran)
-                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                Besar: {{ $produk->stok_besar ?? 0 }} &nbsp;/&nbsp; Kecil: {{ $produk->stok_kecil ?? 0 }}
+                            @php $daftar = $produk->daftar_ukuran; @endphp
+                            @if(count($daftar))
+                                @foreach($daftar as $u)
+                                    <p class="font-semibold {{ $u['stok'] <= $u['stok_minimum'] ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                                        {{ $u['nama'] }}: {{ $u['stok'] }}
+                                        <span class="text-gray-400 font-normal text-xs">(Min: {{ $u['stok_minimum'] }})</span>
+                                    </p>
+                                @endforeach
+                            @else
+                                <p class="text-xs text-gray-400 italic">Belum ada ukuran</p>
+                            @endif
+                        @else
+                            <p class="font-semibold {{ $produk->stok <= $produk->stok_minimum ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                                {{ $produk->stok }}
+                                <span class="text-gray-400 font-normal text-xs">(Min: {{ $produk->stok_minimum }})</span>
                             </p>
                         @endif
                     </div>

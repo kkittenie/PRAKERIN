@@ -4,7 +4,7 @@
 
     <x-common.page-breadcrumb pageTitle="Produksi" />
 
-    <div class="space-y-6" x-data="{ modalOpen: false, produksiId: null, produksiNama: '', jumlahMax: 0, sisaBelum: 0, punyaUkuran: false, ukuran: 'Besar', stokBesar: 0, stokKecil: 0 }">
+    <div class="space-y-6" x-data="{ modalOpen: false, produksiId: null, produksiNama: '', jumlahMax: 0, sisaBelum: 0, punyaUkuran: false, ukuran: null, daftarUkuran: [] }">
 
         <div id="banner-produksi-kadaluwarsa" class="{{ $produksiKadaluarsa->count() > 0 ? '' : 'hidden' }} p-4 rounded-2xl border border-red-200 dark:border-red-500/20 bg-red-50/80 dark:bg-red-500/10 backdrop-blur-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="flex items-start md:items-center gap-3">
@@ -129,17 +129,17 @@
                     <template x-if="punyaUkuran">
                         <div class="mb-3">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ukuran</label>
-                            <div class="flex gap-2">
-                                <button type="button" @click="ukuran = 'Besar'; jumlahMax = Math.min(sisaBelum, stokBesar)"
-                                    :class="ukuran === 'Besar' ? 'bg-brand-500 text-white border-brand-500' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'"
-                                    class="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition">
-                                    Besar <span class="font-normal" x-text="'(' + stokBesar + ' pcs)'"></span>
-                                </button>
-                                <button type="button" @click="ukuran = 'Kecil'; jumlahMax = Math.min(sisaBelum, stokKecil)"
-                                    :class="ukuran === 'Kecil' ? 'bg-brand-500 text-white border-brand-500' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'"
-                                    class="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition">
-                                    Kecil <span class="font-normal" x-text="'(' + stokKecil + ' pcs)'"></span>
-                                </button>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-if="!daftarUkuran || daftarUkuran.length === 0">
+                                    <p class="text-xs text-gray-400 italic">Belum ada ukuran aktif untuk produk ini.</p>
+                                </template>
+                                <template x-for="opsi in daftarUkuran" :key="opsi.nama">
+                                    <button type="button" @click="ukuran = opsi.nama; jumlahMax = Math.min(sisaBelum, opsi.stok)"
+                                        :class="ukuran === opsi.nama ? 'bg-brand-500 text-white border-brand-500' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'"
+                                        class="flex-1 min-w-[45%] rounded-lg border px-3 py-2 text-sm font-semibold transition">
+                                        <span x-text="opsi.nama"></span> <span class="font-normal" x-text="'(' + opsi.stok + ' pcs)'"></span>
+                                    </button>
+                                </template>
                             </div>
                             <input type="hidden" name="ukuran" :value="ukuran">
                         </div>

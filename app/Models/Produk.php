@@ -234,6 +234,18 @@ class Produk extends Model
         return collect($daftar)->sortBy('harga')->first();
     }
 
+    /**
+     * Nama ukuran default yang aman dipakai kalau request gak nyertain
+     * parameter ukuran (mis. JS gagal kirim). Dulu di-hardcode 'Kecil',
+     * yang keliru buat produk yang cuma punya ukuran custom (misal cuma
+     * "Jumbo" doang, gak ada baris "Kecil"). Sekarang pakai ukuran aktif
+     * termurah yang beneran ada di produk ini.
+     */
+    public function ukuranDefault(): ?string
+    {
+        return $this->ukuranTermurah()['nama'] ?? null;
+    }
+
     public function getHarga(?string $ukuran = null): float
     {
         if ($this->punya_ukuran) {

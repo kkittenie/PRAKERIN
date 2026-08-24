@@ -9,6 +9,7 @@ use App\Models\BahanBaku;
 use App\Models\ProduksiBahanBaku;
 use App\Events\StatusProduksiUpdate;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -81,7 +82,7 @@ class ProduksiController extends Controller
             END
         ";
 
-        return Produksi::with(['produk', 'user', 'detailBahan.bahanBaku.satuan'])
+        return Produksi::with(['produk.produkUkurans.ukuran', 'user', 'detailBahan.bahanBaku.satuan'])
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('produk', function ($q) use ($search) {
                     $q->where('nama_produk', 'like', "%{$search}%");
@@ -577,9 +578,19 @@ class ProduksiController extends Controller
         try {
             $produk = $produksi->produk;
 
+            // Validasi ukuran dinamis — dulu di-hardcode 'in:Besar,Kecil',
+            // sekarang dicek terhadap daftar ukuran aktif produk ini
+            // sendiri (bisa nama apapun yang didaftarin di menu Ukuran).
+            $namaUkuranValid = $produk && $produk->punya_ukuran
+                ? collect($produk->daftar_ukuran)->pluck('nama')->all()
+                : [];
+
             $request->validate([
                 'jumlah' => 'required|integer|min:1',
-                'ukuran' => [$produk && $produk->punya_ukuran ? 'required' : 'nullable', 'in:Besar,Kecil'],
+                'ukuran' => [
+                    $produk && $produk->punya_ukuran ? 'required' : 'nullable',
+                    Rule::in($namaUkuranValid),
+                ],
             ]);
 
             $sisa = $produksi->sisa_belum_disesuaikan;

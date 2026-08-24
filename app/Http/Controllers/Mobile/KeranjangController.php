@@ -23,7 +23,7 @@ class KeranjangController extends Controller
                 'catatan' => 'nullable|string|max:255',
             ]);
 
-            $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? 'Kecil') : null;
+            $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;
             $hargaAsal = $produk->getHarga($ukuran);
 
             $diskonSatuan = 0;
@@ -209,7 +209,7 @@ class KeranjangController extends Controller
                     ->with('error', 'Item keranjang tidak ditemukan, mungkin sudah dihapus.');
             }
 
-            $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? 'Kecil') : null;
+            $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;
             $hargaAsal = $produk->getHarga($ukuran);
 
             $diskonSatuan = 0;

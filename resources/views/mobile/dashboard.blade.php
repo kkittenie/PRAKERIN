@@ -319,7 +319,9 @@
                     $hargaAsli = $produk->harga_jual;
                     $hargaFinal = $produk->harga_diskon;
                     $adaPromo = $hargaFinal < $hargaAsli;
-                    $habis = $produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0;
+                    $habis = $produk->punya_ukuran
+                        ? $produk->habisSemuaUkuran()
+                        : ($produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0);
                 @endphp
                 <a href="{{ route('member.produk.show', $produk) }}"
                    onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
@@ -346,8 +348,19 @@
                         <div class="mt-2 flex items-center justify-between gap-1">
                             <div class="min-w-0">
                                 @if ($produk->punya_ukuran)
+                                    @php
+                                        $daftarHarga = collect($produk->daftar_ukuran)->pluck('harga');
+                                        $hargaMin = $daftarHarga->min();
+                                        $hargaMax = $daftarHarga->max();
+                                    @endphp
                                     <p class="truncate text-xs font-extrabold text-gray-900">
-                                        Rp {{ number_format($produk->harga_kecil, 0, ',', '.') }} - Rp {{ number_format($produk->harga_besar, 0, ',', '.') }}
+                                        @if($daftarHarga->isEmpty())
+                                            <span class="text-gray-400 italic font-normal text-[10px]">Segera hadir</span>
+                                        @elseif($hargaMin == $hargaMax)
+                                            Rp {{ number_format($hargaMin, 0, ',', '.') }}
+                                        @else
+                                            Rp {{ number_format($hargaMin, 0, ',', '.') }} - Rp {{ number_format($hargaMax, 0, ',', '.') }}
+                                        @endif
                                     </p>
                                 @else
                                     <p data-harga-asli class="truncate text-[10px] text-gray-400 line-through" style="{{ $adaPromo ? '' : 'display:none' }}">Rp {{ number_format($hargaAsli, 0, ',', '.') }}</p>
