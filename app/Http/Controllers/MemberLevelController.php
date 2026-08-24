@@ -12,22 +12,31 @@ class MemberLevelController extends Controller
 {
     public function index(Request $request)
     {
-        try {
-            $search = $request->search;
+        if ($request->ajax()) {
+            try {
+                $query = MemberLevel::query();
 
-            $levels = MemberLevel::when($search, function ($query) use ($search) {
-                    $query->where('nama_level', 'like', "%{$search}%");
-                })
-                ->orderBy('minimal_poin')
-                ->get();
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->addColumn('nama_level_html', fn($item) => view('pages.member-level.partials.nama', compact('item'))->render())
+                    ->addColumn('minimal_poin_html', fn($item) => view('pages.member-level.partials.minimal_poin', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('pages.member-level.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('pages.member-level.partials.aksi', compact('item'))->render())
+                    ->rawColumns(['nama_level_html', 'minimal_poin_html', 'status_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
 
-            return view('pages.member-level.index', [
-                'title' => 'Aturan Naik Level',
-                'levels' => $levels,
-            ]);
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data level membership.'], 500);
+            }
         }
+
+        return view('pages.member-level.index', [
+            'title' => 'Aturan Naik Level',
+        ]);
     }
 
     public function create()

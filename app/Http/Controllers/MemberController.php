@@ -14,23 +14,37 @@ class MemberController extends Controller
      */
     public function index(Request $request)
     {
-        try {
-            $search = $request->input('search');
+        if ($request->ajax()) {
+            try {
+                $query = Member::query();
 
-            $members = Member::query()
-                ->when($search, function ($query, $search) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('nama', 'like', "%{$search}%")
-                            ->orWhere('username', 'like', "%{$search}%");
-                    });
-                })
-                ->latest()
-                ->get();
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->addColumn('nama_html', fn($item) => view('pages.member.partials.nama', compact('item'))->render())
+                    ->editColumn('username', fn($item) => $item->username ? '@' . $item->username : '-')
+                    ->editColumn('email', fn($item) => $item->email ?: '-')
+                    ->editColumn('poin', fn($item) => number_format($item->poin ?? 0, 0, ',', '.'))
+                    ->addColumn('level_html', fn($item) => view('pages.member.partials.level', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('pages.member.partials.aksi', compact('item'))->render())
+                    ->orderColumn('level_html', function ($query, $order) {
+                        // Level adalah hasil hitungan dari poin (bukan kolom asli di DB),
+                        // jadi sort level diarahkan ke sort poin karena level selalu
+                        // berbanding lurus dengan ambang poin (minimal_poin) member_levels.
+                        $query->orderBy('poin', $order);
+                    })
+                    ->rawColumns(['nama_html', 'level_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
 
-            return view('pages.member.index', compact('members', 'search'));
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data member.'], 500);
+            }
         }
+
+        return view('pages.member.index');
     }
 
     /**

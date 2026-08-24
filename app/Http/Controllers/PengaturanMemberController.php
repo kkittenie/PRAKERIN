@@ -10,21 +10,31 @@ class PengaturanMemberController extends Controller
 {
     public function index(Request $request)
     {
-        try {
-            $query = PengaturanMember::query();
+        if ($request->ajax()) {
+            try {
+                $query = PengaturanMember::query();
 
-            if ($request->filled('search')) {
-                $query->where('nama_aturan', 'like', '%' . $request->search . '%');
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->addColumn('belanja_html', fn($item) => view('pages.pengaturan-member.partials.belanja', compact('item'))->render())
+                    ->addColumn('poin_html', fn($item) => view('pages.pengaturan-member.partials.poin', compact('item'))->render())
+                    ->addColumn('mulai_html', fn($item) => view('pages.pengaturan-member.partials.mulai', compact('item'))->render())
+                    ->addColumn('selesai_html', fn($item) => view('pages.pengaturan-member.partials.selesai', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('pages.pengaturan-member.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('pages.pengaturan-member.partials.aksi', compact('item'))->render())
+                    ->rawColumns(['belanja_html', 'poin_html', 'mulai_html', 'selesai_html', 'status_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
+
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data pengaturan member.'], 500);
             }
-
-            $pengaturanMember = $query
-                ->latest()
-                ->get();
-            
-            return view('pages.pengaturan-member.index', compact('pengaturanMember'));
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
         }
+
+        return view('pages.pengaturan-member.index');
     }
 
     public function create()

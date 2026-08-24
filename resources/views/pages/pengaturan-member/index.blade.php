@@ -55,65 +55,7 @@
                             <th class="py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach($pengaturanMember as $index => $item)
-                            @php
-                                $now = now();
-                                if (!$item->status_aktif) {
-                                    $status = 'Nonaktif';
-                                    $badgeColor = 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400';
-                                } elseif ($now < $item->mulai_berlaku) {
-                                    $status = 'Belum Mulai';
-                                    $badgeColor = 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400';
-                                } elseif ($item->selesai_berlaku && $now > $item->selesai_berlaku) {
-                                    $status = 'Kadaluwarsa';
-                                    $badgeColor = 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400';
-                                } else {
-                                    $status = 'Aktif';
-                                    $badgeColor = 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400';
-                                }
-                            @endphp
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td class="font-semibold text-gray-900 dark:text-white">{{ $item->nama_aturan }}</td>
-                                <td class="text-center text-xs">Rp {{ number_format($item->minimal_belanja, 0, ',', '.') }}</td>
-                                <td class="text-center font-bold text-brand-600 dark:text-brand-400 text-xs whitespace-nowrap">{{ $item->poin }} poin</td>
-                                <td class="text-center text-xs">{{ $item->mulai_berlaku ? $item->mulai_berlaku->format('d M Y H:i') : '-' }}</td>
-                                <td class="text-center text-xs">
-                                    @if($item->selesai_berlaku)
-                                        {{ $item->selesai_berlaku->format('d M Y H:i') }}
-                                    @else
-                                        <span class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">Selamanya</span>
-                                    @endif
-                                </td>
-                                <td class="text-center" data-promo-status-cell data-selesai="{{ $item->selesai_berlaku ? $item->selesai_berlaku->toIso8601String() : '' }}">
-                                    <span class="promo-expired-badge inline-flex items-center rounded-full bg-red-100 dark:bg-red-500/10 px-3 py-1 text-xs font-medium text-red-700 dark:text-red-400 {{ ($item->selesai_berlaku && $now > $item->selesai_berlaku) ? '' : 'hidden' }}">
-                                        Kadaluwarsa
-                                    </span>
-                                    <form action="{{ route('pengaturan-member.toggle-status', $item->id) }}" method="POST" class="promo-toggle-form inline {{ ($item->selesai_berlaku && $now > $item->selesai_berlaku) ? 'hidden' : '' }}">
-                                        @csrf @method('PATCH')
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
-                                            <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
-                                        </label>
-                                    </form>
-                                </td>
-                                <td class="text-right whitespace-nowrap">
-                                    <div class="inline-flex items-center gap-0.5 justify-end">
-                                        <a href="{{ route('pengaturan-member.edit', $item->id) }}" title="Edit" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                        </a>
-                                        <form action="{{ route('pengaturan-member.destroy', $item->id) }}" method="POST" class="inline">
-                                            @csrf @method('DELETE')
-                                            <button type="button" title="Hapus" @click="bukaModalHapus($el.closest('form'), '{{ addslashes($item->nama_aturan) }}')" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
 
@@ -147,8 +89,22 @@
 <script>
     $(document).ready(function() {
         initSaishoDataTable('pengaturanMemberTable', {
+            serverSide: true,
+            ajax: '{{ route('pengaturan-member.index') }}',
+            columns: [
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'nama_aturan', name: 'nama_aturan', className: 'font-semibold text-gray-900 dark:text-white' },
+                { data: 'belanja_html', name: 'minimal_belanja', className: 'text-center text-xs' },
+                { data: 'poin_html', name: 'poin', className: 'text-center' },
+                { data: 'mulai_html', name: 'mulai_berlaku', className: 'text-center text-xs' },
+                { data: 'selesai_html', name: 'selesai_berlaku', className: 'text-center text-xs' },
+                { data: 'status_html', name: 'status_aktif', className: 'text-center' },
+                { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
+            ],
             emptyText: 'Belum ada aturan poin member',
-            columnDefs: [{ orderable: false, targets: -1 }]
+            onDraw: function() {
+                perbaruiKadaluwarsaPromo();
+            }
         });
     });
 
@@ -162,8 +118,14 @@
             const form = cell.querySelector('.promo-toggle-form');
             const kadaluwarsa = !!selesai && sekarang > new Date(selesai);
 
-            if (badge) badge.classList.toggle('hidden', !kadaluwarsa);
-            if (form) form.classList.toggle('hidden', kadaluwarsa);
+            if (badge) {
+                badge.classList.toggle('hidden', !kadaluwarsa);
+                badge.classList.toggle('inline-flex', kadaluwarsa);
+            }
+            if (form) {
+                form.classList.toggle('hidden', kadaluwarsa);
+                form.classList.toggle('inline', !kadaluwarsa);
+            }
         });
     }
 

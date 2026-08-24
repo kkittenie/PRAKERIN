@@ -52,53 +52,7 @@
                             <th class="py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach($levels as $index => $item)
-                            @php
-                                $badgeClasses = match ($item->warna_badge) {
-                                    'yellow' => 'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
-                                    'slate' => 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-300',
-                                    'amber' => 'bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400',
-                                    'blue' => 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
-                                    'green' => 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400',
-                                    'purple' => 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400',
-                                    'red' => 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400',
-                                    default => 'bg-gray-100 text-gray-600 dark:bg-gray-500/10 dark:text-gray-300',
-                                };
-                            @endphp
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>
-                                    <span class="rounded-full px-3 py-1 text-xs font-medium {{ $badgeClasses }}">
-                                        {{ $item->nama_level }}
-                                    </span>
-                                </td>
-                                <td class="text-center text-xs font-semibold">{{ number_format($item->minimal_poin, 0, ',', '.') }} poin</td>
-                                <td class="text-center">
-                                    <form action="{{ route('member-level.toggle-status', $item->id) }}" method="POST" class="inline">
-                                        @csrf @method('PATCH')
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
-                                            <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
-                                        </label>
-                                    </form>
-                                </td>
-                                <td class="text-right whitespace-nowrap">
-                                    <div class="inline-flex items-center gap-0.5 justify-end">
-                                        <a href="{{ route('member-level.edit', $item->id) }}" title="Edit" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                        </a>
-                                        <form action="{{ route('member-level.destroy', $item->id) }}" method="POST" class="inline">
-                                            @csrf @method('DELETE')
-                                            <button type="button" title="Hapus" @click="bukaModalHapus($el.closest('form'), '{{ addslashes($item->nama_level) }}')" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
 
@@ -132,8 +86,16 @@
 <script>
     $(document).ready(function() {
         initSaishoDataTable('memberLevelTable', {
-            emptyText: 'Belum ada data level membership',
-            columnDefs: [{ orderable: false, targets: -1 }]
+            serverSide: true,
+            ajax: '{{ route('member-level.index') }}',
+            columns: [
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'nama_level_html', name: 'nama_level' },
+                { data: 'minimal_poin_html', name: 'minimal_poin', className: 'text-center text-xs font-semibold' },
+                { data: 'status_html', name: 'status_aktif', className: 'text-center' },
+                { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
+            ],
+            emptyText: 'Belum ada data level membership'
         });
     });
 </script>

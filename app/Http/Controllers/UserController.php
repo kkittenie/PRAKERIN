@@ -24,6 +24,23 @@ class UserController extends Controller
                     ->editColumn('name', fn($user) => view('pages.users.partials.name', ['item' => $user])->render())
                     ->editColumn('username', fn($user) => view('pages.users.partials.username', ['item' => $user])->render())
                     ->addColumn('aksi', fn($user) => view('pages.users.partials.aksi', ['item' => $user])->render())
+                    ->orderColumn('roles.name', function ($query, $order) {
+                        // 'roles.name' bukan kolom di tabel users, melainkan relasi
+                        // many-to-many lewat model_has_roles (paket Spatie Permission).
+                        // Yajra tidak bisa auto-order relasi seperti ini, jadi di-join manual.
+                        $query->leftJoin('model_has_roles', function ($join) {
+                                $join->on('model_has_roles.model_id', '=', 'users.id')
+                                    ->where('model_has_roles.model_type', '=', User::class);
+                            })
+                            ->leftJoin('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                            ->orderBy('roles.name', $order)
+                            ->select('users.*');
+                    })
+                    ->filterColumn('roles.name', function ($query, $keyword) {
+                        $query->whereHas('roles', function ($q) use ($keyword) {
+                            $q->where('name', 'like', "%{$keyword}%");
+                        });
+                    })
                     ->rawColumns(['role_html', 'name', 'username', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
