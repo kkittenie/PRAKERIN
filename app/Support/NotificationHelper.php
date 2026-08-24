@@ -22,7 +22,12 @@ class NotificationHelper
         $readKeys = array_map('strval', session()->get('read_notifications', []));
 
         // 1. Notifikasi dari database
-        $dbNotifications = AppNotification::latest()
+        // Sejak app_notifications dipakai bareng buat notif member (lihat migrasi
+        // add_member_notif_support), wajib exclude yang punya member_id supaya
+        // notifikasi pribadi member (mis. "Pesanan kamu sudah kami terima" dgn
+        // url /mobile/pesanan/{id}) nggak nyasar ke dropdown dashboard admin.
+        $dbNotifications = AppNotification::whereNull('member_id')
+            ->latest()
             ->limit($limit)
             ->get();
 

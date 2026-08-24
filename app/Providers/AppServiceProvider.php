@@ -33,8 +33,10 @@ class AppServiceProvider extends ServiceProvider
         URL::forceRootUrl(config('app.url'));
 
         RedirectIfAuthenticated::redirectUsing(function ($request) {
-            if (Auth::guard('member')->check()) {
-                return route('member.beranda');
+            if ($request->is('mobile/*')) {
+                return Auth::guard('member')->check()
+                    ? route('member.beranda')
+                    : route('member.welcome');
             }
 
             return route('dashboard');

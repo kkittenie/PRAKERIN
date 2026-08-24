@@ -41,6 +41,16 @@ class Produk extends Model
         'harga_diskon'
     ];
 
+    public function scopeReguler($query)
+    {
+        return $query->where('is_khusus_bundling', false);
+    }
+
+    public function scopeKhususBundling($query)
+    {
+        return $query->where('is_khusus_bundling', true);
+    }
+
     public function kategori()
     {
         return $this->belongsTo(KategoriProduk::class, 'kategori_id');

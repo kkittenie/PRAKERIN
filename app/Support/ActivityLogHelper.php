@@ -50,6 +50,13 @@ class ActivityLogHelper
             ], 500);
         }
 
+        $previousUrl = rtrim(url()->previous(), '/');
+        $currentUrl = rtrim(request()->fullUrl(), '/');
+
+        if ($previousUrl === '' || $previousUrl === $currentUrl) {
+            abort(500, $message);
+        }
+
         return back()->with('error', $message);
     }
 }

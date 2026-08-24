@@ -56,7 +56,9 @@ class NotificationController extends Controller
         try {
             if (str_starts_with($id, 'db_') || is_numeric($id)) {
                 $cleanId = str_replace('db_', '', $id);
-                AppNotification::where('id', $cleanId)->update(['is_read' => true]);
+                // whereNull('member_id') = cuma boleh nandain notif admin, bukan
+                // notif pribadi member yang kebetulan lolos ke daftar ini.
+                AppNotification::where('id', $cleanId)->whereNull('member_id')->update(['is_read' => true]);
             }
 
             $readNotifs = session()->get('read_notifications', []);
@@ -82,7 +84,7 @@ class NotificationController extends Controller
     public function markAllAsRead(Request $request)
     {
         try {
-            AppNotification::where('is_read', false)->update(['is_read' => true]);
+            AppNotification::where('is_read', false)->whereNull('member_id')->update(['is_read' => true]);
 
             $allLive = NotificationHelper::getLiveNotifications(100);
             $allKeys = array_map('strval', array_column($allLive, 'id'));
