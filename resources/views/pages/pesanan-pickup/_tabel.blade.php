@@ -28,53 +28,7 @@
                     <th class="py-3 text-right">Aksi</th>
                 </tr>
             </thead>
-            <tbody>
-                @foreach ($pesanan as $index => $item)
-                    @php
-                        $statusBadge = [
-                            \App\Models\Transaksi::STATUS_DIPROSES => ['label' => 'Diproses', 'class' => 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'],
-                            \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => ['label' => 'Siap Diambil', 'class' => 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400'],
-                            \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => ['label' => 'Sudah Diambil', 'class' => 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400'],
-                            \App\Models\Transaksi::STATUS_DIBATALKAN => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400'],
-                        ][$item->status_pesanan] ?? ['label' => '-', 'class' => 'bg-gray-100 text-gray-500'];
-
-                        if ($item->status_pembayaran === 'Lunas') {
-                            $bayarBadge = ['label' => 'Lunas', 'class' => 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400'];
-                        } elseif ($item->bukti_dikonfirmasi_pada) {
-                            $bayarBadge = ['label' => 'Menunggu Konfirmasi', 'class' => 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'];
-                        } else {
-                            $bayarBadge = ['label' => 'Menunggu Pembayaran', 'class' => 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400'];
-                        }
-                    @endphp
-                    <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>
-                            <span class="font-mono text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">{{ $item->kode_transaksi }}</span>
-                        </td>
-                        <td>
-                            <span class="block font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{{ $item->nama_pembeli }}</span>
-                            <span class="block text-xs text-gray-400">{{ $item->member->no_hp ?? '-' }}</span>
-                        </td>
-                        <td class="text-right font-semibold text-gray-800 dark:text-gray-200">Rp {{ number_format($item->total_bayar, 0, ',', '.') }}</td>
-                        <td class="text-xs text-gray-500 dark:text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</td>
-                        <td class="text-center">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusBadge['class'] }}">
-                                {{ $statusBadge['label'] }}
-                            </span>
-                        </td>
-                        <td class="text-center">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $bayarBadge['class'] }}">
-                                {{ $bayarBadge['label'] }}
-                            </span>
-                        </td>
-                        <td class="text-right whitespace-nowrap">
-                            <button @click="lihatDetail({{ $item->id }})" title="Detail" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                            </button>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
+            <tbody></tbody>
         </table>
     </div>
 
@@ -85,10 +39,42 @@
 </div>
 
 <script>
+    window.reloadPesananPickupTable = function() {
+        if (window.jQuery && $.fn.DataTable.isDataTable('#pesananPickupTable')) {
+            $('#pesananPickupTable').DataTable().ajax.reload();
+        }
+    };
+
     $(document).ready(function() {
         initSaishoDataTable('pesananPickupTable', {
-            emptyText: 'Belum ada pesanan',
-            columnDefs: [{ orderable: false, targets: -1 }]
+            serverSide: true,
+            order: [[4, 'desc']],
+            ajax: {
+                url: '{{ route('pesanan-pickup.indeks') }}',
+                data: function(d) {
+                    d.status_pesanan = $('#filterPesananPickup select[name="status_pesanan"]').val();
+                    d.status_pembayaran = $('#filterPesananPickup select[name="status_pembayaran"]').val();
+                    d.cari = $('#filterPesananPickup input[name="cari"]').val();
+                    d.tanggal_mulai = $('#filterPesananPickup input[name="tanggal_mulai"]').val();
+                    d.tanggal_selesai = $('#filterPesananPickup input[name="tanggal_selesai"]').val();
+                }
+            },
+            columns: [
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'kode_html', name: 'kode_transaksi' },
+                { data: 'pembeli_html', name: 'nama_pembeli' },
+                { data: 'total_bayar', name: 'total_bayar', searchable: false, className: 'text-right font-semibold text-gray-800 dark:text-gray-200' },
+                { data: 'created_at', name: 'created_at', searchable: false, className: 'text-xs text-gray-500 dark:text-gray-400' },
+                { data: 'status_pesanan_html', name: 'status_pesanan', searchable: false, className: 'text-center' },
+                { data: 'status_pembayaran_html', name: 'status_pembayaran', searchable: false, className: 'text-center' },
+                { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
+            ],
+            emptyText: 'Belum ada pesanan'
+        });
+
+        $('#filterPesananPickup').on('submit', function(e) {
+            e.preventDefault();
+            window.reloadPesananPickupTable();
         });
     });
 </script>

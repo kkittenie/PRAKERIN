@@ -12,7 +12,7 @@
                     <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-1">Pesanan</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Pesanan yang masuk dari Member App.</p>
                 </div>
-                <form method="GET" action="{{ route('pesanan-pickup.indeks') }}" x-data="{
+                <form id="filterPesananPickup" method="GET" action="{{ route('pesanan-pickup.indeks') }}" x-data="{
                               tanggalMulai: '{{ request('tanggal_mulai') }}',
                               tanggalSelesai: '{{ request('tanggal_selesai') }}',
                               onMulaiChange() {
@@ -608,40 +608,18 @@
                         });
                 },
 
-                async muatUlangTabel() {
+                muatUlangTabel() {
+                    // Tabelnya sekarang server-side (Yajra DataTables), jadi
+                    // cukup suruh DataTable ambil ulang datanya lewat ajax,
+                    // nggak perlu fetch & ganti seluruh HTML tabel lagi.
                     const wrapper = document.getElementById('tabel-pesanan-wrapper');
-                    if (! wrapper) return;
+                    if (typeof window.reloadPesananPickupTable === 'function') {
+                        window.reloadPesananPickupTable();
+                    }
 
-                    try {
-                        const response = await fetch(window.location.href, {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                        });
-                        if (! response.ok) throw new Error('HTTP ' + response.status);
-
-                        // Matiin instance DataTable yang lama dulu sebelum tabelnya
-                        // diganti, biar nggak nyangkut/leak.
-                        if (window.jQuery && $.fn.DataTable.isDataTable('#pesananPickupTable')) {
-                            $('#pesananPickupTable').DataTable().destroy();
-                        }
-
-                        wrapper.innerHTML = await response.text();
-
-                        // <script> yang masuk lewat innerHTML nggak otomatis
-                        // dieksekusi browser, jadi initSaishoDataTable() di
-                        // _tabel.blade.php nggak pernah kepanggil tanpa ini —
-                        // itu sebabnya paginasi ilang & semua data numpuk keliatan
-                        // sekaligus tiap ada update real-time. Bikin ulang tiap
-                        // <script> tag-nya biar beneran dieksekusi.
-                        wrapper.querySelectorAll('script').forEach((skripLama) => {
-                            const skripBaru = document.createElement('script');
-                            skripBaru.textContent = skripLama.textContent;
-                            skripLama.replaceWith(skripBaru);
-                        });
-
+                    if (wrapper) {
                         wrapper.classList.add('ring-2', 'ring-amber-400');
                         setTimeout(() => wrapper.classList.remove('ring-2', 'ring-amber-400'), 900);
-                    } catch (error) {
-                        console.error('Gagal memuat ulang tabel pesanan:', error);
                     }
                 },
 

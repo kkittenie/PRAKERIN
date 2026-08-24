@@ -17,55 +17,69 @@ class PesananPickupController extends Controller
 {
     public function indeks(Request $request)
     {
+        $statusPesanan = $request->query('status_pesanan', 'semua');
+        $statusPembayaran = $request->query('status_pembayaran', 'semua');
+        $cari = $request->query('cari');
+        $tanggalMulai = $request->query('tanggal_mulai');
+        $tanggalSelesai = $request->query('tanggal_selesai');
+
+        $query = Transaksi::with(['detailTransaksi', 'member'])
+            ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP);
+
+        if ($statusPesanan !== 'semua') {
+            $query->where('status_pesanan', $statusPesanan);
+        }
+
+        if ($statusPembayaran === 'lunas') {
+            $query->where('status_pembayaran', 'Lunas');
+        } elseif ($statusPembayaran === 'menunggu_konfirmasi') {
+            $query->whereNotNull('bukti_dikonfirmasi_pada')->where('status_pembayaran', '!=', 'Lunas');
+        } elseif ($statusPembayaran === 'menunggu_pembayaran') {
+            $query->whereNull('bukti_dikonfirmasi_pada')->where('status_pembayaran', '!=', 'Lunas');
+        }
+
+        if ($cari) {
+            $query->where(function ($q) use ($cari) {
+                $q->where('kode_transaksi', 'like', "%{$cari}%")
+                  ->orWhere('nama_pembeli', 'like', "%{$cari}%");
+            });
+        }
+
+        if ($tanggalMulai) {
+            $query->whereDate('created_at', '>=', $tanggalMulai);
+        }
+        if ($tanggalSelesai) {
+            if ($tanggalMulai && $tanggalSelesai < $tanggalMulai) {
+                $tanggalSelesai = $tanggalMulai;
+            }
+            $query->whereDate('created_at', '<=', $tanggalSelesai);
+        }
+
+        if ($request->ajax()) {
+            try {
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->addColumn('kode_html', fn ($item) => view('pages.pesanan-pickup.partials.kode', compact('item'))->render())
+                    ->addColumn('pembeli_html', fn ($item) => view('pages.pesanan-pickup.partials.pembeli', compact('item'))->render())
+                    ->editColumn('total_bayar', fn ($item) => 'Rp ' . number_format($item->total_bayar, 0, ',', '.'))
+                    ->editColumn('created_at', fn ($item) => $item->created_at->translatedFormat('d M Y, H:i'))
+                    ->addColumn('status_pesanan_html', fn ($item) => view('pages.pesanan-pickup.partials.status-pesanan', compact('item'))->render())
+                    ->addColumn('status_pembayaran_html', fn ($item) => view('pages.pesanan-pickup.partials.status-pembayaran', compact('item'))->render())
+                    ->addColumn('aksi', fn ($item) => view('pages.pesanan-pickup.partials.aksi', compact('item'))->render())
+                    ->rawColumns(['kode_html', 'pembeli_html', 'status_pesanan_html', 'status_pembayaran_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
+
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data pesanan.'], 500);
+            }
+        }
+
         try {
-            $statusPesanan = $request->query('status_pesanan', 'semua');
-            $statusPembayaran = $request->query('status_pembayaran', 'semua');
-            $cari = $request->query('cari');
-            $tanggalMulai = $request->query('tanggal_mulai');
-            $tanggalSelesai = $request->query('tanggal_selesai');
-
-            $query = Transaksi::with(['detailTransaksi', 'member'])
-                ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP);
-
-            if ($statusPesanan !== 'semua') {
-                $query->where('status_pesanan', $statusPesanan);
-            }
-
-            if ($statusPembayaran === 'lunas') {
-                $query->where('status_pembayaran', 'Lunas');
-            } elseif ($statusPembayaran === 'menunggu_konfirmasi') {
-                $query->whereNotNull('bukti_dikonfirmasi_pada')->where('status_pembayaran', '!=', 'Lunas');
-            } elseif ($statusPembayaran === 'menunggu_pembayaran') {
-                $query->whereNull('bukti_dikonfirmasi_pada')->where('status_pembayaran', '!=', 'Lunas');
-            }
-
-            if ($cari) {
-                $query->where(function ($q) use ($cari) {
-                    $q->where('kode_transaksi', 'like', "%{$cari}%")
-                      ->orWhere('nama_pembeli', 'like', "%{$cari}%");
-                });
-            }
-
-            if ($tanggalMulai) {
-                $query->whereDate('created_at', '>=', $tanggalMulai);
-            }
-            if ($tanggalSelesai) {
-                if ($tanggalMulai && $tanggalSelesai < $tanggalMulai) {
-                    $tanggalSelesai = $tanggalMulai;
-                }
-                $query->whereDate('created_at', '<=', $tanggalSelesai);
-            }
-
-            $pesanan = $query->latest()->get();
-
-            if ($request->ajax()) {
-                return view('pages.pesanan-pickup._tabel', [
-                    'pesanan' => $pesanan,
-                ]);
-            }
-
             return view('pages.pesanan-pickup.index', [
-                'pesanan' => $pesanan,
                 'statusPesananFilter' => $statusPesanan,
                 'statusPembayaranFilter' => $statusPembayaran,
             ]);
