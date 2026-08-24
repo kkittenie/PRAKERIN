@@ -397,6 +397,19 @@
 
     <!-- Global DataTable initializer -->
     <script>
+        // Disable DataTables default browser alert popup modal for AJAX errors
+        if (typeof $.fn.dataTable !== 'undefined') {
+            $.fn.dataTable.ext.errMode = 'none';
+        }
+
+        // Global jQuery AJAX setup with CSRF token and XMLHttpRequest header
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
         function initSaishoDataTable(tableId, options = {}) {
             const $table = $('#' + tableId);
             if (!$table.length) return null;
@@ -432,15 +445,34 @@
             if (options.serverSide) {
                 baseOptions.serverSide = true;
                 baseOptions.processing = true;
-                if (options.ajax) {
-                    baseOptions.ajax = options.ajax;
+
+                let ajaxConfig = options.ajax;
+                if (typeof ajaxConfig === 'string') {
+                    ajaxConfig = { url: ajaxConfig };
                 }
+
+                baseOptions.ajax = $.extend({}, ajaxConfig, {
+                    error: function(xhr, error, thrown) {
+                        console.warn('DataTables AJAX info:', error, thrown);
+                        if (xhr && (xhr.status === 401 || xhr.status === 419)) {
+                            window.location.reload();
+                        }
+                        if (ajaxConfig && typeof ajaxConfig.error === 'function') {
+                            ajaxConfig.error(xhr, error, thrown);
+                        }
+                    }
+                });
+
                 if (options.columns) {
                     baseOptions.columns = options.columns;
                 }
             }
 
             const dt = $table.DataTable(Object.assign(baseOptions, options.dtOptions || {}));
+
+            $table.on('error.dt', function(e, settings, techNote, message) {
+                console.warn('DataTables error.dt handled quietly:', message);
+            });
 
             // Search binding with debounce
             if (searchInput.length) {

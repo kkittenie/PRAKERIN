@@ -34,7 +34,7 @@
 
                     <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
-                        <select name="status"
+                        <select name="status" id="filter_status_produksi" @change="$nextTick(() => window.reloadProduksiTable())"
                             class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
                             <option value="semua" {{ $status === 'semua' ? 'selected' : '' }}>Semua Status</option>
                             <option value="kadaluarsa" {{ $status === 'kadaluarsa' ? 'selected' : '' }}>Kadaluwarsa</option>
@@ -44,7 +44,7 @@
 
                     <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Periode</label>
-                        <select name="periode" x-model="periode" @change="$nextTick(() => $el.form.submit())"
+                        <select name="periode" id="filter_periode_produksi" x-model="periode" @change="$nextTick(() => window.reloadProduksiTable())"
                             class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
                             <option value="semua" {{ $periode === 'semua' ? 'selected' : '' }}>Semua</option>
                             <option value="harian" {{ $periode === 'harian' ? 'selected' : '' }}>Per Hari</option>
@@ -55,9 +55,9 @@
 
                     <div class="flex-1 md:flex-initial" x-show="periode !== 'semua'">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tanggal</label>
-                        <input type="date" name="tanggal_ref" x-show="periode === 'harian'" :disabled="periode !== 'harian'" value="{{ $tanggalRef->toDateString() }}" onchange="this.form.submit()" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
-                        <input type="week" name="tanggal_ref" x-show="periode === 'mingguan'" :disabled="periode !== 'mingguan'" value="{{ $tanggalRef->format('o-\WW') }}" onchange="this.form.submit()" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
-                        <input type="month" name="tanggal_ref" x-show="periode === 'bulanan'" :disabled="periode !== 'bulanan'" value="{{ $tanggalRef->format('Y-m') }}" onchange="this.form.submit()" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
+                        <input type="date" name="tanggal_ref" x-show="periode === 'harian'" :disabled="periode !== 'harian'" value="{{ $tanggalRef->toDateString() }}" @change="window.reloadProduksiTable()" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
+                        <input type="week" name="tanggal_ref" x-show="periode === 'mingguan'" :disabled="periode !== 'mingguan'" value="{{ $tanggalRef->format('o-\WW') }}" @change="window.reloadProduksiTable()" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
+                        <input type="month" name="tanggal_ref" x-show="periode === 'bulanan'" :disabled="periode !== 'bulanan'" value="{{ $tanggalRef->format('Y-m') }}" @change="window.reloadProduksiTable()" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
                     </div>
 
                     <div class="flex gap-2 justify-end mt-2 md:mt-0">
@@ -160,15 +160,21 @@
 
 @push('scripts')
 <script>
+    window.reloadProduksiTable = function() {
+        if ($.fn.DataTable.isDataTable('#produksiTable')) {
+            $('#produksiTable').DataTable().ajax.reload();
+        }
+    };
+
     $(document).ready(function() {
         initSaishoDataTable('produksiTable', {
             serverSide: true,
             ajax: {
                 url: '{{ route('produksi.index') }}',
                 data: function(d) {
-                    d.status = $('select[name="status"]').val();
-                    d.periode = $('select[name="periode"]').val();
-                    d.tanggal_ref = $('input[name="tanggal_ref"]:not(:disabled)').val();
+                    d.status = $('#filter_status_produksi').val() || $('select[name="status"]').val();
+                    d.periode = $('#filter_periode_produksi').val() || $('select[name="periode"]').val();
+                    d.tanggal_ref = $('input[name="tanggal_ref"]:visible:not(:disabled)').val() || $('input[name="tanggal_ref"]:not(:disabled)').val();
                 }
             },
             columns: [
@@ -184,6 +190,11 @@
             onDraw: function() {
                 perbaruiKadaluwarsaProduksi();
             }
+        });
+
+        $('#filterForm').on('submit', function(e) {
+            e.preventDefault();
+            window.reloadProduksiTable();
         });
     });
 

@@ -139,9 +139,46 @@ class ProduksiController extends Controller
 
             [$periode, $tanggalRef] = $this->resolvePeriode($request);
 
-            $produksi = $this->filteredProduksiQuery($request, $periode, $tanggalRef)
-                ->latest()
-                ->get();
+            if ($request->ajax()) {
+                $query = $this->filteredProduksiQuery($request, $periode, $tanggalRef);
+
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->filterColumn('produk.nama_produk', function ($q, $keyword) {
+                        $q->whereHas('produk', function ($qp) use ($keyword) {
+                            $qp->where('nama_produk', 'like', "%{$keyword}%")
+                              ->orWhere('kode_produk', 'like', "%{$keyword}%");
+                        });
+                    })
+                    ->filterColumn('user.name', function ($q, $keyword) {
+                        $q->whereHas('user', function ($qu) use ($keyword) {
+                            $qu->where('name', 'like', "%{$keyword}%");
+                        });
+                    })
+                    ->orderColumn('produk.nama_produk', function ($q, $order) {
+                        $q->join('produks', 'produksis.produk_id', '=', 'produks.id')
+                          ->orderBy('produks.nama_produk', $order)
+                          ->select('produksis.*');
+                    })
+                    ->orderColumn('user.name', function ($q, $order) {
+                        $q->join('users', 'produksis.user_id', '=', 'users.id')
+                          ->orderBy('users.name', $order)
+                          ->select('produksis.*');
+                    })
+                    ->editColumn('tanggal', fn($item) => view('pages.produksi.partials.tanggal', compact('item'))->render())
+                    ->addColumn('produk_html', fn($item) => view('pages.produksi.partials.produk', compact('item'))->render())
+                    ->addColumn('hasil_html', fn($item) => view('pages.produksi.partials.hasil', compact('item'))->render())
+                    ->editColumn('keterangan', fn($item) => view('pages.produksi.partials.keterangan', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('pages.produksi.partials.aksi', compact('item'))->render())
+                    ->setRowAttr([
+                        'data-produksi-row' => 'true',
+                        'data-kadaluarsa-waktu' => fn($item) => $item->kadaluarsa_waktu ? $item->kadaluarsa_waktu->toIso8601String() : '',
+                        'data-sisa' => fn($item) => $item->sisa_belum_disesuaikan,
+                    ])
+                    ->setRowClass(fn($item) => $item->perlu_tindakan ? 'bg-red-50/70 dark:bg-red-500/10' : '')
+                    ->rawColumns(['tanggal', 'produk_html', 'hasil_html', 'keterangan', 'aksi'])
+                    ->make(true);
+            }
 
             $produksiKadaluarsa = Produksi::with('produk')
                 ->get()
@@ -152,9 +189,17 @@ class ProduksiController extends Controller
 
             return view(
                 'pages.produksi.index',
-                compact('produksi', 'search', 'status', 'periode', 'tanggalRef', 'produksiKadaluarsa')
+                compact('search', 'status', 'periode', 'tanggalRef', 'produksiKadaluarsa')
             );
         } catch (\Throwable $e) {
+            if ($request->ajax()) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
+
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data produksi.'], 500);
+            }
             return ActivityLogHelper::handleException($e);
         }
     }

@@ -27,6 +27,17 @@
                         </span>
                         <input type="text" class="sdt-search-input" placeholder="Cari nama, kode, kategori...">
                     </div>
+                    @if(isset($kategori) && $kategori->isNotEmpty())
+                    <div class="sdt-pagesize">
+                        <span>Kategori</span>
+                        <select id="filter_kategori">
+                            <option value="">Semua Kategori</option>
+                            @foreach($kategori as $kat)
+                                <option value="{{ $kat->id }}">{{ $kat->nama_kategori }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
                     <div class="sdt-pagesize">
                         <span>Tampilkan</span>
                         <select><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select>
@@ -93,7 +104,12 @@
     $(document).ready(function() {
         initSaishoDataTable('produkTable', {
             serverSide: true,
-            ajax: '{{ route('produk.index') }}',
+            ajax: {
+                url: '{{ route('produk.index') }}',
+                data: function(d) {
+                    d.kategori_id = $('#filter_kategori').val();
+                }
+            },
             columns: [
                 { data: 'foto', name: 'foto', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'nama_produk', name: 'nama_produk' },
@@ -106,6 +122,12 @@
                 { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
             ],
             emptyText: 'Belum ada produk'
+        });
+
+        $('#filter_kategori').on('change', function() {
+            if ($.fn.DataTable.isDataTable('#produkTable')) {
+                $('#produkTable').DataTable().ajax.reload();
+            }
         });
     });
 </script>
