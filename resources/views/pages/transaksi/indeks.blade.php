@@ -359,27 +359,21 @@
                                                         </template>
                                                     </div>
                                                     <template x-if="produk.punya_ukuran == 1 || produk.punya_ukuran === true">
-                                                        <div class="grid grid-cols-2 gap-1.5 items-center">
-                                                            <!-- Kecil -->
-                                                            <button type="button" @click.stop="tambahKeKeranjang(produk, 'Kecil')"
-                                                                title="Tambah Ukuran Kecil"
-                                                                class="flex flex-col items-center justify-center py-1.5 px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
-                                                                <div class="flex items-center justify-center gap-1 w-full leading-none">
-                                                                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800/90 dark:text-amber-300 group-hover/sz:text-white/90">Kecil</span>
-                                                                    <span class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 group-hover/sz:text-white">+</span>
-                                                                </div>
-                                                                <span class="font-extrabold text-[11px] text-amber-900 dark:text-amber-200 group-hover/sz:text-white leading-tight mt-0.5" x-text="formatRupiah(produk.harga_kecil)"></span>
-                                                            </button>
-                                                            <!-- Besar -->
-                                                            <button type="button" @click.stop="tambahKeKeranjang(produk, 'Besar')"
-                                                                title="Tambah Ukuran Besar"
-                                                                class="flex flex-col items-center justify-center py-1.5 px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
-                                                                <div class="flex items-center justify-center gap-1 w-full leading-none">
-                                                                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800/90 dark:text-amber-300 group-hover/sz:text-white/90">Besar</span>
-                                                                    <span class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 group-hover/sz:text-white">+</span>
-                                                                </div>
-                                                                <span class="font-extrabold text-[11px] text-amber-900 dark:text-amber-200 group-hover/sz:text-white leading-tight mt-0.5" x-text="formatRupiah(produk.harga_besar)"></span>
-                                                            </button>
+                                                        <div class="flex flex-wrap gap-1.5 items-center">
+                                                            <template x-if="!produk.daftar_ukuran || produk.daftar_ukuran.length === 0">
+                                                                <p class="text-xxs text-gray-400 dark:text-gray-500 italic">Belum ada ukuran aktif untuk produk ini.</p>
+                                                            </template>
+                                                            <template x-for="opsiUkuran in (produk.daftar_ukuran || [])" :key="opsiUkuran.produk_ukuran_id">
+                                                                <button type="button" @click.stop="tambahKeKeranjang(produk, opsiUkuran.nama)"
+                                                                    :title="'Tambah Ukuran ' + opsiUkuran.nama"
+                                                                    class="flex-1 min-w-[68px] flex flex-col items-center justify-center py-1.5 px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
+                                                                    <div class="flex items-center justify-center gap-1 w-full leading-none">
+                                                                        <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800/90 dark:text-amber-300 group-hover/sz:text-white/90" x-text="opsiUkuran.nama"></span>
+                                                                        <span class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 group-hover/sz:text-white">+</span>
+                                                                    </div>
+                                                                    <span class="font-extrabold text-[11px] text-amber-900 dark:text-amber-200 group-hover/sz:text-white leading-tight mt-0.5" x-text="formatRupiah(opsiUkuran.harga)"></span>
+                                                                </button>
+                                                            </template>
                                                         </div>
                                                     </template>
 
@@ -1759,18 +1753,14 @@
                 <div class="p-5 flex flex-col gap-3">
                     <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pilih varian ukuran untuk produk ini:</p>
                     <div class="grid grid-cols-2 gap-3">
-                        <button type="button" @click="pilihUkuran('Kecil')"
-                            class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-amber-600 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition">
-                            <span class="font-bold text-sm text-amber-900 dark:text-amber-300">Kecil</span>
-                            <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 mt-1"
-                                x-text="formatRupiah(produkUkuranTerpilih?.harga_kecil || 0)"></span>
-                        </button>
-                        <button type="button" @click="pilihUkuran('Besar')"
-                            class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-amber-600 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition">
-                            <span class="font-bold text-sm text-amber-900 dark:text-amber-300">Besar</span>
-                            <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 mt-1"
-                                x-text="formatRupiah(produkUkuranTerpilih?.harga_besar || 0)"></span>
-                        </button>
+                        <template x-for="opsiUkuran in (produkUkuranTerpilih?.daftar_ukuran || [])" :key="opsiUkuran.produk_ukuran_id">
+                            <button type="button" @click="pilihUkuran(opsiUkuran.nama)"
+                                class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-amber-600 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition">
+                                <span class="font-bold text-sm text-amber-900 dark:text-amber-300" x-text="opsiUkuran.nama"></span>
+                                <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 mt-1"
+                                    x-text="formatRupiah(opsiUkuran.harga)"></span>
+                            </button>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -2259,17 +2249,35 @@
                     return produk.status_ketersediaan === 'perlu_diproduksi' || this.stokUntukUkuran(produk, null) <= 0;
                 },
 
-                // Ambil stok sesuai ukuran (Besar/Kecil) — kalau produk tidak
-                // punya varian ukuran, kembalikan stok gabungan seperti biasa.
+                // Ambil stok sesuai ukuran (dinamis, dari produk.daftar_ukuran) —
+                // kalau produk tidak punya varian ukuran, kembalikan stok
+                // gabungan seperti biasa.
                 stokUntukUkuran(produk, ukuran) {
                     if (!produk) return 0;
                     const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
                     if (punyaUkuran) {
-                        if (ukuran === 'Besar') return parseFloat(produk.stok_besar) || 0;
-                        if (ukuran === 'Kecil') return parseFloat(produk.stok_kecil) || 0;
+                        const daftar = produk.daftar_ukuran || [];
+                        if (ukuran) {
+                            const opsi = this.cariOpsiUkuran(produk, ukuran);
+                            if (opsi) return parseFloat(opsi.stok) || 0;
+                            // Fallback lama, buat produk yang belum punya baris produk_ukurans.
+                            if (ukuran === 'Besar') return parseFloat(produk.stok_besar) || 0;
+                            if (ukuran === 'Kecil') return parseFloat(produk.stok_kecil) || 0;
+                            return 0;
+                        }
+                        if (daftar.length > 0) {
+                            return daftar.reduce((total, o) => total + (parseFloat(o.stok) || 0), 0);
+                        }
                         return (parseFloat(produk.stok_besar) || 0) + (parseFloat(produk.stok_kecil) || 0);
                     }
                     return parseFloat(produk.stok) || 0;
+                },
+
+                // Cari satu baris opsi ukuran (nama, harga, stok) di daftar_ukuran
+                // produk berdasarkan nama, gak peduli besar/kecil huruf.
+                cariOpsiUkuran(produk, ukuran) {
+                    if (!produk || !ukuran) return null;
+                    return (produk.daftar_ukuran || []).find(o => (o.nama || '').toLowerCase() === String(ukuran).toLowerCase()) || null;
                 },
 
                 itemButuhProduksi(item) {
@@ -2300,13 +2308,21 @@
                 buatItemKeranjang(produk, jumlah, perluProduksi, ukuran = null) {
                     let hargaAsli = parseFloat(produk.harga_jual || 0);
                     if (produk.punya_ukuran) {
-                        if (ukuran === 'Besar') {
+                        let opsi = ukuran ? this.cariOpsiUkuran(produk, ukuran) : null;
+                        if (!opsi && !ukuran && produk.daftar_ukuran && produk.daftar_ukuran.length > 0) {
+                            // Gak ada ukuran spesifik diminta -> ambil opsi pertama.
+                            opsi = produk.daftar_ukuran[0];
+                            ukuran = opsi.nama;
+                        }
+                        if (opsi) {
+                            hargaAsli = parseFloat(opsi.harga || 0);
+                        } else if (ukuran === 'Besar') {
                             hargaAsli = parseFloat(produk.harga_besar || 0);
                         } else if (ukuran === 'Kecil') {
                             hargaAsli = parseFloat(produk.harga_kecil || 0);
                         } else {
                             hargaAsli = parseFloat(produk.harga_kecil || produk.harga_besar || 0);
-                            ukuran = 'Kecil';
+                            ukuran = ukuran || 'Kecil';
                         }
                     }
                     const promosTersedia = (produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0)
@@ -3544,13 +3560,18 @@
                     this.daftarRewardStampAktif = [];
                 },
 
-                // Tambah stok lokal (Besar/Kecil sesuai ukuran) + kolom stok
-                // gabungan, supaya tampilan kartu produk tetap sinkron tanpa
-                // perlu reload data dari server.
+                // Sesuaikan stok lokal (baris ukuran dinamis + kolom lama
+                // Besar/Kecil kalau namanya cocok) + kolom stok gabungan,
+                // supaya tampilan kartu produk tetap sinkron tanpa perlu
+                // reload data dari server.
                 _sesuaikanStokLokal(produk, ukuran, delta) {
                     if (!produk) return;
                     const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
                     if (punyaUkuran) {
+                        const opsi = this.cariOpsiUkuran(produk, ukuran);
+                        if (opsi) {
+                            opsi.stok = (parseFloat(opsi.stok) || 0) + delta;
+                        }
                         if (ukuran === 'Besar') {
                             produk.stok_besar = (parseFloat(produk.stok_besar) || 0) + delta;
                         } else if (ukuran === 'Kecil') {

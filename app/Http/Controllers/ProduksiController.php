@@ -216,34 +216,6 @@ class ProduksiController extends Controller
         }
     }
 
-    /**
-     * Sinkronkan hasil produksi Besar/Kecil ke baris produk_ukurans yang
-     * sesuai (sistem ukuran dinamis dari Tahap B), supaya keduanya gak
-     * pernah beda angka. $delta positif = nambah stok, negatif = ngurangin.
-     * Kalau produk itu belum punya baris ukuran dengan nama itu (misal
-     * baru aja dihapus manual dari panel Ukuran Dinamis), dilewati aja
-     * tanpa error — bagian lama (stok_besar/stok_kecil) tetap jadi acuan
-     * utama sampai Tahap D.
-     */
-    private function sinkronStokUkuranDinamis(Produk $produk, string $namaUkuran, int $delta): void
-    {
-        if ($delta === 0) {
-            return;
-        }
-
-        $baris = ProdukUkuran::whereHas('ukuran', function ($q) use ($namaUkuran) {
-            $q->where('nama_ukuran', $namaUkuran);
-        })->where('produk_id', $produk->id)->first();
-
-        if (!$baris) {
-            return;
-        }
-
-        $baris->stok = max(0, $baris->stok + $delta);
-        $baris->status_ketersediaan = $baris->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
-        $baris->save();
-    }
-
     public function store(Request $request)
     {
         try {
@@ -406,13 +378,6 @@ class ProduksiController extends Controller
                         }
 
                         $produk->refresh();
-
-                        // Sinkronkan juga ke tabel produk_ukurans (sistem ukuran
-                        // dinamis yang baru) supaya datanya tetap sama persis
-                        // dengan stok_besar/stok_kecil di atas. Baris "Besar"/
-                        // "Kecil" ini otomatis ada sejak migrasi Tahap B.
-                        $this->sinkronStokUkuranDinamis($produk, 'Besar', $jumlahBesar - $kebutuhanBesar);
-                        $this->sinkronStokUkuranDinamis($produk, 'Kecil', $jumlahKecil - $kebutuhanKecil);
                     } else {
                         $produk->increment('stok', $request->jumlah_hasil);
 
