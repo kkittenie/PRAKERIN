@@ -10,19 +10,29 @@ class UkuranController extends Controller
 {
     public function index(Request $request)
     {
-        try {
-            $search = $request->search;
+        if ($request->ajax()) {
+            try {
+                $query = Ukuran::urut();
 
-            $ukuran = Ukuran::when($search, function ($query) use ($search) {
-                $query->where('nama_ukuran', 'like', "%{$search}%");
-            })
-                ->urut()
-                ->get();
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->editColumn('nama_ukuran', fn ($item) => view('pages.ukuran.partials.nama', compact('item'))->render())
+                    ->addColumn('urutan_html', fn ($item) => view('pages.ukuran.partials.urutan', compact('item'))->render())
+                    ->addColumn('status_html', fn ($item) => view('pages.ukuran.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn ($item) => view('pages.ukuran.partials.aksi', compact('item'))->render())
+                    ->rawColumns(['nama_ukuran', 'urutan_html', 'status_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
 
-            return view('pages.ukuran.index', compact('ukuran'));
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data ukuran.'], 500);
+            }
         }
+
+        return view('pages.ukuran.index');
     }
 
     public function create()
@@ -37,16 +47,24 @@ class UkuranController extends Controller
     public function store(Request $request)
     {
         try {
-            $request->validate([
+            $validated = $request->validate([
                 'nama_ukuran' => 'required|string|max:50|unique:ukurans,nama_ukuran',
                 'urutan' => 'nullable|integer|min:0',
             ]);
 
-            Ukuran::create([
-                'nama_ukuran' => trim($request->nama_ukuran),
-                'urutan' => $request->urutan ?? 0,
+            $ukuran = Ukuran::create([
+                'nama_ukuran' => trim($validated['nama_ukuran']),
+                'urutan' => $validated['urutan'] ?? 0,
                 'status_aktif' => true,
             ]);
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($ukuran)
+                ->withProperties([
+                    'nama_ukuran' => $ukuran->nama_ukuran,
+                ])
+                ->log('menambahkan ukuran');
 
             return redirect()
                 ->route('ukuran.index')
@@ -77,15 +95,23 @@ class UkuranController extends Controller
     public function update(Request $request, Ukuran $ukuran)
     {
         try {
-            $request->validate([
+            $validated = $request->validate([
                 'nama_ukuran' => 'required|string|max:50|unique:ukurans,nama_ukuran,' . $ukuran->id,
                 'urutan' => 'nullable|integer|min:0',
             ]);
 
             $ukuran->update([
-                'nama_ukuran' => trim($request->nama_ukuran),
-                'urutan' => $request->urutan ?? 0,
+                'nama_ukuran' => trim($validated['nama_ukuran']),
+                'urutan' => $validated['urutan'] ?? 0,
             ]);
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($ukuran)
+                ->withProperties([
+                    'nama_ukuran' => $ukuran->nama_ukuran,
+                ])
+                ->log('memperbarui ukuran');
 
             return redirect()
                 ->route('ukuran.index')
@@ -122,9 +148,20 @@ class UkuranController extends Controller
     public function destroy(Ukuran $ukuran)
     {
         try {
-            // Catatan: begitu Tahap B (produk_ukurans) dibuat, di sini perlu
-            // ditambah pengecekan "masih dipakai produk atau enggak" seperti
-            // punya Satuan (cekBahanBakus) sebelum boleh dihapus.
+            if ($ukuran->produkUkurans()->exists()) {
+                return redirect()
+                    ->route('ukuran.index')
+                    ->with('error', 'Ukuran tidak dapat dihapus karena masih digunakan oleh salah satu produk.');
+            }
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($ukuran)
+                ->withProperties([
+                    'nama_ukuran' => $ukuran->nama_ukuran,
+                ])
+                ->log('menghapus ukuran');
+
             $ukuran->delete();
 
             return redirect()

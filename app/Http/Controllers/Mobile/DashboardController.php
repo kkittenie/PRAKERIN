@@ -23,7 +23,7 @@ class DashboardController extends Controller
                 ->take(3)
                 ->get();
 
-            $produkPilihan = Produk::with('kategori')
+            $produkPilihan = Produk::with(['kategori', 'produkUkurans.ukuran'])
                 ->where('status_aktif', true)
                 ->reguler()
                 ->inRandomOrder()

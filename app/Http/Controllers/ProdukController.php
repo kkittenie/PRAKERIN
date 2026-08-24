@@ -18,7 +18,7 @@ class ProdukController extends Controller
     {
         if ($request->ajax()) {
             try {
-                $query = Produk::with('kategori')
+                $query = Produk::with(['kategori', 'produkUkurans.ukuran'])
                     ->when($request->filled('kategori_id'), function ($q) use ($request) {
                         $q->where('kategori_id', $request->kategori_id);
                     });
@@ -154,7 +154,7 @@ class ProdukController extends Controller
     public function show(Produk $produk)
     {
         try {
-            $produk->load('kategori');
+            $produk->load(['kategori', 'produkUkurans.ukuran']);
 
             return view('pages.produk.show', compact('produk'));
         } catch (\Throwable $e) {

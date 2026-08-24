@@ -27,8 +27,9 @@ class PromoStatusController extends Controller
                     ->get()
                     ->map(function ($p) {
                         if ($p->punya_ukuran) {
-                            $hargaAsli = (float) ($p->harga_kecil ?? 0);
-                            $hargaFinal = $p->hargaSetelahPromo('Kecil');
+                            $namaTermurah = $p->ukuranTermurah()['nama'] ?? null;
+                            $hargaAsli = $p->getHarga($namaTermurah);
+                            $hargaFinal = $p->hargaSetelahPromo($namaTermurah);
                         } else {
                             $hargaAsli = (float) $p->harga_jual;
                             $hargaFinal = (float) $p->harga_diskon;

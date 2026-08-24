@@ -51,8 +51,14 @@
                         <p class="text-sm text-gray-500 dark:text-gray-400">Harga Jual</p>
                         <p class="font-semibold text-green-600 dark:text-green-400">
                             @if($produk->punya_ukuran)
-                                Besar: Rp {{ number_format($produk->harga_besar, 0, ',', '.') }} &nbsp;/&nbsp;
-                                Kecil: Rp {{ number_format($produk->harga_kecil, 0, ',', '.') }}
+                                @php $daftar = $produk->daftar_ukuran; @endphp
+                                @if(count($daftar))
+                                    @foreach($daftar as $u)
+                                        <span class="block">{{ $u['nama'] }}: Rp {{ number_format($u['harga'], 0, ',', '.') }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="text-xs text-gray-400 italic font-normal">Belum ada ukuran</span>
+                                @endif
                             @else
                                 Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}
                             @endif
@@ -62,19 +68,39 @@
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Harga Modal</p>
                         <p class="font-semibold text-gray-800 dark:text-white">
-                            Rp {{ number_format($produk->harga_modal, 0, ',', '.') }}
+                            @if($produk->punya_ukuran)
+                                @php $daftar = $produk->daftar_ukuran; @endphp
+                                @if(count($daftar))
+                                    @foreach($daftar as $u)
+                                        <span class="block">{{ $u['nama'] }}: Rp {{ number_format($u['harga_modal'], 0, ',', '.') }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="text-xs text-gray-400 italic font-normal">Belum ada ukuran</span>
+                                @endif
+                            @else
+                                Rp {{ number_format($produk->harga_modal, 0, ',', '.') }}
+                            @endif
                         </p>
                     </div>
 
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Stok</p>
-                        <p class="font-semibold {{ $produk->stok <= $produk->stok_minimum ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                            {{ $produk->stok }}
-                            <span class="text-gray-400 font-normal text-xs">(Min: {{ $produk->stok_minimum }})</span>
-                        </p>
                         @if($produk->punya_ukuran)
-                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                                Besar: {{ $produk->stok_besar ?? 0 }} &nbsp;/&nbsp; Kecil: {{ $produk->stok_kecil ?? 0 }}
+                            @php $daftar = $produk->daftar_ukuran; @endphp
+                            @if(count($daftar))
+                                @foreach($daftar as $u)
+                                    <p class="font-semibold {{ $u['stok'] <= $u['stok_minimum'] ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                                        {{ $u['nama'] }}: {{ $u['stok'] }}
+                                        <span class="text-gray-400 font-normal text-xs">(Min: {{ $u['stok_minimum'] }})</span>
+                                    </p>
+                                @endforeach
+                            @else
+                                <p class="text-xs text-gray-400 italic">Belum ada ukuran</p>
+                            @endif
+                        @else
+                            <p class="font-semibold {{ $produk->stok <= $produk->stok_minimum ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                                {{ $produk->stok }}
+                                <span class="text-gray-400 font-normal text-xs">(Min: {{ $produk->stok_minimum }})</span>
                             </p>
                         @endif
                     </div>
@@ -99,30 +125,22 @@
                         <div class="mt-0.5">
                             @if($produk->punya_ukuran)
                                 <div class="flex flex-col gap-1.5">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 w-12">Besar:</span>
-                                        @if($produk->habisUntukUkuran('Besar'))
-                                            <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
-                                                ⚠ Perlu Diproduksi
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                                                ✓ {{ $produk->stok_besar ?? 0 }} tersedia
-                                            </span>
-                                        @endif
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 w-12">Kecil:</span>
-                                        @if($produk->habisUntukUkuran('Kecil'))
-                                            <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
-                                                ⚠ Perlu Diproduksi
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                                                ✓ {{ $produk->stok_kecil ?? 0 }} tersedia
-                                            </span>
-                                        @endif
-                                    </div>
+                                    @forelse($produk->daftar_ukuran as $opsiUkuran)
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 w-16 truncate" title="{{ $opsiUkuran['nama'] }}">{{ $opsiUkuran['nama'] }}:</span>
+                                            @if($opsiUkuran['perlu_produksi'])
+                                                <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
+                                                    ⚠ Perlu Diproduksi
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                                    ✓ {{ $opsiUkuran['stok'] }} tersedia
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @empty
+                                        <p class="text-xs italic text-gray-400 dark:text-gray-500">Belum ada ukuran aktif untuk produk ini.</p>
+                                    @endforelse
                                 </div>
                             @else
                                 @if($produk->stok <= 0 || $produk->status_ketersediaan == 'perlu_diproduksi')

@@ -29,27 +29,36 @@ class ProdukController extends Controller
             }
 
             $punyaUkuran = (bool) $produk->punya_ukuran;
+            $daftarUkuran = [];
 
             try {
                 if ($punyaUkuran) {
-                    $hargaKecilAsli = (float) ($produk->harga_kecil ?? 0);
-                    $hargaBesarAsli = (float) ($produk->harga_besar ?? 0);
-                    $hargaKecilFinal = $produk->hargaSetelahPromo('Kecil');
-                    $hargaBesarFinal = $produk->hargaSetelahPromo('Besar');
-                    $adaPromoKecil = $hargaKecilFinal < $hargaKecilAsli;
-                    $adaPromoBesar = $hargaBesarFinal < $hargaBesarAsli;
-                    $adaPromo = $adaPromoKecil || $adaPromoBesar;
+                    // Dulu di sini cuma ngitung Kecil/Besar. Sekarang baca
+                    // langsung dari daftar_ukuran (baris produk_ukurans yang
+                    // aktif) supaya ukuran apapun yang didaftarin di menu
+                    // Ukuran otomatis kebawa ke detail produk mobile ini.
+                    $daftarUkuran = collect($produk->daftar_ukuran)
+                        ->map(function ($opsi) use ($produk) {
+                            $hargaAsliOpsi = (float) $opsi['harga'];
+                            $hargaFinalOpsi = $produk->hargaSetelahPromo($opsi['nama']);
 
-                    $hargaAsli = $hargaKecilAsli;
-                    $hargaFinal = $hargaKecilFinal;
+                            return [
+                                'produk_ukuran_id' => $opsi['produk_ukuran_id'],
+                                'nama' => $opsi['nama'],
+                                'harga_asli' => $hargaAsliOpsi,
+                                'harga_final' => $hargaFinalOpsi,
+                                'ada_promo' => $hargaFinalOpsi < $hargaAsliOpsi,
+                                'perlu_produksi' => (bool) ($opsi['perlu_produksi'] ?? false),
+                            ];
+                        })
+                        ->values()
+                        ->all();
+
+                    $default = $daftarUkuran[0] ?? null;
+                    $hargaAsli = $default['harga_asli'] ?? 0;
+                    $hargaFinal = $default['harga_final'] ?? 0;
+                    $adaPromo = collect($daftarUkuran)->contains('ada_promo', true);
                 } else {
-                    $hargaKecilAsli = 0;
-                    $hargaBesarAsli = 0;
-                    $hargaKecilFinal = 0;
-                    $hargaBesarFinal = 0;
-                    $adaPromoKecil = false;
-                    $adaPromoBesar = false;
-
                     $hargaAsli = (float) $produk->harga_jual;
                     $hargaFinal = (float) $produk->harga_diskon;
                     $adaPromo = $hargaFinal < $hargaAsli;
@@ -63,13 +72,13 @@ class ProdukController extends Controller
                 $hargaAsli = (float) $produk->harga_jual;
                 $hargaFinal = (float) $produk->harga_jual;
                 $adaPromo = false;
-                $hargaKecilAsli = (float) ($produk->harga_kecil ?? 0);
-                $hargaBesarAsli = (float) ($produk->harga_besar ?? 0);
-                $hargaKecilFinal = $hargaKecilAsli;
-                $hargaBesarFinal = $hargaBesarAsli;
-                $adaPromoKecil = false;
-                $adaPromoBesar = false;
+                $daftarUkuran = [];
             }
+
+            // Ukuran yang otomatis kepilih pas halaman dibuka: kalau lagi
+            // "ubah" item keranjang, pakai ukuran yang udah ada; kalau
+            // enggak, pakai baris ukuran aktif pertama.
+            $ukuranDipilihAwal = $itemEdit['ukuran'] ?? ($daftarUkuran[0]['nama'] ?? null);
 
             return view('mobile.produk.show', [
                 'produk' => $produk->load('kategori'),
@@ -77,15 +86,11 @@ class ProdukController extends Controller
                 'pengaturan' => $pengaturan,
                 'itemEdit' => $itemEdit,
                 'punyaUkuran' => $punyaUkuran,
+                'daftarUkuran' => $daftarUkuran,
+                'ukuranDipilihAwal' => $ukuranDipilihAwal,
                 'hargaAsli' => $hargaAsli,
                 'hargaFinal' => $hargaFinal,
                 'adaPromo' => $adaPromo,
-                'hargaKecilAsli' => $hargaKecilAsli,
-                'hargaBesarAsli' => $hargaBesarAsli,
-                'hargaKecilFinal' => $hargaKecilFinal,
-                'hargaBesarFinal' => $hargaBesarFinal,
-                'adaPromoKecil' => $adaPromoKecil,
-                'adaPromoBesar' => $adaPromoBesar,
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
