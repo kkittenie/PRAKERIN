@@ -17,26 +17,44 @@ class PegawaiController extends Controller
      */
     public function index(Request $request)
     {
-        try {
-            $search = $request->search;
+        if ($request->ajax()) {
+            try {
+                $query = Pegawai::query();
 
-            $pegawai = Pegawai::when($search, function ($query) use ($search) {
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->editColumn('tanggal_masuk', fn($item) => \Carbon\Carbon::parse($item->tanggal_masuk)->format('d-m-Y'))
+                    ->addColumn('status_html', fn($item) => view('pages.pegawai.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('pages.pegawai.partials.aksi', compact('item'))->render())
+                    ->orderColumn('status_html', function ($query, $order) {
+                        $query->orderBy('status_aktif', $order);
+                    })
+                    ->filter(function ($query) use ($request) {
+                        // Override pencarian global supaya tetap bisa cari lewat
+                        // nama, jabatan, dan no_hp (seperti sebelumnya).
+                        $search = $request->input('search.value');
 
-                $query->where('nama', 'like', "%{$search}%")
-                      ->orWhere('jabatan', 'like', "%{$search}%")
-                      ->orWhere('no_hp', 'like', "%{$search}%");
+                        if ($search) {
+                            $query->where(function ($q) use ($search) {
+                                $q->where('nama', 'like', "%{$search}%")
+                                    ->orWhere('jabatan', 'like', "%{$search}%")
+                                    ->orWhere('no_hp', 'like', "%{$search}%");
+                            });
+                        }
+                    }, true)
+                    ->rawColumns(['status_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
 
-            })
-            ->latest()
-            ->get();
-
-            return view(
-                'pages.pegawai.index',
-                compact('pegawai', 'search')
-            );
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data pegawai.'], 500);
+            }
         }
+
+        return view('pages.pegawai.index');
     }
 
     /**

@@ -38,7 +38,8 @@ class Produk extends Model
     protected $appends = [
         'promo_aktif',
         'promos_aktif_semua',
-        'harga_diskon'
+        'harga_diskon',
+        'daftar_ukuran',
     ];
 
     public function scopeReguler($query)
@@ -60,7 +61,6 @@ class Produk extends Model
     {
         return $this->hasMany(ProdukUkuran::class, 'produk_id')->with('ukuran')->orderBy('id');
     }
-
 
     public function produksi()
     {
@@ -155,9 +155,107 @@ class Produk extends Model
         return $this->hasMany(PromoProdukEvent::class);
     }
 
+    /**
+     * Ambil koleksi baris produk_ukurans yang aktif buat produk ini, tanpa
+     * bikin query baru kalau relasinya udah di-eager-load (mis. dari
+     * TransaksiKasirController::indeks()).
+     */
+    protected function daftarBarisUkuranAktif()
+    {
+        $daftar = $this->relationLoaded('produkUkurans')
+            ? $this->produkUkurans
+            : $this->produkUkurans()->get();
+
+        return $daftar->filter(fn ($pu) => (bool) $pu->status_aktif && $pu->ukuran);
+    }
+
+    /**
+     * Cari baris produk_ukurans yang namanya cocok (case-insensitive) sama
+     * $ukuran. Ini yang bikin sistem ukuran gak lagi kebatas cuma
+     * "Besar"/"Kecil" — nama apapun yang didaftarin di menu Ukuran otomatis
+     * kepakai di sini.
+     */
+    protected function cariBarisUkuran(?string $ukuran): ?ProdukUkuran
+    {
+        if (!$ukuran || !$this->punya_ukuran) {
+            return null;
+        }
+
+        return $this->daftarBarisUkuranAktif()
+            ->first(fn ($pu) => strcasecmp($pu->ukuran->nama_ukuran, $ukuran) === 0);
+    }
+
+    /**
+     * Daftar ukuran aktif produk ini dalam bentuk array polos, otomatis
+     * ke-serialize sebagai "daftar_ukuran" di JSON (dipakai kasir & mobile
+     * buat nampilin tombol ukuran secara dinamis).
+     */
+    public function getDaftarUkuranAttribute(): array
+    {
+        if (!$this->punya_ukuran) {
+            return [];
+        }
+
+        return $this->daftarBarisUkuranAktif()
+            ->sortBy(fn ($pu) => $pu->ukuran->urutan ?? 0)
+            ->map(function ($pu) {
+                return [
+                    'produk_ukuran_id' => $pu->id,
+                    'ukuran_id' => $pu->ukuran_id,
+                    'nama' => $pu->ukuran->nama_ukuran,
+                    'harga' => (float) $pu->harga_jual,
+                    'harga_modal' => (float) $pu->harga_modal,
+                    'stok' => (int) $pu->stok,
+                    'stok_minimum' => (int) $pu->stok_minimum,
+                    'perlu_produksi' => $pu->status_ketersediaan === 'perlu_diproduksi' || $pu->stok <= 0,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Baris ukuran aktif dengan harga paling rendah. Dipakai buat nampilin
+     * harga "mulai dari" di kartu menu/listing — sengaja gak lagi
+     * ngasumsiin ukuran termurah itu pasti yang namanya "Kecil", karena
+     * urutan harga antar ukuran custom bisa aja beda-beda.
+     */
+    public function ukuranTermurah(): ?array
+    {
+        if (!$this->punya_ukuran) {
+            return null;
+        }
+
+        $daftar = $this->daftar_ukuran;
+        if (empty($daftar)) {
+            return null;
+        }
+
+        return collect($daftar)->sortBy('harga')->first();
+    }
+
+    /**
+     * Nama ukuran default yang aman dipakai kalau request gak nyertain
+     * parameter ukuran (mis. JS gagal kirim). Dulu di-hardcode 'Kecil',
+     * yang keliru buat produk yang cuma punya ukuran custom (misal cuma
+     * "Jumbo" doang, gak ada baris "Kecil"). Sekarang pakai ukuran aktif
+     * termurah yang beneran ada di produk ini.
+     */
+    public function ukuranDefault(): ?string
+    {
+        return $this->ukuranTermurah()['nama'] ?? null;
+    }
+
     public function getHarga(?string $ukuran = null): float
     {
         if ($this->punya_ukuran) {
+            $baris = $this->cariBarisUkuran($ukuran);
+            if ($baris) {
+                return (float) $baris->harga_jual;
+            }
+
+            // Fallback ke kolom lama — jaga-jaga kalau baris produk_ukurans
+            // untuk ukuran ini belum ada (data lama yang belum termigrasi).
             if ($ukuran === 'Besar') {
                 return (float) ($this->harga_besar ?? 0);
             }
@@ -173,11 +271,22 @@ class Produk extends Model
     public function stokUntukUkuran(?string $ukuran = null): int
     {
         if ($this->punya_ukuran) {
+            $baris = $this->cariBarisUkuran($ukuran);
+            if ($baris) {
+                return (int) $baris->stok;
+            }
+
             if ($ukuran === 'Besar') {
                 return (int) ($this->stok_besar ?? 0);
             }
             if ($ukuran === 'Kecil') {
                 return (int) ($this->stok_kecil ?? 0);
+            }
+
+            // Gak nyebutin ukuran spesifik -> total semua ukuran aktif.
+            $totalDinamis = (int) $this->daftarBarisUkuranAktif()->sum('stok');
+            if ($totalDinamis > 0) {
+                return $totalDinamis;
             }
             return (int) ($this->stok_besar ?? 0) + (int) ($this->stok_kecil ?? 0);
         }
@@ -200,25 +309,44 @@ class Produk extends Model
             return true;
         }
 
+        $daftarAktif = $this->daftarBarisUkuranAktif();
+        if ($daftarAktif->isNotEmpty()) {
+            return $daftarAktif->every(fn ($pu) => (int) $pu->stok <= 0);
+        }
+
+        // Fallback lama, buat produk yang belum punya baris produk_ukurans.
         return (int) ($this->stok_besar ?? 0) <= 0 && (int) ($this->stok_kecil ?? 0) <= 0;
     }
 
+    /**
+     * Sumber kebenaran tunggal buat ngurangin stok per-ukuran. Otomatis
+     * ngurangin baris produk_ukurans yang cocok (ukuran apapun, gak cuma
+     * Besar/Kecil) SEKALIGUS kolom lama stok_besar/stok_kecil/stok kalau
+     * namanya "Besar"/"Kecil" — supaya data lama & baru tetap sinkron
+     * tanpa perlu ada sinkronisasi manual lagi di controller lain.
+     */
     public function decrementStokUkuran(?string $ukuran, int $jumlah): void
     {
         if ($jumlah <= 0) {
             return;
         }
 
-        if ($this->punya_ukuran && $ukuran === 'Besar') {
-            $this->decrement('stok_besar', $jumlah);
+        if (!$this->punya_ukuran) {
             $this->decrement('stok', $jumlah);
             return;
         }
 
-        if ($this->punya_ukuran && $ukuran === 'Kecil') {
+        $baris = $this->cariBarisUkuran($ukuran);
+        if ($baris) {
+            $baris->stok = max(0, $baris->stok - $jumlah);
+            $baris->status_ketersediaan = $baris->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+            $baris->save();
+        }
+
+        if ($ukuran === 'Besar') {
+            $this->decrement('stok_besar', $jumlah);
+        } elseif ($ukuran === 'Kecil') {
             $this->decrement('stok_kecil', $jumlah);
-            $this->decrement('stok', $jumlah);
-            return;
         }
 
         $this->decrement('stok', $jumlah);
@@ -230,16 +358,22 @@ class Produk extends Model
             return;
         }
 
-        if ($this->punya_ukuran && $ukuran === 'Besar') {
-            $this->increment('stok_besar', $jumlah);
+        if (!$this->punya_ukuran) {
             $this->increment('stok', $jumlah);
             return;
         }
 
-        if ($this->punya_ukuran && $ukuran === 'Kecil') {
+        $baris = $this->cariBarisUkuran($ukuran);
+        if ($baris) {
+            $baris->stok = $baris->stok + $jumlah;
+            $baris->status_ketersediaan = $baris->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+            $baris->save();
+        }
+
+        if ($ukuran === 'Besar') {
+            $this->increment('stok_besar', $jumlah);
+        } elseif ($ukuran === 'Kecil') {
             $this->increment('stok_kecil', $jumlah);
-            $this->increment('stok', $jumlah);
-            return;
         }
 
         $this->increment('stok', $jumlah);

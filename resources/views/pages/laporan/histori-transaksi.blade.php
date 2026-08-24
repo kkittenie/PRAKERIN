@@ -91,37 +91,7 @@
                             <th class="py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach ($transaksiList as $trx)
-                            <tr>
-                                <td><span class="font-mono text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">{{ $trx->kode_transaksi }}</span></td>
-                                <td class="font-medium text-gray-800 dark:text-gray-200">{{ $trx->nama_pembeli }}</td>
-                                <td class="text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">{{ $trx->created_at->format('d M Y, H:i') }}</td>
-                                <td class="text-center">
-                                    @if(strtolower($trx->status_pembayaran) === 'lunas')
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400">Lunas</span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">Belum Bayar</span>
-                                    @endif
-                                </td>
-                                <td class="text-right text-gray-700 dark:text-gray-300">Rp {{ number_format($trx->subtotal, 0, ',', '.') }}</td>
-                                <td class="text-right text-orange-600 dark:text-orange-400">Rp {{ number_format($trx->diskon, 0, ',', '.') }}</td>
-                                <td class="text-right font-bold text-gray-900 dark:text-white">Rp {{ number_format($trx->total_bayar, 0, ',', '.') }}</td>
-                                <td class="text-center">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $trx->metode_pembayaran === 'tunai' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400' }}">
-                                        {{ ucfirst($trx->metode_pembayaran) }}
-                                    </span>
-                                </td>
-                                <td class="text-right whitespace-nowrap">
-                                    <div class="inline-flex items-center gap-0.5 justify-end">
-                                        <button @click="lihatDetail({{ $trx->id }})" title="Detail" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
 
@@ -245,9 +215,22 @@
     <script>
         $(document).ready(function() {
             initSaishoDataTable('historiTransaksiTable', {
+                serverSide: true,
+                ajax: '{{ route('histori-transaksi', request()->query()) }}',
+                order: [[2, 'desc']],
+                columns: [
+                    { data: 'kode_transaksi_html', name: 'kode_transaksi' },
+                    { data: 'nama_pembeli', name: 'nama_pembeli', className: 'font-medium text-gray-800 dark:text-gray-200' },
+                    { data: 'created_at', name: 'created_at', className: 'text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap' },
+                    { data: 'status_html', name: 'status_html', className: 'text-center' },
+                    { data: 'subtotal', name: 'subtotal', className: 'text-right text-gray-700 dark:text-gray-300' },
+                    { data: 'diskon', name: 'diskon', className: 'text-right text-orange-600 dark:text-orange-400' },
+                    { data: 'total_bayar', name: 'total_bayar', className: 'text-right font-bold text-gray-900 dark:text-white' },
+                    { data: 'metode_html', name: 'metode_html', className: 'text-center' },
+                    { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
+                ],
                 emptyText: 'Belum ada histori transaksi',
-                dtOptions: { pageLength: 15 },
-                columnDefs: [{ orderable: false, targets: -1 }]
+                dtOptions: { pageLength: 15 }
             });
         });
 

@@ -27,19 +27,26 @@ class SatuanController extends Controller
 
     public function index(Request $request)
     {
-        try {
-            $search = $request->search;
+        if ($request->ajax()) {
+            try {
+                $query = Satuan::query();
 
-            $satuan = Satuan::when($search, function ($query) use ($search) {
-                $query->where('nama', 'like', "%{$search}%");
-            })
-            ->latest()
-            ->get();
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->addColumn('aksi', fn ($item) => view('pages.satuan.partials.aksi', compact('item'))->render())
+                    ->rawColumns(['aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
 
-            return view('pages.satuan.index', compact('satuan'));
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data satuan.'], 500);
+            }
         }
+
+        return view('pages.satuan.index');
     }
 
     public function create()

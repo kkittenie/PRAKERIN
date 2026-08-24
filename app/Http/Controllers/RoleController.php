@@ -9,14 +9,28 @@ use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        try {
-            $roles = Role::withCount('permissions')->get();
-            return view('pages.roles.index', ['title' => 'Kelola Role', 'roles' => $roles]);
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+        if ($request->ajax()) {
+            try {
+                $query = Role::withCount('permissions');
+
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addColumn('permission_html', fn ($item) => view('pages.roles.partials.permission', compact('item'))->render())
+                    ->addColumn('aksi', fn ($item) => view('pages.roles.partials.aksi', compact('item'))->render())
+                    ->rawColumns(['permission_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
+
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data role.'], 500);
+            }
         }
+
+        return view('pages.roles.index', ['title' => 'Kelola Role']);
     }
 
     public function create()

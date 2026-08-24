@@ -54,65 +54,7 @@
                             <th class="py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach($vouchers as $index => $item)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>
-                                    <div class="flex items-center gap-3">
-                                        @if($item->gambar)
-                                            <img src="{{ asset('storage/'.$item->gambar) }}" class="w-11 h-11 aspect-square rounded-xl object-cover border border-gray-200 dark:border-gray-700 shrink-0 shadow-xs">
-                                        @else
-                                            <div class="w-11 h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-xs">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
-                                                </svg>
-                                            </div>
-                                        @endif
-                                        <a href="{{ route('reward-voucher.show', $item->id) }}" class="font-semibold text-gray-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 transition">
-                                            {{ $item->nama }}
-                                        </a>
-                                    </div>
-                                </td>
-                                <td class="text-xs text-gray-600 dark:text-gray-400 max-w-xs">
-                                    <span class="line-clamp-2">{{ $item->deskripsi ?: '-' }}</span>
-                                </td>
-                                <td class="text-center text-xs font-semibold">{{ number_format($item->poin_dibutuhkan, 0, ',', '.') }} poin</td>
-                                <td class="text-center text-xs">
-                                    @if(is_null($item->stok))
-                                        <span class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">Tidak terbatas</span>
-                                    @else
-                                        {{ $item->stok }}
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    <form action="{{ route('reward-voucher.toggle-status', $item->id) }}" method="POST" class="inline">
-                                        @csrf @method('PATCH')
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
-                                            <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
-                                        </label>
-                                    </form>
-                                </td>
-                                <td class="text-right whitespace-nowrap">
-                                    <div class="inline-flex items-center gap-0.5 justify-end">
-                                        <a href="{{ route('reward-voucher.show', $item->id) }}" title="Detail" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        </a>
-                                        <a href="{{ route('reward-voucher.edit', $item->id) }}" title="Edit" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                        </a>
-                                        <form action="{{ route('reward-voucher.destroy', $item->id) }}" method="POST" class="inline">
-                                            @csrf @method('DELETE')
-                                            <button type="button" title="Hapus" @click="bukaModalHapus($el.closest('form'), '{{ addslashes($item->nama) }}')" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
 
@@ -146,8 +88,19 @@
 <script>
     $(document).ready(function() {
         initSaishoDataTable('rewardVoucherTable', {
-            emptyText: 'Belum ada data reward voucher',
-            columnDefs: [{ orderable: false, targets: -1 }]
+            serverSide: true,
+            ajax: '{{ route('reward-voucher.index') }}',
+            order: [[1, 'asc']],
+            columns: [
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'voucher_html', name: 'nama' },
+                { data: 'deskripsi', name: 'deskripsi', searchable: false, className: 'text-xs text-gray-600 dark:text-gray-400 max-w-xs' },
+                { data: 'poin_dibutuhkan', name: 'poin_dibutuhkan', searchable: false, className: 'text-center text-xs font-semibold' },
+                { data: 'stok_html', name: 'stok', searchable: false, className: 'text-center text-xs' },
+                { data: 'status_html', name: 'status_aktif', searchable: false, className: 'text-center' },
+                { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
+            ],
+            emptyText: 'Belum ada data reward voucher'
         });
     });
 </script>

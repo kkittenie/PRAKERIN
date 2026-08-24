@@ -13,26 +13,37 @@ class RewardVoucherController extends Controller
 {
     public function index(Request $request)
     {
-        try {
-            $search = $request->search;
-            $statusFilter = $request->status;
+        if ($request->ajax()) {
+            try {
+                $statusFilter = $request->status;
 
-            $vouchers = RewardKatalog::where('jenis', 'voucher')
-                ->when($search, function ($query) use ($search) {
-                    $query->where('nama', 'like', "%{$search}%");
-                })
-                ->when($statusFilter === 'aktif', fn ($q) => $q->where('status_aktif', true))
-                ->when($statusFilter === 'nonaktif', fn ($q) => $q->where('status_aktif', false))
-                ->latest()
-                ->get();
+                $query = RewardKatalog::where('jenis', 'voucher')
+                    ->when($statusFilter === 'aktif', fn ($q) => $q->where('status_aktif', true))
+                    ->when($statusFilter === 'nonaktif', fn ($q) => $q->where('status_aktif', false));
 
-            return view('pages.reward-voucher.index', [
-                'title' => 'Reward Voucher',
-                'vouchers' => $vouchers,
-            ]);
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->addColumn('voucher_html', fn ($item) => view('pages.reward-voucher.partials.voucher', compact('item'))->render())
+                    ->editColumn('deskripsi', fn ($item) => view('pages.reward-voucher.partials.deskripsi', compact('item'))->render())
+                    ->editColumn('poin_dibutuhkan', fn ($item) => number_format($item->poin_dibutuhkan, 0, ',', '.') . ' poin')
+                    ->addColumn('stok_html', fn ($item) => view('pages.reward-voucher.partials.stok', compact('item'))->render())
+                    ->addColumn('status_html', fn ($item) => view('pages.reward-voucher.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn ($item) => view('pages.reward-voucher.partials.aksi', compact('item'))->render())
+                    ->rawColumns(['voucher_html', 'deskripsi', 'stok_html', 'status_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
+
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data reward voucher.'], 500);
+            }
         }
+
+        return view('pages.reward-voucher.index', [
+            'title' => 'Reward Voucher',
+        ]);
     }
 
     public function create()

@@ -28,7 +28,7 @@
                     <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-1">Riwayat Redeem</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Lihat semua riwayat penukaran reward oleh member.</p>
                 </div>
-                <form method="GET" action="{{ route('riwayat-redeem.index') }}" class="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full md:w-auto flex-wrap">
+                <form method="GET" action="{{ route('riwayat-redeem.index') }}" id="filterForm" class="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full md:w-auto flex-wrap">
                     <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
                         <select name="status" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
@@ -92,43 +92,7 @@
                             <th class="py-3 text-center">Status</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach ($riwayat as $index => $item)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>
-                                    <span class="font-mono text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded-md">{{ $item->kode_redeem }}</span>
-                                </td>
-                                <td>
-                                    <span class="block font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">{{ $item->member->nama ?? 'Member tidak ditemukan' }}</span>
-                                    <span class="block text-xs text-gray-400">{{ $item->member->no_hp ?? '-' }}</span>
-                                </td>
-                                <td>
-                                    <span class="block font-medium text-gray-800 dark:text-gray-200 text-xs sm:text-sm">{{ $item->reward->nama ?? 'Reward tidak ditemukan' }}</span>
-                                    @if($item->reward)
-                                        <span class="inline-flex mt-0.5 items-center px-2 py-0.5 rounded-full text-[10px] font-semibold
-                                            {{ $item->reward->jenis === 'voucher' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400' }}">
-                                            {{ ucfirst($item->reward->jenis) }}
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="text-center font-semibold text-red-500">-{{ number_format($item->poin_terpakai, 0, ',', '.') }}</td>
-                                <td class="text-xs text-gray-500 dark:text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</td>
-                                <td class="text-center">
-                                    @php
-                                        $statusBadge = [
-                                            'menunggu_diambil' => ['label' => 'Menunggu Diambil', 'class' => 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'],
-                                            'selesai' => ['label' => 'Selesai', 'class' => 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400'],
-                                            'dibatalkan' => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400'],
-                                        ][$item->status];
-                                    @endphp
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusBadge['class'] }}">
-                                        {{ $statusBadge['label'] }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
 
@@ -168,10 +132,40 @@
 
 @push('scripts')
 <script>
+    window.reloadRiwayatRedeemTable = function() {
+        if ($.fn.DataTable.isDataTable('#riwayatRedeemTable')) {
+            $('#riwayatRedeemTable').DataTable().ajax.reload();
+        }
+    };
+
     $(document).ready(function() {
         initSaishoDataTable('riwayatRedeemTable', {
-            emptyText: 'Belum ada riwayat redeem',
-            columnDefs: [{ orderable: false, targets: -1 }]
+            serverSide: true,
+            order: [[5, 'desc']],
+            ajax: {
+                url: '{{ route('riwayat-redeem.index') }}',
+                data: function(d) {
+                    d.status = $('#filterForm select[name="status"]').val();
+                    d.jenis = $('#filterForm select[name="jenis"]').val();
+                    d.tanggal_mulai = $('#filterForm input[name="tanggal_mulai"]').val();
+                    d.tanggal_selesai = $('#filterForm input[name="tanggal_selesai"]').val();
+                }
+            },
+            columns: [
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'kode_html', name: 'kode_redeem' },
+                { data: 'member_html', name: 'member.nama', searchable: false },
+                { data: 'reward_html', name: 'reward.nama', searchable: false },
+                { data: 'poin_terpakai', name: 'poin_terpakai', searchable: false, className: 'text-center font-semibold text-red-500' },
+                { data: 'created_at', name: 'created_at', searchable: false, className: 'text-xs text-gray-500 dark:text-gray-400' },
+                { data: 'status_html', name: 'status', searchable: false, className: 'text-center' }
+            ],
+            emptyText: 'Belum ada riwayat redeem'
+        });
+
+        $('#filterForm').on('submit', function(e) {
+            e.preventDefault();
+            window.reloadRiwayatRedeemTable();
         });
     });
 </script>

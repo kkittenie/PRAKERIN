@@ -1,0 +1,1 @@
+Rp {{ number_format($item->total_harga, 0, ',', '.') }}

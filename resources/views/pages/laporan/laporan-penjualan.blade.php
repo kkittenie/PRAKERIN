@@ -122,30 +122,7 @@
                             <th class="py-3 text-right">Total Pendapatan</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach($produkTerlaris as $index => $produk)
-                        <tr>
-                            <td>
-                                @if($index < 3)
-                                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold
-                                        {{ $index === 0 ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' : ($index === 1 ? 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400' : 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400') }}">
-                                        {{ $index + 1 }}
-                                    </span>
-                                @else
-                                    <span class="text-gray-400 dark:text-gray-500 font-medium pl-2">{{ $index + 1 }}</span>
-                                @endif
-                            </td>
-                            <td class="font-medium text-gray-800 dark:text-gray-200">{{ $produk->nama_produk }}</td>
-                            <td class="text-right">
-                                <span class="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold">
-                                    {{ number_format($produk->total_terjual, 0, ',', '.') }}
-                                    <span class="text-gray-400 dark:text-gray-500 text-xs font-normal">pcs</span>
-                                </span>
-                            </td>
-                            <td class="text-right font-bold text-gray-900 dark:text-white">Rp {{ number_format($produk->total_pendapatan, 0, ',', '.') }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
 
@@ -161,7 +138,31 @@
 <script>
 $(document).ready(function() {
     initSaishoDataTable('produkTerlarisTable', {
-        emptyText: 'Belum ada data penjualan'
+        serverSide: true,
+        ajax: '{{ route('laporan-penjualan', ['periode' => $periode, 'tahun' => $tahun]) }}',
+        order: [[2, 'desc']],
+        columns: [
+            { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'w-12' },
+            { data: 'nama_produk', name: 'nama_produk', className: 'font-medium text-gray-800 dark:text-gray-200' },
+            { data: 'total_terjual_html', name: 'total_terjual', className: 'text-right' },
+            { data: 'total_pendapatan_html', name: 'total_pendapatan', className: 'text-right font-bold text-gray-900 dark:text-white' }
+        ],
+        emptyText: 'Belum ada data penjualan',
+        dtOptions: {
+            createdRow: function(row, data) {
+                var idx = data.DT_RowIndex;
+                if (idx <= 3) {
+                    var kelas = idx === 1
+                        ? 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+                        : (idx === 2
+                            ? 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                            : 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400');
+                    $('td:eq(0)', row).html('<span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ' + kelas + '">' + idx + '</span>');
+                } else {
+                    $('td:eq(0)', row).html('<span class="text-gray-400 dark:text-gray-500 font-medium pl-2">' + idx + '</span>');
+                }
+            }
+        }
     });
 });
 

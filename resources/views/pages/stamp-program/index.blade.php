@@ -55,52 +55,7 @@
                             <th class="py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach($programs as $index => $item)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td class="font-semibold text-gray-900 dark:text-white">{{ $item->nama_program }}</td>
-                                <td class="text-center text-xs">Rp {{ number_format($item->minimal_pembelian, 0, ',', '.') }}</td>
-                                <td class="text-center font-bold text-brand-600 dark:text-brand-400 text-xs">{{ $item->jumlah_stamp_dibutuhkan }} stamp</td>
-                                <td class="text-center text-xs">{{ $item->hadiah_count }} produk</td>
-                                <td class="text-center text-xs">
-                                    @if($item->maksimal_redeem)
-                                        {{ $item->jumlah_redeem ?? 0 }} / {{ $item->maksimal_redeem }}
-                                    @else
-                                        <span class="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">Tidak terbatas</span>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    <form action="{{ route('stamp-program.toggle-status', $item->id) }}" method="POST" class="inline">
-                                        @csrf @method('PATCH')
-                                        <label class="relative inline-flex items-center cursor-pointer" title="Klik untuk mengaktifkan/menonaktifkan">
-                                            <input type="checkbox" class="sr-only peer" onchange="this.form.submit()" {{ $item->status_aktif ? 'checked' : '' }}>
-                                            <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
-                                        </label>
-                                    </form>
-                                    @if($item->status_aktif && $item->status_saat_ini !== 'Aktif')
-                                        <p class="mt-1 text-[10px] leading-tight font-semibold text-red-600 dark:text-red-400">⚠ {{ $item->status_saat_ini }}</p>
-                                    @endif
-                                </td>
-                                <td class="text-right whitespace-nowrap">
-                                    <div class="inline-flex items-center gap-0.5 justify-end">
-                                        <a href="{{ route('stamp-program.show', $item->id) }}" title="Detail" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        </a>
-                                        <a href="{{ route('stamp-program.edit', $item->id) }}" title="Edit" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                        </a>
-                                        <form action="{{ route('stamp-program.destroy', $item->id) }}" method="POST" class="inline">
-                                            @csrf @method('DELETE')
-                                            <button type="button" title="Hapus" @click="bukaModalHapus($el.closest('form'), '{{ addslashes($item->nama_program) }}')" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
 
@@ -134,8 +89,20 @@
 <script>
     $(document).ready(function() {
         initSaishoDataTable('stampProgramTable', {
-            emptyText: 'Belum ada data program stamp',
-            columnDefs: [{ orderable: false, targets: -1 }]
+            serverSide: true,
+            ajax: '{{ route('stamp-program.index') }}',
+            order: [[1, 'asc']],
+            columns: [
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'nama_program', name: 'nama_program', className: 'font-semibold text-gray-900 dark:text-white' },
+                { data: 'minimal_pembelian', name: 'minimal_pembelian', searchable: false, className: 'text-center text-xs' },
+                { data: 'jumlah_stamp_dibutuhkan', name: 'jumlah_stamp_dibutuhkan', searchable: false, className: 'text-center font-bold text-brand-600 dark:text-brand-400 text-xs' },
+                { data: 'hadiah_html', name: 'hadiah_count', searchable: false, className: 'text-center text-xs' },
+                { data: 'redeem_html', name: 'redeem_html', searchable: false, className: 'text-center text-xs' },
+                { data: 'status_html', name: 'status_aktif', searchable: false, className: 'text-center' },
+                { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
+            ],
+            emptyText: 'Belum ada data program stamp'
         });
     });
 </script>

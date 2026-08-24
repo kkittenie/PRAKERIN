@@ -13,48 +13,58 @@ class TransaksiBahanBakuController extends Controller
 {
     public function index(Request $request)
     {
-        try {
-            $transaksi = TransaksiBahanBaku::with([
-                'bahanBaku',
-                'user',
-            ])
-            ->when($request->search, function ($query) use ($request) {
-                $search = $request->search;
+        if ($request->ajax()) {
+            try {
+                $query = TransaksiBahanBaku::with('bahanBaku.satuan');
 
-                $query->where(function ($q) use ($search) {
-                    $q->where(
-                        'supplier',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhere(
-                        'nomor_nota',
-                        'like',
-                        "%{$search}%"
-                    )
-                    ->orWhereHas(
-                        'bahanBaku',
-                        function ($q) use ($search) {
-                            $q->where(
-                                'nama_bahan',
-                                'like',
-                                "%{$search}%"
-                            );
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addIndexColumn()
+                    ->editColumn('tanggal', fn($item) => \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y'))
+                    ->addColumn('bahan_baku_html', fn($item) => view('pages.transaksi-bahan-baku.partials.bahan-baku', compact('item'))->render())
+                    ->addColumn('jumlah_html', fn($item) => view('pages.transaksi-bahan-baku.partials.jumlah', compact('item'))->render())
+                    ->addColumn('total_harga_html', fn($item) => view('pages.transaksi-bahan-baku.partials.total-harga', compact('item'))->render())
+                    ->editColumn('supplier', fn($item) => $item->supplier ?: '-')
+                    ->addColumn('aksi', fn($item) => view('pages.transaksi-bahan-baku.partials.aksi', compact('item'))->render())
+                    ->orderColumn('tanggal', function ($query, $order) {
+                        // Sekunder sort by id, sama seperti perilaku lama
+                        // (->latest('tanggal')->latest('id')).
+                        $query->orderBy('tanggal', $order)->orderBy('id', $order);
+                    })
+                    ->orderColumn('bahan_baku_html', function ($query, $order) {
+                        // 'bahan_baku_html' bukan kolom di tabel transaksi_bahan_bakus,
+                        // melainkan relasi ke bahan_bakus.nama_bahan, jadi di-join manual.
+                        $query->join('bahan_bakus', 'transaksi_bahan_bakus.bahan_baku_id', '=', 'bahan_bakus.id')
+                            ->orderBy('bahan_bakus.nama_bahan', $order)
+                            ->select('transaksi_bahan_bakus.*');
+                    })
+                    ->filter(function ($query) use ($request) {
+                        // Override pencarian global supaya tetap bisa cari lewat
+                        // supplier, nomor nota, dan nama bahan baku (seperti sebelumnya).
+                        $search = $request->input('search.value');
+
+                        if ($search) {
+                            $query->where(function ($q) use ($search) {
+                                $q->where('supplier', 'like', "%{$search}%")
+                                    ->orWhere('nomor_nota', 'like', "%{$search}%")
+                                    ->orWhereHas('bahanBaku', function ($qb) use ($search) {
+                                        $qb->where('nama_bahan', 'like', "%{$search}%");
+                                    });
+                            });
                         }
-                    );
-                });
-            })
-            ->latest('tanggal')
-            ->latest('id')
-            ->get();
+                    }, true)
+                    ->rawColumns(['bahan_baku_html', 'jumlah_html', 'total_harga_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
 
-            return view(
-                'pages.transaksi-bahan-baku.index',
-                compact('transaksi')
-            );
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data transaksi bahan baku.'], 500);
+            }
         }
+
+        return view('pages.transaksi-bahan-baku.index');
     }
 
     public function create()

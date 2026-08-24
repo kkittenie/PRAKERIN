@@ -16,17 +16,10 @@ class LaporanController extends Controller
      */
     public function historiTransaksi(Request $request)
     {
-        try {
-            $query = Transaksi::with('detailTransaksi')->orderBy('created_at', 'desc');
-
-            // Filter berdasarkan pencarian
-            if ($request->filled('cari')) {
-                $cari = $request->cari;
-                $query->where(function ($q) use ($cari) {
-                    $q->where('kode_transaksi', 'like', "%{$cari}%")
-                      ->orWhere('nama_pembeli', 'like', "%{$cari}%");
-                });
-            }
+        // Query dasar + filter tanggal/status dipakai baik untuk render halaman
+        // maupun untuk request AJAX DataTables (route yang sama).
+        $buildQuery = function () use ($request) {
+            $query = Transaksi::query();
 
             // Filter berdasarkan tanggal
             if ($request->filled('tanggal_mulai')) {
@@ -50,15 +43,58 @@ class LaporanController extends Controller
                 }
             }
 
-            $transaksiList = $query->get();
+            return $query;
+        };
 
-            return view('pages.laporan.histori-transaksi', [
-                'title' => 'Histori Transaksi',
-                'transaksiList' => $transaksiList,
-            ]);
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
+        if ($request->ajax()) {
+            try {
+                $query = $buildQuery();
+
+                return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->addColumn('kode_transaksi_html', fn($item) => view('pages.laporan.partials.kode-transaksi', compact('item'))->render())
+                    ->editColumn('created_at', fn($item) => $item->created_at->format('d M Y, H:i'))
+                    ->addColumn('status_html', fn($item) => view('pages.laporan.partials.status-pembayaran', compact('item'))->render())
+                    ->editColumn('subtotal', fn($item) => 'Rp ' . number_format($item->subtotal, 0, ',', '.'))
+                    ->editColumn('diskon', fn($item) => 'Rp ' . number_format($item->diskon, 0, ',', '.'))
+                    ->editColumn('total_bayar', fn($item) => 'Rp ' . number_format($item->total_bayar, 0, ',', '.'))
+                    ->addColumn('metode_html', fn($item) => view('pages.laporan.partials.metode-pembayaran', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('pages.laporan.partials.aksi-histori', compact('item'))->render())
+                    ->orderColumn('kode_transaksi_html', function ($query, $order) {
+                        $query->orderBy('kode_transaksi', $order);
+                    })
+                    ->orderColumn('status_html', function ($query, $order) {
+                        $query->orderBy('status_pembayaran', $order);
+                    })
+                    ->orderColumn('metode_html', function ($query, $order) {
+                        $query->orderBy('metode_pembayaran', $order);
+                    })
+                    ->filter(function ($query) use ($request) {
+                        // Override pencarian global supaya tetap bisa cari lewat
+                        // kode transaksi & nama pembeli (seperti sebelumnya).
+                        $search = $request->input('search.value');
+
+                        if ($search) {
+                            $query->where(function ($q) use ($search) {
+                                $q->where('kode_transaksi', 'like', "%{$search}%")
+                                    ->orWhere('nama_pembeli', 'like', "%{$search}%");
+                            });
+                        }
+                    }, true)
+                    ->rawColumns(['kode_transaksi_html', 'status_html', 'metode_html', 'aksi'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
+
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat histori transaksi.'], 500);
+            }
         }
+
+        return view('pages.laporan.histori-transaksi', [
+            'title' => 'Histori Transaksi',
+        ]);
     }
 
     /**
@@ -83,6 +119,35 @@ class LaporanController extends Controller
      */
     public function laporanPenjualan(Request $request)
     {
+        if ($request->ajax()) {
+            try {
+                // Produk terlaris (top 10 sepanjang waktu) - hasil agregasi GROUP BY.
+                // Diambil sebagai collection dulu (bukan query builder) supaya urutan
+                // "top 10 by total_terjual" ini tetap jadi seleksi datanya, dan sort
+                // dari DataTables (klik header kolom lain) beneran menggantikan
+                // urutan tampil tanpa terbentur ->orderByDesc() bawaan di atas.
+                $produkTerlaris = DetailTransaksi::select('nama_produk', DB::raw('SUM(jumlah) as total_terjual'), DB::raw('SUM(subtotal) as total_pendapatan'))
+                    ->groupBy('nama_produk')
+                    ->orderByDesc('total_terjual')
+                    ->limit(10)
+                    ->get();
+
+                return \Yajra\DataTables\Facades\DataTables::of($produkTerlaris)
+                    ->addIndexColumn()
+                    ->addColumn('total_terjual_html', fn($item) => view('pages.laporan.partials.total-terjual', compact('item'))->render())
+                    ->addColumn('total_pendapatan_html', fn($item) => view('pages.laporan.partials.total-pendapatan', compact('item'))->render())
+                    ->rawColumns(['total_terjual_html', 'total_pendapatan_html'])
+                    ->make(true);
+            } catch (\Throwable $e) {
+                activity('error')
+                    ->causedBy(auth()->user())
+                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
+                    ->log('Error: ' . $e->getMessage());
+
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data produk terlaris.'], 500);
+            }
+        }
+
         try {
             $periode = $request->get('periode', 'bulan'); // minggu, bulan, tahun
             $tahun = (int) $request->get('tahun', date('Y'));
@@ -137,13 +202,6 @@ class LaporanController extends Controller
                 }
             }
 
-            // Produk terlaris (top 10)
-            $produkTerlaris = DetailTransaksi::select('nama_produk', DB::raw('SUM(jumlah) as total_terjual'), DB::raw('SUM(subtotal) as total_pendapatan'))
-                ->groupBy('nama_produk')
-                ->orderByDesc('total_terjual')
-                ->limit(10)
-                ->get();
-
             // Daftar tahun yang memiliki transaksi
             $daftarTahun = Transaksi::selectRaw('YEAR(created_at) as tahun')
                 ->groupBy('tahun')
@@ -169,7 +227,6 @@ class LaporanController extends Controller
                 'jumlahTransaksiTahunIni' => $jumlahTransaksiTahunIni,
                 'dataGrafik' => $dataGrafik,
                 'labelGrafik' => $labelGrafik,
-                'produkTerlaris' => $produkTerlaris,
                 'daftarTahun' => $daftarTahun,
             ]);
         } catch (\Throwable $e) {
