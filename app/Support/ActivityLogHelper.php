@@ -26,7 +26,7 @@ class ActivityLogHelper
 
         $user = auth()->user() ?? auth('member')->user();
 
-        $log = activity();
+        $log = activity('error');
         if ($user) {
             $log->causedBy($user);
         }

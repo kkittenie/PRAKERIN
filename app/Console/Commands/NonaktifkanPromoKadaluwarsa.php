@@ -46,7 +46,7 @@ class NonaktifkanPromoKadaluwarsa extends Command
 
             return self::SUCCESS;
         } catch (\Throwable $e) {
-            activity()
+            activity('error')
                 ->withProperties([
                     'error_message' => $e->getMessage(),
                     'exception' => get_class($e),

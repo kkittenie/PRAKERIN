@@ -69,7 +69,7 @@ class ProduksiController extends Controller
 
     private function filteredProduksiQuery(Request $request, string $periode, Carbon $tanggalRef)
     {
-        $search = $request->search;
+        $search = is_array($request->search) ? ($request->search['value'] ?? null) : $request->search;
         $status = $request->status ?? 'semua';
         $now = Carbon::now();
 

@@ -41,7 +41,7 @@ class UpdateStatusProduksi extends Command
             $this->info('Status produksi telah diperbarui');
             return Command::SUCCESS;
         } catch (\Throwable $e) {
-            activity()
+            activity('error')
                 ->withProperties([
                     'error_message' => $e->getMessage(),
                     'exception' => get_class($e),
