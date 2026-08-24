@@ -27,8 +27,12 @@ class MenuController extends Controller
                 foreach ($kategori->produk as $produk) {
                     try {
                         if ($produk->punya_ukuran) {
-                            $hargaAsli = (float) ($produk->harga_kecil ?? 0);
-                            $hargaFinal = $produk->hargaSetelahPromo('Kecil');
+                            // Dulu selalu pakai ukuran "Kecil" buat harga
+                            // "mulai dari". Sekarang cari ukuran aktif yang
+                            // harganya paling rendah beneran, apapun namanya.
+                            $namaTermurah = $produk->ukuranTermurah()['nama'] ?? null;
+                            $hargaAsli = $produk->getHarga($namaTermurah);
+                            $hargaFinal = $produk->hargaSetelahPromo($namaTermurah);
                         } else {
                             $hargaAsli = (float) $produk->harga_jual;
                             $hargaFinal = (float) $produk->harga_diskon;

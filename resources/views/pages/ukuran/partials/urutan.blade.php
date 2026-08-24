@@ -1,0 +1,1 @@
+<span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-400">{{ $item->urutan }}</span>

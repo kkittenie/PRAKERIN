@@ -27,4 +27,14 @@ class Ukuran extends Model
     {
         return $query->orderBy('urutan')->orderBy('nama_ukuran');
     }
+
+    /**
+     * Baris produk_ukurans yang pakai ukuran ini. Dipakai buat ngecek
+     * "masih dipakai produk atau enggak" sebelum boleh dihapus — sama
+     * kayak Satuan::bahanBakus() / KategoriProduk::produk().
+     */
+    public function produkUkurans()
+    {
+        return $this->hasMany(ProdukUkuran::class, 'ukuran_id');
+    }
 }

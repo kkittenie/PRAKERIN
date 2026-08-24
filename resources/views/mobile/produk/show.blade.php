@@ -10,15 +10,17 @@
 
     <div x-data="{
                     jumlah: {{ $itemEdit['jumlah'] ?? 1 }},
-                    ukuran: @js($itemEdit['ukuran'] ?? ($produk->punya_ukuran ? 'Kecil' : '')),
+                    ukuran: @js($ukuranDipilihAwal ?? ''),
                     catatan: @js($itemEdit['catatan'] ?? ''),
-                    punyaUkuran: {{ $produk->punya_ukuran ? 'true' : 'false' }},
-                    hargaKecil: {{ (float) ($punyaUkuran ? $hargaKecilFinal : 0) }},
-                    hargaBesar: {{ (float) ($punyaUkuran ? $hargaBesarFinal : 0) }},
+                    punyaUkuran: {{ $punyaUkuran ? 'true' : 'false' }},
+                    daftarUkuran: @js($daftarUkuran),
                     hargaDasar: {{ (float) $hargaFinal }},
+                    get opsiUkuranTerpilih() {
+                        return this.daftarUkuran.find(o => o.nama === this.ukuran) || null;
+                    },
                     get hargaSatuan() {
                         if (this.punyaUkuran) {
-                            return this.ukuran === 'Besar' ? this.hargaBesar : this.hargaKecil;
+                            return this.opsiUkuranTerpilih ? this.opsiUkuranTerpilih.harga_final : this.hargaDasar;
                         }
                         return this.hargaDasar;
                     },
@@ -132,44 +134,30 @@
                         Pilihan Ukuran
                     </h3>
 
-                    <div class="mt-2 grid grid-cols-2 gap-2">
-                        {{-- Kecil --}}
-                        <button type="button" @click="ukuran = 'Kecil'" :class="
-                                        ukuran === 'Kecil'
-                                            ? 'border-brand-800 bg-brand-50 text-brand-800'
-                                            : 'border-gray-200 text-gray-600'
-                                    " class="rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]">
-                            <span class="block text-xs font-bold">
-                                Kecil
-                            </span>
-                            @if ($adaPromoKecil)
-                                <span class="block text-[10px] font-semibold text-gray-400 line-through">
-                                    Rp {{ number_format($hargaKecilAsli, 0, ',', '.') }}
-                                </span>
-                            @endif
-                            <span class="block text-[11px] font-semibold text-gray-500">
-                                Rp {{ number_format($hargaKecilFinal, 0, ',', '.') }}
-                            </span>
-                        </button>
+                    <template x-if="!daftarUkuran || daftarUkuran.length === 0">
+                        <p class="mt-2 text-[11px] italic text-gray-400">
+                            Belum ada ukuran aktif untuk produk ini.
+                        </p>
+                    </template>
 
-                        {{-- Besar --}}
-                        <button type="button" @click="ukuran = 'Besar'" :class="
-                                        ukuran === 'Besar'
-                                            ? 'border-brand-800 bg-brand-50 text-brand-800'
-                                            : 'border-gray-200 text-gray-600'
-                                    " class="rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]">
-                            <span class="block text-xs font-bold">
-                                Besar
-                            </span>
-                            @if ($adaPromoBesar)
-                                <span class="block text-[10px] font-semibold text-gray-400 line-through">
-                                    Rp {{ number_format($hargaBesarAsli, 0, ',', '.') }}
-                                </span>
-                            @endif
-                            <span class="block text-[11px] font-semibold text-gray-500">
-                                Rp {{ number_format($hargaBesarFinal, 0, ',', '.') }}
-                            </span>
-                        </button>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                        <template x-for="opsi in daftarUkuran" :key="opsi.produk_ukuran_id">
+                            <button type="button" @click="ukuran = opsi.nama" :class="
+                                            ukuran === opsi.nama
+                                                ? 'border-brand-800 bg-brand-50 text-brand-800'
+                                                : 'border-gray-200 text-gray-600'
+                                        " class="rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]">
+                                <span class="block text-xs font-bold" x-text="opsi.nama"></span>
+
+                                <template x-if="opsi.ada_promo">
+                                    <span class="block text-[10px] font-semibold text-gray-400 line-through"
+                                        x-text="'Rp ' + opsi.harga_asli.toLocaleString('id-ID')"></span>
+                                </template>
+
+                                <span class="block text-[11px] font-semibold text-gray-500"
+                                    x-text="'Rp ' + opsi.harga_final.toLocaleString('id-ID')"></span>
+                            </button>
+                        </template>
                     </div>
                 </div>
             @endif

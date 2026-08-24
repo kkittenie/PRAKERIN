@@ -214,6 +214,26 @@ class Produk extends Model
             ->all();
     }
 
+    /**
+     * Baris ukuran aktif dengan harga paling rendah. Dipakai buat nampilin
+     * harga "mulai dari" di kartu menu/listing — sengaja gak lagi
+     * ngasumsiin ukuran termurah itu pasti yang namanya "Kecil", karena
+     * urutan harga antar ukuran custom bisa aja beda-beda.
+     */
+    public function ukuranTermurah(): ?array
+    {
+        if (!$this->punya_ukuran) {
+            return null;
+        }
+
+        $daftar = $this->daftar_ukuran;
+        if (empty($daftar)) {
+            return null;
+        }
+
+        return collect($daftar)->sortBy('harga')->first();
+    }
+
     public function getHarga(?string $ukuran = null): float
     {
         if ($this->punya_ukuran) {
