@@ -12,7 +12,7 @@ class UkuranController extends Controller
     {
         if ($request->ajax()) {
             try {
-                $query = Ukuran::urut();
+                $query = Ukuran::query();
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
