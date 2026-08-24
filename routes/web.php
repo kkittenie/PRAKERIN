@@ -33,6 +33,7 @@ use App\Http\Controllers\KontenStatisController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PromoProdukEventController;
 use App\Http\Controllers\UkuranController;
+use App\Http\Controllers\ProdukUkuranController;
 
 require __DIR__ . '/mobile.php';
 
@@ -194,6 +195,19 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/ukuran/{id}/toggle-status', [UkuranController::class, 'toggleStatus'])
         ->name('ukuran.toggle-status')
         ->middleware('permission:edit_ukuran');
+
+    // Baris ukuran dinamis milik satu produk (dipakai di halaman edit Produk).
+    Route::middleware('permission:edit_produk')->group(function () {
+        Route::post('/produk/{produk}/ukuran', [ProdukUkuranController::class, 'store'])
+            ->name('produk-ukuran.store');
+        Route::put('/produk-ukuran/{produkUkuran}', [ProdukUkuranController::class, 'update'])
+            ->name('produk-ukuran.update');
+        Route::patch('/produk-ukuran/{id}/toggle-status', [ProdukUkuranController::class, 'toggleStatus'])
+            ->name('produk-ukuran.toggle-status');
+        Route::delete('/produk-ukuran/{produkUkuran}', [ProdukUkuranController::class, 'destroy'])
+            ->name('produk-ukuran.destroy');
+    });
+
 
 
 

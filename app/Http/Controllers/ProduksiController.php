@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Produksi;
 use App\Models\Produk;
+use App\Models\ProdukUkuran;
 use App\Models\BahanBaku;
 use App\Models\ProduksiBahanBaku;
 use App\Events\StatusProduksiUpdate;
@@ -132,42 +133,15 @@ class ProduksiController extends Controller
 
     public function index(Request $request)
     {
-        if ($request->ajax()) {
-            try {
-                [$periode, $tanggalRef] = $this->resolvePeriode($request);
-                $query = $this->filteredProduksiQuery($request, $periode, $tanggalRef);
-
-                return \Yajra\DataTables\Facades\DataTables::of($query)
-                    ->addIndexColumn()
-                    ->editColumn('tanggal', fn($item) => view('pages.produksi.partials.tanggal', compact('item'))->render())
-                    ->addColumn('produk_html', fn($item) => view('pages.produksi.partials.produk', compact('item'))->render())
-                    ->addColumn('hasil_html', fn($item) => view('pages.produksi.partials.hasil', compact('item'))->render())
-                    ->editColumn('user.name', fn($item) => e(optional($item->user)->name ?? '-'))
-                    ->editColumn('keterangan', fn($item) => view('pages.produksi.partials.keterangan', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.produksi.partials.aksi', compact('item'))->render())
-                    ->setRowAttr([
-                        'data-produksi-row' => '',
-                        'data-kadaluarsa-waktu' => fn($item) => $item->kadaluarsa_waktu ? $item->kadaluarsa_waktu->toIso8601String() : '',
-                        'data-sisa' => fn($item) => (int) $item->sisa_belum_disesuaikan,
-                    ])
-                    ->setRowClass(fn($item) => $item->perlu_tindakan ? 'bg-red-50/70 dark:bg-red-500/10' : '')
-                    ->rawColumns(['tanggal', 'produk_html', 'hasil_html', 'keterangan', 'aksi'])
-                    ->make(true);
-            } catch (\Throwable $e) {
-                activity('error')
-                    ->causedBy(auth()->user())
-                    ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
-                    ->log('Error: ' . $e->getMessage());
-
-                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data produksi.'], 500);
-            }
-        }
-
         try {
             $search = $request->search;
             $status = $request->status ?? 'semua';
 
             [$periode, $tanggalRef] = $this->resolvePeriode($request);
+
+            $produksi = $this->filteredProduksiQuery($request, $periode, $tanggalRef)
+                ->latest()
+                ->get();
 
             $produksiKadaluarsa = Produksi::with('produk')
                 ->get()
@@ -178,7 +152,7 @@ class ProduksiController extends Controller
 
             return view(
                 'pages.produksi.index',
-                compact('search', 'status', 'periode', 'tanggalRef', 'produksiKadaluarsa')
+                compact('produksi', 'search', 'status', 'periode', 'tanggalRef', 'produksiKadaluarsa')
             );
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -195,6 +169,34 @@ class ProduksiController extends Controller
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
+    }
+
+    /**
+     * Sinkronkan hasil produksi Besar/Kecil ke baris produk_ukurans yang
+     * sesuai (sistem ukuran dinamis dari Tahap B), supaya keduanya gak
+     * pernah beda angka. $delta positif = nambah stok, negatif = ngurangin.
+     * Kalau produk itu belum punya baris ukuran dengan nama itu (misal
+     * baru aja dihapus manual dari panel Ukuran Dinamis), dilewati aja
+     * tanpa error — bagian lama (stok_besar/stok_kecil) tetap jadi acuan
+     * utama sampai Tahap D.
+     */
+    private function sinkronStokUkuranDinamis(Produk $produk, string $namaUkuran, int $delta): void
+    {
+        if ($delta === 0) {
+            return;
+        }
+
+        $baris = ProdukUkuran::whereHas('ukuran', function ($q) use ($namaUkuran) {
+            $q->where('nama_ukuran', $namaUkuran);
+        })->where('produk_id', $produk->id)->first();
+
+        if (!$baris) {
+            return;
+        }
+
+        $baris->stok = max(0, $baris->stok + $delta);
+        $baris->status_ketersediaan = $baris->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+        $baris->save();
     }
 
     public function store(Request $request)
@@ -359,6 +361,13 @@ class ProduksiController extends Controller
                         }
 
                         $produk->refresh();
+
+                        // Sinkronkan juga ke tabel produk_ukurans (sistem ukuran
+                        // dinamis yang baru) supaya datanya tetap sama persis
+                        // dengan stok_besar/stok_kecil di atas. Baris "Besar"/
+                        // "Kecil" ini otomatis ada sejak migrasi Tahap B.
+                        $this->sinkronStokUkuranDinamis($produk, 'Besar', $jumlahBesar - $kebutuhanBesar);
+                        $this->sinkronStokUkuranDinamis($produk, 'Kecil', $jumlahKecil - $kebutuhanKecil);
                     } else {
                         $produk->increment('stok', $request->jumlah_hasil);
 

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Log;
 
 class Produk extends Model
 {
@@ -23,7 +22,6 @@ class Produk extends Model
         'foto',
         'status_aktif',
         'status_ketersediaan',
-        'is_khusus_bundling',
         'punya_ukuran',
         'harga_besar',
         'harga_kecil',
@@ -31,7 +29,6 @@ class Produk extends Model
 
     protected $casts = [
         'punya_ukuran' => 'boolean',
-        'is_khusus_bundling' => 'boolean',
         'harga_besar' => 'decimal:2',
         'harga_kecil' => 'decimal:2',
         'stok_besar' => 'integer',
@@ -44,20 +41,16 @@ class Produk extends Model
         'harga_diskon'
     ];
 
-    public function scopeReguler($query)
-    {
-        return $query->where('is_khusus_bundling', false);
-    }
-
-    public function scopeKhususBundling($query)
-    {
-        return $query->where('is_khusus_bundling', true);
-    }
-
     public function kategori()
     {
         return $this->belongsTo(KategoriProduk::class, 'kategori_id');
     }
+
+    public function produkUkurans()
+    {
+        return $this->hasMany(ProdukUkuran::class, 'produk_id')->with('ukuran')->orderBy('id');
+    }
+
 
     public function produksi()
     {
@@ -200,43 +193,21 @@ class Produk extends Model
         return (int) ($this->stok_besar ?? 0) <= 0 && (int) ($this->stok_kecil ?? 0) <= 0;
     }
 
-    /**
-     * Setelah stok_besar/stok_kecil berubah, samakan lagi kolom `stok` (total)
-     * = stok_besar + stok_kecil. Dihitung ulang dari data ter-refresh, bukan
-     * di-increment/decrement paralel, supaya `stok` tidak pernah bisa lepas
-     * sinkron dari rincian ukurannya walau ada penyesuaian lain di luar dua
-     * method ini (mis. migrasi data, edit manual, dll).
-     */
-    private function syncStokTotalDenganUkuran(): void
-    {
-        $this->refresh();
-        $this->update(['stok' => (int) $this->stok_besar + (int) $this->stok_kecil]);
-    }
-
     public function decrementStokUkuran(?string $ukuran, int $jumlah): void
     {
         if ($jumlah <= 0) {
             return;
         }
 
-        if ($this->punya_ukuran) {
-            if ($ukuran === 'Besar') {
-                $this->decrement('stok_besar', $jumlah);
-            } elseif ($ukuran === 'Kecil') {
-                $this->decrement('stok_kecil', $jumlah);
-            } else {
-                // Produk ini punya varian ukuran tapi ukurannya tidak
-                // disebutkan. Jangan asal potong salah satu ukuran atau
-                // cuma potong total-nya saja (itu penyebab bug lama: stok
-                // besar/kecil jadi tidak sinkron dengan total stok).
-                Log::warning('decrementStokUkuran dipanggil tanpa ukuran untuk produk yang punya varian ukuran', [
-                    'produk_id' => $this->id,
-                    'nama_produk' => $this->nama_produk,
-                ]);
-                return;
-            }
+        if ($this->punya_ukuran && $ukuran === 'Besar') {
+            $this->decrement('stok_besar', $jumlah);
+            $this->decrement('stok', $jumlah);
+            return;
+        }
 
-            $this->syncStokTotalDenganUkuran();
+        if ($this->punya_ukuran && $ukuran === 'Kecil') {
+            $this->decrement('stok_kecil', $jumlah);
+            $this->decrement('stok', $jumlah);
             return;
         }
 
@@ -249,20 +220,15 @@ class Produk extends Model
             return;
         }
 
-        if ($this->punya_ukuran) {
-            if ($ukuran === 'Besar') {
-                $this->increment('stok_besar', $jumlah);
-            } elseif ($ukuran === 'Kecil') {
-                $this->increment('stok_kecil', $jumlah);
-            } else {
-                Log::warning('incrementStokUkuran dipanggil tanpa ukuran untuk produk yang punya varian ukuran', [
-                    'produk_id' => $this->id,
-                    'nama_produk' => $this->nama_produk,
-                ]);
-                return;
-            }
+        if ($this->punya_ukuran && $ukuran === 'Besar') {
+            $this->increment('stok_besar', $jumlah);
+            $this->increment('stok', $jumlah);
+            return;
+        }
 
-            $this->syncStokTotalDenganUkuran();
+        if ($this->punya_ukuran && $ukuran === 'Kecil') {
+            $this->increment('stok_kecil', $jumlah);
+            $this->increment('stok', $jumlah);
             return;
         }
 
