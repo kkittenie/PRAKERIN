@@ -129,10 +129,39 @@ class ProdukController extends Controller
     {
         try {
             $kategori = KategoriProduk::orderBy('nama_kategori')->get();
+            $daftarUkuran = Ukuran::aktif()->urut()->get();
 
-            return view('pages.produk.create', compact('kategori'));
+            return view('pages.produk.create', compact('kategori', 'daftarUkuran'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    /**
+     * Simpan baris produk_ukurans dari input repeater dinamis (ukuran_baris[])
+     * di form Tambah Produk. Harga modal ikut satu field "Harga Modal" umum
+     * di form (belum ada input modal per-ukuran terpisah), sama seperti
+     * pastikanBarisUkuranBesarKecil() di atas.
+     */
+    private function simpanBarisUkuranDinamis(Produk $produk, $ukuranBaris): void
+    {
+        foreach ($ukuranBaris as $baris) {
+            $stok = (int) ($baris['stok'] ?? 0);
+
+            ProdukUkuran::updateOrCreate(
+                [
+                    'produk_id' => $produk->id,
+                    'ukuran_id' => (int) $baris['ukuran_id'],
+                ],
+                [
+                    'harga_modal' => $produk->harga_modal ?? 0,
+                    'harga_jual' => (float) ($baris['harga_jual'] ?? 0),
+                    'stok' => $stok,
+                    'stok_minimum' => (int) ($produk->stok_minimum ?? 0),
+                    'status_ketersediaan' => $stok > 0 ? 'stok_ada' : 'perlu_diproduksi',
+                    'status_aktif' => true,
+                ]
+            );
         }
     }
 
@@ -146,13 +175,8 @@ class ProdukController extends Controller
                 'deskripsi' => 'nullable|string|max:1000',
                 'harga_jual' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
                 'punya_ukuran' => 'nullable|boolean',
-                'harga_besar' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
-                'harga_kecil' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
                 'harga_modal' => 'required|numeric|min:0',
                 'stok' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
-                'punya_ukuran' => 'nullable|boolean',
-                'stok_besar' => 'nullable|required_if:punya_ukuran,1|integer|min:0',
-                'stok_kecil' => 'nullable|required_if:punya_ukuran,1|integer|min:0',
                 'stok_minimum' => 'required|integer|min:0',
                 'status_aktif' => 'required|boolean',
                 'status_ketersediaan' => [
@@ -160,14 +184,33 @@ class ProdukController extends Controller
                     Rule::in(['stok_ada', 'perlu_diproduksi']),
                 ],
                 'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+
+                // Mode dinamis: dipakai kalau "Punya Ukuran" dicentang. Setiap
+                // baris = satu ukuran dari master data Ukuran, bukan lagi
+                // hardcode Besar/Kecil.
+                'ukuran_baris' => 'nullable|array|required_if:punya_ukuran,1',
+                'ukuran_baris.*.ukuran_id' => 'required_with:ukuran_baris|exists:ukurans,id|distinct',
+                'ukuran_baris.*.harga_jual' => 'required_with:ukuran_baris|numeric|min:0',
+                'ukuran_baris.*.stok' => 'required_with:ukuran_baris|integer|min:0',
+            ], [
+                'ukuran_baris.required_if' => 'Tambahkan minimal 1 baris ukuran.',
+                'ukuran_baris.*.ukuran_id.distinct' => 'Satu ukuran cuma boleh ditambahkan sekali.',
             ]);
+
+            $ukuranBaris = collect($request->input('ukuran_baris', []))
+                ->filter(fn ($baris) => !empty($baris['ukuran_id']))
+                ->values();
 
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
             if ($validated['punya_ukuran']) {
                 $validated['harga_jual'] = 0;
-                $validated['stok_besar'] = (int) ($validated['stok_besar'] ?? 0);
-                $validated['stok_kecil'] = (int) ($validated['stok_kecil'] ?? 0);
-                $validated['stok'] = $validated['stok_besar'] + $validated['stok_kecil'];
+                $validated['stok'] = (int) $ukuranBaris->sum(fn ($b) => (int) ($b['stok'] ?? 0));
+                // Sumber kebenaran harga & stok sekarang full di produk_ukurans;
+                // kolom lama ini cuma tersisa untuk data lama, jadi dikosongkan.
+                $validated['harga_besar'] = null;
+                $validated['harga_kecil'] = null;
+                $validated['stok_besar'] = null;
+                $validated['stok_kecil'] = null;
             } else {
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
@@ -183,9 +226,19 @@ class ProdukController extends Controller
                 $validated['foto'] = $request->file('foto')->store(self::FOTO_PATH, 'public');
             }
 
+            unset($validated['ukuran_baris']);
+
             $produk = Produk::create($validated);
 
-            $this->pastikanBarisUkuranBesarKecil($produk);
+            if ($validated['punya_ukuran']) {
+                if ($ukuranBaris->isNotEmpty()) {
+                    $this->simpanBarisUkuranDinamis($produk, $ukuranBaris);
+                } else {
+                    // Jaga-jaga (mis. dipanggil lewat API tanpa JS) — fallback
+                    // ke perilaku lama biar produk tetap dapat baris ukuran.
+                    $this->pastikanBarisUkuranBesarKecil($produk);
+                }
+            }
 
             activity()
                 ->causedBy(auth()->user())
@@ -196,8 +249,7 @@ class ProdukController extends Controller
                     'kategori_id' => $validated['kategori_id'],
                     'harga_jual' => $validated['harga_jual'],
                     'stok' => $validated['stok'],
-                    'stok_besar' => $validated['stok_besar'] ?? null,
-                    'stok_kecil' => $validated['stok_kecil'] ?? null,
+                    'jumlah_ukuran' => $ukuranBaris->count(),
                 ])
                 ->log('menambahkan produk');
 
@@ -208,6 +260,7 @@ class ProdukController extends Controller
             return ActivityLogHelper::handleException($e);
         }
     }
+
 
     public function show(Produk $produk)
     {

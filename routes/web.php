@@ -192,6 +192,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('ukuran', UkuranController::class)
         ->middleware('permission:lihat_ukuran|tambah_ukuran|edit_ukuran|hapus_ukuran');
 
+    Route::post('/ukuran/ajax', [UkuranController::class, 'storeAjax'])
+        ->name('ukuran.storeAjax')
+        ->middleware('permission:tambah_ukuran');
+
     Route::patch('/ukuran/{id}/toggle-status', [UkuranController::class, 'toggleStatus'])
         ->name('ukuran.toggle-status')
         ->middleware('permission:edit_ukuran');

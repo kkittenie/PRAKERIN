@@ -74,6 +74,43 @@ class UkuranController extends Controller
         }
     }
 
+    /**
+     * Versi AJAX dari store(), dipakai dari form lain (mis. repeater "Varian
+     * Ukuran" di Tambah Produk) yang perlu nambah ukuran baru tanpa pindah
+     * halaman — persis pola SatuanController::storeAjax().
+     */
+    public function storeAjax(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'nama_ukuran' => 'required|string|max:50|unique:ukurans,nama_ukuran',
+            ]);
+
+            $urutanBerikutnya = (int) (Ukuran::max('urutan') ?? 0) + 1;
+
+            $ukuran = Ukuran::create([
+                'nama_ukuran' => trim($validated['nama_ukuran']),
+                'urutan' => $urutanBerikutnya,
+                'status_aktif' => true,
+            ]);
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($ukuran)
+                ->withProperties([
+                    'nama_ukuran' => $ukuran->nama_ukuran,
+                ])
+                ->log('menambahkan ukuran (ajax)');
+
+            return response()->json([
+                'success' => true,
+                'data' => $ukuran,
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
     public function show(Ukuran $ukuran)
     {
         try {

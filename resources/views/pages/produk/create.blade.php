@@ -127,57 +127,95 @@
                             value="1"
                             class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
                             {{ old('punya_ukuran') == '1' ? 'checked' : '' }}>
-                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Produk ini punya varian ukuran (Besar/Kecil)</span>
+                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Produk ini punya varian ukuran</span>
                     </label>
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">
-                        Kalau dicentang, harga jual produk akan dipisah berdasarkan ukuran Besar dan Kecil.
+                        Kalau dicentang, harga jual & stok produk diatur per ukuran di bawah — bisa nambah berapa pun varian, gak cuma Besar/Kecil.
                     </span>
                     @error('punya_ukuran')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>
 
-                {{-- Harga Besar --}}
-                <div id="wrapper-harga-besar" class="hidden">
+                {{-- Ukuran Dinamis --}}
+                <div id="wrapper-ukuran-dinamis" class="hidden md:col-span-2" x-data="ukuranDinamis()">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Harga Besar <span class="text-red-500">*</span>
+                        Varian Ukuran <span class="text-red-500">*</span>
                     </label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-sm">
-                            Rp
-                        </span>
-                        <input
-                            type="text"
-                            inputmode="numeric"
-                            name="harga_besar"
-                            placeholder="15.000"
-                            value="{{ old('harga_besar') ? number_format((int) old('harga_besar'), 0, ',', '.') : '' }}"
-                            class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-10 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-                    </div>
-                    @error('harga_besar')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
 
-                {{-- Harga Kecil --}}
-                <div id="wrapper-harga-kecil" class="hidden">
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Harga Kecil <span class="text-red-500">*</span>
-                    </label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-sm">
-                            Rp
-                        </span>
-                        <input
-                            type="text"
-                            inputmode="numeric"
-                            name="harga_kecil"
-                            placeholder="10.000"
-                            value="{{ old('harga_kecil') ? number_format((int) old('harga_kecil'), 0, ',', '.') : '' }}"
-                            class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-10 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-800/60">
+                                <tr class="text-left text-gray-500 dark:text-gray-400">
+                                    <th class="py-2 px-3">Ukuran</th>
+                                    <th class="py-2 px-3">Harga Jual</th>
+                                    <th class="py-2 px-3">Stok</th>
+                                    <th class="py-2 px-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-if="baris.length === 0">
+                                    <tr>
+                                        <td colspan="4" class="py-3 px-3 text-center text-gray-400 text-xs">Belum ada baris ukuran ditambahkan.</td>
+                                    </tr>
+                                </template>
+                                <template x-for="(item, index) in baris" :key="index">
+                                    <tr class="border-t border-gray-100 dark:border-gray-800">
+                                        <td class="py-2 px-3 font-semibold text-gray-800 dark:text-gray-200" x-text="item.nama"></td>
+                                        <td class="py-2 px-3" x-text="'Rp ' + Number(item.harga_jual || 0).toLocaleString('id-ID')"></td>
+                                        <td class="py-2 px-3" x-text="item.stok"></td>
+                                        <td class="py-2 px-3 text-right">
+                                            <button type="button" @click="hapusBaris(index)" class="text-red-500 hover:text-red-700 text-xs font-semibold">Hapus</button>
+                                            <input type="hidden" :name="'ukuran_baris[' + index + '][ukuran_id]'" :value="item.ukuran_id">
+                                            <input type="hidden" :name="'ukuran_baris[' + index + '][harga_jual]'" :value="item.harga_jual">
+                                            <input type="hidden" :name="'ukuran_baris[' + index + '][stok]'" :value="item.stok">
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
-                    @error('harga_kecil')
-                        <small class="text-red-500">{{ $message }}</small>
+
+                    <div class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Ukuran</label>
+                            <select x-model="pilihUkuranId" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                <option value="">Pilih ukuran</option>
+                                <template x-for="u in opsiTersedia" :key="u.id">
+                                    <option :value="u.id" x-text="u.nama"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Harga Jual</label>
+                            <input type="number" min="0" x-model="hargaBaru" placeholder="10000" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Stok</label>
+                            <input type="number" min="0" x-model="stokBaru" placeholder="0" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                        </div>
+                        <div>
+                            <button type="button" @click="tambahBaris()" class="h-11 w-full rounded-lg bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600">+ Tambah Baris</button>
+                        </div>
+                    </div>
+
+                    <div class="mt-2">
+                        <button type="button" @click="tampilFormUkuranBaru = !tampilFormUkuranBaru" class="text-xs font-semibold text-brand-600 hover:underline">
+                            + Ukuran baru belum ada di daftar? Tambah di sini
+                        </button>
+                        <div x-show="tampilFormUkuranBaru" class="mt-2 flex gap-2">
+                            <input type="text" x-model="namaUkuranBaru" placeholder="Nama ukuran baru, mis. Jumbo" class="h-10 flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                            <button type="button" @click="simpanUkuranBaru()" class="h-10 px-3 rounded-lg bg-brand-500 text-white text-sm hover:bg-brand-600">Simpan</button>
+                            <button type="button" @click="tampilFormUkuranBaru = false; namaUkuranBaru = ''" class="h-10 px-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm">Batal</button>
+                        </div>
+                        <p x-show="pesanErrorUkuranBaru" x-text="pesanErrorUkuranBaru" class="text-xs text-red-500 mt-1"></p>
+                    </div>
+
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-2 block">
+                        Tambahkan minimal 1 ukuran. Harga & stok diatur per baris — bisa lebih dari 2 varian.
+                    </span>
+                    @error('ukuran_baris')
+                        <small class="text-red-500 block mt-1">{{ $message }}</small>
                     @enderror
                 </div>
 
@@ -219,42 +257,6 @@
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                    
                     @error('stok')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
-                {{-- Stok Besar --}}
-                <div id="wrapper-stok-besar" class="hidden">
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Stok Besar
-                    </label>
-
-                    <input
-                        type="number"
-                        name="stok_besar"
-                        placeholder="1"
-                        value="{{ old('stok_besar') }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-
-                    @error('stok_besar')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
-                {{-- Stok Kecil --}}
-                <div id="wrapper-stok-kecil" class="hidden">
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Stok Kecil
-                    </label>
-
-                    <input
-                        type="number"
-                        name="stok_kecil"
-                        placeholder="1"
-                        value="{{ old('stok_kecil') }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-
-                    @error('stok_kecil')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>
@@ -359,25 +361,105 @@
     <script>
 
     const checkboxUkuran = document.getElementById('punya_ukuran');
-    const wrapperBesar = document.getElementById('wrapper-harga-besar');
-    const wrapperKecil = document.getElementById('wrapper-harga-kecil');
+    const wrapperUkuranDinamis = document.getElementById('wrapper-ukuran-dinamis');
     const wrapperHargaJual = document.getElementById('wrapper-harga-jual');
     const wrapperStok = document.getElementById('wrapper-stok');
-    const wrapperStokBesar = document.getElementById('wrapper-stok-besar');
-    const wrapperStokKecil = document.getElementById('wrapper-stok-kecil');
 
     function toggleFieldUkuran() {
         const tampil = checkboxUkuran.checked;
-        wrapperBesar.classList.toggle('hidden', !tampil);
-        wrapperKecil.classList.toggle('hidden', !tampil);
+        wrapperUkuranDinamis.classList.toggle('hidden', !tampil);
         wrapperHargaJual.classList.toggle('hidden', tampil);
-        wrapperStokBesar.classList.toggle('hidden', !tampil);
-        wrapperStokKecil.classList.toggle('hidden', !tampil);
         wrapperStok.classList.toggle('hidden', tampil);
     }
 
     checkboxUkuran.addEventListener('change', toggleFieldUkuran);
     window.addEventListener('load', toggleFieldUkuran);
+
+    // Data Alpine buat repeater "Varian Ukuran" di form Tambah Produk.
+    // Polanya niru "Tambah Bahan Baku": pilih dari master (Ukuran), atau
+    // bikin ukuran baru langsung dari sini lewat AJAX (masuk ke menu Ukuran
+    // juga), tanpa harus pindah halaman.
+    function ukuranDinamis() {
+        return {
+            daftarMaster: @json($daftarUkuran->map(fn ($u) => ['id' => $u->id, 'nama' => $u->nama_ukuran])->values()),
+            baris: @json(
+                collect(old('ukuran_baris', []))->map(function ($b) use ($daftarUkuran) {
+                    $master = $daftarUkuran->firstWhere('id', (int) ($b['ukuran_id'] ?? 0));
+                    return [
+                        'ukuran_id' => $b['ukuran_id'] ?? '',
+                        'nama' => $master->nama_ukuran ?? '',
+                        'harga_jual' => $b['harga_jual'] ?? '',
+                        'stok' => $b['stok'] ?? '',
+                    ];
+                })->values()
+            ),
+            pilihUkuranId: '',
+            hargaBaru: '',
+            stokBaru: '',
+            tampilFormUkuranBaru: false,
+            namaUkuranBaru: '',
+            pesanErrorUkuranBaru: '',
+
+            get opsiTersedia() {
+                const dipakai = this.baris.map(b => String(b.ukuran_id));
+                return this.daftarMaster.filter(u => !dipakai.includes(String(u.id)));
+            },
+
+            tambahBaris() {
+                if (!this.pilihUkuranId || this.hargaBaru === '' || this.stokBaru === '') {
+                    alert('Pilih ukuran, lalu isi Harga Jual & Stok dulu sebelum menambah baris.');
+                    return;
+                }
+                const master = this.daftarMaster.find(u => String(u.id) === String(this.pilihUkuranId));
+                this.baris.push({
+                    ukuran_id: this.pilihUkuranId,
+                    nama: master ? master.nama : '',
+                    harga_jual: this.hargaBaru,
+                    stok: this.stokBaru,
+                });
+                this.pilihUkuranId = '';
+                this.hargaBaru = '';
+                this.stokBaru = '';
+            },
+
+            hapusBaris(index) {
+                this.baris.splice(index, 1);
+            },
+
+            async simpanUkuranBaru() {
+                const nama = this.namaUkuranBaru.trim();
+                this.pesanErrorUkuranBaru = '';
+                if (!nama) {
+                    this.pesanErrorUkuranBaru = 'Nama ukuran wajib diisi.';
+                    return;
+                }
+                try {
+                    const res = await fetch("{{ route('ukuran.storeAjax') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ nama_ukuran: nama }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        this.pesanErrorUkuranBaru = (data.errors && data.errors.nama_ukuran && data.errors.nama_ukuran[0])
+                            || data.message
+                            || 'Gagal menambah ukuran baru, coba lagi.';
+                        return;
+                    }
+                    this.daftarMaster.push({ id: data.data.id, nama: data.data.nama_ukuran });
+                    this.pilihUkuranId = String(data.data.id);
+                    this.namaUkuranBaru = '';
+                    this.tampilFormUkuranBaru = false;
+                } catch (e) {
+                    this.pesanErrorUkuranBaru = 'Gagal menambah ukuran baru, coba lagi.';
+                }
+            },
+        };
+    }
 
     document.querySelectorAll('.input-rupiah').forEach(function (input) {
 
@@ -413,10 +495,18 @@
     });
 
     document.querySelectorAll('form').forEach(function (form) {
-        form.addEventListener('submit', function () {
+        form.addEventListener('submit', function (e) {
             document.querySelectorAll('.input-rupiah').forEach(function (input) {
                 input.value = input.value.replace(/\./g, '');
             });
+
+            if (checkboxUkuran.checked) {
+                const jumlahBaris = form.querySelectorAll('input[name$="[ukuran_id]"]').length;
+                if (jumlahBaris === 0) {
+                    e.preventDefault();
+                    alert('Tambahkan minimal 1 baris ukuran sebelum menyimpan produk.');
+                }
+            }
         });
     });
     </script>
