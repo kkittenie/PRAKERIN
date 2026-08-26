@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Produk;
 use App\Models\KategoriProduk;
 use App\Models\Ukuran;
+use App\Models\ProdukUkuran;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,6 +14,61 @@ use Illuminate\Support\Facades\Storage;
 class ProdukController extends Controller
 {
     private const FOTO_PATH = 'produk/images';
+
+    /**
+     * Pas produk baru dibuat dengan "Punya Ukuran" aktif, form ini masih
+     * minta diisi Harga/Stok Besar & Kecil (kolom lama) — tapi dulu gak ada
+     * yang otomatis bikin baris di produk_ukurans dari nilai itu. Akibatnya
+     * produk yang baru dibuat nongol "Belum ada ukuran aktif" di kasir &
+     * mobile sampai admin balik ke halaman Edit buat nambahin manual.
+     *
+     * Method ini nutup celah itu: begitu produk baru dibuat, otomatis
+     * dibikinin 2 baris ukuran ("Kecil" & "Besar") dari nilai yang barusan
+     * diisi di form, persis logika yang dipakai migration backfill buat
+     * data lama. Pakai firstOrCreate supaya SELALU aman dipanggil ulang
+     * (kalau baris itu udah ada / udah dikustomisasi admin lewat panel
+     * Ukuran Dinamis, gak bakal ketimpa/direset).
+     */
+    private function pastikanBarisUkuranBesarKecil(Produk $produk): void
+    {
+        if (!$produk->punya_ukuran) {
+            return;
+        }
+
+        $ukuranKecil = Ukuran::firstOrCreate(
+            ['nama_ukuran' => 'Kecil'],
+            ['urutan' => 1, 'status_aktif' => true]
+        );
+
+        $ukuranBesar = Ukuran::firstOrCreate(
+            ['nama_ukuran' => 'Besar'],
+            ['urutan' => 2, 'status_aktif' => true]
+        );
+
+        ProdukUkuran::firstOrCreate(
+            ['produk_id' => $produk->id, 'ukuran_id' => $ukuranKecil->id],
+            [
+                'harga_modal' => $produk->harga_modal ?? 0,
+                'harga_jual' => $produk->harga_kecil ?? 0,
+                'stok' => $produk->stok_kecil ?? 0,
+                'stok_minimum' => $produk->stok_minimum ?? 0,
+                'status_ketersediaan' => ($produk->stok_kecil ?? 0) > 0 ? 'stok_ada' : 'perlu_diproduksi',
+                'status_aktif' => true,
+            ]
+        );
+
+        ProdukUkuran::firstOrCreate(
+            ['produk_id' => $produk->id, 'ukuran_id' => $ukuranBesar->id],
+            [
+                'harga_modal' => $produk->harga_modal ?? 0,
+                'harga_jual' => $produk->harga_besar ?? 0,
+                'stok' => $produk->stok_besar ?? 0,
+                'stok_minimum' => $produk->stok_minimum ?? 0,
+                'status_ketersediaan' => ($produk->stok_besar ?? 0) > 0 ? 'stok_ada' : 'perlu_diproduksi',
+                'status_aktif' => true,
+            ]
+        );
+    }
 
     public function index(Request $request)
     {
@@ -129,6 +185,8 @@ class ProdukController extends Controller
 
             $produk = Produk::create($validated);
 
+            $this->pastikanBarisUkuranBesarKecil($produk);
+
             activity()
                 ->causedBy(auth()->user())
                 ->performedOn($produk)
@@ -238,6 +296,8 @@ class ProdukController extends Controller
                 : 'stok_ada';
 
             $produk->update($validated);
+
+            $this->pastikanBarisUkuranBesarKecil($produk);
 
             activity()
                 ->causedBy(auth()->user())

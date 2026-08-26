@@ -209,7 +209,7 @@ class ProduksiController extends Controller
     public function create()
     {
         try {
-            $produk = Produk::orderBy('nama_produk')->get();
+            $produk = Produk::with('produkUkurans.ukuran')->orderBy('nama_produk')->get();
             $bahanBaku = BahanBaku::with('satuan')->orderBy('nama_bahan')->get();
 
             return view('pages.produksi.create', compact('produk', 'bahanBaku'));
