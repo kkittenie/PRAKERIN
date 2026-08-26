@@ -80,6 +80,7 @@
             <div class="min-w-0 flex-1">
                 <p id="preview-produk-nama" class="font-semibold text-gray-800 dark:text-white text-sm truncate"></p>
                 <p id="preview-produk-kode" class="text-xs text-gray-500 dark:text-gray-400"></p>
+                <div id="preview-produk-ukuran" class="mt-1.5 hidden flex-wrap gap-1.5"></div>
             </div>
             <button type="button" onclick="batalkanPilihProduk()"
                 class="shrink-0 text-gray-400 hover:text-red-500 transition text-lg leading-none px-1">&times;</button>
@@ -547,6 +548,26 @@ function aktifkanSearch(element) {
                 return produk.foto ? `/storage/${produk.foto}` : null;
             }
 
+            // Bikin baris badge kecil per ukuran, dipakai di preview & di
+            // daftar hasil pencarian — biar dari awal keliatan produk itu
+            // punya ukuran apa aja dan mana yang stoknya udah perlu diproduksi.
+            function badgeUkuranHtml(produk) {
+                if (!produk.punya_ukuran) return '';
+
+                const daftar = Array.isArray(produk.daftar_ukuran) ? produk.daftar_ukuran : [];
+                if (daftar.length === 0) {
+                    return `<span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 text-[11px] px-2 py-0.5">Belum ada ukuran aktif</span>`;
+                }
+
+                return daftar.map(function (u) {
+                    const namaAman = String(u.nama).replace(/</g, '&lt;');
+                    const warna = u.perlu_produksi
+                        ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800'
+                        : 'bg-gray-100 text-gray-600 border border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600';
+                    return `<span class="inline-flex items-center rounded-full ${warna} text-[11px] px-2 py-0.5 whitespace-nowrap">${namaAman}: ${u.stok}${u.perlu_produksi ? ' ⚠' : ''}</span>`;
+                }).join('');
+            }
+
             function tampilkanPreview(produk) {
                 const url = fotoUrl(produk);
                 if (url) {
@@ -557,7 +578,21 @@ function aktifkanSearch(element) {
                     previewFoto.classList.add('hidden');
                 }
                 previewNama.textContent = produk.nama_produk;
-                previewKode.textContent = `Kode: ${produk.kode_produk} · Stok: ${produk.stok}`;
+
+                const previewUkuran = document.getElementById('preview-produk-ukuran');
+
+                if (produk.punya_ukuran) {
+                    previewKode.textContent = `Kode: ${produk.kode_produk}`;
+                    previewUkuran.innerHTML = badgeUkuranHtml(produk);
+                    previewUkuran.classList.remove('hidden');
+                    previewUkuran.classList.add('flex');
+                } else {
+                    previewKode.textContent = `Kode: ${produk.kode_produk} · Stok: ${produk.stok}`;
+                    previewUkuran.innerHTML = '';
+                    previewUkuran.classList.add('hidden');
+                    previewUkuran.classList.remove('flex');
+                }
+
                 preview.classList.remove('hidden');
 
                 if (typeof bangunRincianUkuranDinamis === 'function') {
@@ -623,8 +658,9 @@ function aktifkanSearch(element) {
                                     ${produk.nama_produk}
                                 </div>
                                 <div class="text-xs text-gray-400 truncate">
-                                    ${produk.kode_produk ?? '-'} · Stok: ${produk.stok}
+                                    ${produk.kode_produk ?? '-'}${produk.punya_ukuran ? '' : ` · Stok: ${produk.stok}`}
                                 </div>
+                                ${produk.punya_ukuran ? `<div class="mt-1 flex flex-wrap gap-1">${badgeUkuranHtml(produk)}</div>` : ''}
                             </div>
                         `;
 

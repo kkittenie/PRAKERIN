@@ -390,10 +390,10 @@
 
         <x-common.component-card title="Ukuran Dinamis (Baru)">
 
-            <p class="text-xs text-amber-600 dark:text-amber-400 mb-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-lg px-3 py-2">
-                Ini sistem ukuran baru yang bisa nambah berapa pun varian (gak cuma Kecil/Besar). Untuk sementara
-                kasir &amp; produksi <strong>masih</strong> pakai kolom "Besar"/"Kecil" yang lama di atas — baris di
-                bawah ini baru dipakai setelah bagian kasir &amp; produksi ikut diperbarui.
+            <p class="text-xs text-blue-600 dark:text-blue-400 mb-4 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-lg px-3 py-2">
+                Ini sistem ukuran yang dipakai kasir &amp; produksi sekarang — bisa nambah berapa pun varian
+                (gak cuma Kecil/Besar). Kolom "Besar"/"Kecil" di atas cuma tersisa untuk data lama; kalau baris
+                ukuran di bawah ini diisi, itu yang dipakai buat harga dan stok.
             </p>
 
             <div class="overflow-x-auto">
