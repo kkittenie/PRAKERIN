@@ -596,6 +596,18 @@
 
                 init() {
                     this.dengarkanPembaruanRealtime();
+
+                    // Datang dari link notifikasi (?buka={id}) -> langsung
+                    // buka modal detail pesanan itu, terus bersihin query-nya
+                    // dari address bar biar rapi & gak ke-refresh ulang.
+                    const params = new URLSearchParams(window.location.search);
+                    const idDibuka = params.get('buka');
+                    if (idDibuka) {
+                        this.lihatDetail(idDibuka);
+                        params.delete('buka');
+                        const query = params.toString();
+                        window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''));
+                    }
                 },
 
                 dengarkanPembaruanRealtime() {

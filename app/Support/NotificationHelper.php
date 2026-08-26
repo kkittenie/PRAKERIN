@@ -56,18 +56,33 @@ class NotificationHelper
 
         foreach ($pesananBaru as $pesanan) {
             $idKey = 'pickup_' . $pesanan->id;
+
+            // status_pesanan di DB langsung ke-set 'diproses' begitu pesanan
+            // dibuat (lihat CheckoutController::store), jadi jangan dipakai
+            // mentah-mentah buat teks notif. Status yang beneran nunjukin
+            // kasir udah mulai proses adalah diproses_pada (masih null =
+            // pesanan baru masuk & belum disentuh sama sekali).
+            $statusLabel = $pesanan->diproses_pada
+                ? 'sedang diproses'
+                : 'menunggu diproses';
+
             $notifications[] = [
                 'id' => $idKey,
                 'is_db' => false,
                 'type' => 'Pesanan Pickup Baru',
                 'title' => 'Pesanan Pickup #' . $pesanan->kode_transaksi,
-                'desc' => 'Pesanan pickup baru dari member. Status: ' . str_replace('_', ' ', $pesanan->status_pesanan),
+                'desc' => 'Pesanan pickup baru dari member. Status: ' . $statusLabel,
                 'time' => $pesanan->created_at->diffForHumans(),
                 'raw_time' => $pesanan->created_at->timestamp,
                 'is_read' => in_array($idKey, $readKeys),
                 'icon' => static::getIconHtml('success'),
                 'color' => static::getColorClass('success'),
-                'url' => route('pesanan-pickup.detail', $pesanan->id),
+                // route('pesanan-pickup.detail', ...) itu endpoint JSON buat
+                // di-fetch() JS pengisi modal (lihatDetail()), BUKAN halaman.
+                // Kalau dipakai langsung sbg href, browser navigasi ke situ
+                // dan cuma nampilin raw JSON. Arahkan ke halaman index-nya,
+                // dibawain query 'buka' biar modal detail auto kebuka.
+                'url' => route('pesanan-pickup.indeks', ['buka' => $pesanan->id]),
             ];
         }
 
