@@ -44,6 +44,11 @@ class Produksi extends Model
         return $this->belongsTo(Produk::class, 'produk_id');
     }
 
+    public function produksiUkurans()
+    {
+        return $this->hasMany(ProduksiUkuran::class, 'produksi_id')->with('produkUkuran.ukuran');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

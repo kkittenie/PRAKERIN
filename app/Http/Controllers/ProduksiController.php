@@ -7,6 +7,7 @@ use App\Models\Produk;
 use App\Models\ProdukUkuran;
 use App\Models\BahanBaku;
 use App\Models\ProduksiBahanBaku;
+use App\Models\ProduksiUkuran;
 use App\Events\StatusProduksiUpdate;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -220,20 +221,31 @@ class ProduksiController extends Controller
     public function store(Request $request)
     {
         try {
-            $produkDipilih = Produk::find($request->produk_id);
+            $produkDipilih = Produk::with('produkUkurans')->find($request->produk_id);
             $punyaUkuran = (bool) ($produkDipilih->punya_ukuran ?? false);
+
+            // Mode dinamis dipakai kalau form ngirim array ukuran_hasil (nanti
+            // dikirim oleh form Catat Produksi versi baru). Selama form-nya
+            // belum diperbarui, request masih format lama (jumlah_besar/
+            // jumlah_kecil) dan kode di bawah otomatis jalan seperti sebelumnya.
+            $modeDinamis = $punyaUkuran && is_array($request->ukuran_hasil) && count(array_filter($request->ukuran_hasil, fn($v) => (int) $v > 0)) > 0;
 
             $request->validate([
                 'tanggal' => 'required|date',
                 'jam_produksi' => 'required|date_format:H:i',
                 'produk_id' => 'required|exists:produks,id',
                 'jumlah_hasil' => 'required|integer|min:1',
-                'jumlah_besar' => [$punyaUkuran ? 'required' : 'nullable', 'integer', 'min:0'],
-                'jumlah_kecil' => [$punyaUkuran ? 'required' : 'nullable', 'integer', 'min:0'],
+                'jumlah_besar' => [(!$modeDinamis && $punyaUkuran) ? 'required' : 'nullable', 'integer', 'min:0'],
+                'jumlah_kecil' => [(!$modeDinamis && $punyaUkuran) ? 'required' : 'nullable', 'integer', 'min:0'],
                 'kebutuhan_besar' => 'nullable|integer|min:0',
                 'kebutuhan_kecil' => 'nullable|integer|min:0',
                 'kebutuhan_produksi' => 'nullable|integer|min:0|lte:jumlah_hasil',
                 'keterangan' => 'nullable|string',
+
+                'ukuran_hasil' => 'nullable|array',
+                'ukuran_hasil.*' => 'nullable|integer|min:0',
+                'ukuran_kebutuhan' => 'nullable|array',
+                'ukuran_kebutuhan.*' => 'nullable|integer|min:0',
 
                 'kadaluarsa_tipe' => 'required|in:tanggal,jam',
                 'kadaluarsa_tanggal' => 'required_if:kadaluarsa_tipe,tanggal|nullable|date|after_or_equal:tanggal',
@@ -277,7 +289,44 @@ class ProduksiController extends Controller
                 return back()->withInput()->with('error', 'Minimal pilih satu bahan baku yang digunakan.');
             }
 
-            if ($punyaUkuran) {
+            $rincianUkuranDinamis = []; // [produk_ukuran_id => ['hasil' => x, 'kebutuhan' => y]]
+
+            if ($modeDinamis) {
+                // Pastikan tiap produk_ukuran_id yang dikirim beneran milik produk ini.
+                $idMilikProduk = $produkDipilih->produkUkurans->pluck('id')->all();
+
+                $totalHasilDinamis = 0;
+                foreach ($request->ukuran_hasil as $produkUkuranId => $hasil) {
+                    $hasil = (int) $hasil;
+                    if ($hasil <= 0) {
+                        continue;
+                    }
+                    if (!in_array((int) $produkUkuranId, $idMilikProduk)) {
+                        return back()->withInput()->with('error', 'Ada baris ukuran yang tidak valid untuk produk ini.');
+                    }
+
+                    $kebutuhan = (int) ($request->ukuran_kebutuhan[$produkUkuranId] ?? 0);
+                    if ($kebutuhan > $hasil) {
+                        return back()->withInput()->with('error', 'Kebutuhan tidak boleh melebihi jumlah hasil pada ukuran yang sama.');
+                    }
+
+                    $rincianUkuranDinamis[(int) $produkUkuranId] = [
+                        'hasil' => $hasil,
+                        'kebutuhan' => $kebutuhan,
+                    ];
+                    $totalHasilDinamis += $hasil;
+                }
+
+                if ($totalHasilDinamis !== (int) $request->jumlah_hasil) {
+                    return back()->withInput()->with('error', 'Total jumlah hasil per ukuran harus sama dengan Jumlah Hasil Produksi.');
+                }
+
+                $jumlahBesar = 0;
+                $jumlahKecil = 0;
+                $kebutuhanBesar = 0;
+                $kebutuhanKecil = 0;
+                $kebutuhanTotal = array_sum(array_column($rincianUkuranDinamis, 'kebutuhan'));
+            } elseif ($punyaUkuran) {
                 if (((int) $request->jumlah_besar + (int) $request->jumlah_kecil) !== (int) $request->jumlah_hasil) {
                     return back()->withInput()->with('error', 'Jumlah Besar + Jumlah Kecil harus sama dengan Jumlah Hasil Produksi.');
                 }
@@ -309,7 +358,7 @@ class ProduksiController extends Controller
             }
 
             $produksi = null;
-            DB::transaction(function () use ($request, $kebutuhanTotal, $kebutuhanBesar, $kebutuhanKecil, $jumlahBesar, $jumlahKecil, &$produksi) {
+            DB::transaction(function () use ($request, $kebutuhanTotal, $kebutuhanBesar, $kebutuhanKecil, $jumlahBesar, $jumlahKecil, $rincianUkuranDinamis, &$produksi) {
 
                 $produksi = Produksi::create([
                     'tanggal' => $request->tanggal,
@@ -354,7 +403,46 @@ class ProduksiController extends Controller
                 $produk = Produk::lockForUpdate()->findOrFail($request->produk_id);
 
                 try {
-                    if ($produk->punya_ukuran) {
+                    if (!empty($rincianUkuranDinamis)) {
+                        // Mode dinamis: tulis rincian per baris ukuran ke
+                        // produksi_ukurans, dan sesuaikan stok langsung di
+                        // baris produk_ukurans yang bersangkutan (bukan lewat
+                        // pencocokan nama Besar/Kecil lagi).
+                        foreach ($rincianUkuranDinamis as $produkUkuranId => $rincian) {
+                            $baris = ProdukUkuran::lockForUpdate()->findOrFail($produkUkuranId);
+
+                            $baris->stok += $rincian['hasil'];
+
+                            if ($rincian['kebutuhan'] > 0) {
+                                if ($baris->stok < $rincian['kebutuhan']) {
+                                    throw new Exception("Stok {$baris->ukuran->nama_ukuran} untuk {$produk->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                                }
+                                $baris->stok -= $rincian['kebutuhan'];
+                            }
+
+                            $baris->status_ketersediaan = $baris->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+                            $baris->save();
+
+                            ProduksiUkuran::create([
+                                'produksi_id' => $produksi->id,
+                                'produk_ukuran_id' => $produkUkuranId,
+                                'jumlah_hasil' => $rincian['hasil'],
+                                'kebutuhan' => $rincian['kebutuhan'],
+                            ]);
+
+                            // Best-effort: kalau baris ini kebetulan namanya "Besar"
+                            // atau "Kecil", sinkronkan juga ke kolom lama supaya
+                            // tempat-tempat yang belum sempat dipindah tetap akurat.
+                            $namaUkuran = $baris->ukuran->nama_ukuran ?? null;
+                            if ($namaUkuran === 'Besar') {
+                                $produk->stok_besar = $baris->stok;
+                            } elseif ($namaUkuran === 'Kecil') {
+                                $produk->stok_kecil = $baris->stok;
+                            }
+                        }
+                        $produk->save();
+                        $produk->refresh();
+                    } elseif ($produk->punya_ukuran) {
                         // Produk punya varian ukuran: tambah & kurangi stok Besar/Kecil
                         // secara terpisah sesuai rincian hasil & kebutuhan produksi.
                         if ($jumlahBesar > 0) {
@@ -396,6 +484,7 @@ class ProduksiController extends Controller
                         'jumlah_kecil' => $jumlahKecil,
                         'kebutuhan_besar' => $kebutuhanBesar,
                         'kebutuhan_kecil' => $kebutuhanKecil,
+                        'rincian_ukuran_dinamis' => $rincianUkuranDinamis,
                         'error' => $e->getMessage(),
                     ]);
                     throw $e;
@@ -417,6 +506,7 @@ class ProduksiController extends Controller
                     'jumlah_besar' => $jumlahBesar,
                     'jumlah_kecil' => $jumlahKecil,
                     'kebutuhan_produksi' => $kebutuhanTotal,
+                    'rincian_ukuran_dinamis' => $rincianUkuranDinamis,
                     'bahan_baku_id' => $request->bahan_baku_id,
                     'jumlah_terpakai' => $request->jumlah_terpakai,
                 ])
