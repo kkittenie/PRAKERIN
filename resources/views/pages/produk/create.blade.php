@@ -381,18 +381,13 @@
     // juga), tanpa harus pindah halaman.
     function ukuranDinamis() {
         return {
-            daftarMaster: @json($daftarUkuran->map(fn ($u) => ['id' => $u->id, 'nama' => $u->nama_ukuran])->values()),
-            baris: @json(
-                collect(old('ukuran_baris', []))->map(function ($b) use ($daftarUkuran) {
-                    $master = $daftarUkuran->firstWhere('id', (int) ($b['ukuran_id'] ?? 0));
-                    return [
-                        'ukuran_id' => $b['ukuran_id'] ?? '',
-                        'nama' => $master->nama_ukuran ?? '',
-                        'harga_jual' => $b['harga_jual'] ?? '',
-                        'stok' => $b['stok'] ?? '',
-                    ];
-                })->values()
-            ),
+            daftarMaster: @json($daftarUkuran->map(fn ($u) => [
+                'id' => $u->id,
+                'nama' => $u->nama_ukuran
+            ])->values()),
+
+            baris: @json($ukuranBaris),
+
             pilihUkuranId: '',
             hargaBaru: '',
             stokBaru: '',

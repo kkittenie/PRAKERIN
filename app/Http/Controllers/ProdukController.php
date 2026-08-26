@@ -131,7 +131,27 @@ class ProdukController extends Controller
             $kategori = KategoriProduk::orderBy('nama_kategori')->get();
             $daftarUkuran = Ukuran::aktif()->urut()->get();
 
-            return view('pages.produk.create', compact('kategori', 'daftarUkuran'));
+            $ukuranBaris = collect(old('ukuran_baris', []))
+                ->map(function ($b) use ($daftarUkuran) {
+                    $master = $daftarUkuran->firstWhere(
+                        'id',
+                        (int) ($b['ukuran_id'] ?? 0)
+                    );
+
+                    return [
+                        'ukuran_id' => $b['ukuran_id'] ?? '',
+                        'nama' => $master->nama_ukuran ?? '',
+                        'harga_jual' => $b['harga_jual'] ?? '',
+                        'stok' => $b['stok'] ?? '',
+                    ];
+                })
+                ->values();
+
+            return view('pages.produk.create', compact(
+                'kategori',
+                'daftarUkuran',
+                'ukuranBaris'
+            ));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
