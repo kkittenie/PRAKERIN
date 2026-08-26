@@ -144,6 +144,7 @@ class ProdukController extends Controller
                         'harga_modal' => $b['harga_modal'] ?? '',
                         'harga_jual' => $b['harga_jual'] ?? '',
                         'stok' => $b['stok'] ?? '',
+                        'status_aktif' => filter_var($b['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
                     ];
                 })
                 ->values();
@@ -186,7 +187,7 @@ class ProdukController extends Controller
                     'stok' => $stok,
                     'stok_minimum' => (int) ($produk->stok_minimum ?? 0),
                     'status_ketersediaan' => $stok > 0 ? 'stok_ada' : 'perlu_diproduksi',
-                    'status_aktif' => true,
+                    'status_aktif' => filter_var($baris['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
                 ]
             );
         }
@@ -242,15 +243,19 @@ class ProdukController extends Controller
                 $validated['stok'] = (int) $ukuranBaris->sum(fn ($b) => (int) ($b['stok'] ?? 0));
                 // Sumber kebenaran harga & stok sekarang full di produk_ukurans;
                 // kolom lama ini cuma tersisa untuk data lama, jadi dikosongkan.
+                // PENTING: stok_besar/stok_kecil di kolom produks itu NOT NULL
+                // (default 0) — diisi null di sini bikin insert selalu gagal
+                // kena constraint DB tiap kali "Punya Ukuran" dicentang. Pakai
+                // 0, bukan null.
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
-                $validated['stok_besar'] = null;
-                $validated['stok_kecil'] = null;
+                $validated['stok_besar'] = 0;
+                $validated['stok_kecil'] = 0;
             } else {
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
-                $validated['stok_besar'] = null;
-                $validated['stok_kecil'] = null;
+                $validated['stok_besar'] = 0;
+                $validated['stok_kecil'] = 0;
             }
 
             $validated['status_ketersediaan'] = $validated['stok'] <= 0
@@ -331,6 +336,7 @@ class ProdukController extends Controller
                             'harga_modal' => $b['harga_modal'] ?? '',
                             'harga_jual' => $b['harga_jual'] ?? '',
                             'stok' => $b['stok'] ?? '',
+                            'status_aktif' => filter_var($b['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
                         ];
                     })
                     ->values();
@@ -343,6 +349,7 @@ class ProdukController extends Controller
                         'harga_modal' => (int) $pu->harga_modal,
                         'harga_jual' => (int) $pu->harga_jual,
                         'stok' => (int) $pu->stok,
+                        'status_aktif' => (bool) $pu->status_aktif,
                     ])
                     ->values();
             }

@@ -166,7 +166,7 @@ class Produk extends Model
             ? $this->produkUkurans
             : $this->produkUkurans()->get();
 
-        return $daftar->filter(fn ($pu) => (bool) $pu->status_aktif && $pu->ukuran);
+        return $daftar->filter(fn ($pu) => (bool) $pu->status_aktif && $pu->ukuran && (bool) $pu->ukuran->status_aktif);
     }
 
     /**

@@ -297,26 +297,31 @@
                                     <template x-if="!produk.is_bundling && !produk.is_promo_event">
                                         <div
                                             class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
-                                            <div @click="tambahKeKeranjang(produk)" title="Klik untuk tambah ke keranjang"
+                                            <div @click="tambahKeKeranjang(produk)"
+                                                :title="tidakAdaUkuranAktif(produk) ? 'Belum ada ukuran aktif untuk produk ini' : 'Klik untuk tambah ke keranjang'"
                                                 class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden cursor-pointer">
                                                 <img :src="getFotoUrl(produk.foto)" x-on:error="handleFotoError($event)"
                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                     alt="Produk">
                                                 <div class="absolute top-2 left-2 z-5">
-                                                    <template x-if="!butuhProduksi(produk)">
+                                                    <template x-if="tidakAdaUkuranAktif(produk)">
+                                                        <span
+                                                            class="bg-gray-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Nonaktif</span>
+                                                    </template>
+                                                    <template x-if="!tidakAdaUkuranAktif(produk) && !butuhProduksi(produk)">
                                                         <span
                                                             class="bg-emerald-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Ready</span>
                                                     </template>
-                                                    <template x-if="butuhProduksi(produk)">
+                                                    <template x-if="!tidakAdaUkuranAktif(produk) && butuhProduksi(produk)">
                                                         <span
                                                             class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu
                                                             Diproduksi</span>
                                                     </template>
                                                 </div>
                                                 <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
-                                                    :class="!butuhProduksi(produk) && produk.stok > 0 && produk.stok <= produk.stok_minimum ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'">
+                                                    :class="!butuhProduksi(produk) && !tidakAdaUkuranAktif(produk) && produk.stok > 0 && produk.stok <= produk.stok_minimum ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'">
                                                     <span
-                                                        x-text="butuhProduksi(produk) ? 'Perlu Diproduksi' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok)"></span>
+                                                        x-text="tidakAdaUkuranAktif(produk) ? 'Belum ada ukuran' : (butuhProduksi(produk) ? 'Perlu Diproduksi' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok))"></span>
                                                 </div>
                                             </div>
                                             <div class="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -363,16 +368,14 @@
                                                             <template x-if="!produk.daftar_ukuran || produk.daftar_ukuran.length === 0">
                                                                 <p class="text-xxs text-gray-400 dark:text-gray-500 italic">Belum ada ukuran aktif untuk produk ini.</p>
                                                             </template>
-                                                            <template x-for="opsiUkuran in (produk.daftar_ukuran || [])" :key="opsiUkuran.produk_ukuran_id">
-                                                                <button type="button" @click.stop="tambahKeKeranjang(produk, opsiUkuran.nama)"
-                                                                    :title="'Tambah Ukuran ' + opsiUkuran.nama"
-                                                                    class="flex-1 min-w-[68px] flex flex-col items-center justify-center py-1.5 px-1 bg-amber-50/80 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-600 rounded-lg transition border border-amber-200/60 dark:border-amber-500/20 group/sz text-center">
-                                                                    <div class="flex items-center justify-center gap-1 w-full leading-none">
-                                                                        <span class="text-[9px] font-extrabold uppercase tracking-wider text-amber-800/90 dark:text-amber-300 group-hover/sz:text-white/90" x-text="opsiUkuran.nama"></span>
-                                                                        <span class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 group-hover/sz:text-white">+</span>
-                                                                    </div>
-                                                                    <span class="font-extrabold text-[11px] text-amber-900 dark:text-amber-200 group-hover/sz:text-white leading-tight mt-0.5" x-text="formatRupiah(opsiUkuran.harga)"></span>
-                                                                </button>
+                                                            <template x-if="produk.daftar_ukuran && produk.daftar_ukuran.length > 0">
+                                                                <select @click.stop @change="if ($event.target.value) { tambahKeKeranjang(produk, $event.target.value); $event.target.value = ''; }"
+                                                                    class="w-full h-9 rounded-lg border border-amber-200/60 dark:border-amber-500/20 bg-amber-50/80 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs font-semibold px-2 focus:border-amber-500 focus:ring-amber-500 cursor-pointer">
+                                                                    <option value="">Pilih ukuran…</option>
+                                                                    <template x-for="opsiUkuran in produk.daftar_ukuran" :key="opsiUkuran.produk_ukuran_id">
+                                                                        <option :value="opsiUkuran.nama" x-text="opsiUkuran.nama + ' — ' + formatRupiah(opsiUkuran.harga)"></option>
+                                                                    </template>
+                                                                </select>
                                                             </template>
                                                         </div>
                                                     </template>
@@ -1752,16 +1755,13 @@
 
                 <div class="p-5 flex flex-col gap-3">
                     <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pilih varian ukuran untuk produk ini:</p>
-                    <div class="grid grid-cols-2 gap-3">
+                    <select @change="if ($event.target.value) { pilihUkuran($event.target.value); }"
+                        class="h-12 w-full rounded-lg border-2 border-amber-600 bg-amber-50/50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 font-semibold px-3 focus:border-amber-500 focus:ring-amber-500 cursor-pointer">
+                        <option value="">Pilih ukuran…</option>
                         <template x-for="opsiUkuran in (produkUkuranTerpilih?.daftar_ukuran || [])" :key="opsiUkuran.produk_ukuran_id">
-                            <button type="button" @click="pilihUkuran(opsiUkuran.nama)"
-                                class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-amber-600 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition">
-                                <span class="font-bold text-sm text-amber-900 dark:text-amber-300" x-text="opsiUkuran.nama"></span>
-                                <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 mt-1"
-                                    x-text="formatRupiah(opsiUkuran.harga)"></span>
-                            </button>
+                            <option :value="opsiUkuran.nama" x-text="opsiUkuran.nama + ' — ' + formatRupiah(opsiUkuran.harga)"></option>
                         </template>
-                    </div>
+                    </select>
                 </div>
             </div>
         </div>
@@ -2247,6 +2247,17 @@
 
                 butuhProduksi(produk) {
                     return produk.status_ketersediaan === 'perlu_diproduksi' || this.stokUntukUkuran(produk, null) <= 0;
+                },
+
+                // Beda sama "perlu diproduksi" (stok abis tapi ukurannya
+                // masih aktif dijual). Ini artinya semua varian ukuran
+                // produk ini lagi dimatikan (baik dari toggle Aktif di
+                // Edit Produk, atau ukurannya sendiri dinonaktifkan di
+                // Data Master Ukuran) — jadi bukan soal stok, tapi memang
+                // gak ada ukuran yang bisa dipesan sama sekali.
+                tidakAdaUkuranAktif(produk) {
+                    const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
+                    return punyaUkuran && (!produk.daftar_ukuran || produk.daftar_ukuran.length === 0);
                 },
 
                 // Ambil stok sesuai ukuran (dinamis, dari produk.daftar_ukuran) —
@@ -2977,6 +2988,12 @@
                 },
                 tambahKeKeranjang(produk, ukuran = null) {
                     const isPunyaUkuran = !produk.is_bundling && (produk.punya_ukuran == 1 || produk.punya_ukuran === true);
+
+                    if (isPunyaUkuran && !ukuran && this.tidakAdaUkuranAktif(produk)) {
+                        this.tambahToast('Belum ada ukuran aktif untuk produk ini — aktifkan dulu di halaman Edit Produk.', 'error');
+                        return;
+                    }
+
                     if (isPunyaUkuran && !ukuran) {
                         this.bukaModalPilihUkuran(produk);
                         return;

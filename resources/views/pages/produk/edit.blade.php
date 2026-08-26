@@ -178,21 +178,28 @@
                                     <th class="py-2 px-3">Harga Modal</th>
                                     <th class="py-2 px-3">Harga Jual</th>
                                     <th class="py-2 px-3">Stok</th>
+                                    <th class="py-2 px-3">Status</th>
                                     <th class="py-2 px-3"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="baris.length === 0">
                                     <tr>
-                                        <td colspan="5" class="py-3 px-3 text-center text-gray-400 text-xs">Belum ada baris ukuran ditambahkan.</td>
+                                        <td colspan="6" class="py-3 px-3 text-center text-gray-400 text-xs">Belum ada baris ukuran ditambahkan.</td>
                                     </tr>
                                 </template>
                                 <template x-for="(item, index) in baris" :key="index">
-                                    <tr class="border-t border-gray-100 dark:border-gray-800">
+                                    <tr class="border-t border-gray-100 dark:border-gray-800" :class="{ 'opacity-50': !item.status_aktif }">
                                         <td class="py-2 px-3 font-semibold text-gray-800 dark:text-gray-200" x-text="item.nama"></td>
                                         <td class="py-2 px-3" x-text="'Rp ' + Number(item.harga_modal || 0).toLocaleString('id-ID')"></td>
                                         <td class="py-2 px-3" x-text="'Rp ' + Number(item.harga_jual || 0).toLocaleString('id-ID')"></td>
                                         <td class="py-2 px-3" x-text="item.stok"></td>
+                                        <td class="py-2 px-3">
+                                            <label class="relative inline-flex items-center cursor-pointer" title="Aktifkan/nonaktifkan ukuran ini di kasir & mobile">
+                                                <input type="checkbox" class="sr-only peer" :checked="item.status_aktif" @change="item.status_aktif = $event.target.checked">
+                                                <div class="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-4"></div>
+                                            </label>
+                                        </td>
                                         <td class="py-2 px-3 text-right">
                                             <div class="inline-flex items-center gap-0.5">
                                                 <button type="button" @click="bukaModalEditBaris(index)" title="Edit" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition">
@@ -206,6 +213,7 @@
                                             <input type="hidden" :name="'ukuran_baris[' + index + '][harga_modal]'" :value="item.harga_modal">
                                             <input type="hidden" :name="'ukuran_baris[' + index + '][harga_jual]'" :value="item.harga_jual">
                                             <input type="hidden" :name="'ukuran_baris[' + index + '][stok]'" :value="item.stok">
+                                            <input type="hidden" :name="'ukuran_baris[' + index + '][status_aktif]'" :value="item.status_aktif ? 1 : 0">
                                         </td>
                                     </tr>
                                 </template>
@@ -538,6 +546,7 @@
                     harga_modal: hargaModalBersih,
                     harga_jual: hargaJualBersih,
                     stok: this.stokBaru,
+                    status_aktif: true,
                 });
                 this.pilihUkuranId = '';
                 this.hargaModalBaru = '';
