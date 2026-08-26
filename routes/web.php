@@ -7,6 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\TransaksiKasirController;
 use App\Http\Controllers\KategoriProdukController;
 use App\Http\Controllers\ProdukController;
+use App\Http\Controllers\ProdukKhususBundlingController;
 use App\Http\Controllers\BahanBakuController;
 use App\Http\Controllers\ProduksiController;
 use App\Http\Controllers\BundlingController;
@@ -131,6 +132,13 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/produk/{produk}/toggle-status', [ProdukController::class, 'toggleStatus'])->name('produk.toggle-status');
 
     Route::resource('produk', ProdukController::class)
+        ->middleware('permission:lihat_produk|tambah_produk|edit_produk|hapus_produk');
+
+    Route::patch('/produk-khusus-bundling/{produk}/toggle-status', [ProdukKhususBundlingController::class, 'toggleStatus'])
+        ->name('produk-khusus-bundling.toggle-status')
+        ->middleware('permission:edit_produk');
+
+    Route::resource('produk-khusus-bundling', ProdukKhususBundlingController::class)
         ->middleware('permission:lihat_produk|tambah_produk|edit_produk|hapus_produk');
 
     Route::resource('bahan-baku', BahanBakuController::class)

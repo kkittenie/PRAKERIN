@@ -141,6 +141,7 @@ class ProdukController extends Controller
                     return [
                         'ukuran_id' => $b['ukuran_id'] ?? '',
                         'nama' => $master->nama_ukuran ?? '',
+                        'harga_modal' => $b['harga_modal'] ?? '',
                         'harga_jual' => $b['harga_jual'] ?? '',
                         'stok' => $b['stok'] ?? '',
                     ];
@@ -158,23 +159,29 @@ class ProdukController extends Controller
     }
 
     /**
-     * Simpan baris produk_ukurans dari input repeater dinamis (ukuran_baris[])
-     * di form Tambah Produk. Harga modal ikut satu field "Harga Modal" umum
-     * di form (belum ada input modal per-ukuran terpisah), sama seperti
-     * pastikanBarisUkuranBesarKecil() di atas.
+     * Simpan/sinkronisasi baris produk_ukurans dari input repeater dinamis
+     * (ukuran_baris[]) di form Tambah & Edit Produk. Dipakai bareng di
+     * store() (produk baru, belum ada baris lama) dan update() (produk
+     * existing — baris yang udah gak ada di draft ikut dihapus, biar form
+     * Edit persis kaya form Tambah: apa yang keliatan di tabel = itu yang
+     * kesimpen).
      */
-    private function simpanBarisUkuranDinamis(Produk $produk, $ukuranBaris): void
+    private function syncBarisUkuranDinamis(Produk $produk, $ukuranBaris): void
     {
+        $ukuranIdDipakai = [];
+
         foreach ($ukuranBaris as $baris) {
             $stok = (int) ($baris['stok'] ?? 0);
+            $ukuranId = (int) $baris['ukuran_id'];
+            $ukuranIdDipakai[] = $ukuranId;
 
             ProdukUkuran::updateOrCreate(
                 [
                     'produk_id' => $produk->id,
-                    'ukuran_id' => (int) $baris['ukuran_id'],
+                    'ukuran_id' => $ukuranId,
                 ],
                 [
-                    'harga_modal' => $produk->harga_modal ?? 0,
+                    'harga_modal' => (float) ($baris['harga_modal'] ?? 0),
                     'harga_jual' => (float) ($baris['harga_jual'] ?? 0),
                     'stok' => $stok,
                     'stok_minimum' => (int) ($produk->stok_minimum ?? 0),
@@ -183,6 +190,12 @@ class ProdukController extends Controller
                 ]
             );
         }
+
+        // Baris ukuran lama yang udah gak ada di draft (dihapus admin di
+        // form) ikut dibuang, biar konsisten sama apa yang keliatan di form.
+        $produk->produkUkurans()
+            ->whereNotIn('ukuran_id', $ukuranIdDipakai)
+            ->delete();
     }
 
     public function store(Request $request)
@@ -195,7 +208,7 @@ class ProdukController extends Controller
                 'deskripsi' => 'nullable|string|max:1000',
                 'harga_jual' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
                 'punya_ukuran' => 'nullable|boolean',
-                'harga_modal' => 'required|numeric|min:0',
+                'harga_modal' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
                 'stok' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
                 'stok_minimum' => 'required|integer|min:0',
                 'status_aktif' => 'required|boolean',
@@ -207,9 +220,10 @@ class ProdukController extends Controller
 
                 // Mode dinamis: dipakai kalau "Punya Ukuran" dicentang. Setiap
                 // baris = satu ukuran dari master data Ukuran, bukan lagi
-                // hardcode Besar/Kecil.
+                // hardcode Besar/Kecil. Harga modal ikut per-baris juga.
                 'ukuran_baris' => 'nullable|array|required_if:punya_ukuran,1',
                 'ukuran_baris.*.ukuran_id' => 'required_with:ukuran_baris|exists:ukurans,id|distinct',
+                'ukuran_baris.*.harga_modal' => 'required_with:ukuran_baris|numeric|min:0',
                 'ukuran_baris.*.harga_jual' => 'required_with:ukuran_baris|numeric|min:0',
                 'ukuran_baris.*.stok' => 'required_with:ukuran_baris|integer|min:0',
             ], [
@@ -224,6 +238,7 @@ class ProdukController extends Controller
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
             if ($validated['punya_ukuran']) {
                 $validated['harga_jual'] = 0;
+                $validated['harga_modal'] = 0;
                 $validated['stok'] = (int) $ukuranBaris->sum(fn ($b) => (int) ($b['stok'] ?? 0));
                 // Sumber kebenaran harga & stok sekarang full di produk_ukurans;
                 // kolom lama ini cuma tersisa untuk data lama, jadi dikosongkan.
@@ -252,7 +267,7 @@ class ProdukController extends Controller
 
             if ($validated['punya_ukuran']) {
                 if ($ukuranBaris->isNotEmpty()) {
-                    $this->simpanBarisUkuranDinamis($produk, $ukuranBaris);
+                    $this->syncBarisUkuranDinamis($produk, $ukuranBaris);
                 } else {
                     // Jaga-jaga (mis. dipanggil lewat API tanpa JS) — fallback
                     // ke perilaku lama biar produk tetap dapat baris ukuran.
@@ -297,15 +312,47 @@ class ProdukController extends Controller
     {
         try {
             $kategori = KategoriProduk::orderBy('nama_kategori')->get();
-            $produk->load('produkUkurans');
+            $daftarUkuran = Ukuran::aktif()->urut()->get();
+            $produk->load('produkUkurans.ukuran');
 
-            $ukuranTerpakaiIds = $produk->produkUkurans->pluck('ukuran_id');
-            $daftarUkuranPilihan = Ukuran::aktif()
-                ->urut()
-                ->whereNotIn('id', $ukuranTerpakaiIds)
-                ->get();
+            if (old('ukuran_baris') !== null) {
+                // Balik dari validasi gagal — pakai draft yang barusan
+                // disubmit, bukan data lama dari DB.
+                $ukuranBaris = collect(old('ukuran_baris', []))
+                    ->map(function ($b) use ($daftarUkuran) {
+                        $master = $daftarUkuran->firstWhere(
+                            'id',
+                            (int) ($b['ukuran_id'] ?? 0)
+                        );
 
-            return view('pages.produk.edit', compact('produk', 'kategori', 'daftarUkuranPilihan'));
+                        return [
+                            'ukuran_id' => $b['ukuran_id'] ?? '',
+                            'nama' => $master->nama_ukuran ?? '',
+                            'harga_modal' => $b['harga_modal'] ?? '',
+                            'harga_jual' => $b['harga_jual'] ?? '',
+                            'stok' => $b['stok'] ?? '',
+                        ];
+                    })
+                    ->values();
+            } else {
+                // Prefill dari baris ukuran yang udah tersimpan buat produk ini.
+                $ukuranBaris = $produk->produkUkurans
+                    ->map(fn ($pu) => [
+                        'ukuran_id' => $pu->ukuran_id,
+                        'nama' => $pu->ukuran->nama_ukuran ?? '',
+                        'harga_modal' => (int) $pu->harga_modal,
+                        'harga_jual' => (int) $pu->harga_jual,
+                        'stok' => (int) $pu->stok,
+                    ])
+                    ->values();
+            }
+
+            return view('pages.produk.edit', compact(
+                'produk',
+                'kategori',
+                'daftarUkuran',
+                'ukuranBaris'
+            ));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -325,12 +372,8 @@ class ProdukController extends Controller
                 'deskripsi' => 'nullable|string|max:1000',
                 'harga_jual' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
                 'punya_ukuran' => 'nullable|boolean',
-                'harga_besar' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
-                'harga_kecil' => 'nullable|required_if:punya_ukuran,1|numeric|min:0',
-                'harga_modal' => 'required|numeric|min:0',
+                'harga_modal' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
                 'stok' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
-                'stok_besar' => 'nullable|required_if:punya_ukuran,1|integer|min:0',
-                'stok_kecil' => 'nullable|required_if:punya_ukuran,1|integer|min:0',
                 'stok_minimum' => 'required|integer|min:0',
                 'status_aktif' => 'required|boolean',
                 'status_ketersediaan' => [
@@ -338,7 +381,22 @@ class ProdukController extends Controller
                     Rule::in(['stok_ada', 'perlu_diproduksi']),
                 ],
                 'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+
+                // Sama persis kaya validasi di store(): satu baris = satu
+                // ukuran dari master Ukuran, harga modal & jual per-baris.
+                'ukuran_baris' => 'nullable|array|required_if:punya_ukuran,1',
+                'ukuran_baris.*.ukuran_id' => 'required_with:ukuran_baris|exists:ukurans,id|distinct',
+                'ukuran_baris.*.harga_modal' => 'required_with:ukuran_baris|numeric|min:0',
+                'ukuran_baris.*.harga_jual' => 'required_with:ukuran_baris|numeric|min:0',
+                'ukuran_baris.*.stok' => 'required_with:ukuran_baris|integer|min:0',
+            ], [
+                'ukuran_baris.required_if' => 'Tambahkan minimal 1 baris ukuran.',
+                'ukuran_baris.*.ukuran_id.distinct' => 'Satu ukuran cuma boleh ditambahkan sekali.',
             ]);
+
+            $ukuranBaris = collect($request->input('ukuran_baris', []))
+                ->filter(fn ($baris) => !empty($baris['ukuran_id']))
+                ->values();
 
             if ($request->hasFile('foto')) {
 
@@ -354,15 +412,11 @@ class ProdukController extends Controller
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
             if ($validated['punya_ukuran']) {
                 $validated['harga_jual'] = 0;
-                $validated['stok_besar'] = (int) ($validated['stok_besar'] ?? 0);
-                $validated['stok_kecil'] = (int) ($validated['stok_kecil'] ?? 0);
-                $validated['stok'] = $validated['stok_besar'] + $validated['stok_kecil'];
-            } else {
-                $validated['harga_besar'] = null;
-                $validated['harga_kecil'] = null;
-                $validated['stok_besar'] = null;
-                $validated['stok_kecil'] = null;
+                $validated['harga_modal'] = 0;
+                $validated['stok'] = (int) $ukuranBaris->sum(fn ($b) => (int) ($b['stok'] ?? 0));
             }
+
+            unset($validated['ukuran_baris']);
 
             $validated['status_ketersediaan'] = $validated['stok'] <= 0
                 ? 'perlu_diproduksi'
@@ -370,7 +424,9 @@ class ProdukController extends Controller
 
             $produk->update($validated);
 
-            $this->pastikanBarisUkuranBesarKecil($produk);
+            if ($validated['punya_ukuran'] && $ukuranBaris->isNotEmpty()) {
+                $this->syncBarisUkuranDinamis($produk, $ukuranBaris);
+            }
 
             activity()
                 ->causedBy(auth()->user())
@@ -381,8 +437,7 @@ class ProdukController extends Controller
                     'kategori_id' => $validated['kategori_id'],
                     'harga_jual' => $validated['harga_jual'],
                     'stok' => $validated['stok'],
-                    'stok_besar' => $validated['stok_besar'] ?? null,
-                    'stok_kecil' => $validated['stok_kecil'] ?? null,
+                    'jumlah_ukuran' => $ukuranBaris->count(),
                 ])
                 ->log('memperbarui produk');
 

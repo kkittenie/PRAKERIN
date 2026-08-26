@@ -163,14 +163,14 @@
             <tr>
                 <td class="label">Jumlah Hasil</td>
                 <td class="val">{{ $item->jumlah_hasil }} pcs</td>
-                <td class="label">Kebutuhan Produksi</td>
+                <td class="label">Pesanan</td>
                 <td class="val">{{ $item->kebutuhan_produksi ?: 0 }} pcs</td>
                 <td class="label">Kadaluwarsa</td>
                 <td class="val">{{ $item->kadaluarsa_label }}</td>
             </tr>
             <tr>
                 <td class="label">Rincian Ukuran</td>
-                <td class="val" colspan="5">Hasil: {{ $item->rincian_ukuran }} &bull; Kebutuhan: {{ $item->rincian_kebutuhan_ukuran }}</td>
+                <td class="val" colspan="5">Hasil: {{ $item->rincian_ukuran }} &bull; Pesanan: {{ $item->rincian_kebutuhan_ukuran }}</td>
             </tr>
             <tr>
                 <td class="label">Dibuat Oleh</td>

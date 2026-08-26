@@ -228,7 +228,7 @@ Pengambilan Bahan Baku <span class="text-red-500">*</span>
             <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
                 Isi "Jumlah Hasil" untuk tiap ukuran yang diproduksi kali ini (boleh kosongkan/0 kalau ukuran itu gak diproduksi sekarang).
                 Total semua "Jumlah Hasil" harus sama dengan Jumlah Hasil Produksi di atas.
-                "Kebutuhan Produksi" opsional, kalau sebagian hasil langsung dipakai/dipotong lagi saat itu juga.
+                "Pesanan" opsional, kalau sebagian hasil langsung dipakai/dipotong lagi saat itu juga.
             </p>
 
             <div id="rincian-ukuran-container" class="space-y-3">
@@ -239,7 +239,7 @@ Pengambilan Bahan Baku <span class="text-red-500">*</span>
                 Total Jumlah Hasil per ukuran harus sama dengan Jumlah Hasil Produksi.
             </p>
             <p id="peringatanKebutuhanUkuran" class="hidden text-xs text-red-600 mt-1">
-                Kebutuhan Produksi tiap ukuran tidak boleh melebihi Jumlah Hasil ukuran itu sendiri.
+                Pesanan tiap ukuran tidak boleh melebihi Jumlah Hasil ukuran itu sendiri.
             </p>
         </div>
 
@@ -259,12 +259,12 @@ Pengambilan Bahan Baku <span class="text-red-500">*</span>
         {{-- Kebutuhan Produksi (biasa) - untuk produk yang TIDAK punya varian ukuran --}}
         <div class="md:col-span-2" id="wrapperKebutuhanBiasa">
             <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
-                Kebutuhan Produksi
+                Pesanan
             </label>
             <input type="number" id="kebutuhan_produksi_biasa" name="kebutuhan_produksi" placeholder="0" value="{{ old('kebutuhan_produksi') }}" min="0"
                 class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
             <small id="infoKebutuhanBiasa" class="text-gray-500 dark:text-gray-400 mt-1 block">
-                Jumlah stok produk yang akan dipakai/dikurangi untuk kebutuhan produksi ini (tidak boleh melebihi Jumlah Hasil Produksi).
+                Jumlah stok produk yang akan dipakai/dikurangi untuk pesanan ini (tidak boleh melebihi Jumlah Hasil Produksi).
             </small>
             @error('kebutuhan_produksi') <small class="text-red-500">{{ $message }}</small> @enderror
         </div>
@@ -956,7 +956,7 @@ function aktifkanSearch(element) {
                         name="ukuran_hasil[${opsi.produk_ukuran_id}]">
                 </div>
                 <div class="w-full sm:w-32">
-                    <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Kebutuhan</label>
+                    <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Pesanan</label>
                     <input type="number" min="0" placeholder="0" value="${oldKebutuhan}"
                         class="input-ukuran-kebutuhan w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:border-brand-500 focus:ring-brand-500"
                         name="ukuran_kebutuhan[${opsi.produk_ukuran_id}]">

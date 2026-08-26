@@ -108,7 +108,7 @@ Kadaluwarsa
 <div>
 
 <p class="text-sm text-gray-500 dark:text-gray-400">
-Kebutuhan Produksi
+Pesanan
 </p>
 
 <p class="font-semibold text-amber-600 dark:text-amber-400">
