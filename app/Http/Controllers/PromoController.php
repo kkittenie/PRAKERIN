@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Promo;
 use App\Models\Produk;
+use App\Models\Ukuran;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -44,7 +45,7 @@ class PromoController extends Controller
     public function lihat($id)
     {
         try {
-            $promo = Promo::with(['produks.kategori'])->findOrFail($id);
+            $promo = Promo::with(['produks.kategori', 'ukurans'])->findOrFail($id);
             return view('pages.promo.show', compact('promo'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -55,7 +56,8 @@ class PromoController extends Controller
     {
         try {
             $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
-            return view('pages.promo.create', compact('produks'));
+            $ukurans = Ukuran::aktif()->urut()->get();
+            return view('pages.promo.create', compact('produks', 'ukurans'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -77,6 +79,8 @@ class PromoController extends Controller
                 'selesai_berlaku' => 'nullable|date|after_or_equal:mulai_berlaku',
                 'produk_ids' => 'required|array',
                 'produk_ids.*' => 'exists:produks,id',
+                'ukuran_ids' => 'nullable|array',
+                'ukuran_ids.*' => 'exists:ukurans,id',
             ]);
 
             $promo = Promo::create([
@@ -91,6 +95,7 @@ class PromoController extends Controller
             ]);
 
             $promo->produks()->sync($validated['produk_ids']);
+            $promo->ukurans()->sync($validated['ukuran_ids'] ?? []);
 
             activity()
                 ->causedBy(auth()->user())
@@ -100,6 +105,7 @@ class PromoController extends Controller
                     'jenis_potongan' => $promo->jenis_potongan,
                     'potongan' => $promo->jenis_potongan === 'nominal' ? $promo->nominal_potongan : $promo->persentase,
                     'produks' => $validated['produk_ids'],
+                    'ukuran_ids' => $validated['ukuran_ids'] ?? [],
                 ])
                 ->log('menambahkan promo');
 
@@ -114,11 +120,13 @@ class PromoController extends Controller
     public function ubah($id)
     {
         try {
-            $promo = Promo::with('produks')->findOrFail($id);
+            $promo = Promo::with(['produks', 'ukurans'])->findOrFail($id);
             $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
+            $ukurans = Ukuran::aktif()->urut()->get();
             $selectedProduks = $promo->produks->pluck('id')->toArray();
+            $selectedUkurans = $promo->ukurans->pluck('id')->toArray();
 
-            return view('pages.promo.edit', compact('promo', 'produks', 'selectedProduks'));
+            return view('pages.promo.edit', compact('promo', 'produks', 'ukurans', 'selectedProduks', 'selectedUkurans'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -142,6 +150,8 @@ class PromoController extends Controller
                 'selesai_berlaku' => 'nullable|date|after_or_equal:mulai_berlaku',
                 'produk_ids' => 'required|array',
                 'produk_ids.*' => 'exists:produks,id',
+                'ukuran_ids' => 'nullable|array',
+                'ukuran_ids.*' => 'exists:ukurans,id',
             ]);
 
             $promo->update([
@@ -156,6 +166,7 @@ class PromoController extends Controller
             ]);
 
             $promo->produks()->sync($validated['produk_ids']);
+            $promo->ukurans()->sync($validated['ukuran_ids'] ?? []);
 
             activity()
                 ->causedBy(auth()->user())
@@ -165,6 +176,7 @@ class PromoController extends Controller
                     'jenis_potongan' => $promo->jenis_potongan,
                     'potongan' => $promo->jenis_potongan === 'nominal' ? $promo->nominal_potongan : $promo->persentase,
                     'produks' => $validated['produk_ids'],
+                    'ukuran_ids' => $validated['ukuran_ids'] ?? [],
                 ])
                 ->log('memperbarui promo');
 

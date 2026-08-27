@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PromoProdukEvent;
 use App\Models\Produk;
+use App\Models\Ukuran;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 
@@ -42,7 +43,7 @@ class PromoProdukEventController extends Controller
     public function lihat($id)
     {
         try {
-            $promoEvent = PromoProdukEvent::with('produk')->findOrFail($id);
+            $promoEvent = PromoProdukEvent::with(['produk', 'ukurans'])->findOrFail($id);
             return view('pages.promo-event.show', compact('promoEvent'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -53,7 +54,8 @@ class PromoProdukEventController extends Controller
     {
         try {
             $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
-            return view('pages.promo-event.create', compact('produks'));
+            $ukurans = Ukuran::aktif()->urut()->get();
+            return view('pages.promo-event.create', compact('produks', 'ukurans'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -71,6 +73,8 @@ class PromoProdukEventController extends Controller
                 'mulai_berlaku' => 'required|date',
                 'selesai_berlaku' => 'required|date|after_or_equal:mulai_berlaku',
                 'status_aktif' => 'nullable|boolean',
+                'ukuran_ids' => 'nullable|array',
+                'ukuran_ids.*' => 'exists:ukurans,id',
             ]);
 
             $promoEvent = PromoProdukEvent::create([
@@ -84,6 +88,8 @@ class PromoProdukEventController extends Controller
                 'status_aktif' => $request->has('status_aktif') ? (bool) $request->status_aktif : true,
             ]);
 
+            $promoEvent->ukurans()->sync($validated['ukuran_ids'] ?? []);
+
             activity()
                 ->causedBy(auth()->user())
                 ->performedOn($promoEvent)
@@ -93,6 +99,7 @@ class PromoProdukEventController extends Controller
                     'isi_normal' => $promoEvent->isi_normal,
                     'isi_event' => $promoEvent->isi_event,
                     'harga_event' => $promoEvent->harga_event,
+                    'ukuran_ids' => $validated['ukuran_ids'] ?? [],
                 ])
                 ->log('menambahkan promo produk event');
 
@@ -107,10 +114,12 @@ class PromoProdukEventController extends Controller
     public function ubah($id)
     {
         try {
-            $promoEvent = PromoProdukEvent::findOrFail($id);
+            $promoEvent = PromoProdukEvent::with('ukurans')->findOrFail($id);
             $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
+            $ukurans = Ukuran::aktif()->urut()->get();
+            $selectedUkurans = $promoEvent->ukurans->pluck('id')->toArray();
 
-            return view('pages.promo-event.edit', compact('promoEvent', 'produks'));
+            return view('pages.promo-event.edit', compact('promoEvent', 'produks', 'ukurans', 'selectedUkurans'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -130,6 +139,8 @@ class PromoProdukEventController extends Controller
                 'mulai_berlaku' => 'required|date',
                 'selesai_berlaku' => 'required|date|after_or_equal:mulai_berlaku',
                 'status_aktif' => 'nullable|boolean',
+                'ukuran_ids' => 'nullable|array',
+                'ukuran_ids.*' => 'exists:ukurans,id',
             ]);
 
             $promoEvent->update([
@@ -142,6 +153,8 @@ class PromoProdukEventController extends Controller
                 'selesai_berlaku' => $validated['selesai_berlaku'],
                 'status_aktif' => $request->has('status_aktif') ? (bool) $request->status_aktif : false,
             ]);
+
+            $promoEvent->ukurans()->sync($validated['ukuran_ids'] ?? []);
 
             activity()
                 ->causedBy(auth()->user())

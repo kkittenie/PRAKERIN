@@ -83,7 +83,7 @@ class Produk extends Model
         };
 
         if ($this->relationLoaded('promos')) {
-            return $this->promos->filter($isPromoBerlaku)->values();
+            return $this->promos->filter($isPromoBerlaku)->values()->loadMissing('ukurans');
         }
 
         return $this->promos()
@@ -93,6 +93,7 @@ class Produk extends Model
                 $q->whereNull('selesai_berlaku')
                   ->orWhere('selesai_berlaku', '>=', $now);
             })
+            ->with('ukurans')
             ->get();
     }
 
@@ -111,7 +112,7 @@ class Produk extends Model
                 return $p->jenis_potongan === 'nominal'
                     ? $p->nominal_potongan
                     : (($p->persentase ?? 0) / 100 * $this->getHarga());
-            })->first();
+            })->first()?->loadMissing('ukurans');
         }
 
         return $this->promos()
@@ -121,6 +122,7 @@ class Produk extends Model
                 $q->whereNull('selesai_berlaku')
                   ->orWhere('selesai_berlaku', '>=', $now);
             })
+            ->with('ukurans')
             ->get()
             ->sortByDesc(function ($p) {
                 return $p->jenis_potongan === 'nominal'
@@ -138,7 +140,7 @@ class Produk extends Model
     public function hargaSetelahPromo(?string $ukuran = null): float
     {
         $hargaDasar = $this->getHarga($ukuran);
-        $promo = $this->promo_aktif;
+        $promo = $this->promoUntukHitungHarga($ukuran);
         if ($promo) {
             if ($promo->jenis_potongan === 'nominal') {
                 $diskon = $promo->nominal_potongan;
@@ -148,6 +150,45 @@ class Produk extends Model
             return max(0, $hargaDasar - $diskon);
         }
         return $hargaDasar;
+    }
+
+    /**
+     * Promo yang beneran berlaku buat ukuran tertentu. Kalau produk gak
+     * punya ukuran, tetap pakai promo_aktif (perilaku lama). Kalau punya
+     * ukuran, promo yang "dibatasi ukuran" (lewat menu Potongan Harga)
+     * cuma dianggap berlaku kalau ukuran ini termasuk yang dicentang admin.
+     */
+    protected function promoUntukHitungHarga(?string $ukuran): ?Promo
+    {
+        if (!$this->punya_ukuran) {
+            return $this->promo_aktif;
+        }
+
+        $ukuranId = optional($this->cariBarisUkuran($ukuran))->ukuran_id;
+        return $this->promoAktifUntukUkuran($ukuranId);
+    }
+
+    /**
+     * Sama kayak accessor promo_aktif, tapi ngecek juga apakah promo itu
+     * dibatasi ke ukuran-ukuran tertentu (tabel promo_ukurans). Promo yang
+     * gak dibatasi (pivot-nya kosong) tetap dianggap berlaku ke semua
+     * ukuran, sama kayak sebelum fitur ini ada.
+     */
+    public function promoAktifUntukUkuran(?int $ukuranId): ?Promo
+    {
+        $now = now();
+        $promos = $this->relationLoaded('promos') ? $this->promos : $this->promos()->get();
+
+        return $promos->filter(function ($promo) use ($now, $ukuranId) {
+            if (!$promo->status_aktif) return false;
+            if ($promo->mulai_berlaku > $now) return false;
+            if ($promo->selesai_berlaku && $promo->selesai_berlaku < $now) return false;
+            return $promo->berlakuUntukUkuran($ukuranId);
+        })->sortByDesc(function ($p) {
+            return $p->jenis_potongan === 'nominal'
+                ? $p->nominal_potongan
+                : (($p->persentase ?? 0) / 100 * $this->getHarga());
+        })->first();
     }
 
     public function promoProdukEvents()
@@ -199,11 +240,26 @@ class Produk extends Model
         return $this->daftarBarisUkuranAktif()
             ->sortBy(fn ($pu) => $pu->ukuran->urutan ?? 0)
             ->map(function ($pu) {
+                $hargaAsli = (float) $pu->harga_jual;
+                $promo = $this->promoAktifUntukUkuran($pu->ukuran_id);
+                $hargaDiskon = $hargaAsli;
+
+                if ($promo) {
+                    $diskon = $promo->jenis_potongan === 'nominal'
+                        ? $promo->nominal_potongan
+                        : (($promo->persentase ?? 0) / 100) * $hargaAsli;
+                    $hargaDiskon = max(0, $hargaAsli - $diskon);
+                }
+
                 return [
                     'produk_ukuran_id' => $pu->id,
                     'ukuran_id' => $pu->ukuran_id,
                     'nama' => $pu->ukuran->nama_ukuran,
-                    'harga' => (float) $pu->harga_jual,
+                    'harga' => $hargaAsli,
+                    'harga_asli' => $hargaAsli,
+                    'harga_diskon' => $hargaDiskon,
+                    'sedang_promo' => (bool) $promo,
+                    'nama_promo' => $promo?->nama_promo,
                     'harga_modal' => (float) $pu->harga_modal,
                     'stok' => (int) $pu->stok,
                     'stok_minimum' => (int) $pu->stok_minimum,
