@@ -364,18 +364,43 @@
                                                         </template>
                                                     </div>
                                                     <template x-if="produk.punya_ukuran == 1 || produk.punya_ukuran === true">
-                                                        <div class="flex flex-wrap gap-1.5 items-center">
+                                                        <div class="relative" @click.away="dropdownUkuranAktifId === produk.id && (dropdownUkuranAktifId = null)">
                                                             <template x-if="!produk.daftar_ukuran || produk.daftar_ukuran.length === 0">
                                                                 <p class="text-xxs text-gray-400 dark:text-gray-500 italic">Belum ada ukuran aktif untuk produk ini.</p>
                                                             </template>
                                                             <template x-if="produk.daftar_ukuran && produk.daftar_ukuran.length > 0">
-                                                                <select @click.stop @change="if ($event.target.value) { tambahKeKeranjang(produk, $event.target.value); $event.target.value = ''; }"
-                                                                    class="w-full h-9 rounded-lg border border-amber-200/60 dark:border-amber-500/20 bg-amber-50/80 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs font-semibold px-2 focus:border-amber-500 focus:ring-amber-500 cursor-pointer">
-                                                                    <option value="">Pilih ukuran…</option>
-                                                                    <template x-for="opsiUkuran in produk.daftar_ukuran" :key="opsiUkuran.produk_ukuran_id">
-                                                                        <option :value="opsiUkuran.nama" x-text="opsiUkuran.nama + ' — ' + formatRupiah(opsiUkuran.harga)"></option>
-                                                                    </template>
-                                                                </select>
+                                                                <div>
+                                                                    <button type="button" @click.stop="dropdownUkuranAktifId = (dropdownUkuranAktifId === produk.id ? null : produk.id)"
+                                                                        class="w-full h-9 flex items-center justify-between gap-2 rounded-lg border border-amber-200/60 dark:border-amber-500/20 bg-amber-50/80 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs font-semibold px-2.5 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors">
+                                                                        <span class="truncate">Pilih ukuran…</span>
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0 transition-transform duration-150"
+                                                                            :class="dropdownUkuranAktifId === produk.id ? 'rotate-180' : ''"
+                                                                            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                                                        </svg>
+                                                                    </button>
+
+                                                                    <div x-show="dropdownUkuranAktifId === produk.id"
+                                                                        x-transition:enter="transition ease-out duration-100"
+                                                                        x-transition:enter-start="opacity-0 -translate-y-1"
+                                                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                                                        class="relative z-20 mt-1.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-lg overflow-hidden py-1 max-h-56 overflow-y-auto"
+                                                                        style="display: none;">
+                                                                        <template x-for="opsiUkuran in produk.daftar_ukuran" :key="opsiUkuran.produk_ukuran_id">
+                                                                            <button type="button"
+                                                                                @click.stop="dropdownUkuranAktifId = null; tambahKeKeranjang(produk, opsiUkuran.nama)"
+                                                                                class="w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors text-left">
+                                                                                <span class="flex items-center gap-1.5 min-w-0">
+                                                                                    <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate" x-text="opsiUkuran.nama"></span>
+                                                                                    <template x-if="opsiUkuran.perlu_produksi">
+                                                                                        <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-full">Perlu Diproduksi</span>
+                                                                                    </template>
+                                                                                </span>
+                                                                                <span class="shrink-0 text-xs font-bold text-amber-700 dark:text-amber-400" x-text="formatRupiah(opsiUkuran.harga)"></span>
+                                                                            </button>
+                                                                        </template>
+                                                                    </div>
+                                                                </div>
                                                             </template>
                                                         </div>
                                                     </template>
@@ -1755,13 +1780,20 @@
 
                 <div class="p-5 flex flex-col gap-3">
                     <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pilih varian ukuran untuk produk ini:</p>
-                    <select @change="if ($event.target.value) { pilihUkuran($event.target.value); }"
-                        class="h-12 w-full rounded-lg border-2 border-amber-600 bg-amber-50/50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 font-semibold px-3 focus:border-amber-500 focus:ring-amber-500 cursor-pointer">
-                        <option value="">Pilih ukuran…</option>
+                    <div class="flex flex-col gap-2 max-h-72 overflow-y-auto">
                         <template x-for="opsiUkuran in (produkUkuranTerpilih?.daftar_ukuran || [])" :key="opsiUkuran.produk_ukuran_id">
-                            <option :value="opsiUkuran.nama" x-text="opsiUkuran.nama + ' — ' + formatRupiah(opsiUkuran.harga)"></option>
+                            <button type="button" @click="pilihUkuran(opsiUkuran.nama)"
+                                class="w-full flex items-center justify-between gap-3 rounded-xl border-2 border-amber-100 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/30 hover:border-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors px-4 py-3 text-left">
+                                <span class="flex items-center gap-2 min-w-0">
+                                    <span class="font-bold text-sm text-amber-900 dark:text-amber-300 truncate" x-text="opsiUkuran.nama"></span>
+                                    <template x-if="opsiUkuran.perlu_produksi">
+                                        <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-200/70 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-full">Perlu Diproduksi</span>
+                                    </template>
+                                </span>
+                                <span class="shrink-0 font-extrabold text-sm text-amber-700 dark:text-amber-400" x-text="formatRupiah(opsiUkuran.harga)"></span>
+                            </button>
                         </template>
-                    </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1922,6 +1954,7 @@
                 modalKonfirmasiHapusTerbuka: false,
                 modalPilihPromoTerbuka: false,
                 modalPilihUkuranTerbuka: false,
+                dropdownUkuranAktifId: null,
                 modalVoucherTerbuka: false,
                 modalVarianBundlingTerbuka: false,
                 itemPromoTerpilih: null,
