@@ -132,6 +132,12 @@ class PromoController extends Controller
     {
         $promo->produkUkuranPivots()->delete();
 
+        // Normalisasi ke int dulu — $produkIds dari request masih berupa
+        // string ("5", "12", dst), jadi kalau dibandingin strict (in_array
+        // ...true) sama $produkId yang udah di-(int)-in, selalu dianggap
+        // gak ketemu dan pembatasan ukurannya gak pernah kesimpen.
+        $produkIds = array_map('intval', $produkIds);
+
         $rows = [];
         $now = now();
         foreach ($ukuranIdsPerProduk as $produkId => $ukuranIds) {
