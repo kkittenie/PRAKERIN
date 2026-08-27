@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('ukuran_id')->constrained('ukurans')->cascadeOnDelete();
             $table->timestamps();
 
-            $table->unique(['promo_produk_event_id', 'ukuran_id']);
+            $table->unique(['promo_produk_event_id', 'ukuran_id'], 'ppeu_event_ukuran_unique');
         });
     }
 

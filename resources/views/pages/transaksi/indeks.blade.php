@@ -395,8 +395,19 @@
                                                                                     <template x-if="opsiUkuran.perlu_produksi">
                                                                                         <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-full">Perlu Diproduksi</span>
                                                                                     </template>
+                                                                                    <template x-if="opsiUkuran.sedang_promo">
+                                                                                        <span class="shrink-0 text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-500/15 px-1.5 py-0.5 rounded-full"
+                                                                                            x-text="opsiUkuran.nama_promo || 'Promo'"></span>
+                                                                                    </template>
                                                                                 </span>
-                                                                                <span class="shrink-0 text-xs font-bold text-amber-700 dark:text-amber-400" x-text="formatRupiah(opsiUkuran.harga)"></span>
+                                                                                <span class="shrink-0 flex flex-col items-end leading-tight">
+                                                                                    <template x-if="opsiUkuran.sedang_promo">
+                                                                                        <span class="text-[10px] text-gray-400 dark:text-gray-500 line-through" x-text="formatRupiah(opsiUkuran.harga_asli)"></span>
+                                                                                    </template>
+                                                                                    <span class="text-xs font-bold"
+                                                                                        :class="opsiUkuran.sedang_promo ? 'text-rose-600 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400'"
+                                                                                        x-text="formatRupiah(opsiUkuran.sedang_promo ? opsiUkuran.harga_diskon : opsiUkuran.harga)"></span>
+                                                                                </span>
                                                                             </button>
                                                                         </template>
                                                                     </div>
@@ -1114,8 +1125,13 @@
                                         </div>
                                         <div class="flex flex-col gap-0.5 mt-1">
                                             <div class="flex items-center gap-1.5">
-                                                <span class="text-xxs font-bold text-amber-700 dark:text-amber-400"
-                                                    x-text="item.is_reward_stamp ? 'Gratis' : formatRupiah(item.harga_jual_asli)"></span>
+                                                <template x-if="!item.is_reward_stamp && (!item.promos_tersedia || item.promos_tersedia.length === 0) && item.promo_aktif">
+                                                    <span class="text-xxs text-gray-400 dark:text-gray-500 line-through"
+                                                        x-text="formatRupiah(item.harga_jual_asli)"></span>
+                                                </template>
+                                                <span class="text-xxs font-bold"
+                                                    :class="!item.is_reward_stamp && (!item.promos_tersedia || item.promos_tersedia.length === 0) && item.promo_aktif ? 'text-rose-600 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400'"
+                                                    x-text="item.is_reward_stamp ? 'Gratis' : formatRupiah((!item.promos_tersedia || item.promos_tersedia.length === 0) && item.promo_aktif ? hargaSatuanSetelahPromo(item) : item.harga_jual_asli)"></span>
                                                 <template
                                                     x-if="!item.is_reward_stamp && apakahBarisPertamaProduk(item) && item.promos_tersedia && item.promos_tersedia.length > 0">
                                                     <button type="button" @click="bukaModalPilihPromo(item)"
@@ -1789,8 +1805,19 @@
                                     <template x-if="opsiUkuran.perlu_produksi">
                                         <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-200/70 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-full">Perlu Diproduksi</span>
                                     </template>
+                                    <template x-if="opsiUkuran.sedang_promo">
+                                        <span class="shrink-0 text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-500/15 px-1.5 py-0.5 rounded-full"
+                                            x-text="opsiUkuran.nama_promo || 'Promo'"></span>
+                                    </template>
                                 </span>
-                                <span class="shrink-0 font-extrabold text-sm text-amber-700 dark:text-amber-400" x-text="formatRupiah(opsiUkuran.harga)"></span>
+                                <span class="shrink-0 flex flex-col items-end leading-tight">
+                                    <template x-if="opsiUkuran.sedang_promo">
+                                        <span class="text-[10px] text-gray-400 dark:text-gray-500 line-through" x-text="formatRupiah(opsiUkuran.harga_asli)"></span>
+                                    </template>
+                                    <span class="font-extrabold text-sm"
+                                        :class="opsiUkuran.sedang_promo ? 'text-rose-600 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400'"
+                                        x-text="formatRupiah(opsiUkuran.sedang_promo ? opsiUkuran.harga_diskon : opsiUkuran.harga)"></span>
+                                </span>
                             </button>
                         </template>
                     </div>
@@ -2351,6 +2378,7 @@
 
                 buatItemKeranjang(produk, jumlah, perluProduksi, ukuran = null) {
                     let hargaAsli = parseFloat(produk.harga_jual || 0);
+                    let ukuranId = null;
                     if (produk.punya_ukuran) {
                         let opsi = ukuran ? this.cariOpsiUkuran(produk, ukuran) : null;
                         if (!opsi && !ukuran && produk.daftar_ukuran && produk.daftar_ukuran.length > 0) {
@@ -2360,6 +2388,7 @@
                         }
                         if (opsi) {
                             hargaAsli = parseFloat(opsi.harga || 0);
+                            ukuranId = opsi.ukuran_id ?? null;
                         } else if (ukuran === 'Besar') {
                             hargaAsli = parseFloat(produk.harga_besar || 0);
                         } else if (ukuran === 'Kecil') {
@@ -2369,9 +2398,21 @@
                             ukuran = ukuran || 'Kecil';
                         }
                     }
-                    const promosTersedia = (produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0)
+                    // Promo cuma dianggap "tersedia" buat baris ini kalau memang berlaku
+                    // buat ukuran ini — promo yang dibatasi ke ukuran lain difilter di sini,
+                    // biar badge/diskon di keranjang gak nyasar ke ukuran yang gak dituju.
+                    const promoBerlakuUntukItem = (promo) => {
+                        if (!promo) return false;
+                        if (!ukuranId) return true; // produk tanpa varian ukuran -> promo produk berlaku penuh
+                        const daftarUkuranPromo = promo.ukurans || [];
+                        if (daftarUkuranPromo.length === 0) return true; // gak dibatasi -> semua ukuran kena
+                        return daftarUkuranPromo.some(u => u.id === ukuranId);
+                    };
+                    const promosTersedia = ((produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0)
                         ? produk.promos_aktif_semua
-                        : (produk.promo_aktif ? [produk.promo_aktif] : []);
+                        : (produk.promo_aktif ? [produk.promo_aktif] : [])
+                    ).filter(promoBerlakuUntukItem);
+                    const promoAktifItem = promoBerlakuUntukItem(produk.promo_aktif) ? produk.promo_aktif : null;
                     const barisLain = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null));
                     const promosTerpilihIds = barisLain
                         ? [...barisLain.promos_terpilih_ids]
@@ -2382,9 +2423,10 @@
                         produk_id: produk.id,
                         nama_produk: produk.nama_produk,
                         ukuran: ukuran,
+                        ukuran_id: ukuranId,
                         harga_jual: hargaAsli,
                         harga_jual_asli: hargaAsli,
-                        promo_aktif: produk.promo_aktif,
+                        promo_aktif: promoAktifItem,
                         promos_tersedia: promosTersedia,
                         promos_terpilih_ids: promosTerpilihIds,
                         foto: produk.foto,
@@ -2398,9 +2440,17 @@
                 normalisasiItemKeranjang(items) {
                     return (items || []).map(item => {
                         const produk = this.daftarProduk.find(p => p.id === item.produk_id);
+                        const ukuranId = item.ukuran_id ?? null;
+                        const promoBerlakuUntukItem = (promo) => {
+                            if (!promo) return false;
+                            if (!ukuranId) return true;
+                            const daftarUkuranPromo = promo.ukurans || [];
+                            if (daftarUkuranPromo.length === 0) return true;
+                            return daftarUkuranPromo.some(u => u.id === ukuranId);
+                        };
                         const promosTersedia = (item.is_bundling || item.is_promo_event)
                             ? (item.promos_tersedia || [])
-                            : (item.promos_tersedia || (produk && produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0 ? produk.promos_aktif_semua : (item.promo_aktif ? [item.promo_aktif] : [])));
+                            : (item.promos_tersedia || (produk && produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0 ? produk.promos_aktif_semua.filter(promoBerlakuUntukItem) : (item.promo_aktif ? [item.promo_aktif] : [])));
                         const promosTerpilihIds = item.promos_terpilih_ids || promosTersedia.map(p => p.id);
                         let foto = item.foto;
                         if (item.is_bundling && !foto) {
@@ -2785,6 +2835,22 @@
                     this.keranjang
                         .filter(i => i.produk_id === item.produk_id)
                         .forEach(i => { i.promos_terpilih_ids = [...terpilihBaru]; });
+                },
+                // Harga satuan setelah promo tunggal (badge legacy, bukan yang lewat
+                // pemilih multi-promo) — dipakai buat nampilin harga coret di keranjang,
+                // konsisten dengan cara backend menghitung harga_diskon (tanpa syarat
+                // min pembelian, karena sifatnya cuma "kalau promo ini dipakai").
+                hargaSatuanSetelahPromo(item) {
+                    if (!item || !item.promo_aktif) return item ? item.harga_jual_asli : 0;
+                    const hargaAsli = parseFloat(item.harga_jual_asli || 0);
+                    const promo = item.promo_aktif;
+                    let potongan = 0;
+                    if (promo.jenis_potongan === 'nominal') {
+                        potongan = parseFloat(promo.nominal_potongan || 0);
+                    } else {
+                        potongan = (parseFloat(promo.persentase || 0) / 100) * hargaAsli;
+                    }
+                    return Math.max(0, hargaAsli - potongan);
                 },
                 hitungDiskonItem(item) {
                     if (!item || !item.promos_tersedia || !item.promos_terpilih_ids) return 0;

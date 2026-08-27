@@ -50,6 +50,7 @@
             ];
         })->values()),
         produkTerpilih: {{ old('produk_id') ? (int) old('produk_id') : 'null' }},
+        ukuranTerpilih: @js(old('ukuran_ids') ? array_map('intval', old('ukuran_ids')) : []),
         itemsPerPage: '10',
         halamanProduk: 1,
         get totalHalamanProduk() {
@@ -290,6 +291,39 @@
         Menampilkan seluruh <span class="font-bold text-gray-800 dark:text-white" x-text="semuaProduk.length"></span> produk
     </div>
 </div>
+
+@if($ukurans->isNotEmpty())
+{{-- Berlaku Untuk Ukuran --}}
+<div class="mb-8">
+    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        Berlaku Untuk Ukuran
+    </label>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">
+        Kosongkan semua (jangan centang apa pun) supaya event berlaku untuk semua ukuran. Kalau produk yang dipilih
+        di atas tidak punya varian ukuran, pilihan ini otomatis diabaikan.
+    </p>
+    <div class="flex flex-wrap gap-2">
+        @foreach($ukurans as $ukuran)
+            <label class="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer select-none text-sm font-medium transition"
+                :class="ukuranTerpilih.includes({{ $ukuran->id }}) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
+                <input
+                    type="checkbox"
+                    name="ukuran_ids[]"
+                    value="{{ $ukuran->id }}"
+                    x-model.number="ukuranTerpilih"
+                    class="rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500">
+                {{ $ukuran->nama_ukuran }}
+            </label>
+        @endforeach
+    </div>
+    @error('ukuran_ids')
+        <small class="text-red-500">{{ $message }}</small>
+    @enderror
+    @error('ukuran_ids.*')
+        <small class="text-red-500">{{ $message }}</small>
+    @enderror
+</div>
+@endif
 
 {{-- Tombol Aksi --}}
 <div class="flex justify-end gap-3">
