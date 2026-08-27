@@ -87,6 +87,9 @@
             <div>
                 <p class="text-[11px] font-bold uppercase tracking-wide text-brand-700">
                     {{ $promoEvent->produk->nama_produk ?? '' }}
+                    @if ($ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi())
+                        {{ $ukuranEvent }}
+                    @endif
                 </p>
 
                 <h2 class="mt-1 text-lg font-extrabold leading-snug text-gray-900">

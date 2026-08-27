@@ -26,12 +26,17 @@ class KeranjangController extends Controller
             $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;
             $hargaAsal = $produk->getHarga($ukuran);
 
+            // Pakai promoUntukHitungHarga($ukuran), bukan promo_aktif — promo_aktif
+            // gak ngecek pembatasan ukuran, jadi ukuran yang harusnya gak dapet
+            // diskon tetep ikut kediskon kalau produknya punya promo aktif lain.
+            $promoBerlaku = $produk->promoUntukHitungHarga($ukuran);
+
             $diskonSatuan = 0;
-            if ($produk->promo_aktif) {
-                if ($produk->promo_aktif->jenis_potongan === 'nominal') {
-                    $diskonSatuan = (float) $produk->promo_aktif->nominal_potongan;
+            if ($promoBerlaku) {
+                if ($promoBerlaku->jenis_potongan === 'nominal') {
+                    $diskonSatuan = (float) $promoBerlaku->nominal_potongan;
                 } else {
-                    $diskonSatuan = ((float) ($produk->promo_aktif->persentase ?? 0) / 100) * $hargaAsal;
+                    $diskonSatuan = ((float) ($promoBerlaku->persentase ?? 0) / 100) * $hargaAsal;
                 }
             }
 
@@ -45,9 +50,9 @@ class KeranjangController extends Controller
                 'harga_satuan' => $hargaSatuan,
                 'harga_asal' => $hargaAsal,
                 'diskon_produk_satuan' => $diskonSatuan,
-                'nama_promo' => $produk->promo_aktif?->nama_promo,
-                'jenis_promo' => $produk->promo_aktif?->jenis_potongan,
-                'persentase_promo' => $produk->promo_aktif?->persentase,
+                'nama_promo' => $promoBerlaku?->nama_promo,
+                'jenis_promo' => $promoBerlaku?->jenis_potongan,
+                'persentase_promo' => $promoBerlaku?->persentase,
                 'ukuran' => $validated['ukuran'] ?? null,
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
@@ -155,7 +160,7 @@ class KeranjangController extends Controller
                 'nama_produk' => $promoEvent->nama_event,
                 'foto' => $promoEvent->produk?->foto,
                 'harga_satuan' => (float) $promoEvent->harga_event,
-                'ukuran' => null,
+                'ukuran' => $promoEvent->ukuranTunggalUntukProduksi(),
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
             ]);
@@ -169,7 +174,7 @@ class KeranjangController extends Controller
                     'item' => [
                         'nama' => $promoEvent->nama_event,
                         'foto_url' => $promoEvent->produk?->foto ? asset('storage/' . $promoEvent->produk->foto) : null,
-                        'ukuran' => null,
+                        'ukuran' => $promoEvent->ukuranTunggalUntukProduksi(),
                         'jumlah' => (int) $validated['jumlah'],
                     ],
                     'cart' => [
@@ -212,12 +217,16 @@ class KeranjangController extends Controller
             $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;
             $hargaAsal = $produk->getHarga($ukuran);
 
+            // Sama kayak di tambah() — pakai promoUntukHitungHarga($ukuran) biar
+            // pembatasan ukuran ke-hormatin, bukan promo_aktif yang berlaku ke semua ukuran.
+            $promoBerlaku = $produk->promoUntukHitungHarga($ukuran);
+
             $diskonSatuan = 0;
-            if ($produk->promo_aktif) {
-                if ($produk->promo_aktif->jenis_potongan === 'nominal') {
-                    $diskonSatuan = (float) $produk->promo_aktif->nominal_potongan;
+            if ($promoBerlaku) {
+                if ($promoBerlaku->jenis_potongan === 'nominal') {
+                    $diskonSatuan = (float) $promoBerlaku->nominal_potongan;
                 } else {
-                    $diskonSatuan = ((float) ($produk->promo_aktif->persentase ?? 0) / 100) * $hargaAsal;
+                    $diskonSatuan = ((float) ($promoBerlaku->persentase ?? 0) / 100) * $hargaAsal;
                 }
             }
 
@@ -231,9 +240,9 @@ class KeranjangController extends Controller
                 'harga_satuan' => $hargaSatuan,
                 'harga_asal' => $hargaAsal,
                 'diskon_produk_satuan' => $diskonSatuan,
-                'nama_promo' => $produk->promo_aktif?->nama_promo,
-                'jenis_promo' => $produk->promo_aktif?->jenis_potongan,
-                'persentase_promo' => $produk->promo_aktif?->persentase,
+                'nama_promo' => $promoBerlaku?->nama_promo,
+                'jenis_promo' => $promoBerlaku?->jenis_potongan,
+                'persentase_promo' => $promoBerlaku?->persentase,
                 'ukuran' => $validated['ukuran'] ?? null,
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
@@ -322,7 +331,7 @@ class KeranjangController extends Controller
                 'nama_produk' => $promoEvent->nama_event,
                 'foto' => $promoEvent->produk?->foto,
                 'harga_satuan' => (float) $promoEvent->harga_event,
-                'ukuran' => null,
+                'ukuran' => $promoEvent->ukuranTunggalUntukProduksi(),
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
             ]);

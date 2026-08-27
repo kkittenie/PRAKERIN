@@ -439,8 +439,16 @@ class CheckoutController extends Controller
             return;
         }
 
+        // Event bisa dibatasi ke ukuran tertentu (mis. cuma "Jumbo"). Kalau
+        // dibiarkan null di sini, stok yang dicek jadi TOTAL semua ukuran
+        // (lihat Produk::stokUntukUkuran()) — bisa keliru nganggep stok
+        // masih ada padahal ukuran yang dibatasi itu sendiri sudah habis,
+        // sehingga tiket produksi gak pernah dibuat. Ukurannya juga dicatat
+        // di detail transaksi supaya kelihatan di POS.
+        $ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi();
+
         $totalDibutuhkan = $promoEvent->isi_event * $jumlahEvent;
-        $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, null, $stokTerpakai);
+        $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, $ukuranEvent, $stokTerpakai);
 
         foreach ($pecahan as $bagian) {
             DetailTransaksi::create([
@@ -448,6 +456,7 @@ class CheckoutController extends Controller
                 'produk_id' => $produk->id,
                 'promo_event_id' => $promoEvent->id,
                 'nama_produk' => $produk->nama_produk,
+                'ukuran' => $ukuranEvent,
                 'harga_satuan' => 0,
                 'jumlah' => $bagian['jumlah'],
                 'catatan' => null,

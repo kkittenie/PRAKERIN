@@ -266,7 +266,7 @@
                                                                 <div class="mb-0.5">Isi:</div>
                                                                 <template x-for="k in item.isi_komponen" :key="k.nama_produk">
                                                                     <div class="mb-0.5">
-                                                                        <div class="font-bold text-gray-700 dark:text-gray-200" x-text="k.nama_produk + ' x' + k.jumlah"></div>
+                                                                        <div class="font-bold text-gray-700 dark:text-gray-200" x-text="k.nama_produk + (k.ukuran ? ' (' + k.ukuran + ')' : '') + ' x' + k.jumlah"></div>
                                                                         <div x-show="k.catatan" class="text-amber-600 dark:text-amber-400 font-medium italic" x-text="'Catatan: ' + k.catatan"></div>
                                                                     </div>
                                                                 </template>
@@ -306,7 +306,7 @@
                                                     <div class="mb-0.5">Isi:</div>
                                                     <template x-for="k in item.isi_komponen" :key="k.nama_produk">
                                                         <div class="mb-0.5">
-                                                            <div class="font-bold text-gray-700 dark:text-gray-200" x-text="k.nama_produk + ' x' + k.jumlah"></div>
+                                                            <div class="font-bold text-gray-700 dark:text-gray-200" x-text="k.nama_produk + (k.ukuran ? ' (' + k.ukuran + ')' : '') + ' x' + k.jumlah"></div>
                                                             <div x-show="k.catatan" class="text-amber-600 dark:text-amber-400 font-medium italic" x-text="'Catatan: ' + k.catatan"></div>
                                                         </div>
                                                     </template>
@@ -725,16 +725,18 @@
 
                         // Satu produk komponen bisa kepecah jadi beberapa baris
                         // (mis. sebagian sudah ready, sisanya perlu diproduksi) —
-                        // gabung jadi satu per nama produk biar tidak dobel.
+                        // gabung jadi satu per nama produk + ukuran biar tidak dobel
+                        // (dan biar Jumbo/Reguler dari produk yang sama tetap kepisah).
                         const gabung = new Map();
                         for (const k of cocok) {
-                            const existing = gabung.get(k.nama_produk);
+                            const kunci = k.nama_produk + '|' + (k.ukuran || '');
+                            const existing = gabung.get(kunci);
                             if (existing) {
                                 existing.jumlah += k.jumlah;
                                 existing.butuh_produksi = existing.butuh_produksi || k.butuh_produksi;
                                 existing.catatan = existing.catatan || k.catatan || null;
                             } else {
-                                gabung.set(k.nama_produk, { nama_produk: k.nama_produk, jumlah: k.jumlah, butuh_produksi: k.butuh_produksi, catatan: k.catatan || null });
+                                gabung.set(kunci, { nama_produk: k.nama_produk, ukuran: k.ukuran || null, jumlah: k.jumlah, butuh_produksi: k.butuh_produksi, catatan: k.catatan || null });
                             }
                         }
                         return Array.from(gabung.values());
@@ -745,7 +747,7 @@
                         .map(item => {
                             const komponen = (item.bundling_id || item.promo_event_id) ? komponenUntuk(item) : [];
                             const isiLabel = komponen
-                                .map(k => `${k.nama_produk} x${k.jumlah}`)
+                                .map(k => `${k.nama_produk}${k.ukuran ? ' (' + k.ukuran + ')' : ''} x${k.jumlah}`)
                                 .join(', ');
                             const perluProduksi = komponen.some(k => k.butuh_produksi);
                             return { ...item, isi_label: isiLabel, isi_komponen: komponen, komponen_perlu_produksi: perluProduksi };

@@ -328,6 +328,12 @@ class TransaksiKasirController extends Controller
             return;
         }
 
+        // Event bisa dibatasi ke ukuran tertentu (mis. cuma "Jumbo"). Cek &
+        // kurangi stok per ukuran itu (bukan kolom stok gabungan), dan catat
+        // ukurannya di detail transaksi supaya kelihatan di POS — sama
+        // seperti alur mobile (lihat CheckoutController::prosesItemPromoEventCheckout()).
+        $ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi();
+
         $totalDibutuhkan = $promoEvent->isi_event * $jumlahEvent;
         $statusManualProduksi = $produk->status_ketersediaan === 'perlu_diproduksi';
 
@@ -335,12 +341,12 @@ class TransaksiKasirController extends Controller
         $jumlahProduksi = $totalDibutuhkan;
 
         if (!$statusManualProduksi) {
-            $stokTersedia = max(0, (float) $produk->stok);
+            $stokTersedia = max(0, (float) $produk->stokUntukUkuran($ukuranEvent));
             $jumlahReady = min($stokTersedia, $totalDibutuhkan);
             $jumlahProduksi = $totalDibutuhkan - $jumlahReady;
 
             if ($jumlahReady > 0) {
-                $produk->decrement('stok', $jumlahReady);
+                $produk->decrementStokUkuran($ukuranEvent, $jumlahReady);
             }
         }
 
@@ -350,6 +356,7 @@ class TransaksiKasirController extends Controller
                 'produk_id' => $produk->id,
                 'promo_event_id' => $promoEvent->id,
                 'nama_produk' => $produk->nama_produk,
+                'ukuran' => $ukuranEvent,
                 'harga_satuan' => 0,
                 'jumlah' => $jumlahReady,
                 'catatan' => null,
@@ -364,6 +371,7 @@ class TransaksiKasirController extends Controller
                 'produk_id' => $produk->id,
                 'promo_event_id' => $promoEvent->id,
                 'nama_produk' => $produk->nama_produk,
+                'ukuran' => $ukuranEvent,
                 'harga_satuan' => 0,
                 'jumlah' => $jumlahProduksi,
                 'catatan' => null,

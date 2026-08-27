@@ -25,6 +25,7 @@ class Produk extends Model
         'punya_ukuran',
         'harga_besar',
         'harga_kecil',
+        'is_khusus_bundling',
     ];
 
     protected $casts = [
@@ -158,7 +159,7 @@ class Produk extends Model
      * ukuran, promo yang "dibatasi ukuran" (lewat menu Potongan Harga)
      * cuma dianggap berlaku kalau ukuran ini termasuk yang dicentang admin.
      */
-    protected function promoUntukHitungHarga(?string $ukuran): ?Promo
+    public function promoUntukHitungHarga(?string $ukuran): ?Promo
     {
         if (!$this->punya_ukuran) {
             return $this->promo_aktif;

@@ -65,6 +65,32 @@ class PromoProdukEvent extends Model
         return $ukuranId !== null && $daftar->contains($ukuranId);
     }
 
+    /**
+     * Nama ukuran (mis. "Jumbo") yang dipakai buat cek stok & dicatat di
+     * detail transaksi waktu event ini di-checkout. Cuma bisa ditentukan
+     * kalau event dibatasi ke TEPAT SATU ukuran — kalau dibatasi ke lebih
+     * dari satu ukuran atau gak dibatasi sama sekali (berlaku semua
+     * ukuran), balikin null supaya pengecekan stok jatuh ke total semua
+     * ukuran seperti biasa (lihat Produk::stokUntukUkuran()).
+     */
+    public function ukuranTunggalUntukProduksi(): ?string
+    {
+        if (! $this->produk || ! $this->produk->punya_ukuran) {
+            return null;
+        }
+
+        $ukuranIds = $this->ukuranIdsTerbatas();
+        if ($ukuranIds->count() !== 1) {
+            return null;
+        }
+
+        $ukuran = $this->relationLoaded('ukurans')
+            ? $this->ukurans->firstWhere('id', $ukuranIds->first())
+            : Ukuran::find($ukuranIds->first());
+
+        return $ukuran?->nama_ukuran;
+    }
+
     public function getSedangBerlangsungAttribute(): bool
     {
         $sekarang = now();

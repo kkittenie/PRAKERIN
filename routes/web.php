@@ -139,6 +139,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:edit_produk');
 
     Route::resource('produk-khusus-bundling', ProdukKhususBundlingController::class)
+        ->parameters(['produk-khusus-bundling' => 'produk'])
         ->middleware('permission:lihat_produk|tambah_produk|edit_produk|hapus_produk');
 
     Route::resource('bahan-baku', BahanBakuController::class)
