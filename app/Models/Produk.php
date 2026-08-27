@@ -83,7 +83,7 @@ class Produk extends Model
         };
 
         if ($this->relationLoaded('promos')) {
-            return $this->promos->filter($isPromoBerlaku)->values()->loadMissing('ukurans');
+            return $this->promos->filter($isPromoBerlaku)->values()->loadMissing('produkUkuranPivots');
         }
 
         return $this->promos()
@@ -93,7 +93,7 @@ class Produk extends Model
                 $q->whereNull('selesai_berlaku')
                   ->orWhere('selesai_berlaku', '>=', $now);
             })
-            ->with('ukurans')
+            ->with('produkUkuranPivots')
             ->get();
     }
 
@@ -112,7 +112,7 @@ class Produk extends Model
                 return $p->jenis_potongan === 'nominal'
                     ? $p->nominal_potongan
                     : (($p->persentase ?? 0) / 100 * $this->getHarga());
-            })->first()?->loadMissing('ukurans');
+            })->first()?->loadMissing('produkUkuranPivots');
         }
 
         return $this->promos()
@@ -122,7 +122,7 @@ class Produk extends Model
                 $q->whereNull('selesai_berlaku')
                   ->orWhere('selesai_berlaku', '>=', $now);
             })
-            ->with('ukurans')
+            ->with('produkUkuranPivots')
             ->get()
             ->sortByDesc(function ($p) {
                 return $p->jenis_potongan === 'nominal'
@@ -183,7 +183,7 @@ class Produk extends Model
             if (!$promo->status_aktif) return false;
             if ($promo->mulai_berlaku > $now) return false;
             if ($promo->selesai_berlaku && $promo->selesai_berlaku < $now) return false;
-            return $promo->berlakuUntukUkuran($ukuranId);
+            return $promo->berlakuUntukUkuran($this->id, $ukuranId);
         })->sortByDesc(function ($p) {
             return $p->jenis_potongan === 'nominal'
                 ? $p->nominal_potongan

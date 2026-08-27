@@ -98,10 +98,31 @@
                     'kode_produk' => $p->kode_produk,
                     'foto' => $p->foto,
                     'harga_jual' => $p->harga_jual,
+                    'punya_ukuran' => (bool) $p->punya_ukuran,
+                    'ukurans' => $p->punya_ukuran
+                        ? $p->produkUkurans->map(fn ($pu) => ['id' => $pu->ukuran_id, 'nama' => $pu->ukuran->nama_ukuran])->unique('id')->values()
+                        : [],
                 ];
             })->values()),
             produkTerpilih: @js(old('produk_ids') ? array_map('intval', old('produk_ids')) : array_values($selectedProduks)),
-            ukuranTerpilih: @js(old('ukuran_ids') ? array_map('intval', old('ukuran_ids')) : array_values($selectedUkurans)),
+            // { produk_id: [ukuran_id, ...] } — checklist ukuran, per produk sendiri-sendiri
+            ukuranTerpilihPerProduk: @js(
+                old('ukuran_ids')
+                    ? collect(old('ukuran_ids'))->mapWithKeys(fn ($ids, $pid) => [(int) $pid => array_map('intval', $ids ?? [])])->all()
+                    : $selectedUkuranPerProduk->mapWithKeys(fn ($ids, $pid) => [(int) $pid => $ids->map(fn ($i) => (int) $i)->values()->all()])->all()
+            ),
+            get produkTerpilihDenganUkuran() {
+                return this.semuaProduk.filter(p => this.produkTerpilih.includes(p.id) && p.punya_ukuran && p.ukurans.length > 0);
+            },
+            isUkuranTerpilih(produkId, ukuranId) {
+                return (this.ukuranTerpilihPerProduk[produkId] || []).includes(ukuranId);
+            },
+            toggleUkuranProduk(produkId, ukuranId) {
+                if (!this.ukuranTerpilihPerProduk[produkId]) this.ukuranTerpilihPerProduk[produkId] = [];
+                const list = this.ukuranTerpilihPerProduk[produkId];
+                const idx = list.indexOf(ukuranId);
+                if (idx === -1) list.push(ukuranId); else list.splice(idx, 1);
+            },
             itemsPerPage: '10',
             halamanProduk: 1,
             get totalHalamanProduk() {
@@ -387,38 +408,46 @@
                 </div>
             </div>
 
-            @if($ukurans->isNotEmpty())
-            {{-- Berlaku Untuk Ukuran --}}
-            <div class="mb-8">
+            {{-- Berlaku Untuk Ukuran — checklist beda-beda per produk yang dipilih --}}
+            <div class="mb-8" x-show="produkTerpilihDenganUkuran.length > 0" x-cloak>
                 <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Berlaku Untuk Ukuran
                 </label>
                 <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">
-                    Kosongkan semua (jangan centang apa pun) supaya promo berlaku untuk semua ukuran. Kalau produk yang dipilih
-                    di atas tidak punya varian ukuran, pilihan ini otomatis diabaikan.
+                    Tiap produk ber-ukuran punya checklist ukurannya sendiri. Kosongkan (jangan centang apa pun) pada
+                    salah satu produk supaya promo berlaku ke semua ukuran produk itu.
                 </p>
-                <div class="flex flex-wrap gap-2">
-                    @foreach($ukurans as $ukuran)
-                        <label class="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer select-none text-sm font-medium transition"
-                            :class="ukuranTerpilih.includes({{ $ukuran->id }}) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
-                            <input
-                                type="checkbox"
-                                name="ukuran_ids[]"
-                                value="{{ $ukuran->id }}"
-                                x-model.number="ukuranTerpilih"
-                                class="rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500">
-                            {{ $ukuran->nama_ukuran }}
-                        </label>
-                    @endforeach
+
+                <div class="space-y-3">
+                    <template x-for="produk in produkTerpilihDenganUkuran" :key="'ukuran-' + produk.id">
+                        <div class="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">Produk:</span>
+                                <span class="text-sm font-semibold text-gray-800 dark:text-gray-100" x-text="produk.nama_produk"></span>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="ukuran in produk.ukurans" :key="produk.id + '-' + ukuran.id">
+                                    <label class="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer select-none text-sm font-medium transition"
+                                        :class="isUkuranTerpilih(produk.id, ukuran.id) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
+                                        <input
+                                            type="checkbox"
+                                            :name="'ukuran_ids[' + produk.id + '][]'"
+                                            :value="ukuran.id"
+                                            :checked="isUkuranTerpilih(produk.id, ukuran.id)"
+                                            @change="toggleUkuranProduk(produk.id, ukuran.id)"
+                                            class="rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500">
+                                        <span x-text="ukuran.nama"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
                 </div>
+
                 @error('ukuran_ids')
-                    <small class="text-red-500">{{ $message }}</small>
-                @enderror
-                @error('ukuran_ids.*')
-                    <small class="text-red-500">{{ $message }}</small>
+                    <small class="text-red-500 block mt-2">{{ $message }}</small>
                 @enderror
             </div>
-            @endif
 
             {{-- Tombol Aksi --}}
             <div class="flex justify-end gap-3">

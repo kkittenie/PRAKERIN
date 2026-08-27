@@ -33,25 +33,39 @@ class Promo extends Model
         return $this->belongsToMany(Produk::class, 'promo_produk', 'promo_id', 'produk_id')->withTimestamps();
     }
 
-    public function ukurans()
+    /**
+     * Baris pembatasan ukuran per-produk buat promo ini. Satu promo bisa
+     * kepasang ke beberapa produk (lewat produks()), dan tiap produk itu
+     * punya checklist ukurannya sendiri-sendiri lewat tabel ini —
+     * bukan 1 checklist global yang berlaku sama buat semua produk.
+     */
+    public function produkUkuranPivots()
     {
-        return $this->belongsToMany(Ukuran::class, 'promo_ukurans', 'promo_id', 'ukuran_id')->withTimestamps();
+        return $this->hasMany(PromoProdukUkuran::class, 'promo_id');
     }
 
     /**
-     * ID ukuran yang dibatasi buat promo ini. Kosong = gak dibatasi
-     * (berlaku ke semua ukuran) — sama kayak sebelum fitur ini ada.
+     * ID ukuran yang dibatasi buat promo ini, KHUSUS produk tertentu.
+     * Kosong = gak dibatasi (berlaku ke semua ukuran produk itu) — sama
+     * kayak sebelum fitur ini ada.
      */
-    public function ukuranIdsTerbatas(): \Illuminate\Support\Collection
+    public function ukuranIdsUntukProduk(int $produkId): \Illuminate\Support\Collection
     {
-        return $this->relationLoaded('ukurans')
-            ? $this->ukurans->pluck('id')
-            : $this->ukurans()->pluck('ukurans.id');
+        if ($this->relationLoaded('produkUkuranPivots')) {
+            return $this->produkUkuranPivots
+                ->where('produk_id', $produkId)
+                ->pluck('ukuran_id')
+                ->values();
+        }
+
+        return $this->produkUkuranPivots()
+            ->where('produk_id', $produkId)
+            ->pluck('ukuran_id');
     }
 
-    public function berlakuUntukUkuran(?int $ukuranId): bool
+    public function berlakuUntukUkuran(int $produkId, ?int $ukuranId): bool
     {
-        $daftar = $this->ukuranIdsTerbatas();
+        $daftar = $this->ukuranIdsUntukProduk($produkId);
         if ($daftar->isEmpty()) {
             return true;
         }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Promo;
 use App\Models\Produk;
-use App\Models\Ukuran;
+use App\Models\PromoProdukUkuran;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -45,7 +45,7 @@ class PromoController extends Controller
     public function lihat($id)
     {
         try {
-            $promo = Promo::with(['produks.kategori', 'ukurans'])->findOrFail($id);
+            $promo = Promo::with(['produks.kategori', 'produkUkuranPivots'])->findOrFail($id);
             return view('pages.promo.show', compact('promo'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -55,9 +55,11 @@ class PromoController extends Controller
     public function tambah()
     {
         try {
-            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
-            $ukurans = Ukuran::aktif()->urut()->get();
-            return view('pages.promo.create', compact('produks', 'ukurans'));
+            $produks = Produk::with(['produkUkurans.ukuran'])
+                ->where('status_aktif', true)
+                ->orderBy('nama_produk', 'asc')
+                ->get();
+            return view('pages.promo.create', compact('produks'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -79,8 +81,10 @@ class PromoController extends Controller
                 'selesai_berlaku' => 'nullable|date|after_or_equal:mulai_berlaku',
                 'produk_ids' => 'required|array',
                 'produk_ids.*' => 'exists:produks,id',
+                // Dikirim per-produk: ukuran_ids[<produk_id>][] = <ukuran_id>
                 'ukuran_ids' => 'nullable|array',
-                'ukuran_ids.*' => 'exists:ukurans,id',
+                'ukuran_ids.*' => 'nullable|array',
+                'ukuran_ids.*.*' => 'integer|exists:ukurans,id',
             ]);
 
             $promo = Promo::create([
@@ -95,7 +99,7 @@ class PromoController extends Controller
             ]);
 
             $promo->produks()->sync($validated['produk_ids']);
-            $promo->ukurans()->sync($validated['ukuran_ids'] ?? []);
+            $this->simpanPembatasanUkuranPerProduk($promo, $validated['produk_ids'], $validated['ukuran_ids'] ?? []);
 
             activity()
                 ->causedBy(auth()->user())
@@ -117,16 +121,55 @@ class PromoController extends Controller
         }
     }
 
+    /**
+     * Simpan ulang pembatasan ukuran per-produk buat promo ini.
+     * $ukuranIdsPerProduk formatnya: [produk_id => [ukuran_id, ...], ...]
+     * (persis bentuk input ukuran_ids[<produk_id>][] dari form).
+     * Produk yang gak ada di $produkIds (misal udah di-uncheck) otomatis
+     * ikut kehapus pembatasannya juga.
+     */
+    private function simpanPembatasanUkuranPerProduk(Promo $promo, array $produkIds, array $ukuranIdsPerProduk): void
+    {
+        $promo->produkUkuranPivots()->delete();
+
+        $rows = [];
+        $now = now();
+        foreach ($ukuranIdsPerProduk as $produkId => $ukuranIds) {
+            $produkId = (int) $produkId;
+            if (!in_array($produkId, $produkIds, true) || empty($ukuranIds)) {
+                continue;
+            }
+            foreach (array_unique($ukuranIds) as $ukuranId) {
+                $rows[] = [
+                    'promo_id' => $promo->id,
+                    'produk_id' => $produkId,
+                    'ukuran_id' => (int) $ukuranId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+
+        if (!empty($rows)) {
+            PromoProdukUkuran::insert($rows);
+        }
+    }
+
     public function ubah($id)
     {
         try {
-            $promo = Promo::with(['produks', 'ukurans'])->findOrFail($id);
-            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
-            $ukurans = Ukuran::aktif()->urut()->get();
+            $promo = Promo::with(['produks', 'produkUkuranPivots'])->findOrFail($id);
+            $produks = Produk::with(['produkUkurans.ukuran'])
+                ->where('status_aktif', true)
+                ->orderBy('nama_produk', 'asc')
+                ->get();
             $selectedProduks = $promo->produks->pluck('id')->toArray();
-            $selectedUkurans = $promo->ukurans->pluck('id')->toArray();
+            // [produk_id => [ukuran_id, ...]] — pembatasan yang udah kesimpen per produk
+            $selectedUkuranPerProduk = $promo->produkUkuranPivots
+                ->groupBy('produk_id')
+                ->map(fn ($rows) => $rows->pluck('ukuran_id')->values());
 
-            return view('pages.promo.edit', compact('promo', 'produks', 'ukurans', 'selectedProduks', 'selectedUkurans'));
+            return view('pages.promo.edit', compact('promo', 'produks', 'selectedProduks', 'selectedUkuranPerProduk'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -151,7 +194,8 @@ class PromoController extends Controller
                 'produk_ids' => 'required|array',
                 'produk_ids.*' => 'exists:produks,id',
                 'ukuran_ids' => 'nullable|array',
-                'ukuran_ids.*' => 'exists:ukurans,id',
+                'ukuran_ids.*' => 'nullable|array',
+                'ukuran_ids.*.*' => 'integer|exists:ukurans,id',
             ]);
 
             $promo->update([
@@ -166,7 +210,7 @@ class PromoController extends Controller
             ]);
 
             $promo->produks()->sync($validated['produk_ids']);
-            $promo->ukurans()->sync($validated['ukuran_ids'] ?? []);
+            $this->simpanPembatasanUkuranPerProduk($promo, $validated['produk_ids'], $validated['ukuran_ids'] ?? []);
 
             activity()
                 ->causedBy(auth()->user())
