@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\PromoProdukEvent;
 use App\Models\Produk;
-use App\Models\Ukuran;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 
@@ -53,9 +52,14 @@ class PromoProdukEventController extends Controller
     public function tambah()
     {
         try {
-            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
-            $ukurans = Ukuran::aktif()->urut()->get();
-            return view('pages.promo-event.create', compact('produks', 'ukurans'));
+            // Ukuran dimuat per-produk (produkUkurans.ukuran), bukan daftar
+            // ukuran global — jadi pilihan ukuran yang muncul di form cuma
+            // ukuran yang beneran dimiliki produk yang dipilih.
+            $produks = Produk::with(['produkUkurans.ukuran'])
+                ->where('status_aktif', true)
+                ->orderBy('nama_produk', 'asc')
+                ->get();
+            return view('pages.promo-event.create', compact('produks'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -115,11 +119,13 @@ class PromoProdukEventController extends Controller
     {
         try {
             $promoEvent = PromoProdukEvent::with('ukurans')->findOrFail($id);
-            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
-            $ukurans = Ukuran::aktif()->urut()->get();
+            $produks = Produk::with(['produkUkurans.ukuran'])
+                ->where('status_aktif', true)
+                ->orderBy('nama_produk', 'asc')
+                ->get();
             $selectedUkurans = $promoEvent->ukurans->pluck('id')->toArray();
 
-            return view('pages.promo-event.edit', compact('promoEvent', 'produks', 'ukurans', 'selectedUkurans'));
+            return view('pages.promo-event.edit', compact('promoEvent', 'produks', 'selectedUkurans'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

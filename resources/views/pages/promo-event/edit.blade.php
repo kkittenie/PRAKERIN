@@ -47,10 +47,35 @@
                 'kode_produk' => $p->kode_produk,
                 'foto' => $p->foto,
                 'harga_jual' => $p->harga_jual,
+                'punya_ukuran' => (bool) $p->punya_ukuran,
+                'ukurans' => $p->punya_ukuran
+                    ? $p->produkUkurans->map(fn ($pu) => ['id' => $pu->ukuran_id, 'nama' => $pu->ukuran->nama_ukuran])->unique('id')->values()
+                    : [],
             ];
         })->values()),
         produkTerpilih: {{ old('produk_id') ? (int) old('produk_id') : (int) $promoEvent->produk_id }},
-        ukuranTerpilih: @js(old('ukuran_ids') ? array_map('intval', old('ukuran_ids')) : array_values($selectedUkurans)),
+        // { produk_id: [ukuran_id, ...] } — ukuran cuma disimpen buat produk yang lagi dipilih
+        ukuranTerpilihPerProduk: @js(old('ukuran_ids')
+            ? [(int) (old('produk_id') ?: $promoEvent->produk_id) => array_map('intval', old('ukuran_ids'))]
+            : [(int) $promoEvent->produk_id => array_values($selectedUkurans)]),
+        modalUkuranTerbuka: false,
+        get produkUntukModalUkuran() {
+            return this.semuaProduk.find(p => p.id === this.produkTerpilih) || null;
+        },
+        isUkuranTerpilih(ukuranId) {
+            return (this.ukuranTerpilihPerProduk[this.produkTerpilih] || []).includes(ukuranId);
+        },
+        toggleUkuranProduk(ukuranId) {
+            const pid = this.produkTerpilih;
+            if (!pid) return;
+            if (!this.ukuranTerpilihPerProduk[pid]) this.ukuranTerpilihPerProduk[pid] = [];
+            const list = this.ukuranTerpilihPerProduk[pid];
+            const idx = list.indexOf(ukuranId);
+            if (idx === -1) list.push(ukuranId); else list.splice(idx, 1);
+        },
+        jumlahUkuranTerpilih() {
+            return (this.ukuranTerpilihPerProduk[this.produkTerpilih] || []).length;
+        },
         itemsPerPage: '10',
         halamanProduk: 1,
         get totalHalamanProduk() {
@@ -74,6 +99,12 @@
         },
         pilihProduk(id) {
             this.produkTerpilih = id;
+            // Kalau produk yang baru dipilih punya ukuran, langsung buka modal
+            // pilih ukuran — gak usah nunggu discroll ke bawah.
+            const p = this.semuaProduk.find(pr => pr.id === id);
+            if (p && p.punya_ukuran && p.ukurans.length > 0) {
+                this.modalUkuranTerbuka = true;
+            }
         }
     }">
 @csrf
@@ -254,6 +285,24 @@
                         <h4 class="font-bold text-xs text-gray-900 dark:text-white line-clamp-2 leading-tight" x-text="produk.nama_produk"></h4>
                         <span class="text-xxs text-gray-400 dark:text-gray-500 mt-1 block" x-text="produk.kode_produk"></span>
                     </div>
+
+                    {{-- Keterangan ukuran yang dipilih — muncul langsung di card, gak usah cari di bawah --}}
+                    <template x-if="produkTerpilih === produk.id && produk.punya_ukuran && produk.ukurans.length > 0">
+                        <div class="mt-2 flex flex-wrap items-center gap-1">
+                            <template x-if="jumlahUkuranTerpilih() === 0">
+                                <span class="text-[9px] font-semibold text-gray-400 dark:text-gray-500 italic">Semua ukuran</span>
+                            </template>
+                            <template x-for="ukuranId in (ukuranTerpilihPerProduk[produk.id] || [])" :key="'badge-' + produk.id + '-' + ukuranId">
+                                <span class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 px-1.5 py-0.5 rounded-full"
+                                    x-text="(produk.ukurans.find(u => u.id === ukuranId) || {}).nama"></span>
+                            </template>
+                            <button type="button" @click.stop.prevent="modalUkuranTerbuka = true"
+                                class="text-[9px] font-bold text-gray-400 dark:text-gray-500 underline hover:text-brand-600 dark:hover:text-brand-400">
+                                Ubah
+                            </button>
+                        </div>
+                    </template>
+
                     <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                         <span class="text-xs font-extrabold text-brand-600 dark:text-brand-400" x-text="'Rp ' + formatNumber(produk.harga_jual)"></span>
                     </div>
@@ -289,38 +338,55 @@
     </div>
 </div>
 
-@if($ukurans->isNotEmpty())
-{{-- Berlaku Untuk Ukuran --}}
-<div class="mb-8">
-    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Berlaku Untuk Ukuran
-    </label>
-    <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">
-        Kosongkan semua (jangan centang apa pun) supaya event berlaku untuk semua ukuran. Kalau produk yang dipilih
-        di atas tidak punya varian ukuran, pilihan ini otomatis diabaikan.
-    </p>
-    <div class="flex flex-wrap gap-2">
-        @foreach($ukurans as $ukuran)
-            <label class="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer select-none text-sm font-medium transition"
-                :class="ukuranTerpilih.includes({{ $ukuran->id }}) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
-                <input
-                    type="checkbox"
-                    name="ukuran_ids[]"
-                    value="{{ $ukuran->id }}"
-                    x-model.number="ukuranTerpilih"
-                    class="rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500">
-                {{ $ukuran->nama_ukuran }}
-            </label>
-        @endforeach
+{{-- Hidden inputs "Berlaku Untuk Ukuran" — checklist-nya ada di modal yang muncul otomatis
+     pas produk ber-ukuran dipilih, keterangannya juga sudah tampil langsung di card produk. --}}
+<template x-for="ukuranId in (ukuranTerpilihPerProduk[produkTerpilih] || [])" :key="'hidden-ukuran-' + ukuranId">
+    <input type="hidden" name="ukuran_ids[]" :value="ukuranId">
+</template>
+
+@error('ukuran_ids')
+    <div class="mb-4"><small class="text-red-500">{{ $message }}</small></div>
+@enderror
+@error('ukuran_ids.*')
+    <div class="mb-4"><small class="text-red-500">{{ $message }}</small></div>
+@enderror
+
+{{-- Modal Pilih Ukuran --}}
+<div x-show="modalUkuranTerbuka" x-cloak x-transition class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+    <div @click.away="modalUkuranTerbuka = false" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+        <template x-if="produkUntukModalUkuran">
+            <div>
+                <div class="p-5 border-b border-gray-100 dark:border-gray-800">
+                    <h3 class="font-extrabold text-gray-900 dark:text-white text-sm">Pilih Ukuran</h3>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1" x-text="produkUntukModalUkuran.nama_produk"></p>
+                </div>
+                <div class="p-5 max-h-72 overflow-y-auto">
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">
+                        Kosongkan semua supaya event berlaku ke semua ukuran produk ini.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <template x-for="ukuran in produkUntukModalUkuran.ukurans" :key="ukuran.id">
+                            <label class="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer select-none text-sm font-medium transition"
+                                :class="isUkuranTerpilih(ukuran.id) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
+                                <input type="checkbox"
+                                    :checked="isUkuranTerpilih(ukuran.id)"
+                                    @change="toggleUkuranProduk(ukuran.id)"
+                                    class="rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500">
+                                <span x-text="ukuran.nama"></span>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                    <button type="button" @click="modalUkuranTerbuka = false"
+                        class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-lg transition">
+                        Selesai
+                    </button>
+                </div>
+            </div>
+        </template>
     </div>
-    @error('ukuran_ids')
-        <small class="text-red-500">{{ $message }}</small>
-    @enderror
-    @error('ukuran_ids.*')
-        <small class="text-red-500">{{ $message }}</small>
-    @enderror
 </div>
-@endif
 
 {{-- Tombol Aksi --}}
 <div class="flex justify-end gap-3">
