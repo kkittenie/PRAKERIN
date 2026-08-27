@@ -2707,15 +2707,19 @@
                 },
 
                 stokPromoEventTersedia(promoEvent) {
-                    const p = this.daftarProduk.find(x => x.id === promoEvent.produk_id);
-                    const stokP = p ? (parseFloat(p.stok) || 0) : 0;
-                    return Math.floor(stokP / Math.max(1, promoEvent.isi_event));
+                    // Jangan hitung ulang dari p.stok (stok gabungan semua
+                    // ukuran) — event bisa dibatasi ke ukuran tertentu (mis.
+                    // cuma "Jumbo"), jadi harusnya pakai stok_tersedia yang
+                    // sudah dihitung backend (lihat
+                    // PromoProdukEvent::getStokTersediaAttribute()), yang
+                    // sudah benar menghormati pembatasan ukuran itu.
+                    return (typeof promoEvent.stok_tersedia === 'number') ? promoEvent.stok_tersedia : 0;
                 },
 
                 promoEventPerluDiproduksi(promoEvent) {
-                    const p = this.daftarProduk.find(x => x.id === promoEvent.produk_id);
-                    if (!p) return true;
-                    return p.status_ketersediaan === 'perlu_diproduksi' || (parseFloat(p.stok) || 0) <= 0 || (parseFloat(p.stok) || 0) < promoEvent.isi_event;
+                    // Sama seperti stokPromoEventTersedia() — pakai flag dari
+                    // backend, jangan hitung ulang pakai stok gabungan.
+                    return (typeof promoEvent.perlu_diproduksi === 'boolean') ? promoEvent.perlu_diproduksi : true;
                 },
 
                 get totalHalamanProduk() {
