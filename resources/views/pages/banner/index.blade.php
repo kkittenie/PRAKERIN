@@ -90,6 +90,7 @@
         initSaishoDataTable('bannerTable', {
             serverSide: true,
             ajax: '{{ route('banner.index') }}',
+            order: [[3, 'asc']],
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'gambar_html', name: 'gambar', orderable: false, searchable: false, className: 'text-center' },

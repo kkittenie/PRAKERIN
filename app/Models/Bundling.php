@@ -19,6 +19,16 @@ class Bundling extends Model
         'gambar',
     ];
 
+    /**
+     * jumlah_produk & perlu_diproduksi bukan kolom database (cuma accessor),
+     * jadi harus di-append biar ikut muncul di toArray()/DataTables collection
+     * engine — ini yang dipakai buat proses sorting di kolom tersebut.
+     */
+    protected $appends = [
+        'jumlah_produk',
+        'perlu_diproduksi',
+    ];
+
     public function items()
     {
         return $this->hasMany(BundlingItem::class, 'bundling_id');

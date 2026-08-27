@@ -16,9 +16,15 @@ class BundlingController extends Controller
     {
         if ($request->ajax()) {
             try {
-                $query = Bundling::with('items.produk');
+                // jumlah_produk & perlu_diproduksi adalah accessor (bukan kolom
+                // database), jadi sort-nya gak bisa dilakuin lewat ->orderBy()
+                // di query builder (bakal error "Unknown column" & bikin
+                // DataTables loading terus). Makanya di sini datanya diambil
+                // sebagai Collection dulu, biar DataTables sort langsung di
+                // attribute yang udah ke-append (lihat Bundling::$appends).
+                $data = Bundling::with('items.produk')->get();
 
-                return \Yajra\DataTables\Facades\DataTables::of($query)
+                return \Yajra\DataTables\Facades\DataTables::of($data)
                     ->addIndexColumn()
                     ->addColumn('gambar_html', fn($item) => view('pages.bundling.partials.gambar', compact('item'))->render())
                     ->addColumn('nama_bundling_html', fn($item) => view('pages.bundling.partials.nama', compact('item'))->render())

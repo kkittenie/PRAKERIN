@@ -15,7 +15,13 @@ class BannerController extends Controller
     {
         if ($request->ajax()) {
             try {
-                $query = Banner::orderBy('urutan')->latest();
+                // Query dibiarkan tanpa orderBy manual di sini. Kalau tetap
+                // pakai ->orderBy('urutan')->latest(), ORDER BY itu nempel
+                // duluan di query dan urutan dari klik sort header DataTables
+                // cuma ditambahin di belakangnya — jadi kealah dan keliatan
+                // kayak sort-nya gak ngefek. Urutan default awal sekarang
+                // diatur dari sisi JS (lihat opsi `order` di index.blade.php).
+                $query = Banner::query();
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
