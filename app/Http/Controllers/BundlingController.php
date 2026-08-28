@@ -16,12 +16,6 @@ class BundlingController extends Controller
     {
         if ($request->ajax()) {
             try {
-                // jumlah_produk & perlu_diproduksi adalah accessor (bukan kolom
-                // database), jadi sort-nya gak bisa dilakuin lewat ->orderBy()
-                // di query builder (bakal error "Unknown column" & bikin
-                // DataTables loading terus). Makanya di sini datanya diambil
-                // sebagai Collection dulu, biar DataTables sort langsung di
-                // attribute yang udah ke-append (lihat Bundling::$appends).
                 $data = Bundling::with('items.produk')->get();
 
                 return \Yajra\DataTables\Facades\DataTables::of($data)
@@ -52,15 +46,14 @@ class BundlingController extends Controller
     public function create()
     {
         try {
-            // Cuma produk reguler yang bisa dimasukkan ke bundling — produk
-            // khusus bundling (varian rasa) udah gak dipakai lagi di sini.
             $produkBiasa = Produk::reguler()
                 ->where('status_aktif', true)
                 ->with('produkUkurans.ukuran')
                 ->orderBy('nama_produk')
                 ->get();
+            $produkKhusus = Produk::khususBundling()->orderBy('nama_produk')->get();
 
-            return view('pages.bundling.create', compact('produkBiasa'));
+            return view('pages.bundling.create', compact('produkBiasa', 'produkKhusus'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -91,6 +84,8 @@ class BundlingController extends Controller
                 'harga' => 'required|integer|min:1',
                 'deskripsi' => 'nullable|string',
                 'status_aktif' => 'nullable|boolean',
+                'jenis_produk' => 'required|in:biasa,khusus_bundling',
+                'total_qty_khusus' => 'required_if:jenis_produk,khusus_bundling|nullable|integer|min:1',
                 'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'produk_id' => 'required|array|min:1',
                 'produk_id.*' => ['required', 'exists:produks,id'],
@@ -100,7 +95,11 @@ class BundlingController extends Controller
                 'qty.*' => 'nullable|integer|min:1',
             ]);
 
-            $this->validasiUkuranBundling($request);
+            if ($request->jenis_produk === 'biasa') {
+                $this->validasiUkuranBundling($request);
+            } else {
+                $this->validasiDistinctKhusus($request);
+            }
 
             DB::transaction(function () use ($request, &$bundling) {
 
@@ -114,8 +113,8 @@ class BundlingController extends Controller
                     'harga' => $request->harga,
                     'deskripsi' => $request->deskripsi,
                     'status_aktif' => $request->boolean('status_aktif', true),
-                    'jenis_produk' => 'biasa',
-                    'total_qty_khusus' => null,
+                    'jenis_produk' => $request->jenis_produk,
+                    'total_qty_khusus' => $request->jenis_produk === 'khusus_bundling' ? (int) $request->total_qty_khusus : null,
                     'gambar' => $pathGambar,
                 ]);
 
@@ -123,11 +122,13 @@ class BundlingController extends Controller
                     'kode_bundling' => 'BDL' . str_pad($bundling->id, 4, '0', STR_PAD_LEFT),
                 ]);
 
+                $isBiasa = $request->jenis_produk === 'biasa';
+
                 foreach ($request->produk_id as $i => $produkId) {
                     BundlingItem::create([
                         'bundling_id' => $bundling->id,
                         'produk_id' => $produkId,
-                        'ukuran' => !empty($request->ukuran[$i]) ? $request->ukuran[$i] : null,
+                        'ukuran' => $isBiasa && !empty($request->ukuran[$i]) ? $request->ukuran[$i] : null,
                         'qty' => isset($request->qty[$i]) ? (int) $request->qty[$i] : 1,
                     ]);
                 }
@@ -141,58 +142,105 @@ class BundlingController extends Controller
         }
     }
 
-    /**
-     * Validasi manual buat kombinasi produk + ukuran di form bundling:
-     * - Produk yang punya varian ukuran (punya_ukuran) WAJIB milih salah satu
-     *   ukuran aktifnya.
-     * - Produk yang gak punya ukuran gak boleh dikirimin ukuran.
-     * - Kombinasi produk+ukuran yang sama gak boleh dipilih dua kali di baris
-     *   yang berbeda (tapi produk yang sama dengan ukuran BEDA boleh).
-     */
     private function validasiUkuranBundling(Request $request): void
     {
-        $produkIds = $request->produk_id ?? [];
-        $ukuranList = $request->ukuran ?? [];
+        try {
+            $produkIds = $request->produk_id ?? [];
+            $ukuranList = $request->ukuran ?? [];
 
-        $produkTerpakai = Produk::whereIn('id', $produkIds)
-            ->with('produkUkurans.ukuran')
-            ->get()
-            ->keyBy('id');
+            $produkTerpakai = Produk::whereIn('id', $produkIds)
+                ->with('produkUkurans.ukuran')
+                ->get()
+                ->keyBy('id');
 
-        $errors = [];
-        $kombinasiSudahAda = [];
+            $errors = [];
+            $kombinasiSudahAda = [];
 
-        foreach ($produkIds as $i => $produkId) {
-            $produk = $produkTerpakai->get($produkId);
-            if (!$produk) {
-                continue;
-            }
-
-            $ukuranBaris = $ukuranList[$i] ?? null;
-            $ukuranBaris = $ukuranBaris !== '' ? $ukuranBaris : null;
-
-            if ($produk->punya_ukuran) {
-                $ukuranValid = collect($produk->daftar_ukuran)->pluck('nama')->map(fn ($n) => strtolower($n));
-
-                if (!$ukuranBaris) {
-                    $errors["ukuran.$i"] = "Pilih ukuran untuk produk \"{$produk->nama_produk}\".";
-                } elseif (!$ukuranValid->contains(strtolower($ukuranBaris))) {
-                    $errors["ukuran.$i"] = "Ukuran yang dipilih untuk \"{$produk->nama_produk}\" tidak valid.";
+            foreach ($produkIds as $i => $produkId) {
+                $produk = $produkTerpakai->get($produkId);
+                if (!$produk) {
+                    continue;
                 }
-            } else {
-                // Produk tanpa varian ukuran gak butuh (dan gak boleh) ukuran.
-                $ukuranBaris = null;
+
+                $ukuranBaris = $ukuranList[$i] ?? null;
+                $ukuranBaris = $ukuranBaris !== '' ? $ukuranBaris : null;
+
+                if ($produk->punya_ukuran) {
+                    $ukuranValid = collect($produk->daftar_ukuran)->pluck('nama')->map(fn ($n) => strtolower($n));
+
+                    if (!$ukuranBaris) {
+                        $errors["ukuran.$i"] = "Pilih ukuran untuk produk \"{$produk->nama_produk}\".";
+                    } elseif (!$ukuranValid->contains(strtolower($ukuranBaris))) {
+                        $errors["ukuran.$i"] = "Ukuran yang dipilih untuk \"{$produk->nama_produk}\" tidak valid.";
+                    }
+                } else {
+                     $ukuranBaris = null;
+                }
+
+                $kunci = $produkId . '|' . strtolower((string) $ukuranBaris);
+                if (isset($kombinasiSudahAda[$kunci])) {
+                    $errors["produk_id.$i"] = "Produk \"{$produk->nama_produk}\"" . ($ukuranBaris ? " ukuran \"$ukuranBaris\"" : '') . " sudah dipilih di baris lain.";
+                }
+                $kombinasiSudahAda[$kunci] = true;
             }
 
-            $kunci = $produkId . '|' . strtolower((string) $ukuranBaris);
-            if (isset($kombinasiSudahAda[$kunci])) {
-                $errors["produk_id.$i"] = "Produk \"{$produk->nama_produk}\"" . ($ukuranBaris ? " ukuran \"$ukuranBaris\"" : '') . " sudah dipilih di baris lain.";
+            if (!empty($errors)) {
+                throw \Illuminate\Validation\ValidationException::withMessages($errors);
             }
-            $kombinasiSudahAda[$kunci] = true;
+        } catch (\Illuminate\Validation\ValidationException $e) {
+             throw $e;
+        } catch (\Throwable $e) {
+             activity('error')
+                ->causedBy(auth()->user())
+                ->withProperties([
+                    'error_message' => $e->getMessage(),
+                    'exception' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'input' => $request->except(['password', 'password_confirmation', 'pin', 'token', '_token']),
+                ])
+                ->log('Error validasi ukuran bundling: ' . $e->getMessage());
+
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'produk_id' => 'Gagal memvalidasi ukuran produk: ' . $e->getMessage(),
+            ]);
         }
+    }
 
-        if (!empty($errors)) {
-            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+    private function validasiDistinctKhusus(Request $request): void
+    {
+        try {
+            $produkIds = $request->produk_id ?? [];
+            $sudahDipilih = [];
+            $errors = [];
+
+            foreach ($produkIds as $i => $produkId) {
+                if (isset($sudahDipilih[$produkId])) {
+                    $errors["produk_id.$i"] = 'Produk ini sudah dipilih di baris lain.';
+                }
+                $sudahDipilih[$produkId] = true;
+            }
+
+            if (!empty($errors)) {
+                throw \Illuminate\Validation\ValidationException::withMessages($errors);
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            activity('error')
+                ->causedBy(auth()->user())
+                ->withProperties([
+                    'error_message' => $e->getMessage(),
+                    'exception' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'input' => $request->except(['password', 'password_confirmation', 'pin', 'token', '_token']),
+                ])
+                ->log('Error validasi produk khusus bundling: ' . $e->getMessage());
+
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'produk_id' => 'Gagal memvalidasi produk: ' . $e->getMessage(),
+            ]);
         }
     }
 
@@ -216,8 +264,9 @@ class BundlingController extends Controller
                 ->with('produkUkurans.ukuran')
                 ->orderBy('nama_produk')
                 ->get();
+            $produkKhusus = Produk::khususBundling()->orderBy('nama_produk')->get();
 
-            return view('pages.bundling.edit', compact('bundling', 'produkBiasa'));
+            return view('pages.bundling.edit', compact('bundling', 'produkBiasa', 'produkKhusus'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -234,6 +283,8 @@ class BundlingController extends Controller
                 'harga' => 'required|integer|min:1',
                 'deskripsi' => 'nullable|string',
                 'status_aktif' => 'nullable|boolean',
+                'jenis_produk' => 'required|in:biasa,khusus_bundling',
+                'total_qty_khusus' => 'required_if:jenis_produk,khusus_bundling|nullable|integer|min:1',
                 'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'produk_id' => 'required|array|min:1',
                 'produk_id.*' => ['required', 'exists:produks,id'],
@@ -243,16 +294,22 @@ class BundlingController extends Controller
                 'qty.*' => 'nullable|integer|min:1',
             ]);
 
-            $this->validasiUkuranBundling($request);
+            if ($request->jenis_produk === 'biasa') {
+                $this->validasiUkuranBundling($request);
+            } else {
+                $this->validasiDistinctKhusus($request);
+            }
 
             DB::transaction(function () use ($request, $bundling) {
+
+                $isBiasa = $request->jenis_produk === 'biasa';
 
                 $dataUpdate = [
                     'nama_bundling' => $request->nama_bundling,
                     'harga' => $request->harga,
                     'deskripsi' => $request->deskripsi,
-                    'jenis_produk' => 'biasa',
-                    'total_qty_khusus' => null,
+                    'jenis_produk' => $request->jenis_produk,
+                    'total_qty_khusus' => $isBiasa ? null : (int) $request->total_qty_khusus,
                     'status_aktif' => $request->boolean('status_aktif', true),
                 ];
 
@@ -271,7 +328,7 @@ class BundlingController extends Controller
                     BundlingItem::create([
                         'bundling_id' => $bundling->id,
                         'produk_id' => $produkId,
-                        'ukuran' => !empty($request->ukuran[$i]) ? $request->ukuran[$i] : null,
+                        'ukuran' => $isBiasa && !empty($request->ukuran[$i]) ? $request->ukuran[$i] : null,
                         'qty' => isset($request->qty[$i]) ? (int) $request->qty[$i] : 1,
                     ]);
                 }

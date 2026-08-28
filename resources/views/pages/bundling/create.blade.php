@@ -67,6 +67,50 @@
         @enderror
     </div>
 
+    {{-- Jenis Produk Bundling --}}
+    <div class="md:col-span-2">
+        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+            Jenis Produk Dalam Bundling <span class="text-red-500">*</span>
+        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label class="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 cursor-pointer hover:border-brand-500 transition">
+                <input type="radio" name="jenis_produk" value="biasa" class="w-4 h-4 text-brand-600 focus:ring-brand-500" {{ old('jenis_produk', 'biasa') === 'biasa' ? 'checked' : '' }} onchange="gantiJenisProduk('biasa')">
+                <div>
+                    <span class="block font-bold text-sm text-gray-900 dark:text-white">Produk Biasa</span>
+                    <span class="block text-xs text-gray-500">Mengambil dari katalog produk reguler/biasa, bisa pilih ukuran</span>
+                </div>
+            </label>
+            <label class="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 cursor-pointer hover:border-amber-500 transition">
+                <input type="radio" name="jenis_produk" value="khusus_bundling" class="w-4 h-4 text-amber-600 focus:ring-amber-500" {{ old('jenis_produk') === 'khusus_bundling' ? 'checked' : '' }} onchange="gantiJenisProduk('khusus_bundling')">
+                <div>
+                    <span class="block font-bold text-sm text-gray-900 dark:text-white">Produk Khusus Bundling</span>
+                    <span class="block text-xs text-gray-500">Varian rasa khusus yang dapat dipilih pembeli di mobile</span>
+                </div>
+            </label>
+        </div>
+        @error('jenis_produk')
+            <small class="text-red-500">{{ $message }}</small>
+        @enderror
+    </div>
+
+    {{-- Total Qty Pilihan Khusus (hanya tampil jika Produk Khusus Bundling) --}}
+    <div id="wrapper-total-qty-khusus" class="{{ old('jenis_produk') === 'khusus_bundling' ? '' : 'hidden' }}">
+        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+            Total Isi Bundling<span class="text-red-500">*</span>
+        </label>
+        <input
+            type="number"
+            min="1"
+            name="total_qty_khusus"
+            placeholder="Contoh: 6 (Pembeli dapat memilih 6 pcs varian rasa)"
+            value="{{ old('total_qty_khusus', 6) }}"
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+        <small class="text-gray-400">Total jumlah produk yang wajib dipilih pembeli di mobile.</small>
+        @error('total_qty_khusus')
+            <small class="text-red-500 block">{{ $message }}</small>
+        @enderror
+    </div>
+
     {{-- Status Bundling --}}
     <div>
         <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
@@ -170,11 +214,29 @@
 </div>
 
 <script>
-    // Cuma produk reguler (biasa) yang bisa dimasukkan ke bundling. Setiap
-    // produk sudah membawa `punya_ukuran` & `daftar_ukuran` (lihat accessor
-    // di App\Models\Produk) sehingga baris produk bisa menampilkan pilihan
-    // ukuran secara dinamis, sama seperti di menu Kasir & Produk.
-    const daftarProduk = @json($produkBiasa);
+    // Produk biasa membawa `punya_ukuran` & `daftar_ukuran` (lihat accessor di
+    // App\Models\Produk) sehingga baris produk bisa menampilkan pilihan ukuran
+    // secara dinamis, sama seperti di menu Kasir & Produk. Produk khusus
+    // bundling (varian rasa) gak pakai ukuran/qty per-baris — total isi
+    // bundling-nya diatur lewat field "Total Isi Bundling" di atas.
+    const produkBiasa = @json($produkBiasa);
+    const produkKhusus = @json($produkKhusus);
+    let jenisProdukAktif = "{{ old('jenis_produk', 'biasa') }}";
+    let daftarProduk = jenisProdukAktif === 'khusus_bundling' ? produkKhusus : produkBiasa;
+
+    function gantiJenisProduk(jenis) {
+        jenisProdukAktif = jenis;
+        daftarProduk = jenis === 'khusus_bundling' ? produkKhusus : produkBiasa;
+
+        const wrapper = document.getElementById('wrapper-total-qty-khusus');
+        if (wrapper) {
+            wrapper.classList.toggle('hidden', jenis !== 'khusus_bundling');
+        }
+
+        const container = document.getElementById('produk-container');
+        container.innerHTML = '';
+        tambahBarisProduk();
+    }
 </script>
 
 <script>
@@ -184,6 +246,7 @@ const tombolTambah = document.getElementById('btn-tambah-produk');
 
 function tambahBarisProduk() {
 
+    const isKhusus = jenisProdukAktif === 'khusus_bundling';
     const div = document.createElement('div');
 
     div.className =
@@ -228,7 +291,7 @@ function tambahBarisProduk() {
 
         </div>
 
-        <div class="col-qty-produk mt-4">
+        <div class="col-qty-produk mt-4 ${isKhusus ? 'hidden' : ''}">
 
             <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Qty
@@ -282,7 +345,8 @@ function perbaruiInfoStok(div, produk, namaUkuran) {
         return;
     }
 
-    const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
+    const isKhusus = jenisProdukAktif === 'khusus_bundling';
+    const punyaUkuran = !isKhusus && (produk.punya_ukuran == 1 || produk.punya_ukuran === true);
 
     if (!punyaUkuran) {
         infoProduk.innerHTML = `Stok tersedia: <strong>${produk.stok}</strong>`;
@@ -315,7 +379,8 @@ function pilihProdukPadaBaris(div, produk) {
     inputId.value = produk.id;
     hasilSearch.classList.add('hidden');
 
-    const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
+    const isKhusus = jenisProdukAktif === 'khusus_bundling';
+    const punyaUkuran = !isKhusus && (produk.punya_ukuran == 1 || produk.punya_ukuran === true);
     const daftarUkuran = produk.daftar_ukuran || [];
 
     if (punyaUkuran && daftarUkuran.length > 0) {
@@ -328,7 +393,11 @@ function pilihProdukPadaBaris(div, produk) {
 
     } else {
         wrapUkuran.classList.add('hidden');
-        selectUkuran.innerHTML = '';
+        // Sisain 1 <option value=""> biar select ini tetap ke-submit (browser
+        // gak ngirim field select yg bener-bener tanpa option), supaya index
+        // ukuran[] tetap sejajar sama produk_id[] & qty[] pas ada campuran
+        // produk yang punya ukuran & yang enggak dalam satu bundling.
+        selectUkuran.innerHTML = '<option value=""></option>';
     }
 
     perbaruiInfoStok(div, produk, selectUkuran.value);
@@ -369,7 +438,7 @@ function aktifkanSearchProduk(element) {
             `;
         } else {
             hasil.forEach(function (produk) {
-                const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
+                const punyaUkuran = jenisProdukAktif !== 'khusus_bundling' && (produk.punya_ukuran == 1 || produk.punya_ukuran === true);
                 const item = document.createElement('button');
                 item.type = 'button';
                 item.className = 'block w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700';

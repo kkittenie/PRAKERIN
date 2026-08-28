@@ -147,7 +147,11 @@
                                 <td class="font-medium text-gray-800 dark:text-white">{{ $p ? $p->nama_produk : '-' }}</td>
                                 <td class="text-center text-gray-500 dark:text-gray-400">{{ $item->ukuran ?? '-' }}</td>
                                 <td class="text-center font-bold text-amber-700 dark:text-amber-400">
-                                    {{ $item->qty }} pcs
+                                    @if($bundling->jenis_produk === 'khusus_bundling')
+                                        <span class="inline-flex rounded-full bg-amber-100 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300">Varian Rasa</span>
+                                    @else
+                                        {{ $item->qty }} pcs
+                                    @endif
                                 </td>
                                 <td class="text-center">
                                     @if($stokHabis)
@@ -184,7 +188,11 @@
                             </span>
                             <span
                                 class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
-                                {{ $item->qty }} pcs
+                                @if($bundling->jenis_produk === 'khusus_bundling')
+                                    Varian Rasa
+                                @else
+                                    {{ $item->qty }} pcs
+                                @endif
                             </span>
                         </div>
                         <div>
