@@ -394,12 +394,15 @@ class CheckoutController extends Controller
             $qtySatuBundling = $mapQtyPilihan[$produk->id] ?? $bundlingItem->qty;
             $totalDibutuhkan = $qtySatuBundling * $jumlahBundling;
             $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
+            $ukuranItem = $bundlingItem->ukuran;
 
             // Catatan: stok komponen bundling BELUM dikurangi di sini. Sama
             // seperti item reguler, pengurangan stok baru terjadi nanti waktu
             // kasir memproses pesanan (lihat PesananPickupController::tandaiSiap()),
-            // bukan langsung saat pesanan baru masuk.
-            $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, null, $stokTerpakai);
+            // bukan langsung saat pesanan baru masuk. Ukuran yang dipilih tetap
+            // dicatat di sini supaya pengurangan stok nanti kena baris ukuran
+            // yang benar.
+            $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, $ukuranItem, $stokTerpakai);
 
             foreach ($pecahan as $bagian) {
                 DetailTransaksi::create([
@@ -407,6 +410,7 @@ class CheckoutController extends Controller
                     'produk_id' => $produk->id,
                     'bundling_id' => $bundling->id,
                     'nama_produk' => $produk->nama_produk,
+                    'ukuran' => $ukuranItem,
                     'harga_satuan' => 0,
                     'jumlah' => $bagian['jumlah'],
                     'catatan' => $catatanProduk !== '' ? $catatanProduk : null,

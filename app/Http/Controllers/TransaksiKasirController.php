@@ -162,7 +162,7 @@ class TransaksiKasirController extends Controller
 
             $daftarKategori = KategoriProduk::all();
 
-            $daftarBundling = Bundling::with('items.produk')
+            $daftarBundling = Bundling::with('items.produk.produkUkurans.ukuran')
                 ->where('status_aktif', true)
                 ->get()
                 ->map(function ($bundling) {
@@ -170,7 +170,11 @@ class TransaksiKasirController extends Controller
                         if (!$item->produk) {
                             return 0;
                         }
-                        $bisaDibuat = intdiv((int) $item->produk->stok, max(1, $item->qty));
+                        // Stok dihitung sesuai ukuran yang dipilih untuk item ini
+                        // (kalau produknya punya varian ukuran), bukan stok
+                        // gabungan semua ukuran.
+                        $stokUkuran = $item->produk->stokUntukUkuran($item->ukuran);
+                        $bisaDibuat = intdiv((int) $stokUkuran, max(1, $item->qty));
                         return is_null($carry) ? $bisaDibuat : min($carry, $bisaDibuat);
                     }, null) ?? 0;
 
@@ -256,6 +260,7 @@ class TransaksiKasirController extends Controller
                 continue;
             }
 
+            $ukuranItem = $bundlingItem->ukuran;
             $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
             $totalDibutuhkan = $qtySatuBundling * $jumlahBundling;
             $statusManualProduksi = $produk->status_ketersediaan === 'perlu_diproduksi';
@@ -264,12 +269,15 @@ class TransaksiKasirController extends Controller
             $jumlahProduksi = $totalDibutuhkan;
 
             if (!$statusManualProduksi) {
-                $stokTersedia = max(0, (float) $produk->stok);
+                // Cek & kurangi stok sesuai ukuran yang dipilih untuk item
+                // bundling ini (Besar/Kecil/ukuran custom lain), bukan stok
+                // gabungan semua ukuran.
+                $stokTersedia = max(0, (float) $produk->stokUntukUkuran($ukuranItem));
                 $jumlahReady = min($stokTersedia, $totalDibutuhkan);
                 $jumlahProduksi = $totalDibutuhkan - $jumlahReady;
 
                 if ($jumlahReady > 0) {
-                    $produk->decrement('stok', $jumlahReady);
+                    $produk->decrementStokUkuran($ukuranItem, (int) $jumlahReady);
                 }
             }
 
@@ -279,6 +287,7 @@ class TransaksiKasirController extends Controller
                     'produk_id' => $produk->id,
                     'bundling_id' => $bundling->id,
                     'nama_produk' => $produk->nama_produk,
+                    'ukuran' => $ukuranItem,
                     'harga_satuan' => 0,
                     'jumlah' => $jumlahReady,
                     'catatan' => $catatanProduk,
@@ -293,6 +302,7 @@ class TransaksiKasirController extends Controller
                     'produk_id' => $produk->id,
                     'bundling_id' => $bundling->id,
                     'nama_produk' => $produk->nama_produk,
+                    'ukuran' => $ukuranItem,
                     'harga_satuan' => 0,
                     'jumlah' => $jumlahProduksi,
                     'catatan' => $catatanProduk,

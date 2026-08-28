@@ -50,7 +50,9 @@ class Bundling extends Model
             if (!$produk) {
                 continue;
             }
-            if ($produk->habisSemuaUkuran() || $produk->stokUntukUkuran() < (float) $item->qty) {
+            // Cek stok sesuai ukuran yang dipilih untuk item ini (kalau produknya
+            // punya varian ukuran), bukan cuma cek stok gabungan semua ukuran.
+            if ($produk->habisUntukUkuran($item->ukuran) || $produk->stokUntukUkuran($item->ukuran) < (float) $item->qty) {
                 return true;
             }
         }

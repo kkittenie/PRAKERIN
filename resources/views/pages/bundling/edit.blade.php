@@ -68,51 +68,6 @@
         @enderror
     </div>
 
-    {{-- Jenis Produk Bundling --}}
-    <div class="md:col-span-2">
-        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
-            Jenis Produk Dalam Bundling <span class="text-red-500">*</span>
-        </label>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label class="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 cursor-pointer hover:border-brand-500 transition">
-                <input type="radio" name="jenis_produk" value="biasa" class="w-4 h-4 text-brand-600 focus:ring-brand-500" {{ old('jenis_produk', $bundling->jenis_produk ?? 'biasa') === 'biasa' ? 'checked' : '' }} onchange="gantiJenisProduk('biasa')">
-                <div>
-                    <span class="block font-bold text-sm text-gray-900 dark:text-white">Produk Biasa</span>
-                    <span class="block text-xs text-gray-500">Mengambil dari katalog produk reguler/biasa</span>
-                </div>
-            </label>
-            <label class="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 cursor-pointer hover:border-amber-500 transition">
-                <input type="radio" name="jenis_produk" value="khusus_bundling" class="w-4 h-4 text-amber-600 focus:ring-amber-500" {{ old('jenis_produk', $bundling->jenis_produk) === 'khusus_bundling' ? 'checked' : '' }} onchange="gantiJenisProduk('khusus_bundling')">
-                <div>
-                    <span class="block font-bold text-sm text-gray-900 dark:text-white">Produk Khusus Bundling</span>
-                    <span class="block text-xs text-gray-500">Varian rasa khusus yang dapat dipilih pembeli di mobile</span>
-                </div>
-            </label>
-        </div>
-        @error('jenis_produk')
-            <small class="text-red-500">{{ $message }}</small>
-        @enderror
-    </div>
-
-    {{-- Total Qty Pilihan Khusus (hanya tampil jika Produk Khusus Bundling) --}}
-    <div id="wrapper-total-qty-khusus" class="{{ old('jenis_produk', $bundling->jenis_produk) === 'khusus_bundling' ? '' : 'hidden' }}">
-        <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
-            Total Isi Bundling<span class="text-red-500">*</span>
-        </label>
-        <input
-            type="number"
-            min="1"
-            name="total_qty_khusus"
-            placeholder="Contoh: 6 (Pembeli dapat memilih 6 pcs varian rasa)"
-            value="{{ old('total_qty_khusus', $bundling->total_qty_khusus ?? 6) }}"
-            class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-        <small class="text-gray-400">Total jumlah produk yang wajib dipilih pembeli di mobile.</small>
-        @error('total_qty_khusus')
-            <small class="text-red-500 block">{{ $message }}</small>
-        @enderror
-    </div>
-
-
     {{-- Status Bundling --}}
     <div>
         <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
@@ -219,27 +174,12 @@
 </div>
 
 <script>
-    const produkBiasa = @json($produkBiasa);
-    const produkKhusus = @json($produkKhusus);
-    let jenisProdukAktif = "{{ old('jenis_produk', $bundling->jenis_produk ?? 'biasa') }}";
-    let daftarProduk = jenisProdukAktif === 'khusus_bundling' ? produkKhusus : produkBiasa;
-
-    function gantiJenisProduk(jenis) {
-        jenisProdukAktif = jenis;
-        daftarProduk = jenis === 'khusus_bundling' ? produkKhusus : produkBiasa;
-        
-        const wrapper = document.getElementById('wrapper-total-qty-khusus');
-        if (wrapper) {
-            wrapper.classList.toggle('hidden', jenis !== 'khusus_bundling');
-        }
-
-        const container = document.getElementById('produk-container');
-        container.innerHTML = '';
-        tambahBarisProduk();
-    }
+    // Cuma produk reguler (biasa) yang bisa dimasukkan ke bundling. Setiap
+    // produk sudah membawa `punya_ukuran` & `daftar_ukuran` (lihat accessor
+    // di App\Models\Produk) sehingga baris produk bisa menampilkan pilihan
+    // ukuran secara dinamis, sama seperti di menu Kasir & Produk.
+    const daftarProduk = @json($produkBiasa);
 </script>
-
-
 
 <script>
 
@@ -248,7 +188,6 @@ const tombolTambah = document.getElementById('btn-tambah-produk');
 
 function tambahBarisProduk() {
 
-    const isKhusus = jenisProdukAktif === 'khusus_bundling';
     const div = document.createElement('div');
 
     div.className =
@@ -256,45 +195,55 @@ function tambahBarisProduk() {
 
     div.innerHTML = `
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="relative col-search-produk">
 
-            <div class="${isKhusus ? 'md:col-span-3' : 'md:col-span-2'} relative col-search-produk">
+            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Cari Produk
+            </label>
 
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Cari Produk
-                </label>
+            <input
+                type="text"
+                class="input-search-produk w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3"
+                placeholder="Ketik nama produk..."
+                autocomplete="off">
 
-                <input
-                    type="text"
-                    class="input-search-produk w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3"
-                    placeholder="Ketik nama produk..."
-                    autocomplete="off">
-
-                <div
-                    class="hasil-search absolute z-50 mt-1 hidden w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                </div>
-
-                <input
-                    type="hidden"
-                    name="produk_id[]"
-                    class="input-id-produk">
-
+            <div
+                class="hasil-search absolute z-50 mt-1 hidden w-full rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
             </div>
 
-            <div class="col-qty-produk ${isKhusus ? 'hidden' : ''}">
+            <input
+                type="hidden"
+                name="produk_id[]"
+                class="input-id-produk">
 
-                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Qty
-                </label>
+        </div>
 
-                <input
-                    type="number"
-                    name="qty[]"
-                    min="1"
-                    value="1"
-                    class="input-qty w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3">
+        <div class="col-ukuran-produk hidden mt-4">
 
-            </div>
+            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Ukuran <span class="text-red-500">*</span>
+            </label>
+
+            <select
+                name="ukuran[]"
+                class="input-ukuran-produk w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                <option value="">Pilih ukuran</option>
+            </select>
+
+        </div>
+
+        <div class="col-qty-produk mt-4">
+
+            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Qty
+            </label>
+
+            <input
+                type="number"
+                name="qty[]"
+                min="1"
+                value="1"
+                class="input-qty w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3">
 
         </div>
 
@@ -311,7 +260,7 @@ function tambahBarisProduk() {
         </div>
 
         <p class="peringatan-duplikat hidden text-xs text-red-600 mt-1">
-            Produk ini sudah dipilih di baris lain!
+            Kombinasi produk & ukuran ini sudah dipilih di baris lain!
         </p>
     `;
 
@@ -326,19 +275,69 @@ tombolTambah.addEventListener('click', function () {
     tambahBarisProduk();
 });
 
+// Nampilin info stok sesuai ukuran yang lagi dipilih (atau stok polos kalau
+// produknya gak punya varian ukuran).
+function perbaruiInfoStok(div, produk, namaUkuran) {
+
+    const infoProduk = div.querySelector('.info-produk');
+
+    if (!produk) {
+        infoProduk.textContent = 'Pilih produk terlebih dahulu';
+        return;
+    }
+
+    const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
+
+    if (!punyaUkuran) {
+        infoProduk.innerHTML = `Stok tersedia: <strong>${produk.stok}</strong>`;
+        return;
+    }
+
+    if (!namaUkuran) {
+        infoProduk.textContent = 'Pilih ukuran untuk melihat stok';
+        return;
+    }
+
+    const opsi = (produk.daftar_ukuran || []).find(function (o) {
+        return o.nama === namaUkuran;
+    });
+
+    infoProduk.innerHTML = opsi
+        ? `Stok tersedia (${opsi.nama}): <strong>${opsi.stok}</strong>${opsi.perlu_produksi ? ' <span class="text-amber-600">— perlu diproduksi</span>' : ''}`
+        : 'Pilih ukuran untuk melihat stok';
+}
+
 function pilihProdukPadaBaris(div, produk) {
 
     const inputSearch = div.querySelector('.input-search-produk');
     const inputId = div.querySelector('.input-id-produk');
-    const infoProduk = div.querySelector('.info-produk');
     const hasilSearch = div.querySelector('.hasil-search');
+    const wrapUkuran = div.querySelector('.col-ukuran-produk');
+    const selectUkuran = div.querySelector('.input-ukuran-produk');
 
     inputSearch.value = produk.nama_produk;
     inputId.value = produk.id;
-    infoProduk.innerHTML = `Stok tersedia: <strong>${produk.stok}</strong>`;
     hasilSearch.classList.add('hidden');
 
-    cekDuplikatProduk();
+    const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
+    const daftarUkuran = produk.daftar_ukuran || [];
+
+    if (punyaUkuran && daftarUkuran.length > 0) {
+
+        wrapUkuran.classList.remove('hidden');
+
+        selectUkuran.innerHTML = '<option value="">Pilih ukuran</option>' + daftarUkuran.map(function (opsi) {
+            return `<option value="${opsi.nama}">${opsi.nama} — Rp ${Math.round(opsi.harga).toLocaleString('id-ID')} (Stok: ${opsi.stok})</option>`;
+        }).join('');
+
+    } else {
+        wrapUkuran.classList.add('hidden');
+        selectUkuran.innerHTML = '';
+    }
+
+    perbaruiInfoStok(div, produk, selectUkuran.value);
+
+    cekValidasiForm();
 }
 
 function aktifkanSearchProduk(element) {
@@ -346,6 +345,7 @@ function aktifkanSearchProduk(element) {
     const inputSearch = element.querySelector('.input-search-produk');
     const hasilSearch = element.querySelector('.hasil-search');
     const inputId = element.querySelector('.input-id-produk');
+    const selectUkuran = element.querySelector('.input-ukuran-produk');
 
     inputSearch.addEventListener('input', function () {
 
@@ -355,7 +355,7 @@ function aktifkanSearchProduk(element) {
 
         if (keyword.length === 0) {
             hasilSearch.classList.add('hidden');
-            cekDuplikatProduk();
+            cekValidasiForm();
             return;
         }
 
@@ -373,6 +373,7 @@ function aktifkanSearchProduk(element) {
             `;
         } else {
             hasil.forEach(function (produk) {
+                const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
                 const item = document.createElement('button');
                 item.type = 'button';
                 item.className = 'block w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700';
@@ -381,7 +382,7 @@ function aktifkanSearchProduk(element) {
                         ${produk.nama_produk}
                     </div>
                     <div class="text-xs text-gray-500">
-                        Stok: ${produk.stok}
+                        ${punyaUkuran ? 'Punya varian ukuran' : 'Stok: ' + produk.stok}
                     </div>
                 `;
 
@@ -396,6 +397,13 @@ function aktifkanSearchProduk(element) {
         hasilSearch.classList.remove('hidden');
     });
 
+    selectUkuran.addEventListener('change', function () {
+        const id = inputId.value;
+        const produk = daftarProduk.find(function (p) { return p.id == id; });
+        perbaruiInfoStok(element, produk, this.value);
+        cekValidasiForm();
+    });
+
     document.addEventListener('click', function (e) {
         if (!inputSearch.contains(e.target) && !hasilSearch.contains(e.target)) {
             hasilSearch.classList.add('hidden');
@@ -404,43 +412,63 @@ function aktifkanSearchProduk(element) {
 
     element.querySelector('.btn-hapus-produk').addEventListener('click', function () {
         element.remove();
-        cekDuplikatProduk();
+        cekValidasiForm();
     });
 }
 
-function cekDuplikatProduk() {
+// Validasi baris: cek kombinasi produk+ukuran yang kembar, dan pastikan
+// ukuran udah dipilih buat produk yang punya varian ukuran, sebelum tombol
+// simpan diaktifkan.
+function cekValidasiForm() {
 
     const semuaBaris = document.querySelectorAll('#produk-container > div');
 
-    const jumlahPerId = {};
+    const jumlahPerKombinasi = {};
 
     semuaBaris.forEach(function (baris) {
         const id = baris.querySelector('.input-id-produk').value;
+        const selectUkuran = baris.querySelector('.input-ukuran-produk');
+        const ukuran = selectUkuran ? selectUkuran.value : '';
         if (id) {
-            jumlahPerId[id] = (jumlahPerId[id] || 0) + 1;
+            const kunci = id + '|' + ukuran;
+            jumlahPerKombinasi[kunci] = (jumlahPerKombinasi[kunci] || 0) + 1;
         }
     });
 
-    let adaDuplikat = false;
+    let adaMasalah = false;
 
     semuaBaris.forEach(function (baris) {
         const inputId = baris.querySelector('.input-id-produk');
         const inputSearch = baris.querySelector('.input-search-produk');
         const peringatan = baris.querySelector('.peringatan-duplikat');
+        const wrapUkuran = baris.querySelector('.col-ukuran-produk');
+        const selectUkuran = baris.querySelector('.input-ukuran-produk');
+        const ukuran = selectUkuran ? selectUkuran.value : '';
+        const kunci = inputId.value + '|' + ukuran;
 
-        if (inputId.value && jumlahPerId[inputId.value] > 1) {
+        const duplikat = inputId.value && jumlahPerKombinasi[kunci] > 1;
+        const ukuranWajibKosong = inputId.value && wrapUkuran && !wrapUkuran.classList.contains('hidden') && !ukuran;
+
+        if (duplikat) {
             peringatan.classList.remove('hidden');
             inputSearch.classList.add('border-red-500');
-            adaDuplikat = true;
+            adaMasalah = true;
         } else {
             peringatan.classList.add('hidden');
             inputSearch.classList.remove('border-red-500');
+        }
+
+        if (selectUkuran) {
+            selectUkuran.classList.toggle('border-red-500', !!ukuranWajibKosong);
+        }
+        if (ukuranWajibKosong) {
+            adaMasalah = true;
         }
     });
 
     const btnSubmit = document.getElementById('btnSubmitBundling');
     if (btnSubmit) {
-        btnSubmit.disabled = adaDuplikat;
+        btnSubmit.disabled = adaMasalah;
     }
 }
 
@@ -488,6 +516,7 @@ document.querySelectorAll('form').forEach(function (form) {
 // ==== Isi ulang baris produk: dari old() kalau validasi gagal, kalau tidak dari data tersimpan ====
 const oldProdukId = @json(old('produk_id', []));
 const oldQty = @json(old('qty', []));
+const oldUkuran = @json(old('ukuran', []));
 
 if (oldProdukId.length > 0) {
 
@@ -506,6 +535,12 @@ if (oldProdukId.length > 0) {
         pilihProdukPadaBaris(div, produk);
 
         div.querySelector('.input-qty').value = oldQty[index] ?? 1;
+
+        const selectUkuran = div.querySelector('.input-ukuran-produk');
+        if (selectUkuran && oldUkuran[index]) {
+            selectUkuran.value = oldUkuran[index];
+            perbaruiInfoStok(div, produk, oldUkuran[index]);
+        }
     });
 
 } else {
@@ -525,12 +560,19 @@ if (oldProdukId.length > 0) {
             pilihProdukPadaBaris(div, produk);
 
             div.querySelector('.input-qty').value = {{ $item->qty }};
+
+            const namaUkuran = @json($item->ukuran);
+            const selectUkuran = div.querySelector('.input-ukuran-produk');
+            if (selectUkuran && namaUkuran) {
+                selectUkuran.value = namaUkuran;
+                perbaruiInfoStok(div, produk, namaUkuran);
+            }
         })();
     @endforeach
 
 }
 
-cekDuplikatProduk();
+cekValidasiForm();
 
 </script>
 

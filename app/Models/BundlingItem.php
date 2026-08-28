@@ -11,6 +11,7 @@ class BundlingItem extends Model
     protected $fillable = [
         'bundling_id',
         'produk_id',
+        'ukuran',
         'qty',
     ];
 
