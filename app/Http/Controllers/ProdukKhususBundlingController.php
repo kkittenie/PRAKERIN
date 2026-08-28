@@ -245,6 +245,17 @@ class ProdukKhususBundlingController extends Controller
         try {
             abort_unless($produk->is_khusus_bundling, 404);
 
+            // Produk yang sudah pernah dicatat di Riwayat Produksi gak boleh
+            // dihapus (FK produksis.produk_id di-restrict, sengaja biar
+            // histori produksi lama gak ikut ilang/rusak). Cek dulu di sini
+            // biar errornya jelas buat user, bukan raw SQL error.
+            if ($produk->produksi()->exists()) {
+                return back()->with(
+                    'error',
+                    "Produk \"{$produk->nama_produk}\" tidak bisa dihapus karena sudah punya riwayat produksi. Nonaktifkan produk ini saja kalau tidak mau dipakai lagi."
+                );
+            }
+
             DB::transaction(function () use ($produk) {
                 if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
                     Storage::disk('public')->delete($produk->foto);

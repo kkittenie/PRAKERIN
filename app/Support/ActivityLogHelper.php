@@ -41,7 +41,17 @@ class ActivityLogHelper
             'input' => request()->except(['password', 'password_confirmation', 'pin', 'token', '_token']),
         ])->log($customMessage ?? ('Error: ' . $e->getMessage()));
 
-        $message = 'Terjadi kesalahan: ' . $e->getMessage();
+        // Constraint FK (kode SQLSTATE 23000, misal "Cannot delete or update
+        // a parent row") aslinya cukup umum terjadi kalau user coba hapus
+        // data yang masih dipakai di tabel lain. Daripada nampilin pesan SQL
+        // mentah ke user, kasih pesan yang lebih manusiawi di sini sebagai
+        // jaring pengaman umum — idealnya tiap controller udah ngecek duluan
+        // sebelum delete, tapi ini buat jaga-jaga kalau ada yang kelewat.
+        if ($e instanceof \Illuminate\Database\QueryException && $e->getCode() === '23000') {
+            $message = 'Data tidak bisa dihapus/diubah karena masih terpakai di data lain. Hapus atau lepas dulu keterkaitannya sebelum mencoba lagi.';
+        } else {
+            $message = 'Terjadi kesalahan: ' . $e->getMessage();
+        }
 
         if (request()->wantsJson() || request()->expectsJson()) {
             return response()->json([

@@ -10,25 +10,12 @@ use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class ProdukController extends Controller
 {
     private const FOTO_PATH = 'produk/images';
 
-    /**
-     * Pas produk baru dibuat dengan "Punya Ukuran" aktif, form ini masih
-     * minta diisi Harga/Stok Besar & Kecil (kolom lama) — tapi dulu gak ada
-     * yang otomatis bikin baris di produk_ukurans dari nilai itu. Akibatnya
-     * produk yang baru dibuat nongol "Belum ada ukuran aktif" di kasir &
-     * mobile sampai admin balik ke halaman Edit buat nambahin manual.
-     *
-     * Method ini nutup celah itu: begitu produk baru dibuat, otomatis
-     * dibikinin 2 baris ukuran ("Kecil" & "Besar") dari nilai yang barusan
-     * diisi di form, persis logika yang dipakai migration backfill buat
-     * data lama. Pakai firstOrCreate supaya SELALU aman dipanggil ulang
-     * (kalau baris itu udah ada / udah dikustomisasi admin lewat panel
-     * Ukuran Dinamis, gak bakal ketimpa/direset).
-     */
     private function pastikanBarisUkuranBesarKecil(Produk $produk): void
     {
         if (!$produk->punya_ukuran) {
@@ -159,14 +146,6 @@ class ProdukController extends Controller
         }
     }
 
-    /**
-     * Simpan/sinkronisasi baris produk_ukurans dari input repeater dinamis
-     * (ukuran_baris[]) di form Tambah & Edit Produk. Dipakai bareng di
-     * store() (produk baru, belum ada baris lama) dan update() (produk
-     * existing — baris yang udah gak ada di draft ikut dihapus, biar form
-     * Edit persis kaya form Tambah: apa yang keliatan di tabel = itu yang
-     * kesimpen).
-     */
     private function syncBarisUkuranDinamis(Produk $produk, $ukuranBaris): void
     {
         $ukuranIdDipakai = [];
@@ -192,8 +171,6 @@ class ProdukController extends Controller
             );
         }
 
-        // Baris ukuran lama yang udah gak ada di draft (dihapus admin di
-        // form) ikut dibuang, biar konsisten sama apa yang keliatan di form.
         $produk->produkUkurans()
             ->whereNotIn('ukuran_id', $ukuranIdDipakai)
             ->delete();
@@ -219,9 +196,6 @@ class ProdukController extends Controller
                 ],
                 'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
-                // Mode dinamis: dipakai kalau "Punya Ukuran" dicentang. Setiap
-                // baris = satu ukuran dari master data Ukuran, bukan lagi
-                // hardcode Besar/Kecil. Harga modal ikut per-baris juga.
                 'ukuran_baris' => 'nullable|array|required_if:punya_ukuran,1',
                 'ukuran_baris.*.ukuran_id' => 'required_with:ukuran_baris|exists:ukurans,id|distinct',
                 'ukuran_baris.*.harga_modal' => 'required_with:ukuran_baris|numeric|min:0',
@@ -241,12 +215,6 @@ class ProdukController extends Controller
                 $validated['harga_jual'] = 0;
                 $validated['harga_modal'] = 0;
                 $validated['stok'] = (int) $ukuranBaris->sum(fn ($b) => (int) ($b['stok'] ?? 0));
-                // Sumber kebenaran harga & stok sekarang full di produk_ukurans;
-                // kolom lama ini cuma tersisa untuk data lama, jadi dikosongkan.
-                // PENTING: stok_besar/stok_kecil di kolom produks itu NOT NULL
-                // (default 0) — diisi null di sini bikin insert selalu gagal
-                // kena constraint DB tiap kali "Punya Ukuran" dicentang. Pakai
-                // 0, bukan null.
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
                 $validated['stok_besar'] = 0;
@@ -274,9 +242,7 @@ class ProdukController extends Controller
                 if ($ukuranBaris->isNotEmpty()) {
                     $this->syncBarisUkuranDinamis($produk, $ukuranBaris);
                 } else {
-                    // Jaga-jaga (mis. dipanggil lewat API tanpa JS) — fallback
-                    // ke perilaku lama biar produk tetap dapat baris ukuran.
-                    $this->pastikanBarisUkuranBesarKecil($produk);
+                     $this->pastikanBarisUkuranBesarKecil($produk);
                 }
             }
 
@@ -321,9 +287,7 @@ class ProdukController extends Controller
             $produk->load('produkUkurans.ukuran');
 
             if (old('ukuran_baris') !== null) {
-                // Balik dari validasi gagal — pakai draft yang barusan
-                // disubmit, bukan data lama dari DB.
-                $ukuranBaris = collect(old('ukuran_baris', []))
+                 $ukuranBaris = collect(old('ukuran_baris', []))
                     ->map(function ($b) use ($daftarUkuran) {
                         $master = $daftarUkuran->firstWhere(
                             'id',
@@ -389,8 +353,6 @@ class ProdukController extends Controller
                 ],
                 'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
-                // Sama persis kaya validasi di store(): satu baris = satu
-                // ukuran dari master Ukuran, harga modal & jual per-baris.
                 'ukuran_baris' => 'nullable|array|required_if:punya_ukuran,1',
                 'ukuran_baris.*.ukuran_id' => 'required_with:ukuran_baris|exists:ukurans,id|distinct',
                 'ukuran_baris.*.harga_modal' => 'required_with:ukuran_baris|numeric|min:0',
@@ -459,23 +421,38 @@ class ProdukController extends Controller
     public function destroy(Produk $produk)
     {
         try {
-            if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
-                Storage::disk('public')->delete($produk->foto);
+            // Produk yang sudah pernah dicatat di Riwayat Produksi gak boleh
+            // dihapus (FK produksis.produk_id di-restrict, sengaja biar
+            // histori produksi lama gak ikut ilang/rusak). Cek dulu di sini
+            // biar errornya jelas buat user, bukan raw SQL error, dan biar
+            // activity log-nya gak kecatat "menghapus produk" kalau ternyata
+            // penghapusannya gagal.
+            if ($produk->produksi()->exists()) {
+                return back()->with(
+                    'error',
+                    "Produk \"{$produk->nama_produk}\" tidak bisa dihapus karena sudah punya riwayat produksi. Nonaktifkan produk ini saja kalau tidak mau dipakai lagi."
+                );
             }
 
-            activity()
-                ->causedBy(auth()->user())
-                ->performedOn($produk)
-                ->withProperties([
-                    'kode_produk' => $produk->kode_produk,
-                    'nama_produk' => $produk->nama_produk,
-                    'kategori_id' => $produk->kategori_id,
-                    'harga_jual' => $produk->harga_jual,
-                    'stok' => $produk->stok,
-                ])
-                ->log('menghapus produk');
+            DB::transaction(function () use ($produk) {
+                if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
+                    Storage::disk('public')->delete($produk->foto);
+                }
 
-            $produk->delete();
+                activity()
+                    ->causedBy(auth()->user())
+                    ->performedOn($produk)
+                    ->withProperties([
+                        'kode_produk' => $produk->kode_produk,
+                        'nama_produk' => $produk->nama_produk,
+                        'kategori_id' => $produk->kategori_id,
+                        'harga_jual' => $produk->harga_jual,
+                        'stok' => $produk->stok,
+                    ])
+                    ->log('menghapus produk');
+
+                $produk->delete();
+            });
 
             return redirect()
                 ->route('produk.index')

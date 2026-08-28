@@ -20,7 +20,7 @@ class ProdukKhususBundlingSeeder extends Seeder
         $donuts = [
             [
                 'kategori_id' => $kategori->id,
-                'kode_produk' => 'PKB-DNT-001',
+                'kode_produk' => 'SSH-DN001',
                 'nama_produk' => 'Chocolate Glazed Donut',
                 'deskripsi' => 'Donat lembut dilapisi glaze cokelat lezat khusus varian bundling.',
                 'harga_jual' => 0,
@@ -34,7 +34,7 @@ class ProdukKhususBundlingSeeder extends Seeder
             ],
             [
                 'kategori_id' => $kategori->id,
-                'kode_produk' => 'PKB-DNT-002',
+                'kode_produk' => 'SSH-DN002',
                 'nama_produk' => 'Strawberry Glazed Donut',
                 'deskripsi' => 'Donat segar dengan lapisan glaze stroberi manis dan harum.',
                 'harga_jual' => 0,
@@ -48,7 +48,7 @@ class ProdukKhususBundlingSeeder extends Seeder
             ],
             [
                 'kategori_id' => $kategori->id,
-                'kode_produk' => 'PKB-DNT-003',
+                'kode_produk' => 'SSH-DN003',
                 'nama_produk' => 'Tiramisu Donut',
                 'deskripsi' => 'Donat rasa tiramisu dengan taburan bubuk kakao khusus varian bundling.',
                 'harga_jual' => 0,
@@ -62,7 +62,7 @@ class ProdukKhususBundlingSeeder extends Seeder
             ],
             [
                 'kategori_id' => $kategori->id,
-                'kode_produk' => 'PKB-DNT-004',
+                'kode_produk' => 'SSH-DN004',
                 'nama_produk' => 'Matcha Green Tea Donut',
                 'deskripsi' => 'Donat lezat berlapis glaze matcha green tea otentik khusus bundling.',
                 'harga_jual' => 0,
