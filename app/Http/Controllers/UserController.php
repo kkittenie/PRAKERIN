@@ -23,6 +23,7 @@ class UserController extends Controller
                     ->addColumn('role_html', fn($user) => view('pages.users.partials.role', ['item' => $user])->render())
                     ->editColumn('name', fn($user) => view('pages.users.partials.name', ['item' => $user])->render())
                     ->editColumn('username', fn($user) => view('pages.users.partials.username', ['item' => $user])->render())
+                    ->editColumn('email', fn($user) => view('pages.users.partials.email', ['item' => $user])->render())
                     ->addColumn('aksi', fn($user) => view('pages.users.partials.aksi', ['item' => $user])->render())
                     ->orderColumn('roles.name', function ($query, $order) {
                         // 'roles.name' bukan kolom di tabel users, melainkan relasi
@@ -41,7 +42,7 @@ class UserController extends Controller
                             $q->where('name', 'like', "%{$keyword}%");
                         });
                     })
-                    ->rawColumns(['role_html', 'name', 'username', 'aksi'])
+                    ->rawColumns(['role_html', 'name', 'username', 'email', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
                 activity('error')

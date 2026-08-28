@@ -216,7 +216,7 @@ class StampProgramController extends Controller
             });
 
             $pesan = $akanAktif
-                ? 'Program stamp diaktifkan. Program aktif lainnya (jika ada) otomatis dinonaktifkan karena cuma 1 yang boleh aktif.'
+                ? 'Program stamp diaktifkan. Program aktif lainnya dinonaktifkan.'
                 : 'Program stamp dinonaktifkan.';
 
             return back()->with('success', $pesan);

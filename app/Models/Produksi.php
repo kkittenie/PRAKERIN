@@ -93,8 +93,35 @@ class Produksi extends Model
         return null;
     }
 
+    /**
+     * Baris rincian ukuran dinamis punya produksi ini (mode ukuran_hasil[]),
+     * diurutkan sesuai urutan ukuran & difilter yang hasilnya > 0.
+     * Null kalau produksi ini bukan produksi mode dinamis (dulu dicatat
+     * lewat kolom lama jumlah_besar/jumlah_kecil, atau produk tanpa ukuran).
+     */
+    protected function rincianUkuranDinamis()
+    {
+        if ($this->produksiUkurans->isEmpty()) {
+            return null;
+        }
+
+        return $this->produksiUkurans
+            ->sortBy(fn ($item) => optional(optional($item->produkUkuran)->ukuran)->urutan ?? 0)
+            ->values();
+    }
+
     public function getRincianUkuranAttribute(): string
     {
+        $dinamis = $this->rincianUkuranDinamis();
+
+        if ($dinamis !== null) {
+            $bagian = $dinamis
+                ->filter(fn ($item) => $item->jumlah_hasil > 0)
+                ->map(fn ($item) => $item->jumlah_hasil . ' ' . (optional(optional($item->produkUkuran)->ukuran)->nama_ukuran ?? '-'));
+
+            return $bagian->isNotEmpty() ? $bagian->implode(', ') : '-';
+        }
+
         $bagian = [];
 
         if ($this->jumlah_besar > 0) {
@@ -110,6 +137,16 @@ class Produksi extends Model
 
     public function getRincianKebutuhanUkuranAttribute(): string
     {
+        $dinamis = $this->rincianUkuranDinamis();
+
+        if ($dinamis !== null) {
+            $bagian = $dinamis
+                ->filter(fn ($item) => $item->kebutuhan > 0)
+                ->map(fn ($item) => $item->kebutuhan . ' ' . (optional(optional($item->produkUkuran)->ukuran)->nama_ukuran ?? '-'));
+
+            return $bagian->isNotEmpty() ? $bagian->implode(', ') : '-';
+        }
+
         $bagian = [];
 
         if ($this->kebutuhan_besar > 0) {

@@ -12,9 +12,15 @@ class ActivityLogController extends Controller
     {
         if ($request->ajax()) {
             try {
+                // PENTING: model_type isinya "App\Models\User" (ada backslash).
+                // Kalau ditempel langsung ke teks SQL (bukan lewat binding "?"),
+                // backslash itu bakal dianggap escape character sama MySQL dan
+                // "dimakan", jadinya string literalnya rusak (jadi "AppModelsUser")
+                // dan WHERE-nya gak akan pernah match row manapun. Makanya harus
+                // pakai placeholder "?" juga di sini, sama kayak di leftJoin di bawah.
                 $roleSubQuery = 'SELECT roles.name FROM model_has_roles '
                     . 'JOIN roles ON roles.id = model_has_roles.role_id '
-                    . "WHERE model_has_roles.model_id = activity_log.causer_id AND model_has_roles.model_type = '" . User::class . "' LIMIT 1";
+                    . 'WHERE model_has_roles.model_id = activity_log.causer_id AND model_has_roles.model_type = ? LIMIT 1';
 
                 $query = Activity::query()
                     ->leftJoin('users', function ($join) {
@@ -27,7 +33,10 @@ class ActivityLogController extends Controller
                     })
                     ->select('activity_log.*')
                     ->selectRaw("COALESCE(users.name, members.nama, 'Sistem') as causer_nama")
-                    ->selectRaw("CASE WHEN activity_log.causer_type = ? THEN 'Member' WHEN activity_log.causer_type = ? THEN COALESCE(($roleSubQuery), 'User') ELSE '-' END as causer_role", [\App\Models\Member::class, User::class]);
+                    ->selectRaw(
+                        "CASE WHEN activity_log.causer_type = ? THEN 'Member' WHEN activity_log.causer_type = ? THEN COALESCE(($roleSubQuery), 'User') ELSE '-' END as causer_role",
+                        [\App\Models\Member::class, User::class, User::class]
+                    );
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->editColumn('created_at', fn($item) => $item->created_at->format('d M Y H:i'))
@@ -35,7 +44,14 @@ class ActivityLogController extends Controller
                     ->addColumn('causer_role_html', fn($item) => view('pages.activity.partials.role', compact('item'))->render())
                     ->editColumn('description', fn($item) => e($item->description))
                     ->orderColumn('causer_role_html', function ($query, $order) {
-                        $query->orderBy('causer_role', $order);
+                        // "causer_role" isinya cuma segelintir nilai ("Admin",
+                        // "Kasir", "Member", dst), jadi banyak baris yang nilainya
+                        // sama persis. Tanpa tie-breaker, urutan antar baris yang
+                        // seri itu ikut urutan fisik tabel di database — makanya
+                        // kelihatan kayak acak (tanggalnya lompat-lompat). Tambahin
+                        // created_at sebagai urutan kedua biar tetap stabil & rapi.
+                        $query->orderBy('causer_role', $order)
+                            ->orderBy('activity_log.created_at', 'desc');
                     })
                     ->filter(function ($query) use ($request) {
                         // Override pencarian global supaya tetap bisa cari lewat

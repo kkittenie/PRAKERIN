@@ -53,6 +53,7 @@
                         <th class="py-3">Role</th>
                         <th class="py-3">Nama</th>
                         <th class="py-3">Username</th>
+                        <th class="py-3">Email</th>
                         <th class="py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -103,6 +104,7 @@
                 { data: 'role_html', name: 'roles.name' },
                 { data: 'name', name: 'name' },
                 { data: 'username', name: 'username' },
+                { data: 'email', name: 'email' },
                 { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
             ],
             emptyText: 'Belum ada data pengguna'

@@ -83,7 +83,7 @@ class ProduksiController extends Controller
             END
         ";
 
-        return Produksi::with(['produk.produkUkurans.ukuran', 'user', 'detailBahan.bahanBaku.satuan'])
+        return Produksi::with(['produk.produkUkurans.ukuran', 'user', 'detailBahan.bahanBaku.satuan', 'produksiUkurans.produkUkuran.ukuran'])
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('produk', function ($q) use ($search) {
                     $q->where('nama_produk', 'like', "%{$search}%");
@@ -528,7 +528,7 @@ class ProduksiController extends Controller
     public function show(Produksi $produksi)
     {
         try {
-            $produksi->load(['produk', 'user', 'detailBahan.bahanBaku.satuan']);
+            $produksi->load(['produk', 'user', 'detailBahan.bahanBaku.satuan', 'produksiUkurans.produkUkuran.ukuran']);
 
             return view('pages.produksi.show', compact('produksi'));
         } catch (\Throwable $e) {

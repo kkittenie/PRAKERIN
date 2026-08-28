@@ -86,12 +86,33 @@
                         rows="3"
                         placeholder="Deskripsi singkat produk, tampil di Detail Produk Member App"
                         class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">{{ old('deskripsi') }}</textarea>
-
-                    @error('deskripsi')
+                        
+                        @error('deskripsi')
                         <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
+                        @enderror
+                    </div>
+                    
+                    {{-- Punya Varian Ukuran --}}
+                    <div class="md:col-span-2">
+                        <label class="flex items-center gap-3 h-12 cursor-pointer">
+                            <input type="hidden" name="punya_ukuran" value="0">
+                            <input
+                                type="checkbox"
+                                id="punya_ukuran"
+                                name="punya_ukuran"
+                                value="1"
+                                class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                                {{ old('punya_ukuran') == '1' ? 'checked' : '' }}>
+                            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Produk ini punya varian ukuran</span>
+                        </label>
+                        <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">
+                            Kalau dicentang, harga jual & stok produk diatur per ukuran di bawah — bisa nambah berapa pun varian, gak cuma Besar/Kecil.
+                        </span>
+                        @error('punya_ukuran')
+                            <small class="text-red-500">{{ $message }}</small>
+                        @enderror
+                    </div>
+                    
                 {{-- Harga Modal & Harga Jual, kolom biasa (dipakai kalau produk TIDAK punya ukuran).
                      Ditaruh berdampingan (modal kiri, jual kanan) biar rapi & irit tempat.
                      Ke-hidden pas "Punya Ukuran" dicentang, karena begitu ada varian ukuran,
@@ -142,26 +163,6 @@
                     @enderror
                 </div>
 
-                {{-- Punya Varian Ukuran --}}
-                <div class="md:col-span-2">
-                    <label class="flex items-center gap-3 h-12 cursor-pointer">
-                        <input type="hidden" name="punya_ukuran" value="0">
-                        <input
-                            type="checkbox"
-                            id="punya_ukuran"
-                            name="punya_ukuran"
-                            value="1"
-                            class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                            {{ old('punya_ukuran') == '1' ? 'checked' : '' }}>
-                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Produk ini punya varian ukuran</span>
-                    </label>
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">
-                        Kalau dicentang, harga jual & stok produk diatur per ukuran di bawah — bisa nambah berapa pun varian, gak cuma Besar/Kecil.
-                    </span>
-                    @error('punya_ukuran')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
 
                 {{-- Ukuran Dinamis --}}
                 <div id="wrapper-ukuran-dinamis" class="hidden md:col-span-2" x-data="ukuranDinamis()">
