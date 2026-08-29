@@ -10,6 +10,7 @@ class Ukuran extends Model
 
     protected $fillable = [
         'nama_ukuran',
+        'kode_ukuran',
         'urutan',
         'status_aktif',
     ];

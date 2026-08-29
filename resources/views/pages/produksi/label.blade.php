@@ -145,6 +145,13 @@
             word-break: break-word;
         }
 
+        .label-harga {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
         .label-barcode svg {
             max-width: 100%;
             height: auto;
@@ -206,46 +213,57 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
             </svg>
-            <span>Cetak {{ $jumlah }} Label</span>
+            <span>Cetak {{ $totalLabel }} Label</span>
         </button>
         <button class="btn btn-close" onclick="window.close(); setTimeout(() => history.back(), 100);">Tutup
             Halaman</button>
     </div>
 
     <p class="info-text">
-        {{ $jumlah }} label untuk <strong>{{ $produksi->produk->nama_produk }}</strong>
+        {{ $totalLabel }} label untuk <strong>{{ $produksi->produk->nama_produk }}</strong>
         (hasil produksi: {{ $produksi->jumlah_hasil }} pcs)
     </p>
 
     <div class="label-list">
-        @for ($i = 0; $i < $jumlah; $i++)
-            <div class="label-card">
-                <div class="label-content">
-                    <div class="label-toko">SAISHO CAKE &amp; BAKERY</div>
-                    <div class="label-nama-produk">{{ $produksi->produk->nama_produk }}</div>
-                    <div class="label-barcode">
-                        <svg id="barcode-{{ $i }}"></svg>
+        @php $labelIndex = 0; @endphp
+        @foreach ($labelItems as $item)
+            @for ($i = 0; $i < $item['jumlah']; $i++)
+                <div class="label-card">
+                    <div class="label-content">
+                        <div class="label-toko">SAISHO CAKE &amp; BAKERY</div>
+                        <div class="label-nama-produk">
+                            {{ $produksi->produk->nama_produk }}
+                            @if ($item['nama_ukuran'])
+                                ({{ $item['nama_ukuran'] }})
+                            @endif
+                        </div>
+                        <div class="label-harga">Rp {{ number_format($item['harga_jual'], 0, ',', '.') }}</div>
+                        <div class="label-barcode">
+                            <svg id="barcode-{{ $labelIndex }}"></svg>
+                        </div>
+                        <div class="label-kadaluarsa">Kadaluwarsa: {{ $produksi->kadaluarsa_label_cetak }}</div>
                     </div>
-                    <div class="label-kadaluarsa">Kadaluwarsa: {{ $produksi->kadaluarsa_label_cetak }}</div>
                 </div>
-            </div>
-        @endfor
+                @php $labelIndex++; @endphp
+            @endfor
+        @endforeach
     </div>
 
     <script>
         function renderSemuaBarcode() {
-            const kodeProduk = @json($produksi->produk->kode_produk);
-            const total = {{ $jumlah }};
+            const daftarBarcode = @json(
+                collect($labelItems)->flatMap(fn ($item) => array_fill(0, $item['jumlah'], $item['kode_barcode']))->values()
+            );
 
-            for (let i = 0; i < total; i++) {
-                JsBarcode(`#barcode-${i}`, kodeProduk, {
+            daftarBarcode.forEach(function (kode, i) {
+                JsBarcode(`#barcode-${i}`, kode, {
                     format: "CODE128",
                     height: 40,
                     width: 1.5,
                     fontSize: 10,
                     margin: 4,
                 });
-            }
+            });
         }
 
         window.onload = function () {
@@ -258,3 +276,5 @@
     </script>
 
 </body>
+
+</html>

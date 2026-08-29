@@ -11,6 +11,7 @@ class ProdukUkuran extends Model
     protected $fillable = [
         'produk_id',
         'ukuran_id',
+        'kode_barcode',
         'harga_modal',
         'harga_jual',
         'stok',
@@ -40,5 +41,26 @@ class ProdukUkuran extends Model
     public function getPerluDiproduksiAttribute(): bool
     {
         return $this->status_ketersediaan === 'perlu_diproduksi' || $this->stok <= 0;
+    }
+
+    protected static function booted()
+    {
+        static::saving(function (ProdukUkuran $produkUkuran) {
+            if ($produkUkuran->isDirty('produk_id') || $produkUkuran->isDirty('ukuran_id') || empty($produkUkuran->kode_barcode)) {
+                $produkUkuran->kode_barcode = static::buatKodeBarcode($produkUkuran);
+            }
+        });
+    }
+
+    protected static function buatKodeBarcode(ProdukUkuran $produkUkuran): ?string
+    {
+        $produk = $produkUkuran->produk ?? Produk::find($produkUkuran->produk_id);
+        $ukuran = $produkUkuran->ukuran ?? Ukuran::find($produkUkuran->ukuran_id);
+
+        if (!$produk || !$ukuran || !$ukuran->kode_ukuran) {
+            return $produkUkuran->kode_barcode;
+        }
+
+        return $produk->kode_produk . '-' . $ukuran->kode_ukuran;
     }
 }

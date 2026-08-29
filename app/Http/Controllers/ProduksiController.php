@@ -539,12 +539,39 @@ class ProduksiController extends Controller
     public function label(Request $request, Produksi $produksi)
     {
         try {
-            $produksi->load('produk');
+            $produksi->load(['produk', 'produksiUkurans.produkUkuran.ukuran']);
 
-            $jumlah = (int) $request->query('jumlah', $produksi->jumlah_hasil);
-            $jumlah = max(1, min($jumlah, 500));
+            $rincianUkuran = $produksi->produksiUkurans
+                ->filter(fn ($item) => $item->jumlah_hasil > 0)
+                ->values();
 
-            return view('pages.produksi.label', compact('produksi', 'jumlah'));
+            if ($rincianUkuran->isNotEmpty()) {
+                // Produk punya varian ukuran: satu kelompok label per ukuran,
+                // barcode & harga ngikutin produk_ukurans masing-masing.
+                $labelItems = $rincianUkuran->map(function ($item) use ($produksi) {
+                    return [
+                        'kode_barcode' => $item->produkUkuran->kode_barcode ?? $produksi->produk->kode_produk,
+                        'nama_ukuran' => optional($item->produkUkuran->ukuran)->nama_ukuran,
+                        'harga_jual' => $item->produkUkuran->harga_jual ?? 0,
+                        'jumlah' => (int) $item->jumlah_hasil,
+                    ];
+                });
+            } else {
+                // Produk tanpa ukuran: sama persis kayak sebelumnya.
+                $jumlah = (int) $request->query('jumlah', $produksi->jumlah_hasil);
+                $jumlah = max(1, min($jumlah, 500));
+
+                $labelItems = collect([[
+                    'kode_barcode' => $produksi->produk->kode_produk,
+                    'nama_ukuran' => null,
+                    'harga_jual' => $produksi->produk->harga_jual,
+                    'jumlah' => $jumlah,
+                ]]);
+            }
+
+            $totalLabel = (int) $labelItems->sum('jumlah');
+
+            return view('pages.produksi.label', compact('produksi', 'labelItems', 'totalLabel'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

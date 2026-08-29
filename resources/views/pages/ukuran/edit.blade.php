@@ -35,6 +35,33 @@
 
             </div>
 
+                        <div class="mb-6">
+
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Kode Ukuran
+                    <span class="text-red-500">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    name="kode_ukuran"
+                    value="{{ old('kode_ukuran', $ukuran->kode_ukuran) }}"
+                    maxlength="10"
+                    placeholder="Contoh : B, K, M"
+                    class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 uppercase">
+
+                <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                    Kode singkat unik untuk ukuran ini, dipakai buat bikin barcode label produksi (misal: Besar → B).
+                </p>
+
+                @error('kode_ukuran')
+                    <p class="mt-2 text-sm text-red-500">
+                        {{ $message }}
+                    </p>
+                @enderror
+
+            </div>
+
             <div class="mb-6">
 
                 <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">

@@ -49,11 +49,13 @@ class UkuranController extends Controller
         try {
             $validated = $request->validate([
                 'nama_ukuran' => 'required|string|max:50|unique:ukurans,nama_ukuran',
+                'kode_ukuran' => 'required|string|max:10|unique:ukurans,kode_ukuran|alpha_dash',
                 'urutan' => 'nullable|integer|min:0',
             ]);
 
             $ukuran = Ukuran::create([
                 'nama_ukuran' => trim($validated['nama_ukuran']),
+                'kode_ukuran' => strtoupper(trim($validated['kode_ukuran'])),
                 'urutan' => $validated['urutan'] ?? 0,
                 'status_aktif' => true,
             ]);
@@ -134,11 +136,13 @@ class UkuranController extends Controller
         try {
             $validated = $request->validate([
                 'nama_ukuran' => 'required|string|max:50|unique:ukurans,nama_ukuran,' . $ukuran->id,
+                'kode_ukuran' => 'required|string|max:10|unique:ukurans,kode_ukuran,' . $ukuran->id . '|alpha_dash',
                 'urutan' => 'nullable|integer|min:0',
             ]);
 
             $ukuran->update([
                 'nama_ukuran' => trim($validated['nama_ukuran']),
+                'kode_ukuran' => strtoupper(trim($validated['kode_ukuran'])),
                 'urutan' => $validated['urutan'] ?? 0,
             ]);
 
