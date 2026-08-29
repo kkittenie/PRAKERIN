@@ -326,7 +326,7 @@
                                 </span>
                                 <span class="flex flex-col items-start">
                                     <span class="text-xs font-bold text-gray-700">Upload bukti transfer / QRIS</span>
-                                    <span class="text-[11px] text-gray-400">JPG atau PNG, maks 4MB</span>
+                                    <span class="text-[11px] text-gray-400">JPG atau PNG</span>
                                 </span>
                             @endif
 

@@ -8,6 +8,9 @@ use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Encoders\JpegEncoder;
+use Intervention\Image\ImageManager;
 
 class PesananController extends Controller
 {
@@ -93,6 +96,9 @@ class PesananController extends Controller
      * Upload bukti transfer/QRIS. Pembayaran tetap dilakukan member sendiri
      * di luar aplikasi (transfer/QRIS manual), foto ini yang jadi bukti
      * buat diverifikasi kasir sebelum status pembayaran ditandai Lunas.
+     *
+     * Alur: upload → validasi → resize (max 1200px) → compress JPEG 75% → simpan.
+     * PNG/WebP otomatis dikonversi ke JPEG untuk mengoptimalkan ukuran file.
      */
     public function uploadBukti(Request $request, Transaksi $transaksi)
     {
@@ -108,17 +114,33 @@ class PesananController extends Controller
                 return back()->with('error', 'Bukti pembayaran sudah dikonfirmasi, tidak bisa diubah lagi.');
             }
 
+            // Validasi: wajib gambar valid, tanpa batas ukuran MB.
             $request->validate([
-                'bukti_pembayaran' => 'required|image|max:4096',
+                'bukti_pembayaran' => 'required|image',
             ]);
 
+            // Hapus bukti lama jika ada (sebelum simpan yang baru).
             if ($transaksi->bukti_pembayaran) {
                 Storage::disk('public')->delete($transaksi->bukti_pembayaran);
             }
 
-            $path = $request->file('bukti_pembayaran')->store('bukti-pembayaran', 'public');
+            // --- Resize & compress menggunakan Intervention Image ---
+            $manager = new ImageManager(GdDriver::class);
+            $image = $manager->decodePath($request->file('bukti_pembayaran')->getPathname());
 
-            $transaksi->update(['bukti_pembayaran' => $path]);
+            // Resize hanya jika sisi terpanjang melebihi 1200px, menjaga aspect ratio.
+            $image->scaleDown(width: 1200, height: 1200);
+
+            // Encode ke JPEG kualitas 75% (PNG/WebP ikut dikonversi).
+            $encoded = $image->encode(new JpegEncoder(quality: 75));
+
+            // Generate nama file unik dengan ekstensi .jpg.
+            $filename = 'bukti-pembayaran/' . uniqid('bukti_', true) . '.jpg';
+
+            // Simpan ke disk public.
+            Storage::disk('public')->put($filename, (string) $encoded);
+
+            $transaksi->update(['bukti_pembayaran' => $filename]);
 
             return back()->with('success', 'Bukti pembayaran berhasil diupload.');
         } catch (\Throwable $e) {
