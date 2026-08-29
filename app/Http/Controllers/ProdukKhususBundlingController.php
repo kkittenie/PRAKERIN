@@ -207,14 +207,28 @@ class ProdukKhususBundlingController extends Controller
                 : 'stok_ada';
 
             DB::transaction(function () use ($request, $produk, &$validated) {
+                $oldKode = $produk->kode_produk;
+                $newKode = $validated['kode_produk'];
+
                 if ($request->hasFile('foto')) {
                     if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
-                        Storage::disk('public')->delete($produk->foto);
+                        Storage::disk('public')->deleteDirectory('produk/' . $oldKode);
                     }
 
                     $validated['foto'] = $request
                         ->file('foto')
-                        ->store('produk/' . $validated['kode_produk'], 'public');
+                        ->store('produk/' . $newKode, 'public');
+                } elseif ($oldKode !== $newKode && $produk->foto) {
+                    $oldFolder = 'produk/' . $oldKode;
+                    $newFolder = 'produk/' . $newKode;
+
+                    if (Storage::disk('public')->exists($oldPath = $produk->foto)) {
+                        $filename = basename($oldPath);
+                        $newPath = $newFolder . '/' . $filename;
+                        Storage::disk('public')->move($oldPath, $newPath);
+                        $validated['foto'] = $newPath;
+                    }
+                    Storage::disk('public')->deleteDirectory($oldFolder);
                 }
 
                 $produk->update($validated);
@@ -257,7 +271,9 @@ class ProdukKhususBundlingController extends Controller
             }
 
             DB::transaction(function () use ($produk) {
-                if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
+                if ($produk->kode_produk) {
+                    Storage::disk('public')->deleteDirectory('produk/' . $produk->kode_produk);
+                } elseif ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
                     Storage::disk('public')->delete($produk->foto);
                 }
 

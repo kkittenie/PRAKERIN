@@ -138,11 +138,11 @@ class BannerController extends Controller
             ]);
 
             if ($request->hasFile('gambar')) {
-                if ($banner->gambar && Storage::disk('public')->exists($banner->gambar)) {
-                    Storage::disk('public')->delete($banner->gambar);
+                $kodeBanner = $banner->kode_banner;
+                if ($kodeBanner) {
+                    Storage::disk('public')->deleteDirectory('banner/' . $kodeBanner);
                 }
 
-                $kodeBanner = $banner->kode_banner;
                 $validated['gambar'] = $request->file('gambar')->store('banner/' . $kodeBanner, 'public');
             }
 
@@ -167,7 +167,10 @@ class BannerController extends Controller
     public function destroy(Banner $banner)
     {
         try {
-            if ($banner->gambar && Storage::disk('public')->exists($banner->gambar)) {
+            $kodeBanner = $banner->kode_banner;
+            if ($kodeBanner) {
+                Storage::disk('public')->deleteDirectory('banner/' . $kodeBanner);
+            } elseif ($banner->gambar && Storage::disk('public')->exists($banner->gambar)) {
                 Storage::disk('public')->delete($banner->gambar);
             }
 

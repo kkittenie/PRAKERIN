@@ -313,10 +313,10 @@ class BundlingController extends Controller
                 ];
 
                 if ($request->hasFile('gambar')) {
-                    if ($bundling->gambar && Storage::disk('public')->exists($bundling->gambar)) {
-                        Storage::disk('public')->delete($bundling->gambar);
-                    }
                     $kodeBundling = $bundling->kode_bundling ?: ('BDL' . str_pad((string) $bundling->id, 4, '0', STR_PAD_LEFT));
+                    if ($kodeBundling) {
+                        Storage::disk('public')->deleteDirectory('bundling/' . $kodeBundling);
+                    }
                     $dataUpdate['gambar'] = $request->file('gambar')->store('bundling/' . $kodeBundling, 'public');
                 }
 
@@ -345,7 +345,10 @@ class BundlingController extends Controller
     public function destroy(Bundling $bundling)
     {
         try {
-            if ($bundling->gambar && Storage::disk('public')->exists($bundling->gambar)) {
+            $kodeBundling = $bundling->kode_bundling ?: ('BDL' . str_pad((string) $bundling->id, 4, '0', STR_PAD_LEFT));
+            if ($kodeBundling) {
+                Storage::disk('public')->deleteDirectory('bundling/' . $kodeBundling);
+            } elseif ($bundling->gambar && Storage::disk('public')->exists($bundling->gambar)) {
                 Storage::disk('public')->delete($bundling->gambar);
             }
 

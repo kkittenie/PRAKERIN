@@ -164,11 +164,11 @@ class RewardVoucherController extends Controller
             ];
 
             if ($request->hasFile('gambar')) {
-                if ($rewardVoucher->gambar && Storage::disk('public')->exists($rewardVoucher->gambar)) {
-                    Storage::disk('public')->delete($rewardVoucher->gambar);
+                $kodeReward = $rewardVoucher->kode_reward;
+                if ($kodeReward) {
+                    Storage::disk('public')->deleteDirectory('reward/' . $kodeReward);
                 }
 
-                $kodeReward = $rewardVoucher->kode_reward;
                 $dataUpdate['gambar'] = $request->file('gambar')->store('reward/' . $kodeReward, 'public');
             }
 
@@ -223,7 +223,10 @@ class RewardVoucherController extends Controller
                 ->withProperties($rewardVoucher->toArray())
                 ->log('Menghapus reward voucher: ' . $rewardVoucher->nama);
 
-            if ($rewardVoucher->gambar && Storage::disk('public')->exists($rewardVoucher->gambar)) {
+            $kodeReward = $rewardVoucher->kode_reward;
+            if ($kodeReward) {
+                Storage::disk('public')->deleteDirectory('reward/' . $kodeReward);
+            } elseif ($rewardVoucher->gambar && Storage::disk('public')->exists($rewardVoucher->gambar)) {
                 Storage::disk('public')->delete($rewardVoucher->gambar);
             }
 

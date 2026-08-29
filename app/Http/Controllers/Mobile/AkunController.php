@@ -56,11 +56,12 @@ class AkunController extends Controller
                 'username.unique' => 'Username ini sudah dipakai. Coba username lain.',
             ]);
 
+            $kodeMember = $member->kode_member ?: \App\Models\Member::generateKodeMember($member->id);
+
             if ($request->hasFile('foto')) {
-                if ($member->foto) {
-                    Storage::disk('public')->delete($member->foto);
+                if ($kodeMember) {
+                    Storage::disk('public')->deleteDirectory('member/' . $kodeMember);
                 }
-                $kodeMember = $member->kode_member ?: \App\Models\Member::generateKodeMember($member->id);
                 $data['foto'] = $request->file('foto')->store('member/' . $kodeMember, 'public');
             }
 
@@ -76,8 +77,11 @@ class AkunController extends Controller
     {
         try {
             $member = Auth::guard('member')->user();
+            $kodeMember = $member->kode_member ?: \App\Models\Member::generateKodeMember($member->id);
 
-            if ($member->foto) {
+            if ($kodeMember) {
+                Storage::disk('public')->deleteDirectory('member/' . $kodeMember);
+            } elseif ($member->foto) {
                 Storage::disk('public')->delete($member->foto);
             }
 

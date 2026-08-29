@@ -151,7 +151,9 @@ class PesananPickupController extends Controller
                 return back()->with('error', 'Pesanan ini sudah lunas, tidak bisa ditolak.');
             }
 
-            if ($transaksi->bukti_pembayaran) {
+            if ($transaksi->kode_transaksi) {
+                Storage::disk('public')->deleteDirectory('bukti-pembayaran/' . $transaksi->kode_transaksi);
+            } elseif ($transaksi->bukti_pembayaran) {
                 Storage::disk('public')->delete($transaksi->bukti_pembayaran);
             }
 

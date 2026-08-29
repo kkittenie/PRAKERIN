@@ -120,7 +120,9 @@ class PesananController extends Controller
             ]);
 
             // Hapus bukti lama jika ada (sebelum simpan yang baru).
-            if ($transaksi->bukti_pembayaran) {
+            if ($transaksi->kode_transaksi) {
+                Storage::disk('public')->deleteDirectory('bukti-pembayaran/' . $transaksi->kode_transaksi);
+            } elseif ($transaksi->bukti_pembayaran) {
                 Storage::disk('public')->delete($transaksi->bukti_pembayaran);
             }
 

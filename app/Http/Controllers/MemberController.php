@@ -211,13 +211,25 @@ class MemberController extends Controller
                 $data['kode_member'] = Member::generateKodeMember($member->id);
             }
 
-            $kodeMember = $data['kode_member'] ?? $member->kode_member;
+            $oldKode = $member->kode_member;
+            $newKode = $data['kode_member'] ?? $member->kode_member;
 
             if ($request->hasFile('foto')) {
-                if ($member->foto && Storage::disk('public')->exists($member->foto)) {
-                    Storage::disk('public')->delete($member->foto);
+                if ($oldKode) {
+                    Storage::disk('public')->deleteDirectory('member/' . $oldKode);
                 }
-                $data['foto'] = $request->file('foto')->store('member/' . $kodeMember, 'public');
+                $data['foto'] = $request->file('foto')->store('member/' . $newKode, 'public');
+            } elseif ($oldKode && $newKode && $oldKode !== $newKode && $member->foto) {
+                $oldFolder = 'member/' . $oldKode;
+                $newFolder = 'member/' . $newKode;
+
+                if (Storage::disk('public')->exists($oldPath = $member->foto)) {
+                    $filename = basename($oldPath);
+                    $newPath = $newFolder . '/' . $filename;
+                    Storage::disk('public')->move($oldPath, $newPath);
+                    $data['foto'] = $newPath;
+                }
+                Storage::disk('public')->deleteDirectory($oldFolder);
             }
 
             $member->update($data);
@@ -258,7 +270,10 @@ class MemberController extends Controller
     public function destroy(Member $member)
     {
         try {
-            if ($member->foto && Storage::disk('public')->exists($member->foto)) {
+            $kodeMember = $member->kode_member ?: Member::generateKodeMember($member->id);
+            if ($kodeMember) {
+                Storage::disk('public')->deleteDirectory('member/' . $kodeMember);
+            } elseif ($member->foto && Storage::disk('public')->exists($member->foto)) {
                 Storage::disk('public')->delete($member->foto);
             }
 

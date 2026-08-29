@@ -367,14 +367,28 @@ class ProdukController extends Controller
                 ->filter(fn ($baris) => !empty($baris['ukuran_id']))
                 ->values();
 
+            $oldKode = $produk->kode_produk;
+            $newKode = $validated['kode_produk'];
+
             if ($request->hasFile('foto')) {
                 if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
-                    Storage::disk('public')->delete($produk->foto);
+                    Storage::disk('public')->deleteDirectory('produk/' . $oldKode);
                 }
 
                 $validated['foto'] = $request
                     ->file('foto')
-                    ->store('produk/' . $validated['kode_produk'], 'public');
+                    ->store('produk/' . $newKode, 'public');
+            } elseif ($oldKode !== $newKode && $produk->foto) {
+                $oldFolder = 'produk/' . $oldKode;
+                $newFolder = 'produk/' . $newKode;
+
+                if (Storage::disk('public')->exists($oldPath = $produk->foto)) {
+                    $filename = basename($oldPath);
+                    $newPath = $newFolder . '/' . $filename;
+                    Storage::disk('public')->move($oldPath, $newPath);
+                    $validated['foto'] = $newPath;
+                }
+                Storage::disk('public')->deleteDirectory($oldFolder);
             }
 
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
@@ -434,7 +448,9 @@ class ProdukController extends Controller
             }
 
             DB::transaction(function () use ($produk) {
-                if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
+                if ($produk->kode_produk) {
+                    Storage::disk('public')->deleteDirectory('produk/' . $produk->kode_produk);
+                } elseif ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
                     Storage::disk('public')->delete($produk->foto);
                 }
 
