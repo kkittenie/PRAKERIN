@@ -25,7 +25,7 @@
         </div>
 
         <div class="sdt-table-wrap">
-            <table id="activityLogTable" class="sdt-table">
+            <table id="activityLogTable" class="sdt-table table-fixed w-full">
                 <thead>
                     <tr>
                         <th class="py-3" style="width: 22%;">Waktu</th>
@@ -56,10 +56,10 @@
                 { data: 'created_at', name: 'created_at', className: 'text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap' },
                 { data: 'causer_nama', name: 'causer_nama', className: 'font-semibold text-gray-800 dark:text-white whitespace-nowrap' },
                 { data: 'causer_role_html', name: 'causer_role_html', className: 'text-center whitespace-nowrap' },
-                { data: 'description', name: 'description', className: 'text-gray-600 dark:text-gray-300 text-xs sm:text-sm break-words' }
+                { data: 'description', name: 'description', className: 'text-gray-600 dark:text-gray-300 text-xs sm:text-sm break-all [word-break:break-all]' }
             ],
             emptyText: 'Belum ada activity log',
-            dtOptions: { pageLength: 15 }
+            dtOptions: { responsive: false, pageLength: 15 }
         });
     });
 </script>
