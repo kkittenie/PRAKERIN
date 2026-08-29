@@ -83,18 +83,12 @@
 
                         <option value="" class="dark:bg-gray-900">Pilih Jabatan</option>
 
-                        <option value="Admin" {{ old('jabatan')=='Admin' ? 'selected' : '' }} class="dark:bg-gray-900">
-                            Admin
-                        </option>
-
-                        <option value="Kasir" {{ old('jabatan')=='Kasir' ? 'selected' : '' }} class="dark:bg-gray-900">
-                            Kasir
-                        </option>
-
-                        <option value="Pegawai" {{ old('jabatan')=='Pegawai' ? 'selected' : '' }}
-                            class="dark:bg-gray-900">
-                            Pegawai
-                        </option>
+                        @foreach ($roles as $role)
+                            <option value="{{ $role }}" {{ old('jabatan')==$role ? 'selected' : '' }}
+                                class="dark:bg-gray-900">
+                                {{ $role }}
+                            </option>
+                        @endforeach
 
                     </select>
 

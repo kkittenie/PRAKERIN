@@ -6,9 +6,12 @@ use App\Models\Member;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class MemberController extends Controller
 {
+    private const FOTO_PATH = 'member-foto';
+
     /**
      * Display a listing of the resource.
      */
@@ -20,7 +23,9 @@ class MemberController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
+                    ->addColumn('foto_html', fn($item) => view('pages.member.partials.foto', compact('item'))->render())
                     ->addColumn('nama_html', fn($item) => view('pages.member.partials.nama', compact('item'))->render())
+                    ->editColumn('kode_member', fn($item) => $item->kode_member ?: '-')
                     ->editColumn('username', fn($item) => $item->username ? '@' . $item->username : '-')
                     ->editColumn('email', fn($item) => $item->email ?: '-')
                     ->editColumn('poin', fn($item) => number_format($item->poin ?? 0, 0, ',', '.'))
@@ -32,7 +37,7 @@ class MemberController extends Controller
                         // berbanding lurus dengan ambang poin (minimal_poin) member_levels.
                         $query->orderBy('poin', $order);
                     })
-                    ->rawColumns(['nama_html', 'level_html', 'aksi'])
+                    ->rawColumns(['foto_html', 'nama_html', 'level_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
                 activity('error')
@@ -79,6 +84,7 @@ class MemberController extends Controller
                 'no_hp' => 'required|string|max:20|unique:members,no_hp',
                 'email' => 'nullable|email|max:255',
                 'tanggal_lahir' => 'nullable|date|before_or_equal:today',
+                'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ], [
                 'nama.required' => 'Nama wajib diisi.',
                 'nama.string' => 'Nama harus berupa teks.',
@@ -94,6 +100,9 @@ class MemberController extends Controller
                 'email.max' => 'Email maksimal 255 karakter.',
                 'tanggal_lahir.date' => 'Tanggal lahir tidak valid.',
                 'tanggal_lahir.before_or_equal' => 'Tanggal lahir tidak boleh melebihi hari ini.',
+                'foto.image' => 'Foto harus berupa gambar.',
+                'foto.mimes' => 'Foto harus berformat jpg, jpeg, atau png.',
+                'foto.max' => 'Ukuran foto maksimal 2MB.',
             ]);
 
             // Password default pakai format LOKAL (0xxxx), bukan +62xxxx, biar
@@ -112,6 +121,16 @@ class MemberController extends Controller
                 // Member disarankan mengganti password ini lewat menu "Change Password".
                 'password' => Hash::make($passwordDefault),
             ]);
+
+            // kode_member digenerate dari id member yang baru tersimpan, supaya
+            // dijamin unik & tidak pernah null.
+            $member->kode_member = Member::generateKodeMember($member->id);
+
+            if ($request->hasFile('foto')) {
+                $member->foto = $request->file('foto')->store(self::FOTO_PATH, 'public');
+            }
+
+            $member->save();
 
             activity()->causedBy(auth()->user())->performedOn($member)->log("Menambah member: {$member->nama}");
 
@@ -157,6 +176,7 @@ class MemberController extends Controller
                 'no_hp' => 'required|string|max:20|unique:members,no_hp,' . $member->id,
                 'email' => 'nullable|email|max:255',
                 'tanggal_lahir' => 'nullable|date|before_or_equal:today',
+                'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ], [
                 'nama.required' => 'Nama wajib diisi.',
                 'nama.string' => 'Nama harus berupa teks.',
@@ -172,15 +192,33 @@ class MemberController extends Controller
                 'email.max' => 'Email maksimal 255 karakter.',
                 'tanggal_lahir.date' => 'Tanggal lahir tidak valid.',
                 'tanggal_lahir.before_or_equal' => 'Tanggal lahir tidak boleh melebihi hari ini.',
+                'foto.image' => 'Foto harus berupa gambar.',
+                'foto.mimes' => 'Foto harus berformat jpg, jpeg, atau png.',
+                'foto.max' => 'Ukuran foto maksimal 2MB.',
             ]);
 
-            $member->update([
+            $data = [
                 'nama' => $request->nama,
                 'username' => $request->username,
                 'no_hp' => $request->no_hp,
                 'email' => $request->email ?: null,
                 'tanggal_lahir' => $request->tanggal_lahir ?: null,
-            ]);
+            ];
+
+            // Member lama (dibuat sebelum fitur kode_member ada) mungkin belum
+            // punya kode_member — isi sekarang juga supaya tidak ada lagi yang null.
+            if (! $member->kode_member) {
+                $data['kode_member'] = Member::generateKodeMember($member->id);
+            }
+
+            if ($request->hasFile('foto')) {
+                if ($member->foto && Storage::disk('public')->exists($member->foto)) {
+                    Storage::disk('public')->delete($member->foto);
+                }
+                $data['foto'] = $request->file('foto')->store(self::FOTO_PATH, 'public');
+            }
+
+            $member->update($data);
 
             activity()->causedBy(auth()->user())->performedOn($member)->log("Mengubah member: {$member->nama}");
 
@@ -218,6 +256,10 @@ class MemberController extends Controller
     public function destroy(Member $member)
     {
         try {
+            if ($member->foto && Storage::disk('public')->exists($member->foto)) {
+                Storage::disk('public')->delete($member->foto);
+            }
+
             $member->delete();
             return back()->with('success', 'Member dihapus');
         } catch (\Throwable $e) {

@@ -59,6 +59,19 @@
             ? [(int) old('produk_id') => array_map('intval', old('ukuran_ids'))]
             : []),
         modalUkuranTerbuka: false,
+        modalUkuranSnapshot: [],
+        bukaModalUkuran() {
+            // Simpan salinan pilihan ukuran saat ini, supaya bisa dikembalikan
+            // kalau user menutup modal lewat tombol Batal / klik di luar modal.
+            this.modalUkuranSnapshot = [...(this.ukuranTerpilihPerProduk[this.produkTerpilih] || [])];
+            this.modalUkuranTerbuka = true;
+        },
+        batalModalUkuran() {
+            if (this.produkTerpilih !== null) {
+                this.ukuranTerpilihPerProduk[this.produkTerpilih] = [...this.modalUkuranSnapshot];
+            }
+            this.modalUkuranTerbuka = false;
+        },
         get produkUntukModalUkuran() {
             return this.semuaProduk.find(p => p.id === this.produkTerpilih) || null;
         },
@@ -103,7 +116,7 @@
             // pilih ukuran — gak usah nunggu discroll ke bawah.
             const p = this.semuaProduk.find(pr => pr.id === id);
             if (p && p.punya_ukuran && p.ukurans.length > 0) {
-                this.modalUkuranTerbuka = true;
+                this.bukaModalUkuran();
             }
         }
     }">
@@ -299,7 +312,7 @@
                                 <span class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 px-1.5 py-0.5 rounded-full"
                                     x-text="(produk.ukurans.find(u => u.id === ukuranId) || {}).nama"></span>
                             </template>
-                            <button type="button" @click.stop.prevent="modalUkuranTerbuka = true"
+                            <button type="button" @click.stop.prevent="bukaModalUkuran()"
                                 class="text-[9px] font-bold text-gray-400 dark:text-gray-500 underline hover:text-brand-600 dark:hover:text-brand-400">
                                 Ubah
                             </button>
@@ -356,7 +369,7 @@
 
 {{-- Modal Pilih Ukuran --}}
 <div x-show="modalUkuranTerbuka" x-cloak x-transition class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
-    <div @click.away="modalUkuranTerbuka = false" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+    <div @click.away="batalModalUkuran()" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
         <template x-if="produkUntukModalUkuran">
             <div>
                 <div class="p-5 border-b border-gray-100 dark:border-gray-800">
@@ -380,7 +393,11 @@
                         </template>
                     </div>
                 </div>
-                <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-2">
+                    <button type="button" @click="batalModalUkuran()"
+                        class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs rounded-lg transition">
+                        Batal
+                    </button>
                     <button type="button" @click="modalUkuranTerbuka = false"
                         class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-lg transition">
                         Selesai

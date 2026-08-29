@@ -2,9 +2,20 @@
 
 @section('content')
     <x-common.page-breadcrumb pageTitle="Tambah Member" parentTitle="Member" :parentUrl="route('member.index')" />
-    <form method="POST" action="{{ route('member.store') }}"
+    <form method="POST" action="{{ route('member.store') }}" enctype="multipart/form-data"
         class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         @csrf
+
+        <div class="mb-5">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Foto Profil
+            </label>
+            <input type="file" name="foto" accept="image/png,image/jpeg,image/jpg"
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white/90" />
+            @error('foto')
+            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>@enderror
+            <p class="mt-1.5 text-xs text-gray-400">Format jpg/jpeg/png, maksimal 2MB.</p>
+        </div>
 
         <div class="mb-5">
             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">

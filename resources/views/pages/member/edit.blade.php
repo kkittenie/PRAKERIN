@@ -2,10 +2,32 @@
 
 @section('content')
     <x-common.page-breadcrumb pageTitle="Edit Member" parentTitle="Member" :parentUrl="route('member.index')" />
-    <form method="POST" action="{{ route('member.update', $member) }}"
+    <form method="POST" action="{{ route('member.update', $member) }}" enctype="multipart/form-data"
         class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         @csrf
         @method('PUT')
+
+        <div class="mb-5">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Kode Member
+            </label>
+            <input type="text" value="{{ $member->kode_member ?: 'Akan dibuat otomatis saat disimpan' }}" disabled
+                class="h-11 w-full rounded-lg border border-gray-200 bg-gray-50 px-4 text-sm text-gray-500 dark:border-gray-700 dark:bg-white/[0.02]" />
+        </div>
+
+        <div class="mb-5">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                Foto Profil
+            </label>
+            @if($member->foto)
+                <img src="{{ asset('storage/' . $member->foto) }}" class="w-16 h-16 rounded-full object-cover border mb-2">
+            @endif
+            <input type="file" name="foto" accept="image/png,image/jpeg,image/jpg"
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white/90" />
+            @error('foto')
+            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>@enderror
+            <p class="mt-1.5 text-xs text-gray-400">Kosongkan kalau tidak ingin mengganti foto. Format jpg/jpeg/png, maksimal 2MB.</p>
+        </div>
 
         <div class="mb-5">
             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">

@@ -11,11 +11,21 @@ class Member extends Authenticatable
 {
     use Notifiable, LogsActivity;
 
-    protected $fillable = ['nama', 'username', 'no_hp', 'email', 'foto', 'poin', 'password'];
+    protected $fillable = ['kode_member', 'nama', 'username', 'no_hp', 'email', 'foto', 'poin', 'password'];
 
     protected $hidden = ['password', 'remember_token'];
 
     protected $appends = ['level', 'warna_badge_level'];
+
+    /**
+     * Generate kode member unik berformat MBR000001, MBR000002, dst,
+     * berdasarkan id member yang sudah tersimpan di DB (jadi dijamin unik
+     * karena mengikuti auto increment, tidak ada resiko race condition).
+     */
+    public static function generateKodeMember(int $id): string
+    {
+        return 'MBR' . str_pad((string) $id, 6, '0', STR_PAD_LEFT);
+    }
 
     public static function normalizeNoHp(string $noHp): string
     {

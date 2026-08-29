@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
 
 class PegawaiController extends Controller
 {
@@ -63,7 +64,8 @@ class PegawaiController extends Controller
     public function create()
     {
         try {
-            return view('pages.pegawai.create');
+            $roles = Role::orderBy('name')->pluck('name');
+            return view('pages.pegawai.create', compact('roles'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -79,7 +81,7 @@ class PegawaiController extends Controller
                 'nama' => 'required|string|max:100',
                 'no_hp' => 'required|regex:/^[0-9+\-\s()]+$/|max:20',
                 'alamat' => 'required|string',
-                'jabatan' => 'required|in:Admin,Kasir,Pegawai',
+                'jabatan' => 'required|exists:roles,name',
                 'tanggal_masuk' => 'required|date',
                 'status_aktif' => 'required|boolean',
                 'username' => 'required|string|max:255|unique:users,username',
@@ -136,7 +138,8 @@ class PegawaiController extends Controller
     {
         try {
             $pegawai->load('user');
-            return view('pages.pegawai.edit', compact('pegawai'));
+            $roles = Role::orderBy('name')->pluck('name');
+            return view('pages.pegawai.edit', compact('pegawai', 'roles'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -152,7 +155,7 @@ class PegawaiController extends Controller
                 'nama' => 'required|string|max:100',
                 'no_hp' => 'required|regex:/^[0-9+\-\s()]+$/|max:20',
                 'alamat' => 'required|string',
-                'jabatan' => 'required|in:Admin,Kasir,Pegawai',
+                'jabatan' => 'required|exists:roles,name',
                 'tanggal_masuk' => 'required|date',
                 'status_aktif' => 'required|boolean',
                 'username' => 'required|string|max:255|unique:users,username,' . optional($pegawai->user)->id,

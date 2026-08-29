@@ -72,6 +72,8 @@
             <table id="memberTable" class="sdt-table">
                 <thead>
                     <tr>
+                        <th class="py-3.5 text-center">Foto</th>
+                        <th class="py-3.5">Kode Member</th>
                         <th class="py-3.5">Nama</th>
                         <th class="py-3.5">Username</th>
                         <th class="py-3.5">No. HP</th>
@@ -137,6 +139,8 @@
             serverSide: true,
             ajax: '{{ route('member.index') }}',
             columns: [
+                { data: 'foto_html', name: 'foto', orderable: false, searchable: false, className: 'text-center' },
+                { data: 'kode_member', name: 'kode_member', className: 'text-gray-600 dark:text-gray-400 font-mono' },
                 { data: 'nama_html', name: 'nama' },
                 { data: 'username', name: 'username' },
                 { data: 'no_hp', name: 'no_hp' },

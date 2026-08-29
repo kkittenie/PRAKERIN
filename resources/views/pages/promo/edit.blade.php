@@ -128,9 +128,19 @@
             },
             modalUkuranTerbuka: false,
             modalUkuranProdukId: null,
+            modalUkuranSnapshot: [],
             bukaModalUkuran(produkId) {
                 this.modalUkuranProdukId = produkId;
+                // Simpan salinan pilihan ukuran saat ini, supaya bisa dikembalikan
+                // kalau user menutup modal lewat tombol Batal / klik di luar modal.
+                this.modalUkuranSnapshot = [...(this.ukuranTerpilihPerProduk[produkId] || [])];
                 this.modalUkuranTerbuka = true;
+            },
+            batalModalUkuran() {
+                if (this.modalUkuranProdukId !== null) {
+                    this.ukuranTerpilihPerProduk[this.modalUkuranProdukId] = [...this.modalUkuranSnapshot];
+                }
+                this.modalUkuranTerbuka = false;
             },
             get produkUntukModalUkuran() {
                 return this.semuaProduk.find(p => p.id === this.modalUkuranProdukId) || null;
@@ -467,7 +477,7 @@
 
             {{-- Modal Pilih Ukuran --}}
             <div x-show="modalUkuranTerbuka" x-cloak x-transition class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
-                <div @click.away="modalUkuranTerbuka = false" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+                <div @click.away="batalModalUkuran()" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
                     <template x-if="produkUntukModalUkuran">
                         <div>
                             <div class="p-5 border-b border-gray-100 dark:border-gray-800">
@@ -491,7 +501,11 @@
                                     </template>
                                 </div>
                             </div>
-                            <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                            <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-2">
+                                <button type="button" @click="batalModalUkuran()"
+                                    class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs rounded-lg transition">
+                                    Batal
+                                </button>
                                 <button type="button" @click="modalUkuranTerbuka = false"
                                     class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-lg transition">
                                     Selesai
