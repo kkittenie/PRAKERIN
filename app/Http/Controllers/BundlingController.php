@@ -103,11 +103,6 @@ class BundlingController extends Controller
 
             DB::transaction(function () use ($request, &$bundling) {
 
-                $pathGambar = null;
-                if ($request->hasFile('gambar')) {
-                    $pathGambar = $request->file('gambar')->store('bundling', 'public');
-                }
-
                 $bundling = Bundling::create([
                     'nama_bundling' => $request->nama_bundling,
                     'harga' => $request->harga,
@@ -115,12 +110,16 @@ class BundlingController extends Controller
                     'status_aktif' => $request->boolean('status_aktif', true),
                     'jenis_produk' => $request->jenis_produk,
                     'total_qty_khusus' => $request->jenis_produk === 'khusus_bundling' ? (int) $request->total_qty_khusus : null,
-                    'gambar' => $pathGambar,
+                    'gambar' => null,
                 ]);
 
-                $bundling->update([
-                    'kode_bundling' => 'BDL' . str_pad($bundling->id, 4, '0', STR_PAD_LEFT),
-                ]);
+                $kodeBundling = 'BDL' . str_pad((string) $bundling->id, 4, '0', STR_PAD_LEFT);
+                $bundling->update(['kode_bundling' => $kodeBundling]);
+
+                if ($request->hasFile('gambar')) {
+                    $pathGambar = $request->file('gambar')->store('bundling/' . $kodeBundling, 'public');
+                    $bundling->update(['gambar' => $pathGambar]);
+                }
 
                 $isBiasa = $request->jenis_produk === 'biasa';
 
@@ -317,7 +316,8 @@ class BundlingController extends Controller
                     if ($bundling->gambar && Storage::disk('public')->exists($bundling->gambar)) {
                         Storage::disk('public')->delete($bundling->gambar);
                     }
-                    $dataUpdate['gambar'] = $request->file('gambar')->store('bundling', 'public');
+                    $kodeBundling = $bundling->kode_bundling ?: ('BDL' . str_pad((string) $bundling->id, 4, '0', STR_PAD_LEFT));
+                    $dataUpdate['gambar'] = $request->file('gambar')->store('bundling/' . $kodeBundling, 'public');
                 }
 
                 $bundling->update($dataUpdate);

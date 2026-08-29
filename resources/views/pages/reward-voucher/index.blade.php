@@ -46,6 +46,7 @@
                     <thead>
                         <tr>
                             <th class="py-3">No</th>
+                            <th class="py-3">Kode</th>
                             <th class="py-3">Voucher</th>
                             <th class="py-3">Deskripsi</th>
                             <th class="py-3 text-center">Poin Dibutuhkan</th>
@@ -90,9 +91,10 @@
         initSaishoDataTable('rewardVoucherTable', {
             serverSide: true,
             ajax: '{{ route('reward-voucher.index') }}',
-            order: [[1, 'asc']],
+            order: [[2, 'asc']],
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'kode_html', name: 'kode_reward' },
                 { data: 'voucher_html', name: 'nama' },
                 { data: 'deskripsi', name: 'deskripsi', searchable: false, className: 'text-xs text-gray-600 dark:text-gray-400 max-w-xs' },
                 { data: 'poin_dibutuhkan', name: 'poin_dibutuhkan', searchable: false, className: 'text-center text-xs font-semibold' },

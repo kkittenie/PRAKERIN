@@ -134,8 +134,8 @@ class PesananController extends Controller
             // Encode ke JPEG kualitas 75% (PNG/WebP ikut dikonversi).
             $encoded = $image->encode(new JpegEncoder(quality: 75));
 
-            // Generate nama file unik dengan ekstensi .jpg.
-            $filename = 'bukti-pembayaran/' . uniqid('bukti_', true) . '.jpg';
+            // Generate nama file unik dengan ekstensi .jpg dalam folder kode_transaksi.
+            $filename = 'bukti-pembayaran/' . $transaksi->kode_transaksi . '/' . uniqid('bukti_', true) . '.jpg';
 
             // Simpan ke disk public.
             Storage::disk('public')->put($filename, (string) $encoded);

@@ -25,13 +25,14 @@ class BannerController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
+                    ->addColumn('kode_html', fn($item) => view('pages.banner.partials.kode', compact('item'))->render())
                     ->addColumn('gambar_html', fn($item) => view('pages.banner.partials.gambar', compact('item'))->render())
                     ->editColumn('judul', fn($item) => view('pages.banner.partials.judul', compact('item'))->render())
                     ->addColumn('urutan_html', fn($item) => view('pages.banner.partials.urutan', compact('item'))->render())
                     ->addColumn('status_html', fn($item) => view('pages.banner.partials.status', compact('item'))->render())
                     ->addColumn('periode_html', fn($item) => view('pages.banner.partials.periode', compact('item'))->render())
                     ->addColumn('aksi', fn($item) => view('pages.banner.partials.aksi', compact('item'))->render())
-                    ->rawColumns(['gambar_html', 'judul', 'urutan_html', 'status_html', 'periode_html', 'aksi'])
+                    ->rawColumns(['kode_html', 'gambar_html', 'judul', 'urutan_html', 'status_html', 'periode_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
                 activity('error')
@@ -77,11 +78,22 @@ class BannerController extends Controller
                 'tanggal_selesai_tampil' => 'nullable|date|after_or_equal:tanggal_mulai_tampil',
             ]);
 
+            $dataInsert = $validated;
+            unset($dataInsert['gambar']);
+            $dataInsert['gambar'] = '';
+
+            $banner = Banner::create($dataInsert);
+
+            $kodeBanner = 'BNR' . str_pad((string) $banner->id, 3, '0', STR_PAD_LEFT);
+            $pathGambar = null;
             if ($request->hasFile('gambar')) {
-                $validated['gambar'] = $request->file('gambar')->store(self::GAMBAR_PATH, 'public');
+                $pathGambar = $request->file('gambar')->store('banner/' . $kodeBanner, 'public');
             }
 
-            $banner = Banner::create($validated);
+            $banner->update([
+                'kode_banner' => $kodeBanner,
+                'gambar' => $pathGambar ?: '',
+            ]);
 
             activity()
                 ->causedBy(auth()->user())
@@ -130,7 +142,8 @@ class BannerController extends Controller
                     Storage::disk('public')->delete($banner->gambar);
                 }
 
-                $validated['gambar'] = $request->file('gambar')->store(self::GAMBAR_PATH, 'public');
+                $kodeBanner = $banner->kode_banner;
+                $validated['gambar'] = $request->file('gambar')->store('banner/' . $kodeBanner, 'public');
             }
 
             $banner->update($validated);

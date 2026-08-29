@@ -9,6 +9,7 @@ class RewardKatalog extends Model
     protected $table = 'reward_katalog';
 
     protected $fillable = [
+        'kode_reward',
         'nama',
         'jenis',
         'deskripsi',
@@ -31,6 +32,14 @@ class RewardKatalog extends Model
         'maksimal_potongan' => 'decimal:2',
         'min_pembelian' => 'decimal:2',
     ];
+
+    public function getKodeRewardAttribute($value): string
+    {
+        if (!empty($value)) {
+            return $value;
+        }
+        return 'RWD' . str_pad((string) $this->id, 3, '0', STR_PAD_LEFT);
+    }
 
     public function produks()
     {

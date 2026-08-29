@@ -114,7 +114,7 @@ class ProdukKhususBundlingController extends Controller
 
             DB::transaction(function () use ($request, &$validated) {
                 if ($request->hasFile('foto')) {
-                    $validated['foto'] = $request->file('foto')->store(self::FOTO_PATH, 'public');
+                    $validated['foto'] = $request->file('foto')->store('produk/' . $validated['kode_produk'], 'public');
                 }
 
                 $produk = Produk::create($validated);
@@ -214,7 +214,7 @@ class ProdukKhususBundlingController extends Controller
 
                     $validated['foto'] = $request
                         ->file('foto')
-                        ->store(self::FOTO_PATH, 'public');
+                        ->store('produk/' . $validated['kode_produk'], 'public');
                 }
 
                 $produk->update($validated);

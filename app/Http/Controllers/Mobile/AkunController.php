@@ -60,7 +60,8 @@ class AkunController extends Controller
                 if ($member->foto) {
                     Storage::disk('public')->delete($member->foto);
                 }
-                $data['foto'] = $request->file('foto')->store('member-foto', 'public');
+                $kodeMember = $member->kode_member ?: \App\Models\Member::generateKodeMember($member->id);
+                $data['foto'] = $request->file('foto')->store('member/' . $kodeMember, 'public');
             }
 
             $member->update($data);

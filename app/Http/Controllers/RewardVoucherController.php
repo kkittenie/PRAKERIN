@@ -23,13 +23,14 @@ class RewardVoucherController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
+                    ->addColumn('kode_html', fn ($item) => view('pages.reward-voucher.partials.kode', compact('item'))->render())
                     ->addColumn('voucher_html', fn ($item) => view('pages.reward-voucher.partials.voucher', compact('item'))->render())
                     ->editColumn('deskripsi', fn ($item) => view('pages.reward-voucher.partials.deskripsi', compact('item'))->render())
                     ->editColumn('poin_dibutuhkan', fn ($item) => number_format($item->poin_dibutuhkan, 0, ',', '.') . ' poin')
                     ->addColumn('stok_html', fn ($item) => view('pages.reward-voucher.partials.stok', compact('item'))->render())
                     ->addColumn('status_html', fn ($item) => view('pages.reward-voucher.partials.status', compact('item'))->render())
                     ->addColumn('aksi', fn ($item) => view('pages.reward-voucher.partials.aksi', compact('item'))->render())
-                    ->rawColumns(['voucher_html', 'deskripsi', 'stok_html', 'status_html', 'aksi'])
+                    ->rawColumns(['kode_html', 'voucher_html', 'deskripsi', 'stok_html', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
                 activity('error')
@@ -81,16 +82,11 @@ class RewardVoucherController extends Controller
         try {
             $validated = $this->validasi($request);
 
-            $pathGambar = null;
-            if ($request->hasFile('gambar')) {
-                $pathGambar = $request->file('gambar')->store('reward', 'public');
-            }
-
             $voucher = RewardKatalog::create([
                 'nama' => $validated['nama'],
                 'jenis' => 'voucher',
                 'deskripsi' => $validated['deskripsi'] ?? null,
-                'gambar' => $pathGambar,
+                'gambar' => null,
                 'poin_dibutuhkan' => $validated['poin_dibutuhkan'],
                 'stok' => $validated['stok'] ?? null,
                 'status_aktif' => (bool) $request->boolean('status_aktif'),
@@ -100,6 +96,17 @@ class RewardVoucherController extends Controller
                 'maksimal_potongan' => $validated['jenis_potongan'] === 'persentase' ? ($validated['maksimal_potongan'] ?? null) : null,
                 'min_pembelian' => $validated['min_pembelian'] ?? 0,
                 'masa_berlaku_hari' => $validated['masa_berlaku_hari'] ?? null,
+            ]);
+
+            $kodeReward = 'RWD' . str_pad((string) $voucher->id, 3, '0', STR_PAD_LEFT);
+            $pathGambar = null;
+            if ($request->hasFile('gambar')) {
+                $pathGambar = $request->file('gambar')->store('reward/' . $kodeReward, 'public');
+            }
+
+            $voucher->update([
+                'kode_reward' => $kodeReward,
+                'gambar' => $pathGambar,
             ]);
 
             $voucher->produks()->sync($validated['produk_ids']);
@@ -161,7 +168,8 @@ class RewardVoucherController extends Controller
                     Storage::disk('public')->delete($rewardVoucher->gambar);
                 }
 
-                $dataUpdate['gambar'] = $request->file('gambar')->store('reward', 'public');
+                $kodeReward = $rewardVoucher->kode_reward;
+                $dataUpdate['gambar'] = $request->file('gambar')->store('reward/' . $kodeReward, 'public');
             }
 
             $rewardVoucher->update($dataUpdate);

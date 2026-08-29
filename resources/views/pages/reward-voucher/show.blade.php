@@ -56,7 +56,10 @@
                         </svg>
                     @endif
                 </div>
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ $voucher->nama }}</h3>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ $voucher->nama }}</h3>
+                    <span class="text-xs font-mono text-gray-500 dark:text-gray-400 block mt-0.5">{{ $voucher->kode_reward }}</span>
+                </div>
             </div>
             <span class="shrink-0 px-3 py-1 rounded-full text-xs font-bold {{ $statusClass }}">
                 {{ $voucher->status_aktif ? 'Aktif' : 'Nonaktif' }}

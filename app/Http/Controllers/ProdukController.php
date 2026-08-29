@@ -231,7 +231,7 @@ class ProdukController extends Controller
                 : 'stok_ada';
 
             if ($request->hasFile('foto')) {
-                $validated['foto'] = $request->file('foto')->store(self::FOTO_PATH, 'public');
+                $validated['foto'] = $request->file('foto')->store('produk/' . $validated['kode_produk'], 'public');
             }
 
             unset($validated['ukuran_baris']);
@@ -368,14 +368,13 @@ class ProdukController extends Controller
                 ->values();
 
             if ($request->hasFile('foto')) {
-
                 if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
                     Storage::disk('public')->delete($produk->foto);
                 }
 
                 $validated['foto'] = $request
                     ->file('foto')
-                    ->store(self::FOTO_PATH, 'public');
+                    ->store('produk/' . $validated['kode_produk'], 'public');
             }
 
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;

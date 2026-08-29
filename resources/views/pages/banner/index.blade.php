@@ -46,6 +46,7 @@
                 <thead>
                     <tr>
                         <th class="py-3">No</th>
+                        <th class="py-3">Kode</th>
                         <th class="py-3 text-center">Gambar</th>
                         <th class="py-3">Judul</th>
                         <th class="py-3 text-center">Urutan</th>
@@ -90,9 +91,10 @@
         initSaishoDataTable('bannerTable', {
             serverSide: true,
             ajax: '{{ route('banner.index') }}',
-            order: [[3, 'asc']],
+            order: [[4, 'asc']],
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'kode_html', name: 'kode_banner' },
                 { data: 'gambar_html', name: 'gambar', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'judul', name: 'judul' },
                 { data: 'urutan_html', name: 'urutan', className: 'text-center' },

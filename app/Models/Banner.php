@@ -9,6 +9,7 @@ class Banner extends Model
     protected $table = 'banners';
 
     protected $fillable = [
+        'kode_banner',
         'judul',
         'gambar',
         'urutan',
@@ -22,6 +23,15 @@ class Banner extends Model
         'tanggal_mulai_tampil' => 'date',
         'tanggal_selesai_tampil' => 'date',
     ];
+
+    // Accessor untuk kode banner
+    public function getKodeBannerAttribute($value): string
+    {
+        if (!empty($value)) {
+            return $value;
+        }
+        return 'BNR' . str_pad((string) $this->id, 3, '0', STR_PAD_LEFT);
+    }
 
     // Scope untuk ambil banner yang sedang aktif tampil (dipakai nanti di API carousel mobile)
     public function scopeTampil($query)

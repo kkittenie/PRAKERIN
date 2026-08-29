@@ -127,7 +127,7 @@ class MemberController extends Controller
             $member->kode_member = Member::generateKodeMember($member->id);
 
             if ($request->hasFile('foto')) {
-                $member->foto = $request->file('foto')->store(self::FOTO_PATH, 'public');
+                $member->foto = $request->file('foto')->store('member/' . $member->kode_member, 'public');
             }
 
             $member->save();
@@ -211,11 +211,13 @@ class MemberController extends Controller
                 $data['kode_member'] = Member::generateKodeMember($member->id);
             }
 
+            $kodeMember = $data['kode_member'] ?? $member->kode_member;
+
             if ($request->hasFile('foto')) {
                 if ($member->foto && Storage::disk('public')->exists($member->foto)) {
                     Storage::disk('public')->delete($member->foto);
                 }
-                $data['foto'] = $request->file('foto')->store(self::FOTO_PATH, 'public');
+                $data['foto'] = $request->file('foto')->store('member/' . $kodeMember, 'public');
             }
 
             $member->update($data);
