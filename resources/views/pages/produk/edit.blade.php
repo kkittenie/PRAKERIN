@@ -107,7 +107,7 @@
                         <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Produk ini punya varian ukuran</span>
                     </label>
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">
-                        Kalau dicentang, harga jual & stok produk diatur per ukuran di bawah — bisa nambah berapa pun varian, gak cuma Besar/Kecil.
+                        Kalau dicentang, harga jual, stok, & stok minimum produk diatur per ukuran di bawah — bisa nambah berapa pun varian, gak cuma Besar/Kecil.
                     </span>
                     @error('punya_ukuran')
                         <small class="text-red-500">{{ $message }}</small>
@@ -179,6 +179,7 @@
                                     <th class="py-2 px-3">Harga Modal</th>
                                     <th class="py-2 px-3">Harga Jual</th>
                                     <th class="py-2 px-3">Stok</th>
+                                    <th class="py-2 px-3">Stok Minimum</th>
                                     <th class="py-2 px-3">Status</th>
                                     <th class="py-2 px-3"></th>
                                 </tr>
@@ -186,7 +187,7 @@
                             <tbody>
                                 <template x-if="baris.length === 0">
                                     <tr>
-                                        <td colspan="6" class="py-3 px-3 text-center text-gray-400 text-xs">Belum ada baris ukuran ditambahkan.</td>
+                                        <td colspan="7" class="py-3 px-3 text-center text-gray-400 text-xs">Belum ada baris ukuran ditambahkan.</td>
                                     </tr>
                                 </template>
                                 <template x-for="(item, index) in baris" :key="index">
@@ -195,6 +196,7 @@
                                         <td class="py-2 px-3" x-text="'Rp ' + Number(item.harga_modal || 0).toLocaleString('id-ID')"></td>
                                         <td class="py-2 px-3" x-text="'Rp ' + Number(item.harga_jual || 0).toLocaleString('id-ID')"></td>
                                         <td class="py-2 px-3" x-text="item.stok"></td>
+                                        <td class="py-2 px-3" x-text="item.stok_minimum"></td>
                                         <td class="py-2 px-3">
                                             <label class="relative inline-flex items-center cursor-pointer" title="Aktifkan/nonaktifkan ukuran ini di kasir & mobile">
                                                 <input type="checkbox" class="sr-only peer" :checked="item.status_aktif" @change="item.status_aktif = $event.target.checked">
@@ -214,6 +216,7 @@
                                             <input type="hidden" :name="'ukuran_baris[' + index + '][harga_modal]'" :value="item.harga_modal">
                                             <input type="hidden" :name="'ukuran_baris[' + index + '][harga_jual]'" :value="item.harga_jual">
                                             <input type="hidden" :name="'ukuran_baris[' + index + '][stok]'" :value="item.stok">
+                                            <input type="hidden" :name="'ukuran_baris[' + index + '][stok_minimum]'" :value="item.stok_minimum">
                                             <input type="hidden" :name="'ukuran_baris[' + index + '][status_aktif]'" :value="item.status_aktif ? 1 : 0">
                                         </td>
                                     </tr>
@@ -222,7 +225,7 @@
                         </table>
                     </div>
 
-                    <div class="mt-3 grid grid-cols-1 md:grid-cols-5 gap-2 items-end">
+                    <div class="mt-3 grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
                         <div>
                             <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Ukuran</label>
                             <select x-model="pilihUkuranId" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
@@ -251,6 +254,10 @@
                             <input type="number" min="0" x-model="stokBaru" placeholder="0" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
                         </div>
                         <div>
+                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Stok Minimum</label>
+                            <input type="number" min="0" x-model="stokMinimumBaru" placeholder="0" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                        </div>
+                        <div>
                             <button type="button" @click="tambahBaris()" class="h-11 w-full rounded-lg bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600">+ Tambah Baris</button>
                         </div>
                     </div>
@@ -268,7 +275,7 @@
                     </div>
 
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-2 block">
-                        Tambahkan minimal 1 ukuran. Harga & stok diatur per baris — bisa lebih dari 2 varian.
+                        Tambahkan minimal 1 ukuran. Harga, stok, & stok minimum diatur per baris — bisa lebih dari 2 varian.
                     </span>
                     @error('ukuran_baris')
                         <small class="text-red-500 block mt-1">{{ $message }}</small>
@@ -317,6 +324,11 @@
                                         <input type="number" min="0" x-model="editStok" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
                                         <p x-show="errorEditStok" x-text="errorEditStok" class="text-xs text-red-500 mt-1"></p>
                                     </div>
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Stok Minimum</label>
+                                        <input type="number" min="0" x-model="editStokMinimum" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                        <p x-show="errorEditStokMinimum" x-text="errorEditStokMinimum" class="text-xs text-red-500 mt-1"></p>
+                                    </div>
                                 </div>
                             </div>
                             <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3">
@@ -362,8 +374,10 @@
                     @enderror
                 </div>
 
-                {{-- Stok Minimum --}}
-                <div>
+                {{-- Stok Minimum: dipakai kalau produk TIDAK punya ukuran.
+                     Kalau "Punya Ukuran" dicentang, stok minimum diisi per baris
+                     di tabel Varian Ukuran, jadi field ini ikut disembunyikan. --}}
+                <div id="wrapper-stok-minimum">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Stok Minimum
                     </label>
@@ -478,6 +492,7 @@
     const wrapperHargaJual = document.getElementById('wrapper-harga-jual');
     const wrapperHargaModal = document.getElementById('wrapper-harga-modal');
     const wrapperStok = document.getElementById('wrapper-stok');
+    const wrapperStokMinimum = document.getElementById('wrapper-stok-minimum');
 
     function toggleFieldUkuran() {
         const tampil = checkboxUkuran.checked;
@@ -485,6 +500,7 @@
         wrapperHargaJual.classList.toggle('hidden', tampil);
         wrapperHargaModal.classList.toggle('hidden', tampil);
         wrapperStok.classList.toggle('hidden', tampil);
+        wrapperStokMinimum.classList.toggle('hidden', tampil);
     }
 
     checkboxUkuran.addEventListener('change', toggleFieldUkuran);
@@ -505,6 +521,7 @@
             hargaModalBaru: '',
             hargaBaru: '',
             stokBaru: '',
+            stokMinimumBaru: '',
             tampilFormUkuranBaru: false,
             namaUkuranBaru: '',
             pesanErrorUkuranBaru: '',
@@ -519,9 +536,11 @@
             editHargaModal: '',
             editHargaJual: '',
             editStok: '',
+            editStokMinimum: '',
             errorEditHargaModal: '',
             errorEditHargaJual: '',
             errorEditStok: '',
+            errorEditStokMinimum: '',
 
             get opsiTersedia() {
                 const dipakai = this.baris.map(b => String(b.ukuran_id));
@@ -535,8 +554,8 @@
                 const hargaModalBersih = String(this.hargaModalBaru).replace(/\D/g, '');
                 const hargaJualBersih = String(this.hargaBaru).replace(/\D/g, '');
 
-                if (!this.pilihUkuranId || hargaModalBersih === '' || hargaJualBersih === '' || this.stokBaru === '') {
-                    this.pesanPeringatan = 'Pilih ukuran, lalu isi Harga Modal, Harga Jual & Stok dulu sebelum menambah baris.';
+                if (!this.pilihUkuranId || hargaModalBersih === '' || hargaJualBersih === '' || this.stokBaru === '' || this.stokMinimumBaru === '') {
+                    this.pesanPeringatan = 'Pilih ukuran, lalu isi Harga Modal, Harga Jual, Stok & Stok Minimum dulu sebelum menambah baris.';
                     this.modalPeringatan = true;
                     return;
                 }
@@ -547,12 +566,14 @@
                     harga_modal: hargaModalBersih,
                     harga_jual: hargaJualBersih,
                     stok: this.stokBaru,
+                    stok_minimum: this.stokMinimumBaru,
                     status_aktif: true,
                 });
                 this.pilihUkuranId = '';
                 this.hargaModalBaru = '';
                 this.hargaBaru = '';
                 this.stokBaru = '';
+                this.stokMinimumBaru = '';
             },
 
             bukaModalHapusBaris(index) {
@@ -577,9 +598,11 @@
                 this.editHargaModal = String(item.harga_modal || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
                 this.editHargaJual = String(item.harga_jual || '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
                 this.editStok = item.stok;
+                this.editStokMinimum = item.stok_minimum;
                 this.errorEditHargaModal = '';
                 this.errorEditHargaJual = '';
                 this.errorEditStok = '';
+                this.errorEditStokMinimum = '';
                 this.modalEditBaris = true;
             },
 
@@ -592,14 +615,16 @@
                 this.errorEditHargaModal = hargaModalBersih === '' ? 'Harga Modal wajib diisi.' : '';
                 this.errorEditHargaJual = hargaJualBersih === '' ? 'Harga Jual wajib diisi.' : '';
                 this.errorEditStok = (this.editStok === '' || this.editStok === null) ? 'Stok wajib diisi.' : '';
+                this.errorEditStokMinimum = (this.editStokMinimum === '' || this.editStokMinimum === null) ? 'Stok Minimum wajib diisi.' : '';
 
-                if (this.errorEditHargaModal || this.errorEditHargaJual || this.errorEditStok) {
+                if (this.errorEditHargaModal || this.errorEditHargaJual || this.errorEditStok || this.errorEditStokMinimum) {
                     return;
                 }
 
                 this.baris[this.indexEditBaris].harga_modal = hargaModalBersih;
                 this.baris[this.indexEditBaris].harga_jual = hargaJualBersih;
                 this.baris[this.indexEditBaris].stok = this.editStok;
+                this.baris[this.indexEditBaris].stok_minimum = this.editStokMinimum;
 
                 this.modalEditBaris = false;
                 this.indexEditBaris = null;

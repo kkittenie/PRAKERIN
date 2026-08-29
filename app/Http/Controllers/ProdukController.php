@@ -131,6 +131,7 @@ class ProdukController extends Controller
                         'harga_modal' => $b['harga_modal'] ?? '',
                         'harga_jual' => $b['harga_jual'] ?? '',
                         'stok' => $b['stok'] ?? '',
+                        'stok_minimum' => $b['stok_minimum'] ?? '',
                         'status_aktif' => filter_var($b['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
                     ];
                 })
@@ -164,7 +165,7 @@ class ProdukController extends Controller
                     'harga_modal' => (float) ($baris['harga_modal'] ?? 0),
                     'harga_jual' => (float) ($baris['harga_jual'] ?? 0),
                     'stok' => $stok,
-                    'stok_minimum' => (int) ($produk->stok_minimum ?? 0),
+                    'stok_minimum' => (int) ($baris['stok_minimum'] ?? 0),
                     'status_ketersediaan' => $stok > 0 ? 'stok_ada' : 'perlu_diproduksi',
                     'status_aktif' => filter_var($baris['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
                 ]
@@ -188,7 +189,7 @@ class ProdukController extends Controller
                 'punya_ukuran' => 'nullable|boolean',
                 'harga_modal' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
                 'stok' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
-                'stok_minimum' => 'required|integer|min:0',
+                'stok_minimum' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
                 'status_aktif' => 'required|boolean',
                 'status_ketersediaan' => [
                     'required',
@@ -201,6 +202,7 @@ class ProdukController extends Controller
                 'ukuran_baris.*.harga_modal' => 'required_with:ukuran_baris|numeric|min:0',
                 'ukuran_baris.*.harga_jual' => 'required_with:ukuran_baris|numeric|min:0',
                 'ukuran_baris.*.stok' => 'required_with:ukuran_baris|integer|min:0',
+                'ukuran_baris.*.stok_minimum' => 'required_with:ukuran_baris|integer|min:0',
             ], [
                 'ukuran_baris.required_if' => 'Tambahkan minimal 1 baris ukuran.',
                 'ukuran_baris.*.ukuran_id.distinct' => 'Satu ukuran cuma boleh ditambahkan sekali.',
@@ -215,6 +217,7 @@ class ProdukController extends Controller
                 $validated['harga_jual'] = 0;
                 $validated['harga_modal'] = 0;
                 $validated['stok'] = (int) $ukuranBaris->sum(fn ($b) => (int) ($b['stok'] ?? 0));
+                $validated['stok_minimum'] = 0;
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
                 $validated['stok_besar'] = 0;
@@ -300,6 +303,7 @@ class ProdukController extends Controller
                             'harga_modal' => $b['harga_modal'] ?? '',
                             'harga_jual' => $b['harga_jual'] ?? '',
                             'stok' => $b['stok'] ?? '',
+                            'stok_minimum' => $b['stok_minimum'] ?? '',
                             'status_aktif' => filter_var($b['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
                         ];
                     })
@@ -313,6 +317,7 @@ class ProdukController extends Controller
                         'harga_modal' => (int) $pu->harga_modal,
                         'harga_jual' => (int) $pu->harga_jual,
                         'stok' => (int) $pu->stok,
+                        'stok_minimum' => (int) $pu->stok_minimum,
                         'status_aktif' => (bool) $pu->status_aktif,
                     ])
                     ->values();
@@ -345,7 +350,7 @@ class ProdukController extends Controller
                 'punya_ukuran' => 'nullable|boolean',
                 'harga_modal' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
                 'stok' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
-                'stok_minimum' => 'required|integer|min:0',
+                'stok_minimum' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
                 'status_aktif' => 'required|boolean',
                 'status_ketersediaan' => [
                     'required',
@@ -358,6 +363,7 @@ class ProdukController extends Controller
                 'ukuran_baris.*.harga_modal' => 'required_with:ukuran_baris|numeric|min:0',
                 'ukuran_baris.*.harga_jual' => 'required_with:ukuran_baris|numeric|min:0',
                 'ukuran_baris.*.stok' => 'required_with:ukuran_baris|integer|min:0',
+                'ukuran_baris.*.stok_minimum' => 'required_with:ukuran_baris|integer|min:0',
             ], [
                 'ukuran_baris.required_if' => 'Tambahkan minimal 1 baris ukuran.',
                 'ukuran_baris.*.ukuran_id.distinct' => 'Satu ukuran cuma boleh ditambahkan sekali.',
@@ -396,6 +402,7 @@ class ProdukController extends Controller
                 $validated['harga_jual'] = 0;
                 $validated['harga_modal'] = 0;
                 $validated['stok'] = (int) $ukuranBaris->sum(fn ($b) => (int) ($b['stok'] ?? 0));
+                $validated['stok_minimum'] = 0;
             }
 
             unset($validated['ukuran_baris']);
