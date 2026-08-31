@@ -187,6 +187,14 @@ class AuthController extends Controller
                 'poin' => 0,
             ]);
 
+            // kode_member digenerate dari id member yang baru tersimpan, sama
+            // kayak di MemberController (sisi POS) -- kalau ini kelewat,
+            // member yang daftar lewat mobile bakal punya kode_member NULL
+            // terus di database, jadi gak nongol di POS pas kasir mau cari
+            // member ini pakai kode membernya.
+            $member->kode_member = Member::generateKodeMember($member->id);
+            $member->save();
+
             // Bersihkan OTP yang sudah dipakai untuk nomor ini
             OtpVerification::where('no_hp', $noHp)->delete();
 
