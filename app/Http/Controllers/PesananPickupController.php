@@ -385,7 +385,7 @@ class PesananPickupController extends Controller
             return;
         }
 
-        $pengaturan = PengaturanMember::where('status_aktif', true)->first();
+        $pengaturan = PengaturanMember::aktifSekarang();
         if ($pengaturan) {
             $nominalUntukPoin = $transaksi->subtotal + $transaksi->pajak;
             $kelipatan = floor($nominalUntukPoin / $pengaturan->minimal_belanja);

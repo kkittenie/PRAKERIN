@@ -18,7 +18,7 @@ class ProdukController extends Controller
             abort_unless($produk->status_aktif, 404);
             $habis = $produk->habisSemuaUkuran();
 
-            $pengaturan = PengaturanMember::where('status_aktif', true)->first();
+            $pengaturan = PengaturanMember::aktifSekarang();
 
             $itemEdit = null;
             if ($request->filled('edit')) {
@@ -33,10 +33,6 @@ class ProdukController extends Controller
 
             try {
                 if ($punyaUkuran) {
-                    // Dulu di sini cuma ngitung Kecil/Besar. Sekarang baca
-                    // langsung dari daftar_ukuran (baris produk_ukurans yang
-                    // aktif) supaya ukuran apapun yang didaftarin di menu
-                    // Ukuran otomatis kebawa ke detail produk mobile ini.
                     $daftarUkuran = collect($produk->daftar_ukuran)
                         ->map(function ($opsi) use ($produk) {
                             $hargaAsliOpsi = (float) $opsi['harga'];
@@ -75,9 +71,6 @@ class ProdukController extends Controller
                 $daftarUkuran = [];
             }
 
-            // Ukuran yang otomatis kepilih pas halaman dibuka: kalau lagi
-            // "ubah" item keranjang, pakai ukuran yang udah ada; kalau
-            // enggak, pakai baris ukuran aktif pertama.
             $ukuranDipilihAwal = $itemEdit['ukuran'] ?? ($daftarUkuran[0]['nama'] ?? null);
 
             return view('mobile.produk.show', [

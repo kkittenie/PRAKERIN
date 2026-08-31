@@ -5,9 +5,46 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\PengaturanMember;
 use App\Support\ActivityLogHelper;
+use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class PengaturanMemberController extends Controller
 {
+    private function cariBentrokAktif($mulai, $selesai, ?int $kecualiId = null): ?PengaturanMember
+    {
+        $mulaiBaru = Carbon::parse($mulai);
+        $selesaiBaru = $selesai ? Carbon::parse($selesai) : null;
+        $takTerhingga = Carbon::create(9999, 12, 31, 23, 59, 59);
+
+        $query = PengaturanMember::where('status_aktif', true);
+        if ($kecualiId) {
+            $query->where('id', '!=', $kecualiId);
+        }
+
+        foreach ($query->get() as $aturan) {
+            $mulaiLain = Carbon::parse($aturan->mulai_berlaku);
+            $selesaiLain = $aturan->selesai_berlaku ? Carbon::parse($aturan->selesai_berlaku) : null;
+
+            $bentrok = $mulaiBaru->lte($selesaiLain ?? $takTerhingga)
+                && $mulaiLain->lte($selesaiBaru ?? $takTerhingga);
+
+            if ($bentrok) {
+                return $aturan;
+            }
+        }
+
+        return null;
+    }
+
+    private function labelRentang(PengaturanMember $aturan): string
+    {
+        $mulai = Carbon::parse($aturan->mulai_berlaku)->format('d M Y H:i');
+        $selesai = $aturan->selesai_berlaku
+            ? Carbon::parse($aturan->selesai_berlaku)->format('d M Y H:i')
+            : 'selamanya';
+
+        return "{$mulai} - {$selesai}";
+    }
     public function index(Request $request)
     {
         if ($request->ajax()) {
@@ -49,21 +86,33 @@ class PengaturanMemberController extends Controller
     public function store(Request $request)
     {
         try {
-            $request->validate([
+            $validated = $request->validate([
                 'nama_aturan' => 'required|string|max:255',
                 'minimal_belanja' => 'required|numeric|min:1',
                 'poin' => 'required|integer|min:1',
                 'mulai_berlaku' => 'required|date',
                 'selesai_berlaku' => 'nullable|date|after_or_equal:mulai_berlaku',
+                'status_aktif' => 'nullable|boolean',
             ]);
 
+            $statusAktif = (bool) ($validated['status_aktif'] ?? false);
+
+            if ($statusAktif) {
+                $bentrok = $this->cariBentrokAktif($validated['mulai_berlaku'], $validated['selesai_berlaku'] ?? null);
+                if ($bentrok) {
+                    throw ValidationException::withMessages([
+                        'status_aktif' => "Tidak bisa diaktifkan, rentang tanggalnya bentrok dengan aturan aktif \"{$bentrok->nama_aturan}\" ({$this->labelRentang($bentrok)}).",
+                    ]);
+                }
+            }
+
             $pengaturanMember = PengaturanMember::create([
-                'nama_aturan' => $request->nama_aturan,
-                'minimal_belanja' => $request->minimal_belanja,
-                'poin' => $request->poin,
-                'mulai_berlaku' => $request->mulai_berlaku,
-                'selesai_berlaku' => $request->selesai_berlaku,
-                'status_aktif' => true,
+                'nama_aturan' => $validated['nama_aturan'],
+                'minimal_belanja' => $validated['minimal_belanja'],
+                'poin' => $validated['poin'],
+                'mulai_berlaku' => $validated['mulai_berlaku'],
+                'selesai_berlaku' => $validated['selesai_berlaku'] ?? null,
+                'status_aktif' => $statusAktif,
             ]);
 
             activity()
@@ -93,22 +142,38 @@ class PengaturanMemberController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $request->validate([
+            $validated = $request->validate([
                 'nama_aturan' => 'required|string|max:255',
                 'minimal_belanja' => 'required|numeric|min:1',
                 'poin' => 'required|integer|min:1',
                 'mulai_berlaku' => 'required|date',
                 'selesai_berlaku' => 'nullable|date|after_or_equal:mulai_berlaku',
+                'status_aktif' => 'nullable|boolean',
             ]);
 
             $pengaturanMember = PengaturanMember::findOrFail($id);
+            $statusAktif = (bool) ($validated['status_aktif'] ?? false);
+
+            if ($statusAktif) {
+                $bentrok = $this->cariBentrokAktif(
+                    $validated['mulai_berlaku'],
+                    $validated['selesai_berlaku'] ?? null,
+                    $pengaturanMember->id
+                );
+                if ($bentrok) {
+                    throw ValidationException::withMessages([
+                        'status_aktif' => "Tidak bisa diaktifkan, rentang tanggalnya bentrok dengan aturan aktif \"{$bentrok->nama_aturan}\" ({$this->labelRentang($bentrok)}).",
+                    ]);
+                }
+            }
 
             $pengaturanMember->update([
-                'nama_aturan' => $request->nama_aturan,
-                'minimal_belanja' => $request->minimal_belanja,
-                'poin' => $request->poin,
-                'mulai_berlaku' => $request->mulai_berlaku,
-                'selesai_berlaku' => $request->selesai_berlaku,
+                'nama_aturan' => $validated['nama_aturan'],
+                'minimal_belanja' => $validated['minimal_belanja'],
+                'poin' => $validated['poin'],
+                'mulai_berlaku' => $validated['mulai_berlaku'],
+                'selesai_berlaku' => $validated['selesai_berlaku'] ?? null,
+                'status_aktif' => $statusAktif,
             ]);
 
             activity()
@@ -149,8 +214,23 @@ class PengaturanMemberController extends Controller
     {
         try {
             $pengaturanMember = PengaturanMember::findOrFail($id);
+            $akanAktif = ! $pengaturanMember->status_aktif;
 
-            $pengaturanMember->status_aktif = ! $pengaturanMember->status_aktif;
+            if ($akanAktif) {
+                $bentrok = $this->cariBentrokAktif(
+                    $pengaturanMember->mulai_berlaku,
+                    $pengaturanMember->selesai_berlaku,
+                    $pengaturanMember->id
+                );
+                if ($bentrok) {
+                    return back()->with(
+                        'error',
+                        "\"{$pengaturanMember->nama_aturan}\" tidak bisa diaktifkan, rentang tanggalnya bentrok dengan aturan aktif \"{$bentrok->nama_aturan}\" ({$this->labelRentang($bentrok)})."
+                    );
+                }
+            }
+
+            $pengaturanMember->status_aktif = $akanAktif;
             $pengaturanMember->save();
 
             activity()

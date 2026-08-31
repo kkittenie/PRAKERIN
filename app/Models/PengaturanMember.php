@@ -22,4 +22,16 @@ class PengaturanMember extends Model
         'selesai_berlaku' => 'datetime',
         'status_aktif' => 'boolean',
     ];
+
+    public static function aktifSekarang(): ?self
+    {
+        $now = now();
+
+        return self::where('status_aktif', true)
+            ->where('mulai_berlaku', '<=', $now)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('selesai_berlaku')->orWhere('selesai_berlaku', '>=', $now);
+            })
+            ->first();
+    }
 }

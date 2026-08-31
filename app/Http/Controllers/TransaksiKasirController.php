@@ -698,21 +698,54 @@ class TransaksiKasirController extends Controller
             }
 
              if (!empty($validated['member_id'])) {
-                $nominalUntukPoin = $transaksi->subtotal + $transaksi->pajak;
-                $member = \App\Models\Member::find($validated['member_id']);
-                if ($member) {
-                    $poinSebelum = $member->poin;
-                    $poinDiperoleh = 0;
-                    if ($nominalUntukPoin >= 100000) {
-                        $poinDiperoleh = floor($nominalUntukPoin / 100000) * 100;
+                $pengaturan = PengaturanMember::aktifSekarang();
+
+                if ($pengaturan) {
+                    $nominalUntukPoin = $transaksi->subtotal + $transaksi->pajak;
+                    $kelipatan = floor($nominalUntukPoin / $pengaturan->minimal_belanja);
+                    $poinDiperoleh = $kelipatan * $pengaturan->poin;
+
+                    $member = Member::find($validated['member_id']);
+                    if ($member) {
+                        $poinSebelum = $member->poin;
                         if ($poinDiperoleh > 0) {
                             $member->increment('poin', (int) $poinDiperoleh);
                         }
+                        $transaksi->update([
+                            'poin_sebelum' => $poinSebelum,
+                            'poin_didapat' => (int) $poinDiperoleh,
+                        ]);
                     }
-                    $transaksi->update([
-                        'poin_sebelum' => $poinSebelum,
-                        'poin_didapat' => (int) $poinDiperoleh,
-                    ]);
+                }
+            }
+
+             if (!empty($validated['member_id'])) {
+                $stampProgram = StampProgram::aktifSekarang();
+
+                if ($stampProgram) {
+                    $nominalUntukStamp = $transaksi->subtotal + $transaksi->pajak;
+                    $stampDidapat = (int) floor($nominalUntukStamp / $stampProgram->minimal_pembelian);
+
+                    if ($stampDidapat > 0) {
+                        $memberStamp = MemberStamp::firstOrCreate(
+                            ['member_id' => $validated['member_id'], 'stamp_program_id' => $stampProgram->id],
+                            ['jumlah_stamp' => 0]
+                        );
+
+                        $stampSebelum = $memberStamp->jumlah_stamp;
+                        $stampBaru = min(
+                            $stampSebelum + $stampDidapat,
+                            $stampProgram->jumlah_stamp_dibutuhkan
+                        );
+
+                        $memberStamp->update(['jumlah_stamp' => $stampBaru]);
+
+                        $transaksi->update([
+                            'stamp_program_id' => $stampProgram->id,
+                            'stamp_sebelum' => $stampSebelum,
+                            'stamp_didapat' => $stampBaru - $stampSebelum,
+                        ]);
+                    }
                 }
             }
 
@@ -804,7 +837,7 @@ class TransaksiKasirController extends Controller
               $this->prosesRewardStampTransaksi($transaksi, $rewardStampSiap);
 
              if ($transaksi->member_id) {
-                $pengaturan = PengaturanMember::where('status_aktif', true)->first();
+                $pengaturan = PengaturanMember::aktifSekarang();
 
                 if ($pengaturan) {
                     $nominalUntukPoin = $transaksi->subtotal + $transaksi->pajak;
@@ -932,6 +965,71 @@ class TransaksiKasirController extends Controller
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    public function promoStatus(Request $request)
+    {
+        try {
+            $produkIds = collect(explode(',', (string) $request->query('produk_ids', '')))
+                ->map(fn ($id) => (int) trim($id))
+                ->filter()
+                ->values();
+
+            $produk = [];
+
+            if ($produkIds->isNotEmpty()) {
+                $produk = Produk::with('promos')
+                    ->whereIn('id', $produkIds)
+                    ->where('status_aktif', true)
+                    ->get()
+                    ->map(function ($p) {
+                        if ($p->punya_ukuran) {
+                            $namaTermurah = $p->ukuranTermurah()['nama'] ?? null;
+                            $hargaAsli = $p->getHarga($namaTermurah);
+                            $hargaFinal = $p->hargaSetelahPromo($namaTermurah);
+                        } else {
+                            $hargaAsli = (float) $p->harga_jual;
+                            $hargaFinal = (float) $p->harga_diskon;
+                        }
+
+                        return [
+                            'id' => $p->id,
+                            'harga_asli' => $hargaAsli,
+                            'harga_final' => $hargaFinal,
+                            'ada_promo' => $hargaFinal < $hargaAsli,
+                            'habis' => $p->habisSemuaUkuran(),
+                        ];
+                    })
+                    ->keyBy('id');
+            }
+
+            $promoEvent = PromoProdukEvent::with('produk')
+                ->berlaku()
+                ->get()
+                ->map(function ($pe) {
+                    return [
+                        'id' => $pe->id,
+                        'nama_event' => $pe->nama_event,
+                        'harga_event' => (float) $pe->harga_event,
+                        'isi_event' => $pe->isi_event,
+                        'isi_normal' => $pe->isi_normal,
+                        'perlu_diproduksi' => $pe->perlu_diproduksi,
+                        'stok_tersedia' => $pe->stok_tersedia,
+                        'produk_nama' => $pe->produk->nama_produk ?? '',
+                        'produk_foto' => ($pe->produk && $pe->produk->foto) ? asset('storage/' . $pe->produk->foto) : null,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'produk' => $produk,
+                    'promo_event' => $promoEvent,
+                ],
+            ]);
+        } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
     }

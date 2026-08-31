@@ -251,9 +251,6 @@ class CheckoutController extends Controller
                     'status_pembayaran' => 'Menunggu Pembayaran',
                     'asal_pesanan' => Transaksi::ASAL_MEMBER_APP,
                     'status_pesanan' => Transaksi::STATUS_DIPROSES,
-                    // Kode pickup baru digenerate nanti waktu kasir menandai
-                    // pesanan "Ready for Pickup" (lihat
-                    // PesananPickupController::tandaiSiap()), bukan di sini.
                     'catatan_pesanan' => $request->input('catatan'),
                 ]);
 
@@ -265,11 +262,6 @@ class CheckoutController extends Controller
                     ]);
                 }
 
-                // Lacak stok yang "sudah kepakai" oleh item lain di checkout ini
-                // (per produk_id + ukuran), supaya kalau ada 2 item berbeda yang
-                // rebutan stok produk yang sama, item kedua tidak baca stok mentah
-                // dari DB (yang belum berkurang) — bisa bikin status "perlu
-                // diproduksi" salah hitung.
                 $stokTerpakai = [];
 
                 foreach ($items as $item) {
@@ -330,8 +322,6 @@ class CheckoutController extends Controller
                 MemberCart::kosongkan();
                 Session::forget(self::SESSION_VOUCHER_KEY);
 
-                // Kabari dashboard POS real-time supaya pesanan baru langsung
-                // muncul di halaman "Pesanan" kasir tanpa perlu refresh manual.
                 \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'baru')));
 
                 return redirect()
@@ -364,7 +354,6 @@ class CheckoutController extends Controller
             'butuh_produksi' => false,
         ]);
 
-        // Cek jika ada pilihan/catatan khusus dari mobile customer
         $pilihanKhusus = $item['pilihan_khusus'] ?? [];
         $mapCatatanPilihan = [];
         $mapQtyPilihan = [];
@@ -387,7 +376,6 @@ class CheckoutController extends Controller
                 continue;
             }
 
-            // Lock produk untuk update transaksi & stok aman
             $produk = Produk::lockForUpdate()->find($produk->id);
             if (!$produk) continue;
 
@@ -396,12 +384,6 @@ class CheckoutController extends Controller
             $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
             $ukuranItem = $bundlingItem->ukuran;
 
-            // Catatan: stok komponen bundling BELUM dikurangi di sini. Sama
-            // seperti item reguler, pengurangan stok baru terjadi nanti waktu
-            // kasir memproses pesanan (lihat PesananPickupController::tandaiSiap()),
-            // bukan langsung saat pesanan baru masuk. Ukuran yang dipilih tetap
-            // dicatat di sini supaya pengurangan stok nanti kena baris ukuran
-            // yang benar.
             $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, $ukuranItem, $stokTerpakai);
 
             foreach ($pecahan as $bagian) {
@@ -443,12 +425,6 @@ class CheckoutController extends Controller
             return;
         }
 
-        // Event bisa dibatasi ke ukuran tertentu (mis. cuma "Jumbo"). Kalau
-        // dibiarkan null di sini, stok yang dicek jadi TOTAL semua ukuran
-        // (lihat Produk::stokUntukUkuran()) — bisa keliru nganggep stok
-        // masih ada padahal ukuran yang dibatasi itu sendiri sudah habis,
-        // sehingga tiket produksi gak pernah dibuat. Ukurannya juga dicatat
-        // di detail transaksi supaya kelihatan di POS.
         $ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi();
 
         $totalDibutuhkan = $promoEvent->isi_event * $jumlahEvent;
@@ -470,12 +446,6 @@ class CheckoutController extends Controller
         }
     }
 
-    /**
-     * @param array<string,int> $stokTerpakai Referensi array "sudah kepakai" per
-     *        produk (key: "{produk_id}|{ukuran}"), diakumulasi selama satu
-     *        proses checkout supaya item-item yang berebut produk yang sama
-     *        tidak sama-sama membaca stok mentah dari DB.
-     */
     private function pecahJumlahProduksi(Produk $produk, int $jumlah, ?string $ukuran, array &$stokTerpakai): array
     {
         if ($produk->status_ketersediaan === 'perlu_diproduksi') {
@@ -505,12 +475,6 @@ class CheckoutController extends Controller
         ];
     }
 
-    /**
-     * Hitung nominal diskon dari voucher — meniru aturan yang sama dipakai
-     * di kasir (VoucherKasirController): nominal langsung, atau persentase
-     * dari basis harga (dibatasi ke produk tertentu kalau voucher-nya
-     * scoped ke produk, dan dipotong maksimal_potongan bila ada).
-     */
     private function hitungDiskonVoucher(PenukaranPoin $voucher, $items, float $subtotal): float
     {
         $reward = $voucher->reward;
@@ -566,7 +530,7 @@ class CheckoutController extends Controller
 
     private function estimasiPoin(Member $member, float $totalBayar): int
     {
-        $pengaturan = \App\Models\PengaturanMember::where('status_aktif', true)->first();
+        $pengaturan = \App\Models\PengaturanMember::aktifSekarang();
         if (! $pengaturan || $pengaturan->minimal_belanja <= 0) {
             return 0;
         }
