@@ -56,11 +56,6 @@ class AkunController extends Controller
                 'username.unique' => 'Username ini sudah dipakai. Coba username lain.',
             ]);
 
-            // Member lama yang daftar lewat mobile sebelum bug generate
-            // kode_member pas register diperbaiki mungkin masih punya
-            // kode_member NULL -- isi & simpan sekarang juga (bukan cuma
-            // dipakai buat nama folder foto doang) supaya member ini juga
-            // langsung bisa dicari di POS pakai kode membernya.
             if (! $member->kode_member) {
                 $data['kode_member'] = \App\Models\Member::generateKodeMember($member->id);
             }

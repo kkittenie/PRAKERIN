@@ -54,7 +54,6 @@ class AuthController extends Controller
 
             $noHp = $this->normalizeNoHp($request->no_hp);
 
-            // Check if phone number already exists
             if (Member::where('no_hp', $noHp)->exists()) {
                 return response()->json([
                     'success' => false,
@@ -62,15 +61,12 @@ class AuthController extends Controller
                 ], 422);
             }
 
-            // Generate 6 digit OTP
             $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-            // Hapus OTP lama yang belum dipakai untuk nomor ini
             OtpVerification::where('no_hp', $noHp)
                 ->where('is_used', false)
                 ->delete();
 
-            // Simpan OTP baru ke database
             OtpVerification::create([
                 'no_hp' => $noHp,
                 'otp' => $otp,
@@ -81,7 +77,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Kode OTP berhasil dikirim ke nomor ' . $noHp,
-                'otp' => $otp, // Exposed for demo display in modal
+                'otp' => $otp,
                 'no_hp' => $noHp
             ]);
         } catch (\Throwable $e) {
@@ -125,7 +121,6 @@ class AuthController extends Controller
                 ], 422);
             }
 
-            // Tandai OTP sudah dipakai (dicek ulang saat submit form di Step 3)
             $otpVerification->update(['is_used' => true]);
 
             return response()->json([
@@ -168,7 +163,6 @@ class AuthController extends Controller
 
             $noHp = $this->normalizeNoHp($data['no_hp']);
 
-            // Verify OTP terhadap database (harus sudah diverifikasi di Step 2)
             $otpVerification = OtpVerification::where('no_hp', $noHp)
                 ->where('otp', $data['otp'])
                 ->where('is_used', true)
@@ -187,15 +181,9 @@ class AuthController extends Controller
                 'poin' => 0,
             ]);
 
-            // kode_member digenerate dari id member yang baru tersimpan, sama
-            // kayak di MemberController (sisi POS) -- kalau ini kelewat,
-            // member yang daftar lewat mobile bakal punya kode_member NULL
-            // terus di database, jadi gak nongol di POS pas kasir mau cari
-            // member ini pakai kode membernya.
             $member->kode_member = Member::generateKodeMember($member->id);
             $member->save();
 
-            // Bersihkan OTP yang sudah dipakai untuk nomor ini
             OtpVerification::where('no_hp', $noHp)->delete();
 
             Auth::guard('member')->login($member);
@@ -229,7 +217,6 @@ class AuthController extends Controller
 
             $noHpInput = trim($credentials['no_hp']);
 
-            // Try direct input match, or normalized +62 match, or converted 08 match
             $phoneVariants = [$noHpInput];
             if (str_starts_with($noHpInput, '0')) {
                 $phoneVariants[] = '+62' . substr($noHpInput, 1);

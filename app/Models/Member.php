@@ -17,11 +17,6 @@ class Member extends Authenticatable
 
     protected $appends = ['level', 'warna_badge_level'];
 
-    /**
-     * Generate kode member unik berformat MBR000001, MBR000002, dst,
-     * berdasarkan id member yang sudah tersimpan di DB (jadi dijamin unik
-     * karena mengikuti auto increment, tidak ada resiko race condition).
-     */
     public static function generateKodeMember(int $id): string
     {
         return 'MBR' . str_pad((string) $id, 6, '0', STR_PAD_LEFT);
@@ -82,14 +77,6 @@ class Member extends Authenticatable
             return $level->nama_level;
         }
 
-        // Kalau sampai sini, artinya nggak ada tier aktif yang minimal_poin-nya
-        // <= poin member (misal tier 0-poin/Bronze kebetulan lagi nonaktif).
-        // JANGAN jatuh ke tier aktif manapun yang minimal_poin-nya > 0 --
-        // dulu di sini dipilih "tier aktif paling rendah" tanpa ngecek dulu
-        // apa member beneran udah cukup poin buat itu, jadi member baru
-        // dengan 0 poin bisa aja ketampil di tier tertinggi kalau cuma itu
-        // yang aktif. Fallback yang aman: cuma pakai tier aktif itu kalau
-        // ambang batasnya beneran 0 (jadi semua orang emang berhak dapet).
         $levelTerendah = MemberLevel::aktif()->orderBy('minimal_poin')->first();
 
         if ($levelTerendah && (int) $levelTerendah->minimal_poin === 0) {
@@ -107,8 +94,6 @@ class Member extends Authenticatable
             return $level->warna_badge ?? 'gray';
         }
 
-        // Lihat penjelasan di getLevelAttribute() -- fallback yang sama:
-        // cuma pakai tier aktif paling rendah kalau ambang batasnya 0.
         $levelTerendah = MemberLevel::aktif()->orderBy('minimal_poin')->first();
 
         if ($levelTerendah && (int) $levelTerendah->minimal_poin === 0) {
