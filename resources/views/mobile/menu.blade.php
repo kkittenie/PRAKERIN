@@ -71,9 +71,7 @@
              });
          ">
 
-        {{-- Compact header: hanya muncul saat area produk di-scroll.
-             Header awal di bawah ini TIDAK diubah ukurannya/posisinya. --}}
-        <div x-cloak
+         <div x-cloak
              x-show="scrolled"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 -translate-y-2"
@@ -165,7 +163,6 @@
             </div>
         </div>
 
-        {{-- Search bar (permanen) + tombol filter kategori (dropdown) --}}
         @if ($kategoris->isNotEmpty() || $daftarBundling->isNotEmpty())
             <div :style="`margin-top: ${chipsOffset}px`"
                  class="relative flex items-center gap-2 pb-4 transition-[margin] duration-200">
@@ -245,9 +242,11 @@
             </div>
         @endif
 
-        {{-- HANYA daftar produk yang scroll. Header, store card, kategori, dan search tetap diam. --}}
         <div x-ref="menuScroller"
              @scroll="
+                 if (window.Android && typeof window.Android.laporkanStatusScroll === 'function') {
+                     window.Android.laporkanStatusScroll($refs.menuScroller.scrollTop > 0);
+                 }
                  const isScrolled = $refs.menuScroller.scrollTop > 10;
                  if (scrolled !== isScrolled) {
                      scrolled = isScrolled;
