@@ -27,7 +27,12 @@ class FcmService
         $projectId = config('services.firebase.project_id');
 
         if (! $accessToken || ! $projectId) {
-            Log::warning('FCM belum dikonfigurasi (FIREBASE_PROJECT_ID / service account belum diisi), push notification dilewati.');
+            $pesan = 'FCM belum dikonfigurasi (FIREBASE_PROJECT_ID / service account belum diisi), push notification dilewati.';
+            Log::warning($pesan);
+            $this->catatActivityLog($pesan, [
+                'firebase_project_id_ada' => (bool) $projectId,
+                'access_token_berhasil' => (bool) $accessToken,
+            ]);
             return $tokensGagal;
         }
 
@@ -35,19 +40,6 @@ class FcmService
 
         foreach ($tokens as $token) {
             try {
-                // Sengaja pakai 'notification' + 'data' bareng (BUKAN data-only).
-                // Alasannya: kalau data-only, pas app member ke-KILL TOTAL (bukan
-                // cuma minimize) -- apalagi di HP yang agresif battery-saver-nya
-                // kaya MIUI/Xiaomi -- OS sering nggak mau "bangunin" app buat
-                // jalanin onMessageReceived(), jadi notifnya nggak muncul sama
-                // sekali. Dengan 'notification' di sini, Android System sendiri
-                // yang nampilin notifnya (nggak butuh app-nya hidup), jadi selalu
-                // muncul kaya WA. Titik yang perlu dijaga: pas notif ini di-tap
-                // (bukan lewat tampilkanNotifikasi() custom di Kotlin, tapi lewat
-                // intent bawaan OS), payload 'data' ini ikut ditaro jadi extras di
-                // intent-nya pakai KEY ASLINYA ('url', bukan 'deep_link_url') --
-                // makanya MainActivity.kt & SplashActivity.kt dibikin baca extra
-                // "url" ini juga sebagai fallback.
                 $response = Http::withToken($accessToken)->post($endpoint, [
                     'message' => [
                         'token' => $token,
@@ -68,7 +60,14 @@ class FcmService
 
                 if ($response->failed()) {
                     $errStatus = $response->json('error.status');
-                    Log::warning('FCM gagal kirim ke token: ' . $errStatus . ' - ' . $response->body());
+                    $pesan = 'FCM gagal kirim ke token: ' . $errStatus . ' - ' . $response->body();
+                    Log::warning($pesan);
+                    $this->catatActivityLog('FCM gagal kirim push notification', [
+                        'http_status' => $response->status(),
+                        'error_status' => $errStatus,
+                        'response_body' => $response->body(),
+                        'token_dipotong' => substr($token, 0, 12) . '...', // jangan simpan token utuh
+                    ]);
 
                     // Token sudah nggak valid (uninstall/logout) -> tandai buat dihapus
                     if (in_array($errStatus, ['UNREGISTERED', 'INVALID_ARGUMENT', 'NOT_FOUND'], true)) {
@@ -77,6 +76,12 @@ class FcmService
                 }
             } catch (\Throwable $e) {
                 Log::error('FCM error kirim push: ' . $e->getMessage());
+                $this->catatActivityLog('FCM exception saat kirim push notification', [
+                    'error_message' => $e->getMessage(),
+                    'exception' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]);
             }
         }
 
@@ -93,12 +98,18 @@ class FcmService
             $path = storage_path('app/firebase-service-account.json');
 
             if (! file_exists($path)) {
+                $this->catatActivityLog('FCM: file service account tidak ditemukan di server', [
+                    'path' => $path,
+                ]);
                 return null;
             }
 
             $sa = json_decode(file_get_contents($path), true);
 
             if (! isset($sa['private_key'], $sa['client_email'])) {
+                $this->catatActivityLog('FCM: file service account ada tapi isinya tidak valid (private_key/client_email kosong)', [
+                    'path' => $path,
+                ]);
                 return null;
             }
 
@@ -124,23 +135,63 @@ class FcmService
 
             if (! $ok) {
                 Log::error('FCM: gagal sign JWT service account.');
+                $this->catatActivityLog('FCM: gagal sign JWT pakai private key service account (kemungkinan file corrupt / private key salah format)', []);
                 return null;
             }
 
             $jwt = $signatureInput . '.' . $this->base64UrlEncode($signature);
 
-            $response = Http::asForm()->post('https://oauth2.googleapis.com/token', [
-                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-                'assertion' => $jwt,
-            ]);
+            try {
+                $response = Http::asForm()->post('https://oauth2.googleapis.com/token', [
+                    'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                    'assertion' => $jwt,
+                ]);
+            } catch (\Throwable $e) {
+                // Ini yang bakal kena kalau koneksi outbound server ke Google diblokir hosting
+                Log::error('FCM: exception saat request access token OAuth2 - ' . $e->getMessage());
+                $this->catatActivityLog('FCM: gagal connect ke oauth2.googleapis.com (kemungkinan outbound HTTPS diblokir hosting)', [
+                    'error_message' => $e->getMessage(),
+                    'exception' => get_class($e),
+                ]);
+                return null;
+            }
 
             if ($response->failed()) {
-                Log::error('FCM: gagal ambil access token OAuth2 - ' . $response->body());
+                $pesan = 'FCM: gagal ambil access token OAuth2 - ' . $response->body();
+                Log::error($pesan);
+                $this->catatActivityLog('FCM: gagal ambil access token OAuth2 dari Google', [
+                    'http_status' => $response->status(),
+                    'response_body' => $response->body(),
+                ]);
                 return null;
             }
 
             return $response->json('access_token');
         });
+    }
+
+    /**
+     * Catat kejadian gagal FCM ke Activity Log (database) supaya kelihatan
+     * dari halaman admin /activity-Log tanpa perlu buka file log server.
+     * Sengaja dibungkus try/catch sendiri: kalau nulis activity log ini
+     * gagal (mis. tabel activity_log belum ke-migrate), jangan sampai bikin
+     * proses kirim notif utama ikut error.
+     */
+    private function catatActivityLog(string $pesan, array $properties): void
+    {
+        try {
+            $user = auth()->user() ?? auth('member')->user();
+
+            $log = activity('fcm');
+
+            if ($user) {
+                $log->causedBy($user);
+            }
+
+            $log->withProperties($properties)->log($pesan);
+        } catch (\Throwable $e) {
+            Log::error('Gagal catat activity log untuk FCM: ' . $e->getMessage());
+        }
     }
 
     private function base64UrlEncode(string $data): string
