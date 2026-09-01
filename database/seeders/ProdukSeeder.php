@@ -41,7 +41,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'produk/butter-croissant.jpeg',
+                'foto' => 'produk/SSH-CR001/butter-croissant.jpeg',
             ],
 
             [
@@ -55,7 +55,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 4,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'produk/chocolate-croissant.jpeg',
+                'foto' => 'produk/SSH-CR002/chocolate-croissant.jpeg',
             ],
 
             [
@@ -69,7 +69,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 3,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'produk/almond-croissant.jpeg',
+                'foto' => 'produk/SSH-CR003/almond-croissant.jpeg',
             ],
 
             [
@@ -83,7 +83,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 2,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'produk/blueberry-danish.jpeg',
+                'foto' => 'produk/SSH-DN004/blueberry-danish.jpeg',
             ],
 
 
@@ -99,7 +99,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 2,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'produk/strawberry-cheese-tart.jpeg',
+                'foto' => 'produk/SSH-CK001/strawberry-cheese-tart.jpeg',
             ],
 
             [
@@ -113,7 +113,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 2,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'produk/chocolate-fudge-cake.jpeg',
+                'foto' => 'produk/SSH-CK002/chocolate-fudge-cake.jpeg',
             ],
 
 
@@ -129,7 +129,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 3,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'produk/cinnamon-roll.jpeg',
+                'foto' => 'produk/SSH-BR001/cinnamon-roll.jpeg',
             ],
 
             [
@@ -143,7 +143,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'produk/soft-milk-bun.jpeg',
+                'foto' => 'produk/SSH-BR002/soft-milk-bun.jpeg',
             ],
 
 
@@ -159,7 +159,7 @@ class ProdukSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'foto' => 'produk/chocolate-chip-cookies.jpeg',
+                'foto' => 'produk/SSH-SW001/chocolate-chip-cookies.jpeg',
             ],
         ];
 

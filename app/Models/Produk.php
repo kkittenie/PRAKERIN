@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Produk extends Model
 {
@@ -153,12 +154,6 @@ class Produk extends Model
         return $hargaDasar;
     }
 
-    /**
-     * Promo yang beneran berlaku buat ukuran tertentu. Kalau produk gak
-     * punya ukuran, tetap pakai promo_aktif (perilaku lama). Kalau punya
-     * ukuran, promo yang "dibatasi ukuran" (lewat menu Potongan Harga)
-     * cuma dianggap berlaku kalau ukuran ini termasuk yang dicentang admin.
-     */
     public function promoUntukHitungHarga(?string $ukuran): ?Promo
     {
         if (!$this->punya_ukuran) {
@@ -169,12 +164,6 @@ class Produk extends Model
         return $this->promoAktifUntukUkuran($ukuranId);
     }
 
-    /**
-     * Sama kayak accessor promo_aktif, tapi ngecek juga apakah promo itu
-     * dibatasi ke ukuran-ukuran tertentu (tabel promo_ukurans). Promo yang
-     * gak dibatasi (pivot-nya kosong) tetap dianggap berlaku ke semua
-     * ukuran, sama kayak sebelum fitur ini ada.
-     */
     public function promoAktifUntukUkuran(?int $ukuranId): ?Promo
     {
         $now = now();
@@ -197,11 +186,6 @@ class Produk extends Model
         return $this->hasMany(PromoProdukEvent::class);
     }
 
-    /**
-     * Ambil koleksi baris produk_ukurans yang aktif buat produk ini, tanpa
-     * bikin query baru kalau relasinya udah di-eager-load (mis. dari
-     * TransaksiKasirController::indeks()).
-     */
     protected function daftarBarisUkuranAktif()
     {
         $daftar = $this->relationLoaded('produkUkurans')
@@ -211,12 +195,6 @@ class Produk extends Model
         return $daftar->filter(fn ($pu) => (bool) $pu->status_aktif && $pu->ukuran && (bool) $pu->ukuran->status_aktif);
     }
 
-    /**
-     * Cari baris produk_ukurans yang namanya cocok (case-insensitive) sama
-     * $ukuran. Ini yang bikin sistem ukuran gak lagi kebatas cuma
-     * "Besar"/"Kecil" — nama apapun yang didaftarin di menu Ukuran otomatis
-     * kepakai di sini.
-     */
     protected function cariBarisUkuran(?string $ukuran): ?ProdukUkuran
     {
         if (!$ukuran || !$this->punya_ukuran) {
@@ -227,11 +205,6 @@ class Produk extends Model
             ->first(fn ($pu) => strcasecmp($pu->ukuran->nama_ukuran, $ukuran) === 0);
     }
 
-    /**
-     * Daftar ukuran aktif produk ini dalam bentuk array polos, otomatis
-     * ke-serialize sebagai "daftar_ukuran" di JSON (dipakai kasir & mobile
-     * buat nampilin tombol ukuran secara dinamis).
-     */
     public function getDaftarUkuranAttribute(): array
     {
         if (!$this->punya_ukuran) {
@@ -271,12 +244,6 @@ class Produk extends Model
             ->all();
     }
 
-    /**
-     * Baris ukuran aktif dengan harga paling rendah. Dipakai buat nampilin
-     * harga "mulai dari" di kartu menu/listing — sengaja gak lagi
-     * ngasumsiin ukuran termurah itu pasti yang namanya "Kecil", karena
-     * urutan harga antar ukuran custom bisa aja beda-beda.
-     */
     public function ukuranTermurah(): ?array
     {
         if (!$this->punya_ukuran) {
@@ -291,13 +258,6 @@ class Produk extends Model
         return collect($daftar)->sortBy('harga')->first();
     }
 
-    /**
-     * Nama ukuran default yang aman dipakai kalau request gak nyertain
-     * parameter ukuran (mis. JS gagal kirim). Dulu di-hardcode 'Kecil',
-     * yang keliru buat produk yang cuma punya ukuran custom (misal cuma
-     * "Jumbo" doang, gak ada baris "Kecil"). Sekarang pakai ukuran aktif
-     * termurah yang beneran ada di produk ini.
-     */
     public function ukuranDefault(): ?string
     {
         return $this->ukuranTermurah()['nama'] ?? null;
@@ -311,8 +271,6 @@ class Produk extends Model
                 return (float) $baris->harga_jual;
             }
 
-            // Fallback ke kolom lama — jaga-jaga kalau baris produk_ukurans
-            // untuk ukuran ini belum ada (data lama yang belum termigrasi).
             if ($ukuran === 'Besar') {
                 return (float) ($this->harga_besar ?? 0);
             }
@@ -340,7 +298,6 @@ class Produk extends Model
                 return (int) ($this->stok_kecil ?? 0);
             }
 
-            // Gak nyebutin ukuran spesifik -> total semua ukuran aktif.
             $totalDinamis = (int) $this->daftarBarisUkuranAktif()->sum('stok');
             if ($totalDinamis > 0) {
                 return $totalDinamis;
@@ -371,17 +328,9 @@ class Produk extends Model
             return $daftarAktif->every(fn ($pu) => (int) $pu->stok <= 0);
         }
 
-        // Fallback lama, buat produk yang belum punya baris produk_ukurans.
         return (int) ($this->stok_besar ?? 0) <= 0 && (int) ($this->stok_kecil ?? 0) <= 0;
     }
 
-    /**
-     * Sumber kebenaran tunggal buat ngurangin stok per-ukuran. Otomatis
-     * ngurangin baris produk_ukurans yang cocok (ukuran apapun, gak cuma
-     * Besar/Kecil) SEKALIGUS kolom lama stok_besar/stok_kecil/stok kalau
-     * namanya "Besar"/"Kecil" — supaya data lama & baru tetap sinkron
-     * tanpa perlu ada sinkronisasi manual lagi di controller lain.
-     */
     public function decrementStokUkuran(?string $ukuran, int $jumlah): void
     {
         if ($jumlah <= 0) {
@@ -401,12 +350,20 @@ class Produk extends Model
         }
 
         if ($ukuran === 'Besar') {
-            $this->decrement('stok_besar', $jumlah);
+            $this->newQuery()->whereKey($this->getKey())->update([
+                'stok_besar' => DB::raw("GREATEST(0, stok_besar - {$jumlah})"),
+            ]);
         } elseif ($ukuran === 'Kecil') {
-            $this->decrement('stok_kecil', $jumlah);
+            $this->newQuery()->whereKey($this->getKey())->update([
+                'stok_kecil' => DB::raw("GREATEST(0, stok_kecil - {$jumlah})"),
+            ]);
         }
 
-        $this->decrement('stok', $jumlah);
+        $this->newQuery()->whereKey($this->getKey())->update([
+            'stok' => DB::raw("GREATEST(0, stok - {$jumlah})"),
+        ]);
+
+        $this->refresh();
     }
 
     public function incrementStokUkuran(?string $ukuran, int $jumlah): void

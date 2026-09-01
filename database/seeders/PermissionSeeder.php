@@ -15,7 +15,7 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $modules = [
-            'dashboard', 'user', 'role', 'kategori_produk', 'produk', 'stok', 'satuan', 'ukuran', 'produksi', 'bundling', 'pegawai', 'member', 'promo', 'promo_event', 'transaksi', 'laporan', 'activity_log', 'banner', 'pajak',
+            'dashboard', 'user', 'role', 'kategori_produk', 'produk', 'stok', 'satuan', 'ukuran', 'produksi', 'bundling', 'pegawai', 'member', 'promo', 'promo_event', 'transaksi', 'laporan', 'activity_log', 'banner', 'pajak', 'reward',
         ];
         $actions = ['lihat', 'tambah', 'edit', 'hapus'];
 

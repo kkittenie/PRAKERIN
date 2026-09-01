@@ -10,8 +10,8 @@ class MemberLevelSeeder extends Seeder
     public function run(): void
     {
         $levels = [
-            ['nama_level' => 'Bronze', 'minimal_poin' => 0, 'warna_badge' => 'orange'],
-            ['nama_level' => 'Silver', 'minimal_poin' => 300, 'warna_badge' => 'gray'],
+            ['nama_level' => 'Bronze', 'minimal_poin' => 0, 'warna_badge' => 'amber'],
+            ['nama_level' => 'Silver', 'minimal_poin' => 300, 'warna_badge' => 'slate'],
             ['nama_level' => 'Gold', 'minimal_poin' => 500, 'warna_badge' => 'yellow'],
         ];
 

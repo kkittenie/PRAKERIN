@@ -11,12 +11,14 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PermissionSeeder::class,
             UserSeeder::class,
+            SatuanSeeder::class,
             BahanBakuSeeder::class,
             ProdukSeeder::class,
             ProdukKhususBundlingSeeder::class,
-            SatuanSeeder::class,
             RewardKatalogSeeder::class,
+            StampProgramSeeder::class,
             KontenStatisSeeder::class,
+            MemberLevelSeeder::class,
         ]);
     }
 }

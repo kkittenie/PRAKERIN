@@ -13,9 +13,6 @@ class BahanBakuSeeder extends Seeder
      */
     public function run(): void
     {
-        // Ambil semua satuan sekali di awal, index berdasarkan kolom `nama` (huruf kecil semua)
-        // -- sesuai kolom yang dipakai SatuanSeeder -- supaya tidak sensitif huruf besar/kecil
-        // dan tidak bergantung pada urutan ID.
         $satuans = Satuan::all()->keyBy(function ($satuan) {
             return strtolower($satuan->nama);
         });
