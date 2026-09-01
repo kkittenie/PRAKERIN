@@ -34,17 +34,25 @@ class Banner extends Model
     }
 
     // Scope untuk ambil banner yang sedang aktif tampil (dipakai nanti di API carousel mobile)
+    //
+    // PENTING: tanggal_mulai_tampil & tanggal_selesai_tampil kolomnya
+    // bertipe `date` (tanpa jam), jadi dibandinginnya harus ke tanggal hari
+    // ini (toDateString()), BUKAN ke now() yang full datetime. Kalau
+    // dibandingin ke now(), tanggal_selesai_tampil (tersimpan sbg
+    // 00:00:00) bakal keanggep "lewat" begitu masuk jam berapa pun di hari
+    // itu, jadi banner ilang dari carousel sehari lebih awal dari yang
+    // di-set admin.
     public function scopeTampil($query)
     {
-        $now = now();
+        $hariIni = now()->toDateString();
         return $query->where('status_aktif', true)
-            ->where(function ($q) use ($now) {
+            ->where(function ($q) use ($hariIni) {
                 $q->whereNull('tanggal_mulai_tampil')
-                  ->orWhere('tanggal_mulai_tampil', '<=', $now);
+                  ->orWhere('tanggal_mulai_tampil', '<=', $hariIni);
             })
-            ->where(function ($q) use ($now) {
+            ->where(function ($q) use ($hariIni) {
                 $q->whereNull('tanggal_selesai_tampil')
-                  ->orWhere('tanggal_selesai_tampil', '>=', $now);
+                  ->orWhere('tanggal_selesai_tampil', '>=', $hariIni);
             });
     }
 }

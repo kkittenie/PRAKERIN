@@ -53,6 +53,9 @@ class KeranjangController extends Controller
                 'nama_promo' => $promoBerlaku?->nama_promo,
                 'jenis_promo' => $promoBerlaku?->jenis_potongan,
                 'persentase_promo' => $promoBerlaku?->persentase,
+                // Disimpen biar bisa di-recheck di checkout terhadap subtotal
+                // keranjang yang sebenarnya (lihat MemberCart::terapkanMinimalPembelian()).
+                'min_pembelian_promo' => $promoBerlaku?->min_pembelian ?? 0,
                 'ukuran' => $validated['ukuran'] ?? null,
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
@@ -243,6 +246,7 @@ class KeranjangController extends Controller
                 'nama_promo' => $promoBerlaku?->nama_promo,
                 'jenis_promo' => $promoBerlaku?->jenis_potongan,
                 'persentase_promo' => $promoBerlaku?->persentase,
+                'min_pembelian_promo' => $promoBerlaku?->min_pembelian ?? 0,
                 'ukuran' => $validated['ukuran'] ?? null,
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],

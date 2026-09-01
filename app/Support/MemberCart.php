@@ -45,6 +45,52 @@ class MemberCart
         });
     }
 
+    /**
+     * Coret diskon promo produk yang syarat "minimal pembelian"-nya belum
+     * kepenuhi oleh subtotal keranjang saat ini.
+     *
+     * Diskon per-item awalnya dihitung & dikunci saat produk ditambahkan ke
+     * keranjang (lihat KeranjangController::tambah()/perbarui()), padahal
+     * min_pembelian itu syarat TOTAL keranjang — yang baru pasti nilainya
+     * begitu isi keranjang lengkap/berubah. Makanya harus di-recheck ulang
+     * di sini setiap kali keranjang mau ditampilkan/di-checkout, bukan
+     * cukup dicek sekali pas nambah item.
+     *
+     * Dipakai subtotalGross (total harga ASLI, sebelum diskon promo apapun)
+     * sebagai basis pembanding, biar gak sirkular (gak kepengaruh sama
+     * diskon yang lagi mau kita tentuin sendiri) — sama kayak basis yang
+     * dipakai buat ngecek min_pembelian voucher reward di CheckoutController.
+     */
+    public static function terapkanMinimalPembelian(): void
+    {
+        $items = self::items();
+        if (empty($items)) {
+            return;
+        }
+
+        $subtotalGross = self::subtotalGross();
+        $berubah = false;
+
+        foreach ($items as &$item) {
+            $minPembelian = (float) ($item['min_pembelian_promo'] ?? 0);
+            $diskonProdukSatuan = (float) ($item['diskon_produk_satuan'] ?? 0);
+
+            if ($minPembelian > 0 && $diskonProdukSatuan > 0 && $minPembelian > $subtotalGross) {
+                $item['harga_satuan'] = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
+                $item['diskon_produk_satuan'] = 0;
+                $item['nama_promo'] = null;
+                $item['jenis_promo'] = null;
+                $item['persentase_promo'] = null;
+                $berubah = true;
+            }
+        }
+        unset($item);
+
+        if ($berubah) {
+            Session::put(self::SESSION_KEY, array_values($items));
+        }
+    }
+
     public static function tambah(array $data): void
     {
         $data['produk_id'] = $data['produk_id'] ?? null;

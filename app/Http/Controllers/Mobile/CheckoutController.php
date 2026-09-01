@@ -35,6 +35,8 @@ class CheckoutController extends Controller
                 return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
             }
 
+            MemberCart::terapkanMinimalPembelian();
+
             $items = MemberCart::items();
             $subtotalGross = MemberCart::subtotalGross();
             $diskonProduk = MemberCart::totalDiskonProduk();
@@ -165,6 +167,8 @@ class CheckoutController extends Controller
             $request->validate([
                 'catatan' => 'nullable|string|max:255',
             ]);
+
+            MemberCart::terapkanMinimalPembelian();
 
             $items = MemberCart::items();
             $subtotalGross = MemberCart::subtotalGross();
