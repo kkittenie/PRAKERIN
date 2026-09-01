@@ -34,14 +34,20 @@
                     </label>
 
                     <div class="flex items-center gap-4">
-                        <div class="w-24 h-24 shrink-0 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+                        <button type="button" onclick="bukaCropDariPreview()"
+                            class="group relative w-24 h-24 shrink-0 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
                             <img id="preview-gambar" src="{{ $banner->gambar ? asset('storage/' . $banner->gambar) : '' }}"
                                 alt="Preview gambar banner" class="{{ $banner->gambar ? '' : 'hidden' }} w-full h-full object-cover">
                             <svg id="icon-gambar-kosong" xmlns="http://www.w3.org/2000/svg"
                                 class="{{ $banner->gambar ? 'hidden' : '' }} w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                        </div>
+                            <span id="overlay-crop-preview" class="{{ $banner->gambar ? 'flex' : 'hidden' }} absolute inset-0 items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 3v4a1 1 0 001 1h4M7 3H5a1 1 0 00-1 1v14a1 1 0 001 1h14a1 1 0 001-1v-2M7 3l10 10M17 21v-4a1 1 0 00-1-1H7" />
+                                </svg>
+                            </span>
+                        </button>
 
                         <div class="flex-1 min-w-0">
                             <label for="input-gambar"
@@ -49,7 +55,7 @@
                                 Ganti Gambar
                             </label>
                             <input id="input-gambar" type="file" name="gambar" accept="image/*" class="hidden"
-                                onchange="tampilkanPreviewGambar(this)">
+                                onchange="bukaCropBanner(this)">
                             <p id="nama-file-gambar" class="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate">
                                 Kosongkan jika tidak ingin mengganti gambar.
                             </p>
@@ -137,19 +143,6 @@
 
 </div>
 
-    <script>
-    function tampilkanPreviewGambar(input) {
-        const preview = document.getElementById('preview-gambar');
-        const icon = document.getElementById('icon-gambar-kosong');
-        const namaFile = document.getElementById('nama-file-gambar');
-
-        if (input.files && input.files[0]) {
-            preview.src = URL.createObjectURL(input.files[0]);
-            preview.classList.remove('hidden');
-            icon.classList.add('hidden');
-            namaFile.textContent = input.files[0].name;
-        }
-    }
-    </script>
+@include('pages.banner.partials.crop-modal')
 
 @endsection

@@ -114,7 +114,6 @@
                         startAuto();
                     }, { passive: true });
 
-                    // Drag pakai mouse (desktop/trackpad), biar geser tanpa klik titiknya juga bisa
                     let mouseStartX = 0;
                     let mouseDragging = false;
 
@@ -149,10 +148,8 @@
                 })();
             </script>
 
-            {{-- Greeting card, tucked up over the banner image like the Fore app --}}
             <div class="relative z-20 {{ count($promoBanners) ? '-mt-10 md:-mt-14' : 'mt-0' }} px-5 sm:px-8 md:px-10">
                 @auth('member')
-                    {{-- Kartu sapaan ala "Hi Sofi!" --}}
                     <div class="relative overflow-hidden rounded-3xl border border-gray-100 bg-white p-5 shadow-lg shadow-gray-900/10">
                         <svg class="pointer-events-none absolute right-4 top-3 h-14 w-16 text-brand-200" viewBox="0 0 90 60" fill="none">
                             <circle cx="70" cy="16" r="8" fill="currentColor" opacity=".5"/>
