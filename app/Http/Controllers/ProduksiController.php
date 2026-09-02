@@ -18,6 +18,10 @@ use App\Support\ActivityLogHelper;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Exception;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class ProduksiController extends Controller
 {
@@ -608,33 +612,46 @@ class ProduksiController extends Controller
                 ->orderBy('jam_produksi')
                 ->get();
 
-            $filename = 'laporan-produksi-' . now()->format('YmdHis') . '.csv';
-
-            $headers = [
-                'Content-Type' => 'text/csv; charset=UTF-8',
-                'Content-Disposition' => "attachment; filename=\"$filename\"",
+            $columnHeaders = [
+                'Tanggal Produksi',
+                'Jam Produksi',
+                'Kadaluarsa',
+                'Produk',
+                'Jumlah Hasil',
+                'Rincian Ukuran',
+                'Dibuat Oleh',
+                'Keterangan',
+                'Nama Bahan',
+                'Jumlah Dipakai',
             ];
+            $lastCol = 'J'; // sesuaikan jika jumlah kolom berubah
 
-            return response()->stream(function () use ($produksi) {
-                $file = fopen('php://output', 'w');
-                fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('Laporan Produksi');
 
-                fputcsv($file, [
-                    'Tanggal Produksi',
-                    'Jam Produksi',
-                    'Kadaluarsa',
-                    'Produk',
-                    'Jumlah Hasil',
-                    'Rincian Ukuran',
-                    'Dibuat Oleh',
-                    'Keterangan',
-                    'Nama Bahan',
-                    'Jumlah Dipakai',
-                ]);
+            $sheet->fromArray($columnHeaders, null, 'A1');
+            $sheet->getStyle("A1:{$lastCol}1")->getFont()->setBold(true);
 
-                foreach ($produksi as $item) {
-                    if ($item->detailBahan->isEmpty()) {
-                        fputcsv($file, [
+            $row = 2;
+            foreach ($produksi as $item) {
+                if ($item->detailBahan->isEmpty()) {
+                    $sheet->fromArray([
+                        $item->tanggal,
+                        $item->jam_produksi,
+                        $item->kadaluarsa_label,
+                        $item->produk->nama_produk,
+                        $item->jumlah_hasil,
+                        $item->rincian_ukuran,
+                        $item->user->name,
+                        $item->keterangan,
+                        '-',
+                        '-',
+                    ], null, "A{$row}");
+                    $row++;
+                } else {
+                    foreach ($item->detailBahan as $detail) {
+                        $sheet->fromArray([
                             $item->tanggal,
                             $item->jam_produksi,
                             $item->kadaluarsa_label,
@@ -643,29 +660,50 @@ class ProduksiController extends Controller
                             $item->rincian_ukuran,
                             $item->user->name,
                             $item->keterangan,
-                            '-',
-                            '-',
-                        ]);
-                    } else {
-                        foreach ($item->detailBahan as $detail) {
-                            fputcsv($file, [
-                                $item->tanggal,
-                                $item->jam_produksi,
-                                $item->kadaluarsa_label,
-                                $item->produk->nama_produk,
-                                $item->jumlah_hasil,
-                                $item->rincian_ukuran,
-                                $item->user->name,
-                                $item->keterangan,
-                                $detail->bahanBaku->nama_bahan,
-                                $detail->jumlah_terpakai . ' ' . ($detail->bahanBaku->satuan->nama ?? ''),
-                            ]);
-                        }
+                            $detail->bahanBaku->nama_bahan,
+                            $detail->jumlah_terpakai . ' ' . ($detail->bahanBaku->satuan->nama ?? ''),
+                        ], null, "A{$row}");
+                        $row++;
                     }
                 }
+            }
 
-                fclose($file);
-            }, 200, $headers);
+            $lastRow = $row - 1;
+
+            // Lebarkan setiap kolom otomatis mengikuti isi terpanjang, biar tidak kepotong
+            foreach (range('A', $lastCol) as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+
+            // Rata tengah (horizontal & vertical) untuk seluruh sel berisi data
+            $sheet->getStyle("A1:{$lastCol}{$lastRow}")
+                ->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                ->setVertical(Alignment::VERTICAL_CENTER);
+
+            // Kolom Produk (D) dan Nama Bahan (I) dibuat rata kiri, tapi judul header tetap di tengah
+            $sheet->getStyle("D2:D{$lastRow}")
+                ->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_LEFT);
+            $sheet->getStyle("I2:I{$lastRow}")
+                ->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+            // Border tipis di semua sel tabel biar rapi
+            $sheet->getStyle("A1:{$lastCol}{$lastRow}")
+                ->getBorders()
+                ->getAllBorders()
+                ->setBorderStyle(Border::BORDER_THIN);
+
+            $filename = 'laporan-produksi-' . now()->format('YmdHis') . '.xlsx';
+
+            return response()->streamDownload(function () use ($spreadsheet) {
+                $writer = new Xlsx($spreadsheet);
+                $writer->save('php://output');
+            }, $filename, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Cache-Control' => 'max-age=0',
+            ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
