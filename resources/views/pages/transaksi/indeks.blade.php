@@ -389,8 +389,8 @@
                                                                         <template x-for="opsiUkuran in produk.daftar_ukuran" :key="opsiUkuran.produk_ukuran_id">
                                                                             <button type="button"
                                                                                 @click.stop="dropdownUkuranAktifId = null; tambahKeKeranjang(produk, opsiUkuran.nama)"
-                                                                                class="w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors text-left">
-                                                                                <span class="flex items-center gap-1.5 min-w-0">
+                                                                                class="w-full flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors text-left">
+                                                                                <span class="flex items-center gap-1.5 min-w-0 flex-wrap">
                                                                                     <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate" x-text="opsiUkuran.nama"></span>
                                                                                     <template x-if="opsiUkuran.perlu_produksi">
                                                                                         <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-full">Perlu Diproduksi</span>
@@ -400,7 +400,7 @@
                                                                                             x-text="opsiUkuran.nama_promo || 'Promo'"></span>
                                                                                     </template>
                                                                                 </span>
-                                                                                <span class="shrink-0 flex flex-col items-end leading-tight">
+                                                                                <span class="shrink-0 flex flex-col items-end leading-tight ml-auto">
                                                                                     <template x-if="opsiUkuran.sedang_promo">
                                                                                         <span class="text-[10px] text-gray-400 dark:text-gray-500 line-through" x-text="formatRupiah(opsiUkuran.harga_asli)"></span>
                                                                                     </template>
