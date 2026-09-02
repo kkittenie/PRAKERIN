@@ -697,7 +697,7 @@ class TransaksiKasirController extends Controller
                 $this->tandaiVoucherDigunakan($voucherDipakai, $transaksi);
             }
 
-             if (!empty($validated['member_id'])) {
+             if (!empty($memberIdEfektif)) {
                 $pengaturan = PengaturanMember::aktifSekarang();
 
                 if ($pengaturan) {
@@ -705,7 +705,7 @@ class TransaksiKasirController extends Controller
                     $kelipatan = floor($nominalUntukPoin / $pengaturan->minimal_belanja);
                     $poinDiperoleh = $kelipatan * $pengaturan->poin;
 
-                    $member = Member::find($validated['member_id']);
+                    $member = Member::find($memberIdEfektif);
                     if ($member) {
                         $poinSebelum = $member->poin;
                         if ($poinDiperoleh > 0) {
@@ -719,7 +719,7 @@ class TransaksiKasirController extends Controller
                 }
             }
 
-             if (!empty($validated['member_id'])) {
+             if (!empty($memberIdEfektif)) {
                 $stampProgram = StampProgram::aktifSekarang();
 
                 if ($stampProgram) {
@@ -728,7 +728,7 @@ class TransaksiKasirController extends Controller
 
                     if ($stampDidapat > 0) {
                         $memberStamp = MemberStamp::firstOrCreate(
-                            ['member_id' => $validated['member_id'], 'stamp_program_id' => $stampProgram->id],
+                            ['member_id' => $memberIdEfektif, 'stamp_program_id' => $stampProgram->id],
                             ['jumlah_stamp' => 0]
                         );
 

@@ -405,6 +405,7 @@ class ProduksiController extends Controller
                 }
 
                 $produk = Produk::lockForUpdate()->findOrFail($request->produk_id);
+                $adaStokTersedia = false;
 
                 try {
                     if (!empty($rincianUkuranDinamis)) {
@@ -426,6 +427,10 @@ class ProduksiController extends Controller
 
                             $baris->status_ketersediaan = $baris->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
                             $baris->save();
+
+                            if ($baris->stok > 0) {
+                                $adaStokTersedia = true;
+                            }
 
                             ProduksiUkuran::create([
                                 'produksi_id' => $produksi->id,
@@ -471,6 +476,7 @@ class ProduksiController extends Controller
                         }
 
                         $produk->refresh();
+                        $adaStokTersedia = $produk->stok_besar > 0 || $produk->stok_kecil > 0;
                     } else {
                         $produk->increment('stok', $request->jumlah_hasil);
 
@@ -480,6 +486,8 @@ class ProduksiController extends Controller
                             }
                             $produk->decrement('stok', $kebutuhanTotal);
                         }
+
+                        $adaStokTersedia = $produk->stok > 0;
                     }
                 } catch (\Throwable $e) {
                     Log::error('Gagal memperbarui stok saat membuat tiket produksi', [
@@ -494,7 +502,11 @@ class ProduksiController extends Controller
                     throw $e;
                 }
 
-                if ($produk->stok > 0 && $produk->status_ketersediaan === 'perlu_diproduksi') {
+                // Pakai stok riil (per baris ukuran untuk produk dinamis,
+                // bukan kolom agregat `stok` yang tidak selalu ikut ter-update
+                // di mode dinamis) supaya status produk tidak nyangkut di
+                // "perlu_diproduksi" walau stoknya sebenarnya sudah ada lagi.
+                if ($adaStokTersedia && $produk->status_ketersediaan === 'perlu_diproduksi') {
                     $produk->update(['status_ketersediaan' => 'stok_ada']);
                 }
             });

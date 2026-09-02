@@ -383,7 +383,14 @@ class CheckoutController extends Controller
             $produk = Produk::lockForUpdate()->find($produk->id);
             if (!$produk) continue;
 
-            $qtySatuBundling = $mapQtyPilihan[$produk->id] ?? $bundlingItem->qty;
+            // Kalau ada pilihan varian khusus, qty per produk ikut pilihan
+            // member (varian yang tidak dipilih otomatis di-skip / qty 0).
+            // Kalau tidak ada (bundling biasa), pakai qty tetap dari paket.
+            // (Sama seperti TransaksiKasirController::prosesItemBundlingTransaksi().)
+            $qtySatuBundling = $mapQtyPilihan[$produk->id] ?? (empty($pilihanKhusus) ? $bundlingItem->qty : 0);
+            if ($qtySatuBundling <= 0) {
+                continue;
+            }
             $totalDibutuhkan = $qtySatuBundling * $jumlahBundling;
             $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
             $ukuranItem = $bundlingItem->ukuran;
