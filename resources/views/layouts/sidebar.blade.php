@@ -59,7 +59,7 @@
     <div class="hidden xl:flex pt-8 pb-7" :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ?
         'xl:justify-center' :
         'justify-start px-6'">
-        <a href="/" class="flex items-center gap-3">
+        <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
             <div x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                 class="flex items-center gap-3">
                 <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Saisho POS" class="w-auto h-10">

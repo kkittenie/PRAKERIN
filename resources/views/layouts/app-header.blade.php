@@ -49,7 +49,7 @@
             </button>
 
             <!-- Logo (mobile only) -->
-            <a href="/" class="xl:hidden flex items-center gap-2">
+            <a href="{{ route('dashboard') }}" class="xl:hidden flex items-center gap-2">
                 <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Saisho POS" class="h-8 w-auto object-contain">
 
                 <span class="font-extrabold text-lg tracking-wider text-gray-900 dark:text-white">

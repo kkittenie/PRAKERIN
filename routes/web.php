@@ -35,10 +35,14 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PromoProdukEventController;
 use App\Http\Controllers\UkuranController;
 use App\Http\Controllers\ProdukUkuranController;
+use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
 
-require __DIR__ . '/mobile.php';
+    require __DIR__ . '/mobile.php';
 
-Route::middleware(['auth'])->group(function () {
+    // Root nampilin halaman welcome mobile langsung (tanpa redirect)
+    Route::get('/', [MobileAuthController::class, 'welcome'])->name('member.welcome.root');
+
+    Route::middleware(['auth'])->group(function () {
 
     // Notifikasi Real-time
     Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
@@ -47,7 +51,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
 
     // Dashboard Utama (Beranda)
-    Route::get('/', [DashboardController::class, 'index'])
+    Route::get('/admin', [DashboardController::class, 'index'])
         ->middleware('permission:lihat_dashboard')
         ->name('dashboard');
 
