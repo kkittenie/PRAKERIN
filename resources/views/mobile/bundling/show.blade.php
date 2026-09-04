@@ -77,68 +77,85 @@
                             this.jumlah--;
                         }
                     }
-                }" class="relative">
+                }" class="relative lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
 
-        {{-- Foto bundling --}}
-        <div class="relative -mx-5 -mt-6 aspect-square w-auto overflow-hidden bg-gray-50 sm:-mx-8 md:-mx-10">
+        {{-- Left column: 1:1 photo + info (nama, harga, deskripsi) --}}
+        <div class="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
+            <div class="relative -mx-5 -mt-6 aspect-square w-auto overflow-hidden bg-gray-50 sm:-mx-8 md:-mx-10 lg:mx-0 lg:mt-0 lg:rounded-2xl lg:aspect-square lg:w-full">
 
-            @if ($bundling->gambar)
-                <img src="{{ asset('storage/' . $bundling->gambar) }}" alt="{{ $bundling->nama_bundling }}"
-                    class="h-full w-full object-cover"
-                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            @endif
+                @if ($bundling->gambar)
+                    <img src="{{ asset('storage/' . $bundling->gambar) }}" alt="{{ $bundling->nama_bundling }}"
+                        class="h-full w-full object-cover"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                @endif
 
-            <div class="{{ $bundling->gambar ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
-                @include('mobile.components.icon-cup', ['class' => 'h-20 w-20'])
+                <div class="{{ $bundling->gambar ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
+                    @include('mobile.components.icon-cup', ['class' => 'h-20 w-20'])
+                </div>
+
+                <a href="{{ $sedangUbah ? route('member.checkout.index') : route('member.menu') }}"
+                    onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+                    class="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow-md transition active:scale-95 active:bg-gray-50"
+                    aria-label="Kembali">
+                    <span class="rotate-180">
+                        @include('mobile.components.icon-chevron-right', ['class' => 'h-5 w-5'])
+                    </span>
+                </a>
+
+                <span class="absolute left-4 top-16 rounded-full bg-amber-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
+                    Bundling
+                </span>
+
+                @if ($habis)
+                    <span class="absolute left-4 bottom-4 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
+                        Perlu Diproduksi
+                    </span>
+                @endif
+
             </div>
 
-            <a href="{{ $sedangUbah ? route('member.checkout.index') : route('member.menu') }}"
-                onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-                class="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow-md transition active:scale-95 active:bg-gray-50"
-                aria-label="Kembali">
-                <span class="rotate-180">
-                    @include('mobile.components.icon-chevron-right', ['class' => 'h-5 w-5'])
-                </span>
-            </a>
-
-            <span class="absolute left-4 top-16 rounded-full bg-amber-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
-                Bundling
-            </span>
-
-            @if ($habis)
-                <span class="absolute left-4 bottom-4 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
-                    Perlu Diproduksi
-                </span>
-            @endif
-
-        </div>
-
-        <div class="mt-5">
-
-            <div>
+            {{-- Nama, kategori, harga --}}
+            <div class="pt-1">
                 <p class="text-[11px] font-bold uppercase tracking-wide text-brand-700">
                     Paket Bundling {{ $isKhusus ? 'Pilihan Varian' : '' }}
                 </p>
 
-                <h2 class="mt-1 text-lg font-extrabold leading-snug text-gray-900">
+                <h2 class="mt-1 text-lg lg:text-xl font-extrabold leading-snug text-gray-900">
                     {{ $bundling->nama_bundling }}
                 </h2>
-                
-                <div class="mt-4">
-                    <p class="mt-1.5 text-xs leading-relaxed text-gray-500">
-                        {{ $bundling->deskripsi ?: '' }}
-                    </p>
-                </div>
 
                 <div class="mt-2 flex items-center gap-2">
-                    <span class="text-base font-extrabold text-gray-900">
+                    <span class="text-base lg:text-lg font-extrabold text-gray-900">
                         Rp {{ number_format($bundling->harga, 0, ',', '.') }}
                     </span>
                 </div>
             </div>
 
+            @if ($habis)
+                <div class="mt-3 flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">
+                    @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
+                    <p class="text-[11px] font-semibold leading-relaxed">
+                        Salah satu isi paket ini stoknya sedang kurang/habis, pesanan tetap bisa dibuat & akan
+                        diproduksi dulu di dapur — waktu tunggu bisa lebih lama dari biasanya.
+                    </p>
+                </div>
+            @endif
+        </div>
+
+        {{-- Right column: deskripsi, varian/isi paket & order form --}}
+        <div class="mt-5 lg:col-span-7 lg:mt-0 space-y-4 lg:max-w-md">
+
+            @if ($bundling->deskripsi)
+                <div class="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-gray-50/50 lg:p-4">
+                    <h3 class="hidden lg:block text-xs font-bold text-gray-900 mb-1">Deskripsi Paket</h3>
+                    <p class="text-xs leading-relaxed text-gray-500 lg:text-gray-600">
+                        {{ $bundling->deskripsi }}
+                    </p>
+                </div>
+            @endif
+
             {{-- Isi paket & Pemilihan Varian Rasa --}}
-            <div class="mt-4">
+            <div>
                 @if($isKhusus)
                     <div class="flex items-center justify-between rounded-xl bg-amber-50 p-3 text-amber-900 border border-amber-200">
                         <div>
@@ -191,11 +208,6 @@
                                         </div>
                                     </div>
 
-                                    {{-- Input catatan varian jika varian dipilih --}}
-                                    {{-- Catatan: input ini SENGAJA tanpa atribut "name" dan berada di luar
-                                         <form> (form baru muncul di footer halaman). Nilainya cuma disimpan
-                                         di state Alpine (varianCatatan) lalu dikirim lewat hidden input di
-                                         dalam <form> footer, supaya benar-benar ikut ter-submit. --}}
                                     <div x-show="(varianQty[{{ $bundlingItem->produk_id }}] || 0) > 0" x-transition class="mt-1">
                                         <input type="text"
                                                x-model="varianCatatan[{{ $bundlingItem->produk_id }}]"
@@ -226,17 +238,7 @@
                 @endif
             </div>
 
-            @if ($habis)
-                <div class="mt-4 flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">
-                    @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
-                    <p class="text-[11px] font-semibold leading-relaxed">
-                        Salah satu isi paket ini stoknya sedang kurang/habis, pesanan tetap bisa dibuat & akan
-                        diproduksi dulu di dapur — waktu tunggu bisa lebih lama dari biasanya.
-                    </p>
-                </div>
-            @endif
-
-            <div class="mt-5">
+            <div>
                 <h3 class="text-xs font-bold text-gray-900">
                     Catatan Pesanan
                     <span class="font-medium text-gray-400">
@@ -248,12 +250,7 @@
                     class="mt-2 w-full resize-none rounded-2xl border border-gray-200 p-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700"></textarea>
             </div>
 
-            <div class="h-32"></div>
-
-        </div>
-
-        <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 2xl:max-w-6xl"
-            style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));">
+            <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 lg:static lg:w-full lg:border-t-0 lg:px-0 lg:pt-4 lg:shadow-none">
 
             @if (Auth::guard('member')->check())
 
@@ -352,7 +349,7 @@
 
                         <button type="submit"
                             :disabled="!bisaSimpan"
-                            class="flex min-w-0 flex-1 items-center justify-between rounded-full bg-brand-800 px-6 py-4 text-sm font-bold text-white shadow-sm transition active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed">
+                            class="flex min-w-0 flex-1 lg:max-w-[260px] items-center justify-between rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed">
                             <span x-text="bisaSimpan ? 'Add' : 'Pilih Varian Dulu'"></span>
                             <span x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                         </button>

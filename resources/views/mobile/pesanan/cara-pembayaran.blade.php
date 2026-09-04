@@ -26,13 +26,9 @@
 
     <div
         x-data="qrisDownloader('QRIS-{{ $transaksi->kode_transaksi }}.png')"
-        class="mt-6 text-center"
+        class="mt-6 text-center lg:text-left lg:grid lg:grid-cols-12 lg:gap-10 lg:items-center"
     >
-        {{-- Toast di-teleport ke <body> supaya position:fixed-nya nggak
-             kejebak/miring gara-gara ke-hitung relatif ke #app-card, yang
-             kena transform pas animasi transisi halaman (page-enter-right
-             dkk). Fixed di dalam ancestor yang punya transform bakal
-             ke-posisiin salah, makanya kelihatan miring/geser di HP. --}}
+        {{-- Toast di-teleport ke <body> --}}
         <template x-teleport="body">
             <div
                 x-show="toast.show"
@@ -52,42 +48,43 @@
             </div>
         </template>
 
-        {{-- TODO: ganti gambar placeholder ini dengan kode QRIS asli toko
-             (taruh file baru di public/images/payment/qris-placeholder.png,
-             nama & path file tetap sama supaya nggak perlu ubah blade ini). --}}
-        <img x-ref="qrisImage" src="{{ asset('images/payment/qris-placeholder.png') }}" alt="Kode QRIS"
-             class="mx-auto h-60 w-60 rounded-2xl border border-gray-100 object-contain">
+        <div class="lg:col-span-6 text-center">
+            <img x-ref="qrisImage" src="{{ asset('images/payment/qris-placeholder.png') }}" alt="Kode QRIS"
+                 class="mx-auto h-60 w-60 rounded-2xl border border-gray-100 object-contain">
 
-        <button type="button" @click="download()" :disabled="downloading"
-                class="mx-auto mt-3 inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-[11px] font-semibold text-gray-600 transition active:bg-gray-100 disabled:opacity-60">
-            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            <span x-text="downloading ? 'Mengunduh...' : 'Download QR'"></span>
-        </button>
+            <button type="button" @click="download()" :disabled="downloading"
+                    class="mx-auto mt-3 inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-[11px] font-semibold text-gray-600 transition active:bg-gray-100 disabled:opacity-60">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                <span x-text="downloading ? 'Mengunduh...' : 'Download QR'"></span>
+            </button>
 
-        <p class="mt-4 text-xs font-medium text-gray-400">Total Tagihan</p>
-        <p class="mt-1 text-2xl font-extrabold text-gray-900">Rp {{ number_format($transaksi->total_bayar, 0, ',', '.') }}</p>
-        <p class="mt-1 text-[11px] text-gray-400">{{ $transaksi->kode_transaksi }}</p>
-
-        <div class="mx-5 mt-6 rounded-2xl border border-dashed border-gray-200 p-4 text-left">
-            <p class="text-xs font-bold text-gray-900">Langkah pembayaran</p>
-            <ol class="mt-2 space-y-1.5 text-[11px] text-gray-500">
-                <li>1. Buka aplikasi bank atau e-wallet kamu.</li>
-                <li>2. Pilih menu Scan QRIS, lalu scan kode di atas (atau download dulu kalau mau scan dari galeri).</li>
-                <li>3. Pastikan nominalnya sesuai total tagihan, lalu bayar.</li>
-                <li>4. Kembali ke halaman pesanan, upload bukti transfernya.</li>
-            </ol>
+            <p class="mt-4 text-xs font-medium text-gray-400">Total Tagihan</p>
+            <p class="mt-1 text-2xl font-extrabold text-gray-900">Rp {{ number_format($transaksi->total_bayar, 0, ',', '.') }}</p>
+            <p class="mt-1 text-[11px] text-gray-400">{{ $transaksi->kode_transaksi }}</p>
         </div>
 
-        <a href="{{ route('member.pesanan.show', $transaksi) }}"
-           onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-           class="mx-5 mt-6 block rounded-xl bg-brand-800 py-2.5 text-xs font-bold text-white transition active:bg-brand-900">
-            Sudah Bayar, Upload Bukti
-        </a>
+        <div class="lg:col-span-6">
+            <div class="mx-5 lg:mx-0 mt-6 lg:mt-0 rounded-2xl border border-dashed border-gray-200 p-4 text-left">
+                <p class="text-xs font-bold text-gray-900">Langkah pembayaran</p>
+                <ol class="mt-2 space-y-1.5 text-[11px] text-gray-500">
+                    <li>1. Buka aplikasi bank atau e-wallet kamu.</li>
+                    <li>2. Pilih menu Scan QRIS, lalu scan kode di atas (atau download dulu kalau mau scan dari galeri).</li>
+                    <li>3. Pastikan nominalnya sesuai total tagihan, lalu bayar.</li>
+                    <li>4. Kembali ke halaman pesanan, upload bukti transfernya.</li>
+                </ol>
+            </div>
+
+            <a href="{{ route('member.pesanan.show', $transaksi) }}"
+               onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+               class="mx-5 lg:mx-0 mt-6 block rounded-xl bg-brand-800 py-2.5 text-center text-xs font-bold text-white transition active:bg-brand-900">
+                Sudah Bayar, Upload Bukti
+            </a>
+        </div>
     </div>
 
     <script>

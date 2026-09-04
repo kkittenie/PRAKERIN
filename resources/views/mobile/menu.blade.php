@@ -71,6 +71,7 @@
              });
          ">
 
+         {{-- Compact scroll header (Mobile only) --}}
          <div x-cloak
              x-show="scrolled"
              x-transition:enter="transition ease-out duration-200"
@@ -79,7 +80,7 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 -translate-y-2"
-             class="pointer-events-none absolute inset-x-0 top-0 z-50" x-ref="compactHeader">
+             class="pointer-events-none absolute inset-x-0 top-0 z-50 lg:hidden" x-ref="compactHeader">
             <div class="bg-white px-5 pb-4 pt-3 shadow-sm sm:px-8 md:px-10">
                 <div class="mx-auto flex max-w-screen-xl items-start gap-3">
                     <a href="{{ route('member.beranda') }}"
@@ -105,6 +106,7 @@
             </div>
         </div>
 
+        {{-- Brown banner + store info card (Mobile only) --}}
         <div x-show="!scrolled"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
@@ -112,7 +114,7 @@
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="relative -mx-5 sm:-mx-8 md:-mx-10 -mt-6 overflow-hidden rounded-b-[22px] bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-5 pb-8 pt-4 text-white">
+             class="relative -mx-5 sm:-mx-8 md:-mx-10 -mt-6 overflow-hidden rounded-b-[22px] bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-5 pb-8 pt-4 text-white lg:hidden">
 
             <div class="relative flex items-center justify-center">
                 <a href="{{ route('member.beranda') }}"
@@ -123,8 +125,7 @@
                 <h1 class="text-theme-sm font-bold text-white">Saisho Cake & Bakery</h1>
             </div>
 
-            {{-- Rotating tagline, ticker-style: dark translucent pill, bakery-only
-                 copy in English. Rotation at 4.5s per change so it's easy to read. --}}
+            {{-- Rotating tagline --}}
             <div class="relative mx-auto mt-4 h-7 w-56 max-w-full overflow-hidden rounded-full bg-black/25"
                  style="mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);">
                 <template x-for="(tagline, i) in taglines" :key="i">
@@ -141,6 +142,7 @@
             </div>
         </div>
 
+        {{-- Store info card (Mobile only) --}}
         <div x-show="!scrolled"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 translate-y-1"
@@ -148,7 +150,7 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 -translate-y-1"
-             class="relative z-10 -mt-8">
+             class="relative z-10 -mt-8 lg:hidden">
             <div class="flex items-center gap-3 rounded-3xl border border-white/10 bg-white px-4 py-4 shadow-lg shadow-black/20">
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
@@ -163,12 +165,65 @@
             </div>
         </div>
 
-        @if ($kategoris->isNotEmpty() || $daftarBundling->isNotEmpty())
-            <div :style="`margin-top: ${chipsOffset}px`"
-                 class="relative flex items-center gap-2 pb-4 transition-[margin] duration-200">
+        {{-- Desktop Sticky Header Container (Hero Banner + Search Bar) --}}
+        <div class="hidden lg:block sticky top-16 z-30 bg-white/95 backdrop-blur-md pt-1 pb-4 mb-6">
+            {{-- Desktop Hero Banner --}}
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#5a3c27] via-[#704b30] to-[#8b5e3c] text-white shadow-lg p-6 xl:p-7">
+                <svg class="pointer-events-none absolute right-0 top-0 h-full w-1/2 text-white/5" viewBox="0 0 400 300" fill="none">
+                    <circle cx="300" cy="150" r="180" stroke="currentColor" stroke-width="40"/>
+                    <circle cx="300" cy="150" r="80" stroke="currentColor" stroke-width="20"/>
+                </svg>
 
-                {{-- Search input --}}
-                <div class="flex flex-1 items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                <div class="relative z-10 flex items-center justify-between gap-8">
+                    <div class="max-w-xl">
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur">
+                            ✨ Freshly Baked Daily
+                        </span>
+                        <h1 class="mt-2 text-2xl lg:text-3xl font-extrabold tracking-tight leading-tight">
+                            Temukan Menu Favoritmu
+                        </h1>
+                        <p class="mt-1 text-xs lg:text-sm text-brand-100/90 leading-relaxed">
+                            Nikmati aneka pilihan kue, roti, paket bundling & promo spesial dari {{ $storeNama }}.
+                        </p>
+                    </div>
+
+                    {{-- Store Location Pill on Desktop --}}
+                    <div class="shrink-0 rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-md max-w-xs">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-brand-800 shadow-sm">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 10.5V20a1 1 0 0 0 1 1h4v-5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5h4a1 1 0 0 0 1-1v-9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M2.5 10 12 3l9.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-white truncate">{{ $storeNama }}</p>
+                                <p class="text-[11px] text-white/75 truncate mt-0.5">{{ $storeAlamat }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Compact Search Bar (Desktop) --}}
+            <div class="mt-3 flex items-center justify-between">
+                <div class="flex w-96 max-w-md items-center gap-2.5 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm">
+                    <svg class="h-4 w-4 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <input type="text" x-model="search" placeholder="Cari menu favoritmu..."
+                           class="w-full border-0 bg-transparent p-0 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0">
+                </div>
+            </div>
+        </div>
+
+        @if ($kategoris->isNotEmpty() || $daftarBundling->isNotEmpty())
+            <div :style="window.innerWidth < 1024 ? `margin-top: ${chipsOffset}px` : ''"
+                 class="relative flex items-center gap-2 pb-4 transition-[margin] duration-200 lg:hidden">
+
+                {{-- Search input (Mobile only) --}}
+                <div class="flex flex-1 items-center gap-2.5 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
                     <svg class="h-4 w-4 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none">
                         <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
                         <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -177,8 +232,8 @@
                            class="w-full border-0 bg-transparent p-0 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0">
                 </div>
 
-                {{-- Tombol filter kategori --}}
-                <div class="relative shrink-0" @click.outside="kategoriDropdown = false">
+                {{-- Tombol filter kategori (Mobile only) --}}
+                <div class="relative shrink-0 lg:hidden" @click.outside="kategoriDropdown = false">
                     <button type="button" @click="kategoriDropdown = ! kategoriDropdown"
                             :class="activeKategori !== 'semua' ? 'bg-brand-800 border-brand-800 text-white' : 'bg-white border-gray-200 text-gray-500'"
                             class="flex h-[46px] w-[46px] items-center justify-center rounded-2xl border shadow-sm transition active:scale-90">
@@ -187,7 +242,7 @@
                         </svg>
                     </button>
 
-                    {{-- Dropdown kategori --}}
+                    {{-- Dropdown kategori (Mobile only) --}}
                     <div x-show="kategoriDropdown" x-cloak
                          x-transition:enter="transition ease-out duration-150"
                          x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
@@ -242,6 +297,48 @@
             </div>
         @endif
 
+        {{-- Main Desktop Grid: Sidebar Kategori on Left, Product List on Right --}}
+        <div class="lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start">
+            {{-- Desktop Sticky Sidebar Navigation --}}
+            <aside class="hidden lg:block lg:col-span-3 xl:col-span-2 sticky top-[310px] space-y-1">
+                <p class="px-3 pb-2 text-[11px] font-extrabold uppercase tracking-wider text-gray-400">Kategori</p>
+                
+                <button type="button" @click="activeKategori = 'semua'"
+                        :class="activeKategori === 'semua' ? 'bg-brand-50 text-brand-800 font-extrabold' : 'text-gray-600 hover:bg-gray-50 font-semibold'"
+                        class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs transition">
+                    <span>Semua Menu</span>
+                    <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500" :class="activeKategori === 'semua' ? 'bg-brand-100 text-brand-700' : ''">{{ count($searchIndex) }}</span>
+                </button>
+
+                @if ($daftarBundling->isNotEmpty())
+                    <button type="button" @click="activeKategori = 'bundling'"
+                            :class="activeKategori === 'bundling' ? 'bg-brand-50 text-brand-800 font-extrabold' : 'text-gray-600 hover:bg-gray-50 font-semibold'"
+                            class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs transition">
+                        <span>Bundling</span>
+                        <span class="rounded-full bg-orange-50 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">{{ $daftarBundling->count() }}</span>
+                    </button>
+                @endif
+
+                <button type="button" x-show="promoEventCountLive > 0" x-cloak @click="activeKategori = 'promo_event'"
+                        :class="activeKategori === 'promo_event' ? 'bg-brand-50 text-brand-800 font-extrabold' : 'text-gray-600 hover:bg-gray-50 font-semibold'"
+                        class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs transition">
+                    <span>Promo Event</span>
+                    <span class="rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600" x-text="promoEventCountLive"></span>
+                </button>
+
+                @foreach ($kategoris as $kategori)
+                    <button type="button" @click="activeKategori = '{{ $kategori->id }}'"
+                            :class="activeKategori === '{{ $kategori->id }}' ? 'bg-brand-50 text-brand-800 font-extrabold' : 'text-gray-600 hover:bg-gray-50 font-semibold'"
+                            class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs transition">
+                        <span>{{ $kategori->nama_kategori }}</span>
+                        <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500" :class="activeKategori === '{{ $kategori->id }}' ? 'bg-brand-100 text-brand-700' : ''">{{ $kategori->produk->count() }}</span>
+                    </button>
+                @endforeach
+            </aside>
+
+            {{-- Right Product Content Area --}}
+            <div class="lg:col-span-9 xl:col-span-10">
+
         <div x-ref="menuScroller"
              @scroll="
                  if (window.Android && typeof window.Android.laporkanStatusScroll === 'function') {
@@ -254,9 +351,9 @@
                      setTimeout(() => updateMenuScrollerHeight(), 240);
                  }
              "
-             :style="`max-height: ${menuScrollerMaxHeight}px`"
-             class="min-h-0 overflow-y-auto overscroll-contain"
-             style="scrollbar-width:none; -webkit-overflow-scrolling:touch;">
+             :style="window.innerWidth >= 1024 ? '' : `max-height: ${menuScrollerMaxHeight}px`"
+             class="min-h-0 overflow-y-auto overscroll-contain lg:max-h-[calc(100vh-340px)] lg:overflow-y-auto lg:pr-2"
+             style="-webkit-overflow-scrolling:touch;">
 
         {{-- Menu sections, grouped by category --}}
         @if ($daftarBundling->isNotEmpty())
@@ -267,7 +364,7 @@
                 </div>
                 <div class="mt-1 border-t border-dashed border-gray-100"></div>
 
-                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4">
                     @foreach ($daftarBundling as $bundling)
                         <a href="{{ route('member.bundling.show', $bundling) }}"
                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
@@ -316,7 +413,7 @@
             </div>
             <div class="mt-1 border-t border-dashed border-gray-100"></div>
 
-            <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" id="promo-event-grid">
+            <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4" id="promo-event-grid">
                 @foreach ($daftarPromoEvent as $promoEvent)
                     <a href="{{ route('member.promo-event.show', $promoEvent) }}"
                        onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
@@ -364,7 +461,7 @@
                 </div>
                 <div class="mt-1 border-t border-dashed border-gray-100"></div>
 
-                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4">
                     @foreach ($kategori->produk as $produk)
                         @php
                             $hargaAsli = $produk->harga_tampil_asli;
@@ -435,6 +532,7 @@
         @endif
 
         <p x-show="adaProdukTampil()" class="mt-6 pb-5 text-center text-[11px] text-gray-400">Tap menu untuk lihat detail &amp; pesan</p>
+        </div>
         </div>
     </div>
 

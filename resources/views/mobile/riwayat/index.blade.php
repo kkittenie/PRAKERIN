@@ -81,14 +81,14 @@
     </style>
 
     <div>
-        <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-0 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10">
-            <h1 class="text-center text-lg font-extrabold text-gray-900">Riwayat</h1>
+        <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-0 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10 lg:pt-2 lg:-mt-2">
+            <h1 class="text-center text-lg font-extrabold text-gray-900 lg:hidden">Riwayat</h1>
 
             @unless ($isEmpty)
                 {{-- Fore-style underline tabs. Same swipeable/draggable track pattern
                      as the Vouchers page. Lives inside the sticky header so it pins
                      under the title while the tab panels scroll underneath it. --}}
-                <div class="relative mt-4 grid grid-cols-3 border-b border-gray-100">
+                <div class="relative mt-4 grid grid-cols-3 border-b border-gray-100 lg:max-w-md lg:mx-auto lg:mt-0">
                     @foreach ([
                         'riwayat' => 'Order',
                         'voucher' => 'Voucher',

@@ -26,24 +26,10 @@
             left: 0;
             right: 0;
             bottom: 0;
-            height: 82%;
+            height: 75%;
             pointer-events: none;
             z-index: 1;
-            background: linear-gradient(to top,
-                    #ffffff 0%,
-                    rgba(255, 255, 255, 0.99) 6%,
-                    rgba(255, 255, 255, 0.96) 12%,
-                    rgba(255, 255, 255, 0.90) 18%,
-                    rgba(255, 255, 255, 0.82) 25%,
-                    rgba(255, 255, 255, 0.72) 32%,
-                    rgba(255, 255, 255, 0.60) 40%,
-                    rgba(255, 255, 255, 0.48) 48%,
-                    rgba(255, 255, 255, 0.36) 56%,
-                    rgba(255, 255, 255, 0.25) 64%,
-                    rgba(255, 255, 255, 0.16) 72%,
-                    rgba(255, 255, 255, 0.09) 80%,
-                    rgba(255, 255, 255, 0.04) 88%,
-                    rgba(255, 255, 255, 0.0) 100%);
+            background: linear-gradient(to top, #ffffff 0%, rgba(255, 255, 255, 0.85) 30%, rgba(255, 255, 255, 0) 100%);
         }
 
         #slide-text {
@@ -77,36 +63,65 @@
 
         /* Plain CSS overrides for md+ layout — not dependent on Tailwind build/cache */
         @media (min-width: 768px) {
+            body {
+                min-height: 100vh !important;
+                height: 100vh !important;
+                width: 100% !important;
+            }
+
             #app-card {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                align-items: stretch;
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                align-items: stretch !important;
+                min-height: 100vh !important;
+                height: 100vh !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
             }
+
             #carousel-viewport {
-                aspect-ratio: unset;
-                height: 100%;
+                aspect-ratio: unset !important;
+                height: 100% !important;
+                border-radius: 0 !important;
             }
+
+            #carousel-viewport .hero-fade {
+                height: 50% !important;
+                background: linear-gradient(to top,
+                        rgba(0, 0, 0, 0.6) 0%,
+                        rgba(0, 0, 0, 0.2) 50%,
+                        rgba(0, 0, 0, 0.0) 100%) !important;
+            }
+
             #text-col {
-                margin-top: 0;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                gap: 2rem;
-                padding-left: 1rem;
-                padding-right: 1rem;
+                margin-top: 0 !important;
+                height: 100% !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                gap: 2.5rem !important;
+                padding-left: 3rem !important;
+                padding-right: 3rem !important;
+                background-color: #ffffff !important;
             }
+
             #button-row {
-                margin-top: 0;
+                margin-top: 0 !important;
+                width: 100% !important;
+                max-width: 380px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
             }
         }
     </style>
 </head>
 
-<body class="h-full font-outfit antialiased overflow-x-hidden sm:flex sm:min-h-screen sm:items-stretch sm:justify-center">
+<body class="h-full font-outfit antialiased overflow-x-hidden md:min-h-screen md:h-screen md:w-full">
     <div id="app-card"
-        class="mx-auto flex min-h-screen w-full max-w-none sm:max-w-2xl md:max-w-4xl lg:max-w-5xl flex-col bg-white shadow-2xl overflow-hidden transition-all duration-300 md:grid md:grid-cols-2 md:items-stretch">
-        <div id="carousel-viewport" class="relative w-full aspect-[3/4] sm:aspect-[4/3] md:aspect-auto md:h-full overflow-hidden touch-pan-x bg-[#5a3c27] sm:rounded-t-3xl md:rounded-tr-none md:rounded-l-3xl">
+        class="mx-auto flex min-h-screen w-full flex-col bg-white shadow-2xl overflow-hidden transition-all duration-300 md:grid md:grid-cols-2 md:min-h-screen md:h-screen md:w-full md:max-w-none md:rounded-none md:shadow-none">
+        <div id="carousel-viewport" class="relative w-full aspect-[3/4] sm:aspect-[4/3] md:aspect-auto md:h-full overflow-hidden touch-pan-x bg-[#5a3c27] md:rounded-none">
             <div id="carousel-track" class="carousel-track">
 
                 {{-- Slide 1 --}}

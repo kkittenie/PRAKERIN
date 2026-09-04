@@ -140,8 +140,15 @@
                     </div>
 
                     <button type="button"
-                        @if ($bisaTukar && $produk) onclick="bukaKonfirmasiTukarStamp({{ $produk->id }}, {{ $hadiah->jumlah }}, {{ \Illuminate\Support\Js::from($produk->nama_produk) }})" @else disabled @endif
-                        class="shrink-0 rounded-full px-4 py-2 text-xs font-bold transition {{ $bisaTukar && $produk ? 'bg-[#5a3c27] text-white active:bg-[#4a3020]' : 'bg-gray-100 text-gray-400' }}">
+                        @if ($bisaTukar && $produk)
+                            data-produk-id="{{ $produk->id }}"
+                            data-jumlah="{{ $hadiah->jumlah }}"
+                            data-nama-produk="{{ $produk->nama_produk }}"
+                            onclick="bukaKonfirmasiTukarStampFromBtn(this)"
+                        @else
+                            onclick="alert('Stamp kamu belum cukup ({{ $current }}/{{ $target }} stamp terkumpul). Kumpulkan {{ $target - $current }} stamp lagi untuk menukar hadiah ini!')"
+                        @endif
+                        class="shrink-0 rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer {{ $bisaTukar && $produk ? 'bg-[#5a3c27] text-white hover:bg-[#4a3020] active:scale-95' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}">
                         Tukar
                     </button>
                 </div>
@@ -152,41 +159,47 @@
             @endforelse
         </div>
 
-        {{-- Shared confirmation dialog, filled in dynamically by bukaKonfirmasiTukarStamp() --}}
-        <dialog id="konfirmasi-tukar-stamp" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto rounded-t-3xl border-0 p-0">
-            <div class="flex shrink-0 justify-center pb-1 pt-3">
-                <span class="h-1 w-10 rounded-full bg-gray-200"></span>
-            </div>
-            <div class="p-5 pt-2 text-center">
-                <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-800">
-                    @include('mobile.components.icon-gift', ['class' => 'h-6 w-6'])
-                </span>
-                <p class="mt-3 text-sm font-semibold text-gray-800">Tukar <span id="konfirmasi-tukar-stamp-nama"></span>?</p>
-                <p class="mt-1 text-xs text-gray-500">Stamp kamu akan dipotong {{ $target }} dan tidak bisa dibatalkan.</p>
-
-                <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-5 space-y-2 pb-2">
-                    @csrf
-                    <input type="hidden" name="produk_id" id="konfirmasi-tukar-stamp-produk-id">
-                    <button type="submit" class="w-full rounded-xl bg-[#5a3c27] py-3 text-sm font-semibold text-white">Ya, Tukar Sekarang</button>
-                    <button type="button" onclick="closeSheet('konfirmasi-tukar-stamp')" class="w-full rounded-xl py-3 text-sm font-medium text-gray-500">Batal</button>
-                </form>
-            </div>
-        </dialog>
-
     @endif
 
     </div>
 
-    {{-- Kept outside #stamp-tab-content: when this page is opened directly this still
-         runs normally, and when the Vouchers page fetches this page for its Stamp tab,
-         it defines the same function itself (see rewards/index.blade.php) since injected
-         <script> tags don't execute. --}}
+    {{-- Shared confirmation dialog, filled in dynamically by bukaKonfirmasiTukarStamp() --}}
+    <dialog id="konfirmasi-tukar-stamp" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto rounded-t-3xl border-0 p-0">
+        <div class="flex shrink-0 justify-center pb-1 pt-3">
+            <span class="h-1 w-10 rounded-full bg-gray-200"></span>
+        </div>
+        <div class="p-5 pt-2 text-center">
+            <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-800">
+                @include('mobile.components.icon-gift', ['class' => 'h-6 w-6'])
+            </span>
+            <p class="mt-3 text-sm font-semibold text-gray-800">Tukar <span id="konfirmasi-tukar-stamp-nama"></span>?</p>
+            <p class="mt-1 text-xs text-gray-500">Stamp kamu akan dipotong dan tidak bisa dibatalkan.</p>
+
+            <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-5 space-y-2 pb-2">
+                @csrf
+                <input type="hidden" name="produk_id" id="konfirmasi-tukar-stamp-produk-id">
+                <button type="submit" class="w-full rounded-xl bg-[#5a3c27] py-3 text-sm font-semibold text-white hover:bg-[#4a3020]">Ya, Tukar Sekarang</button>
+                <button type="button" onclick="closeSheet('konfirmasi-tukar-stamp')" class="w-full rounded-xl py-3 text-sm font-medium text-gray-500 hover:bg-gray-100">Batal</button>
+            </form>
+        </div>
+    </dialog>
+
     <script>
-        function bukaKonfirmasiTukarStamp(produkId, jumlah, namaProduk) {
-            document.getElementById('konfirmasi-tukar-stamp-produk-id').value = produkId;
-            document.getElementById('konfirmasi-tukar-stamp-nama').textContent = jumlah + 'x ' + namaProduk;
+        window.bukaKonfirmasiTukarStamp = function (produkId, jumlah, namaProduk) {
+            const hiddenInput = document.getElementById('konfirmasi-tukar-stamp-produk-id');
+            const namaSpan = document.getElementById('konfirmasi-tukar-stamp-nama');
+            if (hiddenInput) hiddenInput.value = produkId;
+            if (namaSpan) namaSpan.textContent = jumlah + 'x ' + namaProduk;
             openSheet('konfirmasi-tukar-stamp');
-        }
+        };
+
+        window.bukaKonfirmasiTukarStampFromBtn = function (btn) {
+            if (!btn) return;
+            const produkId = btn.dataset.produkId;
+            const jumlah = btn.dataset.jumlah;
+            const namaProduk = btn.dataset.namaProduk;
+            window.bukaKonfirmasiTukarStamp(produkId, jumlah, namaProduk);
+        };
 
         // Only runs when this page is opened directly (not when the Vouchers
         // page injects this markup via innerHTML — injected <script> tags don't

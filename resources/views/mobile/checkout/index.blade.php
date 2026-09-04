@@ -25,9 +25,9 @@
 
     <div x-data="{ pilihVoucherOpen: false }">
         <div
-            class="checkout-sticky-header relative -mx-5 -mt-6 flex h-14 items-center justify-center border-b border-gray-100 px-5 sm:-mx-8 md:-mx-10">
+            class="checkout-sticky-header relative -mx-5 -mt-6 flex h-14 items-center justify-center border-b border-gray-100 px-5 sm:-mx-8 md:-mx-10 lg:-mx-12 lg:hidden">
             <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-                class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100">
+                class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100 lg:hidden">
                 <span class="rotate-180">
                     @include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4'])
                 </span>
@@ -38,47 +38,39 @@
             </h1>
         </div>
 
-        <div class="mt-5 flex items-center gap-3 rounded-2xl bg-brand-50 p-3.5">
+        <div class="lg:grid lg:grid-cols-12 lg:gap-8 lg:mt-6 lg:items-start">
 
-            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-brand-800">
+            <div class="lg:col-span-7 space-y-5">
 
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 10.5V20a1 1 0 0 0 1 1h4v-5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5h4a1 1 0 0 0 1-1v-9.5"
-                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                <div class="mt-5 flex items-center gap-3 rounded-2xl bg-brand-50 p-3.5 lg:mt-0">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-brand-800">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 10.5V20a1 1 0 0 1 1h4v-5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5h4a1 1 0 0 0 1-1v-9.5"
+                                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M2.5 10 12 3l9.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[10px] font-bold uppercase tracking-wide text-brand-700">
+                            Pick Up di
+                        </p>
+                        <p class="truncate text-xs font-bold text-gray-900">
+                            {{ $storeNama }}
+                        </p>
+                        <p class="truncate text-[11px] text-gray-500">
+                            {{ $storeAlamat }}
+                        </p>
+                    </div>
+                </div>
 
-                    <path d="M2.5 10 12 3l9.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                </svg>
-
-            </span>
-
-            <div class="min-w-0 flex-1">
-
-                <p class="text-[10px] font-bold uppercase tracking-wide text-brand-700">
-                    Pick Up di
-                </p>
-
-                <p class="truncate text-xs font-bold text-gray-900">
-                    {{ $storeNama }}
-                </p>
-
-                <p class="truncate text-[11px] text-gray-500">
-                    {{ $storeAlamat }}
-                </p>
-
-            </div>
-
-        </div>
-
-
-        {{-- ========================================================= --}}
-        {{-- ORDER DETAILS --}}
-        {{-- ========================================================= --}}
-        <div class="mt-5">
-
-            <h2 class="text-sm font-bold text-gray-900">
-                Order Details
-            </h2>
+                {{-- ========================================================= --}}
+                {{-- ORDER DETAILS --}}
+                {{-- ========================================================= --}}
+                <div>
+                    <h2 class="text-sm font-bold text-gray-900">
+                        Order Details
+                    </h2>
 
             <div class="mt-2 divide-y divide-dashed divide-gray-200">
 
@@ -279,11 +271,14 @@
 
         </div>
 
+        </div>{{-- end lg:col-span-7 --}}
+
+        <div class="lg:col-span-5 lg:sticky lg:top-24">
 
         {{-- ========================================================= --}}
         {{-- VOUCHER DISKON --}}
         {{-- ========================================================= --}}
-        <div class="mt-5">
+        <div class="mt-5 lg:mt-0">
 
             <p class="text-xs font-bold text-gray-900">
                 Voucher Diskon
@@ -779,11 +774,20 @@
 
             </div>
 
+            <div class="mt-6 hidden lg:block">
+                <button type="submit" form="form-checkout"
+                    class="flex w-full items-center justify-center rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900 active:scale-[0.99]">
+                    Order Now
+                </button>
+            </div>
+
         </div>
 
+        <div class="h-28 lg:h-4"></div>
 
-        {{-- Extra space supaya konten tidak ketutup sticky bottom --}}
-        <div class="h-28"></div>
+        </div>{{-- end lg:col-span-5 --}}
+
+        </div>{{-- end lg:grid --}}
 
     </div>
 
@@ -791,7 +795,8 @@
                        border-t border-gray-100 bg-white/95 px-5 py-4
                        backdrop-blur sm:px-8 sm:pb-6
                        md:px-10
-                       2xl:max-w-6xl">
+                       2xl:max-w-6xl
+                       lg:hidden">
 
         <button type="submit" form="form-checkout"
             class="flex w-full items-center justify-center rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">

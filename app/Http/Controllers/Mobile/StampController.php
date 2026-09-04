@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class StampController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
             $member = Auth::guard('member')->user();
@@ -78,18 +78,30 @@ class StampController extends Controller
                 $memberStamp->decrement('jumlah_stamp', $program->jumlah_stamp_dibutuhkan);
                 $program->increment('jumlah_redeem');
 
-                return StampRedemption::create([
+                $redemption = StampRedemption::create([
                     'member_id' => $member->id,
                     'stamp_program_id' => $program->id,
                     'produk_id' => $validated['produk_id'],
                     'sumber' => 'member',
                     'status' => 'menunggu_diambil',
                 ]);
+
+                \App\Support\NotificationHelper::untukMember(
+                    $member->id,
+                    'Penukaran Stamp Berhasil',
+                    'Kamu berhasil menukar stamp dengan ' . ($produk->nama_produk ?? 'hadiah') . '. Kode: ' . $redemption->kode_redeem,
+                    'stamp',
+                    route('member.reward.index', ['tab' => 'stamp']),
+                    'success'
+                );
+
+                return $redemption;
             });
 
             return redirect()
-                ->route('member.stamps.index')
-                ->with('success', 'Berhasil ditukar! Tunjukkan kode ' . $redemption->kode_redeem . ' ke kasir untuk mengambil hadiahnya.');
+                ->route('member.reward.index', ['tab' => 'stamp'])
+                ->with('success', 'Berhasil ditukar! Tunjukkan kode ' . $redemption->kode_redeem . ' ke kasir untuk mengambil hadiahnya.')
+                ->with('redeem_code', $redemption->kode_redeem);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

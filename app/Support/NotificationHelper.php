@@ -167,15 +167,41 @@ class NotificationHelper
     }
 
     /**
+     * Normalisasi URL agar selalu menggunakan host/port request yang sedang aktif
+     * daripada menembak IP lama yang tersimpan di database.
+     */
+    public static function normalizeUrl(?string $url): string
+    {
+        if (empty($url)) {
+            return route('member.notifikasi.index');
+        }
+
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            $parsed = parse_url($url);
+            $path = $parsed['path'] ?? '/';
+            $query = isset($parsed['query']) ? '?' . $parsed['query'] : '';
+            return url($path . $query);
+        }
+
+        return url($url);
+    }
+
+    /**
      * Ambil notifikasi in-app milik satu member (buat halaman
      * /mobile/notifikasi & badge unread di lonceng beranda).
      */
     public static function getNotifikasiMember(int $memberId, int $limit = 50)
     {
-        return AppNotification::untukMember($memberId)
+        $notifikasis = AppNotification::untukMember($memberId)
             ->latest()
             ->limit($limit)
             ->get();
+
+        foreach ($notifikasis as $notif) {
+            $notif->url = static::normalizeUrl($notif->url);
+        }
+
+        return $notifikasis;
     }
 
     public static function hitungBelumDibacaMember(int $memberId): int

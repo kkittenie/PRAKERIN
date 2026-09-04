@@ -1,6 +1,7 @@
 @extends('mobile.layout', ['title' => 'Status Pesanan'])
 
 @php
+    $detailRingkas = $detailRingkas ?? $transaksi->detailTransaksi ?? $transaksi->detail ?? collect();
     $lunas = $transaksi->status_pembayaran === 'Lunas';
     $steps = [
         'menunggu_pembayaran' => 'Menunggu Pembayaran',
@@ -44,165 +45,133 @@
             <h1 class="text-sm font-bold text-gray-900">Status Pesanan</h1>
         </div>
 
-        @if ($dibatalkan)
-            <div class="mt-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-                <p class="text-xs font-bold text-red-600">Pesanan Dibatalkan</p>
-                <p class="mt-1 text-[11px] text-red-400">{{ $transaksi->kode_transaksi }}</p>
-            </div>
-        @endif
+        <div class="lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start lg:mt-6">
 
-        {{-- Kode Pickup: baru muncul begitu pesanan ditandai Ready for Pickup
-             oleh kasir (kode digenerate otomatis di titik itu). Tunjukkan ke
-             kasir waktu mengambil pesanan. --}}
-        @if (! $dibatalkan && $transaksi->status_pesanan === \App\Models\Transaksi::STATUS_SIAP_DIAMBIL && $transaksi->kode_pickup)
-            <div class="mt-6 rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 p-6 text-center text-white">
-                <p class="text-xs font-bold uppercase tracking-wide text-white/70">Tunjukkan kode ini ke kasir</p>
-                <p class="mt-2 text-4xl font-extrabold tracking-[0.3em]">{{ $transaksi->kode_pickup }}</p>
-                <p class="mt-3 text-[11px] text-white/60">{{ $transaksi->kode_transaksi }}</p>
-            </div>
-        @endif
-
-        {{-- Progress status --}}
-        @unless ($dibatalkan)
-            <div x-data="pesananTimeline({{ $indexSekarang !== false ? $indexSekarang : -1 }}, {{ $transaksi->id }})"
-                 x-cloak
-                 class="mt-6 flex items-start">
-                @foreach ($steps as $key => $label)
-                    @php $idx = array_search($key, $urutan, true); @endphp
-                    <div class="flex min-w-0 flex-1 flex-col items-center text-center">
-                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                              :class="[selesai({{ $idx }}) ? 'bg-brand-800 text-white' : 'bg-gray-200 text-gray-400', (baru({{ $idx }}) && mounted) ? 'animate-step-pop' : '']"
-                              :style="baru({{ $idx }}) ? `animation-delay: {{ $idx }}00ms` : ''">
-                            @include($stepIcons[$key], ['class' => 'h-4 w-4'])
-                        </span>
-                        <p class="mt-2 max-w-[76px] text-[10px] font-bold leading-tight transition-colors duration-500"
-                           :class="selesai({{ $idx }}) ? 'text-brand-800' : 'text-gray-400'">{{ $label }}</p>
+            {{-- Kolom Kiri: Status & Items --}}
+            <div class="lg:col-span-7">
+                @if ($dibatalkan)
+                    <div class="mt-6 lg:mt-0 rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
+                        <p class="text-xs font-bold text-red-600">Pesanan Dibatalkan</p>
+                        <p class="mt-1 text-[11px] text-red-400">{{ $transaksi->kode_transaksi }}</p>
                     </div>
-                    @if (! $loop->last)
-                        <div class="relative mt-4 h-0.5 min-w-[8px] flex-1 shrink rounded-full bg-gray-200">
-                            {{-- Garis terisi begitu step ini kelar --}}
-                            <div class="absolute inset-y-0 left-0 h-full rounded-full bg-brand-800"
-                                 :class="lineSelesai({{ $idx }}) ? 'w-full' : 'w-0'"
-                                 :style="lineBaru({{ $idx }}) ? `transition: width 650ms cubic-bezier(.4,0,.2,1) {{ $idx }}00ms` : 'transition: none'"></div>
-                            {{-- Titik yang "berjalan" dari step ini ke step berikutnya, cuma
-                                 muncul barengan garis yang baru maju (lihat lineBaru() di script).
-                                 Digerbang sama "mounted" persis kayak garisnya, supaya keduanya
-                                 mulai bareng — bukan titiknya duluan baru garisnya nyusul. --}}
-                            <span :class="(lineBaru({{ $idx }}) && mounted) ? 'animate-line-walk' : 'invisible'"
-                                  :style="`animation-delay: {{ $idx }}00ms`"
-                                  class="absolute top-1/2 z-10 h-2.5 w-2.5 rounded-full bg-brand-800 ring-4 ring-white"></span>
-                        </div>
-                    @endif
-                @endforeach
-            </div>
-
-            <p class="mt-4 text-center text-[11px] font-medium text-gray-400">
-                @if ($statusSekarang === 'menunggu_pembayaran')
-                    Menunggu pembayaran kamu diverifikasi oleh toko.
-                @elseif ($statusSekarang === 'pembayaran_dikonfirmasi')
-                    Pembayaran kamu sudah dikonfirmasi toko. Pesanan akan segera mulai diproses.
-                @elseif ($statusSekarang === \App\Models\Transaksi::STATUS_DIPROSES)
-                    Pesanan kamu sedang disiapkan oleh toko.
-                @elseif ($statusSekarang === \App\Models\Transaksi::STATUS_SIAP_DIAMBIL)
-                    Pesanan sudah siap! Silakan ambil di kasir.
-                @else
-                    Pesanan sudah kamu ambil. Terima kasih!
                 @endif
-            </p>
-        @endunless
 
-        {{-- Detail pesanan --}}
-        @php
-            // Satu produk bisa punya lebih dari satu baris detail kalau
-            // sebagian dipenuhi dari stok & sebagian lagi butuh diproduksi
-            // (lihat CheckoutController::pecahJumlahProduksi()). Digabung
-            // per nama produk supaya member cuma lihat satu baris ringkas.
-            $detailRingkas = $transaksi->detailTransaksi
-                ->filter(function ($item) {
-                    // Buang baris komponen bundling (sudah diwakilkan oleh
-                    // baris ringkasan bundling_id, komponen ini cuma buat
-                    // stok/tiket dapur — sama seperti filter di struk pelanggan).
-                    if (! is_null($item->bundling_id) && ! is_null($item->produk_id) && (float) $item->harga_satuan == 0 && (float) $item->subtotal == 0) {
-                        return false;
-                    }
-                    return true;
-                })
-                ->groupBy(function ($item) {
-                    return $item->nama_produk . '_' . ($item->ukuran ?? 'std');
-                })
-                ->map(function ($group) {
-                    $first = $group->first();
-                    return (object) [
-                        'nama_produk' => $first->nama_produk,
-                        'ukuran' => $first->ukuran,
-                        'jumlah' => $group->sum('jumlah'),
-                        'subtotal' => $group->sum('subtotal'),
-                        'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
-                    ];
-                })
-                ->values();
-        @endphp
-        <div class="mt-6">
-            <h2 class="text-sm font-bold text-gray-900">Detail Pesanan</h2>
-            <div class="mt-2 divide-y divide-gray-100 rounded-2xl border border-gray-100">
-                @foreach ($detailRingkas as $detail)
-                    <div class="flex items-center justify-between p-3">
-                        <div class="min-w-0">
-                            <p class="truncate text-xs font-bold text-gray-900">
-                                {{ $detail->jumlah }}x {{ $detail->nama_produk }}
-                                @if (!empty($detail->ukuran))
-                                    <span class="text-brand-800 font-extrabold text-[11px] ml-1">({{ $detail->ukuran }})</span>
-                                @endif
-                            </p>
-                            @if ($detail->catatan)
-                                <p class="truncate text-[11px] text-gray-400">{{ $detail->catatan }}</p>
+                @if (! $dibatalkan && $transaksi->status_pesanan === \App\Models\Transaksi::STATUS_SIAP_DIAMBIL && $transaksi->kode_pickup)
+                    <div class="mt-6 lg:mt-0 rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 p-6 text-center text-white">
+                        <p class="text-xs font-bold uppercase tracking-wide text-white/70">Tunjukkan kode ini ke kasir</p>
+                        <p class="mt-2 text-4xl font-extrabold tracking-[0.3em]">{{ $transaksi->kode_pickup }}</p>
+                        <p class="mt-3 text-[11px] text-white/60">{{ $transaksi->kode_transaksi }}</p>
+                    </div>
+                @endif
+
+                {{-- Progress status --}}
+                @unless ($dibatalkan)
+                    <div x-data="pesananTimeline({{ $indexSekarang !== false ? $indexSekarang : -1 }}, {{ $transaksi->id }})"
+                         x-cloak
+                         class="mt-6 flex items-start">
+                        @foreach ($steps as $key => $label)
+                            @php $idx = array_search($key, $urutan, true); @endphp
+                            <div class="flex min-w-0 flex-1 flex-col items-center text-center">
+                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                                      :class="[selesai({{ $idx }}) ? 'bg-brand-800 text-white' : 'bg-gray-200 text-gray-400', (baru({{ $idx }}) && mounted) ? 'animate-step-pop' : '']"
+                                      :style="baru({{ $idx }}) ? `animation-delay: {{ $idx }}00ms` : ''">
+                                    @include($stepIcons[$key], ['class' => 'h-4 w-4'])
+                                </span>
+                                <p class="mt-2 max-w-[76px] text-[10px] font-bold leading-tight transition-colors duration-500"
+                                   :class="selesai({{ $idx }}) ? 'text-brand-800' : 'text-gray-400'">{{ $label }}</p>
+                            </div>
+                            @if (! $loop->last)
+                                <div class="relative mt-4 h-0.5 min-w-[8px] flex-1 shrink rounded-full bg-gray-200">
+                                    <div class="absolute inset-y-0 left-0 h-full rounded-full bg-brand-800"
+                                         :class="lineSelesai({{ $idx }}) ? 'w-full' : 'w-0'"
+                                         :style="lineBaru({{ $idx }}) ? `transition: width 650ms cubic-bezier(.4,0,.2,1) {{ $idx }}00ms` : 'transition: none'"></div>
+                                    <span :class="(lineBaru({{ $idx }}) && mounted) ? 'animate-line-walk' : 'invisible'"
+                                          :style="`animation-delay: {{ $idx }}00ms`"
+                                          class="absolute top-1/2 z-10 h-2.5 w-2.5 rounded-full bg-brand-800 ring-4 ring-white"></span>
+                                </div>
                             @endif
-                        </div>
-                        <p class="shrink-0 text-xs font-bold text-gray-700">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</p>
+                        @endforeach
                     </div>
-                @endforeach
+
+                    <p class="mt-4 text-center text-[11px] font-medium text-gray-400">
+                        @if ($statusSekarang === 'menunggu_pembayaran')
+                            Menunggu pembayaran kamu diverifikasi oleh toko.
+                        @elseif ($statusSekarang === 'pembayaran_dikonfirmasi')
+                            Pembayaran kamu sudah dikonfirmasi toko. Pesanan akan segera mulai diproses.
+                        @elseif ($statusSekarang === \App\Models\Transaksi::STATUS_DIPROSES)
+                            Pesanan kamu sedang disiapkan oleh toko.
+                        @elseif ($statusSekarang === \App\Models\Transaksi::STATUS_SIAP_DIAMBIL)
+                            Pesanan sudah siap! Silakan ambil di kasir.
+                        @else
+                            Pesanan sudah kamu ambil. Terima kasih!
+                        @endif
+                    </p>
+                @endunless
+
+                <div class="mt-6">
+                    <h2 class="text-sm font-bold text-gray-900">Detail Pesanan</h2>
+                    <div class="mt-2 divide-y divide-gray-100 rounded-2xl border border-gray-100">
+                        @foreach ($detailRingkas as $detail)
+                            <div class="flex items-center justify-between p-3">
+                                <div class="min-w-0">
+                                    <p class="truncate text-xs font-bold text-gray-900">
+                                        {{ $detail->jumlah }}x {{ $detail->nama_produk }}
+                                        @if (!empty($detail->ukuran))
+                                            <span class="text-brand-800 font-extrabold text-[11px] ml-1">({{ $detail->ukuran }})</span>
+                                        @endif
+                                    </p>
+                                    @if ($detail->catatan)
+                                        <p class="truncate text-[11px] text-gray-400">{{ $detail->catatan }}</p>
+                                    @endif
+                                </div>
+                                <p class="shrink-0 text-xs font-bold text-gray-700">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="mt-3 space-y-1.5 rounded-2xl border border-dashed border-gray-200 p-4">
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>Subtotal</span>
+                            <span class="font-semibold text-gray-800">Rp {{ number_format($transaksi->subtotal, 0, ',', '.') }}</span>
+                        </div>
+                        @php
+                            $diskonItemsShow = [];
+                            if (!empty($transaksi->diskon_label)) {
+                                $decoded = json_decode($transaksi->diskon_label, true);
+                                if (is_array($decoded)) {
+                                    $diskonItemsShow = $decoded;
+                                }
+                            }
+                            $stripDiskonPrefix = fn(string $nama): string =>
+                                preg_replace('/^(?:Diskon|Voucher)\s*\((.+)\)$/', '$1', $nama);
+                        @endphp
+                        @if (!empty($diskonItemsShow))
+                            @foreach ($diskonItemsShow as $itemDiskon)
+                                <div class="flex justify-between text-xs text-gray-500">
+                                    <span>{{ $stripDiskonPrefix($itemDiskon['nama']) }}</span>
+                                    <span class="font-semibold text-red-500">- Rp {{ number_format($itemDiskon['nilai'], 0, ',', '.') }}</span>
+                                </div>
+                            @endforeach
+                        @elseif ($transaksi->diskon > 0)
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>Diskon</span>
+                                <span class="font-semibold text-red-500">- Rp {{ number_format($transaksi->diskon, 0, ',', '.') }}</span>
+                            </div>
+                        @endif
+                        <div class="flex justify-between border-t border-dashed border-gray-200 pt-1.5 text-sm">
+                            <span class="font-bold text-gray-900">Total</span>
+                            <span class="font-extrabold text-gray-900">Rp {{ number_format($transaksi->total_bayar, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="!mt-2 flex justify-between text-[11px] text-gray-400">
+                            <span>Status Pembayaran</span>
+                            <span class="font-semibold {{ $transaksi->status_pembayaran === 'Lunas' ? 'text-green-600' : 'text-amber-600' }}">{{ $transaksi->status_pembayaran }}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="mt-3 space-y-1.5 rounded-2xl border border-dashed border-gray-200 p-4">
-                <div class="flex justify-between text-xs text-gray-500">
-                    <span>Subtotal</span>
-                    <span class="font-semibold text-gray-800">Rp {{ number_format($transaksi->subtotal, 0, ',', '.') }}</span>
-                </div>
-                @php
-                    $diskonItemsShow = [];
-                    if (!empty($transaksi->diskon_label)) {
-                        $decoded = json_decode($transaksi->diskon_label, true);
-                        if (is_array($decoded)) {
-                            $diskonItemsShow = $decoded;
-                        }
-                    }
-                    // Strip prefix lama: "Diskon (X)" -> "X", "Voucher (X)" -> "X"
-                    $stripDiskonPrefix = fn(string $nama): string =>
-                        preg_replace('/^(?:Diskon|Voucher)\s*\((.+)\)$/', '$1', $nama);
-                @endphp
-                @if (!empty($diskonItemsShow))
-                    @foreach ($diskonItemsShow as $itemDiskon)
-                        <div class="flex justify-between text-xs text-gray-500">
-                            <span>{{ $stripDiskonPrefix($itemDiskon['nama']) }}</span>
-                            <span class="font-semibold text-red-500">- Rp {{ number_format($itemDiskon['nilai'], 0, ',', '.') }}</span>
-                        </div>
-                    @endforeach
-                @elseif ($transaksi->diskon > 0)
-                    <div class="flex justify-between text-xs text-gray-500">
-                        <span>Diskon</span>
-                        <span class="font-semibold text-red-500">- Rp {{ number_format($transaksi->diskon, 0, ',', '.') }}</span>
-                    </div>
-                @endif
-                <div class="flex justify-between border-t border-dashed border-gray-200 pt-1.5 text-sm">
-                    <span class="font-bold text-gray-900">Total</span>
-                    <span class="font-extrabold text-gray-900">Rp {{ number_format($transaksi->total_bayar, 0, ',', '.') }}</span>
-                </div>
-                <div class="!mt-2 flex justify-between text-[11px] text-gray-400">
-                    <span>Status Pembayaran</span>
-                    <span class="font-semibold {{ $transaksi->status_pembayaran === 'Lunas' ? 'text-green-600' : 'text-amber-600' }}">{{ $transaksi->status_pembayaran }}</span>
-                </div>
-            </div>
-        </div>
+            {{-- Kolom Kanan: Pembayaran --}}
+            <div class="lg:col-span-5 lg:sticky lg:top-24">
 
         {{-- Bukti Pembayaran: pembayaran dilakukan member sendiri di luar
              aplikasi (transfer/QRIS manual), foto ini yang jadi bukti buat
@@ -413,6 +382,9 @@
                 </div>
             </dialog>
         @endif
+
+            </div>{{-- end lg:col-span-5 --}}
+        </div>{{-- end lg:grid --}}
 
     </div>
 

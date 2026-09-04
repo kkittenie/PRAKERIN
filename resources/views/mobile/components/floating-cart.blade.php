@@ -6,7 +6,7 @@
 
 @if ($cartJumlah > 0)
     <a href="{{ route('member.checkout.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-        class="fixed inset-x-5 sm:inset-x-8 md:inset-x-10 bottom-24 sm:bottom-32 z-40 mx-auto flex w-auto max-w-none items-center justify-between gap-3 rounded-2xl bg-brand-800 px-4 py-3.5 text-white shadow-xl shadow-brand-900/30 transition active:scale-[0.98] sm:max-w-lg">
+        class="fixed inset-x-5 sm:inset-x-8 md:inset-x-10 bottom-24 sm:bottom-32 z-40 mx-auto flex w-auto max-w-none items-center justify-between gap-3 rounded-2xl bg-brand-800 px-4 py-3.5 text-white shadow-xl shadow-brand-900/30 transition active:scale-[0.98] sm:max-w-lg lg:hidden">
         <span class="flex items-center gap-3 min-w-0">
             <span class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">

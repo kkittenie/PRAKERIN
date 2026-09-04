@@ -72,90 +72,262 @@
         .step-exit-right {
             animation: pageExitToRight 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
+
+        /* Desktop Layout - Fullscreen 2 Column */
+        @media (min-width: 768px) {
+            #app-card {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                align-items: stretch;
+                min-height: 100vh;
+                height: 100vh;
+                max-width: 100% !important;
+                border-radius: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+        }
     </style>
 </head>
 
-<body class="h-full font-outfit antialiased overflow-x-hidden">
+<body class="h-full font-outfit antialiased overflow-x-hidden md:min-h-screen md:h-screen md:w-full">
     <div id="app-card"
-        class="mx-auto flex min-h-screen w-full max-w-none sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex-col bg-white px-6 sm:px-10 pb-8 pt-6 shadow-2xl step-enter-right sm:my-6 sm:min-h-0 sm:rounded-3xl sm:border sm:border-gray-200/80 transition-all duration-300">
+        class="mx-auto flex min-h-screen w-full flex-col bg-white px-6 sm:px-10 pb-8 pt-6 shadow-2xl step-enter-right transition-all duration-300 md:grid md:grid-cols-2 md:min-h-screen md:h-screen md:px-0 md:py-0 md:shadow-none">
 
-        {{-- Single Form Envelope submitting all 4 data fields to server --}}
-        <form id="form-register" method="POST" action="{{ route('member.register.store') }}"
-            class="flex flex-col flex-1">
-            @csrf
-            <input type="hidden" id="otp-hidden" name="otp" value="">
-
-            {{-- Flash messages --}}
-            @if (session('error') || $errors->any())
-                <div class="mb-4 flex items-start gap-2 rounded-xl bg-red-50 p-3.5 text-xs text-red-700">
-                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 shrink-0 mt-0.5">
-                        <path
-                            d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <span>{{ session('error') ?? $errors->first() }}</span>
+        <!-- Left Column: Desktop Hero Visual Banner -->
+        <div class="hidden md:flex relative h-full w-full overflow-hidden bg-[#5a3c27]">
+            <img src="{{ asset('images/welcome-slide-3.png') }}" alt="Saisho Member Registration"
+                class="absolute inset-0 w-full h-full object-cover object-center">
+            <div class="absolute inset-0 bg-gradient-to-t from-[#2d1a0e] via-[#5a3c27]/70 to-black/30"></div>
+            
+            <div class="relative z-10 flex flex-col justify-between p-12 text-white h-full">
+                <div>
                 </div>
-            @endif
+                <div class="space-y-2">
+                    <h2 class="text-3xl font-extrabold text-white tracking-tight drop-shadow-md">
+                        Bergabung Sekarang!
+                    </h2>
+                    <p class="text-sm text-white/90 max-w-md leading-relaxed drop-shadow">
+                        Nikmati pengalaman berbelanja roti & kue lebih hemat dengan mengumpulkan poin reward dan stamp spesial member Saisho.
+                    </p>
+                </div>
+            </div>
+        </div>
 
-            {{-- ==================== STEP 1: PHONE NUMBER INPUT ==================== --}}
-            <div id="step-1" class="flex flex-col flex-1">
-                {{-- Header Bar --}}
-                <div class="relative flex items-center justify-center py-2 mb-4">
-                    <a href="{{ route('member.welcome') }}"
-                        onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-                        class="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-brand-800 transition hover:bg-gray-50 active:scale-95">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                stroke-linejoin="round" />
+        <!-- Right Column: Registration Form -->
+        <div class="w-full flex flex-col justify-between md:h-full md:justify-center md:px-12 lg:px-20 py-8 bg-white flex-1">
+
+            <div class="max-w-md mx-auto w-full">
+                {{-- Flash messages --}}
+                @if (session('error') || $errors->any())
+                    <div class="mb-4 flex items-start gap-2 rounded-xl bg-red-50 p-3.5 text-xs text-red-700">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 shrink-0 mt-0.5">
+                            <path
+                                d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
-                    </a>
-                    <h1 class="text-base font-bold text-brand-800">Register Step 1/3</h1>
-                </div>
+                        <span>{{ session('error') ?? $errors->first() }}</span>
+                    </div>
+                @endif
 
-                <div class="mt-4 flex-1">
-                    <h2 class="text-lg font-bold text-brand-800">Input Phone Number</h2>
-                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">Masukkan nomor HP kamu untuk menerima kode
-                        verifikasi OTP.</p>
+                {{-- Single Form Envelope submitting all 4 data fields to server --}}
+                <form id="form-register" method="POST" action="{{ route('member.register.store') }}">
+                    @csrf
+                    <input type="hidden" id="otp-hidden" name="otp" value="">
 
-                    <div class="mt-8 space-y-6">
-                        <div>
-                            <div
-                                class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
-                                <div
-                                    class="flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-800">
-                                    <span>+62</span>
-                                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-500">
-                                        <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                </div>
-                                <input id="no_hp" name="no_hp" type="tel" inputmode="numeric" value="{{ old('no_hp') }}"
-                                    required autofocus placeholder="882xxxxxxx"
-                                    oninput="this.value = this.value.replace(/\D/g, '').replace(/^0+/, '')"
-                                    class="ml-3 flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
-                                <button type="button" onclick="document.getElementById('no_hp').value=''"
-                                    class="text-gray-400 hover:text-gray-600 p-1">
-                                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
-                                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <p id="phone-error-text" class="mt-2 text-xs text-red-500 font-medium hidden"></p>
+                    {{-- ==================== STEP 1: PHONE NUMBER INPUT ==================== --}}
+                    <div id="step-1" class="space-y-6">
+                        {{-- Header Bar --}}
+                        <div class="relative flex items-center justify-center py-2 mb-4 md:mb-6">
+                            <a href="{{ route('member.welcome') }}"
+                                onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+                                class="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-brand-800 transition hover:bg-gray-50 active:scale-95">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5">
+                                    <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                            </a>
+                            <h1 class="text-base md:text-lg font-bold text-brand-800">Register Step 1/3</h1>
                         </div>
 
-                        <button type="button" id="btn-step1-next" onclick="prosesKirimOtpStep1()"
-                            class="w-full rounded-2xl bg-brand-800 py-3.5 text-center text-base font-semibold text-white shadow-md transition hover:bg-brand-900 active:scale-[0.99] flex items-center justify-center gap-2">
-                            <span>Kirim Kode OTP</span>
-                            <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
-                                <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-brand-800">Input Phone Number</h2>
+                            <p class="text-xs text-gray-500 mt-1 leading-relaxed">Masukkan nomor HP kamu untuk menerima kode verifikasi OTP.</p>
+                        </div>
 
-                <p class="text-center text-xs leading-relaxed text-gray-500 mt-6">
+                        <div class="space-y-6">
+                            <div>
+                                <div class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
+                                    <div class="flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-800">
+                                        <span>+62</span>
+                                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-500">
+                                            <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </div>
+                                    <input id="no_hp" name="no_hp" type="tel" inputmode="numeric" value="{{ old('no_hp') }}"
+                                        required autofocus placeholder="882xxxxxxx"
+                                        oninput="this.value = this.value.replace(/\D/g, '').replace(/^0+/, '')"
+                                        class="ml-3 flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
+                                    <button type="button" onclick="document.getElementById('no_hp').value=''"
+                                        class="text-gray-400 hover:text-gray-600 p-1">
+                                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                                            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p id="phone-error-text" class="mt-2 text-xs text-red-500 font-medium hidden"></p>
+                            </div>
+
+                            <button type="button" id="btn-step1-next" onclick="prosesKirimOtpStep1()"
+                                class="w-full rounded-2xl bg-brand-800 py-3.5 text-center text-base font-semibold text-white shadow-md transition hover:bg-brand-900 active:scale-[0.99] flex items-center justify-center gap-2">
+                                <span>Kirim Kode OTP</span>
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                                    <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+
+                    {{-- ==================== STEP 2: INPUT OTP CODE ==================== --}}
+                    <div id="step-2" class="space-y-6 hidden">
+                        {{-- Header Bar --}}
+                        <div class="relative flex items-center justify-center py-2 mb-4 md:mb-6">
+                            <button type="button" onclick="goBackToStep(1)"
+                                class="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-brand-800 transition hover:bg-gray-50 active:scale-95">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5">
+                                    <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                            <h1 class="text-base md:text-lg font-bold text-brand-800">Register Step 2/3</h1>
+                        </div>
+
+                        <div class="text-center">
+                            <h2 class="text-xl font-bold text-brand-800">Verifikasi Kode OTP</h2>
+                            <p class="mt-1 text-xs text-gray-500 leading-relaxed px-4">
+                                Kode OTP 6-digit telah dikirimkan ke nomor <br><strong id="otp-phone-display" class="text-gray-900 font-bold"></strong>
+                            </p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <input id="otp-input-code" type="text" maxlength="6" inputmode="numeric"
+                                    placeholder="123456" autofocus
+                                    class="w-full text-center tracking-[0.5em] text-2xl font-extrabold rounded-2xl border-2 border-brand-800 py-3.5 text-gray-900 outline-none focus:ring-4 focus:ring-brand-800/10">
+                                <p id="otp-error-text" class="mt-2 text-xs text-red-500 font-semibold hidden"></p>
+                            </div>
+
+                            <div class="flex items-center justify-between text-xs text-gray-500 px-1">
+                                <span>Waktu tersisa: <strong id="timer-text" class="text-brand-800 font-bold">60s</strong></span>
+                                <button type="button" id="btn-resend-otp" onclick="prosesKirimOtpStep1()"
+                                    class="font-bold text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    Kirim Ulang OTP
+                                </button>
+                            </div>
+
+                            <button type="button" onclick="verifikasiStep2Otp()"
+                                class="w-full rounded-2xl bg-brand-800 py-3.5 text-center text-base font-semibold text-white shadow-md transition hover:bg-brand-900 active:scale-[0.99] flex items-center justify-center gap-2">
+                                <span>Verifikasi Kode OTP</span>
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                                    <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+
+                    {{-- ==================== STEP 3: CREATE PROFILE & PASSWORD ==================== --}}
+                    <div id="step-3" class="space-y-4 hidden">
+                        {{-- Header Bar --}}
+                        <div class="relative flex items-center justify-center py-2 mb-4 md:mb-6">
+                            <button type="button" onclick="goBackToStep(2)"
+                                class="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-brand-800 transition hover:bg-gray-50 active:scale-95">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5">
+                                    <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                            <h1 class="text-base md:text-lg font-bold text-brand-800">Register Step 3/3</h1>
+                        </div>
+
+                        <div>
+                            <h2 class="text-lg font-bold text-brand-800">Buat Profil & Kata Sandi</h2>
+                            <p class="text-xs text-gray-500 mt-1 leading-relaxed">Lengkapi nama dan buat kata sandi untuk mengamankan akun member Saisho kamu.</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label for="nama" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Nama Lengkap</label>
+                                <input id="nama" name="nama" type="text" value="{{ old('nama') }}" required placeholder="Contoh: Budi Santoso"
+                                    class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                                @error('nama')
+                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div>
+                                <label for="username" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Username</label>
+                                <input id="username" name="username" type="text" value="{{ old('username') }}" required minlength="3" maxlength="50" placeholder="Contoh: budisantoso"
+                                    oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()"
+                                    class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                                <p class="mt-1 text-[11px] text-gray-400">Huruf, angka, titik, atau underscore.</p>
+                                @error('username')
+                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div>
+                                <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Kata Sandi</label>
+                                <div class="relative">
+                                    <input id="password" name="password" type="password" required minlength="6" placeholder="Minimal 6 karakter"
+                                        class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                                    <button type="button" onclick="togglePasswordVisibility('password', this)" aria-label="Tampilkan kata sandi"
+                                        class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
+                                        <svg class="eye-icon-show h-4.5 w-4.5" viewBox="0 0 24 24" fill="none">
+                                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" />
+                                        </svg>
+                                        <svg class="eye-icon-hide hidden h-4.5 w-4.5" viewBox="0 0 24 24" fill="none">
+                                            <path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M9.36 5.16A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-3.22 3.9M6.5 6.64C3.68 8.36 2 11 2 11a13.2 13.2 0 0 0 3.22 3.9A11 11 0 0 0 12 17c.86 0 1.68-.1 2.45-.28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                @error('password')
+                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div>
+                                <label for="password_confirmation" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Konfirmasi Kata Sandi</label>
+                                <div class="relative">
+                                    <input id="password_confirmation" name="password_confirmation" type="password" required minlength="6" placeholder="Ulangi kata sandi"
+                                        class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                                    <button type="button" onclick="togglePasswordVisibility('password_confirmation', this)" aria-label="Tampilkan kata sandi"
+                                        class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
+                                        <svg class="eye-icon-show h-4.5 w-4.5" viewBox="0 0 24 24" fill="none">
+                                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" />
+                                        </svg>
+                                        <svg class="eye-icon-hide hidden h-4.5 w-4.5" viewBox="0 0 24 24" fill="none">
+                                            <path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M9.36 5.16A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-3.22 3.9M6.5 6.64C3.68 8.36 2 11 2 11a13.2 13.2 0 0 0 3.22 3.9A11 11 0 0 0 12 17c.86 0 1.68-.1 2.45-.28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p id="password-error-text" class="mt-1 text-xs text-red-500 font-semibold hidden"></p>
+                            </div>
+
+                            <button type="button" onclick="submitRegisterStep3()"
+                                class="w-full mt-4 rounded-2xl bg-brand-800 py-3.5 text-center text-base font-semibold text-white shadow-md transition hover:bg-brand-900 active:scale-[0.99] flex items-center justify-center gap-2">
+                                <span>Selesaikan Pendaftaran</span>
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                                    <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {{-- Bottom Notice / Links --}}
+            <div class="mt-6 max-w-md mx-auto w-full">
+                <p class="text-center text-xs leading-relaxed text-gray-500">
                     Dengan mendaftar, kamu menyetujui <a href="{{ route('member.konten.show', 'terms-conditions') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="font-bold text-brand-800 hover:underline">Terms & Condition</a> dan <a href="{{ route('member.konten.show', 'privacy-policy') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="font-bold text-brand-800 hover:underline">Privacy Policy</a>.
                 </p>
 
@@ -165,172 +337,8 @@
                         class="font-bold text-brand-800 hover:underline">Masuk di sini</a>
                 </p>
             </div>
+        </div>
 
-
-            {{-- ==================== STEP 2: INPUT OTP CODE ==================== --}}
-            <div id="step-2" class="flex flex-col flex-1 hidden">
-                {{-- Header Bar --}}
-                <div class="relative flex items-center justify-center py-2 mb-4">
-                    <button type="button" onclick="goBackToStep(1)"
-                        class="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-brand-800 transition hover:bg-gray-50 active:scale-95">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                        </svg>
-                    </button>
-                    <h1 class="text-base font-bold text-brand-800">Register Step 2/3</h1>
-                </div>
-
-                <div class="mt-4 flex-1 text-center">
-
-                    <h2 class="mt-4 text-xl font-bold text-brand-800">Verifikasi Kode OTP</h2>
-                    <p class="mt-1 text-xs text-gray-500 leading-relaxed px-4">
-                        Kode OTP 6-digit telah dikirimkan ke nomor <br><strong id="otp-phone-display"
-                            class="text-gray-900 font-bold"></strong>
-                    </p>
-
-                    <div class="mt-5 space-y-4">
-                        <div>
-                            <input id="otp-input-code" type="text" maxlength="6" inputmode="numeric"
-                                placeholder="123456" autofocus
-                                class="w-full text-center tracking-[0.5em] text-2xl font-extrabold rounded-2xl border-2 border-brand-800 py-3.5 text-gray-900 outline-none focus:ring-4 focus:ring-brand-800/10">
-                            <p id="otp-error-text" class="mt-2 text-xs text-red-500 font-semibold hidden"></p>
-                        </div>
-
-                        <div class="flex items-center justify-between text-xs text-gray-500 px-1">
-                            <span>Waktu tersisa: <strong id="timer-text"
-                                    class="text-brand-800 font-bold">60s</strong></span>
-                            <button type="button" id="btn-resend-otp" onclick="prosesKirimOtpStep1()"
-                                class="font-bold text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled>
-                                Kirim Ulang OTP
-                            </button>
-                        </div>
-
-                        <button type="button" onclick="verifikasiStep2Otp()"
-                            class="w-full rounded-2xl bg-brand-800 py-3.5 text-center text-base font-semibold text-white shadow-md transition hover:bg-brand-900 active:scale-[0.99] flex items-center justify-center gap-2">
-                            <span>Verifikasi Kode OTP</span>
-                            <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
-                                <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-
-            {{-- ==================== STEP 3: CREATE PROFILE & PASSWORD ==================== --}}
-            <div id="step-3" class="flex flex-col flex-1 hidden">
-                {{-- Header Bar --}}
-                <div class="relative flex items-center justify-center py-2 mb-4">
-                    <button type="button" onclick="goBackToStep(2)"
-                        class="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-brand-800 transition hover:bg-gray-50 active:scale-95">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                        </svg>
-                    </button>
-                    <h1 class="text-base font-bold text-brand-800">Register Step 3/3</h1>
-                </div>
-
-                <div class="mt-2 flex-1">
-                    <h2 class="text-lg font-bold text-brand-800">Buat Profil & Kata Sandi</h2>
-                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">Lengkapi nama dan buat kata sandi untuk
-                        mengamankan akun member Saisho kamu.</p>
-
-                    <div class="mt-6 space-y-4">
-                        <div>
-                            <label for="nama"
-                                class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Nama
-                                Lengkap</label>
-                            <input id="nama" name="nama" type="text" value="{{ old('nama') }}" required
-                                placeholder="Contoh: Budi Santoso"
-                                class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
-                            @error('nama')
-                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label for="username"
-                                class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Username</label>
-                            <input id="username" name="username" type="text" value="{{ old('username') }}" required
-                                minlength="3" maxlength="50" placeholder="Contoh: budisantoso"
-                                oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()"
-                                class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
-                            <p class="mt-1 text-[11px] text-gray-400">Huruf, angka, titik, atau underscore.</p>
-                            @error('username')
-                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label for="password"
-                                class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Kata
-                                Sandi</label>
-                            <div class="relative">
-                                <input id="password" name="password" type="password" required minlength="6"
-                                    placeholder="Minimal 6 karakter"
-                                    class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
-                                <button type="button" onclick="togglePasswordVisibility('password', this)"
-                                    aria-label="Tampilkan kata sandi"
-                                    class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
-                                    <svg class="eye-icon-show h-4.5 w-4.5" viewBox="0 0 24 24" fill="none">
-                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor"
-                                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" />
-                                    </svg>
-                                    <svg class="eye-icon-hide hidden h-4.5 w-4.5" viewBox="0 0 24 24" fill="none">
-                                        <path
-                                            d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M9.36 5.16A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-3.22 3.9M6.5 6.64C3.68 8.36 2 11 2 11a13.2 13.2 0 0 0 3.22 3.9A11 11 0 0 0 12 17c.86 0 1.68-.1 2.45-.28"
-                                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                                            stroke-linejoin="round" />
-                                    </svg>
-                                </button>
-                            </div>
-                            @error('password')
-                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label for="password_confirmation"
-                                class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Konfirmasi
-                                Kata Sandi</label>
-                            <div class="relative">
-                                <input id="password_confirmation" name="password_confirmation" type="password" required
-                                    minlength="6" placeholder="Ulangi kata sandi"
-                                    class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
-                                <button type="button" onclick="togglePasswordVisibility('password_confirmation', this)"
-                                    aria-label="Tampilkan kata sandi"
-                                    class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
-                                    <svg class="eye-icon-show h-4.5 w-4.5" viewBox="0 0 24 24" fill="none">
-                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor"
-                                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" />
-                                    </svg>
-                                    <svg class="eye-icon-hide hidden h-4.5 w-4.5" viewBox="0 0 24 24" fill="none">
-                                        <path
-                                            d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M9.36 5.16A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-3.22 3.9M6.5 6.64C3.68 8.36 2 11 2 11a13.2 13.2 0 0 0 3.22 3.9A11 11 0 0 0 12 17c.86 0 1.68-.1 2.45-.28"
-                                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                                            stroke-linejoin="round" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <p id="password-error-text" class="mt-1 text-xs text-red-500 font-semibold hidden"></p>
-                        </div>
-
-                        <button type="button" onclick="submitRegisterStep3()"
-                            class="w-full mt-4 rounded-2xl bg-brand-800 py-3.5 text-center text-base font-semibold text-white shadow-md transition hover:bg-brand-900 active:scale-[0.99] flex items-center justify-center gap-2">
-                            <span>Selesaikan Pendaftaran</span>
-                            <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
-                                <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-        </form>
     </div>
 
     <script>
@@ -602,21 +610,23 @@
         function switchStep(fromStep, toStep, dir) {
             const fromEl = document.getElementById(`step-${fromStep}`);
             const toEl = document.getElementById(`step-${toStep}`);
+            const fromClass = fromStep === 3 ? 'space-y-4' : 'space-y-6';
+            const toClass = toStep === 3 ? 'space-y-4' : 'space-y-6';
 
             if (dir === 'next') {
-                fromEl.className = 'flex flex-col flex-1 step-exit-left';
+                fromEl.className = `${fromClass} step-exit-left`;
                 setTimeout(() => {
                     fromEl.classList.add('hidden');
                     toEl.classList.remove('hidden');
-                    toEl.className = 'flex flex-col flex-1 step-enter-right';
+                    toEl.className = `${toClass} step-enter-right`;
                     currentStep = toStep;
                 }, 180);
             } else {
-                fromEl.className = 'flex flex-col flex-1 step-exit-right';
+                fromEl.className = `${fromClass} step-exit-right`;
                 setTimeout(() => {
                     fromEl.classList.add('hidden');
                     toEl.classList.remove('hidden');
-                    toEl.className = 'flex flex-col flex-1 step-enter-left';
+                    toEl.className = `${toClass} step-enter-left`;
                     currentStep = toStep;
                 }, 180);
             }

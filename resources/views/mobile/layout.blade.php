@@ -138,35 +138,52 @@
                 -webkit-overflow-scrolling: touch;
             }
         }
+
+        /* Desktop-only layout overrides (>= 1024px) */
+        @media (min-width: 1024px) {
+            /* Remove JS-driven max-height on menu scroller to prevent double-scroll */
+            [x-ref="menuScroller"] {
+                max-height: none !important;
+                overflow: visible !important;
+            }
+
+            /* Transform expandable bottom sheets (dialog.sheet) into clean centered modals on desktop */
+            dialog.sheet {
+                inset: 0 !important;
+                margin: auto !important;
+                max-width: 520px !important;
+                max-height: 85vh !important;
+                width: calc(100% - 2rem) !important;
+                height: fit-content !important;
+                border-radius: 2rem !important;
+                transform: scale(0.94) !important;
+                opacity: 0;
+                transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+                overflow: hidden !important;
+            }
+            dialog.sheet[data-open="true"] {
+                transform: scale(1) !important;
+                opacity: 1;
+            }
+            /* Hide mobile-only checkout header bar on desktop since top desktop navbar is present */
+            .checkout-sticky-header {
+                display: none !important;
+            }
+
+            /* Hide bottom sheet drag handle on desktop modals */
+            dialog.sheet > div > div.flex.justify-center,
+            dialog.sheet .sheet-handle,
+            dialog.sheet .drag-handle {
+                display: none !important;
+            }
+        }
     </style>
 </head>
-<body class="h-full overflow-x-hidden bg-gray-50 font-outfit text-gray-800 antialiased flex flex-col">
+<body class="min-h-screen bg-white font-outfit text-gray-800 antialiased flex flex-col">
 
-    <div id="app-card" class="mx-auto flex flex-1 w-full max-w-none 2xl:max-w-6xl flex-col bg-white sm:border-x sm:border-gray-200/80">
+    <div id="app-card" class="mx-auto flex flex-1 w-full min-h-screen flex-col bg-white">
 
-        {{-- Flash messages (toast, fixed, auto-dismiss). Dilewati di halaman
-             Status Pesanan karena halaman itu sudah punya alert sendiri
-             (Alpine, inline di dekat form bukti pembayaran) — biar nggak
-             muncul dobel. --}}
-        @if ((session('success') || session('error') || $errors->any()) && ! request()->routeIs('member.pesanan.show'))
-            <div id="flash-toast"
-                 class="toast-flash fixed top-4 left-1/2 z-50 flex w-[calc(100%-2.5rem)] max-w-sm items-start gap-2 rounded-2xl px-4 py-3 text-xs font-semibold shadow-lg border
-                 {{ session('success') ? 'bg-brand-50 text-brand-800 border-brand-200' : 'bg-red-50 text-red-800 border-red-200' }}">
-                @if (session('success'))
-                    <svg viewBox="0 0 24 24" fill="none" class="mt-0.5 h-4 w-4 shrink-0 text-brand-800"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                @else
-                    <svg viewBox="0 0 24 24" fill="none" class="mt-0.5 h-4 w-4 shrink-0 text-red-600"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                @endif
-                <span>{{ session('success') ?? session('error') ?? $errors->first() }}</span>
-            </div>
-        @endif
-
-        {{-- Main Page Content --}}
-        <main class="flex flex-1 flex-col {{ request()->routeIs('member.profil') ? '' : 'px-5 sm:px-8 md:px-10' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-6' }}">
-            @yield('content')
-        </main>
-
-        {{-- Fore App Style Bottom Navigation --}}
         @php
             $activeHome = request()->routeIs('member.beranda');
             $activeVoucher = request()->routeIs('member.reward*');
@@ -182,8 +199,204 @@
                 default => -1,
             };
         @endphp
+
+        {{-- Desktop Navigation Header (Active only on lg: screens >= 1024px) --}}
+        @unless(request()->routeIs('member.profil'))
+        <header class="hidden lg:flex relative sticky top-0 z-40 w-full items-center justify-between border-b border-gray-200/80 bg-white/95 px-8 lg:px-12 py-3.5 backdrop-blur-md">
+            <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-3 shrink-0">
+                <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Saisho Logo" class="h-8 w-auto">
+                <span class="text-lg font-extrabold text-brand-800 tracking-tight">Saisho</span>
+            </a>
+
+            {{-- Centered Navbar Menu Links --}}
+            <nav class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+                <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 0);" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition {{ $activeHome ? 'bg-brand-50 text-brand-800' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                    <svg viewBox="0 0 24 24" fill="{{ $activeHome ? 'currentColor' : 'none' }}" class="h-4 w-4"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-9.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Beranda
+                </a>
+                @auth('member')
+                    <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 1);" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition {{ $activeVoucher ? 'bg-brand-50 text-brand-800' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M15 5v14M9 5v14M4 10a2 2 0 0 0 0 4M20 10a2 2 0 0 1 0 4M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Vouchers
+                    </a>
+                @else
+                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition text-gray-600 hover:bg-gray-100 hover:text-gray-900">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M15 5v14M9 5v14M4 10a2 2 0 0 0 0 4M20 10a2 2 0 0 1 0 4M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Vouchers
+                    </a>
+                @endauth
+                <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition {{ $activeMenu ? 'bg-brand-50 text-brand-800' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 10a4 4 0 0 1-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Pesan
+                </a>
+                @auth('member')
+                    <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 3);" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition {{ $activeOrder ? 'bg-brand-50 text-brand-800' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Activity
+                    </a>
+                @else
+                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition text-gray-600 hover:bg-gray-100 hover:text-gray-900">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Activity
+                    </a>
+                @endauth
+            </nav>
+
+            <div class="flex items-center gap-3">
+                @php
+                    $headerCartItems = \App\Support\MemberCart::items();
+                    $headerCartJumlah = collect($headerCartItems)->sum('jumlah');
+                    $headerCartTotal = collect($headerCartItems)->sum(fn($item) => $item['harga_satuan'] * $item['jumlah']);
+                @endphp
+
+                @if ($headerCartJumlah > 0 && !request()->routeIs('member.checkout*'))
+                    <a href="{{ route('member.checkout.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                       class="flex items-center gap-2.5 rounded-2xl bg-brand-800 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-brand-900 transition active:scale-95">
+                        <span class="relative flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                                <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 8H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span class="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] font-extrabold text-white">
+                                {{ $headerCartJumlah }}
+                            </span>
+                        </span>
+                        <span>Rp {{ number_format($headerCartTotal, 0, ',', '.') }}</span>
+                    </a>
+                @endif
+
+                @auth('member')
+                    @php
+                        $authMember = auth('member')->user();
+                        $memberNotifikasis = \App\Support\NotificationHelper::getNotifikasiMember($authMember->id, 10);
+                        $unreadNotifCount = \App\Support\NotificationHelper::hitungBelumDibacaMember($authMember->id);
+                    @endphp
+
+                    {{-- Notification Bell Dropdown Button --}}
+                    <div class="relative" x-data="{ open: false }">
+                        <button type="button" @click="open = !open" @click.outside="open = false"
+                                class="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-800 transition shadow-sm">
+                            <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            @if ($unreadNotifCount > 0)
+                                <span id="navbar-notif-badge" class="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-extrabold text-white animate-pulse">
+                                    {{ $unreadNotifCount }}
+                                </span>
+                            @endif
+                        </button>
+
+                        {{-- Dropdown Menu --}}
+                        <div x-show="open"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute right-0 mt-2.5 w-80 sm:w-96 rounded-3xl border border-gray-100 bg-white p-4 shadow-xl z-50 text-left"
+                             style="display: none;">
+                            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-extrabold text-gray-900">Notifikasi</span>
+                                    @if($unreadNotifCount > 0)
+                                        <span id="navbar-notif-count-text" class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-800">{{ $unreadNotifCount }} Baru</span>
+                                    @endif
+                                </div>
+                                @if($unreadNotifCount > 0)
+                                    <button type="button" onclick="tandaiSemuaDibacaNavbar()" class="text-[11px] font-bold text-brand-800 hover:underline">
+                                        Tandai dibaca
+                                    </button>
+                                @endif
+                            </div>
+
+                            <div class="mt-3 max-h-80 overflow-y-auto space-y-2">
+                                @forelse ($memberNotifikasis as $notif)
+                                    @php
+                                        $targetUrl = $notif->url ?: route('member.notifikasi.index');
+                                    @endphp
+                                    <a href="{{ $targetUrl }}"
+                                       onclick="event.preventDefault(); tandaiNotifDibacaNavbar({{ $notif->id }}, '{{ $targetUrl }}');"
+                                       class="flex items-start gap-3 rounded-2xl p-3 transition {{ ! $notif->is_read ? 'bg-brand-50/60 hover:bg-brand-50 border border-brand-100' : 'bg-gray-50/60 hover:bg-gray-100' }}">
+                                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full {{ $notif->icon_type === 'success' ? 'bg-emerald-100 text-emerald-700' : ($notif->type === 'stamp' ? 'bg-brand-100 text-brand-800' : ($notif->type === 'pesanan' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700')) }}">
+                                            @if ($notif->type === 'stamp')
+                                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            @elseif ($notif->type === 'pesanan')
+                                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4M3 6h18M16 10a4 4 0 0 1-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            @else
+                                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            @endif
+                                        </span>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center justify-between gap-1">
+                                                <p class="truncate text-xs font-bold text-gray-900">{{ $notif->title }}</p>
+                                                @unless($notif->is_read)
+                                                    <span class="h-2 w-2 shrink-0 rounded-full bg-brand-800"></span>
+                                                @endunless
+                                            </div>
+                                            <p class="mt-0.5 text-[11px] leading-snug text-gray-600 line-clamp-2">{{ $notif->desc }}</p>
+                                            <span class="mt-1 block text-[10px] text-gray-400 font-medium">{{ $notif->created_at->diffForHumans() }}</span>
+                                        </div>
+                                    </a>
+                                @empty
+                                    <div class="py-6 text-center">
+                                        <p class="text-xs font-semibold text-gray-500">Belum ada notifikasi</p>
+                                        <p class="mt-1 text-[11px] text-gray-400">Pembaruan pesanan & promo akan muncul di sini.</p>
+                                    </div>
+                                @endforelse
+                            </div>
+
+                            <div class="mt-3 border-t border-gray-100 pt-2.5 text-center">
+                                <a href="{{ route('member.notifikasi.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                   class="text-xs font-bold text-brand-800 hover:text-brand-900 transition">
+                                    Lihat Semua Notifikasi &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 4);" class="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-bold text-gray-800 hover:border-brand-300 hover:text-brand-800 transition">
+                        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-50 text-brand-800">
+                            <svg viewBox="0 0 24 24" fill="{{ $activeAccount ? 'currentColor' : 'none' }}" class="h-3.5 w-3.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span>{{ explode(' ', $authMember->nama)[0] }}</span>
+                    </a>
+                @else
+                    <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="rounded-xl bg-brand-800 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-900 transition">
+                        Masuk / Daftar
+                    </a>
+                @endauth
+            </div>
+        </header>
+        @endunless
+
+        {{-- Flash messages (toast, fixed, auto-dismiss). Dilewati di halaman
+             Status Pesanan karena halaman itu sudah punya alert sendiri
+             (Alpine, inline di dekat form bukti pembayaran) — biar nggak
+             muncul dobel. --}}
+        @if ((session('success') || session('error') || $errors->any()) && ! request()->routeIs('member.pesanan.show'))
+            <div id="flash-toast"
+                 class="toast-flash fixed top-4 left-1/2 z-50 flex w-[calc(100%-2.5rem)] max-w-md items-center justify-between gap-3 rounded-2xl px-4 py-3 text-xs font-semibold shadow-xl border
+                 {{ session('success') ? 'bg-emerald-50 text-emerald-900 border-emerald-200' : 'bg-red-50 text-red-900 border-red-200' }}">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    @if (session('success'))
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 shrink-0 text-emerald-600"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    @else
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 shrink-0 text-red-600"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    @endif
+                    <span class="truncate">{{ session('success') ?? session('error') ?? $errors->first() }}</span>
+                </div>
+                <button type="button" onclick="closeFlashToast()" class="shrink-0 text-gray-400 hover:text-gray-700 p-0.5">
+                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+        @endif
+
+        {{-- Main Page Content --}}
+        <main class="flex flex-1 flex-col mx-auto w-full max-w-7xl {{ request()->routeIs('member.profil') ? '' : 'px-5 sm:px-8 md:px-10 lg:px-12' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-6 lg:pb-12' }}">
+            @yield('content')
+        </main>
+
+        {{-- Fore App Style Bottom Navigation (Mobile Only) --}}
         @unless(request()->routeIs('member.profil') || request()->routeIs('member.produk.show') || request()->routeIs('member.checkout.index'))
-        <nav class="sticky bottom-0 z-30 w-full bg-white/95 backdrop-blur-md border-t border-gray-200/80 px-4 sm:px-8 py-2">
+        <nav class="sticky bottom-0 z-30 w-full bg-white/95 backdrop-blur-md border-t border-gray-200/80 px-4 sm:px-8 py-2 lg:hidden">
             <div class="grid grid-cols-5 items-end gap-1 text-center">
 
                 {{-- Home / Beranda --}}
@@ -486,15 +699,19 @@
                 sessionStorage.removeItem('nav_dir');
             }
 
-            // Auto-dismiss flash toast
+            // Auto-dismiss flash toast after 6 seconds
             const toast = document.getElementById('flash-toast');
             if (toast) {
-                setTimeout(() => {
-                    toast.classList.add('toast-hide');
-                    toast.addEventListener('animationend', () => toast.remove(), { once: true });
-                }, 3000);
+                setTimeout(() => closeFlashToast(), 6000);
             }
         });
+
+        function closeFlashToast() {
+            const toast = document.getElementById('flash-toast');
+            if (!toast) return;
+            toast.classList.add('toast-hide');
+            setTimeout(() => { if (toast && toast.parentNode) toast.remove(); }, 250);
+        }
 
         function animateNavigate(url, dir) {
             const card = document.getElementById('app-card');
@@ -515,6 +732,36 @@
             if (targetIndex === window.__currentTabIndex) return; 
             const dir = targetIndex > window.__currentTabIndex ? 'forward' : 'back';
             animateNavigate(url, dir);
+        }
+
+        function clearNavbarNotifBadge() {
+            document.querySelectorAll('#navbar-notif-badge, #navbar-notif-count-text, [data-navbar-notif-dot]').forEach(el => el.remove());
+        }
+
+        function tandaiNotifDibacaNavbar(id, url) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            fetch(`{{ url('mobile/notifikasi') }}/${id}/baca`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            }).catch(() => {});
+
+            if (url) {
+                animateNavigate(url, 'forward');
+            }
+        }
+
+        function tandaiSemuaDibacaNavbar() {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            clearNavbarNotifBadge();
+            document.querySelectorAll('[data-notif-dot]').forEach((el) => el.remove());
+            document.querySelectorAll('[data-notif-item]').forEach((el) => el.classList.remove('bg-brand-50/40', 'border-brand-200', 'bg-brand-50/60'));
+            const btn = document.getElementById('btn-baca-semua');
+            if (btn) btn.classList.add('invisible');
+
+            fetch("{{ route('member.notifikasi.baca-semua') }}", {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            }).catch(() => {});
         }
     </script>
 </body>

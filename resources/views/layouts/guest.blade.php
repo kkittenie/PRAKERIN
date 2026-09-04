@@ -8,23 +8,27 @@
         <title>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-            <div>
-                <a href="/">
-                    <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
+    <body class="font-outfit text-gray-900 antialiased bg-gradient-to-br from-[#fcf8f3] via-[#f5ebe0] to-[#ebe0d3] min-h-screen flex flex-col justify-center items-center p-4 sm:p-6">
+        <div class="w-full sm:max-w-md bg-white shadow-2xl overflow-hidden sm:rounded-3xl border border-[#5a3c27]/10 p-6 sm:p-8">
+            <div class="flex flex-col items-center text-center mb-6">
+                <a href="/" class="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 border border-brand-200 text-brand-800 text-3xl shadow-sm mb-3">
+                    🥐
                 </a>
+                <h1 class="text-xl font-extrabold text-brand-800 tracking-tight">Saisho Bakery POS</h1>
+                <p class="text-xs text-gray-500 font-medium">Portal Admin & Kasir</p>
             </div>
 
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
-                {{ $slot }}
-            </div>
+            {{ $slot }}
         </div>
+        
+        <p class="text-center text-xs text-gray-400 mt-6">&copy; {{ date('Y') }} Saisho Bakery. All rights reserved.</p>
     </body>
 </html>
+

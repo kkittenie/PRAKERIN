@@ -25,54 +25,58 @@
             <h1 class="text-sm font-bold text-gray-900">Status Pesanan</h1>
         </div>
 
-        {{-- Kode pickup — besar, buat ditunjukkan ke kasir --}}
-        <div class="mt-6 rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 p-6 text-center text-white">
-            @if ($dibatalkan)
-                <p class="text-xs font-bold uppercase tracking-wide text-white/70">Pesanan Dibatalkan</p>
-            @else
-                <p class="text-xs font-bold uppercase tracking-wide text-white/70">Tunjukkan kode ini ke kasir</p>
-                <p class="mt-2 text-4xl font-extrabold tracking-[0.3em]">{{ $transaksi->kode_pickup }}</p>
-            @endif
-            <p class="mt-3 text-[11px] text-white/60">{{ $transaksi->kode_transaksi }}</p>
-        </div>
+        <div class="lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start lg:mt-6">
 
-        {{-- Progress status --}}
-        @unless ($dibatalkan)
-            <div class="mt-6 flex items-start">
-                @foreach ($steps as $key => $label)
-                    @php
-                        $idx = array_search($key, $urutan, true);
-                        $selesai = $indexSekarang !== false && $idx <= $indexSekarang;
-                    @endphp
-                    <div class="flex flex-1 flex-col items-center text-center">
-                        <span class="flex h-8 w-8 items-center justify-center rounded-full text-white {{ $selesai ? 'bg-brand-800' : 'bg-gray-200' }}">
-                            @if ($selesai)
-                                @include('mobile.components.icon-check-circle', ['class' => 'h-4 w-4'])
-                            @else
-                                <span class="h-2 w-2 rounded-full bg-white"></span>
-                            @endif
-                        </span>
-                        <p class="mt-2 max-w-[80px] text-[10px] font-bold {{ $selesai ? 'text-brand-800' : 'text-gray-400' }}">{{ $label }}</p>
-                    </div>
-                    @if (! $loop->last)
-                        <div class="mt-4 h-0.5 flex-1 {{ $idx < $indexSekarang ? 'bg-brand-800' : 'bg-gray-200' }}"></div>
+            <div class="lg:col-span-6">
+                {{-- Kode pickup — besar, buat ditunjukkan ke kasir --}}
+                <div class="mt-6 lg:mt-0 rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 p-6 text-center text-white">
+                    @if ($dibatalkan)
+                        <p class="text-xs font-bold uppercase tracking-wide text-white/70">Pesanan Dibatalkan</p>
+                    @else
+                        <p class="text-xs font-bold uppercase tracking-wide text-white/70">Tunjukkan kode ini ke kasir</p>
+                        <p class="mt-2 text-4xl font-extrabold tracking-[0.3em]">{{ $transaksi->kode_pickup }}</p>
                     @endif
-                @endforeach
+                    <p class="mt-3 text-[11px] text-white/60">{{ $transaksi->kode_transaksi }}</p>
+                </div>
+
+                {{-- Progress status --}}
+                @unless ($dibatalkan)
+                    <div class="mt-6 flex items-start">
+                        @foreach ($steps as $key => $label)
+                            @php
+                                $idx = array_search($key, $urutan, true);
+                                $selesai = $indexSekarang !== false && $idx <= $indexSekarang;
+                            @endphp
+                            <div class="flex flex-1 flex-col items-center text-center">
+                                <span class="flex h-8 w-8 items-center justify-center rounded-full text-white {{ $selesai ? 'bg-brand-800' : 'bg-gray-200' }}">
+                                    @if ($selesai)
+                                        @include('mobile.components.icon-check-circle', ['class' => 'h-4 w-4'])
+                                    @else
+                                        <span class="h-2 w-2 rounded-full bg-white"></span>
+                                    @endif
+                                </span>
+                                <p class="mt-2 max-w-[80px] text-[10px] font-bold {{ $selesai ? 'text-brand-800' : 'text-gray-400' }}">{{ $label }}</p>
+                            </div>
+                            @if (! $loop->last)
+                                <div class="mt-4 h-0.5 flex-1 {{ $idx < $indexSekarang ? 'bg-brand-800' : 'bg-gray-200' }}"></div>
+                            @endif
+                        @endforeach
+                    </div>
+
+                    <p class="mt-4 text-center text-xs font-semibold text-gray-500">
+                        @if ($statusSekarang === \App\Models\Transaksi::STATUS_DIPROSES)
+                            Pesanan kamu sedang disiapkan oleh toko.
+                        @elseif ($statusSekarang === \App\Models\Transaksi::STATUS_SIAP_DIAMBIL)
+                            Pesanan sudah siap! Silakan ambil di kasir.
+                        @else
+                            Pesanan sudah kamu ambil. Terima kasih!
+                        @endif
+                    </p>
+                @endunless
             </div>
 
-            <p class="mt-4 text-center text-xs font-semibold text-gray-500">
-                @if ($statusSekarang === \App\Models\Transaksi::STATUS_DIPROSES)
-                    Pesanan kamu sedang disiapkan oleh toko.
-                @elseif ($statusSekarang === \App\Models\Transaksi::STATUS_SIAP_DIAMBIL)
-                    Pesanan sudah siap! Silakan ambil di kasir.
-                @else
-                    Pesanan sudah kamu ambil. Terima kasih!
-                @endif
-            </p>
-        @endunless
-
-        {{-- Detail pesanan --}}
-        <div class="mt-6">
+            {{-- Detail pesanan --}}
+            <div class="mt-6 lg:mt-0 lg:col-span-6">
             <h2 class="text-sm font-bold text-gray-900">Detail Pesanan</h2>
             <div class="mt-2 divide-y divide-gray-100 rounded-2xl border border-gray-100">
                 @foreach ($transaksi->detailTransaksi as $detail)
