@@ -28,11 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
 
-        $middleware->redirectGuestsTo(function ($request) {
-            return $request->is('mobile/*')
-                ? route('member.login')
-                : route('login');
-        });
+        $middleware->redirectGuestsTo(fn () => route('member.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (Throwable $e) {

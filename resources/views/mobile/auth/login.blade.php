@@ -128,11 +128,23 @@
 
                 {{-- Main Content --}}
                 <div class="mt-6 md:mt-4 max-w-md mx-auto w-full">
-                    <form method="POST" action="{{ route('member.login.store') }}" class="space-y-6">
+                    <form method="POST" action="{{ route('member.login.store') }}" class="space-y-6"
+                        x-data="{ loginType: 'no_hp' }">
                         @csrf
+                        <input type="hidden" name="login_type" x-model="loginType">
 
-                        {{-- Phone Input Group matching Fore UI --}}
-                        <div>
+                        {{-- Toggle No HP / Username --}}
+                        <div class="grid grid-cols-2 gap-2 rounded-2xl bg-gray-100 p-1">
+                            <button type="button" @click="loginType = 'no_hp'"
+                                :class="loginType === 'no_hp' ? 'bg-white shadow-sm text-brand-800' : 'text-gray-500'"
+                                class="rounded-xl py-2 text-sm font-semibold transition">No. HP</button>
+                            <button type="button" @click="loginType = 'username'"
+                                :class="loginType === 'username' ? 'bg-white shadow-sm text-brand-800' : 'text-gray-500'"
+                                class="rounded-xl py-2 text-sm font-semibold transition">Username</button>
+                        </div>
+
+                        {{-- No HP Input --}}
+                        <div x-show="loginType === 'no_hp'" x-cloak>
                             <div
                                 class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
                                 <div
@@ -143,11 +155,11 @@
                                             stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
                                 </div>
-                                <input id="no_hp" name="no_hp" type="tel" inputmode="numeric"
-                                    value="{{ old('no_hp') }}" required autofocus placeholder="882xxxxxxx"
-                                    oninput="this.value = this.value.replace(/\D/g, '').replace(/^0+/, '')"
+                                <input type="tel" inputmode="numeric" :value="loginType === 'no_hp' ? undefined : ''"
+                                    x-ref="noHpInput" required autofocus placeholder="882xxxxxxx"
+                                    @input="if (loginType === 'no_hp') { $refs.identifier.value = $event.target.value.replace(/\D/g, '').replace(/^0+/, ''); $event.target.value = $refs.identifier.value; }"
                                     class="ml-3 flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
-                                <button type="button" onclick="document.getElementById('no_hp').value=''"
+                                <button type="button" @click="$refs.noHpInput.value=''; $refs.identifier.value=''"
                                     class="text-gray-400 hover:text-gray-600 p-1">
                                     <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
                                         <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"
@@ -155,9 +167,22 @@
                                     </svg>
                                 </button>
                             </div>
-                            @error('no_hp')
-                            <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
                         </div>
+
+                        {{-- Username Input --}}
+                        <div x-show="loginType === 'username'" x-cloak>
+                            <div
+                                class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
+                                <input type="text" placeholder="Username"
+                                    @input="if (loginType === 'username') { $refs.identifier.value = $event.target.value; }"
+                                    class="flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="identifier" x-ref="identifier" value="{{ old('identifier') }}">
+
+                        @error('identifier')
+                        <p class="mt-1.5 -mb-3 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
 
                         {{-- Password Field --}}
                         <div>

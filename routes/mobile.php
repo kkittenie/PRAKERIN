@@ -19,13 +19,20 @@ use App\Http\Controllers\Mobile\SettingsController;
 use App\Http\Controllers\Mobile\StampController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('mobile')->name('member.')->group(function () {
+    // Route auth yang diakses tanpa prefix mobile/ (jadi /welcome, /masuk, /keluar)
+    Route::name('member.')->group(function () {
+        Route::get('/welcome', [AuthController::class, 'welcome'])->name('welcome');
+        Route::match(['get', 'post'], '/keluar', [AuthController::class, 'logout'])->name('logout');
 
-    Route::get('/', function () {
-        return redirect()->route('member.welcome');
+        Route::get('/masuk', [AuthController::class, 'tampilkanLogin'])->name('login');
+        Route::post('/masuk', [AuthController::class, 'login'])->name('login.store');
     });
 
-    Route::get('/welcome', [AuthController::class, 'welcome'])->name('welcome');
+    Route::prefix('mobile')->name('member.')->group(function () {
+
+        Route::get('/', function () {
+            return redirect()->route('member.welcome');
+        });
 
     Route::get('/beranda', [DashboardController::class, 'index'])->name('beranda');
     Route::get('/menu', [MenuController::class, 'index'])->name('menu');
@@ -37,16 +44,12 @@ Route::prefix('mobile')->name('member.')->group(function () {
     Route::get('/bundling/{bundling}', [BundlingController::class, 'show'])->name('bundling.show');
     Route::get('/promo-event/{promoEvent}', [PromoEventController::class, 'show'])->name('promo-event.show');
 
-    Route::match(['get', 'post'], '/keluar', [AuthController::class, 'logout'])->name('logout');
-
     Route::middleware('guest:member')->group(function () {
-        Route::get('/masuk', [AuthController::class, 'tampilkanLogin'])->name('login');
-        Route::post('/masuk', [AuthController::class, 'login'])->name('login.store');
-        Route::get('/daftar', [AuthController::class, 'tampilkanRegister'])->name('register');
-        Route::post('/daftar', [AuthController::class, 'register'])->name('register.store');
-        Route::post('/kirim-otp', [AuthController::class, 'kirimOtp'])->name('otp.send');
-        Route::post('/verifikasi-otp', [AuthController::class, 'verifikasiOtp'])->name('otp.verify');
-    });
+            Route::get('/daftar', [AuthController::class, 'tampilkanRegister'])->name('register');
+            Route::post('/daftar', [AuthController::class, 'register'])->name('register.store');
+            Route::post('/kirim-otp', [AuthController::class, 'kirimOtp'])->name('otp.send');
+            Route::post('/verifikasi-otp', [AuthController::class, 'verifikasiOtp'])->name('otp.verify');
+        });
 
     Route::middleware('auth:member')->group(function () {
         Route::get('/profil', [AkunController::class, 'profil'])->name('profil');

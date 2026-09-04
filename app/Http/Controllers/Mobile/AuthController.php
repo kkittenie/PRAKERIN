@@ -198,6 +198,14 @@ class AuthController extends Controller
     public function tampilkanLogin()
     {
         try {
+            if (Auth::guard('web')->check()) {
+                return redirect()->route('dashboard');
+            }
+
+            if (Auth::guard('member')->check()) {
+                return redirect()->route('member.beranda');
+            }
+
             return view('mobile.auth.login');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -207,52 +215,85 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
-            $credentials = $request->validate([
-                'no_hp' => ['required', 'string'],
+            $data = $request->validate([
+                'login_type' => ['required', 'in:no_hp,username'],
+                'identifier' => ['required', 'string'],
                 'password' => ['required', 'string'],
             ], [
-                'no_hp.required' => 'Masukkan nomor HP kamu.',
+                'login_type.required' => 'Pilih mau masuk pakai apa dulu.',
+                'identifier.required' => 'Wajib diisi.',
                 'password.required' => 'Masukkan kata sandi.',
             ]);
 
-            $noHpInput = trim($credentials['no_hp']);
+            $remember = $request->boolean('ingat_saya');
 
-            $phoneVariants = [$noHpInput];
-            if (str_starts_with($noHpInput, '0')) {
-                $phoneVariants[] = '+62' . substr($noHpInput, 1);
-            } elseif (str_starts_with($noHpInput, '+62')) {
-                $phoneVariants[] = '0' . substr($noHpInput, 3);
-            } elseif (!str_starts_with($noHpInput, '+')) {
-                $phoneVariants[] = '+62' . $noHpInput;
-                $phoneVariants[] = '0' . $noHpInput;
-            }
+            if ($data['login_type'] === 'no_hp') {
+                $noHpInput = trim($data['identifier']);
 
-            $authenticated = false;
-            foreach ($phoneVariants as $phone) {
-                if (Auth::guard('member')->attempt(['no_hp' => $phone, 'password' => $credentials['password']], $request->boolean('ingat_saya'))) {
-                    $authenticated = true;
-                    break;
+                $phoneVariants = [$noHpInput];
+                if (str_starts_with($noHpInput, '0')) {
+                    $phoneVariants[] = '+62' . substr($noHpInput, 1);
+                } elseif (str_starts_with($noHpInput, '+62')) {
+                    $phoneVariants[] = '0' . substr($noHpInput, 3);
+                } elseif (!str_starts_with($noHpInput, '+')) {
+                    $phoneVariants[] = '+62' . $noHpInput;
+                    $phoneVariants[] = '0' . $noHpInput;
                 }
-            }
 
-            if (!$authenticated) {
+                foreach ($phoneVariants as $phone) {
+                    if (Auth::guard('member')->attempt(['no_hp' => $phone, 'password' => $data['password']], $remember)) {
+                        return $this->redirectSetelahLoginMember($request);
+                    }
+                }
+
                 return back()
-                    ->withErrors(['no_hp' => 'Nomor HP atau kata sandi salah.'])
-                    ->onlyInput('no_hp');
+                    ->withErrors(['identifier' => 'Nomor HP atau kata sandi salah.'])
+                    ->onlyInput('identifier');
             }
 
-            $request->session()->regenerate();
+            // login_type === 'username' -> coba akun admin (users) dulu, baru member
+            $usernameField = filter_var($data['identifier'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-            $intendedUrl = $request->session()->pull('url.intended');
+            if (Auth::guard('web')->attempt([$usernameField => $data['identifier'], 'password' => $data['password']], $remember)) {
+                $request->session()->regenerate();
 
-            if ($intendedUrl && str_starts_with(parse_url($intendedUrl, PHP_URL_PATH) ?? '', '/mobile')) {
-                return redirect()->to($intendedUrl)->with('success', 'Berhasil masuk. Selamat datang kembali, ' . Auth::guard('member')->user()->nama . '!');
+                $user = Auth::guard('web')->user();
+                activity()
+                    ->causedBy($user)
+                    ->performedOn($user)
+                    ->withProperties([
+                        'user' => $user->name,
+                        'email' => $user->email,
+                    ])
+                    ->log('Login ke sistem');
+
+                return redirect()->intended(route('dashboard'));
             }
 
-            return redirect()->route('member.beranda')->with('success', 'Berhasil masuk. Selamat datang kembali, ' . Auth::guard('member')->user()->nama . '!');
+            if (Auth::guard('member')->attempt(['username' => $data['identifier'], 'password' => $data['password']], $remember)) {
+                return $this->redirectSetelahLoginMember($request);
+            }
+
+            return back()
+                ->withErrors(['identifier' => 'Username atau kata sandi salah.'])
+                ->onlyInput('identifier');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
+    }
+
+    private function redirectSetelahLoginMember(Request $request)
+    {
+        $request->session()->regenerate();
+
+        $intendedUrl = $request->session()->pull('url.intended');
+        $sapaan = 'Berhasil masuk. Selamat datang kembali, ' . Auth::guard('member')->user()->nama . '!';
+
+        if ($intendedUrl && str_starts_with(parse_url($intendedUrl, PHP_URL_PATH) ?? '', '/mobile')) {
+            return redirect()->to($intendedUrl)->with('success', $sapaan);
+        }
+
+        return redirect()->route('member.beranda')->with('success', $sapaan);
     }
 
     public function logout(Request $request)
