@@ -114,75 +114,86 @@
                     <h1 class="text-base md:text-lg font-bold text-brand-800">Login</h1>
                 </div>
 
-                {{-- Flash messages --}}
-                @if (session('error') || $errors->any())
-                    <div class="mt-4 flex items-start gap-2 rounded-xl bg-red-50 p-3.5 text-xs text-red-700">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 shrink-0 mt-0.5">
-                            <path
-                                d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <span>{{ session('error') ?? $errors->first() }}</span>
-                    </div>
-                @endif
-
                 {{-- Main Content --}}
                 <div class="mt-6 md:mt-4 max-w-md mx-auto w-full">
                     <form method="POST" action="{{ route('member.login.store') }}" class="space-y-6"
-                        x-data="{ loginType: 'no_hp' }">
+                        x-data="{ 
+                            loginType: '{{ old('login_type', 'no_hp') }}',
+                            noHpInput: '{{ old('login_type') === 'no_hp' ? old('identifier') : '' }}',
+                            usernameInput: '{{ old('login_type') === 'username' ? old('identifier') : '' }}',
+                            syncIdentifier() {
+                                this.noHpInput = (this.noHpInput || '').replace(/\D/g, '').replace(/^0+/, '');
+                                if (this.loginType === 'no_hp') {
+                                    this.$refs.identifier.value = this.noHpInput;
+                                } else {
+                                    this.$refs.identifier.value = this.usernameInput.trim();
+                                }
+                            }
+                        }"
+                        x-init="syncIdentifier()">
                         @csrf
                         <input type="hidden" name="login_type" x-model="loginType">
+                        <input type="hidden" name="identifier" x-ref="identifier" value="{{ old('identifier') }}">
 
                         {{-- Toggle No HP / Username --}}
                         <div class="grid grid-cols-2 gap-2 rounded-2xl bg-gray-100 p-1">
-                            <button type="button" @click="loginType = 'no_hp'"
+                            <button type="button" @click="loginType = 'no_hp'; $nextTick(() => syncIdentifier());"
                                 :class="loginType === 'no_hp' ? 'bg-white shadow-sm text-brand-800' : 'text-gray-500'"
                                 class="rounded-xl py-2 text-sm font-semibold transition">No. HP</button>
-                            <button type="button" @click="loginType = 'username'"
+                            <button type="button" @click="loginType = 'username'; $nextTick(() => syncIdentifier());"
                                 :class="loginType === 'username' ? 'bg-white shadow-sm text-brand-800' : 'text-gray-500'"
                                 class="rounded-xl py-2 text-sm font-semibold transition">Username</button>
                         </div>
 
-                        {{-- No HP Input --}}
-                        <div x-show="loginType === 'no_hp'" x-cloak>
-                            <div
-                                class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
+                        <div>
+                            {{-- No HP Input --}}
+                            <div x-show="loginType === 'no_hp'" x-cloak>
                                 <div
-                                    class="flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-800">
-                                    <span>+62</span>
-                                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-500">
-                                        <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
+                                    class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
+                                    <div
+                                        class="flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-800">
+                                        <span>+62</span>
+                                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-500">
+                                            <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </div>
+                                    <input type="tel" inputmode="numeric" x-model="noHpInput"
+                                        :required="loginType === 'no_hp'" :disabled="loginType !== 'no_hp'"
+                                        placeholder="882xxxxxxx" @input="syncIdentifier()"
+                                        class="ml-3 flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
+                                    <button type="button" @click="noHpInput = ''; syncIdentifier();"
+                                        class="text-gray-400 hover:text-gray-600 p-1">
+                                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                                            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </button>
                                 </div>
-                                <input type="tel" inputmode="numeric" :value="loginType === 'no_hp' ? undefined : ''"
-                                    x-ref="noHpInput" required autofocus placeholder="882xxxxxxx"
-                                    @input="if (loginType === 'no_hp') { $refs.identifier.value = $event.target.value.replace(/\D/g, '').replace(/^0+/, ''); $event.target.value = $refs.identifier.value; }"
-                                    class="ml-3 flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
-                                <button type="button" @click="$refs.noHpInput.value=''; $refs.identifier.value=''"
-                                    class="text-gray-400 hover:text-gray-600 p-1">
-                                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
-                                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" />
+                            </div>
+
+                            {{-- Username Input --}}
+                            <div x-show="loginType === 'username'" x-cloak>
+                                <div
+                                    class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
+                                    <input type="text" x-model="usernameInput"
+                                        :required="loginType === 'username'" :disabled="loginType !== 'username'"
+                                        placeholder="Username" @input="syncIdentifier()"
+                                        class="flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
+                                </div>
+                            </div>
+
+                            {{-- Single Inline Alert Message --}}
+                            @if (session('error') || $errors->any())
+                                <div class="mt-2.5 flex items-center gap-1.5 text-xs text-red-500 font-medium">
+                                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 shrink-0">
+                                        <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
-                                </button>
-                            </div>
+                                    <span>{{ session('error') ?? $errors->first() }}</span>
+                                </div>
+                            @endif
                         </div>
-
-                        {{-- Username Input --}}
-                        <div x-show="loginType === 'username'" x-cloak>
-                            <div
-                                class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
-                                <input type="text" placeholder="Username"
-                                    @input="if (loginType === 'username') { $refs.identifier.value = $event.target.value; }"
-                                    class="flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
-                            </div>
-                        </div>
-
-                        <input type="hidden" name="identifier" x-ref="identifier" value="{{ old('identifier') }}">
-
-                        @error('identifier')
-                        <p class="mt-1.5 -mb-3 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror
 
                         {{-- Password Field --}}
                         <div>
