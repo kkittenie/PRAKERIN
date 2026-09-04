@@ -77,7 +77,7 @@
                             this.jumlah--;
                         }
                     }
-                }" class="relative lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
+                }" class="relative lg:max-w-5xl lg:mx-auto lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
 
         {{-- Left column: 1:1 photo + info (nama, harga, deskripsi) --}}
         <div class="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
@@ -143,7 +143,7 @@
         </div>
 
         {{-- Right column: deskripsi, varian/isi paket & order form --}}
-        <div class="mt-5 lg:col-span-7 lg:mt-0 space-y-4 lg:max-w-md">
+        <div class="mt-5 lg:col-span-7 lg:mt-0 space-y-4">
 
             @if ($bundling->deskripsi)
                 <div class="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-gray-50/50 lg:p-4">

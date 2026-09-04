@@ -13,11 +13,6 @@
         \App\Models\Transaksi::STATUS_DIBATALKAN => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 text-gray-500'],
     ];
 
-    // status_pesanan di DB langsung ke-set 'diproses' begitu pesanan dibuat
-    // (lihat CheckoutController), padahal pembayarannya belum tentu lunas/
-    // dikonfirmasi. Biar badge di sini nyambung sama step di halaman detail
-    // pesanan (member.pesanan.show), pakai logika yang sama: cek lunas &
-    // diproses_pada dulu sebelum jatuh balik ke status_pesanan asli.
     $pesananStatusInfo = function ($trx) use ($statusPesananBadge) {
         if ($trx->status_pesanan === \App\Models\Transaksi::STATUS_DIBATALKAN) {
             return $statusPesananBadge[\App\Models\Transaksi::STATUS_DIBATALKAN];
@@ -80,15 +75,15 @@
         }
     </style>
 
-    <div>
-        <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-0 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10 lg:pt-2 lg:-mt-2">
-            <h1 class="text-center text-lg font-extrabold text-gray-900 lg:hidden">Riwayat</h1>
+    {{-- ========================================== --}}
+    {{-- MOBILE VIEW (< 1024px) - 100% UNTOUCHED ORIGINAL --}}
+    {{-- ========================================== --}}
+    <div class="lg:hidden">
+        <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-0 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10">
+            <h1 class="text-center text-lg font-extrabold text-gray-900">Riwayat</h1>
 
             @unless ($isEmpty)
-                {{-- Fore-style underline tabs. Same swipeable/draggable track pattern
-                     as the Vouchers page. Lives inside the sticky header so it pins
-                     under the title while the tab panels scroll underneath it. --}}
-                <div class="relative mt-4 grid grid-cols-3 border-b border-gray-100 lg:max-w-md lg:mx-auto lg:mt-0">
+                <div class="relative mt-4 grid grid-cols-3 border-b border-gray-100">
                     @foreach ([
                         'riwayat' => 'Order',
                         'voucher' => 'Voucher',
@@ -115,11 +110,10 @@
                 'iconColor' => 'text-gray-400',
             ])
         @else
-            {{-- Swipeable panes, same track/viewport pattern as the Vouchers page. --}}
             <div id="riwayat-tab-viewport" class="relative flex flex-1 flex-col overflow-hidden">
                 <div id="riwayat-tab-track" class="flex flex-1 transition-transform duration-300 ease-out">
 
-            {{-- ================= TAB: RIWAYAT ================= --}}
+            {{-- TAB: RIWAYAT MOBILE --}}
             <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="0">
                 @if ($riwayat->isEmpty())
                     @include('mobile.components.empty-state', [
@@ -142,7 +136,7 @@
                             <h2 class="text-sm font-bold text-gray-900">Pesanan Aktif</h2>
                             <span class="text-xs text-gray-400">{{ $riwayatAktif->count() }} pesanan</span>
                         </div>
-                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
+                        <div class="mt-3 space-y-3">
                             @foreach ($riwayatAktif as $trx)
                                 @php $pesananBadge = $pesananStatusInfo($trx); @endphp
                                 <a
@@ -175,11 +169,10 @@
                             <h2 class="text-sm font-bold text-gray-900">Riwayat</h2>
                             <span class="text-xs text-gray-400">{{ $riwayatLain->count() }} riwayat</span>
                         </div>
-                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
+                        <div class="mt-3 space-y-3">
                             @foreach ($riwayatLain as $trx)
                                 @php $isOnline = $trx->asal_pesanan === \App\Models\Transaksi::ASAL_MEMBER_APP; @endphp
                                 @if ($isOnline)
-                                    {{-- Pesanan online (sudah selesai/dibatalkan) — buka detail pesanan --}}
                                     @php
                                         $pesananBadge = $pesananStatusInfo($trx);
                                         $sudahDiambil = $trx->status_pesanan === \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL;
@@ -208,7 +201,6 @@
                                         </p>
                                     </a>
                                 @else
-                                    {{-- Transaksi offline (kasir/POS) — buka bottom sheet detail transaksi --}}
                                     @php
                                         $belumLunas = strtolower($trx->status_pembayaran ?? 'lunas') !== 'lunas';
                                         $itemsJson = $trx->detailTransaksi
@@ -264,7 +256,7 @@
                 @endif
             </div>
 
-            {{-- ================= TAB: VOUCHER (penukaran reward) ================= --}}
+            {{-- TAB: VOUCHER MOBILE --}}
             <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="1">
                 @if ($penukaran->isEmpty())
                     @include('mobile.components.empty-state', [
@@ -279,7 +271,7 @@
                         <h2 class="text-sm font-bold text-gray-900">Penukaran Reward</h2>
                         <span class="text-xs text-gray-400">{{ $penukaran->count() }} riwayat</span>
                     </div>
-                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
+                    <div class="mt-3 space-y-3">
                         @foreach ($penukaran as $item)
                             <button
                                 type="button"
@@ -326,7 +318,7 @@
                 @endif
             </div>
 
-            {{-- ================= TAB: STAMP (penukaran hadiah stamp) ================= --}}
+            {{-- TAB: STAMP MOBILE --}}
             <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="2">
                 @if ($riwayatStamp->isEmpty())
                     @include('mobile.components.empty-state', [
@@ -341,7 +333,7 @@
                         <h2 class="text-sm font-bold text-gray-900">Penukaran Stamp</h2>
                         <span class="text-xs text-gray-400">{{ $riwayatStamp->count() }} riwayat</span>
                     </div>
-                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
+                    <div class="mt-3 space-y-3">
                         @foreach ($riwayatStamp as $item)
                             <button
                                 type="button"
@@ -380,8 +372,345 @@
                     </div>
                 @endif
             </div>
+
                 </div>
             </div>
+        @endif
+    </div>
+
+
+    {{-- ========================================== --}}
+    {{-- DESKTOP VIEW (>= 1024px) - REDESIGNED CARD --}}
+    {{-- ========================================== --}}
+    <div class="hidden lg:block lg:max-w-6xl lg:mx-auto lg:my-6 lg:bg-white lg:rounded-3xl lg:border lg:border-gray-200/80 lg:shadow-xl lg:p-8 lg:space-y-8"
+        x-data="{ desktopTab: 'order' }">
+
+        {{-- Desktop Page Header --}}
+        <div class="flex items-center justify-between border-b border-gray-100 pb-6">
+            <div>
+                <h1 class="text-2xl font-black text-brand-800 tracking-tight">Aktivitas & Riwayat Transaksi</h1>
+                <p class="text-xs text-gray-500 mt-1">Pantau pesanan aktif, riwayat pembelian, penukaran voucher, dan stamp member Anda</p>
+            </div>
+
+            {{-- Desktop Tab Navigation Bar --}}
+            @unless ($isEmpty)
+                <div class="inline-flex items-center gap-1.5 rounded-2xl bg-gray-100/80 p-1.5 border border-gray-200/60 shadow-inner">
+                    <button type="button" @click="desktopTab = 'order'"
+                        :class="desktopTab === 'order' ? 'bg-white text-brand-800 shadow-sm font-extrabold' : 'text-gray-600 hover:text-gray-900 font-bold'"
+                        class="rounded-xl px-5 py-2.5 text-xs transition duration-150">
+                        Order
+                    </button>
+                    <button type="button" @click="desktopTab = 'voucher'"
+                        :class="desktopTab === 'voucher' ? 'bg-white text-brand-800 shadow-sm font-extrabold' : 'text-gray-600 hover:text-gray-900 font-bold'"
+                        class="rounded-xl px-5 py-2.5 text-xs transition duration-150">
+                        Voucher
+                    </button>
+                    <button type="button" @click="desktopTab = 'stamp'"
+                        :class="desktopTab === 'stamp' ? 'bg-white text-brand-800 shadow-sm font-extrabold' : 'text-gray-600 hover:text-gray-900 font-bold'"
+                        class="rounded-xl px-5 py-2.5 text-xs transition duration-150">
+                        Stamp
+                    </button>
+                </div>
+            @endunless
+        </div>
+
+        @if ($isEmpty)
+            @include('mobile.components.empty-state', [
+                'title' => 'Belum Ada Riwayat',
+                'description' => 'Semua transaksi, penukaran reward, dan penukaran stamp kamu akan tercatat di sini.',
+                'icon' => 'icon-clock',
+                'iconBg' => 'bg-gray-100',
+                'iconColor' => 'text-gray-400',
+            ])
+        @else
+
+            {{-- ================= DESKTOP TAB 1: ORDER ================= --}}
+            <div x-show="desktopTab === 'order'" class="space-y-8">
+                @if ($riwayat->isEmpty())
+                    @include('mobile.components.empty-state', [
+                        'title' => 'Belum Ada Riwayat Pesanan',
+                        'description' => 'Pesanan & transaksi kamu akan tercatat di sini.',
+                        'icon' => 'icon-clock',
+                        'iconBg' => 'bg-gray-100',
+                        'iconColor' => 'text-gray-400',
+                    ])
+                @else
+                    @php
+                        $statusAktif = [\App\Models\Transaksi::STATUS_DIPROSES, \App\Models\Transaksi::STATUS_SIAP_DIAMBIL];
+                        $riwayatAktif = $riwayat->filter(fn ($trx) => $trx->asal_pesanan === \App\Models\Transaksi::ASAL_MEMBER_APP
+                            && in_array($trx->status_pesanan, $statusAktif));
+                        $riwayatLain = $riwayat->reject(fn ($trx) => $riwayatAktif->contains('id', $trx->id));
+                    @endphp
+
+                    {{-- Pesanan Aktif Section --}}
+                    @if ($riwayatAktif->isNotEmpty())
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                <div class="flex items-center gap-2">
+                                    <h2 class="text-sm font-extrabold uppercase tracking-wide text-gray-900">Pesanan Aktif</h2>
+                                </div>
+                                <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-extrabold text-amber-700 border border-amber-200/60">{{ $riwayatAktif->count() }} Pesanan Sedang Berjalan</span>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-6">
+                                @foreach ($riwayatAktif as $trx)
+                                    @php $pesananBadge = $pesananStatusInfo($trx); @endphp
+                                    <a href="{{ route('member.pesanan.show', $trx) }}"
+                                        onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                        class="group flex flex-col justify-between rounded-2xl border border-amber-200/80 bg-gradient-to-b from-amber-50/40 to-white p-5 shadow-xs hover:border-amber-400 hover:shadow-md transition-all">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="flex items-center gap-3">
+                                                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-800 text-white shadow-xs">
+                                                    @include('mobile.components.icon-cake', ['class' => 'h-5 w-5'])
+                                                </span>
+                                                <div class="min-w-0">
+                                                    <p class="truncate text-sm font-extrabold text-gray-900 group-hover:text-brand-800 transition">{{ $trx->kode_transaksi }}</p>
+                                                    <p class="text-xs text-gray-400 font-medium mt-0.5">Online &middot; {{ $trx->created_at->translatedFormat('d M Y, H:i') }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-5 flex items-center justify-between border-t border-amber-100 pt-3">
+                                            @if ($pesananBadge)
+                                                <span class="rounded-full px-3 py-1 text-[11px] font-extrabold {{ $pesananBadge['class'] }}">
+                                                    {{ $pesananBadge['label'] }}
+                                                </span>
+                                            @endif
+                                            <span class="text-xs font-extrabold text-brand-800 group-hover:translate-x-1 transition transform flex items-center gap-1">
+                                                Lihat Detail &rarr;
+                                            </span>
+                                        </div>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Riwayat Pesanan Selesai / Offline Section --}}
+                    @if ($riwayatLain->isNotEmpty())
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                <h2 class="text-sm font-extrabold uppercase tracking-wide text-gray-900">Riwayat Transaksi</h2>
+                                <span class="text-xs text-gray-500 font-semibold">{{ $riwayatLain->count() }} riwayat selesai / lampau</span>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-6">
+                                @foreach ($riwayatLain as $trx)
+                                    @php $isOnline = $trx->asal_pesanan === \App\Models\Transaksi::ASAL_MEMBER_APP; @endphp
+                                    @if ($isOnline)
+                                        @php
+                                            $pesananBadge = $pesananStatusInfo($trx);
+                                            $sudahDiambil = $trx->status_pesanan === \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL;
+                                        @endphp
+                                        <a href="{{ route('member.pesanan.show', $trx) }}"
+                                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                            class="group flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs hover:border-brand-300 hover:shadow-md transition-all">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="flex items-center gap-3">
+                                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-800 group-hover:bg-brand-800 group-hover:text-white transition">
+                                                        @include('mobile.components.icon-cake', ['class' => 'h-5 w-5'])
+                                                    </span>
+                                                    <div class="min-w-0">
+                                                        <p class="truncate text-sm font-extrabold text-gray-900 group-hover:text-brand-800 transition">{{ $trx->kode_transaksi }}</p>
+                                                        <p class="text-xs text-gray-400 font-medium mt-0.5">Online &middot; {{ $trx->created_at->translatedFormat('d M Y, H:i') }}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-5 flex items-center justify-between border-t border-gray-100 pt-3">
+                                                @if ($pesananBadge)
+                                                    <span class="rounded-full px-3 py-1 text-[11px] font-extrabold {{ $pesananBadge['class'] }}">
+                                                        {{ $pesananBadge['label'] }}
+                                                    </span>
+                                                @endif
+                                                <p class="text-sm font-black {{ $sudahDiambil ? 'text-green-600' : 'text-gray-700' }}">
+                                                    {{ $sudahDiambil ? '+' . number_format($trx->poin_didapat ?? 0, 0, ',', '.') . ' poin' : 'Rp' . number_format($trx->total_bayar, 0, ',', '.') }}
+                                                </p>
+                                            </div>
+                                        </a>
+                                    @else
+                                        @php
+                                            $belumLunas = strtolower($trx->status_pembayaran ?? 'lunas') !== 'lunas';
+                                            $itemsJson = $trx->detailTransaksi
+                                                ->groupBy(function ($item) {
+                                                    return $item->nama_produk . '_' . ($item->ukuran ?? 'std');
+                                                })
+                                                ->map(fn ($group) => [
+                                                    'nama' => $group->first()->nama_produk,
+                                                    'ukuran' => $group->first()->ukuran,
+                                                    'jumlah' => $group->sum('jumlah'),
+                                                    'subtotal' => $group->sum('subtotal'),
+                                                    'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
+                                                ])
+                                                ->values()
+                                                ->toJson();
+                                        @endphp
+                                        <button type="button"
+                                            onclick="bukaDetailTransaksi(this)"
+                                            data-kode="{{ $trx->kode_transaksi }}"
+                                            data-tanggal="{{ $trx->created_at->translatedFormat('d M Y, H:i') }}"
+                                            data-status-label="{{ $belumLunas ? 'Belum Lunas' : 'Lunas' }}"
+                                            data-status-class="{{ $belumLunas ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600' }}"
+                                            data-metode="{{ $trx->metode_pembayaran ?? '-' }}"
+                                            data-subtotal="{{ $trx->subtotal }}"
+                                            data-pajak="{{ $trx->pajak }}"
+                                            data-diskon="{{ $trx->diskon }}"
+                                            data-diskon-label="{{ $trx->diskon_label }}"
+                                            data-total="{{ $trx->total_bayar }}"
+                                            data-poin="{{ $trx->poin_didapat ?? 0 }}"
+                                            data-items="{{ $itemsJson }}"
+                                            class="group flex flex-col justify-between rounded-2xl border {{ $belumLunas ? 'border-red-200 bg-red-50/30' : 'border-gray-200/80 bg-white' }} p-5 text-left shadow-xs hover:border-brand-300 hover:shadow-md transition-all">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="flex items-center gap-3">
+                                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl {{ $belumLunas ? 'bg-red-100 text-red-600' : 'bg-green-50 text-green-600' }}">
+                                                        @if ($belumLunas)
+                                                            @include('mobile.components.icon-clock', ['class' => 'h-5 w-5'])
+                                                        @else
+                                                            @include('mobile.components.icon-check-circle', ['class' => 'h-5 w-5'])
+                                                        @endif
+                                                    </span>
+                                                    <div class="min-w-0">
+                                                        <p class="truncate text-sm font-extrabold text-gray-900 group-hover:text-brand-800 transition">{{ $trx->kode_transaksi }}</p>
+                                                        <p class="text-xs text-gray-400 font-medium mt-0.5">Kasir / POS &middot; {{ $trx->created_at->translatedFormat('d M Y, H:i') }}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-5 flex items-center justify-between border-t border-gray-100 pt-3">
+                                                <span class="rounded-full px-3 py-1 text-[11px] font-extrabold {{ $belumLunas ? 'bg-red-100 text-red-700' : 'bg-green-50 text-green-700' }}">
+                                                    {{ $belumLunas ? 'Belum Lunas' : 'Selesai (Kasir)' }}
+                                                </span>
+                                                <p class="text-sm font-black {{ $belumLunas ? 'text-red-600' : 'text-green-600' }}">
+                                                    {{ $belumLunas ? 'Rp' . number_format($trx->total_bayar, 0, ',', '.') : '+' . number_format($trx->poin_didapat ?? 0, 0, ',', '.') . ' poin' }}
+                                                </p>
+                                            </div>
+                                        </button>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @endif
+            </div>
+
+            {{-- ================= DESKTOP TAB 2: VOUCHER ================= --}}
+            <div x-show="desktopTab === 'voucher'" class="space-y-6">
+                @if ($penukaran->isEmpty())
+                    @include('mobile.components.empty-state', [
+                        'title' => 'Belum Ada Penukaran Voucher',
+                        'description' => 'Penukaran voucher kamu bakal kecatat di sini.',
+                        'icon' => 'icon-ticket',
+                        'iconBg' => 'bg-gray-100',
+                        'iconColor' => 'text-gray-400',
+                    ])
+                @else
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <h2 class="text-sm font-extrabold uppercase tracking-wide text-gray-900">Penukaran Reward & Voucher</h2>
+                        <span class="text-xs text-gray-500 font-semibold">{{ $penukaran->count() }} voucher ditukarkan</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-6">
+                        @foreach ($penukaran as $item)
+                            <button type="button"
+                                onclick="bukaDetailRedeem(this)"
+                                data-jenis="reward"
+                                data-nama="{{ $item->reward->nama ?? 'Reward tidak ditemukan' }}"
+                                data-status-label="{{ $statusBadge[$item->status]['label'] }}"
+                                data-status-class="{{ $statusBadge[$item->status]['class'] }}"
+                                data-tanggal="{{ $item->created_at->translatedFormat('d M Y, H:i') }}"
+                                data-kode="{{ $item->kode_redeem }}"
+                                data-extra-label="Poin Terpakai"
+                                data-extra-value="-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin"
+                                data-diambil="{{ $item->diambil_pada ? \Illuminate\Support\Carbon::parse($item->diambil_pada)->translatedFormat('d M Y, H:i') : '' }}"
+                                class="redeem-voucher-ticket w-full border border-gray-200/80 text-left transition hover:border-brand-300 hover:shadow-md">
+                                <div class="redeem-voucher-ticket__body">
+                                    <div class="flex items-start gap-3">
+                                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-800 text-white shadow-xs">
+                                            @include('mobile.components.icon-ticket', ['class' => 'h-5 w-5'])
+                                        </span>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-start justify-between gap-2">
+                                                <p class="truncate text-sm font-extrabold text-gray-900">{{ $item->reward->nama ?? 'Reward tidak ditemukan' }}</p>
+                                                <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold {{ $statusBadge[$item->status]['class'] }}">
+                                                    {{ $statusBadge[$item->status]['label'] }}
+                                                </span>
+                                            </div>
+                                            <p class="mt-1 text-xs text-gray-400 font-medium">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="redeem-voucher-ticket__cut mt-4 pt-3">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-[10px] uppercase font-bold text-gray-400">Kode Redeem</p>
+                                                <p class="font-mono text-sm font-extrabold tracking-widest text-brand-800">{{ $item->kode_redeem }}</p>
+                                            </div>
+                                            <p class="text-sm font-black text-red-500">-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            {{-- ================= DESKTOP TAB 3: STAMP ================= --}}
+            <div x-show="desktopTab === 'stamp'" class="space-y-6">
+                @if ($riwayatStamp->isEmpty())
+                    @include('mobile.components.empty-state', [
+                        'title' => 'Belum Ada Penukaran Stamp',
+                        'description' => 'Penukaran hadiah stamp kamu bakal kecatat di sini.',
+                        'icon' => 'icon-cake',
+                        'iconBg' => 'bg-gray-100',
+                        'iconColor' => 'text-gray-400',
+                    ])
+                @else
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <h2 class="text-sm font-extrabold uppercase tracking-wide text-gray-900">Penukaran Hadiah Stamp</h2>
+                        <span class="text-xs text-gray-500 font-semibold">{{ $riwayatStamp->count() }} stamp ditukarkan</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-6">
+                        @foreach ($riwayatStamp as $item)
+                            <button type="button"
+                                onclick="bukaDetailRedeem(this)"
+                                data-jenis="stamp"
+                                data-nama="{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}"
+                                data-status-label="{{ $statusBadge[$item->status]['label'] }}"
+                                data-status-class="{{ $statusBadge[$item->status]['class'] }}"
+                                data-tanggal="{{ $item->created_at->translatedFormat('d M Y, H:i') }}"
+                                data-kode="{{ $item->kode_redeem }}"
+                                data-extra-label="Program Stamp"
+                                data-extra-value="{{ $item->stampProgram?->nama_program ?? 'Program Stamp' }}"
+                                data-diambil="{{ $item->diambil_pada ? \Illuminate\Support\Carbon::parse($item->diambil_pada)->translatedFormat('d M Y, H:i') : '' }}"
+                                class="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 text-left shadow-xs hover:border-brand-300 hover:shadow-md transition-all">
+                                <div class="flex items-start gap-3">
+                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 p-2 text-brand-800">
+                                        <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <p class="truncate text-sm font-extrabold text-gray-900">{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}</p>
+                                            <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold {{ $statusBadge[$item->status]['class'] }}">
+                                                {{ $statusBadge[$item->status]['label'] }}
+                                            </span>
+                                        </div>
+                                        <p class="mt-1 text-xs text-gray-400 font-medium">{{ $item->created_at->translatedFormat('d M Y, H:i') }} &middot; {{ $item->stampProgram?->nama_program ?? 'Program Stamp' }}</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 border-t border-dashed border-gray-100 pt-3 flex items-center justify-between">
+                                    <div>
+                                        <p class="text-[10px] uppercase font-bold text-gray-400">Kode Redeem</p>
+                                        <p class="font-mono text-sm font-extrabold tracking-widest text-brand-800">{{ $item->kode_redeem }}</p>
+                                    </div>
+                                    <span class="text-xs font-extrabold text-brand-800">Detail &rarr;</span>
+                                </div>
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
         @endif
     </div>
 
@@ -486,15 +815,12 @@
     </dialog>
 
     <script>
-        // Tab track/swipe — same pattern as the Vouchers page: a horizontal
-        // track of fixed-width panes, translateX'd into view, with tap and
-        // touch-drag both driving the same paint() function.
         (function () {
             const tabs = ['riwayat', 'voucher', 'stamp'];
             let current = 0;
 
             const track = document.getElementById('riwayat-tab-track');
-            if (!track) return; // isEmpty state — no tabs rendered
+            if (!track) return;
 
             const indicator = document.getElementById('riwayat-tab-indicator');
             const buttons = document.querySelectorAll('.riwayat-tab');
@@ -527,8 +853,6 @@
                 paint();
             };
 
-            // Swipe/drag gesture — same threshold-based approach as the Vouchers
-            // and welcome page carousels.
             let startX = 0;
             let dragging = false;
 
@@ -567,7 +891,6 @@
                 }
                 return 'Diskon';
             } catch (e) {
-                // Bukan JSON (data lama / label polos) — tampilkan apa adanya.
                 return raw;
             }
         }

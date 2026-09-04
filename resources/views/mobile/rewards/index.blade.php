@@ -111,74 +111,82 @@
          Two-column grid: left sidebar (stamp + info), right main (catalog)
          ═══════════════════════════════════════════════════════════════════════ --}}
     @php $rewardsVoucherDesktop = $rewards->where('jenis', 'voucher'); @endphp
-    <div class="hidden lg:block">
+    <div class="hidden lg:block lg:max-w-6xl lg:mx-auto lg:my-6 lg:bg-white lg:rounded-3xl lg:border lg:border-gray-200/80 lg:shadow-xl lg:p-8 lg:space-y-8">
+        {{-- Desktop Page Header --}}
+        <div class="flex items-center justify-between border-b border-gray-100 pb-6">
+            <div>
+                <h1 class="text-2xl font-black text-brand-800 tracking-tight">Katalog Reward & Voucher</h1>
+                <p class="text-xs text-gray-500 mt-1">Tukarkan poin dan stamp member Saisho Anda dengan voucher potongan & produk pilihan gratis</p>
+            </div>
+
+            {{-- Member Reward Summary Pill --}}
+            <div class="flex items-center gap-3 rounded-2xl bg-brand-50 border border-brand-100 px-5 py-3 shadow-xs">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-800 text-white shadow-xs">
+                    <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Saisho" class="h-6 w-6 object-contain">
+                </span>
+                <div>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-brand-700">Saldo Poin Kamu</p>
+                    <p class="text-lg font-black text-brand-900">{{ number_format($member->poin, 0, ',', '.') }} <span class="text-xs font-bold text-brand-700">Poin</span></p>
+                </div>
+            </div>
+        </div>
 
         <div class="grid grid-cols-12 gap-8 items-start">
-
-            {{-- ── Left Sidebar: Stamp Program + Member Stats ── --}}
+            {{-- Left Sidebar (Stamp Program + Stats) --}}
             <div class="col-span-4 space-y-5 sticky top-24">
-
-                {{-- Member Reward Summary Card --}}
-                <div class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50">
-                            <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-6 w-6 object-contain">
-                        </span>
-                        <div class="min-w-0">
-                            <p class="text-xs text-gray-500">Saldo Poin Kamu</p>
-                            <p class="text-xl font-extrabold text-brand-800">{{ number_format($member->poin, 0, ',', '.') }}</p>
-                        </div>
-                    </div>
-                </div>
-
                 {{-- Stamp Program Card (Desktop) --}}
                 <div id="desktop-stamp-sidebar" class="space-y-4">
                     <div id="desktop-stamp-sidebar-content">
                         <button type="button" id="desktop-stamp-teaser-card" onclick="switchDesktopTab('stamp')"
-                                class="flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-[#5a3c27] to-[#8b5e3c] p-5 text-left text-white shadow-sm transition hover:shadow-md">
-                            <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/15 p-2.5">
+                                class="flex w-full items-center gap-3.5 overflow-hidden rounded-2xl bg-gradient-to-br from-[#5a3c27] via-[#6f4b32] to-[#8b5e3c] p-5 text-left text-white shadow-md transition hover:shadow-lg active:scale-[0.99]">
+                            <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 p-2.5 backdrop-blur-sm border border-white/20">
                                 <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
                             </span>
                             <div class="min-w-0 flex-1">
-                                <p id="desktop-stamp-teaser-title" class="truncate text-sm font-extrabold">Program Stamp</p>
-                                <p id="desktop-stamp-teaser-subtitle" class="mt-0.5 text-[11px] text-white/75">Kumpulin stamp, tukar hadiah gratis</p>
+                                <p id="desktop-stamp-teaser-title" class="truncate text-sm font-extrabold tracking-wide">Program Stamp</p>
+                                <p id="desktop-stamp-teaser-subtitle" class="mt-0.5 text-[11px] text-white/80 font-medium">Kumpulin stamp, tukar hadiah gratis</p>
                             </div>
-                            <span class="shrink-0 text-white/60">
+                            <span class="shrink-0 text-white/70">
                                 @include('mobile.components.icon-chevron-right', ['class' => 'h-5 w-5'])
                             </span>
                         </button>
                     </div>
                 </div>
 
-                {{-- Quick info --}}
-                <div class="rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-4">
-                    <p class="text-xs font-bold text-gray-700">💡 Cara Mendapatkan Poin</p>
-                    <p class="mt-1.5 text-[11px] leading-relaxed text-gray-500">
-                        Setiap pembelian melalui aplikasi member akan otomatis menambah poin kamu. Tukarkan poin dengan voucher diskon atau hadiah menarik!
+                {{-- Quick info Card --}}
+                <div class="rounded-2xl border border-dashed border-brand-200/80 bg-brand-25/50 p-5 space-y-2">
+                    <div class="flex items-center gap-2 text-xs font-extrabold text-brand-800">
+                        <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-100 text-brand-800">💡</span>
+                        <span>Cara Mendapatkan Poin</span>
+                    </div>
+                    <p class="text-xs leading-relaxed text-gray-600 font-medium">
+                        Setiap transaksi pemesanan melalui aplikasi member Saisho akan otomatis memberikan poin reward. Kumpulkan poin dan tukarkan dengan berbagai penawaran menarik!
                     </p>
                 </div>
             </div>
 
-            {{-- ── Right Main: Reward Catalog with Filter Tabs ── --}}
-            <div class="col-span-8">
-
-                {{-- Tab filter pills (Voucher & Stamp only on Desktop) --}}
-                <div class="flex items-center gap-2 border-b border-gray-100 pb-4">
-                    <button type="button" data-desktop-tab="voucher" onclick="switchDesktopTab('voucher')"
-                            class="desktop-filter-tab rounded-full px-5 py-2 text-xs font-bold transition bg-brand-800 text-white">
-                        Voucher
-                    </button>
-                    <button type="button" data-desktop-tab="stamp" onclick="switchDesktopTab('stamp')"
-                            class="desktop-filter-tab rounded-full px-5 py-2 text-xs font-bold transition bg-gray-100 text-gray-600 hover:bg-gray-200">
-                        Stamp
-                    </button>
+            {{-- Right Main: Reward Catalog --}}
+            <div class="col-span-8 space-y-6">
+                {{-- Desktop Tab filter pills --}}
+                <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <div class="inline-flex items-center gap-2 rounded-2xl bg-gray-100/80 p-1.5 border border-gray-200/60 shadow-inner">
+                        <button type="button" data-desktop-tab="voucher" onclick="switchDesktopTab('voucher')"
+                                class="desktop-filter-tab rounded-xl px-5 py-2.5 text-xs font-extrabold transition bg-brand-800 text-white shadow-sm outline-none focus:outline-none focus:ring-0 cursor-pointer">
+                            Voucher Diskon
+                        </button>
+                        <button type="button" data-desktop-tab="stamp" onclick="switchDesktopTab('stamp')"
+                                class="desktop-filter-tab rounded-xl px-5 py-2.5 text-xs font-bold transition bg-transparent text-gray-600 hover:text-gray-900 outline-none focus:outline-none focus:ring-0 cursor-pointer">
+                            Stamp Reward
+                        </button>
+                    </div>
+                    <span class="text-xs font-semibold text-gray-400">Pilih penawaran yang ingin ditukarkan</span>
                 </div>
 
-                {{-- Desktop: Voucher pane (Default) --}}
-                <div id="desktop-pane-voucher" class="desktop-pane pt-5">
+                {{-- Desktop: Voucher pane --}}
+                <div id="desktop-pane-voucher" class="desktop-pane pt-2">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-base font-bold text-gray-900">Katalog Voucher</h2>
-                        <span class="text-xs text-gray-400">{{ $rewardsVoucherDesktop->count() }} voucher</span>
+                        <h2 class="text-sm font-extrabold uppercase tracking-wide text-gray-900">Katalog Voucher</h2>
+                        <span class="text-xs text-gray-500 font-semibold">{{ $rewardsVoucherDesktop->count() }} voucher tersedia</span>
                     </div>
                     <div class="grid grid-cols-2 xl:grid-cols-3 gap-5">
                         @forelse ($rewardsVoucherDesktop as $reward)
@@ -197,19 +205,18 @@
                     </div>
                 </div>
 
-                {{-- Desktop: Stamp pane (lazily fetched) --}}
-                <div id="desktop-pane-stamp" class="desktop-pane pt-5 hidden">
+                {{-- Desktop: Stamp pane --}}
+                <div id="desktop-pane-stamp" class="desktop-pane pt-2 hidden">
                     <div id="desktop-stamp-pane-content" class="flex flex-1 flex-col">
-                        <div class="flex flex-1 flex-col items-center justify-center py-10 text-center">
-                            <svg class="h-6 w-6 animate-spin text-gray-300" viewBox="0 0 24 24" fill="none">
+                        <div class="flex flex-1 flex-col items-center justify-center py-12 text-center">
+                            <svg class="h-8 w-8 animate-spin text-brand-800" viewBox="0 0 24 24" fill="none">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity=".25"/>
                                 <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
                             </svg>
-                            <p class="mt-3 text-xs text-gray-400">Memuat stamp...</p>
+                            <p class="mt-3 text-xs font-bold text-gray-500">Memuat program stamp...</p>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -315,9 +322,12 @@
                     const isActive = btn.dataset.desktopTab === name;
                     btn.classList.toggle('bg-brand-800', isActive);
                     btn.classList.toggle('text-white', isActive);
-                    btn.classList.toggle('bg-gray-100', !isActive);
+                    btn.classList.toggle('shadow-sm', isActive);
+                    btn.classList.toggle('font-extrabold', isActive);
+                    btn.classList.toggle('font-bold', !isActive);
+                    btn.classList.toggle('bg-transparent', !isActive);
                     btn.classList.toggle('text-gray-600', !isActive);
-                    btn.classList.toggle('hover:bg-gray-200', !isActive);
+                    btn.classList.toggle('hover:text-gray-900', !isActive);
                 });
 
                 // Show/hide panes

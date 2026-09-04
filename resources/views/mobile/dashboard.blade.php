@@ -30,7 +30,10 @@
 
 @section('content')
 
-    <div>
+    {{-- ════════════════════════════════════════════════════════════════
+         MOBILE VIEW (< 1024px) — 100% ORIGINAL, UNTOUCHED
+         ════════════════════════════════════════════════════════════════ --}}
+    <div class="lg:hidden">
 
         {{-- Hero Section (Mobile: original stacked overlap, Desktop: 2-column grid) --}}
         <div class="-mx-5 sm:mx-0 relative lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start">
@@ -373,6 +376,445 @@
                 </div>
             @endforelse
         </div>
+    </div>
+
+    {{-- ════════════════════════════════════════════════════════════════
+         DESKTOP VIEW (>= 1024px) — LANDING PAGE STYLE
+         ════════════════════════════════════════════════════════════════ --}}
+    <div class="hidden lg:block w-full">
+
+        {{-- ━━━ SECTION 1: HERO BANNER ━━━ --}}
+        <section class="relative w-full overflow-hidden bg-gradient-to-br from-[#2c1810] via-[#3d2418] to-[#5a3c27]">
+            {{-- Background deco --}}
+            <div class="absolute inset-0 opacity-10">
+                <div class="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-brand-400 blur-3xl"></div>
+                <div class="absolute right-0 bottom-0 h-60 w-60 rounded-full bg-amber-400 blur-3xl"></div>
+                <div class="absolute left-1/2 top-1/3 h-40 w-40 rounded-full bg-brand-300 blur-2xl"></div>
+            </div>
+
+            <div class="relative mx-auto max-w-7xl px-12 py-20 xl:py-24">
+                <div class="grid grid-cols-12 gap-10 items-center">
+                    {{-- Left: Tagline & CTA --}}
+                    <div class="col-span-7 space-y-6">
+
+                        <h1 class="text-5xl xl:text-6xl font-black text-white leading-[1.1] tracking-tight">
+                            Fresh Bakes,<br>
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-amber-300 to-brand-400">Sweeter Savings</span>
+                        </h1>
+
+                        <p class="text-base text-stone-300 leading-relaxed max-w-lg font-medium">
+                            Nikmati kelezatan roti, kue artisan, dan pastry berkualitas tinggi yang dibuat segar setiap hari. Kumpulkan poin & stamp di setiap transaksi!
+                        </p>
+
+                        <div class="flex items-center gap-4 pt-2">
+                            <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);"
+                               class="inline-flex items-center gap-2.5 rounded-2xl bg-white px-7 py-4 text-sm font-extrabold text-brand-900 shadow-lg hover:bg-brand-50 transition active:scale-[0.98]">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Lihat Menu
+                            </a>
+                            @guest('member')
+                                <a href="{{ route('member.register') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                   class="inline-flex items-center gap-2 rounded-2xl border-2 border-white/25 px-7 py-[14px] text-sm font-extrabold text-white backdrop-blur hover:bg-white/10 transition">
+                                    Daftar Member
+                                </a>
+                            @endguest
+                        </div>
+
+                        {{-- Trust badges --}}
+                        <div class="flex items-center gap-6 pt-4 border-t border-white/10">
+                            <div class="flex items-center gap-2 text-stone-400">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-brand-400"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span class="text-xs font-bold">Buka 08.00 – 18.00</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-stone-400">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-brand-400"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span class="text-xs font-bold">Fresh Baked Daily</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-stone-400">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-brand-400"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span class="text-xs font-bold">Member Rewards</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Right: Promo Carousel or Member Card --}}
+                    <div class="col-span-5 space-y-5">
+                        @if (count($promoBanners))
+                            <div id="desktop-hero-promo" class="relative aspect-[4/3] w-full overflow-hidden rounded-3xl shadow-2xl shadow-black/30 border border-white/10">
+                                <div id="desktop-hero-track" class="flex h-full w-full transition-transform duration-[450ms] ease-out">
+                                    @foreach ($promoBanners as $banner)
+                                        <div class="relative h-full w-full shrink-0 flex-none">
+                                            @if (! empty($banner['gambar']))
+                                                <img src="{{ asset($banner['gambar']) }}" alt="Promo Saisho" class="absolute inset-0 h-full w-full object-cover object-center">
+                                            @else
+                                                <div class="absolute inset-0 bg-gradient-to-br {{ $banner['gradient'] }}"></div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @if (count($promoBanners) > 1)
+                                    <div class="absolute inset-x-0 bottom-4 z-20 flex items-center justify-center gap-1.5">
+                                        @foreach ($promoBanners as $i => $banner)
+                                            <button type="button" onclick="goToDesktopHeroSlide({{ $i }})" class="desktop-hero-dot rounded-full bg-white/50 transition-all {{ $i === 0 ? 'h-2.5 w-2.5 !bg-white' : 'h-1.5 w-1.5' }}" aria-label="Promo {{ $i + 1 }}"></button>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                            <script>
+                            (() => {
+                                const track = document.getElementById('desktop-hero-track');
+                                const dots = document.querySelectorAll('.desktop-hero-dot');
+                                if (!track) return;
+                                const total = track.children.length;
+                                let cur = 0;
+                                window.goToDesktopHeroSlide = (i) => {
+                                    cur = (i + total) % total;
+                                    track.style.transform = `translateX(-${cur * 100}%)`;
+                                    dots.forEach((d, j) => {
+                                        d.classList.toggle('h-2.5', j === cur);
+                                        d.classList.toggle('w-2.5', j === cur);
+                                        d.classList.toggle('!bg-white', j === cur);
+                                        d.classList.toggle('h-1.5', j !== cur);
+                                        d.classList.toggle('w-1.5', j !== cur);
+                                    });
+                                };
+                                if (total > 1) setInterval(() => window.goToDesktopHeroSlide(cur + 1), 5000);
+                            })();
+                            </script>
+                        @endif
+
+                        @auth('member')
+                            {{-- Compact member greeting --}}
+                            <div class="relative overflow-hidden rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-5 text-white">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-brand-300 border border-white/10">
+                                        <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-extrabold">Hi, {{ explode(' ', $member->nama)[0] }}! 👋</p>
+                                        <p class="text-[11px] text-white/60">Selamat datang kembali di Saisho</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3 flex items-center gap-2 border-t border-white/10 pt-3">
+                                    <button type="button" onclick="openSheet('sheet-info-poin')" class="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/10 py-1.5 pl-1.5 pr-3 text-[11px] font-bold transition hover:bg-white/20">
+                                        <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-400/30 p-0.5">
+                                            <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
+                                        </span>
+                                        {{ number_format($member->poin, 0, ',', '.') }} Poin
+                                    </button>
+                                    <button type="button" onclick="openSheet('sheet-info-tier')" class="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/10 py-1.5 pl-1.5 pr-3 text-[11px] font-bold transition hover:bg-white/20">
+                                        <span class="flex h-5 w-5 items-center justify-center rounded-full {{ $warnaBadgeTier }} text-white">
+                                            @include('mobile.components.icon-crown', ['class' => 'h-3 w-3'])
+                                        </span>
+                                        Tier {{ $member->level }}
+                                    </button>
+                                </div>
+                            </div>
+                        @endauth
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {{-- ━━━ SECTION 2: WHY CHOOSE US ━━━ --}}
+        <section class="bg-white py-16 xl:py-20">
+            <div class="mx-auto max-w-7xl px-12">
+                <div class="text-center mb-12">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 border border-brand-100 px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-brand-800 mb-4">Kenapa Saisho?</span>
+                    <h2 class="text-3xl font-black text-gray-900 tracking-tight">Kelezatan yang Bisa Kamu Rasakan</h2>
+                    <p class="mt-2 text-sm text-gray-500 max-w-xl mx-auto">Kami berkomitmen menghadirkan produk bakery terbaik dengan bahan pilihan, dibuat segar setiap hari untuk pelanggan setia kami.</p>
+                </div>
+
+                <div class="grid grid-cols-3 gap-8">
+                    {{-- Card 1 --}}
+                    <div class="group relative rounded-3xl border border-gray-100 bg-gradient-to-b from-white to-gray-50/50 p-8 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-100 to-brand-200 text-brand-800 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                            <svg viewBox="0 0 24 24" fill="none" class="h-7 w-7"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <h3 class="mt-5 text-base font-extrabold text-gray-900">Segar Setiap Hari</h3>
+                        <p class="mt-2 text-xs leading-relaxed text-gray-500">Semua produk kami dibuat fresh dari dapur setiap pagi. Tidak ada produk basi — freshness is our promise.</p>
+                    </div>
+
+                    {{-- Card 2 --}}
+                    <div class="group relative rounded-3xl border border-gray-100 bg-gradient-to-b from-white to-gray-50/50 p-8 shadow-sm hover:shadow-lg hover:border-amber-200 transition-all duration-300">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                            <svg viewBox="0 0 24 24" fill="none" class="h-7 w-7"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <h3 class="mt-5 text-base font-extrabold text-gray-900">Bahan Berkualitas</h3>
+                        <p class="mt-2 text-xs leading-relaxed text-gray-500">Hanya menggunakan bahan-bahan pilihan terbaik: tepung premium, mentega asli, dan bahan alami tanpa pengawet.</p>
+                    </div>
+
+                    {{-- Card 3 --}}
+                    <div class="group relative rounded-3xl border border-gray-100 bg-gradient-to-b from-white to-gray-50/50 p-8 shadow-sm hover:shadow-lg hover:border-emerald-200 transition-all duration-300">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-700 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                            <svg viewBox="0 0 24 24" fill="none" class="h-7 w-7"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6M12 2v10M12 2l4 4M12 2L8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <h3 class="mt-5 text-base font-extrabold text-gray-900">Loyalty Rewards</h3>
+                        <p class="mt-2 text-xs leading-relaxed text-gray-500">Kumpulkan poin & stamp dari setiap transaksi, tukarkan dengan voucher diskon dan produk gratis pilihan kamu.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {{-- ━━━ SECTION 3: PRODUK PILIHAN ━━━ --}}
+        <section class="bg-gray-50/60 py-16 xl:py-20 border-y border-gray-100">
+            <div class="mx-auto max-w-7xl px-8 lg:px-12">
+                <div class="text-center mb-10 max-w-2xl mx-auto">
+                    <h2 class="text-3xl xl:text-4xl font-black text-gray-900 tracking-tight">Produk Favorit Kami</h2>
+                    <p class="mt-2 text-sm text-gray-500">Dipilih khusus dari koleksi terbaik Saisho Bakery untuk Anda</p>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-6">
+                    @forelse ($produkPilihan as $produk)
+                        @php
+                            $hargaAsli = $produk->harga_jual;
+                            $hargaFinal = $produk->harga_diskon;
+                            $adaPromo = $hargaFinal < $hargaAsli;
+                            $habis = $produk->punya_ukuran
+                                ? $produk->habisSemuaUkuran()
+                                : ($produk->status_ketersediaan === 'perlu_diproduksi' || (float) $produk->stok <= 0);
+                        @endphp
+                        <div class="w-full max-w-[270px] sm:w-[250px] lg:w-[270px] shrink-0">
+                            <a href="{{ route('member.produk.show', $produk) }}"
+                               onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                               class="group block rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm hover:shadow-xl hover:border-brand-200 transition-all duration-300 h-full"
+                               @unless($produk->punya_ukuran) data-produk-id="{{ $produk->id }}" @endunless>
+                                <div class="relative aspect-square w-full overflow-hidden bg-gray-50">
+                                    @if ($produk->foto)
+                                        <img src="{{ asset('storage/' . $produk->foto) }}" alt="{{ $produk->nama_produk }}"
+                                             class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    @endif
+                                    <div class="{{ $produk->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
+                                        @include('mobile.components.icon-cup', ['class' => 'h-10 w-10'])
+                                    </div>
+                                    <span data-promo-badge class="absolute left-2.5 top-2.5 rounded-full bg-orange-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm" style="{{ $adaPromo ? '' : 'display:none' }}">Promo</span>
+                                    @if ($habis)
+                                        <span class="absolute left-2.5 bottom-2.5 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Perlu Diproduksi</span>
+                                    @endif
+                                </div>
+                                <div class="p-4">
+                                    <p class="text-[10px] font-medium text-gray-400">{{ $produk->kategori->nama_kategori ?? '' }}</p>
+                                    <p class="mt-0.5 text-xs font-bold leading-snug text-gray-900 line-clamp-2">{{ $produk->nama_produk }}</p>
+                                    <div class="mt-2.5 flex items-center justify-between gap-1">
+                                        <div class="min-w-0">
+                                            @if ($produk->punya_ukuran)
+                                                @php
+                                                    $daftarHarga = collect($produk->daftar_ukuran)->pluck('harga');
+                                                    $hargaMin = $daftarHarga->min();
+                                                    $hargaMax = $daftarHarga->max();
+                                                @endphp
+                                                <p class="truncate text-xs font-extrabold text-gray-900">
+                                                    @if($daftarHarga->isEmpty())
+                                                        <span class="text-gray-400 italic font-normal text-[10px]">Segera hadir</span>
+                                                    @elseif($hargaMin == $hargaMax)
+                                                        Rp {{ number_format($hargaMin, 0, ',', '.') }}
+                                                    @else
+                                                        Rp {{ number_format($hargaMin, 0, ',', '.') }} - {{ number_format($hargaMax, 0, ',', '.') }}
+                                                    @endif
+                                                </p>
+                                            @else
+                                                <p data-harga-asli class="truncate text-[10px] text-gray-400 line-through" style="{{ $adaPromo ? '' : 'display:none' }}">Rp {{ number_format($hargaAsli, 0, ',', '.') }}</p>
+                                                <p data-harga-final class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($hargaFinal, 0, ',', '.') }}</p>
+                                            @endif
+                                        </div>
+                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm group-hover:bg-brand-900 transition">
+                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    @empty
+                        <div class="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-8 text-center text-xs font-medium text-gray-400">
+                            Belum ada produk tersedia saat ini.
+                        </div>
+                    @endforelse
+                </div>
+
+                <div class="mt-10 text-center">
+                    <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);"
+                       class="inline-flex items-center gap-2 rounded-2xl bg-brand-800 px-7 py-3.5 text-xs font-extrabold text-white shadow-md hover:bg-brand-900 transition active:scale-[0.98]">
+                        Lihat Semua Menu
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        {{-- ━━━ SECTION 4: TENTANG SAISHO ━━━ --}}
+        <section class="bg-white py-16 xl:py-20">
+            <div class="mx-auto max-w-7xl px-8 lg:px-12">
+                <div class="grid grid-cols-12 gap-12 items-center">
+                    {{-- Left: Illustration --}}
+                    <div class="col-span-5">
+                        <div class="relative rounded-3xl bg-gradient-to-br from-brand-100 via-brand-50 to-amber-50 p-10 xl:p-14 border border-brand-100/50">
+                            {{-- Decorative bakery icons --}}
+                            <div class="grid grid-cols-3 gap-6">
+                                <div class="flex flex-col items-center gap-3 rounded-2xl bg-white/80 p-5 shadow-sm border border-brand-100/40">
+                                    <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-800">
+                                        <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/></svg>
+                                    </span>
+                                    <span class="text-[10px] font-bold text-brand-800 text-center">Roti Artisan</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-3 rounded-2xl bg-white/80 p-5 shadow-sm border border-amber-100/40">
+                                    <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                                        @include('mobile.components.icon-cake', ['class' => 'h-6 w-6'])
+                                    </span>
+                                    <span class="text-[10px] font-bold text-amber-800 text-center">Kue & Pastry</span>
+                                </div>
+                                <div class="flex flex-col items-center gap-3 rounded-2xl bg-white/80 p-5 shadow-sm border border-emerald-100/40">
+                                    <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                                        @include('mobile.components.icon-cup', ['class' => 'h-6 w-6'])
+                                    </span>
+                                    <span class="text-[10px] font-bold text-emerald-800 text-center">Minuman</span>
+                                </div>
+                            </div>
+                            {{-- Decorative circles --}}
+                            <div class="absolute -left-4 -top-4 h-16 w-16 rounded-full bg-brand-200/40 blur-xl"></div>
+                            <div class="absolute -right-4 -bottom-4 h-20 w-20 rounded-full bg-amber-200/40 blur-xl"></div>
+                        </div>
+                    </div>
+
+                    {{-- Right: About text --}}
+                    <div class="col-span-7 space-y-6">
+                        <h2 class="text-3xl font-black text-gray-900 tracking-tight leading-snug">Saisho Cake & Bakery</h2>
+                        <p class="text-sm leading-relaxed text-gray-600">
+                            Saisho hadir sebagai bakery pilihan yang mengutamakan kelezatan dan kualitas di setiap produknya. Dengan passion mendalam terhadap seni membuat roti dan kue, kami menyajikan berbagai varian produk artisan yang dibuat segar setiap hari menggunakan bahan-bahan terbaik.
+                        </p>
+                        <p class="text-sm leading-relaxed text-gray-600">
+                            Mulai dari croissant renyah, aneka cake lembut, hingga pastry premium — semuanya dirancang untuk menemani momen spesial Anda. Kami percaya bahwa setiap gigitan harus membawa kebahagiaan.
+                        </p>
+
+                        <div class="grid grid-cols-3 gap-5 pt-4 border-t border-gray-100">
+                            <div class="text-center rounded-2xl bg-gray-50 p-4 border border-gray-100">
+                                <p class="text-2xl font-black text-brand-800">08:00 – 18:00</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">Jam Operasional</p>
+                            </div>
+                            <div class="text-center rounded-2xl bg-gray-50 p-4 border border-gray-100">
+                                <p class="text-2xl font-black text-brand-800">100%</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">Fresh Baked Daily</p>
+                            </div>
+                            <div class="text-center rounded-2xl bg-gray-50 p-4 border border-gray-100">
+                                <p class="text-2xl font-black text-brand-800">∞</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">Kelezatan</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {{-- ━━━ SECTION 5: PROGRAM MEMBER ━━━ --}}
+        <section class="relative bg-gradient-to-br from-[#2c1810] via-[#3d2418] to-[#5a3c27] py-16 xl:py-20 overflow-hidden">
+            {{-- Background deco --}}
+            <div class="absolute inset-0 opacity-10">
+                <div class="absolute right-0 top-0 h-60 w-60 rounded-full bg-brand-400 blur-3xl"></div>
+                <div class="absolute left-10 bottom-10 h-40 w-40 rounded-full bg-amber-400 blur-3xl"></div>
+            </div>
+
+            <div class="relative mx-auto max-w-7xl px-8 lg:px-12">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-black text-white tracking-tight">Lebih Sering Belanja, Makin Banyak Untung</h2>
+                    <p class="mt-2 text-sm text-stone-400 max-w-xl mx-auto">Daftar jadi member Saisho dan nikmati berbagai keuntungan eksklusif dari setiap transaksi kamu.</p>
+                </div>
+
+                <div class="grid grid-cols-3 gap-6">
+                    {{-- Points --}}
+                    <div class="rounded-3xl bg-white/5 border border-white/10 p-7 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-400/20 text-brand-300 border border-brand-400/20">
+                            <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-7 w-7 object-contain">
+                        </div>
+                        <h3 class="mt-5 text-base font-extrabold text-white">Saisho Points</h3>
+                        <p class="mt-2 text-xs leading-relaxed text-stone-400">Setiap transaksi menghasilkan poin yang bisa ditukar dengan voucher diskon dan produk gratis dari katalog reward.</p>
+                        @auth('member')
+                            <div class="mt-4 rounded-xl bg-white/10 px-4 py-2.5 border border-white/10">
+                                <span class="text-[11px] font-bold text-brand-300">Poin kamu: {{ number_format($member->poin, 0, ',', '.') }}</span>
+                            </div>
+                        @endauth
+                    </div>
+
+                    {{-- Stamp --}}
+                    <div class="rounded-3xl bg-white/5 border border-white/10 p-7 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/20 text-amber-300 border border-amber-400/20">
+                            @include('mobile.components.icon-cake', ['class' => 'h-7 w-7'])
+                        </div>
+                        <h3 class="mt-5 text-base font-extrabold text-white">Program Stamp</h3>
+                        <p class="mt-2 text-xs leading-relaxed text-stone-400">Kumpulkan stamp dari setiap belanja dengan minimum pembelian tertentu. Stamp penuh? Tukar dengan hadiah gratis!</p>
+                        @isset($program)
+                            @auth('member')
+                                <div class="mt-4 rounded-xl bg-white/10 px-4 py-2.5 border border-white/10">
+                                    <span class="text-[11px] font-bold text-amber-300">{{ $stampCurrent ?? 0 }}/{{ $stampTarget ?? 0 }} stamp terkumpul</span>
+                                </div>
+                            @endauth
+                        @endisset
+                    </div>
+
+                    {{-- Tier --}}
+                    <div class="rounded-3xl bg-white/5 border border-white/10 p-7 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-400/20 text-emerald-300 border border-emerald-400/20">
+                            @include('mobile.components.icon-crown', ['class' => 'h-7 w-7'])
+                        </div>
+                        <h3 class="mt-5 text-base font-extrabold text-white">Member Tier</h3>
+                        <p class="mt-2 text-xs leading-relaxed text-stone-400">Naik tier secara otomatis berdasarkan total poin. Tier lebih tinggi = promo eksklusif dan keuntungan lebih banyak.</p>
+                        @auth('member')
+                            <div class="mt-4 rounded-xl bg-white/10 px-4 py-2.5 border border-white/10">
+                                <span class="text-[11px] font-bold text-emerald-300">Level kamu: Tier {{ $member->level }}</span>
+                            </div>
+                        @endauth
+                    </div>
+                </div>
+
+                @guest('member')
+                    <div class="mt-10 text-center">
+                        <a href="{{ route('member.register') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                           class="inline-flex items-center gap-2.5 rounded-2xl bg-white px-8 py-4 text-sm font-extrabold text-brand-900 shadow-lg hover:bg-brand-50 transition active:scale-[0.98]">
+                            Daftar Member Sekarang — Gratis!
+                            <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </a>
+                    </div>
+                @endguest
+            </div>
+        </section>
+
+        {{-- ━━━ SECTION 6: KATALOG REWARD ━━━ --}}
+        <section class="bg-white py-16 xl:py-20 border-t border-gray-100">
+            <div class="mx-auto max-w-7xl px-8 lg:px-12">
+                <div class="text-center mb-10 max-w-2xl mx-auto">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 border border-brand-100 px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-brand-800 mb-3">Rewards & Vouchers</span>
+                    <h2 class="text-3xl xl:text-4xl font-black text-gray-900 tracking-tight">Spesial Katalog Reward</h2>
+                    <p class="mt-2 text-sm text-gray-500">Tukarkan poin member kamu dengan berbagai penawaran menarik</p>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-6">
+                    @forelse ($rewardUnggulan as $reward)
+                        <div class="w-full max-w-sm sm:w-[350px] shrink-0">
+                            @include('mobile.components.reward-card', ['reward' => $reward, 'member' => $member])
+                        </div>
+                    @empty
+                        <div class="w-full max-w-md rounded-2xl border border-gray-100 bg-gray-50 p-8 text-center text-xs font-medium text-gray-400">
+                            Belum ada reward tersedia saat ini.
+                        </div>
+                    @endforelse
+                </div>
+
+                <div class="mt-10 text-center">
+                    @auth('member')
+                        <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 1);"
+                           class="inline-flex items-center gap-2 rounded-2xl bg-brand-800 px-7 py-3.5 text-xs font-extrabold text-white shadow-md hover:bg-brand-900 transition active:scale-[0.98]">
+                            Lihat Semua Reward
+                            <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </a>
+                    @else
+                        <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                           class="inline-flex items-center gap-2 rounded-2xl bg-brand-800 px-7 py-3.5 text-xs font-extrabold text-white shadow-md hover:bg-brand-900 transition active:scale-[0.98]">
+                            Login untuk Lihat Reward
+                            <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </a>
+                    @endauth
+                </div>
+            </div>
+        </section>
+
     </div>
 
     @include('mobile.components.floating-cart')

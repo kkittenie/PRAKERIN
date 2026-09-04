@@ -165,10 +165,9 @@
             </div>
         </div>
 
-        {{-- Desktop Sticky Header Container (Hero Banner + Search Bar) --}}
+        {{-- Desktop Hero Banner & Header Container --}}
         <div class="hidden lg:block sticky top-16 z-30 bg-white/95 backdrop-blur-md pt-1 pb-4 mb-6">
-            {{-- Desktop Hero Banner --}}
-            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#5a3c27] via-[#704b30] to-[#8b5e3c] text-white shadow-lg p-6 xl:p-7">
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#5a3c27] via-[#6f4b32] to-[#8b5e3c] text-white shadow-lg p-7">
                 <svg class="pointer-events-none absolute right-0 top-0 h-full w-1/2 text-white/5" viewBox="0 0 400 300" fill="none">
                     <circle cx="300" cy="150" r="180" stroke="currentColor" stroke-width="40"/>
                     <circle cx="300" cy="150" r="80" stroke="currentColor" stroke-width="20"/>
@@ -176,29 +175,29 @@
 
                 <div class="relative z-10 flex items-center justify-between gap-8">
                     <div class="max-w-xl">
-                        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur">
-                            ✨ Freshly Baked Daily
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1 text-xs font-bold text-white backdrop-blur-md">
+                            ✨ Freshly Baked & Brewed Daily
                         </span>
-                        <h1 class="mt-2 text-2xl lg:text-3xl font-extrabold tracking-tight leading-tight">
-                            Temukan Menu Favoritmu
+                        <h1 class="mt-2.5 text-2xl lg:text-3xl font-black tracking-tight leading-tight">
+                            Pesan Online & Ambil di Outlet
                         </h1>
-                        <p class="mt-1 text-xs lg:text-sm text-brand-100/90 leading-relaxed">
-                            Nikmati aneka pilihan kue, roti, paket bundling & promo spesial dari {{ $storeNama }}.
+                        <p class="mt-1.5 text-xs lg:text-sm text-brand-100 font-medium leading-relaxed">
+                            Nikmati kelezatan roti artisan, kue spesial, dan minuman pilihan dari Saisho Bakery.
                         </p>
                     </div>
 
                     {{-- Store Location Pill on Desktop --}}
-                    <div class="shrink-0 rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-md max-w-xs">
+                    <div class="shrink-0 rounded-2xl border border-white/25 bg-white/15 p-4 backdrop-blur-md max-w-xs shadow-sm">
                         <div class="flex items-center gap-3">
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-brand-800 shadow-sm">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand-800 shadow-sm">
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
-                                    <path d="M4 10.5V20a1 1 0 0 0 1 1h4v-5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5h4a1 1 0 0 0 1-1v-9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M2.5 10 12 3l9.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M4 10.5V20a1 1 0 0 0 1 1h4v-5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5h4a1 1 0 0 0 1-1v-9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M2.5 10 12 3l9.5 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                             </span>
                             <div class="min-w-0">
-                                <p class="text-xs font-bold text-white truncate">{{ $storeNama }}</p>
-                                <p class="text-[11px] text-white/75 truncate mt-0.5">{{ $storeAlamat }}</p>
+                                <p class="text-xs font-extrabold text-white truncate">{{ $storeNama }}</p>
+                                <p class="text-[11px] text-white/80 truncate mt-0.5 font-medium">{{ $storeAlamat }}</p>
                             </div>
                         </div>
                     </div>
@@ -206,15 +205,19 @@
             </div>
 
             {{-- Compact Search Bar (Desktop) --}}
-            <div class="mt-3 flex items-center justify-between">
-                <div class="flex w-96 max-w-md items-center gap-2.5 rounded-2xl border border-gray-200 bg-white px-4 py-2.5 shadow-sm">
-                    <svg class="h-4 w-4 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none">
+            <div class="mt-4 flex items-center justify-between">
+                <div class="flex w-full max-w-md items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm focus-within:border-brand-800 focus-within:ring-4 focus-within:ring-brand-800/10 transition">
+                    <svg class="h-4.5 w-4.5 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none">
                         <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
                         <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
-                    <input type="text" x-model="search" placeholder="Cari menu favoritmu..."
-                           class="w-full border-0 bg-transparent p-0 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0">
+                    <input type="text" x-model="search" placeholder="Cari roti, cake, kopi, atau promo..."
+                           class="w-full border-0 bg-transparent p-0 text-xs font-semibold text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0">
+                    <button type="button" x-show="search.length > 0" @click="search = ''" class="text-gray-400 hover:text-gray-600">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
                 </div>
+                <span class="text-xs font-semibold text-gray-400">Pilih kategori di sebelah kiri untuk menyaring menu</span>
             </div>
         </div>
 

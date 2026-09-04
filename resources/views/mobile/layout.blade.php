@@ -180,9 +180,9 @@
         }
     </style>
 </head>
-<body class="min-h-screen bg-white font-outfit text-gray-800 antialiased flex flex-col">
+<body class="h-full overflow-x-hidden bg-gray-50 font-outfit text-gray-800 antialiased flex flex-col">
 
-    <div id="app-card" class="mx-auto flex flex-1 w-full min-h-screen flex-col bg-white">
+    <div id="app-card" class="mx-auto flex flex-1 w-full max-w-none 2xl:max-w-6xl flex-col bg-white sm:border-x sm:border-gray-200/80 lg:max-w-none lg:border-x-0">
 
         @php
             $activeHome = request()->routeIs('member.beranda');
@@ -201,7 +201,6 @@
         @endphp
 
         {{-- Desktop Navigation Header (Active only on lg: screens >= 1024px) --}}
-        @unless(request()->routeIs('member.profil'))
         <header class="hidden lg:flex relative sticky top-0 z-40 w-full items-center justify-between border-b border-gray-200/80 bg-white/95 px-8 lg:px-12 py-3.5 backdrop-blur-md">
             <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-3 shrink-0">
                 <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Saisho Logo" class="h-8 w-auto">
@@ -365,7 +364,6 @@
                 @endauth
             </div>
         </header>
-        @endunless
 
         {{-- Flash messages (toast, fixed, auto-dismiss). Dilewati di halaman
              Status Pesanan karena halaman itu sudah punya alert sendiri
@@ -390,7 +388,7 @@
         @endif
 
         {{-- Main Page Content --}}
-        <main class="flex flex-1 flex-col mx-auto w-full max-w-7xl {{ request()->routeIs('member.profil') ? '' : 'px-5 sm:px-8 md:px-10 lg:px-12' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-6 lg:pb-12' }}">
+        <main class="flex flex-1 flex-col {{ request()->routeIs('member.profil') ? '' : 'px-5 sm:px-8 md:px-10' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-6' }} {{ request()->routeIs('member.beranda') ? 'lg:w-full lg:max-w-none lg:px-0 lg:pt-0 lg:pb-0' : 'lg:mx-auto lg:w-full lg:max-w-7xl lg:px-12' }} {{ request()->routeIs('member.profil') ? 'lg:pt-6 lg:pb-12' : (request()->routeIs('member.beranda') ? '' : 'lg:pb-12') }}">
             @yield('content')
         </main>
 
@@ -460,6 +458,105 @@
             </div>
         </nav>
         @endunless
+
+        {{-- Desktop Footer (Visible ONLY on lg: screens >= 1024px) --}}
+        <footer class="hidden lg:block border-t border-stone-800/80 bg-[#1c130d] text-stone-300 mt-auto w-full">
+            <div class="mx-auto max-w-7xl px-8 lg:px-12 py-12">
+                <div class="grid grid-cols-12 gap-8 lg:gap-12">
+                    
+                    {{-- Column 1: Brand & Contact Info (5 cols) --}}
+                    <div class="col-span-12 lg:col-span-5 space-y-4">
+                        <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="inline-flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 p-2 backdrop-blur-sm border border-white/10">
+                                <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Saisho Logo" class="h-6 w-auto">
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-xl font-black text-white tracking-tight">Saisho</span>
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-brand-400">Cake & Bakery</span>
+                            </div>
+                        </a>
+                        <p class="text-xs leading-relaxed text-stone-400 max-w-sm">
+                            Menyajikan kelezatan roti, kue artisan, dan kopi berkualitas tinggi segar setiap hari untuk menemani setiap momen istimewa Anda.
+                        </p>
+                        
+                        <div class="pt-2 space-y-2">
+                            <div class="flex items-center gap-2.5 text-xs text-stone-300">
+                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/5 text-brand-400 border border-white/5">
+                                    <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </span>
+                                <span>Buka Setiap Hari: <strong class="text-white">08.00 - 18.00 WIB</strong></span>
+                            </div>
+                            <div class="flex items-center gap-2.5 text-xs text-stone-300">
+                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/5 text-brand-400 border border-white/5">
+                                    <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </span>
+                                <span>halo@saishobakery.com</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Column 2: Quick Links (2 cols) --}}
+                    <div class="col-span-12 sm:col-span-4 lg:col-span-2 space-y-3">
+                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-white">Jelajahi</h4>
+                        <ul class="space-y-2 text-xs">
+                            <li>
+                                <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 0);" class="hover:text-brand-400 transition">Beranda</a>
+                            </li>
+                            <li>
+                                <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);" class="hover:text-brand-400 transition">Menu & Order</a>
+                            </li>
+                            @auth('member')
+                                <li>
+                                    <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 1);" class="hover:text-brand-400 transition">Voucher & Rewards</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 3);" class="hover:text-brand-400 transition">Aktivitas Pesanan</a>
+                                </li>
+                            @else
+                                <li>
+                                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition">Voucher & Rewards</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition">Aktivitas Pesanan</a>
+                                </li>
+                            @endauth
+                        </ul>
+                    </div>
+
+                    {{-- Column 3: Information & Static Content (2 cols) --}}
+                    <div class="col-span-12 sm:col-span-4 lg:col-span-2 space-y-3">
+                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-white">Informasi</h4>
+                        <ul class="space-y-2 text-xs">
+                            <li>
+                                <a href="{{ route('member.konten.show', 'terms-conditions') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition">Syarat & Ketentuan</a>
+                            </li>
+                            <li>
+                                <a href="{{ route('member.konten.show', 'privacy-policy') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition">Kebijakan Privasi</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {{-- Column 4: Perks & Socials (3 cols) --}}
+                    <div class="col-span-12 sm:col-span-4 lg:col-span-3 space-y-4">
+                        <div>
+                            <h4 class="text-[11px] font-extrabold uppercase tracking-wider text-stone-400 mb-2">Ikuti Kami</h4>
+                            <div class="flex items-center gap-2">
+                                <a href="#" class="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-stone-300 hover:bg-brand-400 hover:text-stone-900 transition border border-white/5">
+                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                {{-- Bottom Bar --}}
+                <div class="mt-12 border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-stone-400">
+                    <p>&copy; {{ date('Y') }} Saisho Cake & Bakery. All rights reserved.</p>
+                    <p class="text-stone-400/80">Freshly baked & brewed daily with passion.</p>
+                </div>
+            </div>
+        </footer>
 
         {{-- Login Required Dialog Modal for Guests --}}
         <dialog id="modal-login-required" class="modal-center fixed inset-0 m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 shadow-2xl border-0 sm:max-w-md md:max-w-lg">

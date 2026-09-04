@@ -25,109 +25,236 @@
 
 @section('content')
 
-    {{-- App-bar style header: back button on the left, title centered --}}
-    <div class="relative -mx-5 sm:mx-0 -mt-6 flex items-center justify-center border-b border-gray-100 px-5 py-4 sm:rounded-t-3xl">
-        <a href="{{ route('member.reward.index') }}"
-           onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-           class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100">
-            <span class="rotate-180">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4'])</span>
-        </a>
-        <h1 class="text-theme-sm font-bold text-gray-900">Voucher Detail</h1>
-    </div>
+    {{-- ========================================== --}}
+    {{-- MOBILE VIEW (< 1024px) - 100% UNTOUCHED ORIGINAL --}}
+    {{-- ========================================== --}}
+    <div class="lg:hidden">
+        {{-- App-bar style header: back button on the left, title centered --}}
+        <div class="relative -mx-5 sm:mx-0 -mt-6 flex items-center justify-center border-b border-gray-100 px-5 py-4 sm:rounded-t-3xl">
+            <a href="{{ route('member.reward.index') }}"
+               onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+               class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100">
+                <span class="rotate-180">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4'])</span>
+            </a>
+            <h1 class="text-theme-sm font-bold text-gray-900">Voucher Detail</h1>
+        </div>
 
-    {{-- Hero image: uses the reward image uploaded from the admin panel. --}}
-    <div class="relative -mx-5 sm:mx-0 h-36 overflow-hidden bg-gradient-to-br {{ $isVoucher ? 'from-brand-100 to-brand-200' : 'from-orange-100 to-orange-200' }} md:h-48 sm:rounded-2xl">
-        @if ($reward->gambar)
-            <img
-                src="{{ asset('storage/' . $reward->gambar) }}"
-                alt="{{ $reward->nama }}"
-                class="h-full w-full object-cover"
-            >
-            <div class="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-white/10"></div>
-        @else
-            <span class="absolute -left-6 -top-6 h-28 w-28 rounded-full bg-white/40"></span>
-            <span class="absolute -right-8 top-8 h-20 w-20 rounded-full bg-white/30"></span>
-            <span class="absolute bottom-0 right-10 h-16 w-16 rounded-full bg-white/25"></span>
+        {{-- Hero image: uses the reward image uploaded from the admin panel. --}}
+        <div class="relative -mx-5 sm:mx-0 h-36 overflow-hidden bg-gradient-to-br {{ $isVoucher ? 'from-brand-100 to-brand-200' : 'from-orange-100 to-orange-200' }} md:h-48 sm:rounded-2xl">
+            @if ($reward->gambar)
+                <img
+                    src="{{ asset('storage/' . $reward->gambar) }}"
+                    alt="{{ $reward->nama }}"
+                    class="h-full w-full object-cover"
+                >
+                <div class="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-white/10"></div>
+            @else
+                <span class="absolute -left-6 -top-6 h-28 w-28 rounded-full bg-white/40"></span>
+                <span class="absolute -right-8 top-8 h-20 w-20 rounded-full bg-white/30"></span>
+                <span class="absolute bottom-0 right-10 h-16 w-16 rounded-full bg-white/25"></span>
 
-            <span class="relative mx-auto flex h-full w-full items-center justify-center">
-                <span class="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/70 shadow-sm {{ $isVoucher ? 'text-brand-700' : 'text-orange-600' }}">
-                    @include('mobile.components.'.$icon, ['class' => 'h-9 w-9'])
+                <span class="relative mx-auto flex h-full w-full items-center justify-center">
+                    <span class="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/70 shadow-sm {{ $isVoucher ? 'text-brand-700' : 'text-orange-600' }}">
+                        @include('mobile.components.'.$icon, ['class' => 'h-9 w-9'])
+                    </span>
                 </span>
-            </span>
-        @endif
-    </div>
-
-    {{-- Title & description --}}
-    <div class="pt-5 md:grid md:grid-cols-2 md:gap-8 md:items-start">
-        <div>
-        <h2 class="text-theme-lg font-bold leading-tight text-gray-900">{{ $reward->nama }}</h2>
-        <p class="mt-2 text-theme-sm leading-relaxed text-gray-500">
-            {{ $reward->deskripsi ?: ($isVoucher ? 'Voucher diskon spesial dari Saisho.' : 'Tukar poin kamu dengan produk gratis ini.') }}
-        </p>
-
-        <div class="mt-4 border-t border-dashed border-gray-200"></div>
-
-        {{-- Valid Until / Min Transaction --}}
-        <div class="mt-3 grid grid-cols-2 divide-x divide-gray-100 rounded-2xl border border-gray-100">
-            <div class="px-4 py-3">
-                <p class="text-theme-xs text-gray-400">Valid Until</p>
-                <p class="mt-0.5 text-theme-sm font-bold text-gray-800">
-                    {{ $reward->berlaku_hingga ? \Illuminate\Support\Carbon::parse($reward->berlaku_hingga)->translatedFormat('d M Y') : 'Selama stok ada' }}
-                </p>
-            </div>
-            <div class="px-4 py-3">
-                <p class="text-theme-xs text-gray-400">Min Transaction</p>
-                <p class="mt-0.5 text-theme-sm font-bold text-gray-800">
-                    {{ $reward->minimal_transaksi ? 'Rp'.number_format($reward->minimal_transaksi, 0, ',', '.') : '–' }}
-                </p>
-            </div>
+            @endif
         </div>
 
-        {{-- Poin kamu vs dibutuhkan — kept from the original page since redeeming here
-             spends poin, unlike Fore's checkout-coupon flow --}}
-        <div class="mt-3 flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3">
+        {{-- Title & description --}}
+        <div class="pt-5 md:grid md:grid-cols-2 md:gap-8 md:items-start">
             <div>
-                <p class="text-theme-xs text-gray-400">Dibutuhkan</p>
-                <p class="text-theme-sm font-bold text-gray-800">{{ number_format($reward->poin_dibutuhkan, 0, ',', '.') }} poin</p>
+            <h2 class="text-theme-lg font-bold leading-tight text-gray-900">{{ $reward->nama }}</h2>
+            <p class="mt-2 text-theme-sm leading-relaxed text-gray-500">
+                {{ $reward->deskripsi ?: ($isVoucher ? 'Voucher diskon spesial dari Saisho.' : 'Tukar poin kamu dengan produk gratis ini.') }}
+            </p>
+
+            <div class="mt-4 border-t border-dashed border-gray-200"></div>
+
+            {{-- Valid Until / Min Transaction --}}
+            <div class="mt-3 grid grid-cols-2 divide-x divide-gray-100 rounded-2xl border border-gray-100">
+                <div class="px-4 py-3">
+                    <p class="text-theme-xs text-gray-400">Valid Until</p>
+                    <p class="mt-0.5 text-theme-sm font-bold text-gray-800">
+                        {{ $reward->berlaku_hingga ? \Illuminate\Support\Carbon::parse($reward->berlaku_hingga)->translatedFormat('d M Y') : 'Selama stok ada' }}
+                    </p>
+                </div>
+                <div class="px-4 py-3">
+                    <p class="text-theme-xs text-gray-400">Min Transaction</p>
+                    <p class="mt-0.5 text-theme-sm font-bold text-gray-800">
+                        {{ $reward->minimal_transaksi ? 'Rp'.number_format($reward->minimal_transaksi, 0, ',', '.') : '–' }}
+                    </p>
+                </div>
             </div>
-            <div class="text-right">
-                <p class="text-theme-xs text-gray-400">Poin kamu</p>
-                <p class="text-theme-sm font-bold {{ $cukupPoin ? 'text-success-600' : 'text-error-500' }}">{{ number_format($member->poin, 0, ',', '.') }}</p>
+
+            {{-- Poin kamu vs dibutuhkan --}}
+            <div class="mt-3 flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3">
+                <div>
+                    <p class="text-theme-xs text-gray-400">Dibutuhkan</p>
+                    <p class="text-theme-sm font-bold text-gray-800">{{ number_format($reward->poin_dibutuhkan, 0, ',', '.') }} poin</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-theme-xs text-gray-400">Poin kamu</p>
+                    <p class="text-theme-sm font-bold {{ $cukupPoin ? 'text-success-600' : 'text-error-500' }}">{{ number_format($member->poin, 0, ',', '.') }}</p>
+                </div>
+            </div>
+
+            {{-- Expandable rows --}}
+            <div class="mt-5 divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-100 bg-white">
+                <button type="button" data-sheet-target="sheet-menu-berlaku" onclick="openExpandableRow(this, 'sheet-menu-berlaku')"
+                        class="expandable-row flex w-full items-center justify-between px-4 py-3.5 text-left">
+                    <span class="text-theme-sm font-bold text-gray-800">Menu yang Berlaku</span>
+                    <span class="row-chevron">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4 text-gray-300'])</span>
+                </button>
+                <button type="button" data-sheet-target="sheet-syarat-ketentuan" onclick="openExpandableRow(this, 'sheet-syarat-ketentuan')"
+                        class="expandable-row flex w-full items-center justify-between px-4 py-3.5 text-left">
+                    <span class="text-theme-sm font-bold text-gray-800">Syarat & Ketentuan</span>
+                    <span class="row-chevron">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4 text-gray-300'])</span>
+                </button>
+                <button type="button" data-sheet-target="sheet-cara-pakai" onclick="openExpandableRow(this, 'sheet-cara-pakai')"
+                        class="expandable-row flex w-full items-center justify-between px-4 py-3.5 text-left">
+                    <span class="text-theme-sm font-bold text-gray-800">Cara Pakai</span>
+                    <span class="row-chevron">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4 text-gray-300'])</span>
+                </button>
             </div>
         </div>
 
-        {{-- Expandable rows, each opens a bottom sheet like the Terms & Conditions example --}}
-        <div class="mt-5 divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-100 bg-white">
-            <button type="button" data-sheet-target="sheet-menu-berlaku" onclick="openExpandableRow(this, 'sheet-menu-berlaku')"
-                    class="expandable-row flex w-full items-center justify-between px-4 py-3.5 text-left">
-                <span class="text-theme-sm font-bold text-gray-800">Menu yang Berlaku</span>
-                <span class="row-chevron">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4 text-gray-300'])</span>
-            </button>
-            <button type="button" data-sheet-target="sheet-syarat-ketentuan" onclick="openExpandableRow(this, 'sheet-syarat-ketentuan')"
-                    class="expandable-row flex w-full items-center justify-between px-4 py-3.5 text-left">
-                <span class="text-theme-sm font-bold text-gray-800">Syarat & Ketentuan</span>
-                <span class="row-chevron">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4 text-gray-300'])</span>
-            </button>
-            <button type="button" data-sheet-target="sheet-cara-pakai" onclick="openExpandableRow(this, 'sheet-cara-pakai')"
-                    class="expandable-row flex w-full items-center justify-between px-4 py-3.5 text-left">
-                <span class="text-theme-sm font-bold text-gray-800">Cara Pakai</span>
-                <span class="row-chevron">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4 text-gray-300'])</span>
-            </button>
+        {{-- Redeem button mobile --}}
+        <div class="sticky bottom-20 mt-5">
+            @if ($habis)
+                <button disabled class="w-full rounded-full bg-gray-200 py-3.5 text-theme-sm font-semibold text-gray-500">Stok sudah habis</button>
+            @elseif (! $cukupPoin)
+                <button disabled class="w-full rounded-full bg-gray-200 py-3.5 text-theme-sm font-semibold text-gray-500">Kurang {{ number_format($kurang, 0, ',', '.') }} poin lagi</button>
+            @else
+                <button type="button" onclick="openSheet('konfirmasi-tukar')"
+                        class="w-full rounded-full bg-brand-700 py-3.5 text-theme-sm font-semibold text-white shadow-theme-md active:bg-brand-800">
+                    Tukar Sekarang
+                </button>
+            @endif
         </div>
     </div>
+    </div>
 
-    {{-- Redeem button — same poin-based logic as before, just styled as a pill --}}
-    <div class="sticky bottom-20 mt-5">
-        @if ($habis)
-            <button disabled class="w-full rounded-full bg-gray-200 py-3.5 text-theme-sm font-semibold text-gray-500">Stok sudah habis</button>
-        @elseif (! $cukupPoin)
-            <button disabled class="w-full rounded-full bg-gray-200 py-3.5 text-theme-sm font-semibold text-gray-500">Kurang {{ number_format($kurang, 0, ',', '.') }} poin lagi</button>
-        @else
-            <button type="button" onclick="openSheet('konfirmasi-tukar')"
-                    class="w-full rounded-full bg-brand-700 py-3.5 text-theme-sm font-semibold text-white shadow-theme-md active:bg-brand-800">
-                Tukar Sekarang
-            </button>
-        @endif
+    {{-- ========================================== --}}
+    {{-- DESKTOP VIEW (>= 1024px) - REDESIGNED CARD --}}
+    {{-- ========================================== --}}
+    <div class="hidden lg:block lg:max-w-4xl lg:mx-auto lg:my-6 lg:bg-white lg:rounded-3xl lg:border lg:border-gray-200/80 lg:shadow-xl lg:overflow-hidden">
+        {{-- Desktop Top Back Bar --}}
+        <div class="flex items-center justify-between px-8 py-5 border-b border-gray-100 bg-gray-50/50">
+            <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+                class="inline-flex items-center gap-2 text-xs font-extrabold text-gray-600 hover:text-brand-800 transition">
+                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Kembali ke Katalog Reward
+            </a>
+            <span class="text-xs font-extrabold uppercase tracking-wider text-brand-800">Detail Voucher & Reward</span>
+        </div>
+
+        <div class="grid grid-cols-12 gap-8 p-8 items-start">
+            {{-- Left Column: Hero Image & Redeem Action Card --}}
+            <div class="col-span-5 space-y-6">
+                {{-- Hero Banner / Image Card --}}
+                <div class="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-gradient-to-br {{ $isVoucher ? 'from-brand-100 to-brand-200' : 'from-orange-100 to-orange-200' }} aspect-[4/3] shadow-sm flex items-center justify-center">
+                    @if ($reward->gambar)
+                        <img src="{{ asset('storage/' . $reward->gambar) }}" alt="{{ $reward->nama }}" class="h-full w-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10"></div>
+                    @else
+                        <span class="flex h-24 w-24 items-center justify-center rounded-3xl bg-white/80 shadow-md {{ $isVoucher ? 'text-brand-800' : 'text-orange-600' }}">
+                            @include('mobile.components.'.$icon, ['class' => 'h-12 w-12'])
+                        </span>
+                    @endif
+
+                    <span class="absolute top-3 left-3 rounded-full px-3 py-1 text-[11px] font-extrabold tracking-wide text-white shadow-sm {{ $isVoucher ? 'bg-brand-800' : 'bg-orange-500' }}">
+                        {{ $isVoucher ? 'Voucher Diskon' : 'Produk Gratis' }}
+                    </span>
+                </div>
+
+                {{-- Points & Redeem Card --}}
+                <div class="rounded-2xl border border-gray-200/80 bg-gray-50/60 p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b border-gray-200/60 pb-3">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Poin Dibutuhkan</p>
+                            <p class="text-xl font-black text-brand-800 mt-0.5">{{ number_format($reward->poin_dibutuhkan, 0, ',', '.') }} <span class="text-xs font-bold text-brand-700">Poin</span></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Saldo Poin Kamu</p>
+                            <p class="text-sm font-black {{ $cukupPoin ? 'text-emerald-600' : 'text-red-500' }} mt-0.5">{{ number_format($member->poin, 0, ',', '.') }} Poin</p>
+                        </div>
+                    </div>
+
+                    {{-- CTA Redeem Button --}}
+                    @if ($habis)
+                        <button disabled class="w-full rounded-xl bg-gray-200 py-3.5 text-xs font-extrabold uppercase tracking-wider text-gray-500 cursor-not-allowed">Stok Sudah Habis</button>
+                    @elseif (! $cukupPoin)
+                        <button disabled class="w-full rounded-xl bg-gray-200 py-3.5 text-xs font-extrabold uppercase tracking-wider text-gray-500 cursor-not-allowed">Kurang {{ number_format($kurang, 0, ',', '.') }} Poin Lagi</button>
+                    @else
+                        <button type="button" onclick="openSheet('konfirmasi-tukar')"
+                                class="w-full rounded-xl bg-brand-800 py-3.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-md hover:bg-brand-900 transition active:scale-95 cursor-pointer">
+                            Tukar Sekarang
+                        </button>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Right Column: Information & Details --}}
+            <div class="col-span-7 space-y-6">
+                <div>
+                    <h2 class="text-2xl font-black text-gray-900 tracking-tight leading-snug">{{ $reward->nama }}</h2>
+                    <p class="mt-2 text-xs leading-relaxed text-gray-600 font-medium">
+                        {{ $reward->deskripsi ?: ($isVoucher ? 'Voucher diskon spesial dari Saisho Bakery.' : 'Tukarkan poin member kamu untuk mendapatkan produk pilihan secara gratis.') }}
+                    </p>
+                </div>
+
+                {{-- Key Stats Grid --}}
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-xs">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Masa Berlaku</p>
+                        <p class="mt-1 text-xs font-extrabold text-gray-900">
+                            {{ $reward->berlaku_hingga ? \Illuminate\Support\Carbon::parse($reward->berlaku_hingga)->translatedFormat('d M Y') : 'Selama stok tersedia' }}
+                        </p>
+                    </div>
+                    <div class="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-xs">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Minimal Transaksi</p>
+                        <p class="mt-1 text-xs font-extrabold text-gray-900">
+                            {{ $reward->minimal_transaksi ? 'Rp '.number_format($reward->minimal_transaksi, 0, ',', '.') : 'Tanpa minimal belanja' }}
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Expandable info rows (open bottom-sheet modals) --}}
+                <div class="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-xs mt-2">
+                    <button type="button" onclick="openSheet('sheet-menu-berlaku')"
+                            class="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-gray-50/80 group cursor-pointer">
+                        <span class="flex items-center gap-3">
+                            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                            <span class="text-xs font-extrabold text-gray-900">Menu yang Berlaku</span>
+                        </span>
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-300 transition group-hover:text-gray-500"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button type="button" onclick="openSheet('sheet-syarat-ketentuan')"
+                            class="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-gray-50/80 group cursor-pointer">
+                        <span class="flex items-center gap-3">
+                            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                            </span>
+                            <span class="text-xs font-extrabold text-gray-900">Syarat & Ketentuan</span>
+                        </span>
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-300 transition group-hover:text-gray-500"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button type="button" onclick="openSheet('sheet-cara-pakai')"
+                            class="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-gray-50/80 group cursor-pointer">
+                        <span class="flex items-center gap-3">
+                            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/></svg>
+                            </span>
+                            <span class="text-xs font-extrabold text-gray-900">Cara Pakai</span>
+                        </span>
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-300 transition group-hover:text-gray-500"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Bottom sheet: Menu yang Berlaku --}}

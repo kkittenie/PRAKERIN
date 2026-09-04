@@ -48,7 +48,7 @@
                             })
                             .catch(() => {});
                     }
-                }" x-init="setInterval(() => cekStatusPromoEvent(), 10000)" class="relative lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
+                }" x-init="setInterval(() => cekStatusPromoEvent(), 10000)" class="relative lg:max-w-5xl lg:mx-auto lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
 
         {{-- Left column: 1:1 photo + info (nama, harga, deskripsi) --}}
         <div class="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
@@ -105,7 +105,7 @@
         </div>
 
         {{-- Right column: highlight deal badge, catatan & order form --}}
-        <div class="mt-5 lg:col-span-7 lg:mt-0 lg:self-center space-y-4 lg:max-w-md">
+        <div class="mt-5 lg:col-span-7 lg:mt-0 space-y-4">
 
             {{-- Highlight deal --}}
             <div class="rounded-2xl bg-rose-50 px-4 py-3 border border-rose-100">
