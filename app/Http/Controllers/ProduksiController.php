@@ -562,8 +562,6 @@ class ProduksiController extends Controller
                 ->values();
 
             if ($rincianUkuran->isNotEmpty()) {
-                // Produk punya varian ukuran: satu kelompok label per ukuran,
-                // barcode & harga ngikutin produk_ukurans masing-masing.
                 $labelItems = $rincianUkuran->map(function ($item) use ($produksi) {
                     return [
                         'kode_barcode' => $item->produkUkuran->kode_barcode ?? $produksi->produk->kode_produk,
@@ -573,7 +571,6 @@ class ProduksiController extends Controller
                     ];
                 });
             } else {
-                // Produk tanpa ukuran: sama persis kayak sebelumnya.
                 $jumlah = (int) $request->query('jumlah', $produksi->jumlah_hasil);
                 $jumlah = max(1, min($jumlah, 500));
 

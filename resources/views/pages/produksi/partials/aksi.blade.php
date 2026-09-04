@@ -4,9 +4,6 @@
     $namaEscaped = e(addslashes($item->produk->nama_produk ?? ''));
     $sisa = (int) $item->sisa_belum_disesuaikan;
     $punyaUkuran = ($item->produk && $item->produk->punya_ukuran) ? 'true' : 'false';
-    // Daftar ukuran aktif produk ini dalam bentuk [{nama, stok}], dikirim
-    // sebagai JSON ke Alpine — dulu di sini cuma stokBesar/stokKecil yang
-    // hardcode, sekarang ngikutin berapapun ukuran yang produk ini punya.
     $daftarUkuranJson = $item->produk
         ? collect($item->produk->daftar_ukuran)->map(fn ($u) => ['nama' => $u['nama'], 'stok' => $u['stok']])->values()
         : collect();

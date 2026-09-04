@@ -395,7 +395,7 @@
             <div class="relative mx-auto max-w-7xl px-12 py-20 xl:py-24">
                 <div class="grid grid-cols-12 gap-10 items-center">
                     {{-- Left: Tagline & CTA --}}
-                    <div class="col-span-7 space-y-6">
+                    <div class="col-span-7 space-y-6 desktop-fade-up delay-100">
 
                         <h1 class="text-5xl xl:text-6xl font-black text-white leading-[1.1] tracking-tight">
                             Fresh Bakes,<br>
@@ -403,7 +403,7 @@
                         </h1>
 
                         <p class="text-base text-stone-300 leading-relaxed max-w-lg font-medium">
-                            Nikmati kelezatan roti, kue artisan, dan pastry berkualitas tinggi yang dibuat segar setiap hari. Kumpulkan poin & stamp di setiap transaksi!
+                            Nikmati kelezatan donat, kue spesial, dan pastry berkualitas tinggi yang dibuat segar setiap hari. Kumpulkan poin & stamp di setiap transaksi!
                         </p>
 
                         <div class="flex items-center gap-4 pt-2">
@@ -430,17 +430,13 @@
                                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-brand-400"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 <span class="text-xs font-bold">Fresh Baked Daily</span>
                             </div>
-                            <div class="flex items-center gap-2 text-stone-400">
-                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-brand-400"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <span class="text-xs font-bold">Member Rewards</span>
-                            </div>
                         </div>
                     </div>
 
                     {{-- Right: Promo Carousel or Member Card --}}
-                    <div class="col-span-5 space-y-5">
+                    <div class="col-span-5 space-y-5 desktop-zoom-in delay-200">
                         @if (count($promoBanners))
-                            <div id="desktop-hero-promo" class="relative aspect-[4/3] w-full overflow-hidden rounded-3xl shadow-2xl shadow-black/30 border border-white/10">
+                            <div id="desktop-hero-promo" class="relative aspect-[696/571] w-full overflow-hidden rounded-3xl shadow-2xl shadow-black/30 border border-white/10">
                                 <div id="desktop-hero-track" class="flex h-full w-full transition-transform duration-[450ms] ease-out">
                                     @foreach ($promoBanners as $banner)
                                         <div class="relative h-full w-full shrink-0 flex-none">
@@ -518,8 +514,8 @@
 
         {{-- ━━━ SECTION 2: WHY CHOOSE US ━━━ --}}
         <section class="bg-white py-16 xl:py-20">
-            <div class="mx-auto max-w-7xl px-12">
-                <div class="text-center mb-12">
+            <div class="mx-auto max-w-7xl px-8 lg:px-12">
+                <div class="text-center mb-12 desktop-fade-up delay-100">
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 border border-brand-100 px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-brand-800 mb-4">Kenapa Saisho?</span>
                     <h2 class="text-3xl font-black text-gray-900 tracking-tight">Kelezatan yang Bisa Kamu Rasakan</h2>
                     <p class="mt-2 text-sm text-gray-500 max-w-xl mx-auto">Kami berkomitmen menghadirkan produk bakery terbaik dengan bahan pilihan, dibuat segar setiap hari untuk pelanggan setia kami.</p>
@@ -527,7 +523,7 @@
 
                 <div class="grid grid-cols-3 gap-8">
                     {{-- Card 1 --}}
-                    <div class="group relative rounded-3xl border border-gray-100 bg-gradient-to-b from-white to-gray-50/50 p-8 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300">
+                    <div class="group relative rounded-3xl border border-gray-100 bg-gradient-to-b from-white to-gray-50/50 p-8 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300 desktop-fade-up delay-150">
                         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-100 to-brand-200 text-brand-800 shadow-sm group-hover:scale-110 transition-transform duration-300">
                             <svg viewBox="0 0 24 24" fill="none" class="h-7 w-7"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
@@ -536,7 +532,7 @@
                     </div>
 
                     {{-- Card 2 --}}
-                    <div class="group relative rounded-3xl border border-gray-100 bg-gradient-to-b from-white to-gray-50/50 p-8 shadow-sm hover:shadow-lg hover:border-amber-200 transition-all duration-300">
+                    <div class="group relative rounded-3xl border border-gray-100 bg-gradient-to-b from-white to-gray-50/50 p-8 shadow-sm hover:shadow-lg hover:border-amber-200 transition-all duration-300 desktop-fade-up delay-250">
                         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 shadow-sm group-hover:scale-110 transition-transform duration-300">
                             <svg viewBox="0 0 24 24" fill="none" class="h-7 w-7"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
@@ -545,7 +541,7 @@
                     </div>
 
                     {{-- Card 3 --}}
-                    <div class="group relative rounded-3xl border border-gray-100 bg-gradient-to-b from-white to-gray-50/50 p-8 shadow-sm hover:shadow-lg hover:border-emerald-200 transition-all duration-300">
+                    <div class="group relative rounded-3xl border border-gray-100 bg-gradient-to-b from-white to-gray-50/50 p-8 shadow-sm hover:shadow-lg hover:border-emerald-200 transition-all duration-300 desktop-fade-up delay-350">
                         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-700 shadow-sm group-hover:scale-110 transition-transform duration-300">
                             <svg viewBox="0 0 24 24" fill="none" class="h-7 w-7"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6M12 2v10M12 2l4 4M12 2L8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
@@ -557,7 +553,7 @@
         </section>
 
         {{-- ━━━ SECTION 3: PRODUK PILIHAN ━━━ --}}
-        <section class="bg-gray-50/60 py-16 xl:py-20 border-y border-gray-100">
+        <section class="bg-gray-50/60 py-16 xl:py-20 border-y border-gray-100 desktop-fade-up delay-200">
             <div class="mx-auto max-w-7xl px-8 lg:px-12">
                 <div class="text-center mb-10 max-w-2xl mx-auto">
                     <h2 class="text-3xl xl:text-4xl font-black text-gray-900 tracking-tight">Produk Favorit Kami</h2>
@@ -642,12 +638,12 @@
         </section>
 
         {{-- ━━━ SECTION 4: TENTANG SAISHO ━━━ --}}
-        <section class="bg-white py-16 xl:py-20">
+        <section class="bg-white py-16 xl:py-20 desktop-fade-up delay-250">
             <div class="mx-auto max-w-7xl px-8 lg:px-12">
                 <div class="grid grid-cols-12 gap-12 items-center">
                     {{-- Left: Illustration --}}
                     <div class="col-span-5">
-                        <div class="relative rounded-3xl bg-gradient-to-br from-brand-100 via-brand-50 to-amber-50 p-10 xl:p-14 border border-brand-100/50">
+                        <div class="relative rounded-3xl bg-gradient-to-br from-brand-100 via-brand-50 to-amber-50 p-10 xl:p-14 border border-brand-100/50 shadow-sm">
                             {{-- Decorative bakery icons --}}
                             <div class="grid grid-cols-3 gap-6">
                                 <div class="flex flex-col items-center gap-3 rounded-2xl bg-white/80 p-5 shadow-sm border border-brand-100/40">
@@ -705,7 +701,7 @@
         </section>
 
         {{-- ━━━ SECTION 5: PROGRAM MEMBER ━━━ --}}
-        <section class="relative bg-gradient-to-br from-[#2c1810] via-[#3d2418] to-[#5a3c27] py-16 xl:py-20 overflow-hidden">
+        <section class="relative bg-gradient-to-br from-[#2c1810] via-[#3d2418] to-[#5a3c27] py-16 xl:py-20 overflow-hidden desktop-fade-up delay-300">
             {{-- Background deco --}}
             <div class="absolute inset-0 opacity-10">
                 <div class="absolute right-0 top-0 h-60 w-60 rounded-full bg-brand-400 blur-3xl"></div>
@@ -777,7 +773,7 @@
         </section>
 
         {{-- ━━━ SECTION 6: KATALOG REWARD ━━━ --}}
-        <section class="bg-white py-16 xl:py-20 border-t border-gray-100">
+        <section class="bg-white py-16 xl:py-20 border-t border-gray-100 desktop-fade-up delay-350">
             <div class="mx-auto max-w-7xl px-8 lg:px-12">
                 <div class="text-center mb-10 max-w-2xl mx-auto">
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 border border-brand-100 px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-brand-800 mb-3">Rewards & Vouchers</span>

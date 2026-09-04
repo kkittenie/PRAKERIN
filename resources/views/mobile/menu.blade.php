@@ -176,13 +176,13 @@
                 <div class="relative z-10 flex items-center justify-between gap-8">
                     <div class="max-w-xl">
                         <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1 text-xs font-bold text-white backdrop-blur-md">
-                            ✨ Freshly Baked & Brewed Daily
+                            ✨ Freshly Baked Daily
                         </span>
                         <h1 class="mt-2.5 text-2xl lg:text-3xl font-black tracking-tight leading-tight">
                             Pesan Online & Ambil di Outlet
                         </h1>
                         <p class="mt-1.5 text-xs lg:text-sm text-brand-100 font-medium leading-relaxed">
-                            Nikmati kelezatan roti artisan, kue spesial, dan minuman pilihan dari Saisho Bakery.
+                            Nikmati kelezatan donat, kue spesial, dan pastry pilihan dari Saisho Bakery.
                         </p>
                     </div>
 
