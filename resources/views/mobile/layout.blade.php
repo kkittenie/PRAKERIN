@@ -31,26 +31,32 @@
             animation: appSplashIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        @keyframes desktopFadeUp {
-            0% { opacity: 0; transform: translateY(28px); }
-            100% { opacity: 1; transform: translateY(0); }
+        .desktop-fade-up, .scroll-fade-up {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: opacity, transform;
         }
-        @keyframes desktopZoomIn {
-            0% { opacity: 0; transform: scale(0.94) translateY(18px); }
-            100% { opacity: 1; transform: scale(1) translateY(0); }
+        .desktop-zoom-in, .scroll-zoom-in {
+            opacity: 0;
+            transform: scale(0.94) translateY(18px);
+            transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: opacity, transform;
         }
-        .desktop-fade-up {
-            animation: desktopFadeUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+        .desktop-fade-up.is-visible,
+        .scroll-fade-up.is-visible,
+        .desktop-zoom-in.is-visible,
+        .scroll-zoom-in.is-visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
         }
-        .desktop-zoom-in {
-            animation: desktopZoomIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-        .delay-100 { animation-delay: 100ms; }
-        .delay-150 { animation-delay: 150ms; }
-        .delay-200 { animation-delay: 200ms; }
-        .delay-250 { animation-delay: 250ms; }
-        .delay-300 { animation-delay: 300ms; }
-        .delay-400 { animation-delay: 400ms; }
+        .delay-100 { transition-delay: 100ms; animation-delay: 100ms; }
+        .delay-150 { transition-delay: 150ms; animation-delay: 150ms; }
+        .delay-200 { transition-delay: 200ms; animation-delay: 200ms; }
+        .delay-250 { transition-delay: 250ms; animation-delay: 250ms; }
+        .delay-300 { transition-delay: 300ms; animation-delay: 300ms; }
+        .delay-350 { transition-delay: 350ms; animation-delay: 350ms; }
+        .delay-400 { transition-delay: 400ms; animation-delay: 400ms; }
 
         dialog.sheet {
             transform: translateY(100%);
@@ -881,6 +887,26 @@
                 headers: { 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
             }).catch(() => {});
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const animElements = document.querySelectorAll('.desktop-fade-up, .desktop-zoom-in, .scroll-fade-up, .scroll-zoom-in');
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-visible');
+                            obs.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.08,
+                    rootMargin: '0px 0px -30px 0px'
+                });
+                animElements.forEach(el => observer.observe(el));
+            } else {
+                animElements.forEach(el => el.classList.add('is-visible'));
+            }
+        });
     </script>
 </body>
 </html>

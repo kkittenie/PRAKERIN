@@ -273,7 +273,7 @@
         </div>
 
         {{-- Produk pilihan --}}
-        <div class="mt-7 lg:mt-10 flex items-center justify-between">
+        <div class="mt-7 lg:mt-10 flex items-center justify-between scroll-fade-up delay-100">
             <h2 class="text-sm lg:text-base font-bold text-gray-900">Produk Pilihan</h2>
             <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-1 text-xs font-bold text-brand-800 hover:underline">
                 Lihat semua
@@ -281,7 +281,7 @@
             </a>
         </div>
 
-        <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 lg:gap-5">
+        <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 lg:gap-5 scroll-fade-up delay-150">
             @forelse ($produkPilihan as $produk)
                 @php
                     $hargaAsli = $produk->harga_jual;
@@ -352,7 +352,7 @@
         </div>
 
         {{-- Reward unggulan --}}
-        <div class="mt-7 lg:mt-10 flex items-center justify-between">
+        <div class="mt-7 lg:mt-10 flex items-center justify-between scroll-fade-up delay-100">
             <h2 class="text-sm lg:text-base font-bold text-gray-900">Spesial Katalog Reward</h2>
             @auth('member')
                 <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-1 text-xs font-bold text-brand-800 hover:underline">
@@ -367,7 +367,7 @@
             @endauth
         </div>
 
-        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-6 space-y-0">
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-6 space-y-0 scroll-fade-up delay-150">
             @forelse ($rewardUnggulan as $reward)
                 @include('mobile.components.reward-card', ['reward' => $reward, 'member' => $member])
             @empty
