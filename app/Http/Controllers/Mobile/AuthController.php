@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -225,6 +227,16 @@ class AuthController extends Controller
                 'password.required' => 'Masukkan kata sandi.',
             ]);
 
+            $throttleKey = Str::lower($data['identifier']) . '|' . $request->ip();
+
+            if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+                $seconds = RateLimiter::availableIn($throttleKey);
+
+                return back()
+                    ->withErrors(['identifier' => "Terlalu banyak percobaan gagal. Coba lagi dalam {$seconds} detik."])
+                    ->onlyInput('identifier');
+            }
+
             $remember = $request->boolean('ingat_saya');
 
             if ($data['login_type'] === 'no_hp') {
@@ -242,9 +254,12 @@ class AuthController extends Controller
 
                 foreach ($phoneVariants as $phone) {
                     if (Auth::guard('member')->attempt(['no_hp' => $phone, 'password' => $data['password']], $remember)) {
+                        RateLimiter::clear($throttleKey);
                         return $this->redirectSetelahLoginMember($request);
                     }
                 }
+
+                RateLimiter::hit($throttleKey, 60);
 
                 return back()
                     ->withErrors(['identifier' => 'Nomor HP atau kata sandi salah.'])
@@ -255,6 +270,7 @@ class AuthController extends Controller
             $usernameField = filter_var($data['identifier'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
             if (Auth::guard('web')->attempt([$usernameField => $data['identifier'], 'password' => $data['password']], $remember)) {
+                RateLimiter::clear($throttleKey);
                 $request->session()->regenerate();
 
                 $user = Auth::guard('web')->user();
@@ -271,8 +287,11 @@ class AuthController extends Controller
             }
 
             if (Auth::guard('member')->attempt(['username' => $data['identifier'], 'password' => $data['password']], $remember)) {
+                RateLimiter::clear($throttleKey);
                 return $this->redirectSetelahLoginMember($request);
             }
+
+            RateLimiter::hit($throttleKey, 60);
 
             return back()
                 ->withErrors(['identifier' => 'Username atau kata sandi salah.'])
