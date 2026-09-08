@@ -396,3 +396,7 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
 });
 
 require __DIR__ . '/auth.php';
+
+Route::fallback(function () {
+    abort(404);
+});

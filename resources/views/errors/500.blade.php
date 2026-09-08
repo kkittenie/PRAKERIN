@@ -1,33 +1,17 @@
 @extends('layouts.fullscreen-layout')
 
 @section('content')
-@php
-    $currentYear = date('Y');
-@endphp
-  <div class="relative flex flex-col items-center justify-center min-h-screen p-6 overflow-hidden z-1">
-      {{-- common grid shape --}}
-      <x-common.common-grid-shape />
-      <!-- Centered Content -->
-      <div class="mx-auto w-full max-w-[242px] text-center sm:max-w-[472px]">
-          <h1 class="mb-8 font-bold text-gray-800 text-title-md xl:text-title-2xl">
-              TERJADI KESALAHAN
-          </h1>
-
-          <img src="{{ asset('images/error/500.svg') }}" alt="500" class="mx-auto dark:hidden" />
-          <img src="{{ asset('images/error/500-dark.svg') }}" alt="500" class="mx-auto hidden dark:block" />
-
-          <p class="mt-10 mb-6 text-base text-gray-700 sm:text-lg">
-              Ada masalah di server kami. Tim sudah mendapat catatannya, coba lagi beberapa saat lagi.
-          </p>
-
-          <a href="{{ url('/') }}"
-              class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-5 py-3.5 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800">
-              Kembali ke Beranda
-          </a>
-      </div>
-      <!-- Footer -->
-      <p class="absolute text-sm text-center text-gray-500 -translate-x-1/2 bottom-6 left-1/2">
-          &copy; {{ $currentYear }} - Saisho POS
-      </p>
-  </div>
+<x-common.error-page
+    code="500"
+    image="500"
+    accent="amber"
+    title="Terjadi Kesalahan"
+    message="Ada masalah di server kami. Tim sudah mendapat catatannya, coba lagi beberapa saat lagi."
+>
+    <button type="button" onclick="window.location.reload()"
+        class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.06] sm:w-auto">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/></svg>
+        Muat Ulang
+    </button>
+</x-common.error-page>
 @endsection

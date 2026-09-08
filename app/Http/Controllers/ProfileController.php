@@ -51,32 +51,39 @@ class ProfileController extends Controller
 
     public function destroy(Request $request)
     {
+        $request->validateWithBag('userDeletion', [
+            'password' => ['required', 'current_password'],
+        ]);
+
+        $user = $request->user();
+
         try {
-            $request->validateWithBag('userDeletion', [
-                'password' => ['required', 'current_password'],
-            ]);
-
-            $user = $request->user();
-
-            activity()
-                ->causedBy($user)
-                ->performedOn($user)
-                ->withProperties([
-                    'user' => $user->name,
-                    'email' => $user->email,
-                ])
-                ->log('menghapus akun');
-
-            Auth::logout();
-
             $user->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() === '23000') {
+                return back()->withErrors([
+                    'password' => 'Akun tidak bisa dihapus karena masih terkait dengan data lain (mis. riwayat produksi, data pegawai, atau transaksi). Lepas/pindahkan dulu keterkaitannya sebelum menghapus akun ini.',
+                ], 'userDeletion');
+            }
 
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return Redirect::to('/');
+            return ActivityLogHelper::handleException($e);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
+
+        activity()
+            ->causedBy($user)
+            ->withProperties([
+                'user' => $user->name,
+                'email' => $user->email,
+            ])
+            ->log('menghapus akun');
+
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return Redirect::to('/');
     }
 }
