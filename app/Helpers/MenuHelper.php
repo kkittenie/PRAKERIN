@@ -11,7 +11,7 @@ class MenuHelper
                 'name' => 'Dashboard',
                 'icon' => 'dashboard',
                 'subItems' => [
-                    ['name' => 'Penjualan', 'path' => '/', 'permission' => 'lihat_dashboard'],
+                    ['name' => 'Penjualan', 'path' => '/admin', 'permission' => 'lihat_dashboard'],
                 ],
             ],
             [
