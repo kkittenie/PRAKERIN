@@ -571,7 +571,7 @@
                                                     </span>
                                                     <div class="min-w-0">
                                                         <p class="truncate text-sm font-extrabold text-gray-900 group-hover:text-brand-800 transition">{{ $trx->kode_transaksi }}</p>
-                                                        <p class="text-xs text-gray-400 font-medium mt-0.5">Kasir / POS &middot; {{ $trx->created_at->translatedFormat('d M Y, H:i') }}</p>
+                                                        <p class="text-xs text-gray-400 font-medium mt-0.5">Kasir &middot; {{ $trx->created_at->translatedFormat('d M Y, H:i') }}</p>
                                                     </div>
                                                 </div>
                                             </div>
