@@ -34,6 +34,7 @@ use App\Http\Controllers\KontenStatisController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PromoProdukEventController;
 use App\Http\Controllers\UkuranController;
+use App\Http\Controllers\VarianRasaController;
 use App\Http\Controllers\ProdukUkuranController;
 use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
 
@@ -212,6 +213,13 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
     Route::patch('/ukuran/{id}/toggle-status', [UkuranController::class, 'toggleStatus'])
         ->name('ukuran.toggle-status')
         ->middleware('permission:edit_ukuran');
+
+    Route::patch('/varian-rasa/{id}/toggle-status', [VarianRasaController::class, 'toggleStatus'])
+        ->name('varian-rasa.toggle-status')
+        ->middleware('permission:edit_varian_rasa');
+
+    Route::resource('varian-rasa', VarianRasaController::class)
+        ->middleware('permission:lihat_varian_rasa|tambah_varian_rasa|edit_varian_rasa|hapus_varian_rasa');
 
     // Baris ukuran dinamis milik satu produk (dipakai di halaman edit Produk).
     Route::middleware('permission:edit_produk')->group(function () {
