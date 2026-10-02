@@ -170,7 +170,7 @@
             </tr>
             <tr>
                 <td class="label">Rincian Ukuran</td>
-                <td class="val" colspan="5">Hasil: {{ $item->rincian_ukuran }} &bull; Pesanan: {{ $item->rincian_kebutuhan_ukuran }}</td>
+                <td class="val" colspan="5">Hasil: {{ $item->rincian_ukuran }} &bull; Pesanan: {{ $item->rincian_kebutuhan_ukuran }}@if($item->punya_rincian_rasa)<br>Rasa: {{ $item->rincian_rasa }}@endif</td>
             </tr>
             <tr>
                 <td class="label">Dibuat Oleh</td>

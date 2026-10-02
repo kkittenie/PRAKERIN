@@ -49,6 +49,11 @@ class Produksi extends Model
         return $this->hasMany(ProduksiUkuran::class, 'produksi_id')->with('produkUkuran.ukuran');
     }
 
+    public function produksiRasas()
+    {
+        return $this->hasMany(ProduksiRasa::class, 'produksi_id')->with('produkUkuran.ukuran');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -158,6 +163,46 @@ class Produksi extends Model
         }
 
         return $bagian ? implode(', ', $bagian) : '-';
+    }
+
+    /**
+     * Rincian hasil per rasa, dikelompokkan per ukuran. Contoh:
+     * "Kecil: Coklat 3, Keju 2 | Besar: Coklat 1". Produk tanpa ukuran: "Coklat 3, Keju 2".
+     * Null kalau produksi ini tidak mencatat rasa.
+     */
+    protected function kelompokRasa(string $kolom)
+    {
+        $baris = $this->produksiRasas->filter(fn ($r) => $r->{$kolom} > 0);
+
+        if ($baris->isEmpty()) {
+            return null;
+        }
+
+        return $baris
+            ->groupBy(fn ($r) => (int) $r->produk_ukuran_id)
+            ->sortBy(fn ($grup) => optional(optional($grup->first()->produkUkuran)->ukuran)->urutan ?? 0)
+            ->map(function ($grup) use ($kolom) {
+                $namaUkuran = optional(optional($grup->first()->produkUkuran)->ukuran)->nama_ukuran;
+                $teks = $grup->map(fn ($r) => $r->nama_rasa . ' ' . $r->{$kolom})->implode(', ');
+
+                return $namaUkuran ? $namaUkuran . ': ' . $teks : $teks;
+            })
+            ->implode(' | ');
+    }
+
+    public function getRincianRasaAttribute(): string
+    {
+        return $this->kelompokRasa('jumlah_hasil') ?? '-';
+    }
+
+    public function getRincianKebutuhanRasaAttribute(): string
+    {
+        return $this->kelompokRasa('kebutuhan') ?? '-';
+    }
+
+    public function getPunyaRincianRasaAttribute(): bool
+    {
+        return $this->produksiRasas->isNotEmpty();
     }
 
     public function getJumlahEfektifAttribute(): int

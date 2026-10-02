@@ -105,6 +105,48 @@ Kadaluwarsa
     <p class="font-semibold text-gray-800 dark:text-white">{{ $produksi->rincian_ukuran }}</p>
 </div>
 
+@if($produksi->punya_rincian_rasa)
+<div class="md:col-span-2">
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Rincian per Rasa</p>
+
+    @php
+        $kelompokRasa = $produksi->produksiRasas
+            ->groupBy(fn ($r) => (int) $r->produk_ukuran_id)
+            ->sortBy(fn ($grup) => optional(optional($grup->first()->produkUkuran)->ukuran)->urutan ?? 0);
+        $adaUkuranRasa = $produksi->produksiRasas->contains(fn ($r) => $r->produk_ukuran_id);
+    @endphp
+
+    <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                    @if($adaUkuranRasa)
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Ukuran</th>
+                    @endif
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Rasa</th>
+                    <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Jumlah Hasil</th>
+                    <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Pesanan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($kelompokRasa as $grup)
+                    @foreach($grup as $r)
+                        <tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
+                            @if($adaUkuranRasa)
+                                <td class="px-4 py-3">{{ optional(optional($r->produkUkuran)->ukuran)->nama_ukuran ?? '-' }}</td>
+                            @endif
+                            <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">{{ $r->nama_rasa }}</td>
+                            <td class="px-4 py-3 text-center font-bold text-green-600 dark:text-green-400">{{ $r->jumlah_hasil }}</td>
+                            <td class="px-4 py-3 text-center font-bold text-amber-600 dark:text-amber-400">{{ $r->kebutuhan }}</td>
+                        </tr>
+                    @endforeach
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
 <div>
 
 <p class="text-sm text-gray-500 dark:text-gray-400">

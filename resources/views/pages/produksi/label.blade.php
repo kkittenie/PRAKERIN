@@ -233,8 +233,8 @@
                         <div class="label-toko">SAISHO CAKE &amp; BAKERY</div>
                         <div class="label-nama-produk">
                             {{ $produksi->produk->nama_produk }}
-                            @if ($item['nama_ukuran'])
-                                ({{ $item['nama_ukuran'] }})
+                            @if ($item['nama_ukuran'] || !empty($item['nama_rasa']))
+                                ({{ collect([$item['nama_ukuran'], $item['nama_rasa'] ?? null])->filter()->implode(' · ') }})
                             @endif
                         </div>
                         <div class="label-harga">Rp {{ number_format($item['harga_jual'], 0, ',', '.') }}</div>
