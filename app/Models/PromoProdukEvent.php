@@ -65,6 +65,56 @@ class PromoProdukEvent extends Model
         return $ukuranId !== null && $daftar->contains($ukuranId);
     }
 
+    public function varianRasas()
+    {
+        return $this->belongsToMany(VarianRasa::class, 'promo_produk_event_varian_rasas', 'promo_produk_event_id', 'varian_rasa_id')->withTimestamps();
+    }
+
+    /**
+     * ID varian rasa yang dibatasi buat event ini. Kosong = gak dibatasi
+     * (berlaku ke semua rasa produk ini) — sama kayak pembatasan ukuran.
+     */
+    public function varianRasaIdsTerbatas(): \Illuminate\Support\Collection
+    {
+        return $this->relationLoaded('varianRasas')
+            ? $this->varianRasas->pluck('id')
+            : $this->varianRasas()->pluck('varian_rasas.id');
+    }
+
+    public function berlakuUntukRasa(?int $varianRasaId): bool
+    {
+        $daftar = $this->varianRasaIdsTerbatas();
+        if ($daftar->isEmpty()) {
+            return true;
+        }
+
+        return $varianRasaId !== null && $daftar->contains($varianRasaId);
+    }
+
+    /**
+     * Nama rasa (mis. "Coklat") yang dipakai buat cek & kurangi stok waktu
+     * event ini di-checkout. Cuma bisa ditentukan kalau event dibatasi ke
+     * TEPAT SATU rasa pada produk yang punya varian rasa — selain itu balikin
+     * null supaya stok jatuh ke total semua rasa seperti biasa.
+     */
+    public function rasaTunggalUntukProduksi(): ?string
+    {
+        if (! $this->produk || ! $this->produk->punya_varian_rasa) {
+            return null;
+        }
+
+        $rasaIds = $this->varianRasaIdsTerbatas();
+        if ($rasaIds->count() !== 1) {
+            return null;
+        }
+
+        $rasa = $this->relationLoaded('varianRasas')
+            ? $this->varianRasas->firstWhere('id', $rasaIds->first())
+            : VarianRasa::find($rasaIds->first());
+
+        return $rasa?->nama_rasa;
+    }
+
     /**
      * Nama ukuran (mis. "Jumbo") yang dipakai buat cek stok & dicatat di
      * detail transaksi waktu event ini di-checkout. Cuma bisa ditentukan
@@ -117,7 +167,26 @@ class PromoProdukEvent extends Model
         $stokDasar = (int) $this->produk->stok;
 
         $ukuranIds = $this->ukuranIdsTerbatas();
-        if ($this->produk->punya_ukuran && $ukuranIds->isNotEmpty()) {
+        $rasaIds = $this->produk->punya_varian_rasa
+            ? $this->varianRasaIdsTerbatas()
+            : collect();
+        $batasiUkuran = $this->produk->punya_ukuran && $ukuranIds->isNotEmpty();
+        $batasiRasa = $rasaIds->isNotEmpty();
+
+        if ($batasiUkuran && $batasiRasa) {
+            // Dibatasi ukuran DAN rasa — pakai stok kombinasi ukuran x rasa
+            // yang ikut event aja.
+            $stokDasar = (int) $this->produk->produkUkuranRasas()
+                ->whereIn('ukuran_id', $ukuranIds)
+                ->whereIn('varian_rasa_id', $rasaIds)
+                ->sum('stok');
+        } elseif ($batasiRasa) {
+            // Dibatasi rasa tertentu — pakai stok rasa itu aja (total semua
+            // ukuran), jangan digabung sama rasa lain yang gak ikut event.
+            $stokDasar = (int) ProdukVarianRasa::where('produk_id', $this->produk_id)
+                ->whereIn('varian_rasa_id', $rasaIds)
+                ->sum('stok');
+        } elseif ($batasiUkuran) {
             // Event dibatasi ke ukuran tertentu — pakai stok ukuran itu
             // aja, jangan digabung sama ukuran lain yang gak ikut event.
             $stokDasar = (int) $this->produk->produkUkurans()
