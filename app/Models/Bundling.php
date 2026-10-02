@@ -43,16 +43,18 @@ class Bundling extends Model
 
     public function getPerluDiproduksiAttribute(): bool
     {
-        $items = $this->relationLoaded('items') ? $this->items : $this->items()->with('produk')->get();
+        $items = $this->relationLoaded('items') ? $this->items : $this->items()->with(['produk.produkVarianRasas.varianRasa', 'produk.produkUkuranRasas'])->get();
 
         foreach ($items as $item) {
             $produk = $item->produk;
             if (!$produk) {
                 continue;
             }
-            // Cek stok sesuai ukuran yang dipilih untuk item ini (kalau produknya
-            // punya varian ukuran), bukan cuma cek stok gabungan semua ukuran.
-            if ($produk->habisUntukUkuran($item->ukuran) || $produk->stokUntukUkuran($item->ukuran) < (float) $item->qty) {
+            // Cek stok sesuai ukuran + rasa yang dipilih untuk item ini (kalau
+            // produknya punya varian ukuran / rasa), bukan cuma cek stok
+            // gabungan semua ukuran.
+            $stok = $produk->stokUntukUkuranRasa($item->ukuran, $item->varian_rasa);
+            if ($produk->status_ketersediaan === 'perlu_diproduksi' || $stok <= 0 || $stok < (float) $item->qty) {
                 return true;
             }
         }

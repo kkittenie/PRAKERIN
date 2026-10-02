@@ -12,6 +12,7 @@ class BundlingItem extends Model
         'bundling_id',
         'produk_id',
         'ukuran',
+        'varian_rasa',
         'qty',
     ];
 

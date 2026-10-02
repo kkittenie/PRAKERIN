@@ -131,6 +131,7 @@
                             <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
                             <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Produk</th>
                             <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Ukuran</th>
+                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Rasa</th>
                             <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Qty Bundling</th>
                             <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status Stok Produk</th>
                         </tr>
@@ -139,13 +140,22 @@
                         @foreach($bundling->items as $item)
                             @php
                                 $p = $item->produk;
-                                $stokUkuran = $p ? $p->stokUntukUkuran($item->ukuran) : 0;
-                                $stokHabis = !$p || $p->habisUntukUkuran($item->ukuran);
+                                $stokUkuran = $p ? $p->stokUntukUkuranRasa($item->ukuran, $item->varian_rasa) : 0;
+                                $stokHabis = !$p || $p->status_ketersediaan === 'perlu_diproduksi' || $stokUkuran <= 0;
                             @endphp
                             <tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
                                 <td class="py-4">{{ $loop->iteration }}</td>
                                 <td class="font-medium text-gray-800 dark:text-white">{{ $p ? $p->nama_produk : '-' }}</td>
                                 <td class="text-center text-gray-500 dark:text-gray-400">{{ $item->ukuran ?? '-' }}</td>
+                                <td class="text-center text-gray-500 dark:text-gray-400">
+                                    @if($item->varian_rasa)
+                                        {{ $item->varian_rasa }}
+                                    @elseif($p && $p->punya_varian_rasa && $bundling->jenis_produk !== 'khusus_bundling')
+                                        <span class="text-xs font-semibold text-red-500">Belum dipilih</span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td class="text-center font-bold text-amber-700 dark:text-amber-400">
                                     @if($bundling->jenis_produk === 'khusus_bundling')
                                         <span class="inline-flex rounded-full bg-amber-100 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300">Varian Rasa</span>
@@ -175,8 +185,8 @@
                 @foreach($bundling->items as $item)
                     @php
                         $p = $item->produk;
-                        $stokUkuran = $p ? $p->stokUntukUkuran($item->ukuran) : 0;
-                        $stokHabis = !$p || $p->habisUntukUkuran($item->ukuran);
+                        $stokUkuran = $p ? $p->stokUntukUkuranRasa($item->ukuran, $item->varian_rasa) : 0;
+                        $stokHabis = !$p || $p->status_ketersediaan === 'perlu_diproduksi' || $stokUkuran <= 0;
                     @endphp
                     <div class="py-3 flex flex-col gap-1.5">
                         <div class="flex items-center justify-between">
@@ -184,6 +194,11 @@
                                 {{ $p ? $p->nama_produk : '-' }}
                                 @if($item->ukuran)
                                     <span class="font-normal text-gray-400 dark:text-gray-500">({{ $item->ukuran }})</span>
+                                @endif
+                                @if($item->varian_rasa)
+                                    <span class="font-normal text-gray-400 dark:text-gray-500">· {{ $item->varian_rasa }}</span>
+                                @elseif($p && $p->punya_varian_rasa && $bundling->jenis_produk !== 'khusus_bundling')
+                                    <span class="text-xs font-semibold text-red-500">· Rasa belum dipilih</span>
                                 @endif
                             </span>
                             <span
