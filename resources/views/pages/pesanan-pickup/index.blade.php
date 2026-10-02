@@ -259,6 +259,9 @@
                                                             <template x-if="item.ukuran">
                                                                 <span class="ml-1 text-[11px] font-extrabold text-amber-700 dark:text-amber-400" x-text="'(' + item.ukuran + ')'"></span>
                                                             </template>
+                                                            <template x-if="item.varian_rasa">
+                                                                <span class="ml-1 text-[11px] font-extrabold text-purple-700 dark:text-purple-400" x-text="'Rasa: ' + item.varian_rasa"></span>
+                                                            </template>
                                                             <template x-if="item.butuh_produksi">
                                                                 <span class="ml-1.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
                                                             </template>
@@ -292,6 +295,9 @@
                                                         <span class="font-bold text-gray-800 dark:text-white text-xs" x-text="item.nama_produk"></span>
                                                         <template x-if="item.ukuran">
                                                             <span class="ml-1 text-[11px] font-extrabold text-amber-700 dark:text-amber-400" x-text="'(' + item.ukuran + ')'"></span>
+                                                        </template>
+                                                        <template x-if="item.varian_rasa">
+                                                            <span class="ml-1 text-[11px] font-extrabold text-purple-700 dark:text-purple-400" x-text="'Rasa: ' + item.varian_rasa"></span>
                                                         </template>
                                                         <template x-if="item.butuh_produksi">
                                                             <span class="ml-1.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[9px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
@@ -388,7 +394,7 @@
                                     Cetak Struk
                                 </button>
                             </template>
-                            <template x-if="detailData.status_pembayaran === 'Lunas' && !detailData.diproses_pada && adaItemProduksi()">
+                            <template x-if="detailData.status_pembayaran === 'Lunas' && adaItemProduksi()">
                                 <button @click="cetakStruk('dapur')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition">
                                     Tiket Produksi
                                 </button>

@@ -147,15 +147,16 @@ class TransaksiKasirController extends Controller
             return true;
         }
 
-        // Kalau produk punya varian ukuran, cek stok sesuai ukuran yang dipilih
-        // di item (Besar/Kecil), bukan stok gabungan.
-        return (bool) ($item['butuh_produksi'] ?? ($produk->stokUntukUkuran($item['ukuran'] ?? null) <= 0));
+        // Cek stok per kombinasi (ukuran + rasa) kalau keduanya ada,
+        // fallback ke stok ukuran saja kalau tidak ada rasa.
+        $varianRasa = $item['varian_rasa'] ?? null;
+        return (bool) ($item['butuh_produksi'] ?? ($produk->stokUntukUkuranRasa($item['ukuran'] ?? null, $varianRasa) <= 0));
     }
 
     public function indeks()
     {
         try {
-            $daftarProduk = Produk::with(['kategori', 'promos', 'produkUkurans.ukuran', 'produkVarianRasas.varianRasa'])
+            $daftarProduk = Produk::with(['kategori', 'promos', 'produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])
                 ->where('status_aktif', true)
                 ->reguler()
                 ->get();
@@ -399,11 +400,15 @@ class TransaksiKasirController extends Controller
             }
             if (!$detail->butuh_produksi) {
                 try {
-                    $produk = Produk::find($detail->produk_id);
+                    $produk = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])->find($detail->produk_id);
                     if ($produk) {
-                        // Kembalikan ke stok ukuran (Besar/Kecil) yang sama dengan
-                        // saat dikurangi, supaya stok per ukuran tetap sinkron.
-                        $produk->incrementStokUkuran($detail->ukuran, $detail->jumlah);
+                        // Kalau detail punya varian_rasa, kembalikan lewat
+                        // ubahStokRasa supaya stok di keempat tabel sinkron.
+                        if ($detail->varian_rasa && $produk->punya_varian_rasa) {
+                            $produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, $detail->jumlah);
+                        } else {
+                            $produk->incrementStokUkuran($detail->ukuran, $detail->jumlah);
+                        }
                     }
                 } catch (\Throwable $e) {
                     Log::error('Gagal mengembalikan stok dari detail transaksi', [
@@ -489,23 +494,33 @@ class TransaksiKasirController extends Controller
                     continue;
                 }
 
-                 $produk = Produk::findOrFail($item['produk_id']);
+                 $produk = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])->findOrFail($item['produk_id']);
                 $perluProduksi = $this->tentukanPerluProduksi($produk, $item);
                 $ukuranItem = $item['ukuran'] ?? null;
+                $varianRasa = $item['varian_rasa'] ?? null;
 
                 if (!$perluProduksi) {
-                    $stokTersediaUntukUkuran = $produk->stokUntukUkuran($ukuranItem);
+                    $stokTersediaUntukUkuran = $produk->stokUntukUkuranRasa($ukuranItem, $varianRasa);
                     if ($stokTersediaUntukUkuran < $item['jumlah']) {
-                        throw new \Exception("Stok untuk produk '{$produk->nama_produk}'" . ($ukuranItem ? " ukuran {$ukuranItem}" : '') . " tidak mencukupi (Tersedia: {$stokTersediaUntukUkuran}, Diminta: {$item['jumlah']})");
+                        $label = $produk->nama_produk;
+                        if ($varianRasa) $label .= " ({$varianRasa})";
+                        if ($ukuranItem) $label .= " ukuran {$ukuranItem}";
+                        throw new \Exception("Stok untuk produk '{$label}' tidak mencukupi (Tersedia: {$stokTersediaUntukUkuran}, Diminta: {$item['jumlah']})");
                     }
 
                     try {
-                        // Kurangi stok sesuai ukuran (Besar/Kecil) yang dipilih kasir.
-                        $produk->decrementStokUkuran($ukuranItem, $item['jumlah']);
+                        // Kurangi stok per kombinasi (rasa + ukuran) kalau ada,
+                        // fallback ke stok ukuran saja.
+                        if ($varianRasa && $produk->punya_varian_rasa) {
+                            $produk->ubahStokRasa($ukuranItem, $varianRasa, -$item['jumlah']);
+                        } else {
+                            $produk->decrementStokUkuran($ukuranItem, $item['jumlah']);
+                        }
                     } catch (\Throwable $e) {
                         Log::error('Gagal mengurangi stok saat menahan pesanan', [
                             'produk_id' => $produk->id,
                             'ukuran' => $ukuranItem,
+                            'varian_rasa' => $varianRasa,
                             'jumlah' => $item['jumlah'],
                             'error' => $e->getMessage(),
                         ]);
@@ -907,23 +922,33 @@ class TransaksiKasirController extends Controller
                     continue;
                 }
 
-                 $produk = Produk::findOrFail($item['produk_id']);
+                 $produk = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])->findOrFail($item['produk_id']);
                 $perluProduksi = $this->tentukanPerluProduksi($produk, $item);
                 $ukuranItem = $item['ukuran'] ?? null;
+                $varianRasa = $item['varian_rasa'] ?? null;
 
                 if (!$perluProduksi) {
-                    $stokTersediaUntukUkuran = $produk->stokUntukUkuran($ukuranItem);
+                    $stokTersediaUntukUkuran = $produk->stokUntukUkuranRasa($ukuranItem, $varianRasa);
                     if ($stokTersediaUntukUkuran < $item['jumlah']) {
-                        throw new \Exception("Stok untuk produk '{$produk->nama_produk}'" . ($ukuranItem ? " ukuran {$ukuranItem}" : '') . " tidak mencukupi (Tersedia: {$stokTersediaUntukUkuran}, Diminta: {$item['jumlah']})");
+                        $label = $produk->nama_produk;
+                        if ($varianRasa) $label .= " ({$varianRasa})";
+                        if ($ukuranItem) $label .= " ukuran {$ukuranItem}";
+                        throw new \Exception("Stok untuk produk '{$label}' tidak mencukupi (Tersedia: {$stokTersediaUntukUkuran}, Diminta: {$item['jumlah']})");
                     }
 
                     try {
-                        // Kurangi stok sesuai ukuran (Besar/Kecil) yang dipilih kasir.
-                        $produk->decrementStokUkuran($ukuranItem, $item['jumlah']);
+                        // Kurangi stok per kombinasi (rasa + ukuran) kalau ada,
+                        // fallback ke stok ukuran saja.
+                        if ($varianRasa && $produk->punya_varian_rasa) {
+                            $produk->ubahStokRasa($ukuranItem, $varianRasa, -$item['jumlah']);
+                        } else {
+                            $produk->decrementStokUkuran($ukuranItem, $item['jumlah']);
+                        }
                     } catch (\Throwable $e) {
                         Log::error('Gagal mengurangi stok saat transaksi kasir', [
                             'produk_id' => $produk->id,
                             'ukuran' => $ukuranItem,
+                            'varian_rasa' => $varianRasa,
                             'jumlah' => $item['jumlah'],
                             'error' => $e->getMessage(),
                         ]);

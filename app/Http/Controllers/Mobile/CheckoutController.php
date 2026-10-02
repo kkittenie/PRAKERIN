@@ -282,7 +282,8 @@ class CheckoutController extends Controller
                     $produk = Produk::lockForUpdate()->findOrFail($item['produk_id']);
                     $catatanItem = $item['catatan'] ?? null;
                     $ukuranItem = $item['ukuran'] ?? null;
-                    $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah'], $ukuranItem, $stokTerpakai);
+                    $varianRasaItem = $item['varian_rasa'] ?? null;
+                    $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah'], $ukuranItem, $varianRasaItem, $stokTerpakai);
 
                     $hargaSatuanDetail = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
 
@@ -292,6 +293,7 @@ class CheckoutController extends Controller
                             'produk_id' => $produk->id,
                             'nama_produk' => $produk->nama_produk,
                             'ukuran' => $ukuranItem,
+                            'varian_rasa' => $varianRasaItem,
                             'harga_satuan' => $hargaSatuanDetail,
                             'jumlah' => $bagian['jumlah'],
                             'catatan' => $catatanItem !== '' ? $catatanItem : null,
@@ -395,7 +397,7 @@ class CheckoutController extends Controller
             $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
             $ukuranItem = $bundlingItem->ukuran;
 
-            $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, $ukuranItem, $stokTerpakai);
+            $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, $ukuranItem, null, $stokTerpakai);
 
             foreach ($pecahan as $bagian) {
                 DetailTransaksi::create([
@@ -439,7 +441,7 @@ class CheckoutController extends Controller
         $ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi();
 
         $totalDibutuhkan = $promoEvent->isi_event * $jumlahEvent;
-        $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, $ukuranEvent, $stokTerpakai);
+        $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, $ukuranEvent, null, $stokTerpakai);
 
         foreach ($pecahan as $bagian) {
             DetailTransaksi::create([
@@ -457,17 +459,16 @@ class CheckoutController extends Controller
         }
     }
 
-    private function pecahJumlahProduksi(Produk $produk, int $jumlah, ?string $ukuran, array &$stokTerpakai): array
+    private function pecahJumlahProduksi(Produk $produk, int $jumlah, ?string $ukuran, ?string $varianRasa, array &$stokTerpakai): array
     {
         if ($produk->status_ketersediaan === 'perlu_diproduksi') {
             return [['jumlah' => $jumlah, 'butuh_produksi' => true]];
         }
 
-        // Kalau produk punya varian ukuran, cek stok sesuai ukuran yang dipilih
-        // (Besar/Kecil), bukan stok gabungan.
-        $kunci = $produk->id . '|' . ($ukuran ?? '-');
+        // Kalau produk punya varian ukuran/rasa, cek stok sesuai kombinasi yang dipilih
+        $kunci = $produk->id . '|' . ($ukuran ?? '-') . '|' . ($varianRasa ?? '-');
         $sudahDipakai = $stokTerpakai[$kunci] ?? 0;
-        $stokTersedia = max(0, (int) floor((float) $produk->stokUntukUkuran($ukuran)) - $sudahDipakai);
+        $stokTersedia = max(0, (int) floor((float) $produk->stokUntukUkuranRasa($ukuran, $varianRasa)) - $sudahDipakai);
 
         if ($stokTersedia >= $jumlah) {
             $stokTerpakai[$kunci] = $sudahDipakai + $jumlah;

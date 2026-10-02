@@ -186,14 +186,148 @@ class PesananPickupController extends Controller
                 return back()->with('error', 'Pesanan ini sudah diproses.');
             }
 
-            $transaksi->update(['diproses_pada' => now()]);
+            DB::beginTransaction();
+            try {
+                $transaksi->load('detailTransaksi');
 
-            activity()->causedBy(auth()->user())->performedOn($transaksi)
-                ->log('memproses pesanan pick up');
+                foreach ($transaksi->detailTransaksi as $detail) {
+                    if (! $detail->produk_id) {
+                        continue;
+                    }
 
-            \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'diproses')));
+                    // Lewati baris komponen bundling/promo (harga 0) — stoknya sudah
+                    // diurus lewat pecahan saat checkout; di sini kita hanya perlu
+                    // meng-update butuh_produksi + kurangi stok untuk baris reguler.
+                    $isBundlingKomponen = $detail->bundling_id && $detail->harga_satuan == 0;
+                    $isPromoKomponen = $detail->promo_event_id && $detail->harga_satuan == 0;
+                    if ($isBundlingKomponen || $isPromoKomponen) {
+                        // Komponen: stok sudah dihitung via pecahJumlahProduksi
+                        // saat checkout, butuh_produksi sudah diset.
+                        // Kurangi stok untuk yang tidak butuh_produksi.
+                        if (! $detail->butuh_produksi) {
+                            $produk = \App\Models\Produk::lockForUpdate()->find($detail->produk_id);
+                            if ($produk) {
+                                try {
+                                    if ($detail->varian_rasa && $produk->punya_varian_rasa) {
+                                        $produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, -$detail->jumlah);
+                                    } else {
+                                        $produk->decrementStokUkuran($detail->ukuran, $detail->jumlah);
+                                    }
+                                } catch (\Throwable $e) {
+                                    Log::error('Gagal mengurangi stok komponen saat proses pesanan pickup', [
+                                        'detail_id' => $detail->id,
+                                        'produk_id' => $produk->id,
+                                        'error' => $e->getMessage(),
+                                    ]);
+                                    throw $e;
+                                }
+                            }
+                        }
+                        continue;
+                    }
 
-            return back()->with('success', "Pesanan {$transaksi->kode_transaksi} mulai diproses.");
+                    $produk = \App\Models\Produk::lockForUpdate()->find($detail->produk_id);
+                    if (! $produk) {
+                        continue;
+                    }
+
+                    // Tentukan apakah perlu diproduksi (sama seperti kasir)
+                    if ($produk->status_ketersediaan === 'perlu_diproduksi') {
+                        $detail->butuh_produksi = true;
+                        $detail->save();
+                        continue;
+                    }
+
+                    // Stok dibaca FRESH dari DB (produk di-find ulang per baris, dan
+                    // stok sudah dikurangi oleh baris sebelumnya). Jangan dikurangi
+                    // lagi dengan "stok terpakai" — itu bikin stok dihitung dobel
+                    // dan baris yang sebenarnya masih ready malah jadi perlu produksi.
+                    $stokTersedia = max(0, (int) floor((float) $produk->stokUntukUkuranRasa($detail->ukuran, $detail->varian_rasa)));
+
+                    if ($stokTersedia >= $detail->jumlah) {
+                        // Stok cukup: kurangi stok, tidak perlu produksi
+                        $detail->butuh_produksi = false;
+                        $detail->save();
+
+                        try {
+                            if ($detail->varian_rasa && $produk->punya_varian_rasa) {
+                                $produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, -$detail->jumlah);
+                            } else {
+                                $produk->decrementStokUkuran($detail->ukuran, $detail->jumlah);
+                            }
+                        } catch (\Throwable $e) {
+                            Log::error('Gagal mengurangi stok saat proses pesanan pickup', [
+                                'produk_id' => $produk->id,
+                                'ukuran' => $detail->ukuran,
+                                'varian_rasa' => $detail->varian_rasa,
+                                'jumlah' => $detail->jumlah,
+                                'error' => $e->getMessage(),
+                            ]);
+                            throw $e;
+                        }
+                    } elseif ($stokTersedia <= 0) {
+                        // Stok habis: semua perlu diproduksi
+                        $detail->butuh_produksi = true;
+                        $detail->save();
+                    } else {
+                        // Stok sebagian: pecah jadi 2 baris (ready + produksi)
+                        $sisaProduksi = $detail->jumlah - $stokTersedia;
+
+                        // Update baris ini jadi porsi ready
+                        $detail->jumlah = $stokTersedia;
+                        $detail->subtotal = $detail->harga_satuan * $stokTersedia;
+                        $detail->butuh_produksi = false;
+                        $detail->save();
+
+                        // Buat baris baru untuk porsi produksi
+                        \App\Models\DetailTransaksi::create([
+                            'transaksi_id' => $transaksi->id,
+                            'produk_id' => $produk->id,
+                            'nama_produk' => $detail->nama_produk,
+                            'ukuran' => $detail->ukuran,
+                            'varian_rasa' => $detail->varian_rasa,
+                            'harga_satuan' => $detail->harga_satuan,
+                            'jumlah' => $sisaProduksi,
+                            'catatan' => $detail->catatan,
+                            'subtotal' => $detail->harga_satuan * $sisaProduksi,
+                            'butuh_produksi' => true,
+                        ]);
+
+
+                        try {
+                            if ($detail->varian_rasa && $produk->punya_varian_rasa) {
+                                $produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, -$stokTersedia);
+                            } else {
+                                $produk->decrementStokUkuran($detail->ukuran, $stokTersedia);
+                            }
+                        } catch (\Throwable $e) {
+                            Log::error('Gagal mengurangi stok (pecahan) saat proses pesanan pickup', [
+                                'produk_id' => $produk->id,
+                                'ukuran' => $detail->ukuran,
+                                'varian_rasa' => $detail->varian_rasa,
+                                'jumlah_ready' => $stokTersedia,
+                                'error' => $e->getMessage(),
+                            ]);
+                            throw $e;
+                        }
+                    }
+                }
+
+                $transaksi->update(['diproses_pada' => now()]);
+
+                DB::commit();
+
+                activity()->causedBy(auth()->user())->performedOn($transaksi)
+                    ->log('memproses pesanan pick up (stok dikurangi)');
+
+                \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'diproses')));
+
+                return back()->with('success', "Pesanan {$transaksi->kode_transaksi} mulai diproses.");
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Error proses pesanan pickup: ' . $e->getMessage());
+                return back()->with('error', 'Gagal memproses pesanan: ' . $e->getMessage());
+            }
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -211,58 +345,18 @@ class PesananPickupController extends Controller
                 return back()->with('error', 'Selesaikan konfirmasi pembayaran & proses pesanan dulu.');
             }
 
-            DB::beginTransaction();
-            try {
-                $transaksi->load('detailTransaksi');
+            $transaksi->update([
+                'status_pesanan' => Transaksi::STATUS_SIAP_DIAMBIL,
+                'siap_pada' => now(),
+                'kode_pickup' => $transaksi->kode_pickup ?: Transaksi::buatKodePickupUnik(),
+            ]);
 
-                foreach ($transaksi->detailTransaksi as $detail) {
-                    if ($detail->butuh_produksi || ! $detail->produk_id) {
-                        continue;
-                    }
+            activity()->causedBy(auth()->user())->performedOn($transaksi)
+                ->log('menandai pesanan pick up siap diambil');
 
-                    $produk = \App\Models\Produk::lockForUpdate()->find($detail->produk_id);
-                    if (! $produk) {
-                        continue;
-                    }
+            \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'siap')));
 
-                    $stokTersediaUntukUkuran = $produk->stokUntukUkuran($detail->ukuran);
-                    if ($stokTersediaUntukUkuran < $detail->jumlah) {
-                        throw new \Exception("Stok untuk produk '{$produk->nama_produk}' tidak mencukupi untuk disiapkan.");
-                    }
-
-                    try {
-                        // Kurangi stok sesuai ukuran (Besar/Kecil) yang dipesan member.
-                        $produk->decrementStokUkuran($detail->ukuran, $detail->jumlah);
-                    } catch (\Throwable $e) {
-                        Log::error('Gagal mengurangi stok saat menandai pesanan pickup siap', [
-                            'produk_id' => $produk->id,
-                            'ukuran' => $detail->ukuran,
-                            'jumlah' => $detail->jumlah,
-                            'error' => $e->getMessage(),
-                        ]);
-                        throw $e;
-                    }
-                }
-
-                $transaksi->update([
-                    'status_pesanan' => Transaksi::STATUS_SIAP_DIAMBIL,
-                    'siap_pada' => now(),
-                    'kode_pickup' => $transaksi->kode_pickup ?: Transaksi::buatKodePickupUnik(),
-                ]);
-
-                DB::commit();
-
-                activity()->causedBy(auth()->user())->performedOn($transaksi)
-                    ->log('menandai pesanan pick up siap diambil');
-
-                \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'siap')));
-
-                return back()->with('success', "Pesanan {$transaksi->kode_transaksi} ditandai siap diambil.");
-            } catch (\Exception $e) {
-                DB::rollBack();
-                Log::error('Error tandai siap pesanan pickup: ' . $e->getMessage());
-                return back()->with('error', 'Gagal menandai siap: ' . $e->getMessage());
-            }
+            return back()->with('success', "Pesanan {$transaksi->kode_transaksi} ditandai siap diambil.");
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -279,15 +373,27 @@ class PesananPickupController extends Controller
 
             DB::beginTransaction();
             try {
-                if ($transaksi->status_pesanan === Transaksi::STATUS_SIAP_DIAMBIL) {
+                // Stok dikurangi saat prosesPesanan, jadi kembalikan kalau
+                // pesanan sudah diproses (siap_diambil ATAU diproses).
+                $perluKembalikanStok = in_array($transaksi->status_pesanan, [
+                    Transaksi::STATUS_SIAP_DIAMBIL,
+                    Transaksi::STATUS_DIPROSES,
+                ], true) && $transaksi->diproses_pada;
+
+                if ($perluKembalikanStok) {
                     foreach ($transaksi->detailTransaksi as $detail) {
                         if (! $detail->butuh_produksi && $detail->produk_id) {
                             try {
-                                $detail->produk?->incrementStokUkuran($detail->ukuran, $detail->jumlah);
+                                if ($detail->varian_rasa && $detail->produk?->punya_varian_rasa) {
+                                    $detail->produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, $detail->jumlah);
+                                } else {
+                                    $detail->produk?->incrementStokUkuran($detail->ukuran, $detail->jumlah);
+                                }
                             } catch (\Throwable $e) {
                                 Log::error('Gagal mengembalikan stok saat membatalkan pesanan pickup', [
                                     'produk_id' => $detail->produk_id,
                                     'ukuran' => $detail->ukuran,
+                                    'varian_rasa' => $detail->varian_rasa,
                                     'jumlah' => $detail->jumlah,
                                     'error' => $e->getMessage(),
                                 ]);

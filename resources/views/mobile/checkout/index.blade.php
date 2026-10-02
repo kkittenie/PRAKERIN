@@ -87,12 +87,19 @@
                                     {{ $item['nama_produk'] }}
                                 </p>
 
-                                @if ($item['ukuran'])
-
-                                    <p class="mt-0.5 text-[11px] text-gray-400">
-                                        {{ $item['ukuran'] }}
-                                    </p>
-
+                                @if (!empty($item['ukuran']) || !empty($item['varian_rasa']))
+                                    <div class="mt-0.5 flex flex-wrap items-center gap-1">
+                                        @if (!empty($item['ukuran']))
+                                            <span class="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-800">
+                                                {{ $item['ukuran'] }}
+                                            </span>
+                                        @endif
+                                        @if (!empty($item['varian_rasa']))
+                                            <span class="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                                                Rasa: {{ $item['varian_rasa'] }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 @endif
 
                                 @if ($item['catatan'])

@@ -370,6 +370,49 @@ class Produk extends Model
         return (int) $this->stok;
     }
 
+    /**
+     * Stok untuk kombinasi (ukuran + rasa). Kalau keduanya ada, ambil dari
+     * produk_ukuran_rasas. Kalau cuma rasa, ambil dari produk_varian_rasas.
+     * Kalau cuma ukuran, delegasi ke stokUntukUkuran(). Kalau keduanya null,
+     * kembalikan stok produk gabungan.
+     */
+    public function stokUntukUkuranRasa(?string $ukuran = null, ?string $namaRasa = null): int
+    {
+        // Tidak ada rasa → gunakan logika stok per ukuran biasa
+        if (!$namaRasa || !$this->punya_varian_rasa) {
+            return $this->stokUntukUkuran($ukuran);
+        }
+
+        $pvr = $this->cariBarisRasa($namaRasa);
+        if (!$pvr) {
+            return $this->stokUntukUkuran($ukuran);
+        }
+
+        // Ada rasa + ada ukuran → cek tabel silang produk_ukuran_rasas
+        if ($ukuran && $this->punya_ukuran) {
+            $baris = $this->cariBarisUkuran($ukuran);
+            if ($baris) {
+                $pur = $this->relationLoaded('produkUkuranRasas')
+                    ? $this->produkUkuranRasas
+                        ->where('ukuran_id', $baris->ukuran_id)
+                        ->where('varian_rasa_id', $pvr->varian_rasa_id)
+                        ->first()
+                    : $this->produkUkuranRasas()
+                        ->where('ukuran_id', $baris->ukuran_id)
+                        ->where('varian_rasa_id', $pvr->varian_rasa_id)
+                        ->first();
+                if ($pur) {
+                    return (int) $pur->stok;
+                }
+            }
+            // Fallback: stok rasa keseluruhan
+            return (int) $pvr->stok;
+        }
+
+        // Ada rasa, tidak ada ukuran → stok rasa keseluruhan
+        return (int) $pvr->stok;
+    }
+
     public function habisUntukUkuran(?string $ukuran = null): bool
     {
         return $this->status_ketersediaan === 'perlu_diproduksi' || $this->stokUntukUkuran($ukuran) <= 0;

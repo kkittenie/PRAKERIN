@@ -20,6 +20,7 @@ class KeranjangController extends Controller
             $validated = $request->validate([
                 'jumlah' => 'required|integer|min:1|max:50',
                 'ukuran' => 'nullable|string|max:50',
+                'varian_rasa' => 'nullable|string|max:100',
                 'catatan' => 'nullable|string|max:255',
             ]);
 
@@ -42,6 +43,7 @@ class KeranjangController extends Controller
 
             $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
             $validated['ukuran'] = $ukuran;
+            $varianRasa = $produk->punya_varian_rasa ? ($validated['varian_rasa'] ?? null) : null;
 
             MemberCart::tambah([
                 'produk_id' => $produk->id,
@@ -57,6 +59,7 @@ class KeranjangController extends Controller
                 // keranjang yang sebenarnya (lihat MemberCart::terapkanMinimalPembelian()).
                 'min_pembelian_promo' => $promoBerlaku?->min_pembelian ?? 0,
                 'ukuran' => $validated['ukuran'] ?? null,
+                'varian_rasa' => $varianRasa,
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
             ]);
@@ -71,6 +74,7 @@ class KeranjangController extends Controller
                         'nama' => $produk->nama_produk,
                         'foto_url' => $produk->foto ? asset('storage/' . $produk->foto) : null,
                         'ukuran' => $validated['ukuran'] ?: null,
+                        'varian_rasa' => $varianRasa,
                         'jumlah' => (int) $validated['jumlah'],
                     ],
                     'cart' => $this->ringkasanKeranjang(),
@@ -206,6 +210,7 @@ class KeranjangController extends Controller
                 'produk_id' => 'required|integer|exists:produks,id',
                 'jumlah' => 'required|integer|min:1|max:50',
                 'ukuran' => 'nullable|string|max:50',
+                'varian_rasa' => 'nullable|string|max:100',
                 'catatan' => 'nullable|string|max:255',
             ]);
 
@@ -235,6 +240,7 @@ class KeranjangController extends Controller
 
             $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
             $validated['ukuran'] = $ukuran;
+            $varianRasa = $produk->punya_varian_rasa ? ($validated['varian_rasa'] ?? null) : null;
 
             MemberCart::perbarui($itemId, [
                 'produk_id' => $produk->id,
@@ -248,6 +254,7 @@ class KeranjangController extends Controller
                 'persentase_promo' => $promoBerlaku?->persentase,
                 'min_pembelian_promo' => $promoBerlaku?->min_pembelian ?? 0,
                 'ukuran' => $validated['ukuran'] ?? null,
+                'varian_rasa' => $varianRasa,
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
             ]);

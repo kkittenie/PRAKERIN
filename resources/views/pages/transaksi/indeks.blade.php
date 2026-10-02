@@ -2331,9 +2331,29 @@
 
                 // Ambil stok sesuai ukuran (dinamis, dari produk.daftar_ukuran) —
                 // kalau produk tidak punya varian ukuran, kembalikan stok
-                // gabungan seperti biasa.
-                stokUntukUkuran(produk, ukuran) {
+                // gabungan seperti biasa. Kalau ada varianRasa + ukuran,
+                // ambil dari stok_per_ukuran di daftar_varian_rasa.
+                stokUntukUkuran(produk, ukuran, varianRasa = null) {
                     if (!produk) return 0;
+
+                    // === Kalau ada varian rasa, prioritaskan stok per (rasa + ukuran) ===
+                    const punyaRasa = produk.punya_varian_rasa == 1 || produk.punya_varian_rasa === true;
+                    if (punyaRasa && varianRasa) {
+                        const rasaObj = (produk.daftar_varian_rasa || []).find(r => (r.nama || '').toLowerCase() === String(varianRasa).toLowerCase());
+                        if (rasaObj) {
+                            const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
+                            if (punyaUkuran && ukuran && rasaObj.stok_per_ukuran) {
+                                const ukuranObj = (produk.daftar_ukuran || []).find(o => (o.nama || '').toLowerCase() === String(ukuran).toLowerCase());
+                                if (ukuranObj && rasaObj.stok_per_ukuran[ukuranObj.ukuran_id] !== undefined) {
+                                    return parseInt(rasaObj.stok_per_ukuran[ukuranObj.ukuran_id]) || 0;
+                                }
+                            }
+                            // Hanya rasa, tanpa ukuran → stok rasa keseluruhan
+                            return parseInt(rasaObj.stok) || 0;
+                        }
+                    }
+
+                    // === Fallback: stok per ukuran saja (tanpa rasa) ===
                     const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
                     if (punyaUkuran) {
                         const daftar = produk.daftar_ukuran || [];
@@ -2441,7 +2461,7 @@
                         promos_terpilih_ids: promosTerpilihIds,
                         foto: produk.foto,
                         jumlah: jumlah,
-                        stok: this.stokUntukUkuran(produk, ukuran),
+                        stok: this.stokUntukUkuran(produk, ukuran, varianRasa),
                         status_ketersediaan: produk.status_ketersediaan,
                         butuh_produksi: perluProduksi,
                         catatan: ''
@@ -3163,7 +3183,7 @@
                     const totalReadyDipakai = this.keranjang
                         .filter(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && (i.varian_rasa || null) === (varianRasa || null) && !i.butuh_produksi)
                         .reduce((sum, i) => sum + i.jumlah, 0);
-                    const stokTersedia = this.stokUntukUkuran(produk, ukuran);
+                    const stokTersedia = this.stokUntukUkuran(produk, ukuran, varianRasa);
 
                     if (totalReadyDipakai < stokTersedia) {
                         const readyItem = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && (i.varian_rasa || null) === (varianRasa || null) && !i.butuh_produksi);
@@ -3373,7 +3393,7 @@
                     }
 
                     const produk = this.daftarProduk.find(p => p.id === item.produk_id);
-                    const stokTersedia = this.stokUntukUkuran(produk, item.ukuran);
+                    const stokTersedia = this.stokUntukUkuran(produk, item.ukuran, item.varian_rasa);
                     const totalReadyDipakai = this.keranjang
                         .filter(i => i.produk_id === item.produk_id && (i.ukuran || null) === (item.ukuran || null) && (i.varian_rasa || null) === (item.varian_rasa || null) && !i.butuh_produksi)
                         .reduce((sum, i) => sum + i.jumlah, 0);

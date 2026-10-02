@@ -11,9 +11,12 @@
     <div x-data="{
                     jumlah: {{ $itemEdit['jumlah'] ?? 1 }},
                     ukuran: @js($ukuranDipilihAwal ?? ''),
+                    varianRasa: @js($varianRasaDipilihAwal ?? ''),
                     catatan: @js($itemEdit['catatan'] ?? ''),
                     punyaUkuran: {{ $punyaUkuran ? 'true' : 'false' }},
+                    punyaVarianRasa: {{ $punyaVarianRasa ? 'true' : 'false' }},
                     daftarUkuran: @js($daftarUkuran),
+                    daftarVarianRasa: @js($daftarVarianRasa),
                     hargaDasar: {{ (float) $hargaFinal }},
                     get opsiUkuranTerpilih() {
                         return this.daftarUkuran.find(o => o.nama === this.ukuran) || null;
@@ -180,6 +183,40 @@
                 </div>
             @endif
 
+            @if ($produk->punya_varian_rasa)
+                <div>
+                    <h3 class="text-xs font-bold text-gray-900">
+                        Pilihan Varian Rasa
+                    </h3>
+
+                    <template x-if="!daftarVarianRasa || daftarVarianRasa.length === 0">
+                        <p class="mt-2 text-[11px] italic text-gray-400">
+                            Belum ada varian rasa aktif untuk produk ini.
+                        </p>
+                    </template>
+
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                        <template x-for="rasa in daftarVarianRasa" :key="rasa.produk_varian_rasa_id">
+                            <button type="button" @click="varianRasa = rasa.nama" :class="
+                                            varianRasa === rasa.nama
+                                                ? 'border-brand-800 bg-brand-50 text-brand-800 font-extrabold'
+                                                : 'border-gray-200 text-gray-600'
+                                        " class="flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition active:scale-[0.99]">
+                                <template x-if="rasa.gambar">
+                                    <img :src="rasa.gambar" :alt="rasa.nama" class="h-8 w-8 rounded-full object-cover shrink-0 border border-gray-100">
+                                </template>
+                                <template x-if="!rasa.gambar">
+                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800 text-[10px] font-bold">
+                                        <span x-text="(rasa.nama || '').charAt(0).toUpperCase()"></span>
+                                    </div>
+                                </template>
+                                <span class="block text-xs font-bold truncate" x-text="rasa.nama"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            @endif
+
             <div>
                 <h3 class="text-xs font-bold text-gray-900">
                     Catatan
@@ -206,6 +243,7 @@
                             <input type="hidden" name="produk_id" value="{{ $produk->id }}">
                             <input type="hidden" name="jumlah" :value="jumlah">
                             <input type="hidden" name="ukuran" :value="ukuran">
+                            <input type="hidden" name="varian_rasa" :value="varianRasa">
                             <input type="hidden" name="catatan" :value="catatan">
 
                             {{-- Card Update --}}
@@ -255,6 +293,8 @@
                         <input type="hidden" name="jumlah" :value="jumlah">
 
                         <input type="hidden" name="ukuran" :value="ukuran">
+
+                        <input type="hidden" name="varian_rasa" :value="varianRasa">
 
                         <input type="hidden" name="catatan" :value="catatan">
 

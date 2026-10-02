@@ -72,15 +72,22 @@ class ProdukController extends Controller
             }
 
             $ukuranDipilihAwal = $itemEdit['ukuran'] ?? ($daftarUkuran[0]['nama'] ?? null);
+            $punyaVarianRasa = (bool) $produk->punya_varian_rasa;
+            $produk->load(['kategori', 'produkVarianRasas.varianRasa', 'produkUkuranRasas', 'produkUkurans.ukuran']);
+            $daftarVarianRasa = $produk->daftar_varian_rasa;
+            $varianRasaDipilihAwal = $itemEdit['varian_rasa'] ?? ($daftarVarianRasa[0]['nama'] ?? null);
 
             return view('mobile.produk.show', [
-                'produk' => $produk->load('kategori'),
+                'produk' => $produk,
                 'habis' => $habis,
                 'pengaturan' => $pengaturan,
                 'itemEdit' => $itemEdit,
                 'punyaUkuran' => $punyaUkuran,
                 'daftarUkuran' => $daftarUkuran,
                 'ukuranDipilihAwal' => $ukuranDipilihAwal,
+                'punyaVarianRasa' => $punyaVarianRasa,
+                'daftarVarianRasa' => $daftarVarianRasa,
+                'varianRasaDipilihAwal' => $varianRasaDipilihAwal,
                 'hargaAsli' => $hargaAsli,
                 'hargaFinal' => $hargaFinal,
                 'adaPromo' => $adaPromo,

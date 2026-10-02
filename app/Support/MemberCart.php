@@ -106,6 +106,7 @@ class MemberCart
                 && ($item['bundling_id'] ?? null) === $data['bundling_id']
                 && ($item['promo_event_id'] ?? null) === $data['promo_event_id']
                 && ($item['ukuran'] ?? null) === ($data['ukuran'] ?? null)
+                && ($item['varian_rasa'] ?? null) === ($data['varian_rasa'] ?? null)
                 && ($item['catatan'] ?? null) === ($data['catatan'] ?? null)
             ) {
                 $existingKey = $key;

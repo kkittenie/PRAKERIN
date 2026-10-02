@@ -119,6 +119,9 @@
                                         @if (!empty($detail->ukuran))
                                             <span class="text-brand-800 font-extrabold text-[11px] ml-1">({{ $detail->ukuran }})</span>
                                         @endif
+                                        @if (!empty($detail->varian_rasa))
+                                            <span class="text-amber-800 font-extrabold text-[11px] ml-1">({{ $detail->varian_rasa }})</span>
+                                        @endif
                                     </p>
                                     @if ($detail->catatan)
                                         <p class="truncate text-[11px] text-gray-400">{{ $detail->catatan }}</p>
