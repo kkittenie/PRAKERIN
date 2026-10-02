@@ -86,14 +86,15 @@
                         rows="3"
                         placeholder="Deskripsi singkat produk, tampil di Detail Produk Member App"
                         class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">{{ old('deskripsi') }}</textarea>
-                        
-                        @error('deskripsi')
+
+                    @error('deskripsi')
                         <small class="text-red-500">{{ $message }}</small>
-                        @enderror
-                    </div>
-                    
-                    {{-- Punya Varian Ukuran --}}
-                    <div class="md:col-span-2">
+                    @enderror
+                </div>
+
+                {{-- Checkboxes Punya Ukuran & Varian Rasa --}}
+                <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                         <label class="flex items-center gap-3 h-12 cursor-pointer">
                             <input type="hidden" name="punya_ukuran" value="0">
                             <input
@@ -106,17 +107,35 @@
                             <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Produk ini punya varian ukuran</span>
                         </label>
                         <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">
-                            Kalau dicentang, harga jual, stok, & stok minimum produk diatur per ukuran di bawah — bisa nambah berapa pun varian, gak cuma Besar/Kecil.
+                            Kalau dicentang, harga jual, stok, & stok minimum produk diatur per ukuran di bawah.
                         </span>
                         @error('punya_ukuran')
                             <small class="text-red-500">{{ $message }}</small>
                         @enderror
                     </div>
-                    
-                {{-- Harga Modal & Harga Jual, kolom biasa (dipakai kalau produk TIDAK punya ukuran).
-                     Ditaruh berdampingan (modal kiri, jual kanan) biar rapi & irit tempat.
-                     Ke-hidden pas "Punya Ukuran" dicentang, karena begitu ada varian ukuran,
-                     harga modal & jual-nya diisi per-baris di tabel Varian Ukuran di bawah. --}}
+
+                    <div>
+                        <label class="flex items-center gap-3 h-12 cursor-pointer">
+                            <input type="hidden" name="punya_varian_rasa" value="0">
+                            <input
+                                type="checkbox"
+                                id="punya_varian_rasa"
+                                name="punya_varian_rasa"
+                                value="1"
+                                class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                                {{ old('punya_varian_rasa') == '1' ? 'checked' : '' }}>
+                            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Produk ini punya varian rasa</span>
+                        </label>
+                        <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">
+                            Kalau dicentang, stok & stok minimum produk diatur per varian rasa di bawah.
+                        </span>
+                        @error('punya_varian_rasa')
+                            <small class="text-red-500">{{ $message }}</small>
+                        @enderror
+                    </div>
+                </div>
+
+                {{-- Harga Modal & Harga Jual --}}
                 <div id="wrapper-harga-modal">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Harga Modal <span class="text-red-500">*</span>
@@ -162,7 +181,6 @@
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>
-
 
                 {{-- Ukuran Dinamis --}}
                 <div id="wrapper-ukuran-dinamis" class="hidden md:col-span-2" x-data="ukuranDinamis()">
@@ -254,15 +272,9 @@
                     </div>
 
                     <div class="mt-2">
-                        <button type="button" @click="tampilFormUkuranBaru = !tampilFormUkuranBaru" class="text-xs font-semibold text-brand-600 hover:underline">
+                        <button type="button" @click="modalTambahUkuran = true" class="text-xs font-semibold text-brand-600 hover:underline">
                             + Ukuran baru belum ada di daftar? Tambah di sini
                         </button>
-                        <div x-show="tampilFormUkuranBaru" class="mt-2 flex gap-2">
-                            <input type="text" x-model="namaUkuranBaru" placeholder="Nama ukuran baru, mis. Jumbo" class="h-10 flex-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
-                            <button type="button" @click="simpanUkuranBaru()" class="h-10 px-3 rounded-lg bg-brand-500 text-white text-sm hover:bg-brand-600">Simpan</button>
-                            <button type="button" @click="tampilFormUkuranBaru = false; namaUkuranBaru = ''" class="h-10 px-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm">Batal</button>
-                        </div>
-                        <p x-show="pesanErrorUkuranBaru" x-text="pesanErrorUkuranBaru" class="text-xs text-red-500 mt-1"></p>
                     </div>
 
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-2 block">
@@ -271,6 +283,25 @@
                     @error('ukuran_baris')
                         <small class="text-red-500 block mt-1">{{ $message }}</small>
                     @enderror
+
+                    <!-- MODAL TAMBAH UKURAN BARU -->
+                    <div x-show="modalTambahUkuran" x-cloak x-transition class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+                        <div @click.away="modalTambahUkuran = false" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800">
+                            <div class="p-6">
+                                <h3 class="font-extrabold text-gray-900 dark:text-white text-base text-center mb-1">Tambah Ukuran Baru</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">Ukuran baru akan langsung tersimpan di Master Data Ukuran.</p>
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Nama Ukuran <span class="text-red-500">*</span></label>
+                                    <input type="text" x-model="namaUkuranBaru" placeholder="Mis. Jumbo / Extra Large" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                    <p x-show="pesanErrorUkuranBaru" x-text="pesanErrorUkuranBaru" class="text-xs text-red-500 mt-1"></p>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
+                                <button type="button" @click="modalTambahUkuran = false; namaUkuranBaru = ''; pesanErrorUkuranBaru = ''" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-bold text-xs rounded-lg transition text-gray-700 dark:text-gray-300">Batal</button>
+                                <button type="button" @click="simpanUkuranBaru()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-lg transition shadow-xs">Simpan Ukuran</button>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- MODAL PERINGATAN VALIDASI BARIS UKURAN -->
                     <div x-show="modalPeringatan" x-cloak x-transition class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
@@ -347,6 +378,137 @@
                     </div>
                 </div>
 
+                {{-- Varian Rasa Dinamis --}}
+                <div id="wrapper-varian-rasa-dinamis" class="hidden md:col-span-2" x-data="varianRasaDinamis()">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Varian Rasa <span class="text-red-500">*</span>
+                    </label>
+
+                    <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-800/60">
+                                <tr class="text-left text-gray-500 dark:text-gray-400">
+                                    <th class="py-2 px-3 w-16 text-center">Gambar</th>
+                                    <th class="py-2 px-3">Varian Rasa</th>
+                                    <th class="py-2 px-3 w-16 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-if="baris.length === 0">
+                                    <tr>
+                                        <td colspan="3" class="py-3 px-3 text-center text-gray-400 text-xs">Belum ada varian rasa ditambahkan.</td>
+                                    </tr>
+                                </template>
+                                <template x-for="(item, index) in baris" :key="index">
+                                    <tr class="border-t border-gray-100 dark:border-gray-800">
+                                        <td class="py-2 px-3 text-center">
+                                            <template x-if="item.gambar">
+                                                <img :src="item.gambar" :alt="item.nama" class="w-9 h-9 rounded-lg object-cover border border-gray-200 dark:border-gray-700 mx-auto">
+                                            </template>
+                                            <template x-if="!item.gambar">
+                                                <div class="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs border border-amber-200/50 mx-auto">
+                                                    <span x-text="(item.nama || 'VR').substring(0, 2).toUpperCase()"></span>
+                                                </div>
+                                            </template>
+                                        </td>
+                                        <td class="py-2 px-3 font-semibold text-gray-800 dark:text-gray-200" x-text="item.nama"></td>
+                                        <td class="py-2 px-3 text-right">
+                                            <button type="button" @click="bukaModalHapusBaris(index)" title="Hapus" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-[17px] h-[17px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+                                            <input type="hidden" :name="'rasa_baris[' + index + '][varian_rasa_id]'" :value="item.varian_rasa_id">
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3 flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
+                        <div class="flex-1">
+                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Pilih Varian Rasa</label>
+                            <select x-model="pilihRasaId" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                <option value="">Pilih varian rasa</option>
+                                <template x-for="r in opsiTersedia" :key="r.id">
+                                    <option :value="r.id" x-text="r.nama"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <button type="button" @click="tambahBaris()" class="h-11 px-5 rounded-lg bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition">+ Tambah Rasa</button>
+                        </div>
+                    </div>
+
+                    <div class="mt-2">
+                        <button type="button" @click="modalTambahRasa = true" class="text-xs font-semibold text-brand-600 hover:underline">
+                            + Varian rasa baru belum ada di daftar? Tambah di sini
+                        </button>
+                    </div>
+
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-2 block">
+                        Varian rasa berlaku sama untuk semua ukuran produk. Stok mengikuti ukuran produk.
+                    </span>
+                    @error('rasa_baris')
+                        <small class="text-red-500 block mt-1">{{ $message }}</small>
+                    @enderror
+
+                    <!-- MODAL TAMBAH VARIAN RASA BARU -->
+                    <div x-show="modalTambahRasa" x-cloak x-transition class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+                        <div @click.away="batalTambahRasa()" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800">
+                            <div class="p-6">
+                                <h3 class="font-extrabold text-gray-900 dark:text-white text-base text-center mb-1">Tambah Varian Rasa Baru</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 text-center mb-4">Varian rasa baru akan tersimpan di Master Data Varian Rasa.</p>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Nama Varian Rasa <span class="text-red-500">*</span></label>
+                                        <input type="text" x-model="namaRasaBaru" placeholder="Mis. Cokelat Hazelnut" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Foto / Gambar Varian Rasa</label>
+                                        <input type="file" id="inputGambarRasaBaruCreate" accept="image/*" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-xs focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <p x-show="pesanErrorRasaBaru" x-text="pesanErrorRasaBaru" class="text-xs text-red-500"></p>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
+                                <button type="button" @click="batalTambahRasa()" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-bold text-xs rounded-lg transition text-gray-700 dark:text-gray-300">Batal</button>
+                                <button type="button" @click="simpanRasaBaru()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-lg transition shadow-xs">Simpan Varian Rasa</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODAL PERINGATAN VALIDASI BARIS RASA -->
+                    <div x-show="modalPeringatan" x-cloak x-transition class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+                        <div @click.away="modalPeringatan = false" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+                            <div class="p-6 text-center">
+                                <div class="w-14 h-14 bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">⚠</div>
+                                <h3 class="font-extrabold text-gray-900 dark:text-white text-base">Belum Lengkap</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2" x-text="pesanPeringatan"></p>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center">
+                                <button type="button" @click="modalPeringatan = false" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-lg transition">Oke</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODAL HAPUS BARIS RASA -->
+                    <div x-show="modalHapusBaris" x-cloak x-transition class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+                        <div @click.away="modalHapusBaris = false" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+                            <div class="p-6 text-center">
+                                <div class="w-14 h-14 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">⚠</div>
+                                <h3 class="font-extrabold text-gray-900 dark:text-white text-base">Hapus Baris Varian Rasa?</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    Varian Rasa <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="namaHapusBaris"></span> akan dihapus dari daftar ini.
+                                </p>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3">
+                                <button type="button" @click="modalHapusBaris = false" class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-bold text-xs rounded-lg transition text-gray-700 dark:text-gray-300">Batal</button>
+                                <button type="button" @click="konfirmasiHapusBaris()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Hapus</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Stok --}}
                 <div id="wrapper-stok">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -365,9 +527,7 @@
                     @enderror
                 </div>
 
-                {{-- Stok Minimum: dipakai kalau produk TIDAK punya ukuran.
-                     Kalau "Punya Ukuran" dicentang, stok minimum diisi per baris
-                     di tabel Varian Ukuran, jadi field ini ikut disembunyikan. --}}
+                {{-- Stok Minimum --}}
                 <div id="wrapper-stok-minimum">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Stok Minimum
@@ -422,7 +582,7 @@
                 </div>
 
                 {{-- Foto --}}
-                <div>
+                <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Foto Produk
                     </label>
@@ -432,7 +592,7 @@
                         name="foto"
                         class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                    
-                        @error('foto')
+                    @error('foto')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>
@@ -467,34 +627,35 @@
     <script>
 
     const checkboxUkuran = document.getElementById('punya_ukuran');
+    const checkboxRasa = document.getElementById('punya_varian_rasa');
     const wrapperUkuranDinamis = document.getElementById('wrapper-ukuran-dinamis');
+    const wrapperVarianRasaDinamis = document.getElementById('wrapper-varian-rasa-dinamis');
     const wrapperHargaJual = document.getElementById('wrapper-harga-jual');
     const wrapperHargaModal = document.getElementById('wrapper-harga-modal');
     const wrapperStok = document.getElementById('wrapper-stok');
     const wrapperStokMinimum = document.getElementById('wrapper-stok-minimum');
 
     function toggleFieldUkuran() {
-        const tampil = checkboxUkuran.checked;
-        wrapperUkuranDinamis.classList.toggle('hidden', !tampil);
-        wrapperHargaJual.classList.toggle('hidden', tampil);
-        wrapperHargaModal.classList.toggle('hidden', tampil);
-        wrapperStok.classList.toggle('hidden', tampil);
-        wrapperStokMinimum.classList.toggle('hidden', tampil);
+        const tampilUkuran = checkboxUkuran.checked;
+        const tampilRasa = checkboxRasa.checked;
+
+        wrapperUkuranDinamis.classList.toggle('hidden', !tampilUkuran);
+        wrapperVarianRasaDinamis.classList.toggle('hidden', !tampilRasa);
+
+        wrapperHargaJual.classList.toggle('hidden', tampilUkuran);
+        wrapperHargaModal.classList.toggle('hidden', tampilUkuran);
+
+        wrapperStok.classList.toggle('hidden', tampilUkuran);
+        wrapperStokMinimum.classList.toggle('hidden', tampilUkuran);
     }
 
     checkboxUkuran.addEventListener('change', toggleFieldUkuran);
+    checkboxRasa.addEventListener('change', toggleFieldUkuran);
     window.addEventListener('load', toggleFieldUkuran);
 
-    // Data Alpine buat repeater "Varian Ukuran" di form Tambah Produk.
-    // Polanya niru "Tambah Bahan Baku": pilih dari master (Ukuran), atau
-    // bikin ukuran baru langsung dari sini lewat AJAX (masuk ke menu Ukuran
-    // juga), tanpa harus pindah halaman.
     function ukuranDinamis() {
         return {
-            daftarMaster: @json($daftarUkuran->map(fn ($u) => [
-                'id' => $u->id,
-                'nama' => $u->nama_ukuran
-            ])->values()),
+            daftarMaster: @json($masterUkuranList),
 
             baris: @json($ukuranBaris),
 
@@ -503,7 +664,7 @@
             hargaBaru: '',
             stokBaru: '',
             stokMinimumBaru: '',
-            tampilFormUkuranBaru: false,
+            modalTambahUkuran: false,
             namaUkuranBaru: '',
             pesanErrorUkuranBaru: '',
             modalPeringatan: false,
@@ -529,9 +690,6 @@
             },
 
             tambahBaris() {
-                // hargaModalBaru/hargaBaru datang dari input yang diformat
-                // pakai titik ribuan (.input-rupiah), jadi bersihin dulu
-                // titiknya sebelum disimpan ke state/dikirim ke server.
                 const hargaModalBersih = String(this.hargaModalBaru).replace(/\D/g, '');
                 const hargaJualBersih = String(this.hargaBaru).replace(/\D/g, '');
 
@@ -637,9 +795,112 @@
                     this.daftarMaster.push({ id: data.data.id, nama: data.data.nama_ukuran });
                     this.pilihUkuranId = String(data.data.id);
                     this.namaUkuranBaru = '';
-                    this.tampilFormUkuranBaru = false;
+                    this.modalTambahUkuran = false;
                 } catch (e) {
                     this.pesanErrorUkuranBaru = 'Gagal menambah ukuran baru, coba lagi.';
+                }
+            },
+        };
+    }
+
+    function varianRasaDinamis() {
+        return {
+            daftarMaster: @json($masterVarianRasaList),
+
+            baris: @json($rasaBaris),
+
+            pilihRasaId: '',
+            modalTambahRasa: false,
+            namaRasaBaru: '',
+            pesanErrorRasaBaru: '',
+            modalPeringatan: false,
+            pesanPeringatan: '',
+            modalHapusBaris: false,
+            indexHapusBaris: null,
+            namaHapusBaris: '',
+
+            get opsiTersedia() {
+                const dipakai = this.baris.map(b => String(b.varian_rasa_id));
+                return this.daftarMaster.filter(r => !dipakai.includes(String(r.id)));
+            },
+
+            tambahBaris() {
+                if (!this.pilihRasaId) {
+                    this.pesanPeringatan = 'Pilih varian rasa terlebih dahulu sebelum menambah baris.';
+                    this.modalPeringatan = true;
+                    return;
+                }
+                const master = this.daftarMaster.find(r => String(r.id) === String(this.pilihRasaId));
+                this.baris.push({
+                    varian_rasa_id: this.pilihRasaId,
+                    nama: master ? master.nama : '',
+                    gambar: master ? master.gambar : null,
+                });
+                this.pilihRasaId = '';
+            },
+
+            bukaModalHapusBaris(index) {
+                this.indexHapusBaris = index;
+                this.namaHapusBaris = this.baris[index] ? this.baris[index].nama : '';
+                this.modalHapusBaris = true;
+            },
+
+            konfirmasiHapusBaris() {
+                if (this.indexHapusBaris !== null) {
+                    this.baris.splice(this.indexHapusBaris, 1);
+                }
+                this.modalHapusBaris = false;
+                this.indexHapusBaris = null;
+            },
+
+            batalTambahRasa() {
+                this.modalTambahRasa = false;
+                this.namaRasaBaru = '';
+                this.pesanErrorRasaBaru = '';
+                const fileInput = document.getElementById('inputGambarRasaBaruCreate');
+                if (fileInput) fileInput.value = '';
+            },
+
+            async simpanRasaBaru() {
+                const nama = this.namaRasaBaru.trim();
+                this.pesanErrorRasaBaru = '';
+                if (!nama) {
+                    this.pesanErrorRasaBaru = 'Nama varian rasa wajib diisi.';
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('nama_rasa', nama);
+                const fileInput = document.getElementById('inputGambarRasaBaruCreate');
+                if (fileInput && fileInput.files[0]) {
+                    formData.append('gambar', fileInput.files[0]);
+                }
+
+                try {
+                    const res = await fetch("{{ route('varian-rasa.storeAjax') }}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                        },
+                        body: formData,
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        this.pesanErrorRasaBaru = (data.errors && data.errors.nama_rasa && data.errors.nama_rasa[0])
+                            || data.message
+                            || 'Gagal menambah varian rasa baru, coba lagi.';
+                        return;
+                    }
+                    this.daftarMaster.push({
+                        id: data.data.id,
+                        nama: data.data.nama_rasa,
+                        gambar: data.data.gambar
+                    });
+                    this.pilihRasaId = String(data.data.id);
+                    this.batalTambahRasa();
+                } catch (e) {
+                    this.pesanErrorRasaBaru = 'Gagal menambah varian rasa baru, coba lagi.';
                 }
             },
         };
@@ -689,6 +950,14 @@
                 if (jumlahBaris === 0) {
                     e.preventDefault();
                     alert('Tambahkan minimal 1 baris ukuran sebelum menyimpan produk.');
+                }
+            }
+
+            if (checkboxRasa.checked) {
+                const jumlahBarisRasa = form.querySelectorAll('input[name$="[varian_rasa_id]"]').length;
+                if (jumlahBarisRasa === 0) {
+                    e.preventDefault();
+                    alert('Tambahkan minimal 1 baris varian rasa sebelum menyimpan produk.');
                 }
             }
         });

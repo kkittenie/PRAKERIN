@@ -218,6 +218,10 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
         ->name('varian-rasa.toggle-status')
         ->middleware('permission:edit_varian_rasa');
 
+    Route::post('/varian-rasa/ajax', [VarianRasaController::class, 'storeAjax'])
+        ->name('varian-rasa.storeAjax')
+        ->middleware('permission:tambah_varian_rasa');
+
     Route::resource('varian-rasa', VarianRasaController::class)
         ->middleware('permission:lihat_varian_rasa|tambah_varian_rasa|edit_varian_rasa|hapus_varian_rasa');
 

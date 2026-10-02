@@ -58,9 +58,10 @@
                     <thead>
                         <tr>
                             <th class="py-3.5 text-center w-16">Foto</th>
-                            <th class="py-3.5">Nama Produk</th>
+                            <th class="py-3.5 max-w-[180px]">Nama Produk</th>
                             <th class="py-3.5">Kode</th>
                             <th class="py-3.5">Kategori</th>
+                            <th class="py-3.5 text-center">Varian Rasa</th>
                             <th class="py-3.5 text-right">Harga Jual</th>
                             <th class="py-3.5 text-center">Stok</th>
                             <th class="py-3.5 text-center">Status</th>
@@ -115,6 +116,7 @@
                 { data: 'nama_produk', name: 'nama_produk' },
                 { data: 'kode_produk', name: 'kode_produk', className: 'font-mono text-sm text-gray-600 dark:text-gray-400' },
                 { data: 'kategori.nama_kategori', name: 'kategori.nama_kategori', defaultContent: '-', className: 'text-sm font-medium text-gray-700 dark:text-gray-300' },
+                { data: 'varian_rasa_html', name: 'varian_rasa_html', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'harga_jual_html', name: 'harga_jual', className: 'text-right font-bold text-amber-700 dark:text-amber-400 whitespace-nowrap text-sm sm:text-base' },
                 { data: 'stok_html', name: 'stok', className: 'text-center' },
                 { data: 'status_html', name: 'status_aktif', className: 'text-center' },

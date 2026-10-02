@@ -304,7 +304,8 @@
                             return !$adalahKomponenInternal;
                         })
                         ->groupBy(function ($item) {
-                            return $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : '');
+                            $v = array_filter([$item->ukuran, $item->varian_rasa]);
+                            return $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : '');
                         })
                         ->map(function ($group, $key) {
                             $first = $group->first();
@@ -478,8 +479,9 @@
                                 ->filter(fn ($c) => filled($c))
                                 ->unique()
                                 ->implode(' | ');
+                            $v = array_filter([$item->ukuran, $item->varian_rasa]);
                             return (object) [
-                                'nama_produk' => $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : ''),
+                                'nama_produk' => $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : ''),
                                 'jumlah' => $item->jumlah,
                                 'catatan' => $catatanGabung,
                             ];
@@ -646,7 +648,8 @@
                     return !$adalahKomponenInternal;
                 })
                 ->groupBy(function ($item) {
-                    return $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : '');
+                    $v = array_filter([$item->ukuran, $item->varian_rasa]);
+                    return $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : '');
                 })
                 ->map(function ($group, $key) {
                     $first = $group->first();
@@ -759,8 +762,9 @@
                         ->filter(fn ($c) => filled($c))
                         ->unique()
                         ->implode(' | ');
+                    $v = array_filter([$item->ukuran, $item->varian_rasa]);
                     return (object) [
-                        'nama_produk' => $item->nama_produk . ($item->ukuran ? ' (' . $item->ukuran . ')' : ''),
+                        'nama_produk' => $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : ''),
                         'jumlah' => $item->jumlah,
                         'catatan' => $catatanGabung,
                     ];

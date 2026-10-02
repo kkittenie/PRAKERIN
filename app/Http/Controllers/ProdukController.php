@@ -6,6 +6,8 @@ use App\Models\Produk;
 use App\Models\KategoriProduk;
 use App\Models\Ukuran;
 use App\Models\ProdukUkuran;
+use App\Models\VarianRasa;
+use App\Models\ProdukVarianRasa;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -61,7 +63,7 @@ class ProdukController extends Controller
     {
         if ($request->ajax()) {
             try {
-                $query = Produk::with(['kategori', 'produkUkurans.ukuran'])
+                $query = Produk::with(['kategori', 'produkUkurans.ukuran', 'produkVarianRasas.varianRasa'])
                     ->when($request->filled('kategori_id'), function ($q) use ($request) {
                         $q->where('kategori_id', $request->kategori_id);
                     });
@@ -80,12 +82,13 @@ class ProdukController extends Controller
                     })
                     ->addColumn('foto', fn($item) => view('pages.produk.partials.foto', compact('item'))->render())
                     ->editColumn('nama_produk', fn($item) => view('pages.produk.partials.nama', compact('item'))->render())
+                    ->addColumn('varian_rasa_html', fn($item) => view('pages.produk.partials.varian_rasa', compact('item'))->render())
                     ->addColumn('harga_jual_html', fn($item) => view('pages.produk.partials.harga', compact('item'))->render())
                     ->addColumn('stok_html', fn($item) => view('pages.produk.partials.stok', compact('item'))->render())
                     ->addColumn('status_html', fn($item) => view('pages.produk.partials.status', compact('item'))->render())
                     ->addColumn('ketersediaan_html', fn($item) => view('pages.produk.partials.ketersediaan', compact('item'))->render())
                     ->addColumn('aksi', fn($item) => view('pages.produk.partials.aksi', compact('item'))->render())
-                    ->rawColumns(['foto', 'nama_produk', 'harga_jual_html', 'stok_html', 'status_html', 'ketersediaan_html', 'aksi'])
+                    ->rawColumns(['foto', 'nama_produk', 'varian_rasa_html', 'harga_jual_html', 'stok_html', 'status_html', 'ketersediaan_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
                 activity('error')
@@ -116,11 +119,23 @@ class ProdukController extends Controller
     {
         try {
             $kategori = KategoriProduk::orderBy('nama_kategori')->get();
-            $daftarUkuran = Ukuran::aktif()->urut()->get();
+            $rawUkuran = Ukuran::aktif()->urut()->get();
+            $rawVarianRasa = VarianRasa::aktif()->urut()->get();
+
+            $masterUkuranList = $rawUkuran->map(fn ($u) => [
+                'id' => $u->id,
+                'nama' => $u->nama_ukuran,
+            ])->values();
+
+            $masterVarianRasaList = $rawVarianRasa->map(fn ($r) => [
+                'id' => $r->id,
+                'nama' => $r->nama_rasa,
+                'gambar' => $r->gambar ? asset('storage/' . $r->gambar) : null,
+            ])->values();
 
             $ukuranBaris = collect(old('ukuran_baris', []))
-                ->map(function ($b) use ($daftarUkuran) {
-                    $master = $daftarUkuran->firstWhere(
+                ->map(function ($b) use ($rawUkuran) {
+                    $master = $rawUkuran->firstWhere(
                         'id',
                         (int) ($b['ukuran_id'] ?? 0)
                     );
@@ -137,10 +152,28 @@ class ProdukController extends Controller
                 })
                 ->values();
 
+            $rasaBaris = collect(old('rasa_baris', []))
+                ->map(function ($b) use ($rawVarianRasa) {
+                    $master = $rawVarianRasa->firstWhere(
+                        'id',
+                        (int) ($b['varian_rasa_id'] ?? 0)
+                    );
+
+                    return [
+                        'varian_rasa_id' => $b['varian_rasa_id'] ?? '',
+                        'nama' => $master->nama_rasa ?? '',
+                        'gambar' => $master && $master->gambar ? asset('storage/' . $master->gambar) : null,
+                        'status_aktif' => filter_var($b['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
+                    ];
+                })
+                ->values();
+
             return view('pages.produk.create', compact(
                 'kategori',
-                'daftarUkuran',
-                'ukuranBaris'
+                'masterUkuranList',
+                'ukuranBaris',
+                'masterVarianRasaList',
+                'rasaBaris'
             ));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -177,6 +210,33 @@ class ProdukController extends Controller
             ->delete();
     }
 
+    private function syncBarisVarianRasaDinamis(Produk $produk, $rasaBaris): void
+    {
+        $rasaIdDipakai = [];
+
+        foreach ($rasaBaris as $baris) {
+            $rasaId = (int) $baris['varian_rasa_id'];
+            $rasaIdDipakai[] = $rasaId;
+
+            ProdukVarianRasa::updateOrCreate(
+                [
+                    'produk_id' => $produk->id,
+                    'varian_rasa_id' => $rasaId,
+                ],
+                [
+                    'stok' => 0,
+                    'stok_minimum' => 0,
+                    'status_ketersediaan' => 'stok_ada',
+                    'status_aktif' => filter_var($baris['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
+                ]
+            );
+        }
+
+        $produk->produkVarianRasas()
+            ->whereNotIn('varian_rasa_id', $rasaIdDipakai)
+            ->delete();
+    }
+
     public function store(Request $request)
     {
         try {
@@ -187,9 +247,10 @@ class ProdukController extends Controller
                 'deskripsi' => 'nullable|string|max:1000',
                 'harga_jual' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
                 'punya_ukuran' => 'nullable|boolean',
+                'punya_varian_rasa' => 'nullable|boolean',
                 'harga_modal' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
-                'stok' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
-                'stok_minimum' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
+                'stok' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
+                'stok_minimum' => 'nullable|numeric|min:0',
                 'status_aktif' => 'required|boolean',
                 'status_ketersediaan' => [
                     'required',
@@ -203,16 +264,27 @@ class ProdukController extends Controller
                 'ukuran_baris.*.harga_jual' => 'required_with:ukuran_baris|numeric|min:0',
                 'ukuran_baris.*.stok' => 'required_with:ukuran_baris|integer|min:0',
                 'ukuran_baris.*.stok_minimum' => 'required_with:ukuran_baris|integer|min:0',
+
+                'rasa_baris' => 'nullable|array|required_if:punya_varian_rasa,1',
+                'rasa_baris.*.varian_rasa_id' => 'required_with:rasa_baris|exists:varian_rasas,id|distinct',
             ], [
                 'ukuran_baris.required_if' => 'Tambahkan minimal 1 baris ukuran.',
                 'ukuran_baris.*.ukuran_id.distinct' => 'Satu ukuran cuma boleh ditambahkan sekali.',
+                'rasa_baris.required_if' => 'Tambahkan minimal 1 baris varian rasa.',
+                'rasa_baris.*.varian_rasa_id.distinct' => 'Satu varian rasa cuma boleh ditambahkan sekali.',
             ]);
 
             $ukuranBaris = collect($request->input('ukuran_baris', []))
                 ->filter(fn ($baris) => !empty($baris['ukuran_id']))
                 ->values();
 
+            $rasaBaris = collect($request->input('rasa_baris', []))
+                ->filter(fn ($baris) => !empty($baris['varian_rasa_id']))
+                ->values();
+
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
+            $validated['punya_varian_rasa'] = $request->has('punya_varian_rasa') ? (bool) $request->punya_varian_rasa : false;
+
             if ($validated['punya_ukuran']) {
                 $validated['harga_jual'] = 0;
                 $validated['harga_modal'] = 0;
@@ -223,13 +295,17 @@ class ProdukController extends Controller
                 $validated['stok_besar'] = 0;
                 $validated['stok_kecil'] = 0;
             } else {
+                $validated['stok'] = (int) ($validated['stok'] ?? 0);
+                $validated['stok_minimum'] = (int) ($validated['stok_minimum'] ?? 0);
+                $validated['harga_jual'] = (float) ($validated['harga_jual'] ?? 0);
+                $validated['harga_modal'] = (float) ($validated['harga_modal'] ?? 0);
                 $validated['harga_besar'] = null;
                 $validated['harga_kecil'] = null;
                 $validated['stok_besar'] = 0;
                 $validated['stok_kecil'] = 0;
             }
 
-            $validated['status_ketersediaan'] = $validated['stok'] <= 0
+            $validated['status_ketersediaan'] = ($validated['stok'] ?? 0) <= 0
                 ? 'perlu_diproduksi'
                 : 'stok_ada';
 
@@ -237,7 +313,7 @@ class ProdukController extends Controller
                 $validated['foto'] = $request->file('foto')->store('produk/' . $validated['kode_produk'], 'public');
             }
 
-            unset($validated['ukuran_baris']);
+            unset($validated['ukuran_baris'], $validated['rasa_baris']);
 
             $produk = Produk::create($validated);
 
@@ -247,6 +323,10 @@ class ProdukController extends Controller
                 } else {
                      $this->pastikanBarisUkuranBesarKecil($produk);
                 }
+            }
+
+            if ($validated['punya_varian_rasa'] && $rasaBaris->isNotEmpty()) {
+                $this->syncBarisVarianRasaDinamis($produk, $rasaBaris);
             }
 
             activity()
@@ -259,6 +339,7 @@ class ProdukController extends Controller
                     'harga_jual' => $validated['harga_jual'],
                     'stok' => $validated['stok'],
                     'jumlah_ukuran' => $ukuranBaris->count(),
+                    'jumlah_rasa' => $rasaBaris->count(),
                 ])
                 ->log('menambahkan produk');
 
@@ -270,11 +351,10 @@ class ProdukController extends Controller
         }
     }
 
-
     public function show(Produk $produk)
     {
         try {
-            $produk->load(['kategori', 'produkUkurans.ukuran']);
+            $produk->load(['kategori', 'produkUkurans.ukuran', 'produkVarianRasas.varianRasa']);
 
             return view('pages.produk.show', compact('produk'));
         } catch (\Throwable $e) {
@@ -286,13 +366,26 @@ class ProdukController extends Controller
     {
         try {
             $kategori = KategoriProduk::orderBy('nama_kategori')->get();
-            $daftarUkuran = Ukuran::aktif()->urut()->get();
-            $produk->load('produkUkurans.ukuran');
+            $rawUkuran = Ukuran::aktif()->urut()->get();
+            $rawVarianRasa = VarianRasa::aktif()->urut()->get();
+
+            $masterUkuranList = $rawUkuran->map(fn ($u) => [
+                'id' => $u->id,
+                'nama' => $u->nama_ukuran,
+            ])->values();
+
+            $masterVarianRasaList = $rawVarianRasa->map(fn ($r) => [
+                'id' => $r->id,
+                'nama' => $r->nama_rasa,
+                'gambar' => $r->gambar ? asset('storage/' . $r->gambar) : null,
+            ])->values();
+
+            $produk->load(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa']);
 
             if (old('ukuran_baris') !== null) {
                  $ukuranBaris = collect(old('ukuran_baris', []))
-                    ->map(function ($b) use ($daftarUkuran) {
-                        $master = $daftarUkuran->firstWhere(
+                    ->map(function ($b) use ($rawUkuran) {
+                        $master = $rawUkuran->firstWhere(
                             'id',
                             (int) ($b['ukuran_id'] ?? 0)
                         );
@@ -309,7 +402,6 @@ class ProdukController extends Controller
                     })
                     ->values();
             } else {
-                // Prefill dari baris ukuran yang udah tersimpan buat produk ini.
                 $ukuranBaris = $produk->produkUkurans
                     ->map(fn ($pu) => [
                         'ukuran_id' => $pu->ukuran_id,
@@ -323,11 +415,40 @@ class ProdukController extends Controller
                     ->values();
             }
 
+            if (old('rasa_baris') !== null) {
+                 $rasaBaris = collect(old('rasa_baris', []))
+                    ->map(function ($b) use ($rawVarianRasa) {
+                        $master = $rawVarianRasa->firstWhere(
+                            'id',
+                            (int) ($b['varian_rasa_id'] ?? 0)
+                        );
+
+                        return [
+                            'varian_rasa_id' => $b['varian_rasa_id'] ?? '',
+                            'nama' => $master->nama_rasa ?? '',
+                            'gambar' => $master && $master->gambar ? asset('storage/' . $master->gambar) : null,
+                            'status_aktif' => filter_var($b['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
+                        ];
+                    })
+                    ->values();
+            } else {
+                $rasaBaris = $produk->produkVarianRasas
+                    ->map(fn ($pr) => [
+                        'varian_rasa_id' => $pr->varian_rasa_id,
+                        'nama' => $pr->varianRasa->nama_rasa ?? '',
+                        'gambar' => $pr->varianRasa && $pr->varianRasa->gambar ? asset('storage/' . $pr->varianRasa->gambar) : null,
+                        'status_aktif' => (bool) $pr->status_aktif,
+                    ])
+                    ->values();
+            }
+
             return view('pages.produk.edit', compact(
                 'produk',
                 'kategori',
-                'daftarUkuran',
-                'ukuranBaris'
+                'masterUkuranList',
+                'ukuranBaris',
+                'masterVarianRasaList',
+                'rasaBaris'
             ));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -348,9 +469,10 @@ class ProdukController extends Controller
                 'deskripsi' => 'nullable|string|max:1000',
                 'harga_jual' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
                 'punya_ukuran' => 'nullable|boolean',
+                'punya_varian_rasa' => 'nullable|boolean',
                 'harga_modal' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
-                'stok' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
-                'stok_minimum' => 'nullable|required_if:punya_ukuran,0|integer|min:0',
+                'stok' => 'nullable|required_if:punya_ukuran,0|numeric|min:0',
+                'stok_minimum' => 'nullable|numeric|min:0',
                 'status_aktif' => 'required|boolean',
                 'status_ketersediaan' => [
                     'required',
@@ -364,13 +486,22 @@ class ProdukController extends Controller
                 'ukuran_baris.*.harga_jual' => 'required_with:ukuran_baris|numeric|min:0',
                 'ukuran_baris.*.stok' => 'required_with:ukuran_baris|integer|min:0',
                 'ukuran_baris.*.stok_minimum' => 'required_with:ukuran_baris|integer|min:0',
+
+                'rasa_baris' => 'nullable|array|required_if:punya_varian_rasa,1',
+                'rasa_baris.*.varian_rasa_id' => 'required_with:rasa_baris|exists:varian_rasas,id|distinct',
             ], [
                 'ukuran_baris.required_if' => 'Tambahkan minimal 1 baris ukuran.',
                 'ukuran_baris.*.ukuran_id.distinct' => 'Satu ukuran cuma boleh ditambahkan sekali.',
+                'rasa_baris.required_if' => 'Tambahkan minimal 1 baris varian rasa.',
+                'rasa_baris.*.varian_rasa_id.distinct' => 'Satu varian rasa cuma boleh ditambahkan sekali.',
             ]);
 
             $ukuranBaris = collect($request->input('ukuran_baris', []))
                 ->filter(fn ($baris) => !empty($baris['ukuran_id']))
+                ->values();
+
+            $rasaBaris = collect($request->input('rasa_baris', []))
+                ->filter(fn ($baris) => !empty($baris['varian_rasa_id']))
                 ->values();
 
             $oldKode = $produk->kode_produk;
@@ -398,23 +529,42 @@ class ProdukController extends Controller
             }
 
             $validated['punya_ukuran'] = $request->has('punya_ukuran') ? (bool) $request->punya_ukuran : false;
+            $validated['punya_varian_rasa'] = $request->has('punya_varian_rasa') ? (bool) $request->punya_varian_rasa : false;
+
             if ($validated['punya_ukuran']) {
                 $validated['harga_jual'] = 0;
                 $validated['harga_modal'] = 0;
                 $validated['stok'] = (int) $ukuranBaris->sum(fn ($b) => (int) ($b['stok'] ?? 0));
                 $validated['stok_minimum'] = 0;
+            } else {
+                $validated['stok'] = (int) ($validated['stok'] ?? 0);
+                $validated['stok_minimum'] = (int) ($validated['stok_minimum'] ?? 0);
+                $validated['harga_jual'] = (float) ($validated['harga_jual'] ?? 0);
+                $validated['harga_modal'] = (float) ($validated['harga_modal'] ?? 0);
             }
 
-            unset($validated['ukuran_baris']);
+            unset($validated['ukuran_baris'], $validated['rasa_baris']);
 
-            $validated['status_ketersediaan'] = $validated['stok'] <= 0
+            $validated['status_ketersediaan'] = ($validated['stok'] ?? 0) <= 0
                 ? 'perlu_diproduksi'
                 : 'stok_ada';
 
             $produk->update($validated);
 
-            if ($validated['punya_ukuran'] && $ukuranBaris->isNotEmpty()) {
-                $this->syncBarisUkuranDinamis($produk, $ukuranBaris);
+            if ($validated['punya_ukuran']) {
+                if ($ukuranBaris->isNotEmpty()) {
+                    $this->syncBarisUkuranDinamis($produk, $ukuranBaris);
+                }
+            } else {
+                $produk->produkUkurans()->delete();
+            }
+
+            if ($validated['punya_varian_rasa']) {
+                if ($rasaBaris->isNotEmpty()) {
+                    $this->syncBarisVarianRasaDinamis($produk, $rasaBaris);
+                }
+            } else {
+                $produk->produkVarianRasas()->delete();
             }
 
             activity()
@@ -427,6 +577,7 @@ class ProdukController extends Controller
                     'harga_jual' => $validated['harga_jual'],
                     'stok' => $validated['stok'],
                     'jumlah_ukuran' => $ukuranBaris->count(),
+                    'jumlah_rasa' => $rasaBaris->count(),
                 ])
                 ->log('memperbarui produk');
 

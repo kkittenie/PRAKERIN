@@ -178,4 +178,51 @@ class VarianRasaController extends Controller
             return ActivityLogHelper::handleException($e);
         }
     }
+
+    /**
+     * Versi AJAX dari store(), dipakai dari modal "Varian Rasa" di form Produk.
+     */
+    public function storeAjax(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'nama_rasa' => 'required|string|max:100|unique:varian_rasas,nama_rasa',
+                'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            ]);
+
+            $pathGambar = null;
+            if ($request->hasFile('gambar')) {
+                $pathGambar = $request->file('gambar')->store(self::GAMBAR_PATH, 'public');
+            }
+
+            $varian = VarianRasa::create([
+                'nama_rasa' => trim($validated['nama_rasa']),
+                'gambar' => $pathGambar,
+                'status_aktif' => true,
+            ]);
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($varian)
+                ->withProperties(['nama_rasa' => $varian->nama_rasa])
+                ->log('menambahkan varian rasa (ajax)');
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $varian->id,
+                    'nama_rasa' => $varian->nama_rasa,
+                    'gambar' => $varian->gambar ? asset('storage/' . $varian->gambar) : null,
+                ],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
 }

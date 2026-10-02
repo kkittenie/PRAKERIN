@@ -24,6 +24,7 @@ class Produk extends Model
         'status_aktif',
         'status_ketersediaan',
         'punya_ukuran',
+        'punya_varian_rasa',
         'harga_besar',
         'harga_kecil',
         'is_khusus_bundling',
@@ -31,6 +32,7 @@ class Produk extends Model
 
     protected $casts = [
         'punya_ukuran' => 'boolean',
+        'punya_varian_rasa' => 'boolean',
         'harga_besar' => 'decimal:2',
         'harga_kecil' => 'decimal:2',
         'stok_besar' => 'integer',
@@ -42,6 +44,7 @@ class Produk extends Model
         'promos_aktif_semua',
         'harga_diskon',
         'daftar_ukuran',
+        'daftar_varian_rasa',
     ];
 
     public function scopeReguler($query)
@@ -62,6 +65,11 @@ class Produk extends Model
     public function produkUkurans()
     {
         return $this->hasMany(ProdukUkuran::class, 'produk_id')->with('ukuran')->orderBy('id');
+    }
+
+    public function produkVarianRasas()
+    {
+        return $this->hasMany(ProdukVarianRasa::class, 'produk_id')->with('varianRasa')->orderBy('id');
     }
 
     public function produksi()
@@ -238,6 +246,36 @@ class Produk extends Model
                     'stok' => (int) $pu->stok,
                     'stok_minimum' => (int) $pu->stok_minimum,
                     'perlu_produksi' => $pu->status_ketersediaan === 'perlu_diproduksi' || $pu->stok <= 0,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    public function getDaftarVarianRasaAttribute(): array
+    {
+        if (!$this->punya_varian_rasa) {
+            return [];
+        }
+
+        $daftar = $this->relationLoaded('produkVarianRasas')
+            ? $this->produkVarianRasas
+            : $this->produkVarianRasas()->get();
+
+        return $daftar->filter(fn ($pvr) => $pvr->varianRasa && (bool) $pvr->varianRasa->status_aktif)
+            ->map(function ($pvr) {
+                $gambar = $pvr->varianRasa->gambar;
+                $gambarUrl = null;
+                if ($gambar) {
+                    $gambarUrl = (str_starts_with($gambar, 'http://') || str_starts_with($gambar, 'https://'))
+                        ? $gambar
+                        : asset('storage/' . $gambar);
+                }
+                return [
+                    'produk_varian_rasa_id' => $pvr->id,
+                    'varian_rasa_id' => $pvr->varian_rasa_id,
+                    'nama' => $pvr->varianRasa->nama_rasa,
+                    'gambar' => $gambarUrl,
                 ];
             })
             ->values()

@@ -363,74 +363,28 @@
                                                             </div>
                                                         </template>
                                                     </div>
-                                                    <template x-if="produk.punya_ukuran == 1 || produk.punya_ukuran === true">
-                                                        <div class="relative" @click.away="dropdownUkuranAktifId === produk.id && (dropdownUkuranAktifId = null)">
-                                                            <template x-if="!produk.daftar_ukuran || produk.daftar_ukuran.length === 0">
-                                                                <p class="text-xxs text-gray-400 dark:text-gray-500 italic">Belum ada ukuran aktif untuk produk ini.</p>
+                                                    <div class="flex items-center justify-between">
+                                                        <div class="flex flex-col">
+                                                            <template x-if="produk.punya_ukuran == 1 || produk.punya_ukuran === true">
+                                                                <span class="font-bold text-amber-700 dark:text-amber-400 text-xs">
+                                                                    Pilih Ukuran…
+                                                                </span>
                                                             </template>
-                                                            <template x-if="produk.daftar_ukuran && produk.daftar_ukuran.length > 0">
-                                                                <div>
-                                                                    <button type="button" @click.stop="dropdownUkuranAktifId = (dropdownUkuranAktifId === produk.id ? null : produk.id)"
-                                                                        class="w-full h-9 flex items-center justify-between gap-2 rounded-lg border border-amber-200/60 dark:border-amber-500/20 bg-amber-50/80 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs font-semibold px-2.5 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors">
-                                                                        <span class="truncate">Pilih ukuran…</span>
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0 transition-transform duration-150"
-                                                                            :class="dropdownUkuranAktifId === produk.id ? 'rotate-180' : ''"
-                                                                            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                                                                        </svg>
-                                                                    </button>
-
-                                                                    <div x-show="dropdownUkuranAktifId === produk.id"
-                                                                        x-transition:enter="transition ease-out duration-100"
-                                                                        x-transition:enter-start="opacity-0 -translate-y-1"
-                                                                        x-transition:enter-end="opacity-100 translate-y-0"
-                                                                        class="relative z-20 mt-1.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-lg overflow-hidden py-1 max-h-56 overflow-y-auto"
-                                                                        style="display: none;">
-                                                                        <template x-for="opsiUkuran in produk.daftar_ukuran" :key="opsiUkuran.produk_ukuran_id">
-                                                                            <button type="button"
-                                                                                @click.stop="dropdownUkuranAktifId = null; tambahKeKeranjang(produk, opsiUkuran.nama)"
-                                                                                class="w-full flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 py-2 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors text-left">
-                                                                                <span class="flex items-center gap-1.5 min-w-0 flex-wrap">
-                                                                                    <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate" x-text="opsiUkuran.nama"></span>
-                                                                                    <template x-if="opsiUkuran.perlu_produksi">
-                                                                                        <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-full">Perlu Diproduksi</span>
-                                                                                    </template>
-                                                                                    <template x-if="opsiUkuran.sedang_promo">
-                                                                                        <span class="shrink-0 text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-500/15 px-1.5 py-0.5 rounded-full"
-                                                                                            x-text="opsiUkuran.nama_promo || 'Promo'"></span>
-                                                                                    </template>
-                                                                                </span>
-                                                                                <span class="shrink-0 flex flex-col items-end leading-tight ml-auto">
-                                                                                    <template x-if="opsiUkuran.sedang_promo">
-                                                                                        <span class="text-[10px] text-gray-400 dark:text-gray-500 line-through" x-text="formatRupiah(opsiUkuran.harga_asli)"></span>
-                                                                                    </template>
-                                                                                    <span class="text-xs font-bold"
-                                                                                        :class="opsiUkuran.sedang_promo ? 'text-rose-600 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400'"
-                                                                                        x-text="formatRupiah(opsiUkuran.sedang_promo ? opsiUkuran.harga_diskon : opsiUkuran.harga)"></span>
-                                                                                </span>
-                                                                            </button>
-                                                                        </template>
-                                                                    </div>
-                                                                </div>
+                                                            <template x-if="!(produk.punya_ukuran == 1 || produk.punya_ukuran === true)">
+                                                                <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
+                                                                    x-text="formatRupiah(produk.promo_aktif ? produk.harga_diskon : produk.harga_jual)"></span>
                                                             </template>
                                                         </div>
-                                                    </template>
-
-                                                    <template x-if="!(produk.punya_ukuran == 1 || produk.punya_ukuran === true)">
-                                                        <div class="flex items-center justify-between">
-                                                            <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
-                                                                x-text="formatRupiah(produk.promo_aktif ? produk.harga_diskon : produk.harga_jual)"></span>
-                                                            <button @click.stop="tambahKeKeranjang(produk)"
-                                                                title="Tambah ke keranjang"
-                                                                class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
-                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                                    viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                                        stroke-width="2.5" d="M12 4v16m8-8H4" />
-                                                                </svg>
-                                                            </button>
-                                                        </div>
-                                                    </template>
+                                                        <button @click.stop="tambahKeKeranjang(produk)"
+                                                            title="Tambah ke keranjang"
+                                                            class="p-2 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-600 dark:hover:bg-amber-600 text-amber-600 dark:text-amber-400 hover:text-white rounded-lg transition">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2.5" d="M12 4v16m8-8H4" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1090,29 +1044,24 @@
                                         <img :src="getFotoUrl(item.foto)" x-on:error="handleFotoError($event)"
                                             class="w-full h-full object-cover">
                                     </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-1.5 flex-wrap">
-                                            <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate"
-                                                x-text="item.nama_produk"></h5>
+                                    <div class="flex-1 min-w-0 flex flex-col gap-1">
+                                        <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate"
+                                            x-text="item.nama_produk"></h5>
+                                        <div class="flex items-center gap-1 flex-wrap">
                                             <template x-if="item.ukuran">
                                                 <span
                                                     class="shrink-0 text-[9px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-700/50"
                                                     x-text="'Ukuran: ' + item.ukuran"></span>
                                             </template>
+                                            <template x-if="item.varian_rasa">
+                                                <span
+                                                    class="shrink-0 text-[9px] font-bold text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-1.5 py-0.5 rounded-full border border-purple-300 dark:border-purple-700/50"
+                                                    x-text="'Rasa: ' + item.varian_rasa"></span>
+                                            </template>
                                             <template x-if="item.is_reward_stamp">
                                                 <span
                                                     class="shrink-0 text-[9px] font-bold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 px-1.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-500/25">Reward
                                                     Stamp</span>
-                                            </template>
-                                            <template x-if="item.is_reward_stamp && itemButuhProduksi(item)">
-                                                <span
-                                                    class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/25">Perlu
-                                                    Diproduksi</span>
-                                            </template>
-                                            <template x-if="!item.is_reward_stamp && itemButuhProduksi(item)">
-                                                <span
-                                                    class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/25">Perlu
-                                                    Diproduksi</span>
                                             </template>
                                             <template x-if="item.pilihan_khusus">
                                                 <button type="button" @click="bukaEditVarianItem(item)"
@@ -1123,6 +1072,14 @@
                                                 </button>
                                             </template>
                                         </div>
+                                        <template x-if="itemButuhProduksi(item)">
+                                            <div>
+                                                <span
+                                                    class="inline-block text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/25">
+                                                    Perlu Diproduksi
+                                                </span>
+                                            </div>
+                                        </template>
                                         <div class="flex flex-col gap-0.5 mt-1">
                                             <div class="flex items-center gap-1.5">
                                                 <template x-if="!item.is_reward_stamp && (!item.promos_tersedia || item.promos_tersedia.length === 0) && item.promo_aktif">
@@ -1777,49 +1734,97 @@
             </div>
         </div>
 
-        <!-- ========== MODAL: PILIH UKURAN PRODUK ========== -->
-        <div x-show="modalPilihUkuranTerbuka"
+        <!-- ========== MODAL UNIFIED: PILIH VARIAN RASA & UKURAN PRODUK ========== -->
+        <div x-show="modalPilihVarianTerbuka"
             class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4"
             x-transition x-cloak>
-            <div @click.away="modalPilihUkuranTerbuka = false"
-                class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
-                <div class="bg-amber-800 dark:bg-amber-900 text-white p-4 flex items-center justify-between">
-                    <div>
-                        <h3 class="font-extrabold text-sm">Pilih Ukuran Produk</h3>
-                        <p class="text-white/80 text-xs mt-0.5"
-                            x-text="produkUkuranTerpilih ? produkUkuranTerpilih.nama_produk : ''">
-                        </p>
-                    </div>
-                    <button @click="modalPilihUkuranTerbuka = false"
-                        class="text-white hover:text-gray-200 font-bold text-lg leading-none">&times;</button>
-                </div>
-
-                <div class="p-5 flex flex-col gap-3">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pilih varian ukuran untuk produk ini:</p>
-                    <div class="flex flex-col gap-2 max-h-72 overflow-y-auto">
-                        <template x-for="opsiUkuran in (produkUkuranTerpilih?.daftar_ukuran || [])" :key="opsiUkuran.produk_ukuran_id">
-                            <button type="button" @click="pilihUkuran(opsiUkuran.nama)"
-                                class="w-full flex items-center justify-between gap-3 rounded-xl border-2 border-amber-100 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/30 hover:border-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors px-4 py-3 text-left">
-                                <span class="flex items-center gap-2 min-w-0">
-                                    <span class="font-bold text-sm text-amber-900 dark:text-amber-300 truncate" x-text="opsiUkuran.nama"></span>
-                                    <template x-if="opsiUkuran.perlu_produksi">
-                                        <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-200/70 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-full">Perlu Diproduksi</span>
-                                    </template>
-                                    <template x-if="opsiUkuran.sedang_promo">
-                                        <span class="shrink-0 text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-500/15 px-1.5 py-0.5 rounded-full"
-                                            x-text="opsiUkuran.nama_promo || 'Promo'"></span>
-                                    </template>
-                                </span>
-                                <span class="shrink-0 flex flex-col items-end leading-tight">
-                                    <template x-if="opsiUkuran.sedang_promo">
-                                        <span class="text-[10px] text-gray-400 dark:text-gray-500 line-through" x-text="formatRupiah(opsiUkuran.harga_asli)"></span>
-                                    </template>
-                                    <span class="font-extrabold text-sm"
-                                        :class="opsiUkuran.sedang_promo ? 'text-rose-600 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400'"
-                                        x-text="formatRupiah(opsiUkuran.sedang_promo ? opsiUkuran.harga_diskon : opsiUkuran.harga)"></span>
-                                </span>
+            <div @click.away="modalPilihVarianTerbuka = false"
+                class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col max-h-[85vh]">
+                
+                <!-- Modal Header -->
+                <div class="bg-amber-800 dark:bg-amber-900 text-white p-4 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <template x-if="stepModalVarian === 2 && (produkUkuranTerpilih?.punya_varian_rasa && produkUkuranTerpilih?.daftar_varian_rasa?.length > 0)">
+                            <button type="button" @click="stepModalVarian = 1" class="p-1 hover:bg-amber-700 rounded-lg text-white transition shrink-0" title="Kembali ke pilih varian rasa">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                                </svg>
                             </button>
                         </template>
+                        <div class="min-w-0">
+                            <h3 class="font-extrabold text-sm truncate" x-text="stepModalVarian === 1 ? 'Pilih Varian Rasa' : 'Pilih Ukuran Produk'"></h3>
+                            <p class="text-white/80 text-xs mt-0.5 truncate" x-text="produkUkuranTerpilih ? produkUkuranTerpilih.nama_produk : ''"></p>
+                        </div>
+                    </div>
+                    <button @click="modalPilihVarianTerbuka = false" class="text-white hover:text-gray-200 font-bold text-xl leading-none ml-2">&times;</button>
+                </div>
+
+                <!-- Slide Container -->
+                <div class="relative overflow-hidden w-full flex-1">
+                    <div class="flex transition-transform duration-300 ease-in-out w-[200%]"
+                        :style="stepModalVarian === 2 ? 'transform: translateX(-50%);' : 'transform: translateX(0);'">
+                        
+                        <!-- STEP 1: PILIH VARIAN RASA -->
+                        <div class="w-1/2 p-5 flex flex-col gap-3 overflow-y-auto max-h-[60vh] custom-scrollbar shrink-0">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pilih varian rasa untuk produk ini:</p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <template x-for="opsiRasa in (produkUkuranTerpilih?.daftar_varian_rasa || [])" :key="opsiRasa.produk_varian_rasa_id">
+                                    <button type="button" @click="pilihRasa(opsiRasa.nama)"
+                                        class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all text-center group cursor-pointer"
+                                        :class="rasaTerpilihModal === opsiRasa.nama ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40' : 'border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 hover:border-amber-300 hover:bg-amber-50/50'">
+                                        <div class="w-14 h-14 rounded-lg bg-white dark:bg-gray-900 overflow-hidden border border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0">
+                                            <template x-if="opsiRasa.gambar">
+                                                <img :src="opsiRasa.gambar" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" alt="Varian Rasa">
+                                            </template>
+                                            <template x-if="!opsiRasa.gambar">
+                                                <div class="w-full h-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-extrabold text-sm flex items-center justify-center">
+                                                    <span x-text="opsiRasa.nama ? opsiRasa.nama.substring(0,2).toUpperCase() : 'VR'"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <span class="font-bold text-xs text-gray-800 dark:text-gray-200 group-hover:text-amber-700 dark:group-hover:text-amber-400 truncate w-full" x-text="opsiRasa.nama"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- STEP 2: PILIH UKURAN -->
+                        <div class="w-1/2 p-5 flex flex-col gap-3 overflow-y-auto max-h-[60vh] custom-scrollbar shrink-0">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pilih ukuran produk:</p>
+                                <template x-if="rasaTerpilihModal">
+                                    <span class="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded-full" x-text="'Rasa: ' + rasaTerpilihModal"></span>
+                                </template>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <template x-for="opsiUkuran in (produkUkuranTerpilih?.daftar_ukuran || [])" :key="opsiUkuran.produk_ukuran_id">
+                                    <button type="button" @click="pilihUkuranSelesai(opsiUkuran.nama)"
+                                        class="w-full flex items-center justify-between gap-3 rounded-xl border-2 border-amber-100 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/30 hover:border-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors px-4 py-3 text-left">
+                                        <span class="flex items-center gap-2 min-w-0">
+                                            <span class="font-bold text-sm text-amber-900 dark:text-amber-300 truncate" x-text="opsiUkuran.nama"></span>
+                                            <template x-if="opsiUkuran.perlu_produksi">
+                                                <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-200/70 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-full">Perlu Diproduksi</span>
+                                            </template>
+                                            <template x-if="opsiUkuran.sedang_promo">
+                                                <span class="shrink-0 text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-500/15 px-1.5 py-0.5 rounded-full"
+                                                    x-text="opsiUkuran.nama_promo || 'Promo'"></span>
+                                            </template>
+                                        </span>
+                                        <span class="shrink-0 flex flex-col items-end leading-tight">
+                                            <template x-if="opsiUkuran.sedang_promo">
+                                                <span class="text-[10px] text-gray-400 dark:text-gray-500 line-through" x-text="formatRupiah(opsiUkuran.harga_asli)"></span>
+                                            </template>
+                                            <span class="font-extrabold text-sm"
+                                                :class="opsiUkuran.sedang_promo ? 'text-rose-600 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400'"
+                                                x-text="formatRupiah(opsiUkuran.sedang_promo ? opsiUkuran.harga_diskon : opsiUkuran.harga)"></span>
+                                        </span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -1981,6 +1986,10 @@
                 modalKonfirmasiHapusTerbuka: false,
                 modalPilihPromoTerbuka: false,
                 modalPilihUkuranTerbuka: false,
+                modalPilihVarianTerbuka: false,
+                stepModalVarian: 1,
+                rasaTerpilihModal: null,
+                ukuranTerpilihModal: null,
                 dropdownUkuranAktifId: null,
                 modalVoucherTerbuka: false,
                 modalVarianBundlingTerbuka: false,
@@ -2376,7 +2385,7 @@
                     return index !== -1 && this.keranjang[index] === item;
                 },
 
-                buatItemKeranjang(produk, jumlah, perluProduksi, ukuran = null) {
+                buatItemKeranjang(produk, jumlah, perluProduksi, ukuran = null, varianRasa = null) {
                     let hargaAsli = parseFloat(produk.harga_jual || 0);
                     let ukuranId = null;
                     if (produk.punya_ukuran) {
@@ -2413,16 +2422,17 @@
                         : (produk.promo_aktif ? [produk.promo_aktif] : [])
                     ).filter(promoBerlakuUntukItem);
                     const promoAktifItem = promoBerlakuUntukItem(produk.promo_aktif) ? produk.promo_aktif : null;
-                    const barisLain = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null));
+                    const barisLain = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && (i.varian_rasa || null) === (varianRasa || null));
                     const promosTerpilihIds = barisLain
                         ? [...barisLain.promos_terpilih_ids]
                         : promosTersedia.map(p => p.id);
 
                     return {
-                        key: produk.id + '_' + (ukuran || 'std') + '_' + (perluProduksi ? 'produksi' : 'ready'),
+                        key: produk.id + '_' + (ukuran || 'std') + '_' + (varianRasa || 'std') + '_' + (perluProduksi ? 'produksi' : 'ready'),
                         produk_id: produk.id,
                         nama_produk: produk.nama_produk,
                         ukuran: ukuran,
+                        varian_rasa: varianRasa,
                         ukuran_id: ukuranId,
                         harga_jual: hargaAsli,
                         harga_jual_asli: hargaAsli,
@@ -3081,63 +3091,94 @@
                     return new Intl.NumberFormat('id-ID').format(this.jumlahDiterimaNum);
                 },
 
-                bukaModalPilihUkuran(produk) {
+                bukaModalPilihVarian(produk) {
                     this.produkUkuranTerpilih = produk;
-                    this.modalPilihUkuranTerbuka = true;
+                    this.rasaTerpilihModal = null;
+                    this.ukuranTerpilihModal = null;
+                    const hasRasa = (produk.punya_varian_rasa == 1 || produk.punya_varian_rasa === true) && produk.daftar_varian_rasa && produk.daftar_varian_rasa.length > 0;
+                    const hasUkuran = (produk.punya_ukuran == 1 || produk.punya_ukuran === true) && produk.daftar_ukuran && produk.daftar_ukuran.length > 0;
+
+                    if (hasRasa) {
+                        this.stepModalVarian = 1;
+                    } else if (hasUkuran) {
+                        this.stepModalVarian = 2;
+                    } else {
+                        this.tambahKeKeranjang(produk);
+                        return;
+                    }
+
+                    this.modalPilihVarianTerbuka = true;
                 },
-                pilihUkuran(ukuran) {
-                    if (this.produkUkuranTerpilih) {
-                        const p = this.produkUkuranTerpilih;
-                        this.modalPilihUkuranTerbuka = false;
+                pilihRasa(namaRasa) {
+                    this.rasaTerpilihModal = namaRasa;
+                    const produk = this.produkUkuranTerpilih;
+                    const hasUkuran = (produk?.punya_ukuran == 1 || produk?.punya_ukuran === true) && produk?.daftar_ukuran && produk?.daftar_ukuran.length > 0;
+
+                    if (hasUkuran) {
+                        this.stepModalVarian = 2;
+                    } else {
+                        this.modalPilihVarianTerbuka = false;
+                        this.tambahKeKeranjang(produk, null, namaRasa);
                         this.produkUkuranTerpilih = null;
-                        this.tambahKeKeranjang(p, ukuran);
+                        this.rasaTerpilihModal = null;
                     }
                 },
-                tambahKeKeranjang(produk, ukuran = null) {
+                pilihUkuranSelesai(namaUkuran) {
+                    if (this.produkUkuranTerpilih) {
+                        const p = this.produkUkuranTerpilih;
+                        const rasa = this.rasaTerpilihModal;
+                        this.modalPilihVarianTerbuka = false;
+                        this.produkUkuranTerpilih = null;
+                        this.rasaTerpilihModal = null;
+                        this.tambahKeKeranjang(p, namaUkuran, rasa);
+                    }
+                },
+                tambahKeKeranjang(produk, ukuran = null, varianRasa = null) {
                     const isPunyaUkuran = !produk.is_bundling && (produk.punya_ukuran == 1 || produk.punya_ukuran === true);
+                    const isPunyaRasa = !produk.is_bundling && (produk.punya_varian_rasa == 1 || produk.punya_varian_rasa === true);
 
                     if (isPunyaUkuran && !ukuran && this.tidakAdaUkuranAktif(produk)) {
                         this.tambahToast('Belum ada ukuran aktif untuk produk ini — aktifkan dulu di halaman Edit Produk.', 'error');
                         return;
                     }
 
-                    if (isPunyaUkuran && !ukuran) {
-                        this.bukaModalPilihUkuran(produk);
+                    if ((isPunyaUkuran && !ukuran) || (isPunyaRasa && !varianRasa && produk.daftar_varian_rasa && produk.daftar_varian_rasa.length > 0)) {
+                        this.bukaModalPilihVarian(produk);
                         return;
                     }
 
                     const manualProduksi = produk.status_ketersediaan === 'perlu_diproduksi';
 
                     if (manualProduksi) {
-                        const item = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && i.butuh_produksi);
+                        const item = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && (i.varian_rasa || null) === (varianRasa || null) && i.butuh_produksi);
                         if (item) {
                             item.jumlah++;
                         } else {
-                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true, ukuran));
+                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true, ukuran, varianRasa));
                         }
                         this.tambahToast('Produk ditambahkan (Perlu Diproduksi).', 'sukses');
                         return;
                     }
 
                     const totalReadyDipakai = this.keranjang
-                        .filter(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && !i.butuh_produksi)
+                        .filter(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && (i.varian_rasa || null) === (varianRasa || null) && !i.butuh_produksi)
                         .reduce((sum, i) => sum + i.jumlah, 0);
                     const stokTersedia = this.stokUntukUkuran(produk, ukuran);
 
                     if (totalReadyDipakai < stokTersedia) {
-                        const readyItem = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && !i.butuh_produksi);
+                        const readyItem = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && (i.varian_rasa || null) === (varianRasa || null) && !i.butuh_produksi);
                         if (readyItem) {
                             readyItem.jumlah++;
                         } else {
-                            this.keranjang.push(this.buatItemKeranjang(produk, 1, false, ukuran));
+                            this.keranjang.push(this.buatItemKeranjang(produk, 1, false, ukuran, varianRasa));
                         }
                         this.tambahToast('Produk ditambahkan.', 'sukses');
                     } else {
-                        const produksiItem = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && i.butuh_produksi);
+                        const produksiItem = this.keranjang.find(i => i.produk_id === produk.id && (i.ukuran || null) === (ukuran || null) && (i.varian_rasa || null) === (varianRasa || null) && i.butuh_produksi);
                         if (produksiItem) {
                             produksiItem.jumlah++;
                         } else {
-                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true, ukuran));
+                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true, ukuran, varianRasa));
                         }
                         this.tambahToast('Stok ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
                     }
@@ -3334,17 +3375,17 @@
                     const produk = this.daftarProduk.find(p => p.id === item.produk_id);
                     const stokTersedia = this.stokUntukUkuran(produk, item.ukuran);
                     const totalReadyDipakai = this.keranjang
-                        .filter(i => i.produk_id === item.produk_id && (i.ukuran || null) === (item.ukuran || null) && !i.butuh_produksi)
+                        .filter(i => i.produk_id === item.produk_id && (i.ukuran || null) === (item.ukuran || null) && (i.varian_rasa || null) === (item.varian_rasa || null) && !i.butuh_produksi)
                         .reduce((sum, i) => sum + i.jumlah, 0);
 
                     if (totalReadyDipakai < stokTersedia) {
                         item.jumlah++;
                     } else {
-                        const produksiItem = this.keranjang.find(i => i.produk_id === item.produk_id && (i.ukuran || null) === (item.ukuran || null) && i.butuh_produksi);
+                        const produksiItem = this.keranjang.find(i => i.produk_id === item.produk_id && (i.ukuran || null) === (item.ukuran || null) && (i.varian_rasa || null) === (item.varian_rasa || null) && i.butuh_produksi);
                         if (produksiItem) {
                             produksiItem.jumlah++;
                         } else if (produk) {
-                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true, item.ukuran));
+                            this.keranjang.push(this.buatItemKeranjang(produk, 1, true, item.ukuran, item.varian_rasa));
                         }
                         this.tambahToast('Stok ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
                     }

@@ -156,6 +156,30 @@
                         </div>
                     </div>
 
+                    @if($produk->punya_varian_rasa)
+                    <div class="sm:col-span-2">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Varian Rasa</p>
+                        <div class="flex flex-wrap gap-2">
+                            @forelse($produk->produkVarianRasas as $pvr)
+                                @if($pvr->varianRasa)
+                                    <div class="inline-flex items-center gap-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1.5 pr-3">
+                                        @if($pvr->varianRasa->gambar)
+                                            <img src="{{ asset('storage/' . $pvr->varianRasa->gambar) }}" alt="{{ $pvr->varianRasa->nama_rasa }}" class="w-7 h-7 rounded-md object-cover">
+                                        @else
+                                            <div class="w-7 h-7 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-bold flex items-center justify-center">
+                                                {{ strtoupper(substr($pvr->varianRasa->nama_rasa, 0, 2)) }}
+                                            </div>
+                                        @endif
+                                        <span class="text-xs font-semibold text-gray-800 dark:text-gray-200">{{ $pvr->varianRasa->nama_rasa }}</span>
+                                    </div>
+                                @endif
+                            @empty
+                                <p class="text-xs italic text-gray-400">Belum ada varian rasa.</p>
+                            @endforelse
+                        </div>
+                    </div>
+                    @endif
+
                     <div class="sm:col-span-2">
                         <p class="text-sm text-gray-500 dark:text-gray-400">Deskripsi</p>
                         <p class="text-gray-800 dark:text-gray-200">
