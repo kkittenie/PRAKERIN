@@ -159,6 +159,15 @@ class VarianRasaController extends Controller
     public function destroy(VarianRasa $varianRasa)
     {
         try {
+            // Sama seperti Ukuran: rasa yang masih terpasang di produk tidak boleh
+            // dihapus. Relasi produk_varian_rasas & produk_ukuran_rasas bersifat
+            // cascade, jadi stok rasa ini di semua produk akan ikut terhapus.
+            if ($varianRasa->produkVarianRasas()->exists()) {
+                return redirect()
+                    ->route('varian-rasa.index')
+                    ->with('error', 'Varian rasa tidak dapat dihapus karena masih digunakan oleh salah satu produk. Nonaktifkan saja kalau tidak ingin dipakai lagi.');
+            }
+
             if ($varianRasa->gambar) {
                 Storage::disk('public')->delete($varianRasa->gambar);
             }

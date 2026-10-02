@@ -692,12 +692,11 @@ class ProdukController extends Controller
 
             $produk->update($validated);
 
-            if ($validated['punya_ukuran']) {
-                if ($ukuranBaris->isNotEmpty()) {
-                    $this->syncBarisUkuranDinamis($produk, $ukuranBaris);
-                }
-            } else {
-                $produk->produkUkurans()->delete();
+            // Perilaku asli dipertahankan: melepas centang "punya ukuran" TIDAK menghapus
+            // baris produk_ukurans. Menghapusnya ikut menghapus riwayat produksi per ukuran
+            // (produksi_ukurans cascade ke produk_ukurans).
+            if ($validated['punya_ukuran'] && $ukuranBaris->isNotEmpty()) {
+                $this->syncBarisUkuranDinamis($produk, $ukuranBaris);
             }
 
             if ($validated['punya_varian_rasa']) {

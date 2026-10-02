@@ -27,4 +27,14 @@ class VarianRasa extends Model
     {
         return $query->orderBy('nama_rasa');
     }
+
+    /**
+     * Baris stok rasa ini di produk-produk. Dipakai untuk ngecek "masih dipakai
+     * produk atau enggak" sebelum rasa boleh dihapus (FK-nya cascade, jadi kalau
+     * dihapus begitu saja, stok rasa di semua produk ikut hilang).
+     */
+    public function produkVarianRasas()
+    {
+        return $this->hasMany(ProdukVarianRasa::class, 'varian_rasa_id');
+    }
 }

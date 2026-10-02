@@ -43,7 +43,7 @@ class KeranjangController extends Controller
 
             $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
             $validated['ukuran'] = $ukuran;
-            $varianRasa = $produk->punya_varian_rasa ? ($validated['varian_rasa'] ?? null) : null;
+            $varianRasa = $this->tentukanVarianRasa($produk, $validated['varian_rasa'] ?? null);
 
             MemberCart::tambah([
                 'produk_id' => $produk->id,
@@ -240,7 +240,7 @@ class KeranjangController extends Controller
 
             $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
             $validated['ukuran'] = $ukuran;
-            $varianRasa = $produk->punya_varian_rasa ? ($validated['varian_rasa'] ?? null) : null;
+            $varianRasa = $this->tentukanVarianRasa($produk, $validated['varian_rasa'] ?? null);
 
             MemberCart::perbarui($itemId, [
                 'produk_id' => $produk->id,
@@ -387,5 +387,28 @@ class KeranjangController extends Controller
             'jumlah' => MemberCart::jumlahItem(),
             'subtotal' => MemberCart::subtotal(),
         ];
+    }
+
+    /**
+     * Tentukan rasa yang valid untuk produk. Nama dinormalisasi ke yang tersimpan di
+     * master (huruf besar/kecil), dan kalau gak dikirim / gak terdaftar di produk ini,
+     * jatuh ke rasa pertama yang aktif — sama kayak ukuranDefault(). Tanpa ini, nama rasa
+     * sembarang bisa masuk keranjang dan stok rasa gak ikut berkurang saat pesanan diproses.
+     */
+    private function tentukanVarianRasa(Produk $produk, ?string $varianRasa): ?string
+    {
+        if (! $produk->punya_varian_rasa) {
+            return null;
+        }
+
+        $daftar = $produk->daftar_varian_rasa;
+
+        foreach ($daftar as $opsi) {
+            if ($varianRasa !== null && strcasecmp($opsi['nama'], $varianRasa) === 0) {
+                return $opsi['nama'];
+            }
+        }
+
+        return $daftar[0]['nama'] ?? null;
     }
 }

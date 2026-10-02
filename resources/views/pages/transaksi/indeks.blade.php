@@ -3749,7 +3749,7 @@
                 // Besar/Kecil kalau namanya cocok) + kolom stok gabungan,
                 // supaya tampilan kartu produk tetap sinkron tanpa perlu
                 // reload data dari server.
-                _sesuaikanStokLokal(produk, ukuran, delta) {
+                _sesuaikanStokLokal(produk, ukuran, delta, varianRasa = null) {
                     if (!produk) return;
                     const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
                     if (punyaUkuran) {
@@ -3764,6 +3764,23 @@
                         }
                     }
                     produk.stok = (parseFloat(produk.stok) || 0) + delta;
+
+                    // Stok rasa (total) + stok per ukuran x rasa ikut disesuaikan, supaya
+                    // kartu produk & pengecekan stok berikutnya tidak basi sebelum halaman di-reload.
+                    const punyaRasa = produk.punya_varian_rasa == 1 || produk.punya_varian_rasa === true;
+                    if (punyaRasa && varianRasa) {
+                        const rasaObj = (produk.daftar_varian_rasa || []).find(r => (r.nama || '').toLowerCase() === String(varianRasa).toLowerCase());
+                        if (rasaObj) {
+                            rasaObj.stok = (parseInt(rasaObj.stok) || 0) + delta;
+                            if (punyaUkuran && ukuran && rasaObj.stok_per_ukuran) {
+                                const opsiUkuran = this.cariOpsiUkuran(produk, ukuran);
+                                const kunci = opsiUkuran ? opsiUkuran.ukuran_id : null;
+                                if (kunci !== null && rasaObj.stok_per_ukuran[kunci] !== undefined) {
+                                    rasaObj.stok_per_ukuran[kunci] = (parseInt(rasaObj.stok_per_ukuran[kunci]) || 0) + delta;
+                                }
+                            }
+                        }
+                    }
                 },
 
                 kembalikanStokFrontend(itemPesanan) {
@@ -3786,7 +3803,7 @@
                         }
                         const p = this.daftarProduk.find(x => x.id === item.produk_id);
                         if (p && !this.itemButuhProduksi(item)) {
-                            this._sesuaikanStokLokal(p, item.ukuran, parseFloat(item.jumlah));
+                            this._sesuaikanStokLokal(p, item.ukuran, parseFloat(item.jumlah), item.varian_rasa);
                         }
                     });
                 },
@@ -3810,7 +3827,7 @@
                         }
                         const p = this.daftarProduk.find(x => x.id === item.produk_id);
                         if (p && !this.itemButuhProduksi(item)) {
-                            this._sesuaikanStokLokal(p, item.ukuran, -parseFloat(item.jumlah));
+                            this._sesuaikanStokLokal(p, item.ukuran, -parseFloat(item.jumlah), item.varian_rasa);
                         }
                     });
                 },
