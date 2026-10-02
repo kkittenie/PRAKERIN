@@ -170,7 +170,20 @@
                                                 {{ strtoupper(substr($pvr->varianRasa->nama_rasa, 0, 2)) }}
                                             </div>
                                         @endif
-                                        <span class="text-xs font-semibold text-gray-800 dark:text-gray-200">{{ $pvr->varianRasa->nama_rasa }}</span>
+                                        <div>
+                                            <span class="block text-xs font-semibold text-gray-800 dark:text-gray-200">{{ $pvr->varianRasa->nama_rasa }}</span>
+                                            @if($produk->punya_ukuran)
+                                                @php $stokRasa = $produk->produkUkuranRasas->where('varian_rasa_id', $pvr->varian_rasa_id); @endphp
+                                                <span class="block text-[11px] text-gray-500 dark:text-gray-400">
+                                                    @foreach($produk->produkUkurans as $pu)
+                                                        @php $baris = $stokRasa->firstWhere('ukuran_id', $pu->ukuran_id); @endphp
+                                                        {{ $pu->ukuran->nama_ukuran ?? '-' }}: {{ $baris->stok ?? 0 }}{{ $loop->last ? '' : ' · ' }}
+                                                    @endforeach
+                                                </span>
+                                            @else
+                                                <span class="block text-[11px] text-gray-500 dark:text-gray-400">Stok: {{ $pvr->stok }} (Min: {{ $pvr->stok_minimum }})</span>
+                                            @endif
+                                        </div>
                                     </div>
                                 @endif
                             @empty

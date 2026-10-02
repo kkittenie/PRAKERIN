@@ -72,6 +72,11 @@ class Produk extends Model
         return $this->hasMany(ProdukVarianRasa::class, 'produk_id')->with('varianRasa')->orderBy('id');
     }
 
+    public function produkUkuranRasas()
+    {
+        return $this->hasMany(ProdukUkuranRasa::class, 'produk_id');
+    }
+
     public function produksi()
     {
         return $this->hasMany(Produksi::class);
@@ -276,9 +281,28 @@ class Produk extends Model
                     'varian_rasa_id' => $pvr->varian_rasa_id,
                     'nama' => $pvr->varianRasa->nama_rasa,
                     'gambar' => $gambarUrl,
+                    'stok' => (int) $pvr->stok,
+                    'stok_minimum' => (int) $pvr->stok_minimum,
+                    'stok_per_ukuran' => $this->stokRasaPerUkuran($pvr->varian_rasa_id),
                 ];
             })
             ->values()
+            ->all();
+    }
+
+    /**
+     * Stok satu rasa per ukuran: [ukuran_id => stok]. Hanya dihitung kalau relasi
+     * produkUkuranRasas sudah di-eager load, supaya tidak ada query per produk.
+     */
+    protected function stokRasaPerUkuran(int $varianRasaId): array
+    {
+        if (!$this->punya_ukuran || !$this->relationLoaded('produkUkuranRasas')) {
+            return [];
+        }
+
+        return $this->produkUkuranRasas
+            ->where('varian_rasa_id', $varianRasaId)
+            ->mapWithKeys(fn ($r) => [$r->ukuran_id => (int) $r->stok])
             ->all();
     }
 
@@ -429,5 +453,57 @@ class Produk extends Model
         }
 
         $this->increment('stok', $jumlah);
+    }
+
+    protected function cariBarisRasa(?string $namaRasa): ?ProdukVarianRasa
+    {
+        if (!$this->punya_varian_rasa || !$namaRasa) {
+            return null;
+        }
+
+        $daftar = $this->relationLoaded('produkVarianRasas')
+            ? $this->produkVarianRasas
+            : $this->produkVarianRasas()->get();
+
+        return $daftar->first(fn ($pvr) => $pvr->varianRasa && strcasecmp($pvr->varianRasa->nama_rasa, $namaRasa) === 0);
+    }
+
+    /**
+     * Ubah stok satu rasa (dan stok ukuran/produk yang menjadi totalnya).
+     * $delta negatif = kurangi (penjualan), positif = tambah (produksi/retur).
+     * Dipakai kasir/produksi supaya stok rasa & stok ukuran tetap sinkron.
+     */
+    public function ubahStokRasa(?string $ukuran, ?string $namaRasa, int $delta): void
+    {
+        if ($delta === 0) {
+            return;
+        }
+
+        $pvr = $this->cariBarisRasa($namaRasa);
+
+        if ($pvr) {
+            $pvr->stok = max(0, $pvr->stok + $delta);
+            $pvr->status_ketersediaan = $pvr->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+            $pvr->save();
+
+            $baris = $this->cariBarisUkuran($ukuran);
+            if ($baris) {
+                $pur = ProdukUkuranRasa::firstOrNew([
+                    'produk_id' => $this->id,
+                    'ukuran_id' => $baris->ukuran_id,
+                    'varian_rasa_id' => $pvr->varian_rasa_id,
+                ]);
+                $pur->stok = max(0, (int) $pur->stok + $delta);
+                $pur->status_ketersediaan = $pur->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+                $pur->save();
+            }
+        }
+
+        // Stok ukuran/produk = total semua rasa, jadi tetap pakai jalur yang sudah ada.
+        if ($delta < 0) {
+            $this->decrementStokUkuran($ukuran, abs($delta));
+        } else {
+            $this->incrementStokUkuran($ukuran, $delta);
+        }
     }
 }

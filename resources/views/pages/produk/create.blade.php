@@ -127,7 +127,7 @@
                             <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Produk ini punya varian rasa</span>
                         </label>
                         <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">
-                            Kalau dicentang, stok & stok minimum produk diatur per varian rasa di bawah.
+                            Kalau dicentang, stok & stok minimum diatur per varian rasa (dan per ukuran kalau produk punya ukuran) di bawah.
                         </span>
                         @error('punya_varian_rasa')
                             <small class="text-red-500">{{ $message }}</small>
@@ -195,8 +195,8 @@
                                     <th class="py-2 px-3">Ukuran</th>
                                     <th class="py-2 px-3">Harga Modal</th>
                                     <th class="py-2 px-3">Harga Jual</th>
-                                    <th class="py-2 px-3">Stok</th>
-                                    <th class="py-2 px-3">Stok Minimum</th>
+                                    <th class="py-2 px-3">Stok<span x-show="$store.produkForm.rasaAktif" class="block text-[10px] font-normal text-gray-400">total semua rasa</span></th>
+                                    <th class="py-2 px-3">Stok Minimum<span x-show="$store.produkForm.rasaAktif" class="block text-[10px] font-normal text-gray-400">total semua rasa</span></th>
                                     <th class="py-2 px-3"></th>
                                 </tr>
                             </thead>
@@ -211,8 +211,8 @@
                                         <td class="py-2 px-3 font-semibold text-gray-800 dark:text-gray-200" x-text="item.nama"></td>
                                         <td class="py-2 px-3" x-text="'Rp ' + Number(item.harga_modal || 0).toLocaleString('id-ID')"></td>
                                         <td class="py-2 px-3" x-text="'Rp ' + Number(item.harga_jual || 0).toLocaleString('id-ID')"></td>
-                                        <td class="py-2 px-3" x-text="item.stok"></td>
-                                        <td class="py-2 px-3" x-text="item.stok_minimum"></td>
+                                        <td class="py-2 px-3" x-text="stokTampil(item, 'stok')"></td>
+                                        <td class="py-2 px-3" x-text="stokTampil(item, 'stok_minimum')"></td>
                                         <td class="py-2 px-3 text-right">
                                             <div class="inline-flex items-center gap-0.5">
                                                 <button type="button" @click="bukaModalEditBaris(index)" title="Edit" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition">
@@ -225,8 +225,8 @@
                                             <input type="hidden" :name="'ukuran_baris[' + index + '][ukuran_id]'" :value="item.ukuran_id">
                                             <input type="hidden" :name="'ukuran_baris[' + index + '][harga_modal]'" :value="item.harga_modal">
                                             <input type="hidden" :name="'ukuran_baris[' + index + '][harga_jual]'" :value="item.harga_jual">
-                                            <input type="hidden" :name="'ukuran_baris[' + index + '][stok]'" :value="item.stok">
-                                            <input type="hidden" :name="'ukuran_baris[' + index + '][stok_minimum]'" :value="item.stok_minimum">
+                                            <input type="hidden" :name="'ukuran_baris[' + index + '][stok]'" :value="stokTampil(item, 'stok')">
+                                            <input type="hidden" :name="'ukuran_baris[' + index + '][stok_minimum]'" :value="stokTampil(item, 'stok_minimum')">
                                         </td>
                                     </tr>
                                 </template>
@@ -258,11 +258,11 @@
                                 <input type="text" inputmode="numeric" x-model="hargaBaru" placeholder="10.000" class="input-rupiah h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-8 pr-3 text-sm focus:border-brand-500 focus:ring-brand-500">
                             </div>
                         </div>
-                        <div>
+                        <div x-show="!$store.produkForm.rasaAktif">
                             <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Stok</label>
                             <input type="number" min="0" x-model="stokBaru" placeholder="0" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
                         </div>
-                        <div>
+                        <div x-show="!$store.produkForm.rasaAktif">
                             <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Stok Minimum</label>
                             <input type="number" min="0" x-model="stokMinimumBaru" placeholder="0" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
                         </div>
@@ -278,7 +278,7 @@
                     </div>
 
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-2 block">
-                        Tambahkan minimal 1 ukuran. Harga, stok, & stok minimum diatur per baris — bisa lebih dari 2 varian.
+                        Tambahkan minimal 1 ukuran. Harga diatur per baris. Stok & stok minimum diatur per baris, atau per rasa kalau produk punya varian rasa.
                     </span>
                     @error('ukuran_baris')
                         <small class="text-red-500 block mt-1">{{ $message }}</small>
@@ -341,12 +341,12 @@
                                         </div>
                                         <p x-show="errorEditHargaJual" x-text="errorEditHargaJual" class="text-xs text-red-500 mt-1"></p>
                                     </div>
-                                    <div>
+                                    <div x-show="!$store.produkForm.rasaAktif">
                                         <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Stok</label>
                                         <input type="number" min="0" x-model="editStok" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
                                         <p x-show="errorEditStok" x-text="errorEditStok" class="text-xs text-red-500 mt-1"></p>
                                     </div>
-                                    <div>
+                                    <div x-show="!$store.produkForm.rasaAktif">
                                         <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Stok Minimum</label>
                                         <input type="number" min="0" x-model="editStokMinimum" class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
                                         <p x-show="errorEditStokMinimum" x-text="errorEditStokMinimum" class="text-xs text-red-500 mt-1"></p>
@@ -384,19 +384,25 @@
                         Varian Rasa <span class="text-red-500">*</span>
                     </label>
 
-                    <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead class="bg-gray-50 dark:bg-gray-800/60">
                                 <tr class="text-left text-gray-500 dark:text-gray-400">
-                                    <th class="py-2 px-3 w-16 text-center">Gambar</th>
-                                    <th class="py-2 px-3">Varian Rasa</th>
-                                    <th class="py-2 px-3 w-16 text-right">Aksi</th>
+                                    <th class="py-3 px-4 w-16 text-center">Gambar</th>
+                                    <th class="py-3 px-4">Varian Rasa</th>
+                                    <template x-for="u in ukuranUntukForm" :key="u.ukuran_id">
+                                        <th class="py-3 px-4" x-text="'Stok ' + u.nama"></th>
+                                    </template>
+                                    <template x-if="!$store.produkForm.ukuranAktif">
+                                        <th class="py-3 px-4">Stok &amp; Stok Minimum</th>
+                                    </template>
+                                    <th class="py-3 px-4 w-16 text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="baris.length === 0">
                                     <tr>
-                                        <td colspan="3" class="py-3 px-3 text-center text-gray-400 text-xs">Belum ada varian rasa ditambahkan.</td>
+                                        <td colspan="8" class="py-3 px-3 text-center text-gray-400 text-xs">Belum ada varian rasa ditambahkan.</td>
                                     </tr>
                                 </template>
                                 <template x-for="(item, index) in baris" :key="index">
@@ -411,13 +417,41 @@
                                                 </div>
                                             </template>
                                         </td>
-                                        <td class="py-2 px-3 font-semibold text-gray-800 dark:text-gray-200" x-text="item.nama"></td>
-                                        <td class="py-2 px-3 text-right">
+                                        <td class="py-3 px-4 align-middle font-semibold text-gray-800 dark:text-gray-200" x-text="item.nama"></td>
+                                        <template x-for="u in ukuranUntukForm" :key="u.ukuran_id">
+                                            <td class="py-3 px-4 align-middle">
+                                                <div class="flex items-end gap-3">
+                                                    <div>
+                                                        <span class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1">Stok</span>
+                                                        <input type="number" min="0" placeholder="0" :value="stokDi(item, u.ukuran_id, 'stok')" @input="setStokItem(item, u.ukuran_id, 'stok', $event.target.value)" :name="'rasa_baris[' + index + '][stok_ukuran][' + u.ukuran_id + '][stok]'" class="h-10 w-24 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                                    </div>
+                                                    <div>
+                                                        <span class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1">Minimum</span>
+                                                        <input type="number" min="0" placeholder="0" :value="stokDi(item, u.ukuran_id, 'stok_minimum')" @input="setStokItem(item, u.ukuran_id, 'stok_minimum', $event.target.value)" :name="'rasa_baris[' + index + '][stok_ukuran][' + u.ukuran_id + '][stok_minimum]'" class="h-10 w-24 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </template>
+                                        <template x-if="!$store.produkForm.ukuranAktif">
+                                            <td class="py-3 px-4 align-middle">
+                                                <div class="flex items-end gap-3">
+                                                    <div>
+                                                        <span class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1">Stok</span>
+                                                        <input type="number" min="0" placeholder="0" x-model="item.stok" :name="'rasa_baris[' + index + '][stok]'" class="h-10 w-24 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                                    </div>
+                                                    <div>
+                                                        <span class="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1">Minimum</span>
+                                                        <input type="number" min="0" placeholder="0" x-model="item.stok_minimum" :name="'rasa_baris[' + index + '][stok_minimum]'" class="h-10 w-24 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </template>
+                                        <td class="py-3 px-4 text-right align-middle">
                                             <button type="button" @click="bukaModalHapusBaris(index)" title="Hapus" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-[17px] h-[17px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                             </button>
                                             <input type="hidden" :name="'rasa_baris[' + index + '][varian_rasa_id]'" :value="item.varian_rasa_id">
-                                        </td>
+                                                                                    </td>
                                     </tr>
                                 </template>
                             </tbody>
@@ -446,7 +480,7 @@
                     </div>
 
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-2 block">
-                        Varian rasa berlaku sama untuk semua ukuran produk. Stok mengikuti ukuran produk.
+                        Varian rasa berlaku sama untuk semua ukuran. Isi stok & stok minimum tiap rasa langsung di tabel (per ukuran). Stok ukuran otomatis = jumlah stok semua rasa.
                     </span>
                     @error('rasa_baris')
                         <small class="text-red-500 block mt-1">{{ $message }}</small>
@@ -635,6 +669,23 @@
     const wrapperStok = document.getElementById('wrapper-stok');
     const wrapperStokMinimum = document.getElementById('wrapper-stok-minimum');
 
+    // State bersama antara tabel ukuran & tabel rasa (stok rasa dipecah per ukuran).
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('produkForm', {
+            ukuranAktif: checkboxUkuran.checked,
+            rasaAktif: checkboxRasa.checked,
+            ukuran: @json($ukuranBaris),
+            rasa: @json($rasaBaris),
+        });
+    });
+
+    function sinkronStoreProdukForm() {
+        if (window.Alpine && Alpine.store('produkForm')) {
+            Alpine.store('produkForm').ukuranAktif = checkboxUkuran.checked;
+            Alpine.store('produkForm').rasaAktif = checkboxRasa.checked;
+        }
+    }
+
     function toggleFieldUkuran() {
         const tampilUkuran = checkboxUkuran.checked;
         const tampilRasa = checkboxRasa.checked;
@@ -645,8 +696,11 @@
         wrapperHargaJual.classList.toggle('hidden', tampilUkuran);
         wrapperHargaModal.classList.toggle('hidden', tampilUkuran);
 
-        wrapperStok.classList.toggle('hidden', tampilUkuran);
-        wrapperStokMinimum.classList.toggle('hidden', tampilUkuran);
+        // Stok produk dasar disembunyikan kalau stok diatur per ukuran atau per rasa.
+        wrapperStok.classList.toggle('hidden', tampilUkuran || tampilRasa);
+        wrapperStokMinimum.classList.toggle('hidden', tampilUkuran || tampilRasa);
+
+        sinkronStoreProdukForm();
     }
 
     checkboxUkuran.addEventListener('change', toggleFieldUkuran);
@@ -657,7 +711,7 @@
         return {
             daftarMaster: @json($masterUkuranList),
 
-            baris: @json($ukuranBaris),
+            get baris() { return Alpine.store('produkForm').ukuran; },
 
             pilihUkuranId: '',
             hargaModalBaru: '',
@@ -684,6 +738,19 @@
             errorEditStok: '',
             errorEditStokMinimum: '',
 
+            totalRasa(ukuranId, field) {
+                return Alpine.store('produkForm').rasa.reduce((jumlah, r) => {
+                    const baris = r.stok_map && r.stok_map[ukuranId];
+                    return jumlah + (baris ? (parseInt(baris[field], 10) || 0) : 0);
+                }, 0);
+            },
+
+            stokTampil(item, field) {
+                return Alpine.store('produkForm').rasaAktif
+                    ? this.totalRasa(item.ukuran_id, field)
+                    : item[field];
+            },
+
             get opsiTersedia() {
                 const dipakai = this.baris.map(b => String(b.ukuran_id));
                 return this.daftarMaster.filter(u => !dipakai.includes(String(u.id)));
@@ -693,8 +760,13 @@
                 const hargaModalBersih = String(this.hargaModalBaru).replace(/\D/g, '');
                 const hargaJualBersih = String(this.hargaBaru).replace(/\D/g, '');
 
-                if (!this.pilihUkuranId || hargaModalBersih === '' || hargaJualBersih === '' || this.stokBaru === '' || this.stokMinimumBaru === '') {
-                    this.pesanPeringatan = 'Pilih ukuran, lalu isi Harga Modal, Harga Jual, Stok & Stok Minimum dulu sebelum menambah baris.';
+                const stokDiRasa = Alpine.store('produkForm').rasaAktif;
+                const stokKosong = !stokDiRasa && (this.stokBaru === '' || this.stokMinimumBaru === '');
+
+                if (!this.pilihUkuranId || hargaModalBersih === '' || hargaJualBersih === '' || stokKosong) {
+                    this.pesanPeringatan = stokDiRasa
+                        ? 'Pilih ukuran, lalu isi Harga Modal & Harga Jual dulu sebelum menambah baris. Stok diisi di tabel Varian Rasa.'
+                        : 'Pilih ukuran, lalu isi Harga Modal, Harga Jual, Stok & Stok Minimum dulu sebelum menambah baris.';
                     this.modalPeringatan = true;
                     return;
                 }
@@ -704,8 +776,8 @@
                     nama: master ? master.nama : '',
                     harga_modal: hargaModalBersih,
                     harga_jual: hargaJualBersih,
-                    stok: this.stokBaru,
-                    stok_minimum: this.stokMinimumBaru,
+                    stok: stokDiRasa ? 0 : this.stokBaru,
+                    stok_minimum: stokDiRasa ? 0 : this.stokMinimumBaru,
                 });
                 this.pilihUkuranId = '';
                 this.hargaModalBaru = '';
@@ -752,8 +824,9 @@
 
                 this.errorEditHargaModal = hargaModalBersih === '' ? 'Harga Modal wajib diisi.' : '';
                 this.errorEditHargaJual = hargaJualBersih === '' ? 'Harga Jual wajib diisi.' : '';
-                this.errorEditStok = (this.editStok === '' || this.editStok === null) ? 'Stok wajib diisi.' : '';
-                this.errorEditStokMinimum = (this.editStokMinimum === '' || this.editStokMinimum === null) ? 'Stok Minimum wajib diisi.' : '';
+                const stokDiRasa = Alpine.store('produkForm').rasaAktif;
+                this.errorEditStok = (!stokDiRasa && (this.editStok === '' || this.editStok === null)) ? 'Stok wajib diisi.' : '';
+                this.errorEditStokMinimum = (!stokDiRasa && (this.editStokMinimum === '' || this.editStokMinimum === null)) ? 'Stok Minimum wajib diisi.' : '';
 
                 if (this.errorEditHargaModal || this.errorEditHargaJual || this.errorEditStok || this.errorEditStokMinimum) {
                     return;
@@ -761,8 +834,10 @@
 
                 this.baris[this.indexEditBaris].harga_modal = hargaModalBersih;
                 this.baris[this.indexEditBaris].harga_jual = hargaJualBersih;
-                this.baris[this.indexEditBaris].stok = this.editStok;
-                this.baris[this.indexEditBaris].stok_minimum = this.editStokMinimum;
+                if (!stokDiRasa) {
+                    this.baris[this.indexEditBaris].stok = this.editStok;
+                    this.baris[this.indexEditBaris].stok_minimum = this.editStokMinimum;
+                }
 
                 this.modalEditBaris = false;
                 this.indexEditBaris = null;
@@ -807,7 +882,40 @@
         return {
             daftarMaster: @json($masterVarianRasaList),
 
-            baris: @json($rasaBaris),
+            get baris() { return Alpine.store('produkForm').rasa; },
+
+            get ukuranList() { return Alpine.store('produkForm').ukuran; },
+
+            get ukuranUntukForm() { return Alpine.store('produkForm').ukuranAktif ? this.ukuranList : []; },
+
+            stokDi(item, ukuranId, field) {
+                return (item.stok_map && item.stok_map[ukuranId]) ? item.stok_map[ukuranId][field] : 0;
+            },
+
+            setStokItem(item, ukuranId, field, nilai) {
+                if (!item.stok_map || Array.isArray(item.stok_map)) item.stok_map = {};
+                if (!item.stok_map[ukuranId]) item.stok_map[ukuranId] = { stok: 0, stok_minimum: 0 };
+                item.stok_map[ukuranId][field] = nilai;
+            },
+
+            init() {
+                this.siapkanStok();
+                this.$watch(() => JSON.stringify(Alpine.store('produkForm').ukuran.map(u => u.ukuran_id)), () => this.siapkanStok());
+            },
+
+            // Pastikan tiap rasa punya isian stok untuk setiap ukuran yang ada.
+            siapkanStok() {
+                this.baris.forEach(item => {
+                    if (!item.stok_map || Array.isArray(item.stok_map)) item.stok_map = {};
+                    this.ukuranList.forEach(u => {
+                        if (!item.stok_map[u.ukuran_id]) {
+                            item.stok_map[u.ukuran_id] = { stok: 0, stok_minimum: 0 };
+                        }
+                    });
+                    if (item.stok === undefined || item.stok === null || item.stok === '') item.stok = 0;
+                    if (item.stok_minimum === undefined || item.stok_minimum === null || item.stok_minimum === '') item.stok_minimum = 0;
+                });
+            },
 
             pilihRasaId: '',
             modalTambahRasa: false,
@@ -835,7 +943,11 @@
                     varian_rasa_id: this.pilihRasaId,
                     nama: master ? master.nama : '',
                     gambar: master ? master.gambar : null,
+                    stok: 0,
+                    stok_minimum: 0,
+                    stok_map: {},
                 });
+                this.siapkanStok();
                 this.pilihRasaId = '';
             },
 
