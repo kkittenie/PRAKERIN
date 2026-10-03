@@ -163,7 +163,7 @@ class TransaksiKasirController extends Controller
 
             $daftarKategori = KategoriProduk::all();
 
-            $daftarBundling = Bundling::with('items.produk.produkUkurans.ukuran')
+            $daftarBundling = Bundling::with(['items.produk.produkUkurans.ukuran', 'items.produk.produkVarianRasas.varianRasa', 'items.produk.produkUkuranRasas'])
                 ->where('status_aktif', true)
                 ->get()
                 ->map(function ($bundling) {
@@ -171,10 +171,10 @@ class TransaksiKasirController extends Controller
                         if (!$item->produk) {
                             return 0;
                         }
-                        // Stok dihitung sesuai ukuran yang dipilih untuk item ini
-                        // (kalau produknya punya varian ukuran), bukan stok
-                        // gabungan semua ukuran.
-                        $stokUkuran = $item->produk->stokUntukUkuran($item->ukuran);
+                        // Stok dihitung sesuai ukuran + rasa yang dipilih untuk
+                        // item ini (kalau produknya punya varian ukuran / rasa),
+                        // bukan stok gabungan semua ukuran / rasa.
+                        $stokUkuran = $item->produk->stokUntukUkuranRasa($item->ukuran, $item->varian_rasa);
                         $bisaDibuat = intdiv((int) $stokUkuran, max(1, $item->qty));
                         return is_null($carry) ? $bisaDibuat : min($carry, $bisaDibuat);
                     }, null) ?? 0;
@@ -262,50 +262,46 @@ class TransaksiKasirController extends Controller
             }
 
             $ukuranItem = $bundlingItem->ukuran;
+            // Rasa yang dipilih untuk produk ini di dalam paket (null kalau
+            // produknya tidak punya varian rasa). Stok dicek & dikurangi per
+            // kombinasi ukuran + rasa, bukan cuma per ukuran.
+            $rasaItem = $produk->punya_varian_rasa ? ($bundlingItem->varian_rasa ?: null) : null;
             $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
-            $totalDibutuhkan = $qtySatuBundling * $jumlahBundling;
-            $statusManualProduksi = $produk->status_ketersediaan === 'perlu_diproduksi';
+            $totalDibutuhkan = (int) ($qtySatuBundling * $jumlahBundling);
 
-            $jumlahReady = 0;
-            $jumlahProduksi = $totalDibutuhkan;
+            $terpakai = [];
+            $alokasi = $produk->alokasiStok($ukuranItem, $rasaItem ? [$rasaItem] : [], $totalDibutuhkan, $terpakai);
 
-            if (!$statusManualProduksi) {
-                // Cek & kurangi stok sesuai ukuran yang dipilih untuk item
-                // bundling ini (Besar/Kecil/ukuran custom lain), bukan stok
-                // gabungan semua ukuran.
-                $stokTersedia = max(0, (float) $produk->stokUntukUkuran($ukuranItem));
-                $jumlahReady = min($stokTersedia, $totalDibutuhkan);
-                $jumlahProduksi = $totalDibutuhkan - $jumlahReady;
+            // Bagian yang stoknya ready: kurangi stok (ukuran + rasa) & catat rasanya.
+            foreach ($alokasi['ready'] as $bagian) {
+                $produk->kurangiStokKombinasi($ukuranItem, $bagian['varian_rasa'], (int) $bagian['jumlah']);
 
-                if ($jumlahReady > 0) {
-                    $produk->decrementStokUkuran($ukuranItem, (int) $jumlahReady);
-                }
-            }
-
-            if ($jumlahReady > 0) {
                 DetailTransaksi::create([
                     'transaksi_id' => $transaksi->id,
                     'produk_id' => $produk->id,
                     'bundling_id' => $bundling->id,
                     'nama_produk' => $produk->nama_produk,
                     'ukuran' => $ukuranItem,
+                    'varian_rasa' => $bagian['varian_rasa'],
                     'harga_satuan' => 0,
-                    'jumlah' => $jumlahReady,
+                    'jumlah' => $bagian['jumlah'],
                     'catatan' => $catatanProduk,
                     'subtotal' => 0,
                     'butuh_produksi' => false,
                 ]);
             }
 
-            if ($jumlahProduksi > 0) {
+            // Sisanya perlu diproduksi → baris ini yang masuk ke tiket produksi.
+            if ($alokasi['produksi'] > 0) {
                 DetailTransaksi::create([
                     'transaksi_id' => $transaksi->id,
                     'produk_id' => $produk->id,
                     'bundling_id' => $bundling->id,
                     'nama_produk' => $produk->nama_produk,
                     'ukuran' => $ukuranItem,
+                    'varian_rasa' => $rasaItem,
                     'harga_satuan' => 0,
-                    'jumlah' => $jumlahProduksi,
+                    'jumlah' => $alokasi['produksi'],
                     'catatan' => $catatanProduk,
                     'subtotal' => 0,
                     'butuh_produksi' => true,
@@ -339,52 +335,48 @@ class TransaksiKasirController extends Controller
             return;
         }
 
-        // Event bisa dibatasi ke ukuran tertentu (mis. cuma "Jumbo"). Cek &
-        // kurangi stok per ukuran itu (bukan kolom stok gabungan), dan catat
-        // ukurannya di detail transaksi supaya kelihatan di POS — sama
-        // seperti alur mobile (lihat CheckoutController::prosesItemPromoEventCheckout()).
+        // Event bisa dibatasi ke ukuran tertentu (mis. cuma "Jumbo") dan/atau
+        // rasa tertentu. Cek & kurangi stok per kombinasi ukuran + rasa itu
+        // (bukan kolom stok gabungan), dan catat ukuran + rasanya di detail
+        // transaksi supaya kelihatan di POS & tiket produksi — sama seperti
+        // alur mobile (lihat CheckoutController::prosesItemPromoEventCheckout()).
         $ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi();
+        $kandidatRasa = $promoEvent->kandidatRasaUntukProduksi();
+        $rasaTunggal = count($kandidatRasa) === 1 ? $kandidatRasa[0] : null;
 
-        $totalDibutuhkan = $promoEvent->isi_event * $jumlahEvent;
-        $statusManualProduksi = $produk->status_ketersediaan === 'perlu_diproduksi';
+        $totalDibutuhkan = (int) ($promoEvent->isi_event * $jumlahEvent);
 
-        $jumlahReady = 0;
-        $jumlahProduksi = $totalDibutuhkan;
+        $terpakai = [];
+        $alokasi = $produk->alokasiStok($ukuranEvent, $kandidatRasa, $totalDibutuhkan, $terpakai);
 
-        if (!$statusManualProduksi) {
-            $stokTersedia = max(0, (float) $produk->stokUntukUkuran($ukuranEvent));
-            $jumlahReady = min($stokTersedia, $totalDibutuhkan);
-            $jumlahProduksi = $totalDibutuhkan - $jumlahReady;
+        foreach ($alokasi['ready'] as $bagian) {
+            $produk->kurangiStokKombinasi($ukuranEvent, $bagian['varian_rasa'], (int) $bagian['jumlah']);
 
-            if ($jumlahReady > 0) {
-                $produk->decrementStokUkuran($ukuranEvent, $jumlahReady);
-            }
-        }
-
-        if ($jumlahReady > 0) {
             DetailTransaksi::create([
                 'transaksi_id' => $transaksi->id,
                 'produk_id' => $produk->id,
                 'promo_event_id' => $promoEvent->id,
                 'nama_produk' => $produk->nama_produk,
                 'ukuran' => $ukuranEvent,
+                'varian_rasa' => $bagian['varian_rasa'],
                 'harga_satuan' => 0,
-                'jumlah' => $jumlahReady,
+                'jumlah' => $bagian['jumlah'],
                 'catatan' => null,
                 'subtotal' => 0,
                 'butuh_produksi' => false,
             ]);
         }
 
-        if ($jumlahProduksi > 0) {
+        if ($alokasi['produksi'] > 0) {
             DetailTransaksi::create([
                 'transaksi_id' => $transaksi->id,
                 'produk_id' => $produk->id,
                 'promo_event_id' => $promoEvent->id,
                 'nama_produk' => $produk->nama_produk,
                 'ukuran' => $ukuranEvent,
+                'varian_rasa' => $rasaTunggal,
                 'harga_satuan' => 0,
-                'jumlah' => $jumlahProduksi,
+                'jumlah' => $alokasi['produksi'],
                 'catatan' => null,
                 'subtotal' => 0,
                 'butuh_produksi' => true,

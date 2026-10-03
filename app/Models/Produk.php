@@ -549,4 +549,93 @@ class Produk extends Model
             $this->incrementStokUkuran($ukuran, $delta);
         }
     }
+
+    /**
+     * Kurangi stok untuk kombinasi (ukuran + rasa). Kalau produk punya rasa
+     * DAN rasanya diketahui, stok rasa / stok ukuran x rasa / stok ukuran /
+     * stok total ikut berkurang bareng (lewat ubahStokRasa). Kalau tidak,
+     * jatuh ke pengurangan stok per ukuran biasa.
+     *
+     * Dipakai untuk item di dalam bundling & promo event, yang sebelumnya
+     * cuma mengurangi stok ukuran sehingga stok rasanya tidak pernah turun.
+     */
+    public function kurangiStokKombinasi(?string $ukuran, ?string $namaRasa, int $jumlah): void
+    {
+        if ($jumlah <= 0) {
+            return;
+        }
+
+        if ($namaRasa && $this->punya_varian_rasa) {
+            $this->ubahStokRasa($ukuran, $namaRasa, -$jumlah);
+            return;
+        }
+
+        $this->decrementStokUkuran($ukuran, $jumlah);
+    }
+
+    /**
+     * Nama semua rasa aktif produk ini (urut sesuai daftar_varian_rasa).
+     * Kosong kalau produk tidak punya varian rasa.
+     */
+    public function namaRasaAktif(): array
+    {
+        return collect($this->daftar_varian_rasa)->pluck('nama')->values()->all();
+    }
+
+    /**
+     * Bagi kebutuhan $jumlah ke stok READY (ukuran x rasa) yang tersedia, sisanya
+     * jadi kebutuhan produksi.
+     *
+     * $kandidatRasa = rasa yang boleh dipakai, urut prioritas. Isi dengan satu
+     * rasa untuk item bundling (rasanya sudah tetap), atau beberapa rasa untuk
+     * promo event yang tidak dibatasi ke satu rasa. Kosong / [null] = produk
+     * tanpa rasa (cek stok per ukuran saja).
+     *
+     * $terpakai = stok yang sudah "diambil" baris lain dalam transaksi yang sama
+     * tapi belum dikurangi dari database (checkout member app baru mengurangi
+     * stok saat pesanan diproses). Kunci: "produk_id|ukuran|rasa" — boleh dipakai
+     * bareng untuk banyak produk dalam satu transaksi.
+     *
+     * Return:
+     *   ['ready' => [['varian_rasa' => ?string, 'jumlah' => int], ...],
+     *    'produksi' => int]
+     */
+    public function alokasiStok(?string $ukuran, array $kandidatRasa, int $jumlah, array &$terpakai = []): array
+    {
+        if ($jumlah <= 0) {
+            return ['ready' => [], 'produksi' => 0];
+        }
+
+        // Status manual "perlu diproduksi" → semuanya masuk produksi.
+        if ($this->status_ketersediaan === 'perlu_diproduksi') {
+            return ['ready' => [], 'produksi' => $jumlah];
+        }
+
+        $kandidat = $this->punya_varian_rasa ? array_values($kandidatRasa) : [null];
+        if (empty($kandidat)) {
+            $kandidat = [null];
+        }
+
+        $sisa = $jumlah;
+        $ready = [];
+
+        foreach ($kandidat as $rasa) {
+            if ($sisa <= 0) {
+                break;
+            }
+
+            $kunci = $this->id . '|' . ($ukuran ?? '-') . '|' . strtolower((string) ($rasa ?? '-'));
+            $sudahDipakai = (int) ($terpakai[$kunci] ?? 0);
+            $stok = max(0, (int) floor((float) $this->stokUntukUkuranRasa($ukuran, $rasa)) - $sudahDipakai);
+            $ambil = min($stok, $sisa);
+
+            if ($ambil > 0) {
+                $terpakai[$kunci] = $sudahDipakai + $ambil;
+                $ready[] = ['varian_rasa' => $rasa, 'jumlah' => $ambil];
+                $sisa -= $ambil;
+            }
+        }
+
+        return ['ready' => $ready, 'produksi' => $sisa];
+    }
 }

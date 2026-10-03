@@ -393,11 +393,17 @@ class CheckoutController extends Controller
             if ($qtySatuBundling <= 0) {
                 continue;
             }
-            $totalDibutuhkan = $qtySatuBundling * $jumlahBundling;
+            $totalDibutuhkan = (int) ($qtySatuBundling * $jumlahBundling);
             $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
             $ukuranItem = $bundlingItem->ukuran;
+            // Rasa yang dipilih untuk produk ini di dalam paket (null kalau
+            // produknya tidak punya varian rasa). Dicek & dicatat per
+            // kombinasi ukuran + rasa supaya stok yang dikurangi saat pesanan
+            // diproses (PesananPickupController::prosesPesanan) tepat sasaran,
+            // dan baris yang perlu produksi masuk ke tiket produksi.
+            $rasaItem = $produk->punya_varian_rasa ? ($bundlingItem->varian_rasa ?: null) : null;
 
-            $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, $ukuranItem, null, $stokTerpakai);
+            $pecahan = $this->pecahJumlahProduksiRasa($produk, $totalDibutuhkan, $ukuranItem, $rasaItem ? [$rasaItem] : [], $stokTerpakai);
 
             foreach ($pecahan as $bagian) {
                 DetailTransaksi::create([
@@ -406,6 +412,7 @@ class CheckoutController extends Controller
                     'bundling_id' => $bundling->id,
                     'nama_produk' => $produk->nama_produk,
                     'ukuran' => $ukuranItem,
+                    'varian_rasa' => $bagian['varian_rasa'],
                     'harga_satuan' => 0,
                     'jumlah' => $bagian['jumlah'],
                     'catatan' => $catatanProduk !== '' ? $catatanProduk : null,
@@ -439,9 +446,13 @@ class CheckoutController extends Controller
         }
 
         $ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi();
+        // Rasa yang boleh dipakai event ini (satu rasa / beberapa rasa / semua
+        // rasa produk). Stok dicek per rasa & rasa yang terpakai dicatat di
+        // detail transaksi.
+        $kandidatRasa = $promoEvent->kandidatRasaUntukProduksi();
 
-        $totalDibutuhkan = $promoEvent->isi_event * $jumlahEvent;
-        $pecahan = $this->pecahJumlahProduksi($produk, $totalDibutuhkan, $ukuranEvent, null, $stokTerpakai);
+        $totalDibutuhkan = (int) ($promoEvent->isi_event * $jumlahEvent);
+        $pecahan = $this->pecahJumlahProduksiRasa($produk, $totalDibutuhkan, $ukuranEvent, $kandidatRasa, $stokTerpakai);
 
         foreach ($pecahan as $bagian) {
             DetailTransaksi::create([
@@ -450,6 +461,7 @@ class CheckoutController extends Controller
                 'promo_event_id' => $promoEvent->id,
                 'nama_produk' => $produk->nama_produk,
                 'ukuran' => $ukuranEvent,
+                'varian_rasa' => $bagian['varian_rasa'],
                 'harga_satuan' => 0,
                 'jumlah' => $bagian['jumlah'],
                 'catatan' => null,
@@ -461,30 +473,41 @@ class CheckoutController extends Controller
 
     private function pecahJumlahProduksi(Produk $produk, int $jumlah, ?string $ukuran, ?string $varianRasa, array &$stokTerpakai): array
     {
-        if ($produk->status_ketersediaan === 'perlu_diproduksi') {
-            return [['jumlah' => $jumlah, 'butuh_produksi' => true]];
+        return $this->pecahJumlahProduksiRasa($produk, $jumlah, $ukuran, $varianRasa ? [$varianRasa] : [], $stokTerpakai);
+    }
+
+    /**
+     * Pecah $jumlah jadi bagian "ready" (stok ukuran x rasa cukup) dan bagian
+     * "butuh produksi". $kandidatRasa = rasa yang boleh dipakai (satu rasa untuk
+     * item bundling / produk biasa, beberapa untuk promo event). Tiap bagian
+     * mengembalikan rasa yang dipakai supaya bisa dicatat di detail transaksi.
+     *
+     * Stok BELUM dikurangi di sini (baru dikurangi saat pesanan diproses),
+     * makanya $stokTerpakai dipakai buat menghitung pemakaian dalam satu checkout.
+     */
+    private function pecahJumlahProduksiRasa(Produk $produk, int $jumlah, ?string $ukuran, array $kandidatRasa, array &$stokTerpakai): array
+    {
+        $alokasi = $produk->alokasiStok($ukuran, $kandidatRasa, $jumlah, $stokTerpakai);
+
+        $hasil = [];
+        foreach ($alokasi['ready'] as $bagian) {
+            $hasil[] = [
+                'jumlah' => $bagian['jumlah'],
+                'butuh_produksi' => false,
+                'varian_rasa' => $bagian['varian_rasa'],
+            ];
         }
 
-        // Kalau produk punya varian ukuran/rasa, cek stok sesuai kombinasi yang dipilih
-        $kunci = $produk->id . '|' . ($ukuran ?? '-') . '|' . ($varianRasa ?? '-');
-        $sudahDipakai = $stokTerpakai[$kunci] ?? 0;
-        $stokTersedia = max(0, (int) floor((float) $produk->stokUntukUkuranRasa($ukuran, $varianRasa)) - $sudahDipakai);
-
-        if ($stokTersedia >= $jumlah) {
-            $stokTerpakai[$kunci] = $sudahDipakai + $jumlah;
-            return [['jumlah' => $jumlah, 'butuh_produksi' => false]];
+        if ($alokasi['produksi'] > 0) {
+            $hasil[] = [
+                'jumlah' => $alokasi['produksi'],
+                'butuh_produksi' => true,
+                // Rasa sisa produksi cuma bisa ditentukan kalau kandidatnya satu.
+                'varian_rasa' => count($kandidatRasa) === 1 ? $kandidatRasa[0] : null,
+            ];
         }
 
-        if ($stokTersedia <= 0) {
-            return [['jumlah' => $jumlah, 'butuh_produksi' => true]];
-        }
-
-        $stokTerpakai[$kunci] = $sudahDipakai + $stokTersedia;
-
-        return [
-            ['jumlah' => $stokTersedia, 'butuh_produksi' => false],
-            ['jumlah' => $jumlah - $stokTersedia, 'butuh_produksi' => true],
-        ];
+        return $hasil;
     }
 
     private function hitungDiskonVoucher(PenukaranPoin $voucher, $items, float $subtotal): float

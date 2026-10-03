@@ -116,6 +116,32 @@ class PromoProdukEvent extends Model
     }
 
     /**
+     * Daftar nama rasa yang boleh dipakai buat memenuhi event ini, urut sesuai
+     * daftar rasa produk. Event dibatasi ke rasa tertentu → hanya rasa itu;
+     * tidak dibatasi → semua rasa aktif produk. Kosong kalau produknya tidak
+     * punya varian rasa.
+     *
+     * Dipakai buat cek & kurangi stok per rasa waktu event di-checkout, supaya
+     * stok rasa ikut turun dan rasa yang dipakai tercatat di detail transaksi
+     * (kelihatan di tiket produksi).
+     */
+    public function kandidatRasaUntukProduksi(): array
+    {
+        if (! $this->produk || ! $this->produk->punya_varian_rasa) {
+            return [];
+        }
+
+        $semuaRasa = $this->produk->daftar_varian_rasa; // hanya rasa aktif milik produk
+        $rasaIds = $this->varianRasaIdsTerbatas();
+
+        return collect($semuaRasa)
+            ->when($rasaIds->isNotEmpty(), fn ($c) => $c->filter(fn ($r) => $rasaIds->contains($r['varian_rasa_id'])))
+            ->pluck('nama')
+            ->values()
+            ->all();
+    }
+
+    /**
      * Nama ukuran (mis. "Jumbo") yang dipakai buat cek stok & dicatat di
      * detail transaksi waktu event ini di-checkout. Cuma bisa ditentukan
      * kalau event dibatasi ke TEPAT SATU ukuran — kalau dibatasi ke lebih
