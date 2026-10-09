@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -28,7 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
 
-        $middleware->redirectGuestsTo(fn () => route('member.login'));
+        // Belum login: area /mobile -> login pelanggan, selain itu (panel admin) -> login admin
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('mobile', 'mobile/*')
+            ? route('member.login')
+            : route('admin.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (Throwable $e) {

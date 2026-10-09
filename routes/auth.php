@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\AdminLoginController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -11,8 +12,12 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
+// Login admin (tampilan sama dengan login pelanggan, beda URL & beda guard)
+Route::get('admin/login', [AdminLoginController::class, 'create'])->name('admin.login');
+Route::post('admin/login', [AdminLoginController::class, 'store'])->name('admin.login.store');
+
 Route::middleware('guest')->group(function () {
-    Route::redirect('signin', '/masuk');
+    Route::redirect('signin', '/login');
     Route::redirect('signup', '/daftar');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])

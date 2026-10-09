@@ -116,71 +116,28 @@
 
                 {{-- Main Content --}}
                 <div class="mt-6 md:mt-4 max-w-md mx-auto w-full">
-                    <form method="POST" action="{{ route('member.login.store') }}" class="space-y-6"
-                        x-data="{ 
-                            loginType: '{{ old('login_type', 'no_hp') }}',
-                            noHpInput: '{{ old('login_type') === 'no_hp' ? old('identifier') : '' }}',
-                            usernameInput: '{{ old('login_type') === 'username' ? old('identifier') : '' }}',
-                            syncIdentifier() {
-                                this.noHpInput = (this.noHpInput || '').replace(/\D/g, '').replace(/^0+/, '');
-                                if (this.loginType === 'no_hp') {
-                                    this.$refs.identifier.value = this.noHpInput;
-                                } else {
-                                    this.$refs.identifier.value = this.usernameInput.trim();
-                                }
-                            }
-                        }"
-                        x-init="syncIdentifier()">
+                    @php
+                        $isAdmin = ($mode ?? 'member') === 'admin';
+                        $formAction = $isAdmin ? route('admin.login.store') : route('member.login.store');
+                    @endphp
+                    <form method="POST" action="{{ $formAction }}" class="space-y-6">
                         @csrf
-                        <input type="hidden" name="login_type" x-model="loginType">
-                        <input type="hidden" name="identifier" x-ref="identifier" value="{{ old('identifier') }}">
-
-                        {{-- Toggle No HP / Username --}}
-                        <div class="grid grid-cols-2 gap-2 rounded-2xl bg-gray-100 p-1">
-                            <button type="button" @click="loginType = 'no_hp'; $nextTick(() => syncIdentifier());"
-                                :class="loginType === 'no_hp' ? 'bg-white shadow-sm text-brand-800' : 'text-gray-500'"
-                                class="rounded-xl py-2 text-sm font-semibold transition">No. HP</button>
-                            <button type="button" @click="loginType = 'username'; $nextTick(() => syncIdentifier());"
-                                :class="loginType === 'username' ? 'bg-white shadow-sm text-brand-800' : 'text-gray-500'"
-                                class="rounded-xl py-2 text-sm font-semibold transition">Username</button>
-                        </div>
 
                         <div>
-                            {{-- No HP Input --}}
-                            <div x-show="loginType === 'no_hp'" x-cloak>
-                                <div
-                                    class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
-                                    <div
-                                        class="flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-800">
-                                        <span>+62</span>
-                                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-gray-500">
-                                            <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
-                                    </div>
-                                    <input type="tel" inputmode="numeric" x-model="noHpInput"
-                                        :required="loginType === 'no_hp'" :disabled="loginType !== 'no_hp'"
-                                        placeholder="882xxxxxxx" @input="syncIdentifier()"
-                                        class="ml-3 flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
-                                    <button type="button" @click="noHpInput = ''; syncIdentifier();"
-                                        class="text-gray-400 hover:text-gray-600 p-1">
-                                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
-                                            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {{-- Username Input --}}
-                            <div x-show="loginType === 'username'" x-cloak>
-                                <div
-                                    class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
-                                    <input type="text" x-model="usernameInput"
-                                        :required="loginType === 'username'" :disabled="loginType !== 'username'"
-                                        placeholder="Username" @input="syncIdentifier()"
-                                        class="flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
-                                </div>
+                            {{-- Satu kolom: username atau no. HP (admin: username atau email) --}}
+                            <div x-data="{ identifier: @js(old('identifier', '')) }"
+                                class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
+                                <input type="text" name="identifier" x-model="identifier" required autofocus
+                                    autocomplete="username" autocapitalize="none" spellcheck="false"
+                                    placeholder="{{ $isAdmin ? 'Masukkan username atau email' : 'Masukkan username atau no. HP' }}"
+                                    class="flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
+                                <button type="button" x-show="identifier" x-cloak @click="identifier = ''"
+                                    class="text-gray-400 hover:text-gray-600 p-1">
+                                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
                             </div>
 
                             {{-- Single Inline Alert Message --}}
@@ -231,9 +188,11 @@
                                     class="rounded border-gray-300 text-brand-800 focus:ring-brand-800">
                                 Ingat saya
                             </label>
-                            <a href="{{ route('member.register') }}"
-                                onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                                class="text-xs font-bold text-brand-800 hover:underline">Belum punya akun? Daftar</a>
+                            @unless ($isAdmin)
+                                <a href="{{ route('member.register') }}"
+                                    onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                    class="text-xs font-bold text-brand-800 hover:underline">Belum punya akun? Daftar</a>
+                            @endunless
                         </div>
 
                         {{-- Continue Button --}}

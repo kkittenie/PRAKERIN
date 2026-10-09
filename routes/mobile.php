@@ -19,13 +19,17 @@ use App\Http\Controllers\Mobile\SettingsController;
 use App\Http\Controllers\Mobile\StampController;
 use Illuminate\Support\Facades\Route;
 
-    // Route auth yang diakses tanpa prefix mobile/ (jadi /welcome, /masuk, /keluar)
+    // Route auth yang diakses tanpa prefix mobile/ (jadi /welcome, /login, /keluar)
     Route::name('member.')->group(function () {
         Route::get('/welcome', [AuthController::class, 'welcome'])->name('welcome');
         Route::match(['get', 'post'], '/keluar', [AuthController::class, 'logout'])->name('logout');
 
-        Route::get('/masuk', [AuthController::class, 'tampilkanLogin'])->name('login');
-        Route::post('/masuk', [AuthController::class, 'login'])->name('login.store');
+        // Login pelanggan (login admin ada di /admin/login, lihat routes/auth.php)
+        Route::get('/login', [AuthController::class, 'tampilkanLogin'])->name('login');
+        Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+
+        // URL lama /masuk tetap jalan, diarahkan ke /login
+        Route::redirect('/masuk', '/login');
     });
 
     Route::prefix('mobile')->name('member.')->group(function () {

@@ -31,7 +31,7 @@ class AuthenticatedSessionController extends Controller
 
             $request->session()->regenerateToken();
 
-            return redirect()->route('member.login');
+            return redirect()->route('admin.login');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

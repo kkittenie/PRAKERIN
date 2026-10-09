@@ -214,20 +214,25 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * Login pelanggan (member). Satu kolom "identifier":
+     * kalau isinya kelihatan kayak nomor HP -> dicocokin ke no_hp,
+     * selain itu (atau kalau no HP-nya gak ketemu) -> dicocokin ke username.
+     * Akun admin TIDAK bisa login lewat sini, adanya di /admin/login.
+     */
     public function login(Request $request)
     {
         try {
             $data = $request->validate([
-                'login_type' => ['required', 'in:no_hp,username'],
                 'identifier' => ['required', 'string'],
                 'password' => ['required', 'string'],
             ], [
-                'login_type.required' => 'Pilih mau masuk pakai apa dulu.',
-                'identifier.required' => 'Wajib diisi.',
+                'identifier.required' => 'Username atau nomor HP wajib diisi.',
                 'password.required' => 'Masukkan kata sandi.',
             ]);
 
-            $throttleKey = Str::lower($data['identifier']) . '|' . $request->ip();
+            $identifier = trim($data['identifier']);
+            $throttleKey = 'member|' . Str::lower($identifier) . '|' . $request->ip();
 
             if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
                 $seconds = RateLimiter::availableIn($throttleKey);
@@ -238,55 +243,23 @@ class AuthController extends Controller
             }
 
             $remember = $request->boolean('ingat_saya');
+            $guard = Auth::guard('member');
 
-            if ($data['login_type'] === 'no_hp') {
-                $noHpInput = trim($data['identifier']);
-
-                $phoneVariants = [$noHpInput];
-                if (str_starts_with($noHpInput, '0')) {
-                    $phoneVariants[] = '+62' . substr($noHpInput, 1);
-                } elseif (str_starts_with($noHpInput, '+62')) {
-                    $phoneVariants[] = '0' . substr($noHpInput, 3);
-                } elseif (!str_starts_with($noHpInput, '+')) {
-                    $phoneVariants[] = '+62' . $noHpInput;
-                    $phoneVariants[] = '0' . $noHpInput;
-                }
+            // Kelihatan kayak nomor HP (angka, boleh diawali +, spasi, atau strip)
+            if (preg_match('/^\+?[\d\s\-]+$/', $identifier)) {
+                $noHp = $this->normalizeNoHp($identifier);
+                $phoneVariants = array_unique([$noHp, Member::toLocalNoHp($noHp)]);
 
                 foreach ($phoneVariants as $phone) {
-                    if (Auth::guard('member')->attempt(['no_hp' => $phone, 'password' => $data['password']], $remember)) {
+                    if ($guard->attempt(['no_hp' => $phone, 'password' => $data['password']], $remember)) {
                         RateLimiter::clear($throttleKey);
                         return $this->redirectSetelahLoginMember($request);
                     }
                 }
-
-                RateLimiter::hit($throttleKey, 60);
-
-                return back()
-                    ->withErrors(['identifier' => 'Nomor HP atau kata sandi salah.'])
-                    ->onlyInput('identifier');
             }
 
-            // login_type === 'username' -> coba akun admin (users) dulu, baru member
-            $usernameField = filter_var($data['identifier'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-
-            if (Auth::guard('web')->attempt([$usernameField => $data['identifier'], 'password' => $data['password']], $remember)) {
-                RateLimiter::clear($throttleKey);
-                $request->session()->regenerate();
-
-                $user = Auth::guard('web')->user();
-                activity()
-                    ->causedBy($user)
-                    ->performedOn($user)
-                    ->withProperties([
-                        'user' => $user->name,
-                        'email' => $user->email,
-                    ])
-                    ->log('Login ke sistem');
-
-                return redirect()->intended(route('dashboard'));
-            }
-
-            if (Auth::guard('member')->attempt(['username' => $data['identifier'], 'password' => $data['password']], $remember)) {
+            // Username (juga jadi cadangan kalau ada username yang isinya angka semua)
+            if ($guard->attempt(['username' => $identifier, 'password' => $data['password']], $remember)) {
                 RateLimiter::clear($throttleKey);
                 return $this->redirectSetelahLoginMember($request);
             }
@@ -294,7 +267,7 @@ class AuthController extends Controller
             RateLimiter::hit($throttleKey, 60);
 
             return back()
-                ->withErrors(['identifier' => 'Username atau kata sandi salah.'])
+                ->withErrors(['identifier' => 'Username/nomor HP atau kata sandi salah.'])
                 ->onlyInput('identifier');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
