@@ -11,7 +11,7 @@ class Member extends Authenticatable
 {
     use Notifiable, LogsActivity;
 
-    protected $fillable = ['kode_member', 'nama', 'username', 'no_hp', 'email', 'foto', 'poin', 'password'];
+    protected $fillable = ['kode_member', 'nama', 'username', 'no_hp', 'email', 'foto', 'poin', 'password', 'google_id'];
 
     protected $hidden = ['password', 'remember_token'];
 

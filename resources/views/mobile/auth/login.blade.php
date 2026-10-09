@@ -201,6 +201,10 @@
                             Continue
                         </button>
                     </form>
+
+                    @if (($mode ?? null) !== 'admin')
+                        @include('mobile.auth._google-button')
+                    @endif
                 </div>
             </div>
 

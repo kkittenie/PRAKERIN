@@ -323,6 +323,8 @@
                         </div>
                     </div>
                 </form>
+
+                @include('mobile.auth._google-button')
             </div>
 
             {{-- Bottom Notice / Links --}}

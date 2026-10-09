@@ -2,6 +2,11 @@
 
 @section('content')
 
+    @php
+        $langsungBuat = $belumPunyaPassword ?? false; // akun Google tanpa password
+        $mulaiStep2 = $langsungBuat || $errors->has('password_baru');
+    @endphp
+
     <style>
         @keyframes stepEnterFromRight {
             0% { opacity: 0; transform: translateX(24px); }
@@ -29,7 +34,8 @@
     {{-- MOBILE VIEW (< 1024px) - 100% UNTOUCHED ORIGINAL --}}
     {{-- ========================================== --}}
     <div class="lg:hidden" x-data="{
-            step: {{ $errors->has('password_baru') ? 2 : 1 }},
+            step: {{ $mulaiStep2 ? 2 : 1 }},
+            tanpaPasswordLama: @js($langsungBuat),
             passwordLama: @js(old('password_lama', '')),
             errorLama: '',
             memverifikasi: false,
@@ -100,23 +106,25 @@
 
         <div class="-mt-6 flex flex-none items-center justify-between px-0 pt-6">
             <button type="button"
-                @click="if (step === 2) { gotoStep(1, 'back'); } else { window.location.href = '{{ route('member.settings.index') }}'; }"
+                @click="if (step === 2 && !tanpaPasswordLama) { gotoStep(1, 'back'); } else { window.location.href = '{{ route('member.settings.index') }}'; }"
                 class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-brand-800 text-brand-800">
                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
                     <path d="m14 6-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
                         stroke-linejoin="round" />
                 </svg>
             </button>
-            <h1 class="text-base font-extrabold text-brand-800">Change Password</h1>
+            <h1 class="text-base font-extrabold text-brand-800">{{ $langsungBuat ? 'Buat Password' : 'Change Password' }}</h1>
             <span class="w-8"></span>
         </div>
 
+        @unless ($langsungBuat)
         <div class="mt-6 flex items-center gap-2 px-0.5">
             <span class="h-1.5 flex-1 rounded-full transition-colors duration-300" :class="step >= 1 ? 'bg-brand-800' : 'bg-gray-100'"></span>
             <span class="h-1.5 flex-1 rounded-full transition-colors duration-300" :class="step >= 2 ? 'bg-brand-800' : 'bg-gray-100'"></span>
         </div>
+        @endunless
 
-        <div x-ref="step1" class="mt-7 {{ $errors->has('password_baru') ? 'hidden' : '' }}">
+        <div x-ref="step1" class="mt-7 {{ $mulaiStep2 ? 'hidden' : '' }}">
             <p class="text-sm text-gray-500">Masukkan password lama kamu untuk melanjutkan.</p>
 
             <div class="mt-5">
@@ -147,13 +155,14 @@
             </button>
         </div>
 
-        <div x-ref="step2" class="mt-7 {{ $errors->has('password_baru') ? '' : 'hidden' }}">
-            <p class="text-sm text-gray-500">Password lama terverifikasi. Sekarang buat password baru kamu.</p>
+        <div x-ref="step2" class="mt-7 {{ $mulaiStep2 ? '' : 'hidden' }}">
 
             <form method="POST" action="{{ route('member.settings.ubah-password.update') }}" class="mt-5 space-y-4"
                 @submit="menyimpan = true">
                 @csrf
-                <input type="hidden" name="password_lama" :value="passwordLama">
+                @unless ($langsungBuat)
+                    <input type="hidden" name="password_lama" :value="passwordLama">
+                @endunless
 
                 <div>
                     <label for="password_baru" class="text-xs font-semibold text-gray-500">Password Baru</label>
@@ -215,7 +224,8 @@
     {{-- ========================================== --}}
     <div class="hidden lg:block lg:max-w-xl lg:mx-auto lg:my-6 lg:bg-white lg:rounded-3xl lg:border lg:border-gray-200/80 lg:shadow-xl lg:p-8"
         x-data="{
-            step: {{ $errors->has('password_baru') ? 2 : 1 }},
+            step: {{ $mulaiStep2 ? 2 : 1 }},
+            tanpaPasswordLama: @js($langsungBuat),
             passwordLama: @js(old('password_lama', '')),
             errorLama: '',
             memverifikasi: false,
@@ -287,14 +297,15 @@
         {{-- Desktop Header Bar --}}
         <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
             <button type="button"
-                @click="if (step === 2) { gotoStep(1, 'back'); } else { window.location.href = '{{ route('member.settings.index') }}'; }"
+                @click="if (step === 2 && !tanpaPasswordLama) { gotoStep(1, 'back'); } else { window.location.href = '{{ route('member.settings.index') }}'; }"
                 class="inline-flex items-center gap-2 text-xs font-extrabold text-gray-600 hover:text-brand-800 transition">
                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 Kembali ke Pengaturan
             </button>
-            <h1 class="text-sm font-extrabold uppercase tracking-wider text-brand-800">Ubah Kata Sandi</h1>
+            <h1 class="text-sm font-extrabold uppercase tracking-wider text-brand-800">{{ $langsungBuat ? 'Buat Kata Sandi' : 'Ubah Kata Sandi' }}</h1>
         </div>
 
+        @unless ($langsungBuat)
         {{-- Step Indicator Bar --}}
         <div class="space-y-1.5">
             <div class="flex items-center justify-between text-xs font-bold text-gray-600">
@@ -306,9 +317,10 @@
                 <span class="h-2 flex-1 rounded-full transition-colors duration-300" :class="step >= 2 ? 'bg-brand-800' : 'bg-gray-200'"></span>
             </div>
         </div>
+        @endunless
 
         {{-- ==================== STEP 1: PASSWORD LAMA ==================== --}}
-        <div x-ref="stepDesk1" class="mt-7 {{ $errors->has('password_baru') ? 'hidden' : '' }}">
+        <div x-ref="stepDesk1" class="mt-7 {{ $mulaiStep2 ? 'hidden' : '' }}">
             <p class="text-xs text-gray-500 font-medium">Masukkan password lama kamu untuk melanjutkan proses perubahan password.</p>
 
             <div class="mt-5">
@@ -343,13 +355,14 @@
         </div>
 
         {{-- ==================== STEP 2: PASSWORD BARU ==================== --}}
-        <div x-ref="stepDesk2" class="mt-7 {{ $errors->has('password_baru') ? '' : 'hidden' }}">
-            <p class="text-xs text-gray-500 font-medium">Password lama terverifikasi. Sekarang buat password baru kamu.</p>
+        <div x-ref="stepDesk2" class="mt-7 {{ $mulaiStep2 ? '' : 'hidden' }}">
 
             <form method="POST" action="{{ route('member.settings.ubah-password.update') }}" class="mt-5 space-y-4"
                 @submit="menyimpan = true">
                 @csrf
-                <input type="hidden" name="password_lama" :value="passwordLama">
+                @unless ($langsungBuat)
+                    <input type="hidden" name="password_lama" :value="passwordLama">
+                @endunless
 
                 <div>
                     <label for="password_baru_desk" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Password Baru</label>

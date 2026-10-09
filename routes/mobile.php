@@ -7,6 +7,7 @@ use App\Http\Controllers\Mobile\PromoEventController;
 use App\Http\Controllers\Mobile\PromoStatusController;
 use App\Http\Controllers\Mobile\CheckoutController;
 use App\Http\Controllers\Mobile\DashboardController;
+use App\Http\Controllers\Mobile\GoogleAuthController;
 use App\Http\Controllers\Mobile\KeranjangController;
 use App\Http\Controllers\Mobile\KontenController;
 use App\Http\Controllers\Mobile\MenuController;
@@ -30,6 +31,12 @@ use Illuminate\Support\Facades\Route;
 
         // URL lama /masuk tetap jalan, diarahkan ke /login
         Route::redirect('/masuk', '/login');
+
+        // Login / daftar dengan Google (khusus pelanggan)
+        Route::middleware('guest:member')->group(function () {
+            Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
+            Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
+        });
     });
 
     Route::prefix('mobile')->name('member.')->group(function () {
