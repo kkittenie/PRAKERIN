@@ -36,6 +36,12 @@ use Illuminate\Support\Facades\Route;
         Route::middleware('guest:member')->group(function () {
             Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
             Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
+
+            // Akun Google belum terdaftar -> lengkapi data dulu (alur ala GitHub)
+            Route::get('/auth/google/daftar', [GoogleAuthController::class, 'tampilkanRegister'])->name('google.register');
+            Route::post('/auth/google/daftar', [GoogleAuthController::class, 'register'])->name('google.register.store');
+            Route::get('/auth/google/cek-username', [GoogleAuthController::class, 'cekUsername'])->name('google.username');
+            Route::get('/auth/google/batal', [GoogleAuthController::class, 'batal'])->name('google.batal');
         });
     });
 

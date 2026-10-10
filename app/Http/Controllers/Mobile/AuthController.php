@@ -191,7 +191,7 @@ class AuthController extends Controller
             Auth::guard('member')->login($member);
             $request->session()->regenerate();
 
-            return redirect()->route('member.beranda')->with('success', 'Selamat datang, ' . $member->nama . '! Akun member Saisho kamu sudah aktif.');
+            return redirect()->route('member.beranda')->with('success', 'Selamat datang, ' . $member->nama . '!');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
