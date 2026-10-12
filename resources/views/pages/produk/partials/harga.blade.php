@@ -1,12 +1,15 @@
-@if($item->punya_ukuran)
-    @php $daftar = $item->daftar_ukuran; @endphp
-    @if(count($daftar))
-        @foreach($daftar as $u)
-            <div class="text-xs font-medium text-gray-500">{{ $u['nama'] }}: <span class="font-bold text-amber-700 dark:text-amber-400 text-sm">Rp {{ number_format($u['harga'], 0, ',', '.') }}</span></div>
-        @endforeach
+@php $varians = $item->produkVarians; @endphp
+@if($varians->isNotEmpty())
+    @php
+        $hargaMin = $varians->min('harga_jual');
+        $hargaMax = $varians->max('harga_jual');
+    @endphp
+    @if($hargaMin == $hargaMax)
+        Rp {{ number_format($hargaMin, 0, ',', '.') }}
     @else
-        <span class="text-xs text-gray-400 italic">Belum ada ukuran</span>
+        Rp {{ number_format($hargaMin, 0, ',', '.') }} &ndash; Rp {{ number_format($hargaMax, 0, ',', '.') }}
     @endif
+    <div class="text-[11px] font-medium text-gray-400">{{ $varians->count() }} varian</div>
 @else
     Rp {{ number_format($item->harga_jual, 0, ',', '.') }}
 @endif

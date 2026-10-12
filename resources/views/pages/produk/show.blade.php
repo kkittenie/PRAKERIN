@@ -47,17 +47,16 @@
                         </p>
                     </div>
 
+                    @php $varians = $produk->produkVarians; @endphp
+
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Harga Jual</p>
                         <p class="font-semibold text-green-600 dark:text-green-400">
-                            @if($produk->punya_ukuran)
-                                @php $daftar = $produk->daftar_ukuran; @endphp
-                                @if(count($daftar))
-                                    @foreach($daftar as $u)
-                                        <span class="block">{{ $u['nama'] }}: Rp {{ number_format($u['harga'], 0, ',', '.') }}</span>
-                                    @endforeach
+                            @if($varians->isNotEmpty())
+                                @if($varians->min('harga_jual') == $varians->max('harga_jual'))
+                                    Rp {{ number_format($varians->min('harga_jual'), 0, ',', '.') }}
                                 @else
-                                    <span class="text-xs text-gray-400 italic font-normal">Belum ada ukuran</span>
+                                    Rp {{ number_format($varians->min('harga_jual'), 0, ',', '.') }} &ndash; Rp {{ number_format($varians->max('harga_jual'), 0, ',', '.') }}
                                 @endif
                             @else
                                 Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}
@@ -68,14 +67,11 @@
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Harga Modal</p>
                         <p class="font-semibold text-gray-800 dark:text-white">
-                            @if($produk->punya_ukuran)
-                                @php $daftar = $produk->daftar_ukuran; @endphp
-                                @if(count($daftar))
-                                    @foreach($daftar as $u)
-                                        <span class="block">{{ $u['nama'] }}: Rp {{ number_format($u['harga_modal'], 0, ',', '.') }}</span>
-                                    @endforeach
+                            @if($varians->isNotEmpty())
+                                @if($varians->min('harga_modal') == $varians->max('harga_modal'))
+                                    Rp {{ number_format($varians->min('harga_modal'), 0, ',', '.') }}
                                 @else
-                                    <span class="text-xs text-gray-400 italic font-normal">Belum ada ukuran</span>
+                                    Rp {{ number_format($varians->min('harga_modal'), 0, ',', '.') }} &ndash; Rp {{ number_format($varians->max('harga_modal'), 0, ',', '.') }}
                                 @endif
                             @else
                                 Rp {{ number_format($produk->harga_modal, 0, ',', '.') }}
@@ -85,18 +81,12 @@
 
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Stok</p>
-                        @if($produk->punya_ukuran)
-                            @php $daftar = $produk->daftar_ukuran; @endphp
-                            @if(count($daftar))
-                                @foreach($daftar as $u)
-                                    <p class="font-semibold {{ $u['stok'] <= $u['stok_minimum'] ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                                        {{ $u['nama'] }}: {{ $u['stok'] }}
-                                        <span class="text-gray-400 font-normal text-xs">(Min: {{ $u['stok_minimum'] }})</span>
-                                    </p>
-                                @endforeach
-                            @else
-                                <p class="text-xs text-gray-400 italic">Belum ada ukuran</p>
-                            @endif
+                        @if($varians->isNotEmpty())
+                            @php $totalStok = (int) $varians->sum('stok'); $totalMin = (int) $varians->sum('stok_minimum'); @endphp
+                            <p class="font-semibold {{ $totalStok <= $totalMin ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                                {{ $totalStok }}
+                                <span class="text-gray-400 font-normal text-xs">(Total {{ $varians->count() }} varian)</span>
+                            </p>
                         @else
                             <p class="font-semibold {{ $produk->stok <= $produk->stok_minimum ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
                                 {{ $produk->stok }}
@@ -123,72 +113,72 @@
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Ketersediaan</p>
                         <div class="mt-0.5">
-                            @if($produk->punya_ukuran)
-                                <div class="flex flex-col gap-1.5">
-                                    @forelse($produk->daftar_ukuran as $opsiUkuran)
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 w-16 truncate" title="{{ $opsiUkuran['nama'] }}">{{ $opsiUkuran['nama'] }}:</span>
-                                            @if($opsiUkuran['perlu_produksi'])
-                                                <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
-                                                    ⚠ Perlu Diproduksi
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                                                    ✓ {{ $opsiUkuran['stok'] }} tersedia
-                                                </span>
-                                            @endif
-                                        </div>
-                                    @empty
-                                        <p class="text-xs italic text-gray-400 dark:text-gray-500">Belum ada ukuran aktif untuk produk ini.</p>
-                                    @endforelse
-                                </div>
-                            @else
-                                @if($produk->stok <= 0 || $produk->status_ketersediaan == 'perlu_diproduksi')
-                                    <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
-                                        ⚠ Perlu Diproduksi
-                                    </span>
+                            @if($varians->isNotEmpty())
+                                @php $jumlahHabis = $varians->filter(fn ($v) => $v->perlu_diproduksi)->count(); @endphp
+                                @if($jumlahHabis === $varians->count())
+                                    <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">⚠ Perlu Diproduksi</span>
+                                @elseif($jumlahHabis > 0)
+                                    <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">{{ $jumlahHabis }} varian habis</span>
                                 @else
-                                    <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                                        ✓ Stok Ada
-                                    </span>
+                                    <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">✓ Semua varian tersedia</span>
                                 @endif
+                            @elseif($produk->stok <= 0 || $produk->status_ketersediaan == 'perlu_diproduksi')
+                                <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">⚠ Perlu Diproduksi</span>
+                            @else
+                                <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">✓ Stok Ada</span>
                             @endif
                         </div>
                     </div>
 
-                    @if($produk->punya_varian_rasa)
+                    @if($varians->isNotEmpty())
                     <div class="sm:col-span-2">
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Varian Rasa</p>
-                        <div class="flex flex-wrap gap-2">
-                            @forelse($produk->produkVarianRasas as $pvr)
-                                @if($pvr->varianRasa)
-                                    <div class="inline-flex items-center gap-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1.5 pr-3">
-                                        @if($pvr->varianRasa->gambar)
-                                            <img src="{{ asset('storage/' . $pvr->varianRasa->gambar) }}" alt="{{ $pvr->varianRasa->nama_rasa }}" class="w-7 h-7 rounded-md object-cover">
-                                        @else
-                                            <div class="w-7 h-7 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-bold flex items-center justify-center">
-                                                {{ strtoupper(substr($pvr->varianRasa->nama_rasa, 0, 2)) }}
-                                            </div>
-                                        @endif
-                                        <div>
-                                            <span class="block text-xs font-semibold text-gray-800 dark:text-gray-200">{{ $pvr->varianRasa->nama_rasa }}</span>
-                                            @if($produk->punya_ukuran)
-                                                @php $stokRasa = $produk->produkUkuranRasas->where('varian_rasa_id', $pvr->varian_rasa_id); @endphp
-                                                <span class="block text-[11px] text-gray-500 dark:text-gray-400">
-                                                    @foreach($produk->produkUkurans as $pu)
-                                                        @php $baris = $stokRasa->firstWhere('ukuran_id', $pu->ukuran_id); @endphp
-                                                        {{ $pu->ukuran->nama_ukuran ?? '-' }}: {{ $baris->stok ?? 0 }}{{ $loop->last ? '' : ' · ' }}
-                                                    @endforeach
-                                                </span>
-                                            @else
-                                                <span class="block text-[11px] text-gray-500 dark:text-gray-400">Stok: {{ $pvr->stok }} (Min: {{ $pvr->stok_minimum }})</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endif
-                            @empty
-                                <p class="text-xs italic text-gray-400">Belum ada varian rasa.</p>
-                            @endforelse
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Daftar Varian</p>
+                        <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-50 dark:bg-gray-800/60">
+                                    <tr class="text-left text-gray-500 dark:text-gray-400">
+                                        <th class="py-2 px-3 w-16">Foto</th>
+                                        <th class="py-2 px-3">Ukuran</th>
+                                        <th class="py-2 px-3">Variasi</th>
+                                        <th class="py-2 px-3">Kode</th>
+                                        <th class="py-2 px-3">Harga Modal</th>
+                                        <th class="py-2 px-3">Harga Jual</th>
+                                        <th class="py-2 px-3">Stok</th>
+                                        <th class="py-2 px-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($varians as $v)
+                                        <tr class="border-t border-gray-100 dark:border-gray-800 {{ $v->status_aktif ? '' : 'opacity-50' }}">
+                                            <td class="py-2 px-3">
+                                                @if($v->foto_url)
+                                                    <img src="{{ $v->foto_url }}" alt="Foto varian" class="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700">
+                                                @else
+                                                    <div class="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 text-xs bg-gray-50 dark:bg-gray-800">-</div>
+                                                @endif
+                                            </td>
+                                            <td class="py-2 px-3 font-semibold text-gray-800 dark:text-gray-200">{{ $v->ukuran ?? '-' }}</td>
+                                            <td class="py-2 px-3 font-semibold text-gray-800 dark:text-gray-200">{{ $v->variasi ?? '-' }}</td>
+                                            <td class="py-2 px-3 font-mono text-xs text-gray-500">{{ $v->kode_barcode }}</td>
+                                            <td class="py-2 px-3">Rp {{ number_format($v->harga_modal, 0, ',', '.') }}</td>
+                                            <td class="py-2 px-3 font-semibold text-green-600 dark:text-green-400">Rp {{ number_format($v->harga_jual, 0, ',', '.') }}</td>
+                                            <td class="py-2 px-3">
+                                                <span class="font-semibold {{ $v->stok <= $v->stok_minimum ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">{{ $v->stok }}</span>
+                                                <span class="text-gray-400 text-xs">(Min: {{ $v->stok_minimum }})</span>
+                                            </td>
+                                            <td class="py-2 px-3">
+                                                @if(!$v->status_aktif)
+                                                    <span class="inline-flex rounded-full bg-gray-100 dark:bg-gray-700/50 px-2.5 py-0.5 text-xs font-bold text-gray-600 dark:text-gray-400">Nonaktif</span>
+                                                @elseif($v->perlu_diproduksi)
+                                                    <span class="inline-flex rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">Habis</span>
+                                                @else
+                                                    <span class="inline-flex rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">Tersedia</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                     @endif

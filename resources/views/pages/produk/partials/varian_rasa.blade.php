@@ -1,17 +1,17 @@
-@if($item->punya_varian_rasa && $item->produkVarianRasas->isNotEmpty())
-    @php
-        $rasaList = $item->produkVarianRasas
-            ->filter(fn($pvr) => $pvr->varianRasa)
-            ->pluck('varianRasa.nama_rasa')
-            ->toArray();
-    @endphp
-    @if(count($rasaList))
-        <span class="text-xs text-gray-700 dark:text-gray-300 font-medium leading-snug">
-            {{ implode(', ', $rasaList) }}
-        </span>
-    @else
-        <span class="text-xs text-gray-400 italic">-</span>
-    @endif
+@php
+    $varians = $item->produkVarians;
+    $daftarUkuran = $varians->pluck('ukuran')->filter()->unique()->values();
+    $daftarVariasi = $varians->pluck('variasi')->filter()->unique()->values();
+@endphp
+@if($daftarUkuran->isNotEmpty() || $daftarVariasi->isNotEmpty())
+    <div class="text-xs leading-snug text-left">
+        @if($daftarUkuran->isNotEmpty())
+            <div class="text-gray-700 dark:text-gray-300 font-medium"><span class="text-gray-400">Ukuran:</span> {{ $daftarUkuran->implode(', ') }}</div>
+        @endif
+        @if($daftarVariasi->isNotEmpty())
+            <div class="text-gray-700 dark:text-gray-300 font-medium"><span class="text-gray-400">Variasi:</span> {{ $daftarVariasi->implode(', ') }}</div>
+        @endif
+    </div>
 @else
     <span class="text-xs text-gray-400 italic">-</span>
 @endif

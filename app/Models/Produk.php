@@ -77,6 +77,11 @@ class Produk extends Model
         return $this->hasMany(ProdukUkuranRasa::class, 'produk_id');
     }
 
+    public function produkVarians()
+    {
+        return $this->hasMany(ProdukVarian::class, 'produk_id')->orderBy('urutan')->orderBy('id');
+    }
+
     public function produksi()
     {
         return $this->hasMany(Produksi::class);
