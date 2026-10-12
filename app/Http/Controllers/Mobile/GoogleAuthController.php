@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Mobile;
 
 use App\Http\Controllers\Controller;
 use App\Models\Member;
+use App\Models\OtpVerification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password;
 use Laravel\Socialite\Facades\Socialite;
 
 /**
@@ -97,17 +97,37 @@ class GoogleAuthController extends Controller
         $data = $request->validate([
             'nama'     => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-zA-Z0-9_.]+$/', 'unique:members,username'],
-            'password' => ['required', 'confirmed', Password::min(6)],
+            'no_hp'    => ['required', 'string', 'max:20'],
+            'otp'      => ['required', 'string', 'size:6'],
         ], [
             'nama.required'     => 'Nama wajib diisi.',
             'username.required' => 'Username wajib diisi.',
             'username.min'      => 'Username minimal 3 karakter.',
             'username.regex'    => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi).',
             'username.unique'   => 'Username ini sudah dipakai. Coba username lain.',
-            'password.required'  => 'Buat kata sandi dulu ya.',
-            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
-            'password.min'       => 'Kata sandi minimal 6 karakter.',
+            'no_hp.required'    => 'Nomor HP wajib diisi.',
+            'otp.required'      => 'Kode OTP wajib diisi.',
+            'otp.size'          => 'Kode OTP harus 6 digit.',
         ]);
+
+        $noHp = Member::normalizeNoHp($data['no_hp']);
+
+        if (Member::where('no_hp', $noHp)->exists()) {
+            return back()->withErrors(['no_hp' => 'Nomor HP ini sudah terdaftar. Gunakan nomor lain atau langsung masuk.'])->withInput();
+        }
+
+        $otpVerification = OtpVerification::where('no_hp', $noHp)
+            ->where('otp', $data['otp'])
+            ->where('is_used', true)
+            ->latest()
+            ->first();
+
+        if (! $otpVerification || $otpVerification->isExpired()) {
+            return back()->withErrors(['otp' => 'Kode OTP tidak valid atau sudah kadaluarsa. Silakan minta kode OTP baru.'])->withInput();
+        }
+
+        // Nomor HP format lokal (diawali angka 0, contoh: 088xxxx) dijadikan password awal member
+        $localNoHp = Member::toLocalNoHp($noHp);
 
         // Jaga-jaga: akun dengan google_id/email ini sudah dibuat sejak callback (mis. tab ganda)
         $member = Member::where('google_id', $g['google_id'])->first();
@@ -117,17 +137,26 @@ class GoogleAuthController extends Controller
                 'nama'      => $data['nama'],
                 'username'  => $data['username'],
                 'email'     => $g['email'],
+                'no_hp'     => $noHp,
                 'google_id' => $g['google_id'],
                 'poin'      => 0,
-                'password'  => $data['password'], // di-hash otomatis oleh cast 'hashed' di model Member
+                'password'  => $localNoHp, // di-hash otomatis oleh cast 'hashed' di model Member
             ]);
 
             $member->update(['kode_member' => Member::generateKodeMember($member->id)]);
+        } else {
+            $member->update([
+                'nama'      => $data['nama'],
+                'username'  => $data['username'],
+                'no_hp'     => $noHp,
+                'password'  => $localNoHp,
+            ]);
         }
 
+        OtpVerification::where('no_hp', $noHp)->delete();
         $request->session()->forget(self::SESSION_KEY);
 
-        return $this->loginMember($request, $member, 'Selamat datang, ' . $member->nama . '!');
+        return $this->loginMember($request, $member, 'Selamat datang, ' . $member->nama . '! Akun kamu berhasil didaftarkan.');
     }
 
     /** Batalkan pendaftaran Google (tombol "Batal"). */
