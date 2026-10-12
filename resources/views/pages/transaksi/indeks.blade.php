@@ -314,14 +314,14 @@
                                                     </template>
                                                     <template x-if="!tidakAdaUkuranAktif(produk) && butuhProduksi(produk)">
                                                         <span
-                                                            class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu
-                                                            Diproduksi</span>
+                                                            class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs"
+                                                            x-text="'Perlu Diproduksi'"></span>
                                                     </template>
                                                 </div>
                                                 <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                                     :class="!butuhProduksi(produk) && !tidakAdaUkuranAktif(produk) && produk.stok > 0 && produk.stok <= produk.stok_minimum ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'">
                                                     <span
-                                                        x-text="tidakAdaUkuranAktif(produk) ? 'Belum ada ukuran' : (butuhProduksi(produk) ? 'Perlu Diproduksi' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok))"></span>
+                                                        x-text="tidakAdaUkuranAktif(produk) ? (produk.punya_varian ? 'Belum ada varian' : 'Belum ada ukuran') : (butuhProduksi(produk) ? 'Perlu Diproduksi' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok))"></span>
                                                 </div>
                                             </div>
                                             <div class="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -365,12 +365,16 @@
                                                     </div>
                                                     <div class="flex items-center justify-between">
                                                         <div class="flex flex-col">
-                                                            <template x-if="produk.punya_ukuran == 1 || produk.punya_ukuran === true">
+                                                            <template x-if="produk.punya_varian === true">
+                                                                <span class="font-bold text-amber-700 dark:text-amber-400 text-xs"
+                                                                    x-text="rentangHarga(produk)"></span>
+                                                            </template>
+                                                            <template x-if="produk.punya_varian !== true && (produk.punya_ukuran == 1 || produk.punya_ukuran === true)">
                                                                 <span class="font-bold text-amber-700 dark:text-amber-400 text-xs">
                                                                     Pilih Ukuran…
                                                                 </span>
                                                             </template>
-                                                            <template x-if="!(produk.punya_ukuran == 1 || produk.punya_ukuran === true)">
+                                                            <template x-if="produk.punya_varian !== true && !(produk.punya_ukuran == 1 || produk.punya_ukuran === true)">
                                                                 <span class="font-bold text-amber-700 dark:text-amber-400 text-sm"
                                                                     x-text="formatRupiah(produk.promo_aktif ? produk.harga_diskon : produk.harga_jual)"></span>
                                                             </template>
@@ -1056,7 +1060,7 @@
                                             <template x-if="item.varian_rasa">
                                                 <span
                                                     class="shrink-0 text-[9px] font-bold text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-1.5 py-0.5 rounded-full border border-purple-300 dark:border-purple-700/50"
-                                                    x-text="'Rasa: ' + item.varian_rasa"></span>
+                                                    x-text="(item.varian_id ? 'Variasi: ' : 'Rasa: ') + item.varian_rasa"></span>
                                             </template>
                                             <template x-if="item.is_reward_stamp">
                                                 <span
@@ -1367,6 +1371,9 @@
                                         <span x-text="item.nama_produk"></span>
                                         <template x-if="item.ukuran">
                                             <span class="text-amber-600 dark:text-amber-400 font-extrabold text-[10px] ml-1" x-text="'(' + item.ukuran + ')'"></span>
+                                        </template>
+                                        <template x-if="item.varian_id && item.varian_rasa">
+                                            <span class="text-purple-600 dark:text-purple-400 font-extrabold text-[10px] ml-1" x-text="'(' + item.varian_rasa + ')'"></span>
                                         </template>
                                     </p>
                                     <p class="text-xxs text-gray-400 dark:text-gray-500">
@@ -1830,6 +1837,114 @@
             </div>
         </div>
 
+        <!-- ========== MODAL: PILIH UKURAN & VARIASI (ala Shopee/Tokopedia) ========== -->
+        <div x-show="modalVarianTerbuka"
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4"
+            x-transition x-cloak @keydown.escape.window="tutupModalVarian()">
+            <div @click.away="tutupModalVarian()"
+                class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh]">
+
+                <!-- Header: foto, harga, stok -->
+                <div class="p-4 flex items-start gap-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                    <div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shrink-0">
+                        <img :src="getFotoUrl(fotoModalVarian)" x-on:error="handleFotoError($event)"
+                            class="w-full h-full object-cover" alt="Foto produk">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold text-gray-500 dark:text-gray-400 truncate"
+                            x-text="modalVarianProduk ? modalVarianProduk.nama_produk : ''"></p>
+                        <template x-if="varianTerpilihModal && varianTerpilihModal.sedang_promo">
+                            <p class="text-[11px] text-gray-400 line-through mt-1"
+                                x-text="formatRupiah(varianTerpilihModal.harga_asli)"></p>
+                        </template>
+                        <p class="font-extrabold text-lg text-amber-700 dark:text-amber-400 leading-tight"
+                            x-text="teksHargaModalVarian"></p>
+                        <p class="text-xs mt-1 font-medium"
+                            :class="varianTerpilihModal ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'"
+                            x-text="varianTerpilihModal ? (sisaStokVarian(varianTerpilihModal) > 0 ? ('Stok: ' + sisaStokVarian(varianTerpilihModal)) : 'Stok habis — Perlu Diproduksi') : 'Pilih varian untuk melihat stok'"></p>
+                    </div>
+                    <button type="button" @click="tutupModalVarian()"
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-bold text-2xl leading-none shrink-0">&times;</button>
+                </div>
+
+                <div class="p-4 flex flex-col gap-5 overflow-y-auto">
+                    <!-- Ukuran -->
+                    <div x-show="opsiUkuranModal.length > 0">
+                        <p class="text-xs font-bold text-gray-800 dark:text-gray-200 mb-2">
+                            Ukuran
+                            <span class="font-medium text-gray-400" x-show="!pilihanUkuranModal">— pilih salah satu</span>
+                            <span class="font-medium text-amber-700 dark:text-amber-400" x-show="pilihanUkuranModal" x-text="'· ' + pilihanUkuranModal"></span>
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="u in opsiUkuranModal" :key="'u-' + u">
+                                <button type="button" @click="pilihUkuranModal(u)" :disabled="!ukuranTersedia(u)"
+                                    :title="ukuranTersedia(u) ? '' : 'Nonaktif'"
+                                    class="px-4 py-2 rounded-xl border-2 text-xs font-bold transition-colors"
+                                    :class="pilihanUkuranModal === u
+                                        ? 'border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'
+                                        : (ukuranTersedia(u)
+                                            ? 'border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:border-amber-400 cursor-pointer'
+                                            : 'border-dashed border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600 cursor-not-allowed')"
+                                    :style="ukuranTersedia(u) ? '' : 'opacity:.45;background:#f3f4f6;text-decoration:line-through;'">
+                                    <span x-text="u"></span>
+                                    <span x-show="ukuranTersedia(u) && ukuranHabis(u)" class="block text-[9px] font-semibold text-amber-600 dark:text-amber-400">Perlu Diproduksi</span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Variasi -->
+                    <div x-show="opsiVariasiModal.length > 0">
+                        <p class="text-xs font-bold text-gray-800 dark:text-gray-200 mb-2">
+                            Variasi
+                            <span class="font-medium text-gray-400" x-show="!pilihanVariasiModal">— pilih salah satu</span>
+                            <span class="font-medium text-amber-700 dark:text-amber-400" x-show="pilihanVariasiModal" x-text="'· ' + pilihanVariasiModal"></span>
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="v in opsiVariasiModal" :key="'v-' + v">
+                                <button type="button" @click="pilihVariasiModal(v)" :disabled="!variasiTersedia(v)"
+                                    :title="variasiTersedia(v) ? '' : 'Nonaktif'"
+                                    class="px-3 py-2 rounded-xl border-2 text-xs font-bold transition-colors flex items-center gap-2"
+                                    :class="pilihanVariasiModal === v
+                                        ? 'border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'
+                                        : (variasiTersedia(v)
+                                            ? 'border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:border-amber-400 cursor-pointer'
+                                            : 'border-dashed border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600 cursor-not-allowed')"
+                                    :style="variasiTersedia(v) ? '' : 'opacity:.45;background:#f3f4f6;text-decoration:line-through;'">
+                                    <template x-if="fotoVariasiModal(v)">
+                                        <img :src="fotoVariasiModal(v)" class="w-6 h-6 rounded object-cover" alt="">
+                                    </template>
+                                    <span x-text="v"></span>
+                                    <span x-show="variasiTersedia(v) && variasiHabis(v)" class="text-[9px] font-semibold text-amber-600 dark:text-amber-400">Perlu Diproduksi</span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Jumlah -->
+                    <p x-show="varianTerpilihModal && qtyModalVarian > sisaStokVarian(varianTerpilihModal)" class="text-[11px] font-medium text-amber-700 dark:text-amber-400 -mb-3"
+                        x-text="(qtyModalVarian - sisaStokVarian(varianTerpilihModal)) + ' pcs akan masuk Perlu Diproduksi'"></p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-gray-800 dark:text-gray-200">Jumlah</span>
+                        <div class="flex items-center gap-3">
+                            <button type="button" @click="kurangiQtyModalVarian()" :disabled="qtyModalVarian <= 1"
+                                class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 transition active:scale-90 disabled:opacity-30">-</button>
+                            <span class="w-6 text-center text-sm font-bold text-gray-900 dark:text-white" x-text="qtyModalVarian"></span>
+                            <button type="button" @click="tambahQtyModalVarian()"
+                                :disabled="!varianTerpilihModal"
+                                class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-700 text-white transition active:scale-90 disabled:opacity-30">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 shrink-0">
+                    <button type="button" @click="konfirmasiModalVarian()" :disabled="!varianTerpilihModal"
+                        class="w-full py-3 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-extrabold text-sm transition shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                        x-text="varianTerpilihModal ? ('Tambah ke Keranjang · ' + formatRupiah((varianTerpilihModal.sedang_promo ? varianTerpilihModal.harga_diskon : varianTerpilihModal.harga) * qtyModalVarian)) : teksTombolPilihVarian"></button>
+                </div>
+            </div>
+        </div>
+
         <!-- ========== MODAL: PILIH VARIAN RASA BUNDLING KHUSUS ========== -->
         <div x-show="modalVarianBundlingTerbuka"
             class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4"
@@ -1987,6 +2102,11 @@
                 modalPilihPromoTerbuka: false,
                 modalPilihUkuranTerbuka: false,
                 modalPilihVarianTerbuka: false,
+                modalVarianTerbuka: false,
+                modalVarianProduk: null,
+                pilihanUkuranModal: null,
+                pilihanVariasiModal: null,
+                qtyModalVarian: 1,
                 stepModalVarian: 1,
                 rasaTerpilihModal: null,
                 ukuranTerpilihModal: null,
@@ -2318,6 +2438,230 @@
                     return produk.status_ketersediaan === 'perlu_diproduksi' || this.stokUntukUkuran(produk, null) <= 0;
                 },
 
+                // ===== Varian produk (tabel produk_varians) — pemilih ala Shopee/Tokopedia =====
+                adaVarian(produk) {
+                    return !!produk && !produk.is_bundling && produk.punya_varian === true;
+                },
+
+                // Semua varian (termasuk nonaktif) dan hanya yang aktif.
+                daftarVarianProduk(produk) {
+                    return (produk && produk.daftar_varian) ? produk.daftar_varian : [];
+                },
+                daftarVarianAktif(produk) {
+                    return this.daftarVarianProduk(produk).filter(v => v.aktif);
+                },
+
+                cariVarian(produkId, varianId) {
+                    const p = this.daftarProduk.find(x => x.id === produkId);
+                    return p ? this.daftarVarianProduk(p).find(v => v.id === varianId) || null : null;
+                },
+
+                // Stok ready varian dikurangi jumlah (ready) yang sudah ada di keranjang.
+                sisaStokVarian(varian) {
+                    if (!varian) return 0;
+                    const dikeranjang = this.keranjang
+                        .filter(i => i.varian_id === varian.id && !i.butuh_produksi)
+                        .reduce((sum, i) => sum + (parseInt(i.jumlah) || 0), 0);
+                    return Math.max(0, (parseInt(varian.stok) || 0) - dikeranjang);
+                },
+
+                rentangHarga(produk) {
+                    const harga = this.daftarVarianAktif(produk).map(v => v.sedang_promo ? v.harga_diskon : v.harga);
+                    if (harga.length === 0) return '-';
+                    const min = Math.min(...harga), max = Math.max(...harga);
+                    return min === max ? this.formatRupiah(min) : (this.formatRupiah(min) + ' - ' + this.formatRupiah(max));
+                },
+
+                get opsiUkuranModal() {
+                    return [...new Set(this.daftarVarianProduk(this.modalVarianProduk).map(v => v.ukuran).filter(Boolean))];
+                },
+                get opsiVariasiModal() {
+                    return [...new Set(this.daftarVarianProduk(this.modalVarianProduk).map(v => v.variasi).filter(Boolean))];
+                },
+
+                // Chip hanya abu-abu & tidak bisa dipilih kalau kombinasinya NONAKTIF.
+                // Stok habis tetap bisa dipilih (masuk "Perlu Diproduksi").
+                ukuranTersedia(u) {
+                    return this.daftarVarianProduk(this.modalVarianProduk).some(v =>
+                        v.aktif && v.ukuran === u
+                        && (!this.pilihanVariasiModal || v.variasi === this.pilihanVariasiModal));
+                },
+                variasiTersedia(vr) {
+                    return this.daftarVarianProduk(this.modalVarianProduk).some(v =>
+                        v.aktif && v.variasi === vr
+                        && (!this.pilihanUkuranModal || v.ukuran === this.pilihanUkuranModal));
+                },
+                // Semua varian untuk chip ini habis stoknya -> beri label kecil "Perlu Diproduksi".
+                ukuranHabis(u) {
+                    return !this.daftarVarianProduk(this.modalVarianProduk).some(v =>
+                        v.aktif && v.ukuran === u
+                        && (!this.pilihanVariasiModal || v.variasi === this.pilihanVariasiModal)
+                        && this.sisaStokVarian(v) > 0);
+                },
+                variasiHabis(vr) {
+                    return !this.daftarVarianProduk(this.modalVarianProduk).some(v =>
+                        v.aktif && v.variasi === vr
+                        && (!this.pilihanUkuranModal || v.ukuran === this.pilihanUkuranModal)
+                        && this.sisaStokVarian(v) > 0);
+                },
+                fotoVariasiModal(vr) {
+                    const v = this.daftarVarianProduk(this.modalVarianProduk).find(x => x.variasi === vr && x.foto);
+                    return v ? v.foto : null;
+                },
+
+                get varianTerpilihModal() {
+                    if (!this.modalVarianProduk) return null;
+                    if (this.opsiUkuranModal.length > 0 && !this.pilihanUkuranModal) return null;
+                    if (this.opsiVariasiModal.length > 0 && !this.pilihanVariasiModal) return null;
+                    return this.daftarVarianProduk(this.modalVarianProduk).find(v =>
+                        v.aktif
+                        && (v.ukuran || null) === (this.pilihanUkuranModal || null)
+                        && (v.variasi || null) === (this.pilihanVariasiModal || null)) || null;
+                },
+
+                get fotoModalVarian() {
+                    const v = this.varianTerpilihModal;
+                    if (v && v.foto) return v.foto;
+                    if (this.pilihanVariasiModal) {
+                        const f = this.fotoVariasiModal(this.pilihanVariasiModal);
+                        if (f) return f;
+                    }
+                    return this.modalVarianProduk ? this.modalVarianProduk.foto : null;
+                },
+
+                get teksHargaModalVarian() {
+                    const v = this.varianTerpilihModal;
+                    if (v) return this.formatRupiah(v.sedang_promo ? v.harga_diskon : v.harga);
+                    return this.modalVarianProduk ? this.rentangHarga(this.modalVarianProduk) : '';
+                },
+
+                get teksTombolPilihVarian() {
+                    if (this.opsiUkuranModal.length > 0 && !this.pilihanUkuranModal) return 'Pilih ukuran dulu';
+                    if (this.opsiVariasiModal.length > 0 && !this.pilihanVariasiModal) return 'Pilih variasi dulu';
+                    return 'Kombinasi ini nonaktif';
+                },
+
+                bukaModalVarian(produk) {
+                    this.modalVarianProduk = produk;
+                    this.pilihanUkuranModal = null;
+                    this.pilihanVariasiModal = null;
+                    this.qtyModalVarian = 1;
+                    this.modalVarianTerbuka = true;
+
+                    // Kalau cuma ada satu pilihan yang tersedia, langsung dipilihkan.
+                    const ukuranOk = this.opsiUkuranModal.filter(u => this.ukuranTersedia(u));
+                    if (this.opsiUkuranModal.length === 1 && ukuranOk.length === 1) this.pilihanUkuranModal = ukuranOk[0];
+                    const variasiOk = this.opsiVariasiModal.filter(v => this.variasiTersedia(v));
+                    if (this.opsiVariasiModal.length === 1 && variasiOk.length === 1) this.pilihanVariasiModal = variasiOk[0];
+                },
+
+                tutupModalVarian() {
+                    this.modalVarianTerbuka = false;
+                    this.modalVarianProduk = null;
+                    this.pilihanUkuranModal = null;
+                    this.pilihanVariasiModal = null;
+                    this.qtyModalVarian = 1;
+                },
+
+                // Klik lagi pada pilihan yang sedang aktif = batal pilih.
+                pilihUkuranModal(u) {
+                    if (this.pilihanUkuranModal === u) { this.pilihanUkuranModal = null; this.qtyModalVarian = 1; return; }
+                    if (!this.ukuranTersedia(u)) return;
+                    this.pilihanUkuranModal = u;
+                    this.qtyModalVarian = 1;
+                },
+                pilihVariasiModal(v) {
+                    if (this.pilihanVariasiModal === v) { this.pilihanVariasiModal = null; this.qtyModalVarian = 1; return; }
+                    if (!this.variasiTersedia(v)) return;
+                    this.pilihanVariasiModal = v;
+                    this.qtyModalVarian = 1;
+                },
+
+                kurangiQtyModalVarian() { if (this.qtyModalVarian > 1) this.qtyModalVarian--; },
+                tambahQtyModalVarian() {
+                    if (this.varianTerpilihModal && this.qtyModalVarian < 999) this.qtyModalVarian++;
+                },
+
+                konfirmasiModalVarian() {
+                    const v = this.varianTerpilihModal;
+                    const produk = this.modalVarianProduk;
+                    if (!v || !produk) return;
+                    this.tambahVarianKeKeranjang(produk, v, this.qtyModalVarian);
+                    this.tutupModalVarian();
+                },
+
+                // Stok ready dipakai dulu, kelebihannya jadi baris "Perlu Diproduksi" (sama seperti logika lama).
+                tambahVarianKeKeranjang(produk, varian, qty = 1) {
+                    if (!varian.aktif) {
+                        this.tambahToast('Varian ini sedang nonaktif.', 'error');
+                        return;
+                    }
+                    const ready = Math.min(qty, this.sisaStokVarian(varian));
+                    const produksi = qty - ready;
+
+                    if (ready > 0) {
+                        const adaReady = this.keranjang.find(i => i.varian_id === varian.id && !i.butuh_produksi);
+                        if (adaReady) adaReady.jumlah += ready;
+                        else this.keranjang.push(this.buatItemVarianKeranjang(produk, varian, ready, false));
+                    }
+                    if (produksi > 0) {
+                        const adaProduksi = this.keranjang.find(i => i.varian_id === varian.id && i.butuh_produksi);
+                        if (adaProduksi) adaProduksi.jumlah += produksi;
+                        else this.keranjang.push(this.buatItemVarianKeranjang(produk, varian, produksi, true));
+                    }
+
+                    if (produksi > 0) {
+                        this.tambahToast(ready > 0
+                            ? 'Stok ready habis, kelebihan masuk ke Perlu Diproduksi.'
+                            : 'Produk ditambahkan (Perlu Diproduksi).', 'info');
+                    } else {
+                        this.tambahToast('Produk ditambahkan.', 'sukses');
+                    }
+                },
+
+                buatItemVarianKeranjang(produk, varian, qty, perluProduksi = false) {
+                    const ukuranId = varian.ukuran_id || null;
+                    // Sama seperti server: promo yang dibatasi ke ukuran tertentu hanya berlaku kalau ukuran varian cocok.
+                    const promoBerlaku = (promo) => {
+                        if (!promo) return false;
+                        const daftar = promo.ukurans || [];
+                        if (daftar.length === 0) return true;
+                        return !!ukuranId && daftar.some(u => u.id === ukuranId);
+                    };
+                    const promosTersedia = ((produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0)
+                        ? produk.promos_aktif_semua
+                        : (produk.promo_aktif ? [produk.promo_aktif] : [])
+                    ).filter(promoBerlaku);
+
+                    return {
+                        key: 'varian_' + varian.id + '_' + (perluProduksi ? 'produksi' : 'ready'),
+                        produk_id: produk.id,
+                        varian_id: varian.id,
+                        nama_produk: produk.nama_produk,
+                        ukuran: varian.ukuran,
+                        varian_rasa: varian.variasi,
+                        ukuran_id: ukuranId,
+                        harga_jual: parseFloat(varian.harga),
+                        harga_jual_asli: parseFloat(varian.harga),
+                        promo_aktif: promoBerlaku(produk.promo_aktif) ? produk.promo_aktif : null,
+                        promos_tersedia: promosTersedia,
+                        promos_terpilih_ids: promosTersedia.map(p => p.id),
+                        foto: varian.foto || produk.foto,
+                        jumlah: qty,
+                        stok: parseInt(varian.stok) || 0,
+                        status_ketersediaan: perluProduksi ? 'perlu_diproduksi' : 'stok_ada',
+                        butuh_produksi: perluProduksi,
+                        catatan: ''
+                    };
+                },
+
+                _sesuaikanStokVarianLokal(produk, varianId, delta) {
+                    if (!produk) return;
+                    const v = this.daftarVarianProduk(produk).find(x => x.id === varianId);
+                    if (v) v.stok = (parseInt(v.stok) || 0) + delta;
+                    produk.stok = (parseFloat(produk.stok) || 0) + delta;
+                },
+
                 // Beda sama "perlu diproduksi" (stok abis tapi ukurannya
                 // masih aktif dijual). Ini artinya semua varian ukuran
                 // produk ini lagi dimatikan (baik dari toggle Aktif di
@@ -2325,6 +2669,9 @@
                 // Data Master Ukuran) — jadi bukan soal stok, tapi memang
                 // gak ada ukuran yang bisa dipesan sama sekali.
                 tidakAdaUkuranAktif(produk) {
+                    if (produk && !produk.is_bundling && produk.punya_varian === true) {
+                        return this.daftarVarianAktif(produk).length === 0;
+                    }
                     const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
                     return punyaUkuran && (!produk.daftar_ukuran || produk.daftar_ukuran.length === 0);
                 },
@@ -2334,6 +2681,13 @@
                 // gabungan seperti biasa. Kalau ada varianRasa + ukuran,
                 // ambil dari stok_per_ukuran di daftar_varian_rasa.
                 stokUntukUkuran(produk, ukuran, varianRasa = null) {
+                    // Produk dengan varian baru: jumlahkan varian yang cocok dengan ukuran/variasi yang diminta.
+                    if (produk && produk.punya_varian === true) {
+                        return this.daftarVarianAktif(produk)
+                            .filter(v => (!ukuran || String(v.ukuran || '').toLowerCase() === String(ukuran).toLowerCase())
+                                && (!varianRasa || String(v.variasi || '').toLowerCase() === String(varianRasa).toLowerCase()))
+                            .reduce((sum, v) => sum + (parseInt(v.stok) || 0), 0);
+                    }
                     if (!produk) return 0;
 
                     // === Kalau ada varian rasa, prioritaskan stok per (rasa + ukuran) ===
@@ -3154,6 +3508,16 @@
                     }
                 },
                 tambahKeKeranjang(produk, ukuran = null, varianRasa = null) {
+                    // Produk dengan varian dari form produk -> buka pemilih ukuran/variasi.
+                    if (this.adaVarian(produk)) {
+                        if (this.tidakAdaUkuranAktif(produk)) {
+                            this.tambahToast('Belum ada varian aktif untuk produk ini — aktifkan dulu di halaman Edit Produk.', 'error');
+                            return;
+                        }
+                        this.bukaModalVarian(produk);
+                        return;
+                    }
+
                     const isPunyaUkuran = !produk.is_bundling && (produk.punya_ukuran == 1 || produk.punya_ukuran === true);
                     const isPunyaRasa = !produk.is_bundling && (produk.punya_varian_rasa == 1 || produk.punya_varian_rasa === true);
 
@@ -3324,6 +3688,18 @@
                 },
 
                 tambahJumlah(item) {
+                    // Item varian: stok ready dipakai dulu, lebihnya masuk "Perlu Diproduksi".
+                    if (item.varian_id) {
+                        if (item.butuh_produksi) { item.jumlah++; return; }
+                        const v = this.cariVarian(item.produk_id, item.varian_id);
+                        if (v && this.sisaStokVarian(v) > 0) {
+                            item.jumlah++;
+                        } else if (v) {
+                            this.tambahVarianKeKeranjang(this.daftarProduk.find(p => p.id === item.produk_id), v, 1);
+                        }
+                        return;
+                    }
+
                     if (item.is_bundling) {
                         if (item.pilihan_khusus) {
                             // Komposisi varian sudah ditentukan lewat modal (Edit
@@ -3802,6 +4178,10 @@
                             return;
                         }
                         const p = this.daftarProduk.find(x => x.id === item.produk_id);
+                        if (p && item.varian_id) {
+                            if (!this.itemButuhProduksi(item)) this._sesuaikanStokVarianLokal(p, item.varian_id, parseFloat(item.jumlah));
+                            return;
+                        }
                         if (p && !this.itemButuhProduksi(item)) {
                             this._sesuaikanStokLokal(p, item.ukuran, parseFloat(item.jumlah), item.varian_rasa);
                         }
@@ -3826,6 +4206,10 @@
                             return;
                         }
                         const p = this.daftarProduk.find(x => x.id === item.produk_id);
+                        if (p && item.varian_id) {
+                            if (!this.itemButuhProduksi(item)) this._sesuaikanStokVarianLokal(p, item.varian_id, -parseFloat(item.jumlah));
+                            return;
+                        }
                         if (p && !this.itemButuhProduksi(item)) {
                             this._sesuaikanStokLokal(p, item.ukuran, -parseFloat(item.jumlah), item.varian_rasa);
                         }

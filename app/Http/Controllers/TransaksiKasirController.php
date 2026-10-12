@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\KategoriProduk;
 use App\Models\Produk;
+use App\Models\ProdukVarian;
 use App\Models\PesananDitahan;
 use App\Models\Transaksi;
 use App\Models\DetailTransaksi;
@@ -136,6 +137,11 @@ class TransaksiKasirController extends Controller
 
     private function butuhProduksi(Produk $produk): bool
     {
+        // Produk dengan varian baru: perlu produksi kalau SEMUA varian aktif habis.
+        if ($produk->produkVarians()->exists()) {
+            return !$produk->produkVarians()->where('status_aktif', true)->where('stok', '>', 0)->exists();
+        }
+
         // Kalau produk punya varian ukuran, dianggap perlu produksi hanya
         // kalau SEMUA ukuran (Besar & Kecil) sedang habis.
         return $produk->habisSemuaUkuran();
@@ -156,10 +162,15 @@ class TransaksiKasirController extends Controller
     public function indeks()
     {
         try {
-            $daftarProduk = Produk::with(['kategori', 'promos', 'produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])
+            $daftarProduk = Produk::with(['kategori', 'promos', 'produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas', 'produkVarians'])
                 ->where('status_aktif', true)
                 ->reguler()
-                ->get();
+                ->get()
+                ->each(function (Produk $produk) {
+                    // Varian dari form produk (tabel produk_varians) yang dipakai kasir.
+                    $produk->setAttribute('punya_varian', $produk->produkVarians->isNotEmpty());
+                    $produk->setAttribute('daftar_varian', $produk->daftarVarianKasir());
+                });
 
             $daftarKategori = KategoriProduk::all();
 
@@ -384,12 +395,112 @@ class TransaksiKasirController extends Controller
         }
     }
 
+    /**
+     * Item produk yang dipilih lewat varian (ukuran + variasi dari tabel
+     * produk_varians): kunci baris varian, lalu sama seperti logika lama —
+     * kalau stok ready cukup, stok dikurangi; kalau stok habis (atau item
+     * ditandai butuh_produksi dari kasir) item dicatat sebagai "perlu
+     * diproduksi" tanpa mengurangi stok. Varian nonaktif ditolak.
+     */
+    private function prosesItemVarianTransaksi(Transaksi $transaksi, array $item): void
+    {
+        $jumlah = (int) ($item['jumlah'] ?? 0);
+        if ($jumlah <= 0) {
+            throw new \Exception('Jumlah item tidak valid.');
+        }
+
+        $varian = ProdukVarian::where('id', (int) $item['varian_id'])
+            ->where('produk_id', (int) ($item['produk_id'] ?? 0))
+            ->lockForUpdate()
+            ->first();
+
+        if (!$varian || !$varian->status_aktif) {
+            throw new \Exception('Varian produk tidak ditemukan atau sudah dinonaktifkan. Muat ulang halaman kasir.');
+        }
+
+        $produk = Produk::findOrFail($varian->produk_id);
+        $label = $produk->nama_produk . ($varian->nama_lengkap ? " ({$varian->nama_lengkap})" : '');
+
+        if (isset($item['harga_jual']) && abs((float) $item['harga_jual'] - (float) $varian->harga_jual) > 0.5) {
+            throw new \Exception("Harga '{$label}' sudah berubah. Muat ulang halaman kasir lalu coba lagi.");
+        }
+
+        $perluProduksi = (bool) ($item['butuh_produksi'] ?? ((int) $varian->stok <= 0));
+
+        if (!$perluProduksi) {
+            if ((int) $varian->stok < $jumlah) {
+                throw new \Exception("Stok untuk produk '{$label}' tidak mencukupi (Tersedia: {$varian->stok}, Diminta: {$jumlah})");
+            }
+
+            $varian->stok = (int) $varian->stok - $jumlah;
+            $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+            $varian->save();
+
+            $this->sinkronStokProduk($produk);
+        }
+
+        DetailTransaksi::create([
+            'transaksi_id' => $transaksi->id,
+            'produk_id' => $produk->id,
+            'produk_varian_id' => $varian->id,
+            'nama_produk' => $produk->nama_produk,
+            'ukuran' => $varian->ukuran,
+            'varian_rasa' => $varian->variasi,
+            'harga_satuan' => $varian->harga_jual,
+            'jumlah' => $jumlah,
+            'catatan' => $item['catatan'] ?? null,
+            'subtotal' => $varian->harga_jual * $jumlah,
+            'butuh_produksi' => $perluProduksi,
+        ]);
+    }
+
+    /** Stok & status produk = total semua varian (sama seperti form produk). */
+    private function sinkronStokProduk(Produk $produk): void
+    {
+        $total = (int) ProdukVarian::where('produk_id', $produk->id)->sum('stok');
+
+        $produk->update([
+            'stok' => $total,
+            'status_ketersediaan' => $total > 0 ? 'stok_ada' : 'perlu_diproduksi',
+        ]);
+    }
+
+    private function kembalikanStokVarian(DetailTransaksi $detail): void
+    {
+        $varian = ProdukVarian::where('id', $detail->produk_varian_id)->lockForUpdate()->first();
+        if (!$varian) {
+            Log::warning('Varian sudah dihapus, stok tidak dikembalikan', [
+                'detail_transaksi_id' => $detail->id,
+                'produk_varian_id' => $detail->produk_varian_id,
+            ]);
+            return;
+        }
+
+        $varian->stok = (int) $varian->stok + (int) $detail->jumlah;
+        $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+        $varian->save();
+
+        $produk = Produk::find($varian->produk_id);
+        if ($produk) {
+            $this->sinkronStokProduk($produk);
+        }
+    }
+
     private function kembalikanStokDariDetail($detailTransaksi): void
     {
         foreach ($detailTransaksi as $detail) {
             if (!$detail->produk_id) {
                 continue;
             }
+
+            // Detail dari varian baru: kembalikan ke baris varian yang sama.
+            if ($detail->produk_varian_id) {
+                if (!$detail->butuh_produksi) {
+                    $this->kembalikanStokVarian($detail);
+                }
+                continue;
+            }
+
             if (!$detail->butuh_produksi) {
                 try {
                     $produk = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])->find($detail->produk_id);
@@ -484,6 +595,15 @@ class TransaksiKasirController extends Controller
                 if (!empty($item['is_promo_event']) && !empty($item['promo_event_id'])) {
                     $this->prosesItemPromoEventTransaksi($transaksi, $item);
                     continue;
+                }
+
+                if (!empty($item['varian_id'])) {
+                    $this->prosesItemVarianTransaksi($transaksi, $item);
+                    continue;
+                }
+
+                if (ProdukVarian::where('produk_id', (int) ($item['produk_id'] ?? 0))->exists()) {
+                    throw new \Exception('Pilih ukuran/variasi produk terlebih dahulu.');
                 }
 
                  $produk = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])->findOrFail($item['produk_id']);
@@ -914,6 +1034,15 @@ class TransaksiKasirController extends Controller
                     continue;
                 }
 
+                if (!empty($item['varian_id'])) {
+                    $this->prosesItemVarianTransaksi($transaksi, $item);
+                    continue;
+                }
+
+                if (ProdukVarian::where('produk_id', (int) ($item['produk_id'] ?? 0))->exists()) {
+                    throw new \Exception('Pilih ukuran/variasi produk terlebih dahulu.');
+                }
+
                  $produk = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])->findOrFail($item['produk_id']);
                 $perluProduksi = $this->tentukanPerluProduksi($produk, $item);
                 $ukuranItem = $item['ukuran'] ?? null;
@@ -999,11 +1128,24 @@ class TransaksiKasirController extends Controller
             $produk = [];
 
             if ($produkIds->isNotEmpty()) {
-                $produk = Produk::with('promos')
+                $produk = Produk::with(['promos', 'produkVarians'])
                     ->whereIn('id', $produkIds)
                     ->where('status_aktif', true)
                     ->get()
                     ->map(function ($p) {
+                        $varian = collect($p->daftarVarianKasir())->where('aktif', true);
+                        if ($varian->isNotEmpty()) {
+                            $termurah = $varian->sortBy('harga_asli')->first();
+
+                            return [
+                                'id' => $p->id,
+                                'harga_asli' => (float) $termurah['harga_asli'],
+                                'harga_final' => (float) $termurah['harga_diskon'],
+                                'ada_promo' => $termurah['harga_diskon'] < $termurah['harga_asli'],
+                                'habis' => $varian->where('stok', '>', 0)->isEmpty(),
+                            ];
+                        }
+
                         if ($p->punya_ukuran) {
                             $namaTermurah = $p->ukuranTermurah()['nama'] ?? null;
                             $hargaAsli = $p->getHarga($namaTermurah);

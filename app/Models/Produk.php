@@ -82,6 +82,53 @@ class Produk extends Model
         return $this->hasMany(ProdukVarian::class, 'produk_id')->orderBy('urutan')->orderBy('id');
     }
 
+    /**
+     * Daftar varian untuk kasir (tabel produk_varians), termasuk yang nonaktif
+     * (ditandai 'aktif' => false, tampil abu-abu & tidak bisa dipilih). Satu baris =
+     * satu kombinasi ukuran + variasi, lengkap dengan harga (sudah termasuk
+     * promo), stok, dan foto.
+     */
+    public function daftarVarianKasir(): array
+    {
+        $daftar = $this->relationLoaded('produkVarians')
+            ? $this->produkVarians
+            : $this->produkVarians()->get();
+
+        return $daftar
+            ->map(function (ProdukVarian $v) {
+                $hargaAsli = (float) $v->harga_jual;
+                $promo = $this->promoAktifUntukUkuran($v->ukuran_id ? (int) $v->ukuran_id : null);
+                $hargaDiskon = $hargaAsli;
+
+                if ($promo) {
+                    $diskon = $promo->jenis_potongan === 'nominal'
+                        ? (float) $promo->nominal_potongan
+                        : (((float) ($promo->persentase ?? 0)) / 100) * $hargaAsli;
+                    $hargaDiskon = max(0, $hargaAsli - $diskon);
+                }
+
+                return [
+                    'id' => $v->id,
+                    'aktif' => (bool) $v->status_aktif,
+                    'ukuran' => $v->ukuran,
+                    'variasi' => $v->variasi,
+                    'nama' => $v->nama_lengkap,
+                    'kode_barcode' => $v->kode_barcode,
+                    'ukuran_id' => $v->ukuran_id ? (int) $v->ukuran_id : null,
+                    'harga' => $hargaAsli,
+                    'harga_asli' => $hargaAsli,
+                    'harga_diskon' => $hargaDiskon,
+                    'sedang_promo' => (bool) $promo,
+                    'nama_promo' => $promo?->nama_promo,
+                    'stok' => (int) $v->stok,
+                    'stok_minimum' => (int) $v->stok_minimum,
+                    'foto' => $v->foto_url,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
     public function produksi()
     {
         return $this->hasMany(Produksi::class);
