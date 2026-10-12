@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Lengkapi Pendaftaran &middot; {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
@@ -109,43 +110,95 @@
                         class="block text-center text-xs font-semibold text-gray-500 hover:underline">Batal</a>
                     </div>
 
-                    {{-- ============ LANGKAH 2: kata sandi ============ --}}
+                    {{-- ============ LANGKAH 2: nomor HP & OTP ============ --}}
                     <div id="step-2" class="space-y-5 hidden">
+                        <input type="hidden" id="otp-hidden" name="otp" value="">
+
+                        {{-- Nomor HP --}}
                         <div>
-                            <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Kata Sandi</label>
-                            <div class="relative">
-                                <input id="password" name="password" type="password" minlength="6" placeholder="Minimal 6 karakter" autocomplete="new-password"
-                                    class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
-                                <button type="button" onclick="togglePw('password', this)" aria-label="Tampilkan kata sandi"
-                                    class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
-                                <svg class="eye-show h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
-                                <svg class="eye-hide hidden h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M9.36 5.16A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-3.22 3.9M6.5 6.64C3.68 8.36 2 11 2 11a13.2 13.2 0 0 0 3.22 3.9A11 11 0 0 0 12 17c.86 0 1.68-.1 2.45-.28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <label for="no_hp" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+                                Nomor Handphone
+                            </label>
+                            <div class="relative flex items-center border-b-2 border-brand-800 pb-2 pt-1 focus-within:border-brand-800">
+                                <div class="flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-800 shrink-0">
+                                    <span>+62</span>
+                                </div>
+                                <input id="no_hp" name="no_hp" type="tel" inputmode="numeric" value="{{ old('no_hp') }}"
+                                    required placeholder="882xxxxxxx"
+                                    oninput="this.value = this.value.replace(/\D/g, '').replace(/^0+/, '')"
+                                    class="ml-3 flex-1 bg-transparent text-base font-semibold text-gray-900 outline-none placeholder:text-gray-400 placeholder:font-normal">
+                                <button type="button" onclick="document.getElementById('no_hp').value=''"
+                                    class="text-gray-400 hover:text-gray-600 p-1">
+                                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
                                 </button>
+                            </div>
+                            <p id="phone-error-text" class="mt-2 text-xs text-red-500 font-medium hidden"></p>
+                            @error('no_hp')<p class="mt-2 text-xs text-red-500 font-medium">{{ $message }}</p>@enderror
+                        </div>
+
+                        {{-- Info Nomor HP Sebagai Password --}}
+                        <div class="rounded-2xl bg-amber-50/90 border border-amber-200/80 p-3.5 text-xs text-amber-900 leading-relaxed flex items-start gap-2.5">
+                            <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                <path d="M12 16v-4m0-4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <div>
+                                <p class="font-bold text-amber-950">Nomor HP Sebagai Kata Sandi</p>
+                                <p class="mt-0.5 text-amber-800/90 text-[11px] leading-relaxed">
+                                    Nomor HP yang kamu daftarkan akan otomatis menjadi kata sandi akunmu (contoh: <span class="font-bold font-mono">088xxxxxxxx</span>). Kamu dapat menggunakannya saat masuk dengan Username atau No HP.
+                                </p>
                             </div>
                         </div>
 
-                        <div>
-                            <label for="password_confirmation" class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Konfirmasi Kata Sandi</label>
-                            <div class="relative">
-                                <input id="password_confirmation" name="password_confirmation" type="password" minlength="6" placeholder="Ulangi kata sandi" autocomplete="new-password"
-                                    class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 pr-12 text-sm text-gray-900 outline-none focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
-                                <button type="button" onclick="togglePw('password_confirmation', this)" aria-label="Tampilkan kata sandi"
-                                    class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
-                                <svg class="eye-show h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
-                                <svg class="eye-hide hidden h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M9.36 5.16A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-3.22 3.9M6.5 6.64C3.68 8.36 2 11 2 11a13.2 13.2 0 0 0 3.22 3.9A11 11 0 0 0 12 17c.86 0 1.68-.1 2.45-.28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                </button>
-                            </div>
+                        {{-- Tombol Kirim OTP Awal --}}
+                        <div id="section-send-otp">
+                            <button type="button" id="btn-kirim-otp" onclick="prosesKirimOtp()"
+                                class="w-full rounded-2xl bg-brand-800 py-3.5 text-center text-base font-semibold text-white shadow-md transition hover:bg-brand-900 active:scale-[0.99] flex items-center justify-center gap-2">
+                                <span>Kirim Kode OTP</span>
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                                    <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
                         </div>
 
-                        <p id="pw-error" class="text-xs font-semibold text-red-500 hidden"></p>
+                        {{-- Box Input OTP (tampil setelah OTP dikirim) --}}
+                        <div id="section-otp" class="space-y-4 hidden">
+                            <div class="rounded-2xl bg-gray-50 border border-gray-200 p-4 space-y-3">
+                                <div class="text-center">
+                                    <p class="text-xs text-gray-500">Kode OTP 6-digit telah dikirimkan ke:</p>
+                                    <p class="text-sm font-bold text-gray-900 mt-0.5" id="otp-phone-display">+62 </p>
+                                </div>
+                                <div>
+                                    <input id="otp-input-code" type="text" maxlength="6" inputmode="numeric"
+                                        placeholder="123456"
+                                        class="w-full text-center tracking-[0.5em] text-2xl font-extrabold rounded-2xl border-2 border-brand-800 py-3 text-gray-900 outline-none focus:ring-4 focus:ring-brand-800/10 bg-white">
+                                    <p id="otp-error-text" class="mt-2 text-xs text-red-500 font-semibold text-center hidden"></p>
+                                    @error('otp')<p class="mt-2 text-xs text-red-500 font-semibold text-center">{{ $message }}</p>@enderror
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-gray-500 pt-1">
+                                    <span>Waktu tersisa: <strong id="timer-text" class="text-brand-800 font-bold">60s</strong></span>
+                                    <button type="button" id="btn-resend-otp" onclick="prosesKirimOtp()"
+                                        class="font-bold text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed hover:underline" disabled>
+                                        Kirim Ulang OTP
+                                    </button>
+                                </div>
+                            </div>
 
-                        <button type="button" onclick="kirimForm()"
-                            class="w-full rounded-2xl bg-brand-800 py-3.5 text-center text-base font-semibold text-white shadow-md transition hover:bg-brand-900 active:scale-[0.99]">
-                            Buat akun
-                        </button>
+                            <button type="button" id="btn-submit-daftar" onclick="verifikasiDanDaftar()"
+                                class="w-full rounded-2xl bg-brand-800 py-3.5 text-center text-base font-semibold text-white shadow-md transition hover:bg-brand-900 active:scale-[0.99] flex items-center justify-center gap-2">
+                                <span>Verifikasi & Buat Akun</span>
+                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                                    <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
 
                         <button type="button" onclick="keLangkah1()"
-                            class="block w-full text-center text-xs font-semibold text-gray-500 hover:underline">Kembali</button>
+                            class="block w-full text-center text-xs font-semibold text-gray-500 hover:underline pt-1">
+                            &larr; Kembali ke Langkah 1
+                        </button>
                     </div>
                 </form>
             </div>
@@ -162,13 +215,15 @@
     </div>
 
     <script>
-        const mulaiDiLangkah2 = @json($errors->has('password'));
+        const mulaiDiLangkah2 = @json($errors->has('no_hp') || $errors->has('otp'));
         const input = document.getElementById('username');
         const icon = document.getElementById('username-icon');
         const hint = document.getElementById('username-hint');
         const btnNext = document.getElementById('btn-next');
         const url = @json(route('member.google.username'));
         let timer = null, seq = 0;
+        let countdownTimer = null;
+        let currentNoHpTerikirim = '';
 
         // ---- cek username langsung (centang hijau ala GitHub) ----
         function show(ok, msg) {
@@ -197,11 +252,13 @@
             document.getElementById('step-1').classList.toggle('hidden', n !== 1);
             document.getElementById('step-2').classList.toggle('hidden', n !== 2);
             document.getElementById('step-label').textContent = 'Langkah ' + n + ' dari 2';
-            document.getElementById('step-title').textContent = n === 1 ? 'Daftar ke Saisho' : 'Buat Kata Sandi';
+            document.getElementById('step-title').textContent = n === 1 ? 'Daftar ke Saisho' : 'Verifikasi Nomor HP';
             document.getElementById('step-desc').textContent = n === 1
                 ? 'Belum ada akun member untuk akun Google ini. Periksa data di bawah lalu lanjut.'
-                : 'Buat kata sandi supaya kamu juga bisa masuk dengan username.';
-            if (n === 2) document.getElementById('password').focus();
+                : 'Masukkan nomor HP kamu dan verifikasi dengan kode OTP. Nomor HP ini juga akan menjadi kata sandi awal akun kamu.';
+            if (n === 2) {
+                document.getElementById('no_hp').focus();
+            }
         }
 
         function keLangkah1() { setLangkah(1); }
@@ -214,31 +271,213 @@
             setLangkah(2);
         }
 
-        function kirimForm() {
-            const pass = document.getElementById('password').value;
-            const conf = document.getElementById('password_confirmation').value;
-            const err = document.getElementById('pw-error');
-            err.classList.add('hidden');
+        // ---- Kirim OTP AJAX ----
+        function prosesKirimOtp() {
+            const noHpInput = document.getElementById('no_hp').value.trim();
+            const errEl = document.getElementById('phone-error-text');
+            const btnKirim = document.getElementById('btn-kirim-otp');
+            const btnResend = document.getElementById('btn-resend-otp');
 
-            if (pass.length < 6) { err.textContent = 'Kata sandi minimal 6 karakter.'; err.classList.remove('hidden'); return; }
-            if (pass !== conf) { err.textContent = 'Konfirmasi kata sandi tidak cocok.'; err.classList.remove('hidden'); return; }
+            errEl.classList.add('hidden');
 
-            document.getElementById('form-google-register').submit();
+            if (!noHpInput) {
+                errEl.textContent = 'Masukkan nomor HP kamu terlebih dahulu.';
+                errEl.classList.remove('hidden');
+                document.getElementById('no_hp').focus();
+                return;
+            }
+
+            if (noHpInput.length < 8) {
+                errEl.textContent = 'Nomor HP minimal 8 digit.';
+                errEl.classList.remove('hidden');
+                document.getElementById('no_hp').focus();
+                return;
+            }
+
+            if (btnKirim) {
+                btnKirim.disabled = true;
+                btnKirim.innerHTML = `
+                    <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span>Mengirim OTP...</span>
+                `;
+            }
+            if (btnResend) {
+                btnResend.disabled = true;
+            }
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+            fetch('{{ route("member.otp.send") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ no_hp: noHpInput })
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Gagal mengirim OTP.');
+                }
+                return data;
+            })
+            .then(data => {
+                if (btnKirim) {
+                    btnKirim.disabled = false;
+                    btnKirim.innerHTML = `
+                        <span>Kirim Kode OTP</span>
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                            <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    `;
+                }
+
+                if (data.success) {
+                    currentNoHpTerikirim = noHpInput;
+                    document.getElementById('otp-phone-display').textContent = '+62 ' + noHpInput;
+                    document.getElementById('section-send-otp').classList.add('hidden');
+                    document.getElementById('section-otp').classList.remove('hidden');
+                    startTimer60s();
+                    document.getElementById('otp-input-code').focus();
+                } else {
+                    errEl.textContent = data.message || 'Gagal mengirim OTP.';
+                    errEl.classList.remove('hidden');
+                }
+            })
+            .catch(error => {
+                if (btnKirim) {
+                    btnKirim.disabled = false;
+                    btnKirim.innerHTML = `
+                        <span>Kirim Kode OTP</span>
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                            <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    `;
+                }
+                errEl.textContent = error.message || 'Terjadi kesalahan pengiriman OTP.';
+                errEl.classList.remove('hidden');
+            });
         }
 
-        function togglePw(id, btn) {
-            const el = document.getElementById(id);
-            const showing = el.type === 'text';
-            el.type = showing ? 'password' : 'text';
-            btn.querySelector('.eye-show').classList.toggle('hidden', !showing);
-            btn.querySelector('.eye-hide').classList.toggle('hidden', showing);
+        // ---- Verifikasi OTP lalu submit form ----
+        function verifikasiDanDaftar() {
+            const noHpInput = document.getElementById('no_hp').value.trim();
+            const otpCode = document.getElementById('otp-input-code').value.trim();
+            const errEl = document.getElementById('otp-error-text');
+            const btnSubmit = document.getElementById('btn-submit-daftar');
+
+            errEl.classList.add('hidden');
+
+            if (!otpCode) {
+                errEl.textContent = 'Masukkan 6 digit kode OTP.';
+                errEl.classList.remove('hidden');
+                document.getElementById('otp-input-code').focus();
+                return;
+            }
+
+            if (!/^\d{6}$/.test(otpCode)) {
+                errEl.textContent = 'Kode OTP harus terdiri dari 6 digit angka.';
+                errEl.classList.remove('hidden');
+                document.getElementById('otp-input-code').focus();
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span>Memverifikasi...</span>
+            `;
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+            fetch('{{ route("member.otp.verify") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    no_hp: noHpInput,
+                    otp: otpCode
+                })
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Kode OTP tidak valid.');
+                }
+                return data;
+            })
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('otp-hidden').value = otpCode;
+                    btnSubmit.innerHTML = `<span>Menyimpan Akun...</span>`;
+                    document.getElementById('form-google-register').submit();
+                } else {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = `
+                        <span>Verifikasi & Buat Akun</span>
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                            <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    `;
+                    errEl.textContent = data.message || 'Kode OTP salah.';
+                    errEl.classList.remove('hidden');
+                }
+            })
+            .catch(error => {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = `
+                    <span>Verifikasi & Buat Akun</span>
+                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                        <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                `;
+                errEl.textContent = error.message || 'Kode OTP salah.';
+                errEl.classList.remove('hidden');
+            });
         }
 
-        // Enter di langkah 1 -> lanjut, di langkah 2 -> kirim
+        function startTimer60s() {
+            let seconds = 60;
+            const timerEl = document.getElementById('timer-text');
+            const resendBtn = document.getElementById('btn-resend-otp');
+            resendBtn.disabled = true;
+
+            clearInterval(countdownTimer);
+            countdownTimer = setInterval(() => {
+                seconds--;
+                timerEl.textContent = seconds + 's';
+                if (seconds <= 0) {
+                    clearInterval(countdownTimer);
+                    timerEl.textContent = '0s';
+                    resendBtn.disabled = false;
+                }
+            }, 1000);
+        }
+
+        // Enter di langkah 1 -> lanjut, di langkah 2 -> kirim otp atau verifikasi
         document.getElementById('form-google-register').addEventListener('keydown', (e) => {
             if (e.key !== 'Enter') return;
             e.preventDefault();
-            document.getElementById('step-2').classList.contains('hidden') ? keLangkah2() : kirimForm();
+            if (document.getElementById('step-2').classList.contains('hidden')) {
+                keLangkah2();
+            } else {
+                if (document.getElementById('section-otp').classList.contains('hidden')) {
+                    prosesKirimOtp();
+                } else {
+                    verifikasiDanDaftar();
+                }
+            }
         });
 
         cek();

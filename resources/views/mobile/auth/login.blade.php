@@ -120,6 +120,33 @@
                         $isAdmin = ($mode ?? 'member') === 'admin';
                         $formAction = $isAdmin ? route('admin.login.store') : route('member.login.store');
                     @endphp
+                    @unless ($isAdmin)
+                        {{-- Banner Info Password Nomor HP --}}
+                        <div class="mb-5">
+                            <button type="button" onclick="bukaModalInfoLogin()"
+                                class="w-full flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/80 text-amber-950 text-left hover:bg-amber-100/70 transition-all shadow-sm group">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-amber-200/90 text-amber-800 font-bold">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                            <path d="M12 16v-4m0-4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-gray-900 truncate">Daftar lewat Google?</p>
+                                        <p class="text-[11px] text-gray-600 truncate">Klik untuk melihat informasi</p>
+                                    </div>
+                                </div>
+                                <span class="text-[11px] font-bold text-brand-800 group-hover:underline shrink-0 flex items-center gap-0.5">
+                                    Info
+                                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none">
+                                        <path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
+                    @endunless
+
                     <form method="POST" action="{{ $formAction }}" class="space-y-6">
                         @csrf
 
@@ -154,9 +181,21 @@
 
                         {{-- Password Field --}}
                         <div>
-                            <label for="password"
-                                class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">Kata
-                                Sandi</label>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label for="password"
+                                    class="block text-xs font-semibold uppercase tracking-wider text-gray-500">Kata
+                                    Sandi</label>
+                                @unless ($isAdmin)
+                                    <button type="button" onclick="bukaModalInfoLogin()"
+                                        class="text-[11px] font-semibold text-brand-800 hover:text-brand-900 hover:underline flex items-center gap-1">
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                            <path d="M12 16v-4m0-4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        </svg>
+                                        Info Kata Sandi
+                                    </button>
+                                @endunless
+                            </div>
                             <div class="relative">
                                 <input id="password" name="password" type="password" required
                                     placeholder="Masukkan kata sandi"
@@ -222,7 +261,121 @@
 
     </div>
 
+    @unless ($isAdmin)
+        {{-- Modal Pop-up Informasi Nomor HP Sebagai Kata Sandi --}}
+        <div id="modal-info-login"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-200 hidden opacity-0"
+            aria-labelledby="modal-info-title" role="dialog" aria-modal="true" onclick="if(event.target === this) tutupModalInfoLogin()">
+            <div class="relative w-full max-w-sm transform overflow-hidden rounded-3xl bg-white p-6 text-left shadow-2xl transition-all scale-95 duration-200" id="modal-info-card">
+                
+                {{-- Tombol Close --}}
+                <button type="button" onclick="tutupModalInfoLogin()"
+                    class="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+
+                {{-- Header Icon & Title --}}
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 shadow-inner">
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none">
+                            <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" />
+                            <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2" />
+                            <circle cx="12" cy="16" r="1.5" fill="currentColor" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">Info Akun & Sandi</span>
+                        <h2 id="modal-info-title" class="text-base font-bold text-gray-900 mt-1">Nomor HP Sebagai Password</h2>
+                    </div>
+                </div>
+
+                {{-- Isi Pesan --}}
+                <div class="space-y-3.5 text-xs text-gray-600 leading-relaxed">
+                    <div class="rounded-2xl bg-amber-50/80 border border-amber-200/70 p-3.5 text-amber-950">
+                        <p class="font-semibold text-xs text-amber-900 mb-1">📌 Bagi Pengguna Akun Google:</p>
+                        <p class="text-[11px] leading-relaxed">
+                            Jika kamu mendaftar melalui <strong class="text-gray-900 font-bold">Google</strong>, kata sandi akunmu otomatis diatur menggunakan <strong class="text-gray-900 font-bold">Nomor HP</strong> yang kamu masukkan saat registrasi (format lokal diawali angka 0, contoh: <span class="font-bold font-mono text-brand-800 bg-white px-1.5 py-0.5 rounded border border-amber-200">088xxxxxxxx</span>).
+                        </p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <p class="font-bold text-gray-900 text-xs">Pilihan Cara Masuk:</p>
+                        <div class="flex items-start gap-2.5 text-[11px]">
+                            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800 font-bold text-[10px] mt-0.5">1</span>
+                            <p><strong class="text-gray-800">Lewat Tombol Google:</strong> Klik tombol <em>"Lanjutkan dengan Google"</em> di bawah untuk login instan tanpa input sandi.</p>
+                        </div>
+                        <div class="flex items-start gap-2.5 text-[11px]">
+                            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800 font-bold text-[10px] mt-0.5">2</span>
+                            <p><strong class="text-gray-800">Masuk Manual:</strong> Masukkan Username atau No HP kamu, lalu gunakan nomor HP kamu (<span class="font-mono font-semibold text-gray-900">088...</span>) sebagai kata sandinya.</p>
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-gray-400 italic pt-1 border-t border-gray-100">
+                        * Kamu dapat memperbarui kata sandi kapan saja di menu Pengaturan Akun setelah login.
+                    </p>
+                </div>
+
+                {{-- Checkbox Jangan Tampilkan Lagi & Tombol --}}
+                <div class="mt-5 pt-3 border-t border-gray-100 flex flex-col gap-3">
+                    <label class="flex items-center gap-2 text-xs text-gray-500 cursor-pointer select-none">
+                        <input type="checkbox" id="cb-jangan-tampilkan" onchange="handleCheckboxToggle(this.checked)" class="rounded border-gray-300 text-brand-800 focus:ring-brand-800">
+                        <span id="label-jangan-tampilkan">Jangan tampilkan pop-up ini lagi secara otomatis</span>
+                    </label>
+                    <button type="button" onclick="tutupModalInfoLogin()"
+                        class="w-full rounded-2xl bg-brand-800 py-3 text-center text-sm font-semibold text-white shadow-md hover:bg-brand-900 active:scale-[0.99] transition">
+                        Saya Mengerti
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    @endunless
+
     <script>
+        const DISMISS_KEY = 'saisho_login_pw_info_dismissed';
+
+        function getDismissedStatus() {
+            try {
+                if (localStorage.getItem(DISMISS_KEY) === '1') return true;
+            } catch (e) {}
+
+            try {
+                return document.cookie.split(';').some(c => c.trim().startsWith(DISMISS_KEY + '=1'));
+            } catch (e) {}
+
+            return false;
+        }
+
+        function setDismissedStatus(val) {
+            try {
+                if (val) {
+                    localStorage.setItem(DISMISS_KEY, '1');
+                } else {
+                    localStorage.removeItem(DISMISS_KEY);
+                }
+            } catch (e) {}
+
+            try {
+                if (val) {
+                    document.cookie = DISMISS_KEY + '=1; path=/; max-age=' + (365 * 24 * 60 * 60) + '; SameSite=Lax';
+                } else {
+                    document.cookie = DISMISS_KEY + '=; path=/; max-age=0; SameSite=Lax';
+                }
+            } catch (e) {}
+        }
+
+        function handleCheckboxToggle(isChecked) {
+            setDismissedStatus(isChecked);
+            const label = document.getElementById('label-jangan-tampilkan');
+            if (label) {
+                label.textContent = isChecked
+                    ? 'Preferensi disimpan (tidak akan muncul lagi)'
+                    : 'Jangan tampilkan pop-up ini lagi secara otomatis';
+            }
+        }
+
         function togglePasswordVisibility(inputId, btn) {
             const input = document.getElementById(inputId);
             const showing = input.type === 'text';
@@ -230,6 +383,52 @@
             btn.querySelector('.eye-icon-show').classList.toggle('hidden', !showing);
             btn.querySelector('.eye-icon-hide').classList.toggle('hidden', showing);
             btn.setAttribute('aria-label', showing ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi');
+        }
+
+        function bukaModalInfoLogin() {
+            const modal = document.getElementById('modal-info-login');
+            const card = document.getElementById('modal-info-card');
+            const cb = document.getElementById('cb-jangan-tampilkan');
+            if (!modal) return;
+
+            if (cb) {
+                cb.checked = getDismissedStatus();
+                const label = document.getElementById('label-jangan-tampilkan');
+                if (label) {
+                    label.textContent = cb.checked
+                        ? 'Preferensi disimpan (tidak akan muncul lagi)'
+                        : 'Jangan tampilkan pop-up ini lagi secara otomatis';
+                }
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                if (card) {
+                    card.classList.remove('scale-95');
+                    card.classList.add('scale-100');
+                }
+            }, 10);
+        }
+
+        function tutupModalInfoLogin() {
+            const modal = document.getElementById('modal-info-login');
+            const card = document.getElementById('modal-info-card');
+            const cb = document.getElementById('cb-jangan-tampilkan');
+
+            if (cb && cb.checked) {
+                setDismissedStatus(true);
+            }
+
+            if (!modal) return;
+            modal.classList.add('opacity-0');
+            if (card) {
+                card.classList.remove('scale-100');
+                card.classList.add('scale-95');
+            }
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -243,6 +442,16 @@
                 card.classList.add(dir === 'back' ? 'page-enter-left' : 'page-enter-right');
             }
             sessionStorage.removeItem('nav_dir');
+
+            // Auto-show pop-up HANYA JIKA belum di-dismiss oleh pengguna
+            const urlParams = new URLSearchParams(window.location.search);
+            const forceShow = urlParams.get('buka_info') === '1';
+            const dismissed = getDismissedStatus();
+
+            if (forceShow || (!dismissed && !sessionStorage.getItem('saisho_login_modal_shown_session'))) {
+                sessionStorage.setItem('saisho_login_modal_shown_session', '1');
+                setTimeout(bukaModalInfoLogin, 350);
+            }
         });
 
         function animateNavigate(url, dir) {
