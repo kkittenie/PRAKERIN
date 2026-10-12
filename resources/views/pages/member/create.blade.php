@@ -8,17 +8,6 @@
 
         <div class="mb-5">
             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Foto Profil
-            </label>
-            <input type="file" name="foto" accept="image/png,image/jpeg,image/jpg"
-                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm dark:border-gray-700 dark:text-white/90" />
-            @error('foto')
-            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>@enderror
-            <p class="mt-1.5 text-xs text-gray-400">Format jpg/jpeg/png, maksimal 2MB.</p>
-        </div>
-
-        <div class="mb-5">
-            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                 Nama <span class="text-red-500">*</span>
             </label>
             <input type="text" name="nama" value="{{ old('nama') }}" required

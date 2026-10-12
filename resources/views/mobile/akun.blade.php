@@ -93,7 +93,7 @@
         {{-- Version & Logout --}}
         @auth('member')
             <div class="flex items-center justify-between border-t border-gray-100 pt-4">
-                <span class="text-xs text-gray-400">Version 1.0.0</span>
+                <span class="text-xs text-gray-400"></span>
                 <form method="POST" action="{{ route('member.logout') }}">
                     @csrf
                     <button type="submit" class="text-sm font-bold text-red-600 hover:text-red-700">Logout</button>
