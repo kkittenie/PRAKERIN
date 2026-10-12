@@ -49,6 +49,11 @@ class Produksi extends Model
         return $this->hasMany(ProduksiUkuran::class, 'produksi_id')->with('produkUkuran.ukuran');
     }
 
+    public function produksiVarians()
+    {
+        return $this->hasMany(ProduksiVarian::class, 'produksi_id')->orderBy('id');
+    }
+
     public function produksiRasas()
     {
         return $this->hasMany(ProduksiRasa::class, 'produksi_id')->with('produkUkuran.ukuran');
@@ -115,8 +120,53 @@ class Produksi extends Model
             ->values();
     }
 
+    /**
+     * Ringkasan per ukuran dari produksi_varians. Contoh: "5 Besar, 3 Kecil".
+     * "-" kalau varian-varian produksi ini tidak punya ukuran.
+     */
+    protected function ringkasVarianPerUkuran(string $kolom): string
+    {
+        $adaUkuran = $this->produksiVarians->contains(fn ($v) => filled($v->ukuran));
+        $baris = $this->produksiVarians->filter(fn ($v) => $v->{$kolom} > 0);
+
+        if (!$adaUkuran || $baris->isEmpty()) {
+            return '-';
+        }
+
+        return $baris
+            ->groupBy(fn ($v) => (string) $v->ukuran)
+            ->map(fn ($grup, $ukuran) => $grup->sum($kolom) . ' ' . ($ukuran !== '' ? $ukuran : 'Tanpa ukuran'))
+            ->implode(', ');
+    }
+
+    /**
+     * Rincian per variasi, dikelompokkan per ukuran. Contoh:
+     * "Kecil: Coklat 3, Keju 2 | Besar: Coklat 1". Null kalau tidak ada variasi.
+     */
+    protected function kelompokVarian(string $kolom): ?string
+    {
+        $baris = $this->produksiVarians->filter(fn ($v) => $v->{$kolom} > 0 && filled($v->variasi));
+
+        if ($baris->isEmpty()) {
+            return null;
+        }
+
+        return $baris
+            ->groupBy(fn ($v) => (string) $v->ukuran)
+            ->map(function ($grup, $ukuran) use ($kolom) {
+                $teks = $grup->map(fn ($v) => $v->variasi . ' ' . $v->{$kolom})->implode(', ');
+
+                return $ukuran !== '' ? $ukuran . ': ' . $teks : $teks;
+            })
+            ->implode(' | ');
+    }
+
     public function getRincianUkuranAttribute(): string
     {
+        if ($this->produksiVarians->isNotEmpty()) {
+            return $this->ringkasVarianPerUkuran('jumlah_hasil');
+        }
+
         $dinamis = $this->rincianUkuranDinamis();
 
         if ($dinamis !== null) {
@@ -142,6 +192,10 @@ class Produksi extends Model
 
     public function getRincianKebutuhanUkuranAttribute(): string
     {
+        if ($this->produksiVarians->isNotEmpty()) {
+            return $this->ringkasVarianPerUkuran('kebutuhan');
+        }
+
         $dinamis = $this->rincianUkuranDinamis();
 
         if ($dinamis !== null) {
@@ -192,16 +246,28 @@ class Produksi extends Model
 
     public function getRincianRasaAttribute(): string
     {
+        if ($this->produksiVarians->isNotEmpty()) {
+            return $this->kelompokVarian('jumlah_hasil') ?? '-';
+        }
+
         return $this->kelompokRasa('jumlah_hasil') ?? '-';
     }
 
     public function getRincianKebutuhanRasaAttribute(): string
     {
+        if ($this->produksiVarians->isNotEmpty()) {
+            return $this->kelompokVarian('kebutuhan') ?? '-';
+        }
+
         return $this->kelompokRasa('kebutuhan') ?? '-';
     }
 
     public function getPunyaRincianRasaAttribute(): bool
     {
+        if ($this->produksiVarians->isNotEmpty()) {
+            return $this->produksiVarians->contains(fn ($v) => filled($v->variasi));
+        }
+
         return $this->produksiRasas->isNotEmpty();
     }
 

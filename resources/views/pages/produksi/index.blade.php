@@ -4,11 +4,14 @@
 
     <x-common.page-breadcrumb pageTitle="Produksi" />
 
-    <div class="space-y-6" x-data="{ modalOpen: false, produksiId: null, produksiNama: '', jumlahMax: 0, sisaBelum: 0, stokTotal: 0, punyaUkuran: false, ukuran: null, daftarUkuran: [], punyaRasa: false, rasa: null, daftarRasa: [],
+    <div class="space-y-6" x-data="{ modalOpen: false, produksiId: null, produksiNama: '', jumlahMax: 0, sisaBelum: 0, stokTotal: 0, punyaUkuran: false, ukuran: null, daftarUkuran: [], punyaRasa: false, rasa: null, daftarRasa: [], punyaVarian: false, varianId: null, daftarVarian: [],
             stokRasaSaatIni(r) { return this.punyaUkuran ? ((r.stok_ukuran && r.stok_ukuran[this.ukuran] !== undefined) ? r.stok_ukuran[this.ukuran] : 0) : r.stok; },
             hitungMax() {
                 let stok = 0;
-                if (this.punyaRasa) {
+                if (this.punyaVarian) {
+                    const v = this.daftarVarian.find(x => x.id === this.varianId);
+                    stok = v ? v.stok : 0;
+                } else if (this.punyaRasa) {
                     const r = this.daftarRasa.find(x => x.nama === this.rasa);
                     stok = r ? this.stokRasaSaatIni(r) : 0;
                 } else if (this.punyaUkuran) {
@@ -140,6 +143,21 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4" x-text="'Produk: ' + produksiNama"></p>
                 <form :action="'/produksi/' + produksiId + '/kurangi-stok'" method="POST">
                     @csrf
+                    <template x-if="punyaVarian">
+                        <div class="mb-3">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Varian</label>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="v in daftarVarian" :key="v.id">
+                                    <button type="button" @click="varianId = v.id; hitungMax()"
+                                        :class="varianId === v.id ? 'bg-brand-500 text-white border-brand-500' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'"
+                                        class="flex-1 min-w-[45%] rounded-lg border px-3 py-2 text-sm font-semibold transition">
+                                        <span x-text="v.nama"></span> <span class="font-normal" x-text="'(' + v.stok + ' pcs)'"></span>
+                                    </button>
+                                </template>
+                            </div>
+                            <input type="hidden" name="varian_id" :value="varianId">
+                        </div>
+                    </template>
                     <template x-if="punyaUkuran">
                         <div class="mb-3">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ukuran</label>

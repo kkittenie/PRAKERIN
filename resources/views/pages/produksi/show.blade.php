@@ -100,6 +100,7 @@ Kadaluwarsa
 
 </div>
 
+@if($produksi->produksiVarians->isEmpty())
 <div>
     <p class="text-sm text-gray-500 dark:text-gray-400">Rincian Ukuran</p>
     <p class="font-semibold text-gray-800 dark:text-white">{{ $produksi->rincian_ukuran }}</p>
@@ -140,6 +141,53 @@ Kadaluwarsa
                             <td class="px-4 py-3 text-center font-bold text-amber-600 dark:text-amber-400">{{ $r->kebutuhan }}</td>
                         </tr>
                     @endforeach
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+@else
+<div class="md:col-span-2">
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Rincian per Varian</p>
+
+    @php
+        $adaUkuranVarian = $produksi->produksiVarians->contains(fn ($v) => filled($v->ukuran));
+        $adaVariasiVarian = $produksi->produksiVarians->contains(fn ($v) => filled($v->variasi));
+    @endphp
+
+    <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                    @if($adaUkuranVarian)
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Ukuran</th>
+                    @endif
+                    @if($adaVariasiVarian)
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Variasi</th>
+                    @endif
+                    @if(!$adaUkuranVarian && !$adaVariasiVarian)
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Varian</th>
+                    @endif
+                    <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Jumlah Hasil</th>
+                    <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Pesanan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($produksi->produksiVarians->filter(fn ($v) => $v->jumlah_hasil > 0 || $v->kebutuhan > 0) as $v)
+                    <tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
+                        @if($adaUkuranVarian)
+                            <td class="px-4 py-3">{{ $v->ukuran ?: '-' }}</td>
+                        @endif
+                        @if($adaVariasiVarian)
+                            <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">{{ $v->variasi ?: '-' }}</td>
+                        @endif
+                        @if(!$adaUkuranVarian && !$adaVariasiVarian)
+                            <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">{{ $v->nama_lengkap }}</td>
+                        @endif
+                        <td class="px-4 py-3 text-center font-bold text-green-600 dark:text-green-400">{{ $v->jumlah_hasil }}</td>
+                        <td class="px-4 py-3 text-center font-bold text-amber-600 dark:text-amber-400">{{ $v->kebutuhan }}</td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
@@ -236,8 +284,10 @@ Keterangan
 
         <form action="{{ route('produksi.label', $produksi) }}" method="GET" target="_blank"
             class="inline-flex items-center gap-2">
+            @if($produksi->produksiVarians->isEmpty())
             <input type="number" name="jumlah" min="1" max="500" value="{{ $produksi->jumlah_hasil }}"
                 class="w-20 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-2 py-2 text-sm text-center">
+            @endif
             <button type="submit"
                 class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm transition whitespace-nowrap">
                 Cetak Label Barcode

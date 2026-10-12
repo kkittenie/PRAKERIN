@@ -11,6 +11,8 @@ use App\Models\ProduksiRasa;
 use App\Models\BahanBaku;
 use App\Models\ProduksiBahanBaku;
 use App\Models\ProduksiUkuran;
+use App\Models\ProdukVarian;
+use App\Models\ProduksiVarian;
 use App\Events\StatusProduksiUpdate;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -90,7 +92,7 @@ class ProduksiController extends Controller
             END
         ";
 
-        return Produksi::with(['produk.produkUkurans.ukuran', 'produk.produkVarianRasas.varianRasa', 'produk.produkUkuranRasas', 'user', 'detailBahan.bahanBaku.satuan', 'produksiUkurans.produkUkuran.ukuran', 'produksiRasas'])
+        return Produksi::with(['produk.produkUkurans.ukuran', 'produk.produkVarianRasas.varianRasa', 'produk.produkUkuranRasas', 'user', 'detailBahan.bahanBaku.satuan', 'produksiUkurans.produkUkuran.ukuran', 'produksiRasas', 'produksiVarians', 'produk.produkVarians'])
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('produk', function ($q) use ($search) {
                     $q->where('nama_produk', 'like', "%{$search}%");
@@ -216,7 +218,27 @@ class ProduksiController extends Controller
     public function create()
     {
         try {
-            $produk = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])->orderBy('nama_produk')->get();
+            $produk = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas', 'produkVarians'])->orderBy('nama_produk')->get();
+
+            // Produk dengan varian baru (form produk): kirim daftar varian AKTIF ke form produksi.
+            // Varian nonaktif tidak bisa diproduksi, sama seperti tidak bisa dipilih di kasir.
+            $produk->each(function (Produk $p) {
+                $p->setAttribute('punya_varian_baru', $p->produkVarians->isNotEmpty());
+                $p->setAttribute('daftar_varian_produksi', $p->produkVarians
+                    ->where('status_aktif', true)
+                    ->map(fn (ProdukVarian $v) => [
+                        'id' => $v->id,
+                        'ukuran' => $v->ukuran,
+                        'variasi' => $v->variasi,
+                        'nama' => $v->nama_lengkap,
+                        'stok' => (int) $v->stok,
+                        'perlu_produksi' => $v->status_ketersediaan === 'perlu_diproduksi' || (int) $v->stok <= 0,
+                    ])
+                    ->values()
+                    ->all());
+                $p->unsetRelation('produkVarians');
+            });
+
             $bahanBaku = BahanBaku::with('satuan')->orderBy('nama_bahan')->get();
 
             return view('pages.produksi.create', compact('produk', 'bahanBaku'));
@@ -229,6 +251,13 @@ class ProduksiController extends Controller
     {
         try {
             $produkDipilih = Produk::with('produkUkurans')->find($request->produk_id);
+
+            // Produk yang sudah punya varian dari form produk (produk_varians): alur baru.
+            // Produk tanpa varian tetap lewat alur lama di bawah.
+            if ($produkDipilih && $produkDipilih->produkVarians()->exists()) {
+                return $this->simpanProduksiVarian($request, $produkDipilih);
+            }
+
             $punyaUkuran = (bool) ($produkDipilih->punya_ukuran ?? false);
 
             // Produk dengan varian rasa: hasil & pesanan diisi per rasa (per ukuran x rasa
@@ -641,7 +670,7 @@ class ProduksiController extends Controller
     public function show(Produksi $produksi)
     {
         try {
-            $produksi->load(['produk', 'user', 'detailBahan.bahanBaku.satuan', 'produksiUkurans.produkUkuran.ukuran', 'produksiRasas']);
+            $produksi->load(['produk', 'user', 'detailBahan.bahanBaku.satuan', 'produksiUkurans.produkUkuran.ukuran', 'produksiRasas', 'produksiVarians']);
 
             return view('pages.produksi.show', compact('produksi'));
         } catch (\Throwable $e) {
@@ -652,7 +681,26 @@ class ProduksiController extends Controller
     public function label(Request $request, Produksi $produksi)
     {
         try {
-            $produksi->load(['produk', 'produksiUkurans.produkUkuran.ukuran', 'produksiRasas']);
+            $produksi->load(['produk', 'produksiUkurans.produkUkuran.ukuran', 'produksiRasas', 'produksiVarians.produkVarian']);
+
+            if ($produksi->produksiVarians->isNotEmpty()) {
+                // Satu kelompok label per varian; barcode & harga ikut data varian saat ini
+                // (kalau varian sudah dihapus, pakai salinan saat produksi).
+                $labelItems = $produksi->produksiVarians
+                    ->filter(fn ($item) => $item->jumlah_hasil > 0)
+                    ->map(fn ($item) => [
+                        'kode_barcode' => optional($item->produkVarian)->kode_barcode ?: ($item->kode_barcode ?: $produksi->produk->kode_produk),
+                        'nama_ukuran' => $item->ukuran,
+                        'nama_rasa' => $item->variasi,
+                        'harga_jual' => optional($item->produkVarian)->harga_jual ?? $item->harga_jual,
+                        'jumlah' => (int) $item->jumlah_hasil,
+                    ])
+                    ->values();
+
+                $totalLabel = (int) $labelItems->sum('jumlah');
+
+                return view('pages.produksi.label', compact('produksi', 'labelItems', 'totalLabel'));
+            }
 
             $rincianUkuran = $produksi->produksiUkurans
                 ->filter(fn ($item) => $item->jumlah_hasil > 0)
@@ -856,6 +904,11 @@ class ProduksiController extends Controller
         try {
             $produk = $produksi->produk;
 
+            // Produk dengan varian baru: stok yang dikurangi ditentukan lewat varian.
+            if ($produk && $produk->produkVarians()->exists()) {
+                return $this->kurangiStokVarian($request, $produksi, $produk);
+            }
+
             // Validasi ukuran dinamis — dulu di-hardcode 'in:Besar,Kecil',
             // sekarang dicek terhadap daftar ukuran aktif produk ini
             // sendiri (bisa nama apapun yang didaftarin di menu Ukuran).
@@ -924,6 +977,281 @@ class ProduksiController extends Controller
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
+    }
+
+    /**
+     * Simpan produksi untuk produk yang punya varian dari form produk (tabel produk_varians).
+     * Input: varian_hasil[produk_varian_id] dan varian_kebutuhan[produk_varian_id].
+     * Stok varian bertambah sebesar hasil, lalu berkurang sebesar pesanan (kebutuhan).
+     */
+    private function simpanProduksiVarian(Request $request, Produk $produk)
+    {
+        $hasilInput = (array) $request->input('varian_hasil', []);
+
+        if (empty($hasilInput)) {
+            return back()->withInput()->with('error', 'Produk ini belum punya varian aktif. Aktifkan atau tambahkan varian lewat halaman Edit Produk.');
+        }
+
+        $request->validate([
+            'tanggal' => 'required|date',
+            'jam_produksi' => 'required|date_format:H:i',
+            'produk_id' => 'required|exists:produks,id',
+            'jumlah_hasil' => 'required|integer|min:1',
+            'keterangan' => 'nullable|string',
+
+            'varian_hasil' => 'required|array',
+            'varian_hasil.*' => 'nullable|integer|min:0',
+            'varian_kebutuhan' => 'nullable|array',
+            'varian_kebutuhan.*' => 'nullable|integer|min:0',
+
+            'kadaluarsa_tipe' => 'required|in:tanggal,jam',
+            'kadaluarsa_tanggal' => 'required_if:kadaluarsa_tipe,tanggal|nullable|date|after_or_equal:tanggal',
+            'kadaluarsa_jam' => 'required_if:kadaluarsa_tipe,jam|nullable|integer|min:1',
+
+            'bahan_baku_id' => 'required|array|min:1',
+            'bahan_baku_id.*' => ['required', 'distinct', 'exists:bahan_bakus,id'],
+
+            'jumlah_terpakai' => 'required|array|min:1',
+            'jumlah_terpakai.*' => [
+                'required',
+                'numeric',
+                'gt:0',
+                function ($attribute, $value, $fail) use ($request) {
+                    preg_match('/\d+/', $attribute, $match);
+                    $index = $match[0] ?? null;
+                    $bahanId = $request->bahan_baku_id[$index] ?? null;
+
+                    if (!$bahanId) {
+                        return;
+                    }
+
+                    $bahan = BahanBaku::with('satuan')->find($bahanId);
+
+                    if ($bahan && $bahan->satuan?->tipe === 'bulat' && floor($value) != $value) {
+                        $fail("Jumlah dipakai untuk {$bahan->nama_bahan} harus bilangan bulat (satuan {$bahan->satuan->nama}, tidak boleh desimal).");
+                    }
+                },
+            ],
+        ]);
+
+        // Susun rincian per varian: [produk_varian_id => ['hasil' => x, 'kebutuhan' => y]]
+        $varianProduk = ProdukVarian::where('produk_id', $produk->id)->get()->keyBy('id');
+        $kebutuhanInput = (array) $request->input('varian_kebutuhan', []);
+        $rincian = [];
+        $totalHasil = 0;
+        $totalKebutuhan = 0;
+
+        foreach ($hasilInput as $varianId => $hasil) {
+            $varianId = (int) $varianId;
+            $hasil = (int) $hasil;
+            $kebutuhan = (int) ($kebutuhanInput[$varianId] ?? 0);
+
+            if ($hasil <= 0 && $kebutuhan <= 0) {
+                continue;
+            }
+
+            $varian = $varianProduk->get($varianId);
+
+            if (!$varian) {
+                return back()->withInput()->with('error', 'Ada varian yang tidak valid untuk produk ini.');
+            }
+
+            if (!$varian->status_aktif) {
+                return back()->withInput()->with('error', "Varian {$varian->nama_lengkap} sedang dinonaktifkan, tidak bisa diproduksi.");
+            }
+
+            if ($kebutuhan > $hasil) {
+                return back()->withInput()->with('error', "Pesanan varian {$varian->nama_lengkap} tidak boleh melebihi Jumlah Hasil varian itu sendiri.");
+            }
+
+            $rincian[$varianId] = ['hasil' => $hasil, 'kebutuhan' => $kebutuhan];
+            $totalHasil += $hasil;
+            $totalKebutuhan += $kebutuhan;
+        }
+
+        if ($totalHasil <= 0) {
+            return back()->withInput()->with('error', 'Isi Jumlah Hasil minimal pada satu varian.');
+        }
+
+        if ($totalHasil !== (int) $request->jumlah_hasil) {
+            return back()->withInput()->with('error', 'Total Jumlah Hasil semua varian harus sama dengan Jumlah Hasil Produksi.');
+        }
+
+        $adaBahan = false;
+        foreach ($request->jumlah_terpakai as $jumlah) {
+            if ($jumlah > 0) {
+                $adaBahan = true;
+                break;
+            }
+        }
+
+        if (!$adaBahan) {
+            return back()->withInput()->with('error', 'Minimal pilih satu bahan baku yang digunakan.');
+        }
+
+        $produksi = null;
+        DB::transaction(function () use ($request, $produk, $rincian, $totalKebutuhan, &$produksi) {
+            $produksi = Produksi::create([
+                'tanggal' => $request->tanggal,
+                'jam_produksi' => $request->jam_produksi,
+                'produk_id' => $produk->id,
+                'jumlah_hasil' => $request->jumlah_hasil,
+                'jumlah_besar' => 0,
+                'jumlah_kecil' => 0,
+                'kebutuhan_produksi' => $totalKebutuhan,
+                'kebutuhan_besar' => 0,
+                'kebutuhan_kecil' => 0,
+                'user_id' => Auth::id(),
+                'keterangan' => $request->keterangan,
+                'kadaluarsa_tipe' => $request->kadaluarsa_tipe,
+                'kadaluarsa_tanggal' => $request->kadaluarsa_tipe === 'tanggal' ? $request->kadaluarsa_tanggal : null,
+                'kadaluarsa_jam' => $request->kadaluarsa_tipe === 'jam' ? $request->kadaluarsa_jam : null,
+                'status' => 'belum kadaluwarsa',
+            ]);
+
+            foreach ($request->bahan_baku_id as $i => $id) {
+                $pakai = (float) $request->jumlah_terpakai[$i];
+
+                if ($pakai <= 0) {
+                    continue;
+                }
+
+                $bahan = BahanBaku::lockForUpdate()->findOrFail($id);
+
+                if ($bahan->stok < $pakai) {
+                    throw new Exception("Stok {$bahan->nama_bahan} tidak mencukupi.");
+                }
+
+                ProduksiBahanBaku::create([
+                    'produksi_id' => $produksi->id,
+                    'bahan_baku_id' => $id,
+                    'jumlah_terpakai' => $pakai,
+                ]);
+
+                $bahan->decrement('stok', $pakai);
+            }
+
+            $produkTerkunci = Produk::lockForUpdate()->findOrFail($produk->id);
+
+            foreach ($rincian as $varianId => $r) {
+                $varian = ProdukVarian::lockForUpdate()->findOrFail($varianId);
+
+                $varian->stok = (int) $varian->stok + $r['hasil'];
+
+                if ($r['kebutuhan'] > 0) {
+                    if ($varian->stok < $r['kebutuhan']) {
+                        throw new Exception("Stok {$varian->nama_lengkap} untuk {$produkTerkunci->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                    }
+                    $varian->stok -= $r['kebutuhan'];
+                }
+
+                $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+                $varian->save();
+
+                ProduksiVarian::create([
+                    'produksi_id' => $produksi->id,
+                    'produk_varian_id' => $varian->id,
+                    'ukuran' => $varian->ukuran,
+                    'variasi' => $varian->variasi,
+                    'kode_barcode' => $varian->kode_barcode,
+                    'harga_jual' => $varian->harga_jual,
+                    'jumlah_hasil' => $r['hasil'],
+                    'kebutuhan' => $r['kebutuhan'],
+                ]);
+            }
+
+            $this->sinkronStokProdukDariVarian($produkTerkunci);
+        });
+
+        event(new StatusProduksiUpdate($produksi));
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($produksi)
+            ->withProperties([
+                'produk_id' => $produk->id,
+                'jumlah_hasil' => $request->jumlah_hasil,
+                'kebutuhan_produksi' => $totalKebutuhan,
+                'rincian_varian' => $rincian,
+                'bahan_baku_id' => $request->bahan_baku_id,
+                'jumlah_terpakai' => $request->jumlah_terpakai,
+            ])
+            ->log('menambahkan produksi');
+
+        $produksi->load('produksiVarians');
+        $ringkas = $produksi->produksiVarians
+            ->filter(fn ($v) => $v->jumlah_hasil > 0)
+            ->map(fn ($v) => $v->nama_lengkap . ' ' . $v->jumlah_hasil)
+            ->implode(', ');
+
+        return redirect()->route('produksi.index')->with(
+            'success',
+            "Produksi berhasil disimpan ({$produksi->jumlah_hasil} pcs: {$ringkas})."
+        );
+    }
+
+    /**
+     * Kurangi stok produk kadaluwarsa untuk produk bervarian: varian yang dikurangi dipilih
+     * lewat varian_id (nonaktif pun boleh, karena stok kadaluwarsa tetap harus dibuang).
+     */
+    private function kurangiStokVarian(Request $request, Produksi $produksi, Produk $produk)
+    {
+        $request->validate([
+            'jumlah' => 'required|integer|min:1',
+            'varian_id' => ['required', 'integer', Rule::exists('produk_varians', 'id')->where('produk_id', $produk->id)],
+        ]);
+
+        $jumlah = (int) $request->jumlah;
+        $sisa = $produksi->sisa_belum_disesuaikan;
+
+        if ($jumlah > $sisa) {
+            return back()->with('error', "Jumlah melebihi sisa yang belum disesuaikan ({$sisa} pcs).");
+        }
+
+        $varian = ProdukVarian::where('produk_id', $produk->id)->findOrFail($request->varian_id);
+
+        if ($jumlah > (int) $varian->stok) {
+            return back()->with('error', "Jumlah yang dikurangi melebihi stok varian {$varian->nama_lengkap} ({$varian->stok} pcs).");
+        }
+
+        DB::transaction(function () use ($jumlah, $varian, $produk, $produksi) {
+            $v = ProdukVarian::lockForUpdate()->findOrFail($varian->id);
+
+            if ($jumlah > (int) $v->stok) {
+                throw new Exception("Stok varian {$v->nama_lengkap} tidak mencukupi.");
+            }
+
+            $v->stok = (int) $v->stok - $jumlah;
+            $v->status_ketersediaan = $v->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+            $v->save();
+
+            $this->sinkronStokProdukDariVarian(Produk::lockForUpdate()->findOrFail($produk->id));
+
+            $produksi->increment('jumlah_disesuaikan', $jumlah);
+        });
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($produksi)
+            ->withProperties([
+                'jumlah_dikurangi' => $jumlah,
+                'produk_varian_id' => $varian->id,
+                'varian' => $varian->nama_lengkap,
+            ])
+            ->log('menyesuaikan stok produk kadaluwarsa');
+
+        return back()->with('success', "Stok \"{$produk->nama_produk}\" varian {$varian->nama_lengkap} berhasil dikurangi {$jumlah} pcs.");
+    }
+
+    /** Stok & status produk = total semua varian (sama seperti form produk & kasir). */
+    private function sinkronStokProdukDariVarian(Produk $produk): void
+    {
+        $total = (int) ProdukVarian::where('produk_id', $produk->id)->sum('stok');
+
+        $produk->update([
+            'stok' => $total,
+            'status_ketersediaan' => $total > 0 ? 'stok_ada' : 'perlu_diproduksi',
+        ]);
     }
 
     /**

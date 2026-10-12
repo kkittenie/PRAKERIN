@@ -68,22 +68,23 @@
                             <input type="hidden" :name="'varian_baris[' + index + '][id]'" :value="item.id">
                         </td>
                         <td class="py-2 px-3">
-                            <input type="text" maxlength="50" placeholder="Mis. Kecil" x-model="item.ukuran" :name="'varian_baris[' + index + '][ukuran]'" class="{{ $inputClass }}">
+                            <input type="text" maxlength="50" placeholder="Mis. Kecil" x-model="item.ukuran" :name="'varian_baris[' + index + '][ukuran]'" :style="pesanBaris(index) ? 'border-color:#ef4444' : ''" class="{{ $inputClass }}">
                         </td>
                         <td class="py-2 px-3">
-                            <input type="text" maxlength="100" placeholder="Mis. Coklat" x-model="item.variasi" :name="'varian_baris[' + index + '][variasi]'" class="{{ $inputClass }}">
+                            <input type="text" maxlength="100" placeholder="Mis. Coklat" x-model="item.variasi" :name="'varian_baris[' + index + '][variasi]'" :style="pesanBaris(index) ? 'border-color:#ef4444' : ''" class="{{ $inputClass }}">
+                            <p x-show="pesanBaris(index)" x-text="pesanBaris(index)" class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"></p>
                         </td>
                         <td class="py-2 px-3">
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-xs">Rp</span>
-                                <input type="text" inputmode="numeric" placeholder="8.000" :value="fmt(item.harga_modal)" @input="item.harga_modal = digits($event.target.value); $event.target.value = fmt(item.harga_modal)" class="{{ $inputClass }} pl-8">
+                                <input type="text" inputmode="numeric" placeholder="8.000" :style="kosongHarga(item.harga_modal) ? 'border-color:#ef4444' : ''" :value="fmt(item.harga_modal)" @input="item.harga_modal = digits($event.target.value); $event.target.value = fmt(item.harga_modal)" class="{{ $inputClass }} pl-8">
                                 <input type="hidden" :name="'varian_baris[' + index + '][harga_modal]'" :value="item.harga_modal">
                             </div>
                         </td>
                         <td class="py-2 px-3">
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-xs">Rp</span>
-                                <input type="text" inputmode="numeric" placeholder="10.000" :value="fmt(item.harga_jual)" @input="item.harga_jual = digits($event.target.value); $event.target.value = fmt(item.harga_jual)" class="{{ $inputClass }} pl-8">
+                                <input type="text" inputmode="numeric" placeholder="10.000" :style="kosongHarga(item.harga_jual) ? 'border-color:#ef4444' : ''" :value="fmt(item.harga_jual)" @input="item.harga_jual = digits($event.target.value); $event.target.value = fmt(item.harga_jual)" class="{{ $inputClass }} pl-8">
                                 <input type="hidden" :name="'varian_baris[' + index + '][harga_jual]'" :value="item.harga_jual">
                             </div>
                         </td>
@@ -119,9 +120,26 @@
         Satu baris = satu kombinasi yang dijual (contoh: Kecil + Coklat). Isi minimal Ukuran atau Variasi. Kosongkan salah satunya kalau produk cuma punya ukuran atau cuma punya variasi. Kombinasi yang sama tidak boleh dobel.
     </span>
 
-    @foreach (collect($errors->get('varian_baris*'))->flatten()->unique()->take(3) as $pesanVarian)
-        <small class="text-red-500 block mt-1">{{ $pesanVarian }}</small>
-    @endforeach
+    {{-- Peringatan merah (muncul langsung saat ada varian dobel, dan saat simpan kalau ada yang kurang) --}}
+    <div x-show="daftarGalat().length > 0" x-cloak class="mt-3 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3">
+        <p class="text-sm font-semibold text-red-700 dark:text-red-400">Periksa kembali daftar varian:</p>
+        <ul class="mt-1 list-disc pl-5 text-xs text-red-600 dark:text-red-400 space-y-0.5">
+            <template x-for="p in daftarGalat()" :key="p">
+                <li x-text="p"></li>
+            </template>
+        </ul>
+    </div>
+
+    @php
+        $pesanServerVarian = collect($errors->get('varian_baris*'))->flatten()->unique()->take(3);
+    @endphp
+    @if ($pesanServerVarian->isNotEmpty())
+        <div class="mt-3 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3">
+            @foreach ($pesanServerVarian as $pesanVarian)
+                <p class="text-xs font-medium text-red-600 dark:text-red-400">{{ $pesanVarian }}</p>
+            @endforeach
+        </div>
+    @endif
 
     {{-- MODAL HAPUS BARIS VARIAN --}}
     <div x-show="modalHapus" x-cloak x-transition class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
@@ -149,6 +167,56 @@
             modalHapus: false,
             indexHapus: null,
             namaHapus: '',
+            tampilkanGalat: false,
+
+            kosongBaris(b) {
+                return !String(b.ukuran || '').trim() && !String(b.variasi || '').trim();
+            },
+
+            kunciBaris(b) {
+                return (String(b.ukuran || '').trim() + '|' + String(b.variasi || '').trim()).toLowerCase();
+            },
+
+            dobel(index) {
+                const b = this.baris[index];
+                if (!b || this.kosongBaris(b)) return false;
+                const k = this.kunciBaris(b);
+                return this.baris.some((x, i) => i !== index && !this.kosongBaris(x) && this.kunciBaris(x) === k);
+            },
+
+            kosongHarga(v) {
+                return this.tampilkanGalat && (v === '' || v === null || v === undefined);
+            },
+
+            // Dobel selalu tampil langsung; kolom yang kosong baru ditandai merah setelah klik simpan.
+            pesanBaris(index) {
+                const b = this.baris[index];
+                if (!b) return '';
+                if (this.dobel(index)) return 'Kombinasi ukuran & variasi ini sudah dipakai di baris lain.';
+                if (this.tampilkanGalat && this.kosongBaris(b)) return 'Isi minimal Ukuran atau Variasi.';
+                return '';
+            },
+
+            hitungGalat(paksa) {
+                const out = [];
+                if (paksa && this.baris.length === 0) out.push('Tambahkan minimal 1 varian sebelum menyimpan produk.');
+                this.baris.forEach((b, i) => {
+                    const nomor = 'Baris ' + (i + 1) + ': ';
+                    if (this.dobel(i)) {
+                        out.push(nomor + 'kombinasi ukuran & variasi ini sudah ada di baris lain.');
+                    } else if (paksa && this.kosongBaris(b)) {
+                        out.push(nomor + 'isi minimal Ukuran atau Variasi.');
+                    }
+                    if (paksa && (b.harga_modal === '' || b.harga_jual === '')) {
+                        out.push(nomor + 'Harga Modal dan Harga Jual wajib diisi.');
+                    }
+                });
+                return out;
+            },
+
+            daftarGalat() {
+                return this.hitungGalat(this.tampilkanGalat);
+            },
 
             init() {
                 this.baris = this.baris.map(b => ({ ...b, uid: ++this.uid }));
@@ -229,35 +297,15 @@
             const cb = document.getElementById('punya_varian');
             if (!cb.checked) return;
 
-            const data = Alpine.$data(document.getElementById('wrapper-varian'));
-            const gagal = function (pesan) {
+            const wrapper = document.getElementById('wrapper-varian');
+            const data = Alpine.$data(wrapper);
+
+            // Munculkan semua peringatan merah; kalau masih ada yang salah, simpan dibatalkan.
+            data.tampilkanGalat = true;
+
+            if (data.hitungGalat(true).length > 0) {
                 e.preventDefault();
-                alert(pesan);
-            };
-
-            if (data.baris.length === 0) {
-                return gagal('Tambahkan minimal 1 varian sebelum menyimpan produk.');
-            }
-
-            const dipakai = new Set();
-            for (let i = 0; i < data.baris.length; i++) {
-                const b = data.baris[i];
-                const ukuran = String(b.ukuran || '').trim();
-                const variasi = String(b.variasi || '').trim();
-                const nomor = 'Baris ' + (i + 1) + ': ';
-
-                if (!ukuran && !variasi) {
-                    return gagal(nomor + 'isi minimal Ukuran atau Variasi.');
-                }
-                if (b.harga_modal === '' || b.harga_jual === '') {
-                    return gagal(nomor + 'Harga Modal dan Harga Jual wajib diisi.');
-                }
-
-                const kunci = (ukuran + '|' + variasi).toLowerCase();
-                if (dipakai.has(kunci)) {
-                    return gagal(nomor + 'kombinasi ukuran & variasi ini sudah ada di baris lain.');
-                }
-                dipakai.add(kunci);
+                wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });
     })();

@@ -33,9 +33,6 @@ use App\Http\Controllers\PengaturanPajakController;
 use App\Http\Controllers\KontenStatisController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PromoProdukEventController;
-use App\Http\Controllers\UkuranController;
-use App\Http\Controllers\VarianRasaController;
-use App\Http\Controllers\ProdukUkuranController;
 use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
 
     require __DIR__ . '/mobile.php';
@@ -202,40 +199,6 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
     Route::post('/satuan/ajax', [SatuanController::class, 'storeAjax'])
         ->name('satuan.storeAjax')
         ->middleware('permission:tambah_satuan');
-
-    Route::resource('ukuran', UkuranController::class)
-        ->middleware('permission:lihat_ukuran|tambah_ukuran|edit_ukuran|hapus_ukuran');
-
-    Route::post('/ukuran/ajax', [UkuranController::class, 'storeAjax'])
-        ->name('ukuran.storeAjax')
-        ->middleware('permission:tambah_ukuran');
-
-    Route::patch('/ukuran/{id}/toggle-status', [UkuranController::class, 'toggleStatus'])
-        ->name('ukuran.toggle-status')
-        ->middleware('permission:edit_ukuran');
-
-    Route::patch('/varian-rasa/{id}/toggle-status', [VarianRasaController::class, 'toggleStatus'])
-        ->name('varian-rasa.toggle-status')
-        ->middleware('permission:edit_varian_rasa');
-
-    Route::post('/varian-rasa/ajax', [VarianRasaController::class, 'storeAjax'])
-        ->name('varian-rasa.storeAjax')
-        ->middleware('permission:tambah_varian_rasa');
-
-    Route::resource('varian-rasa', VarianRasaController::class)
-        ->middleware('permission:lihat_varian_rasa|tambah_varian_rasa|edit_varian_rasa|hapus_varian_rasa');
-
-    // Baris ukuran dinamis milik satu produk (dipakai di halaman edit Produk).
-    Route::middleware('permission:edit_produk')->group(function () {
-        Route::post('/produk/{produk}/ukuran', [ProdukUkuranController::class, 'store'])
-            ->name('produk-ukuran.store');
-        Route::put('/produk-ukuran/{produkUkuran}', [ProdukUkuranController::class, 'update'])
-            ->name('produk-ukuran.update');
-        Route::patch('/produk-ukuran/{id}/toggle-status', [ProdukUkuranController::class, 'toggleStatus'])
-            ->name('produk-ukuran.toggle-status');
-        Route::delete('/produk-ukuran/{produkUkuran}', [ProdukUkuranController::class, 'destroy'])
-            ->name('produk-ukuran.destroy');
-    });
 
 
 

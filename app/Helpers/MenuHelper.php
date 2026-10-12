@@ -28,8 +28,6 @@ class MenuHelper
                 'icon' => 'data-master',
                 'subItems' => [
                     ['name' => 'Kategori Produk', 'path' => '/kategori-produk', 'permission' => 'lihat_kategori_produk'],
-                    ['name' => 'Ukuran Produk', 'path' => '/ukuran', 'permission' => 'lihat_ukuran'],
-                    ['name' => 'Varian Rasa', 'path' => '/varian-rasa', 'permission' => 'lihat_varian_rasa'],
                     ['name' => 'Produk', 'path' => '/produk', 'permission' => 'lihat_produk'],
                     ['name' => 'Produk Khusus Bundling', 'path' => '/produk-khusus-bundling', 'permission' => 'lihat_produk'],
                     ['name' => 'Bundling', 'path' => '/bundling', 'permission' => 'lihat_bundling'],
