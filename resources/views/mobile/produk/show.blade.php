@@ -13,19 +13,102 @@
                     ukuran: @js($ukuranDipilihAwal ?? ''),
                     varianRasa: @js($varianRasaDipilihAwal ?? ''),
                     catatan: @js($itemEdit['catatan'] ?? ''),
+                    punyaVarianBaru: {{ $punyaVarianBaru ? 'true' : 'false' }},
+                    daftarVarian: @js($daftarVarian),
+                    opsiUkuran: @js($opsiUkuran),
+                    opsiVariasi: @js($opsiVariasi),
+                    idVarianAwal: @js($varianIdDipilihAwal),
                     punyaUkuran: {{ $punyaUkuran ? 'true' : 'false' }},
                     punyaVarianRasa: {{ $punyaVarianRasa ? 'true' : 'false' }},
                     daftarUkuran: @js($daftarUkuran),
                     daftarVarianRasa: @js($daftarVarianRasa),
                     hargaDasar: {{ (float) $hargaFinal }},
+                    hargaAsliDasar: {{ (float) $hargaAsli }},
+                    fotoProdukUtama: @js($produk->foto ? asset('storage/' . $produk->foto) : null),
+
+                    get varianTerpilih() {
+                        if (!this.punyaVarianBaru) return null;
+                        let cocok = this.daftarVarian.find(v => {
+                            let matchU = !this.ukuran || v.ukuran === this.ukuran;
+                            let matchR = !this.varianRasa || v.variasi === this.varianRasa;
+                            return matchU && matchR;
+                        });
+                        if (!cocok && this.daftarVarian.length > 0) {
+                            cocok = this.daftarVarian.find(v => !this.ukuran || v.ukuran === this.ukuran);
+                        }
+                        return cocok || this.daftarVarian[0] || null;
+                    },
+
+                    get idVarianTerpilih() {
+                        return this.varianTerpilih ? this.varianTerpilih.id : null;
+                    },
+
+                    get fotoTampil() {
+                        if (this.punyaVarianBaru && this.varianTerpilih && this.varianTerpilih.foto) {
+                            return this.varianTerpilih.foto;
+                        }
+                        return this.fotoProdukUtama;
+                    },
+
                     get opsiUkuranTerpilih() {
                         return this.daftarUkuran.find(o => o.nama === this.ukuran) || null;
                     },
+
                     get hargaSatuan() {
+                        if (this.punyaVarianBaru) {
+                            return this.varianTerpilih ? this.varianTerpilih.harga_diskon : this.hargaDasar;
+                        }
                         if (this.punyaUkuran) {
                             return this.opsiUkuranTerpilih ? this.opsiUkuranTerpilih.harga_final : this.hargaDasar;
                         }
                         return this.hargaDasar;
+                    },
+
+                    get hargaAsliSatuan() {
+                        if (this.punyaVarianBaru) {
+                            return this.varianTerpilih ? this.varianTerpilih.harga_asli : this.hargaAsliDasar;
+                        }
+                        if (this.punyaUkuran) {
+                            return this.opsiUkuranTerpilih ? this.opsiUkuranTerpilih.harga_asli : this.hargaAsliDasar;
+                        }
+                        return this.hargaAsliDasar;
+                    },
+
+                    get adaPromoVarian() {
+                        if (this.punyaVarianBaru) {
+                            return this.varianTerpilih ? (this.varianTerpilih.sedang_promo || this.varianTerpilih.harga_diskon < this.varianTerpilih.harga_asli) : false;
+                        }
+                        if (this.punyaUkuran) {
+                            return this.opsiUkuranTerpilih ? this.opsiUkuranTerpilih.ada_promo : false;
+                        }
+                        return {{ $adaPromo ? 'true' : 'false' }};
+                    },
+
+                    get isHabis() {
+                        if (this.punyaVarianBaru) {
+                            return !this.varianTerpilih || this.varianTerpilih.stok <= 0;
+                        }
+                        return {{ $habis ? 'true' : 'false' }};
+                    },
+
+                    pilihUkuran(u) {
+                        this.ukuran = u;
+                        if (this.punyaVarianBaru) {
+                            let varianCocok = this.daftarVarian.filter(v => v.ukuran === u);
+                            if (varianCocok.length > 0 && !varianCocok.some(v => v.variasi === this.varianRasa)) {
+                                this.varianRasa = varianCocok[0].variasi || '';
+                            }
+                        }
+                    },
+
+                    pilihVariasi(r) {
+                        this.varianRasa = r;
+                        if (this.punyaVarianBaru) {
+                            let varianCocok = this.daftarVarian.filter(v => v.variasi === r);
+                            if (varianCocok.length > 0 && !varianCocok.some(v => v.ukuran === this.ukuran)) {
+                                this.ukuran = varianCocok[0].ukuran || '';
+                            }
+                        }
                     },
 
                     get total() {
@@ -58,13 +141,12 @@
         <div class="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
             <div class="relative -mx-5 -mt-6 aspect-square w-auto overflow-hidden bg-gray-50 sm:-mx-8 md:-mx-10 lg:mx-0 lg:mt-0 lg:rounded-2xl lg:aspect-square lg:w-full">
 
-                @if ($produk->foto)
-                    <img src="{{ asset('storage/' . $produk->foto) }}" alt="{{ $produk->nama_produk }}"
-                        class="h-full w-full object-cover"
-                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                @endif
+                <template x-if="fotoTampil">
+                    <img :src="fotoTampil" alt="{{ $produk->nama_produk }}"
+                        class="h-full w-full object-cover">
+                </template>
 
-                <div class="{{ $produk->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
+                <div x-show="!fotoTampil" class="flex h-full w-full items-center justify-center text-brand-200">
                     @include('mobile.components.icon-cup', ['class' => 'h-20 w-20'])
                 </div>
 
@@ -79,12 +161,12 @@
                 </a>
 
                 {{-- Badge promo --}}
-                @if ($adaPromo)
+                <template x-if="adaPromoVarian">
                     <span
                         class="absolute left-4 top-16 rounded-full bg-orange-500 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
                         Promo
                     </span>
-                @endif
+                </template>
 
             </div>
 
@@ -98,7 +180,19 @@
                     {{ $produk->nama_produk }}
                 </h2>
 
-                @unless ($punyaUkuran)
+                <template x-if="punyaVarianBaru">
+                    <div class="mt-2 flex items-center gap-2">
+                        <template x-if="adaPromoVarian">
+                            <span class="text-xs text-gray-400 line-through"
+                                x-text="'Rp ' + Math.round(hargaAsliSatuan).toLocaleString('id-ID')"></span>
+                        </template>
+
+                        <span class="text-base lg:text-lg font-extrabold text-gray-900"
+                            x-text="'Rp ' + Math.round(hargaSatuan).toLocaleString('id-ID')"></span>
+                    </div>
+                </template>
+
+                <template x-if="!punyaVarianBaru && !punyaUkuran">
                     <div class="mt-2 flex items-center gap-2">
                         @if ($adaPromo)
                             <span class="text-xs text-gray-400 line-through">
@@ -110,18 +204,18 @@
                             Rp {{ number_format($hargaFinal, 0, ',', '.') }}
                         </span>
                     </div>
-                @endunless
+                </template>
             </div>
 
-            @if ($habis)
+            <template x-if="isHabis">
                 <div class="mt-3 flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">
                     @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
                     <p class="text-[11px] font-semibold leading-relaxed">
-                        Stok produk ini sedang kurang/habis, pesanan tetap bisa dibuat & akan
+                        Stok produk/varian ini sedang kurang/habis, pesanan tetap bisa dibuat & akan
                         diproduksi dulu di dapur — waktu tunggu bisa lebih lama dari biasanya.
                     </p>
                 </div>
-            @endif
+            </template>
 
             <template x-if="poinDidapat > 0">
                 <div class="mt-3 flex items-center gap-2 rounded-2xl bg-brand-50 px-4 py-3 text-brand-800">
@@ -149,72 +243,117 @@
                 </div>
             @endif
 
-            @if ($produk->punya_ukuran)
-                <div>
-                    <h3 class="text-xs font-bold text-gray-900">
-                        Pilihan Ukuran
-                    </h3>
+            @if ($punyaVarianBaru)
+                <template x-if="opsiUkuran && opsiUkuran.length > 0">
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-900">
+                            Pilihan Ukuran
+                        </h3>
 
-                    <template x-if="!daftarUkuran || daftarUkuran.length === 0">
-                        <p class="mt-2 text-[11px] italic text-gray-400">
-                            Belum ada ukuran aktif untuk produk ini.
-                        </p>
-                    </template>
-
-                    <div class="mt-2 grid grid-cols-2 gap-2">
-                        <template x-for="opsi in daftarUkuran" :key="opsi.produk_ukuran_id">
-                            <button type="button" @click="ukuran = opsi.nama" :class="
-                                            ukuran === opsi.nama
-                                                ? 'border-brand-800 bg-brand-50 text-brand-800'
-                                                : 'border-gray-200 text-gray-600'
-                                        " class="rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]">
-                                <span class="block text-xs font-bold" x-text="opsi.nama"></span>
-
-                                <template x-if="opsi.ada_promo">
-                                    <span class="block text-[10px] font-semibold text-gray-400 line-through"
-                                        x-text="'Rp ' + opsi.harga_asli.toLocaleString('id-ID')"></span>
-                                </template>
-
-                                <span class="block text-[11px] font-semibold text-gray-500"
-                                    x-text="'Rp ' + opsi.harga_final.toLocaleString('id-ID')"></span>
-                            </button>
-                        </template>
+                        <div class="mt-2 grid grid-cols-2 gap-2">
+                            <template x-for="u in opsiUkuran" :key="u">
+                                <button type="button" @click="pilihUkuran(u)" :class="
+                                    ukuran === u
+                                        ? 'border-brand-800 bg-brand-50 text-brand-800 font-extrabold'
+                                        : 'border-gray-200 text-gray-600'
+                                " class="rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]">
+                                    <span class="block text-xs font-bold" x-text="u"></span>
+                                </button>
+                            </template>
+                        </div>
                     </div>
-                </div>
-            @endif
+                </template>
 
-            @if ($produk->punya_varian_rasa)
-                <div>
-                    <h3 class="text-xs font-bold text-gray-900">
-                        Pilihan Varian Rasa
-                    </h3>
+                <template x-if="opsiVariasi && opsiVariasi.length > 0">
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-900">
+                            Pilihan Variasi
+                        </h3>
 
-                    <template x-if="!daftarVarianRasa || daftarVarianRasa.length === 0">
-                        <p class="mt-2 text-[11px] italic text-gray-400">
-                            Belum ada varian rasa aktif untuk produk ini.
-                        </p>
-                    </template>
-
-                    <div class="mt-2 grid grid-cols-2 gap-2">
-                        <template x-for="rasa in daftarVarianRasa" :key="rasa.produk_varian_rasa_id">
-                            <button type="button" @click="varianRasa = rasa.nama" :class="
-                                            varianRasa === rasa.nama
-                                                ? 'border-brand-800 bg-brand-50 text-brand-800 font-extrabold'
-                                                : 'border-gray-200 text-gray-600'
-                                        " class="flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition active:scale-[0.99]">
-                                <template x-if="rasa.gambar">
-                                    <img :src="rasa.gambar" :alt="rasa.nama" class="h-8 w-8 rounded-full object-cover shrink-0 border border-gray-100">
-                                </template>
-                                <template x-if="!rasa.gambar">
+                        <div class="mt-2 grid grid-cols-2 gap-2">
+                            <template x-for="v in opsiVariasi" :key="v">
+                                <button type="button" @click="pilihVariasi(v)" :class="
+                                    varianRasa === v
+                                        ? 'border-brand-800 bg-brand-50 text-brand-800 font-extrabold'
+                                        : 'border-gray-200 text-gray-600'
+                                " class="flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition active:scale-[0.99]">
                                     <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800 text-[10px] font-bold">
-                                        <span x-text="(rasa.nama || '').charAt(0).toUpperCase()"></span>
+                                        <span x-text="(v || '').charAt(0).toUpperCase()"></span>
                                     </div>
-                                </template>
-                                <span class="block text-xs font-bold truncate" x-text="rasa.nama"></span>
-                            </button>
-                        </template>
+                                    <span class="block text-xs font-bold truncate" x-text="v"></span>
+                                </button>
+                            </template>
+                        </div>
                     </div>
-                </div>
+                </template>
+            @else
+                @if ($produk->punya_ukuran)
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-900">
+                            Pilihan Ukuran
+                        </h3>
+
+                        <template x-if="!daftarUkuran || daftarUkuran.length === 0">
+                            <p class="mt-2 text-[11px] italic text-gray-400">
+                                Belum ada ukuran aktif untuk produk ini.
+                            </p>
+                        </template>
+
+                        <div class="mt-2 grid grid-cols-2 gap-2">
+                            <template x-for="opsi in daftarUkuran" :key="opsi.produk_ukuran_id">
+                                <button type="button" @click="ukuran = opsi.nama" :class="
+                                                ukuran === opsi.nama
+                                                    ? 'border-brand-800 bg-brand-50 text-brand-800'
+                                                    : 'border-gray-200 text-gray-600'
+                                            " class="rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]">
+                                    <span class="block text-xs font-bold" x-text="opsi.nama"></span>
+
+                                    <template x-if="opsi.ada_promo">
+                                        <span class="block text-[10px] font-semibold text-gray-400 line-through"
+                                            x-text="'Rp ' + opsi.harga_asli.toLocaleString('id-ID')"></span>
+                                    </template>
+
+                                    <span class="block text-[11px] font-semibold text-gray-500"
+                                        x-text="'Rp ' + opsi.harga_final.toLocaleString('id-ID')"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($produk->punya_varian_rasa)
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-900">
+                            Pilihan Varian Rasa
+                        </h3>
+
+                        <template x-if="!daftarVarianRasa || daftarVarianRasa.length === 0">
+                            <p class="mt-2 text-[11px] italic text-gray-400">
+                                Belum ada varian rasa aktif untuk produk ini.
+                            </p>
+                        </template>
+
+                        <div class="mt-2 grid grid-cols-2 gap-2">
+                            <template x-for="rasa in daftarVarianRasa" :key="rasa.produk_varian_rasa_id">
+                                <button type="button" @click="varianRasa = rasa.nama" :class="
+                                                varianRasa === rasa.nama
+                                                    ? 'border-brand-800 bg-brand-50 text-brand-800 font-extrabold'
+                                                    : 'border-gray-200 text-gray-600'
+                                            " class="flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition active:scale-[0.99]">
+                                    <template x-if="rasa.gambar">
+                                        <img :src="rasa.gambar" :alt="rasa.nama" class="h-8 w-8 rounded-full object-cover shrink-0 border border-gray-100">
+                                    </template>
+                                    <template x-if="!rasa.gambar">
+                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800 text-[10px] font-bold">
+                                            <span x-text="(rasa.nama || '').charAt(0).toUpperCase()"></span>
+                                        </div>
+                                    </template>
+                                    <span class="block text-xs font-bold truncate" x-text="rasa.nama"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                @endif
             @endif
 
             <div>
@@ -230,6 +369,9 @@
 
             </div>
 
+            {{-- Spacer pas di bawah kolom catatan agar scroll pas sampai batas kolom catatan --}}
+            <div class="h-16 lg:hidden" aria-hidden="true"></div>
+
             <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 lg:static lg:w-full lg:border-t-0 lg:px-0 lg:pt-4 lg:shadow-none">
 
             @if (Auth::guard('member')->check())
@@ -241,6 +383,7 @@
                             @method('PATCH')
 
                             <input type="hidden" name="produk_id" value="{{ $produk->id }}">
+                            <input type="hidden" name="produk_varian_id" :value="idVarianTerpilih">
                             <input type="hidden" name="jumlah" :value="jumlah">
                             <input type="hidden" name="ukuran" :value="ukuran">
                             <input type="hidden" name="varian_rasa" :value="varianRasa">
@@ -289,6 +432,8 @@
                     <form method="POST" action="{{ route('member.keranjang.tambah', $produk) }}"
                         onsubmit="event.preventDefault(); kirimTambahKeranjang(this);">
                         @csrf
+
+                        <input type="hidden" name="produk_varian_id" :value="idVarianTerpilih">
 
                         <input type="hidden" name="jumlah" :value="jumlah">
 

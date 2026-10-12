@@ -116,10 +116,6 @@
         <button type="button" @click="tambahBaris()" class="h-11 px-5 rounded-lg bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition">+ Tambah Varian</button>
     </div>
 
-    <span class="text-xs text-gray-400 dark:text-gray-500 mt-2 block">
-        Satu baris = satu kombinasi yang dijual (contoh: Kecil + Coklat). Isi minimal Ukuran atau Variasi. Kosongkan salah satunya kalau produk cuma punya ukuran atau cuma punya variasi. Kombinasi yang sama tidak boleh dobel.
-    </span>
-
     {{-- Peringatan merah (muncul langsung saat ada varian dobel, dan saat simpan kalau ada yang kurang) --}}
     <div x-show="daftarGalat().length > 0" x-cloak class="mt-3 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3">
         <p class="text-sm font-semibold text-red-700 dark:text-red-400">Periksa kembali daftar varian:</p>

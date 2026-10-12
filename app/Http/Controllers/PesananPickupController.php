@@ -205,6 +205,20 @@ class PesananPickupController extends Controller
                         // saat checkout, butuh_produksi sudah diset.
                         // Kurangi stok untuk yang tidak butuh_produksi.
                         if (! $detail->butuh_produksi) {
+                            if ($detail->produk_varian_id) {
+                                $varian = \App\Models\ProdukVarian::lockForUpdate()->find($detail->produk_varian_id);
+                                if ($varian) {
+                                    $varian->stok = max(0, (int) $varian->stok - (int) $detail->jumlah);
+                                    $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+                                    $varian->save();
+                                    $pInduk = \App\Models\Produk::find($varian->produk_id);
+                                    if ($pInduk) {
+                                        $this->sinkronStokProduk($pInduk);
+                                    }
+                                }
+                                continue;
+                            }
+
                             $produk = \App\Models\Produk::lockForUpdate()->find($detail->produk_id);
                             if ($produk) {
                                 try {
@@ -229,6 +243,51 @@ class PesananPickupController extends Controller
                     $produk = \App\Models\Produk::lockForUpdate()->find($detail->produk_id);
                     if (! $produk) {
                         continue;
+                    }
+
+                    // Tentukan apakah perlu diproduksi untuk varian baru
+                    if ($detail->produk_varian_id) {
+                        $varian = \App\Models\ProdukVarian::lockForUpdate()->find($detail->produk_varian_id);
+                        if ($varian) {
+                            $stokTersedia = max(0, (int) $varian->stok);
+                            if ($varian->perlu_diproduksi || $stokTersedia <= 0) {
+                                $detail->butuh_produksi = true;
+                                $detail->save();
+                            } elseif ($stokTersedia >= $detail->jumlah) {
+                                $detail->butuh_produksi = false;
+                                $detail->save();
+                                $varian->stok = $stokTersedia - $detail->jumlah;
+                                $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+                                $varian->save();
+                                $this->sinkronStokProduk($produk);
+                            } else {
+                                $sisaProduksi = $detail->jumlah - $stokTersedia;
+                                $detail->jumlah = $stokTersedia;
+                                $detail->subtotal = $detail->harga_satuan * $stokTersedia;
+                                $detail->butuh_produksi = false;
+                                $detail->save();
+
+                                \App\Models\DetailTransaksi::create([
+                                    'transaksi_id' => $transaksi->id,
+                                    'produk_id' => $produk->id,
+                                    'produk_varian_id' => $varian->id,
+                                    'nama_produk' => $detail->nama_produk,
+                                    'ukuran' => $varian->ukuran,
+                                    'varian_rasa' => $varian->variasi,
+                                    'harga_satuan' => $detail->harga_satuan,
+                                    'jumlah' => $sisaProduksi,
+                                    'catatan' => $detail->catatan,
+                                    'subtotal' => $detail->harga_satuan * $sisaProduksi,
+                                    'butuh_produksi' => true,
+                                ]);
+
+                                $varian->stok = 0;
+                                $varian->status_ketersediaan = 'perlu_diproduksi';
+                                $varian->save();
+                                $this->sinkronStokProduk($produk);
+                            }
+                            continue;
+                        }
                     }
 
                     // Tentukan apakah perlu diproduksi (sama seperti kasir)
@@ -383,6 +442,19 @@ class PesananPickupController extends Controller
                 if ($perluKembalikanStok) {
                     foreach ($transaksi->detailTransaksi as $detail) {
                         if (! $detail->butuh_produksi && $detail->produk_id) {
+                            if ($detail->produk_varian_id) {
+                                $varian = \App\Models\ProdukVarian::lockForUpdate()->find($detail->produk_varian_id);
+                                if ($varian) {
+                                    $varian->stok = (int) $varian->stok + (int) $detail->jumlah;
+                                    $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+                                    $varian->save();
+                                    if ($detail->produk) {
+                                        $this->sinkronStokProduk($detail->produk);
+                                    }
+                                }
+                                continue;
+                            }
+
                             try {
                                 if ($detail->varian_rasa && $detail->produk?->punya_varian_rasa) {
                                     $detail->produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, $detail->jumlah);
@@ -533,5 +605,16 @@ class PesananPickupController extends Controller
                 ]);
             }
         }
+    }
+
+    private function sinkronStokProduk(\App\Models\Produk $produk): void
+    {
+        $totalStok = (int) \App\Models\ProdukVarian::where('produk_id', $produk->id)
+            ->where('status_aktif', true)
+            ->sum('stok');
+
+        $produk->stok = $totalStok;
+        $produk->status_ketersediaan = $totalStok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+        $produk->save();
     }
 }

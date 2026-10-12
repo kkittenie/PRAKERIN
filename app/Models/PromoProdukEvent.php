@@ -99,6 +99,21 @@ class PromoProdukEvent extends Model
      */
     public function rasaTunggalUntukProduksi(): ?string
     {
+        $hasVarianBaru = $this->produk && $this->produk->produkVarians()->exists();
+        if ($hasVarianBaru) {
+            $rasaIds = $this->varianRasaIdsTerbatas();
+            if ($rasaIds->count() !== 1) {
+                return null;
+            }
+            $targetId = (int) $rasaIds->first();
+            $varian = $this->produk->produkVarians
+                ->first(function ($v) use ($targetId) {
+                    $id = (int) ($v->varian_rasa_id ?: (\App\Models\VarianRasa::where('nama_rasa', $v->variasi)->value('id') ?? 0));
+                    return $id === $targetId;
+                });
+            return $varian?->variasi;
+        }
+
         if (! $this->produk || ! $this->produk->punya_varian_rasa) {
             return null;
         }
@@ -120,13 +135,25 @@ class PromoProdukEvent extends Model
      * daftar rasa produk. Event dibatasi ke rasa tertentu → hanya rasa itu;
      * tidak dibatasi → semua rasa aktif produk. Kosong kalau produknya tidak
      * punya varian rasa.
-     *
-     * Dipakai buat cek & kurangi stok per rasa waktu event di-checkout, supaya
-     * stok rasa ikut turun dan rasa yang dipakai tercatat di detail transaksi
-     * (kelihatan di tiket produksi).
      */
     public function kandidatRasaUntukProduksi(): array
     {
+        $hasVarianBaru = $this->produk && $this->produk->produkVarians()->exists();
+        if ($hasVarianBaru) {
+            $rasaIds = $this->varianRasaIdsTerbatas();
+            $varians = $this->produk->produkVarians;
+            return $varians->filter(function ($v) use ($rasaIds) {
+                    if (empty($v->variasi)) return false;
+                    if ($rasaIds->isEmpty()) return true;
+                    $id = (int) ($v->varian_rasa_id ?: (\App\Models\VarianRasa::where('nama_rasa', $v->variasi)->value('id') ?? 0));
+                    return $rasaIds->contains($id);
+                })
+                ->pluck('variasi')
+                ->unique()
+                ->values()
+                ->all();
+        }
+
         if (! $this->produk || ! $this->produk->punya_varian_rasa) {
             return [];
         }
@@ -151,6 +178,21 @@ class PromoProdukEvent extends Model
      */
     public function ukuranTunggalUntukProduksi(): ?string
     {
+        $hasVarianBaru = $this->produk && $this->produk->produkVarians()->exists();
+        if ($hasVarianBaru) {
+            $ukuranIds = $this->ukuranIdsTerbatas();
+            if ($ukuranIds->count() !== 1) {
+                return null;
+            }
+            $targetId = (int) $ukuranIds->first();
+            $varian = $this->produk->produkVarians
+                ->first(function ($v) use ($targetId) {
+                    $id = (int) ($v->ukuran_id ?: (\App\Models\Ukuran::where('nama_ukuran', $v->ukuran)->value('id') ?? 0));
+                    return $id === $targetId;
+                });
+            return $varian?->ukuran;
+        }
+
         if (! $this->produk || ! $this->produk->punya_ukuran) {
             return null;
         }
@@ -175,7 +217,7 @@ class PromoProdukEvent extends Model
             && $sekarang->between($this->mulai_berlaku, $this->selesai_berlaku);
     }
 
-        public function scopeBerlaku($query)
+    public function scopeBerlaku($query)
     {
         $now = now();
 
@@ -188,6 +230,28 @@ class PromoProdukEvent extends Model
     {
         if (!$this->produk || $this->isi_event <= 0) {
             return 0;
+        }
+
+        $hasVarianBaru = $this->produk->produkVarians()->exists();
+        if ($hasVarianBaru) {
+            $ukuranIds = $this->ukuranIdsTerbatas();
+            $rasaIds = $this->varianRasaIdsTerbatas();
+
+            $varians = $this->produk->produkVarians->filter(function ($v) use ($ukuranIds, $rasaIds) {
+                if (!$v->status_aktif) return false;
+                if ($ukuranIds->isNotEmpty()) {
+                    $uId = (int) ($v->ukuran_id ?: (\App\Models\Ukuran::where('nama_ukuran', $v->ukuran)->value('id') ?? 0));
+                    if (!$ukuranIds->contains($uId)) return false;
+                }
+                if ($rasaIds->isNotEmpty()) {
+                    $rId = (int) ($v->varian_rasa_id ?: (\App\Models\VarianRasa::where('nama_rasa', $v->variasi)->value('id') ?? 0));
+                    if (!$rasaIds->contains($rId)) return false;
+                }
+                return true;
+            });
+
+            $stokDasar = (int) $varians->sum('stok');
+            return intdiv($stokDasar, (int) $this->isi_event);
         }
 
         $stokDasar = (int) $this->produk->stok;

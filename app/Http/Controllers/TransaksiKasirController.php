@@ -174,13 +174,23 @@ class TransaksiKasirController extends Controller
 
             $daftarKategori = KategoriProduk::all();
 
-            $daftarBundling = Bundling::with(['items.produk.produkUkurans.ukuran', 'items.produk.produkVarianRasas.varianRasa', 'items.produk.produkUkuranRasas'])
+            $daftarBundling = Bundling::with([
+                'items.produk.produkUkurans.ukuran',
+                'items.produk.produkVarianRasas.varianRasa',
+                'items.produk.produkUkuranRasas',
+                'items.produkVarian',
+            ])
                 ->where('status_aktif', true)
                 ->get()
                 ->map(function ($bundling) {
                     $stokMaksimal = $bundling->items->reduce(function ($carry, $item) {
                         if (!$item->produk) {
                             return 0;
+                        }
+                        if ($item->produkVarian) {
+                            $stokVarian = (int) $item->produkVarian->stok;
+                            $bisaDibuat = intdiv($stokVarian, max(1, $item->qty));
+                            return is_null($carry) ? $bisaDibuat : min($carry, $bisaDibuat);
                         }
                         // Stok dihitung sesuai ukuran + rasa yang dipilih untuk
                         // item ini (kalau produknya punya varian ukuran / rasa),
@@ -221,7 +231,7 @@ class TransaksiKasirController extends Controller
     {
         $bundlingId = (int) $item['bundling_id'];
         $jumlahBundling = (int) $item['jumlah'];
-        $bundling = Bundling::with('items.produk')->findOrFail($bundlingId);
+        $bundling = Bundling::with('items.produk', 'items.produkVarian')->findOrFail($bundlingId);
 
         $perluProduksiBundling = (bool) ($item['butuh_produksi'] ?? false);
 
@@ -272,13 +282,80 @@ class TransaksiKasirController extends Controller
                 continue;
             }
 
-            $ukuranItem = $bundlingItem->ukuran;
-            // Rasa yang dipilih untuk produk ini di dalam paket (null kalau
-            // produknya tidak punya varian rasa). Stok dicek & dikurangi per
-            // kombinasi ukuran + rasa, bukan cuma per ukuran.
-            $rasaItem = $produk->punya_varian_rasa ? ($bundlingItem->varian_rasa ?: null) : null;
             $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
             $totalDibutuhkan = (int) ($qtySatuBundling * $jumlahBundling);
+
+            // ── Sistem baru: deduct stok dari ProdukVarian ──
+            if ($bundlingItem->produk_varian_id) {
+                $varian = ProdukVarian::where('id', $bundlingItem->produk_varian_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$varian) {
+                    continue;
+                }
+
+                $stokTersedia = (int) $varian->stok;
+                $stokReady = min($stokTersedia, $totalDibutuhkan);
+                $stokProduksi = $totalDibutuhkan - $stokReady;
+
+                // Tentukan apakah item ini perlu diproduksi berdasarkan stok
+                $perluProduksi = $varian->perlu_diproduksi || $stokTersedia <= 0;
+
+                if ($perluProduksi) {
+                    // Semua masuk produksi, stok tidak dikurangi
+                    $stokReady = 0;
+                    $stokProduksi = $totalDibutuhkan;
+                }
+
+                // Bagian ready: kurangi stok varian
+                if ($stokReady > 0) {
+                    $varian->stok = $stokTersedia - $stokReady;
+                    $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+                    $varian->save();
+
+                    $this->sinkronStokProduk($produk);
+
+                    DetailTransaksi::create([
+                        'transaksi_id' => $transaksi->id,
+                        'produk_id' => $produk->id,
+                        'produk_varian_id' => $varian->id,
+                        'bundling_id' => $bundling->id,
+                        'nama_produk' => $produk->nama_produk,
+                        'ukuran' => $varian->ukuran,
+                        'varian_rasa' => $varian->variasi,
+                        'harga_satuan' => 0,
+                        'jumlah' => $stokReady,
+                        'catatan' => $catatanProduk,
+                        'subtotal' => 0,
+                        'butuh_produksi' => false,
+                    ]);
+                }
+
+                // Bagian produksi
+                if ($stokProduksi > 0) {
+                    DetailTransaksi::create([
+                        'transaksi_id' => $transaksi->id,
+                        'produk_id' => $produk->id,
+                        'produk_varian_id' => $varian->id,
+                        'bundling_id' => $bundling->id,
+                        'nama_produk' => $produk->nama_produk,
+                        'ukuran' => $varian->ukuran,
+                        'varian_rasa' => $varian->variasi,
+                        'harga_satuan' => 0,
+                        'jumlah' => $stokProduksi,
+                        'catatan' => $catatanProduk,
+                        'subtotal' => 0,
+                        'butuh_produksi' => true,
+                    ]);
+                }
+
+                continue;
+            }
+
+            // ── Fallback: sistem lama (ukuran + varian_rasa string) ──
+            $ukuranItem = $bundlingItem->ukuran;
+            $rasaItem = $produk->punya_varian_rasa ? ($bundlingItem->varian_rasa ?: null) : null;
 
             $terpakai = [];
             $alokasi = $produk->alokasiStok($ukuranItem, $rasaItem ? [$rasaItem] : [], $totalDibutuhkan, $terpakai);
@@ -325,7 +402,7 @@ class TransaksiKasirController extends Controller
     {
         $promoEventId = (int) $item['promo_event_id'];
         $jumlahEvent = (int) $item['jumlah'];
-        $promoEvent = PromoProdukEvent::with('produk')->findOrFail($promoEventId);
+        $promoEvent = PromoProdukEvent::with('produk.produkVarians')->findOrFail($promoEventId);
         $produk = $promoEvent->produk;
 
         $perluProduksiEvent = (bool) ($item['butuh_produksi'] ?? false);
@@ -346,16 +423,101 @@ class TransaksiKasirController extends Controller
             return;
         }
 
-        // Event bisa dibatasi ke ukuran tertentu (mis. cuma "Jumbo") dan/atau
-        // rasa tertentu. Cek & kurangi stok per kombinasi ukuran + rasa itu
-        // (bukan kolom stok gabungan), dan catat ukuran + rasanya di detail
-        // transaksi supaya kelihatan di POS & tiket produksi — sama seperti
-        // alur mobile (lihat CheckoutController::prosesItemPromoEventCheckout()).
+        $totalDibutuhkan = (int) ($promoEvent->isi_event * $jumlahEvent);
+
+        // ── Sistem baru: cari ProdukVarian yang cocok dengan pembatasan event ──
         $ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi();
         $kandidatRasa = $promoEvent->kandidatRasaUntukProduksi();
-        $rasaTunggal = count($kandidatRasa) === 1 ? $kandidatRasa[0] : null;
 
-        $totalDibutuhkan = (int) ($promoEvent->isi_event * $jumlahEvent);
+        // Cari semua ProdukVarian yang cocok dengan pembatasan ukuran & rasa event
+        $variansCocok = $produk->produkVarians
+            ->filter(function (ProdukVarian $v) use ($ukuranEvent, $kandidatRasa) {
+                if (!$v->status_aktif) return false;
+                // Filter ukuran
+                if ($ukuranEvent && $v->ukuran && strcasecmp($v->ukuran, $ukuranEvent) !== 0) return false;
+                if ($ukuranEvent && !$v->ukuran) return false;
+                // Filter rasa/variasi
+                if (!empty($kandidatRasa)) {
+                    $cocok = false;
+                    foreach ($kandidatRasa as $rasa) {
+                        if ($v->variasi && strcasecmp($v->variasi, $rasa) === 0) {
+                            $cocok = true;
+                            break;
+                        }
+                    }
+                    if (!$cocok && $v->variasi) return false;
+                }
+                return true;
+            })
+            ->values();
+
+        // Jika ada ProdukVarian yang cocok, gunakan sistem baru
+        if ($variansCocok->isNotEmpty()) {
+            $sisa = $totalDibutuhkan;
+
+            foreach ($variansCocok as $varian) {
+                if ($sisa <= 0) break;
+
+                $varian = ProdukVarian::where('id', $varian->id)->lockForUpdate()->first();
+                if (!$varian) continue;
+
+                $stokTersedia = (int) $varian->stok;
+                $perluProduksi = $varian->perlu_diproduksi || $stokTersedia <= 0;
+
+                if (!$perluProduksi && $stokTersedia > 0) {
+                    $ambil = min($stokTersedia, $sisa);
+
+                    $varian->stok = $stokTersedia - $ambil;
+                    $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+                    $varian->save();
+
+                    $this->sinkronStokProduk($produk);
+
+                    DetailTransaksi::create([
+                        'transaksi_id' => $transaksi->id,
+                        'produk_id' => $produk->id,
+                        'produk_varian_id' => $varian->id,
+                        'promo_event_id' => $promoEvent->id,
+                        'nama_produk' => $produk->nama_produk,
+                        'ukuran' => $varian->ukuran,
+                        'varian_rasa' => $varian->variasi,
+                        'harga_satuan' => 0,
+                        'jumlah' => $ambil,
+                        'catatan' => null,
+                        'subtotal' => 0,
+                        'butuh_produksi' => false,
+                    ]);
+
+                    $sisa -= $ambil;
+                }
+            }
+
+            // Sisa yang tidak terpenuhi stoknya → masuk produksi
+            if ($sisa > 0) {
+                // Pakai varian pertama yang cocok untuk label di tiket produksi
+                $varianProduksi = $variansCocok->first();
+
+                DetailTransaksi::create([
+                    'transaksi_id' => $transaksi->id,
+                    'produk_id' => $produk->id,
+                    'produk_varian_id' => $varianProduksi->id,
+                    'promo_event_id' => $promoEvent->id,
+                    'nama_produk' => $produk->nama_produk,
+                    'ukuran' => $varianProduksi->ukuran,
+                    'varian_rasa' => $varianProduksi->variasi,
+                    'harga_satuan' => 0,
+                    'jumlah' => $sisa,
+                    'catatan' => null,
+                    'subtotal' => 0,
+                    'butuh_produksi' => true,
+                ]);
+            }
+
+            return;
+        }
+
+        // ── Fallback: sistem lama (ukuran + varian_rasa string) ──
+        $rasaTunggal = count($kandidatRasa) === 1 ? $kandidatRasa[0] : null;
 
         $terpakai = [];
         $alokasi = $produk->alokasiStok($ukuranEvent, $kandidatRasa, $totalDibutuhkan, $terpakai);

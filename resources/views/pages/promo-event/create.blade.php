@@ -41,21 +41,52 @@
             });
         },
         semuaProduk: @js($produks->map(function ($p) {
+            $hasVarian = $p->produkVarians && $p->produkVarians->isNotEmpty();
+            if ($hasVarian) {
+                $ukurans = $p->produkVarians
+                    ->filter(fn ($v) => !empty($v->ukuran))
+                    ->map(fn ($v) => [
+                        'id' => (int) ($v->ukuran_id ?: (\App\Models\Ukuran::where('nama_ukuran', $v->ukuran)->value('id') ?? 0)),
+                        'nama' => $v->ukuran,
+                    ])
+                    ->filter(fn ($u) => $u['id'] > 0)
+                    ->unique('id')
+                    ->values();
+
+                $rasas = $p->produkVarians
+                    ->filter(fn ($v) => !empty($v->variasi))
+                    ->map(fn ($v) => [
+                        'id' => (int) ($v->varian_rasa_id ?: (\App\Models\VarianRasa::where('nama_rasa', $v->variasi)->value('id') ?? 0)),
+                        'nama' => $v->variasi,
+                    ])
+                    ->filter(fn ($r) => $r['id'] > 0)
+                    ->unique('id')
+                    ->values();
+
+                $punyaUkuran = $ukurans->isNotEmpty();
+                $punyaRasa = $rasas->isNotEmpty();
+            } else {
+                $punyaUkuran = (bool) $p->punya_ukuran;
+                $ukurans = $punyaUkuran
+                    ? $p->produkUkurans->map(fn ($pu) => ['id' => $pu->ukuran_id, 'nama' => $pu->ukuran->nama_ukuran])->unique('id')->values()
+                    : collect();
+
+                $punyaRasa = (bool) $p->punya_varian_rasa;
+                $rasas = $punyaRasa
+                    ? collect($p->daftar_varian_rasa)->map(fn ($r) => ['id' => $r['varian_rasa_id'], 'nama' => $r['nama']])->values()
+                    : collect();
+            }
+
             return [
                 'id' => $p->id,
                 'nama_produk' => $p->nama_produk,
                 'kode_produk' => $p->kode_produk,
                 'foto' => $p->foto,
                 'harga_jual' => $p->harga_jual,
-                'punya_ukuran' => (bool) $p->punya_ukuran,
-                'ukurans' => $p->punya_ukuran
-                    ? $p->produkUkurans->map(fn ($pu) => ['id' => $pu->ukuran_id, 'nama' => $pu->ukuran->nama_ukuran])->unique('id')->values()
-                    : [],
-                'punya_varian_rasa' => (bool) $p->punya_varian_rasa,
-                // varian rasa aktif milik produk ini (id = varian_rasa_id)
-                'rasas' => $p->punya_varian_rasa
-                    ? collect($p->daftar_varian_rasa)->map(fn ($r) => ['id' => $r['varian_rasa_id'], 'nama' => $r['nama']])->values()
-                    : [],
+                'punya_ukuran' => (bool) $punyaUkuran,
+                'ukurans' => $ukurans,
+                'punya_varian_rasa' => (bool) $punyaRasa,
+                'rasas' => $rasas,
             ];
         })->values()),
         produkTerpilih: {{ old('produk_id') ? (int) old('produk_id') : 'null' }},

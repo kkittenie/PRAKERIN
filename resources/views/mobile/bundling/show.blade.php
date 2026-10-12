@@ -250,6 +250,9 @@
                     class="mt-2 w-full resize-none rounded-2xl border border-gray-200 p-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700"></textarea>
             </div>
 
+            {{-- Spacer pas di bawah kolom catatan agar scroll pas sampai batas kolom catatan --}}
+            <div class="h-16 lg:hidden" aria-hidden="true"></div>
+
             <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 lg:static lg:w-full lg:border-t-0 lg:px-0 lg:pt-4 lg:shadow-none">
 
             @if (Auth::guard('member')->check())

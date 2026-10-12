@@ -304,7 +304,9 @@
                             return !$adalahKomponenInternal;
                         })
                         ->groupBy(function ($item) {
-                            $v = array_filter([$item->ukuran, $item->varian_rasa]);
+                            $ukuran = $item->ukuran ?: optional($item->produkVarian)->ukuran;
+                            $rasa = $item->varian_rasa ?: optional($item->produkVarian)->variasi;
+                            $v = array_filter([$ukuran, $rasa]);
                             return $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : '');
                         })
                         ->map(function ($group, $key) {
@@ -479,7 +481,9 @@
                                 ->filter(fn ($c) => filled($c))
                                 ->unique()
                                 ->implode(' | ');
-                            $v = array_filter([$item->ukuran, $item->varian_rasa]);
+                            $ukuran = $item->ukuran ?: optional($item->produkVarian)->ukuran;
+                            $rasa = $item->varian_rasa ?: optional($item->produkVarian)->variasi;
+                            $v = array_filter([$ukuran, $rasa]);
                             return (object) [
                                 'nama_produk' => $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : ''),
                                 'jumlah' => $item->jumlah,
@@ -648,7 +652,9 @@
                     return !$adalahKomponenInternal;
                 })
                 ->groupBy(function ($item) {
-                    $v = array_filter([$item->ukuran, $item->varian_rasa]);
+                    $ukuran = $item->ukuran ?: optional($item->produkVarian)->ukuran;
+                    $rasa = $item->varian_rasa ?: optional($item->produkVarian)->variasi;
+                    $v = array_filter([$ukuran, $rasa]);
                     return $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : '');
                 })
                 ->map(function ($group, $key) {
@@ -762,7 +768,9 @@
                         ->filter(fn ($c) => filled($c))
                         ->unique()
                         ->implode(' | ');
-                    $v = array_filter([$item->ukuran, $item->varian_rasa]);
+                    $ukuran = $item->ukuran ?: optional($item->produkVarian)->ukuran;
+                    $rasa = $item->varian_rasa ?: optional($item->produkVarian)->variasi;
+                    $v = array_filter([$ukuran, $rasa]);
                     return (object) [
                         'nama_produk' => $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : ''),
                         'jumlah' => $item->jumlah,

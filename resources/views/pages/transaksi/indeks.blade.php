@@ -2937,10 +2937,13 @@
                     let min = null;
                     bundling.items.forEach(it => {
                         const p = this.daftarProduk.find(x => x.id === it.produk_id);
-                        // Pakai stok sesuai ukuran yang dipilih untuk item ini
-                        // (kalau produknya punya varian ukuran), bukan stok
-                        // gabungan semua ukuran (p.stok).
-                        const stokP = this.stokUntukUkuran(p, it.ukuran, it.varian_rasa);
+                        let stokP = 0;
+                        if (it.produk_varian_id && p && p.daftar_varian) {
+                            const v = p.daftar_varian.find(dv => dv.id === it.produk_varian_id);
+                            stokP = v ? v.stok : 0;
+                        } else {
+                            stokP = this.stokUntukUkuran(p, it.ukuran, it.varian_rasa);
+                        }
                         const bisaDibuat = Math.floor(stokP / Math.max(1, it.qty));
                         min = (min === null) ? bisaDibuat : Math.min(min, bisaDibuat);
                     });
@@ -2954,7 +2957,13 @@
                     return bundling.items.some(it => {
                         const p = this.daftarProduk.find(x => x.id === it.produk_id);
                         if (!p) return true;
-                        const stokP = this.stokUntukUkuran(p, it.ukuran, it.varian_rasa);
+                        let stokP = 0;
+                        if (it.produk_varian_id && p && p.daftar_varian) {
+                            const v = p.daftar_varian.find(dv => dv.id === it.produk_varian_id);
+                            stokP = v ? v.stok : 0;
+                        } else {
+                            stokP = this.stokUntukUkuran(p, it.ukuran, it.varian_rasa);
+                        }
                         return p.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < it.qty;
                     });
                 },
@@ -3579,9 +3588,15 @@
                         foto: bundling.gambar,
                         items: (bundling.items || []).map(i => {
                             const p = this.daftarProduk.find(x => x.id === i.produk_id);
-                            const stokP = this.stokUntukUkuran(p, i.ukuran, i.varian_rasa);
+                            let stokP = 0;
+                            if (i.produk_varian_id && p && p.daftar_varian) {
+                                const v = p.daftar_varian.find(dv => dv.id === i.produk_varian_id);
+                                stokP = v ? v.stok : 0;
+                            } else {
+                                stokP = this.stokUntukUkuran(p, i.ukuran, i.varian_rasa);
+                            }
                             const subButuh = p ? (p.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < i.qty) : true;
-                            return { produk_id: i.produk_id, qty: i.qty, ukuran: i.ukuran || null, varian_rasa: i.varian_rasa || null, butuh_produksi: subButuh };
+                            return { produk_id: i.produk_id, produk_varian_id: i.produk_varian_id || null, qty: i.qty, ukuran: i.ukuran || null, varian_rasa: i.varian_rasa || null, butuh_produksi: subButuh };
                         }),
                         jumlah: jumlah,
                         butuh_produksi: perluProduksi,

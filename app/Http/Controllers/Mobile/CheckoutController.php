@@ -283,23 +283,83 @@ class CheckoutController extends Controller
                     $catatanItem = $item['catatan'] ?? null;
                     $ukuranItem = $item['ukuran'] ?? null;
                     $varianRasaItem = $item['varian_rasa'] ?? null;
-                    $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah'], $ukuranItem, $varianRasaItem, $stokTerpakai);
-
                     $hargaSatuanDetail = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
 
-                    foreach ($pecahan as $bagian) {
-                        DetailTransaksi::create([
-                            'transaksi_id' => $transaksi->id,
-                            'produk_id' => $produk->id,
-                            'nama_produk' => $produk->nama_produk,
-                            'ukuran' => $ukuranItem,
-                            'varian_rasa' => $varianRasaItem,
-                            'harga_satuan' => $hargaSatuanDetail,
-                            'jumlah' => $bagian['jumlah'],
-                            'catatan' => $catatanItem !== '' ? $catatanItem : null,
-                            'subtotal' => $hargaSatuanDetail * $bagian['jumlah'],
-                            'butuh_produksi' => $bagian['butuh_produksi'],
-                        ]);
+                    $varian = null;
+                    if (!empty($item['produk_varian_id'])) {
+                        $varian = \App\Models\ProdukVarian::lockForUpdate()->find($item['produk_varian_id']);
+                    } elseif ($produk->produkVarians()->exists()) {
+                        $varian = $produk->produkVarians()
+                            ->where(function ($q) use ($ukuranItem, $varianRasaItem) {
+                                if ($ukuranItem) $q->where('ukuran', $ukuranItem);
+                                if ($varianRasaItem) $q->where('variasi', $varianRasaItem);
+                            })->first();
+                    }
+
+                    if ($varian) {
+                        $jumlahDibutuhkan = (int) $item['jumlah'];
+                        $kunciVarian = 'varian_' . $varian->id;
+                        $sudahDipakai = (int) ($stokTerpakai[$kunciVarian] ?? 0);
+                        $stokTersedia = max(0, (int) $varian->stok - $sudahDipakai);
+
+                        if ($varian->status_aktif && $stokTersedia > 0) {
+                            $stokReady = min($stokTersedia, $jumlahDibutuhkan);
+                            $stokProduksi = $jumlahDibutuhkan - $stokReady;
+                        } else {
+                            $stokReady = 0;
+                            $stokProduksi = $jumlahDibutuhkan;
+                        }
+
+                        if ($stokReady > 0) {
+                            $stokTerpakai[$kunciVarian] = $sudahDipakai + $stokReady;
+
+                            DetailTransaksi::create([
+                                'transaksi_id' => $transaksi->id,
+                                'produk_id' => $produk->id,
+                                'produk_varian_id' => $varian->id,
+                                'nama_produk' => $produk->nama_produk,
+                                'ukuran' => $varian->ukuran,
+                                'varian_rasa' => $varian->variasi,
+                                'harga_satuan' => $hargaSatuanDetail,
+                                'jumlah' => $stokReady,
+                                'catatan' => $catatanItem !== '' ? $catatanItem : null,
+                                'subtotal' => $hargaSatuanDetail * $stokReady,
+                                'butuh_produksi' => false,
+                            ]);
+                        }
+
+                        if ($stokProduksi > 0) {
+                            DetailTransaksi::create([
+                                'transaksi_id' => $transaksi->id,
+                                'produk_id' => $produk->id,
+                                'produk_varian_id' => $varian->id,
+                                'nama_produk' => $produk->nama_produk,
+                                'ukuran' => $varian->ukuran,
+                                'varian_rasa' => $varian->variasi,
+                                'harga_satuan' => $hargaSatuanDetail,
+                                'jumlah' => $stokProduksi,
+                                'catatan' => $catatanItem !== '' ? $catatanItem : null,
+                                'subtotal' => $hargaSatuanDetail * $stokProduksi,
+                                'butuh_produksi' => true,
+                            ]);
+                        }
+                    } else {
+                        $pecahan = $this->pecahJumlahProduksi($produk, (int) $item['jumlah'], $ukuranItem, $varianRasaItem, $stokTerpakai);
+
+                        foreach ($pecahan as $bagian) {
+                            DetailTransaksi::create([
+                                'transaksi_id' => $transaksi->id,
+                                'produk_id' => $produk->id,
+                                'nama_produk' => $produk->nama_produk,
+                                'ukuran' => $ukuranItem,
+                                'varian_rasa' => $varianRasaItem,
+                                'harga_satuan' => $hargaSatuanDetail,
+                                'jumlah' => $bagian['jumlah'],
+                                'catatan' => $catatanItem !== '' ? $catatanItem : null,
+                                'subtotal' => $hargaSatuanDetail * $bagian['jumlah'],
+                                'butuh_produksi' => $bagian['butuh_produksi'],
+                            ]);
+                        }
                     }
                 }
 
@@ -345,7 +405,7 @@ class CheckoutController extends Controller
     }
     private function prosesItemBundlingCheckout(Transaksi $transaksi, array $item, array &$stokTerpakai): void
     {
-        $bundling = Bundling::with('items.produk')->findOrFail($item['bundling_id']);
+        $bundling = Bundling::with('items.produk', 'items.produkVarian')->findOrFail($item['bundling_id']);
         $jumlahBundling = (int) $item['jumlah'];
 
         DetailTransaksi::create([
@@ -388,19 +448,87 @@ class CheckoutController extends Controller
             // Kalau ada pilihan varian khusus, qty per produk ikut pilihan
             // member (varian yang tidak dipilih otomatis di-skip / qty 0).
             // Kalau tidak ada (bundling biasa), pakai qty tetap dari paket.
-            // (Sama seperti TransaksiKasirController::prosesItemBundlingTransaksi().)
             $qtySatuBundling = $mapQtyPilihan[$produk->id] ?? (empty($pilihanKhusus) ? $bundlingItem->qty : 0);
             if ($qtySatuBundling <= 0) {
                 continue;
             }
             $totalDibutuhkan = (int) ($qtySatuBundling * $jumlahBundling);
             $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
+
+            // ── Sistem baru: track stok via ProdukVarian ──
+            if ($bundlingItem->produk_varian_id) {
+                $varian = $bundlingItem->produkVarian;
+                if (!$varian) continue;
+
+                // Track stok yang sudah "dipakai" dalam checkout ini (belum dikurangi dari DB)
+                $kunciVarian = 'varian_' . $varian->id;
+                $sudahDipakai = (int) ($stokTerpakai[$kunciVarian] ?? 0);
+                $stokEfektif = max(0, (int) $varian->stok - $sudahDipakai);
+
+                $perluProduksi = $varian->perlu_diproduksi || $stokEfektif <= 0;
+
+                if ($perluProduksi) {
+                    // Semua masuk produksi
+                    DetailTransaksi::create([
+                        'transaksi_id' => $transaksi->id,
+                        'produk_id' => $produk->id,
+                        'produk_varian_id' => $varian->id,
+                        'bundling_id' => $bundling->id,
+                        'nama_produk' => $produk->nama_produk,
+                        'ukuran' => $varian->ukuran,
+                        'varian_rasa' => $varian->variasi,
+                        'harga_satuan' => 0,
+                        'jumlah' => $totalDibutuhkan,
+                        'catatan' => $catatanProduk !== '' ? $catatanProduk : null,
+                        'subtotal' => 0,
+                        'butuh_produksi' => true,
+                    ]);
+                } else {
+                    $stokReady = min($stokEfektif, $totalDibutuhkan);
+                    $stokProduksi = $totalDibutuhkan - $stokReady;
+
+                    if ($stokReady > 0) {
+                        $stokTerpakai[$kunciVarian] = $sudahDipakai + $stokReady;
+
+                        DetailTransaksi::create([
+                            'transaksi_id' => $transaksi->id,
+                            'produk_id' => $produk->id,
+                            'produk_varian_id' => $varian->id,
+                            'bundling_id' => $bundling->id,
+                            'nama_produk' => $produk->nama_produk,
+                            'ukuran' => $varian->ukuran,
+                            'varian_rasa' => $varian->variasi,
+                            'harga_satuan' => 0,
+                            'jumlah' => $stokReady,
+                            'catatan' => $catatanProduk !== '' ? $catatanProduk : null,
+                            'subtotal' => 0,
+                            'butuh_produksi' => false,
+                        ]);
+                    }
+
+                    if ($stokProduksi > 0) {
+                        DetailTransaksi::create([
+                            'transaksi_id' => $transaksi->id,
+                            'produk_id' => $produk->id,
+                            'produk_varian_id' => $varian->id,
+                            'bundling_id' => $bundling->id,
+                            'nama_produk' => $produk->nama_produk,
+                            'ukuran' => $varian->ukuran,
+                            'varian_rasa' => $varian->variasi,
+                            'harga_satuan' => 0,
+                            'jumlah' => $stokProduksi,
+                            'catatan' => $catatanProduk !== '' ? $catatanProduk : null,
+                            'subtotal' => 0,
+                            'butuh_produksi' => true,
+                        ]);
+                    }
+                }
+
+                continue;
+            }
+
+            // ── Fallback: sistem lama (ukuran + varian_rasa string) ──
             $ukuranItem = $bundlingItem->ukuran;
-            // Rasa yang dipilih untuk produk ini di dalam paket (null kalau
-            // produknya tidak punya varian rasa). Dicek & dicatat per
-            // kombinasi ukuran + rasa supaya stok yang dikurangi saat pesanan
-            // diproses (PesananPickupController::prosesPesanan) tepat sasaran,
-            // dan baris yang perlu produksi masuk ke tiket produksi.
             $rasaItem = $produk->punya_varian_rasa ? ($bundlingItem->varian_rasa ?: null) : null;
 
             $pecahan = $this->pecahJumlahProduksiRasa($produk, $totalDibutuhkan, $ukuranItem, $rasaItem ? [$rasaItem] : [], $stokTerpakai);
@@ -425,7 +553,7 @@ class CheckoutController extends Controller
 
     private function prosesItemPromoEventCheckout(Transaksi $transaksi, array $item, array &$stokTerpakai): void
     {
-        $promoEvent = PromoProdukEvent::with('produk')->findOrFail($item['promo_event_id']);
+        $promoEvent = PromoProdukEvent::with('produk.produkVarians')->findOrFail($item['promo_event_id']);
         $jumlahEvent = (int) $item['jumlah'];
         $produk = $promoEvent->produk;
 
@@ -445,13 +573,88 @@ class CheckoutController extends Controller
             return;
         }
 
+        $totalDibutuhkan = (int) ($promoEvent->isi_event * $jumlahEvent);
         $ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi();
-        // Rasa yang boleh dipakai event ini (satu rasa / beberapa rasa / semua
-        // rasa produk). Stok dicek per rasa & rasa yang terpakai dicatat di
-        // detail transaksi.
         $kandidatRasa = $promoEvent->kandidatRasaUntukProduksi();
 
-        $totalDibutuhkan = (int) ($promoEvent->isi_event * $jumlahEvent);
+        // ── Sistem baru: cari ProdukVarian yang cocok ──
+        $variansCocok = $produk->produkVarians
+            ->filter(function ($v) use ($ukuranEvent, $kandidatRasa) {
+                if (!$v->status_aktif) return false;
+                if ($ukuranEvent && $v->ukuran && strcasecmp($v->ukuran, $ukuranEvent) !== 0) return false;
+                if ($ukuranEvent && !$v->ukuran) return false;
+                if (!empty($kandidatRasa)) {
+                    $cocok = false;
+                    foreach ($kandidatRasa as $rasa) {
+                        if ($v->variasi && strcasecmp($v->variasi, $rasa) === 0) {
+                            $cocok = true;
+                            break;
+                        }
+                    }
+                    if (!$cocok && $v->variasi) return false;
+                }
+                return true;
+            })
+            ->values();
+
+        if ($variansCocok->isNotEmpty()) {
+            $sisa = $totalDibutuhkan;
+
+            foreach ($variansCocok as $varian) {
+                if ($sisa <= 0) break;
+
+                $kunciVarian = 'varian_' . $varian->id;
+                $sudahDipakai = (int) ($stokTerpakai[$kunciVarian] ?? 0);
+                $stokEfektif = max(0, (int) $varian->stok - $sudahDipakai);
+
+                $perluProduksi = $varian->perlu_diproduksi || $stokEfektif <= 0;
+
+                if (!$perluProduksi && $stokEfektif > 0) {
+                    $ambil = min($stokEfektif, $sisa);
+                    $stokTerpakai[$kunciVarian] = $sudahDipakai + $ambil;
+
+                    DetailTransaksi::create([
+                        'transaksi_id' => $transaksi->id,
+                        'produk_id' => $produk->id,
+                        'produk_varian_id' => $varian->id,
+                        'promo_event_id' => $promoEvent->id,
+                        'nama_produk' => $produk->nama_produk,
+                        'ukuran' => $varian->ukuran,
+                        'varian_rasa' => $varian->variasi,
+                        'harga_satuan' => 0,
+                        'jumlah' => $ambil,
+                        'catatan' => null,
+                        'subtotal' => 0,
+                        'butuh_produksi' => false,
+                    ]);
+
+                    $sisa -= $ambil;
+                }
+            }
+
+            if ($sisa > 0) {
+                $varianProduksi = $variansCocok->first();
+
+                DetailTransaksi::create([
+                    'transaksi_id' => $transaksi->id,
+                    'produk_id' => $produk->id,
+                    'produk_varian_id' => $varianProduksi->id,
+                    'promo_event_id' => $promoEvent->id,
+                    'nama_produk' => $produk->nama_produk,
+                    'ukuran' => $varianProduksi->ukuran,
+                    'varian_rasa' => $varianProduksi->variasi,
+                    'harga_satuan' => 0,
+                    'jumlah' => $sisa,
+                    'catatan' => null,
+                    'subtotal' => 0,
+                    'butuh_produksi' => true,
+                ]);
+            }
+
+            return;
+        }
+
+        // ── Fallback: sistem lama ──
         $pecahan = $this->pecahJumlahProduksiRasa($produk, $totalDibutuhkan, $ukuranEvent, $kandidatRasa, $stokTerpakai);
 
         foreach ($pecahan as $bagian) {

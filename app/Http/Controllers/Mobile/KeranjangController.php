@@ -19,46 +19,78 @@ class KeranjangController extends Controller
 
             $validated = $request->validate([
                 'jumlah' => 'required|integer|min:1|max:50',
+                'produk_varian_id' => 'nullable|integer',
                 'ukuran' => 'nullable|string|max:50',
                 'varian_rasa' => 'nullable|string|max:100',
                 'catatan' => 'nullable|string|max:255',
             ]);
 
-            $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;
-            $hargaAsal = $produk->getHarga($ukuran);
-
-            // Pakai promoUntukHitungHarga($ukuran), bukan promo_aktif — promo_aktif
-            // gak ngecek pembatasan ukuran, jadi ukuran yang harusnya gak dapet
-            // diskon tetep ikut kediskon kalau produknya punya promo aktif lain.
-            $promoBerlaku = $produk->promoUntukHitungHarga($ukuran);
-
-            $diskonSatuan = 0;
-            if ($promoBerlaku) {
-                if ($promoBerlaku->jenis_potongan === 'nominal') {
-                    $diskonSatuan = (float) $promoBerlaku->nominal_potongan;
-                } else {
-                    $diskonSatuan = ((float) ($promoBerlaku->persentase ?? 0) / 100) * $hargaAsal;
-                }
+            $produkVarian = null;
+            if (!empty($validated['produk_varian_id'])) {
+                $produkVarian = $produk->produkVarians()->where('id', $validated['produk_varian_id'])->first();
+            } elseif ($produk->produkVarians()->exists()) {
+                $produkVarian = $produk->produkVarians()
+                    ->where(function ($q) use ($validated) {
+                        if (!empty($validated['ukuran'])) {
+                            $q->where('ukuran', $validated['ukuran']);
+                        }
+                        if (!empty($validated['varian_rasa'])) {
+                            $q->where('variasi', $validated['varian_rasa']);
+                        }
+                    })->first() ?? $produk->produkVarians()->first();
             }
 
-            $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
-            $validated['ukuran'] = $ukuran;
-            $varianRasa = $this->tentukanVarianRasa($produk, $validated['varian_rasa'] ?? null);
+            if ($produkVarian) {
+                $ukuran = $produkVarian->ukuran;
+                $varianRasa = $produkVarian->variasi;
+                $hargaAsal = (float) $produkVarian->harga_jual;
+                $promoBerlaku = $produk->promoAktifUntukUkuran($produkVarian->ukuran_id ? (int) $produkVarian->ukuran_id : null);
+
+                $diskonSatuan = 0;
+                if ($promoBerlaku) {
+                    if ($promoBerlaku->jenis_potongan === 'nominal') {
+                        $diskonSatuan = (float) $promoBerlaku->nominal_potongan;
+                    } else {
+                        $diskonSatuan = ((float) ($promoBerlaku->persentase ?? 0) / 100) * $hargaAsal;
+                    }
+                }
+
+                $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
+                $foto = $produkVarian->foto ?: $produk->foto;
+                $produkVarianId = $produkVarian->id;
+            } else {
+                $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;
+                $hargaAsal = $produk->getHarga($ukuran);
+                $promoBerlaku = $produk->promoUntukHitungHarga($ukuran);
+
+                $diskonSatuan = 0;
+                if ($promoBerlaku) {
+                    if ($promoBerlaku->jenis_potongan === 'nominal') {
+                        $diskonSatuan = (float) $promoBerlaku->nominal_potongan;
+                    } else {
+                        $diskonSatuan = ((float) ($promoBerlaku->persentase ?? 0) / 100) * $hargaAsal;
+                    }
+                }
+
+                $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
+                $varianRasa = $this->tentukanVarianRasa($produk, $validated['varian_rasa'] ?? null);
+                $foto = $produk->foto;
+                $produkVarianId = null;
+            }
 
             MemberCart::tambah([
                 'produk_id' => $produk->id,
+                'produk_varian_id' => $produkVarianId,
                 'nama_produk' => $produk->nama_produk,
-                'foto' => $produk->foto,
+                'foto' => $foto,
                 'harga_satuan' => $hargaSatuan,
                 'harga_asal' => $hargaAsal,
                 'diskon_produk_satuan' => $diskonSatuan,
                 'nama_promo' => $promoBerlaku?->nama_promo,
                 'jenis_promo' => $promoBerlaku?->jenis_potongan,
                 'persentase_promo' => $promoBerlaku?->persentase,
-                // Disimpen biar bisa di-recheck di checkout terhadap subtotal
-                // keranjang yang sebenarnya (lihat MemberCart::terapkanMinimalPembelian()).
                 'min_pembelian_promo' => $promoBerlaku?->min_pembelian ?? 0,
-                'ukuran' => $validated['ukuran'] ?? null,
+                'ukuran' => $ukuran,
                 'varian_rasa' => $varianRasa,
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
@@ -72,8 +104,8 @@ class KeranjangController extends Controller
                     'message' => $pesan,
                     'item' => [
                         'nama' => $produk->nama_produk,
-                        'foto_url' => $produk->foto ? asset('storage/' . $produk->foto) : null,
-                        'ukuran' => $validated['ukuran'] ?: null,
+                        'foto_url' => $foto ? asset('storage/' . $foto) : null,
+                        'ukuran' => $ukuran ?: null,
                         'varian_rasa' => $varianRasa,
                         'jumlah' => (int) $validated['jumlah'],
                     ],
@@ -208,6 +240,7 @@ class KeranjangController extends Controller
         try {
             $validated = $request->validate([
                 'produk_id' => 'required|integer|exists:produks,id',
+                'produk_varian_id' => 'nullable|integer',
                 'jumlah' => 'required|integer|min:1|max:50',
                 'ukuran' => 'nullable|string|max:50',
                 'varian_rasa' => 'nullable|string|max:100',
@@ -222,30 +255,64 @@ class KeranjangController extends Controller
                     ->with('error', 'Item keranjang tidak ditemukan, mungkin sudah dihapus.');
             }
 
-            $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;
-            $hargaAsal = $produk->getHarga($ukuran);
-
-            // Sama kayak di tambah() — pakai promoUntukHitungHarga($ukuran) biar
-            // pembatasan ukuran ke-hormatin, bukan promo_aktif yang berlaku ke semua ukuran.
-            $promoBerlaku = $produk->promoUntukHitungHarga($ukuran);
-
-            $diskonSatuan = 0;
-            if ($promoBerlaku) {
-                if ($promoBerlaku->jenis_potongan === 'nominal') {
-                    $diskonSatuan = (float) $promoBerlaku->nominal_potongan;
-                } else {
-                    $diskonSatuan = ((float) ($promoBerlaku->persentase ?? 0) / 100) * $hargaAsal;
-                }
+            $produkVarian = null;
+            if (!empty($validated['produk_varian_id'])) {
+                $produkVarian = $produk->produkVarians()->where('id', $validated['produk_varian_id'])->first();
+            } elseif ($produk->produkVarians()->exists()) {
+                $produkVarian = $produk->produkVarians()
+                    ->where(function ($q) use ($validated) {
+                        if (!empty($validated['ukuran'])) {
+                            $q->where('ukuran', $validated['ukuran']);
+                        }
+                        if (!empty($validated['varian_rasa'])) {
+                            $q->where('variasi', $validated['varian_rasa']);
+                        }
+                    })->first() ?? $produk->produkVarians()->first();
             }
 
-            $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
-            $validated['ukuran'] = $ukuran;
-            $varianRasa = $this->tentukanVarianRasa($produk, $validated['varian_rasa'] ?? null);
+            if ($produkVarian) {
+                $ukuran = $produkVarian->ukuran;
+                $varianRasa = $produkVarian->variasi;
+                $hargaAsal = (float) $produkVarian->harga_jual;
+                $promoBerlaku = $produk->promoAktifUntukUkuran($produkVarian->ukuran_id ? (int) $produkVarian->ukuran_id : null);
+
+                $diskonSatuan = 0;
+                if ($promoBerlaku) {
+                    if ($promoBerlaku->jenis_potongan === 'nominal') {
+                        $diskonSatuan = (float) $promoBerlaku->nominal_potongan;
+                    } else {
+                        $diskonSatuan = ((float) ($promoBerlaku->persentase ?? 0) / 100) * $hargaAsal;
+                    }
+                }
+
+                $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
+                $foto = $produkVarian->foto ?: $produk->foto;
+                $produkVarianId = $produkVarian->id;
+            } else {
+                $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;
+                $hargaAsal = $produk->getHarga($ukuran);
+                $promoBerlaku = $produk->promoUntukHitungHarga($ukuran);
+
+                $diskonSatuan = 0;
+                if ($promoBerlaku) {
+                    if ($promoBerlaku->jenis_potongan === 'nominal') {
+                        $diskonSatuan = (float) $promoBerlaku->nominal_potongan;
+                    } else {
+                        $diskonSatuan = ((float) ($promoBerlaku->persentase ?? 0) / 100) * $hargaAsal;
+                    }
+                }
+
+                $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
+                $varianRasa = $this->tentukanVarianRasa($produk, $validated['varian_rasa'] ?? null);
+                $foto = $produk->foto;
+                $produkVarianId = null;
+            }
 
             MemberCart::perbarui($itemId, [
                 'produk_id' => $produk->id,
+                'produk_varian_id' => $produkVarianId,
                 'nama_produk' => $produk->nama_produk,
-                'foto' => $produk->foto,
+                'foto' => $foto,
                 'harga_satuan' => $hargaSatuan,
                 'harga_asal' => $hargaAsal,
                 'diskon_produk_satuan' => $diskonSatuan,
@@ -253,7 +320,7 @@ class KeranjangController extends Controller
                 'jenis_promo' => $promoBerlaku?->jenis_potongan,
                 'persentase_promo' => $promoBerlaku?->persentase,
                 'min_pembelian_promo' => $promoBerlaku?->min_pembelian ?? 0,
-                'ukuran' => $validated['ukuran'] ?? null,
+                'ukuran' => $ukuran,
                 'varian_rasa' => $varianRasa,
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],

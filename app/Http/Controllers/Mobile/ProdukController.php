@@ -16,7 +16,15 @@ class ProdukController extends Controller
     {
         try {
             abort_unless($produk->status_aktif, 404);
-            $habis = $produk->habisSemuaUkuran();
+
+            $produk->load([
+                'kategori',
+                'promos',
+                'produkVarians' => fn ($q) => $q->orderBy('urutan')->orderBy('id'),
+                'produkVarianRasas.varianRasa',
+                'produkUkuranRasas',
+                'produkUkurans.ukuran',
+            ]);
 
             $pengaturan = PengaturanMember::aktifSekarang();
 
@@ -28,11 +36,42 @@ class ProdukController extends Controller
                 }
             }
 
+            $punyaVarianBaru = $produk->produkVarians->isNotEmpty();
+            $daftarVarian = [];
+            $opsiUkuran = [];
+            $opsiVariasi = [];
+            $varianIdDipilihAwal = null;
+
             $punyaUkuran = (bool) $produk->punya_ukuran;
             $daftarUkuran = [];
 
             try {
-                if ($punyaUkuran) {
+                if ($punyaVarianBaru) {
+                    $daftarVarian = $produk->daftarVarianKasir();
+                    $opsiUkuran = collect($daftarVarian)->pluck('ukuran')->filter()->unique()->values()->all();
+                    $opsiVariasi = collect($daftarVarian)->pluck('variasi')->filter()->unique()->values()->all();
+
+                    $varianEdit = null;
+                    if (!empty($itemEdit['produk_varian_id'])) {
+                        $varianEdit = collect($daftarVarian)->firstWhere('id', (int) $itemEdit['produk_varian_id']);
+                    } elseif (!empty($itemEdit['ukuran']) || !empty($itemEdit['varian_rasa'])) {
+                        $varianEdit = collect($daftarVarian)->first(function ($v) use ($itemEdit) {
+                            $matchU = empty($itemEdit['ukuran']) || $v['ukuran'] === $itemEdit['ukuran'];
+                            $matchR = empty($itemEdit['varian_rasa']) || $v['variasi'] === $itemEdit['varian_rasa'];
+                            return $matchU && $matchR;
+                        });
+                    }
+
+                    $varianIdDipilihAwal = $varianEdit['id'] ?? null;
+                    $ukuranDipilihAwal = $varianEdit['ukuran'] ?? ($itemEdit['ukuran'] ?? ($opsiUkuran[0] ?? null));
+                    $varianRasaDipilihAwal = $varianEdit['variasi'] ?? ($itemEdit['varian_rasa'] ?? ($opsiVariasi[0] ?? null));
+
+                    $termurah = collect($daftarVarian)->where('aktif', true)->sortBy('harga_diskon')->first();
+                    $hargaAsli = $termurah['harga_asli'] ?? (float) $produk->harga_jual;
+                    $hargaFinal = $termurah['harga_diskon'] ?? (float) $produk->harga_diskon;
+                    $adaPromo = collect($daftarVarian)->contains('sedang_promo', true);
+                    $habis = collect($daftarVarian)->where('aktif', true)->where('stok', '>', 0)->isEmpty();
+                } elseif ($punyaUkuran) {
                     $daftarUkuran = collect($produk->daftar_ukuran)
                         ->map(function ($opsi) use ($produk) {
                             $hargaAsliOpsi = (float) $opsi['harga'];
@@ -54,10 +93,16 @@ class ProdukController extends Controller
                     $hargaAsli = $default['harga_asli'] ?? 0;
                     $hargaFinal = $default['harga_final'] ?? 0;
                     $adaPromo = collect($daftarUkuran)->contains('ada_promo', true);
+                    $habis = $produk->habisSemuaUkuran();
+                    $ukuranDipilihAwal = $itemEdit['ukuran'] ?? ($daftarUkuran[0]['nama'] ?? null);
+                    $varianRasaDipilihAwal = $itemEdit['varian_rasa'] ?? null;
                 } else {
                     $hargaAsli = (float) $produk->harga_jual;
                     $hargaFinal = (float) $produk->harga_diskon;
                     $adaPromo = $hargaFinal < $hargaAsli;
+                    $habis = (int) $produk->stok <= 0;
+                    $ukuranDipilihAwal = null;
+                    $varianRasaDipilihAwal = null;
                 }
             } catch (\Throwable $e) {
                 Log::error('Gagal hitung harga/promo produk di detail mobile', [
@@ -69,19 +114,27 @@ class ProdukController extends Controller
                 $hargaFinal = (float) $produk->harga_jual;
                 $adaPromo = false;
                 $daftarUkuran = [];
+                $habis = true;
+                $ukuranDipilihAwal = null;
+                $varianRasaDipilihAwal = null;
             }
 
-            $ukuranDipilihAwal = $itemEdit['ukuran'] ?? ($daftarUkuran[0]['nama'] ?? null);
             $punyaVarianRasa = (bool) $produk->punya_varian_rasa;
-            $produk->load(['kategori', 'produkVarianRasas.varianRasa', 'produkUkuranRasas', 'produkUkurans.ukuran']);
             $daftarVarianRasa = $produk->daftar_varian_rasa;
-            $varianRasaDipilihAwal = $itemEdit['varian_rasa'] ?? ($daftarVarianRasa[0]['nama'] ?? null);
+            if (!$punyaVarianBaru && $punyaVarianRasa) {
+                $varianRasaDipilihAwal = $itemEdit['varian_rasa'] ?? ($daftarVarianRasa[0]['nama'] ?? null);
+            }
 
             return view('mobile.produk.show', [
                 'produk' => $produk,
                 'habis' => $habis,
                 'pengaturan' => $pengaturan,
                 'itemEdit' => $itemEdit,
+                'punyaVarianBaru' => $punyaVarianBaru,
+                'daftarVarian' => $daftarVarian,
+                'opsiUkuran' => $opsiUkuran,
+                'opsiVariasi' => $opsiVariasi,
+                'varianIdDipilihAwal' => $varianIdDipilihAwal,
                 'punyaUkuran' => $punyaUkuran,
                 'daftarUkuran' => $daftarUkuran,
                 'ukuranDipilihAwal' => $ukuranDipilihAwal,

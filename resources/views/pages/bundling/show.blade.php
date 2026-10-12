@@ -140,16 +140,26 @@
                         @foreach($bundling->items as $item)
                             @php
                                 $p = $item->produk;
-                                $stokUkuran = $p ? $p->stokUntukUkuranRasa($item->ukuran, $item->varian_rasa) : 0;
-                                $stokHabis = !$p || $p->status_ketersediaan === 'perlu_diproduksi' || $stokUkuran <= 0;
+                                $v = $item->produkVarian;
+                                if ($v) {
+                                    $stokUkuran = (int) $v->stok;
+                                    $stokHabis = !$v->status_aktif || $v->perlu_diproduksi || $stokUkuran <= 0;
+                                    $ukuranTampil = $v->ukuran ?? '-';
+                                    $rasaTampil = $v->variasi;
+                                } else {
+                                    $stokUkuran = $p ? $p->stokUntukUkuranRasa($item->ukuran, $item->varian_rasa) : 0;
+                                    $stokHabis = !$p || $p->status_ketersediaan === 'perlu_diproduksi' || $stokUkuran <= 0;
+                                    $ukuranTampil = $item->ukuran ?? '-';
+                                    $rasaTampil = $item->varian_rasa;
+                                }
                             @endphp
                             <tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
                                 <td class="py-4">{{ $loop->iteration }}</td>
                                 <td class="font-medium text-gray-800 dark:text-white">{{ $p ? $p->nama_produk : '-' }}</td>
-                                <td class="text-center text-gray-500 dark:text-gray-400">{{ $item->ukuran ?? '-' }}</td>
+                                <td class="text-center text-gray-500 dark:text-gray-400">{{ $ukuranTampil }}</td>
                                 <td class="text-center text-gray-500 dark:text-gray-400">
-                                    @if($item->varian_rasa)
-                                        {{ $item->varian_rasa }}
+                                    @if($rasaTampil)
+                                        {{ $rasaTampil }}
                                     @elseif($p && $p->punya_varian_rasa && $bundling->jenis_produk !== 'khusus_bundling')
                                         <span class="text-xs font-semibold text-red-500">Belum dipilih</span>
                                     @else
@@ -185,18 +195,28 @@
                 @foreach($bundling->items as $item)
                     @php
                         $p = $item->produk;
-                        $stokUkuran = $p ? $p->stokUntukUkuranRasa($item->ukuran, $item->varian_rasa) : 0;
-                        $stokHabis = !$p || $p->status_ketersediaan === 'perlu_diproduksi' || $stokUkuran <= 0;
+                        $v = $item->produkVarian;
+                        if ($v) {
+                            $stokUkuran = (int) $v->stok;
+                            $stokHabis = !$v->status_aktif || $v->perlu_diproduksi || $stokUkuran <= 0;
+                            $ukuranTampil = $v->ukuran;
+                            $rasaTampil = $v->variasi;
+                        } else {
+                            $stokUkuran = $p ? $p->stokUntukUkuranRasa($item->ukuran, $item->varian_rasa) : 0;
+                            $stokHabis = !$p || $p->status_ketersediaan === 'perlu_diproduksi' || $stokUkuran <= 0;
+                            $ukuranTampil = $item->ukuran;
+                            $rasaTampil = $item->varian_rasa;
+                        }
                     @endphp
                     <div class="py-3 flex flex-col gap-1.5">
                         <div class="flex items-center justify-between">
                             <span class="font-bold text-gray-800 dark:text-white text-sm">
                                 {{ $p ? $p->nama_produk : '-' }}
-                                @if($item->ukuran)
-                                    <span class="font-normal text-gray-400 dark:text-gray-500">({{ $item->ukuran }})</span>
+                                @if($ukuranTampil)
+                                    <span class="font-normal text-gray-400 dark:text-gray-500">({{ $ukuranTampil }})</span>
                                 @endif
-                                @if($item->varian_rasa)
-                                    <span class="font-normal text-gray-400 dark:text-gray-500">· {{ $item->varian_rasa }}</span>
+                                @if($rasaTampil)
+                                    <span class="font-normal text-gray-400 dark:text-gray-500">· {{ $rasaTampil }}</span>
                                 @elseif($p && $p->punya_varian_rasa && $bundling->jenis_produk !== 'khusus_bundling')
                                     <span class="text-xs font-semibold text-red-500">· Rasa belum dipilih</span>
                                 @endif
@@ -213,7 +233,7 @@
                         <div>
                             @if($stokHabis)
                                 <span class="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-500/15 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:text-red-400">
-                                    Perlu Diproduksi (Stok: {{ $stokUkuran }})
+                                            Perlu Diproduksi (Stok: {{ $stokUkuran }})
                                 </span>
                             @else
                                 <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">

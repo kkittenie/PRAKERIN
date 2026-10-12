@@ -94,6 +94,7 @@ class MemberCart
     public static function tambah(array $data): void
     {
         $data['produk_id'] = $data['produk_id'] ?? null;
+        $data['produk_varian_id'] = $data['produk_varian_id'] ?? null;
         $data['bundling_id'] = $data['bundling_id'] ?? null;
         $data['promo_event_id'] = $data['promo_event_id'] ?? null;
 
@@ -103,6 +104,7 @@ class MemberCart
         foreach ($items as $key => $item) {
             if (
                 ($item['produk_id'] ?? null) === $data['produk_id']
+                && ($item['produk_varian_id'] ?? null) === $data['produk_varian_id']
                 && ($item['bundling_id'] ?? null) === $data['bundling_id']
                 && ($item['promo_event_id'] ?? null) === $data['promo_event_id']
                 && ($item['ukuran'] ?? null) === ($data['ukuran'] ?? null)

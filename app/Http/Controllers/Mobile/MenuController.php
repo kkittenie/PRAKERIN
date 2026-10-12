@@ -16,6 +16,7 @@ class MenuController extends Controller
             $kategoris = KategoriProduk::with(['produk' => function ($query) {
                 $query->where('status_aktif', true)
                     ->reguler()
+                    ->with(['produkVarians', 'promos'])
                     ->orderBy('nama_produk');
             }])
                 ->orderBy('nama_kategori')
@@ -26,22 +27,27 @@ class MenuController extends Controller
             foreach ($kategoris as $kategori) {
                 foreach ($kategori->produk as $produk) {
                     try {
-                        if ($produk->punya_ukuran) {
-                            // Dulu selalu pakai ukuran "Kecil" buat harga
-                            // "mulai dari". Sekarang cari ukuran aktif yang
-                            // harganya paling rendah beneran, apapun namanya.
+                        $varians = collect($produk->daftarVarianKasir())->where('aktif', true);
+                        if ($varians->isNotEmpty()) {
+                            $termurah = $varians->sortBy('harga_diskon')->first();
+                            $hargaAsli = (float) $termurah['harga_asli'];
+                            $hargaFinal = (float) $termurah['harga_diskon'];
+                            $habis = $varians->where('stok', '>', 0)->isEmpty();
+                        } elseif ($produk->punya_ukuran) {
                             $namaTermurah = $produk->ukuranTermurah()['nama'] ?? null;
                             $hargaAsli = $produk->getHarga($namaTermurah);
                             $hargaFinal = $produk->hargaSetelahPromo($namaTermurah);
+                            $habis = $produk->habisSemuaUkuran();
                         } else {
                             $hargaAsli = (float) $produk->harga_jual;
                             $hargaFinal = (float) $produk->harga_diskon;
+                            $habis = (int) $produk->stok <= 0;
                         }
 
                         $produk->harga_tampil_asli = $hargaAsli;
                         $produk->harga_tampil_final = $hargaFinal;
                         $produk->ada_promo_tampil = $hargaFinal < $hargaAsli;
-                        $produk->habis_tampil = $produk->habisSemuaUkuran();
+                        $produk->habis_tampil = $habis;
                     } catch (\Throwable $e) {
                         Log::error('Gagal hitung harga/promo produk di menu mobile', [
                             'produk_id' => $produk->id,
@@ -57,7 +63,7 @@ class MenuController extends Controller
             }
 
             $totalProduk = $kategoris->sum(fn ($kategori) => $kategori->produk->count());
-            $daftarBundling = Bundling::with('items.produk')
+            $daftarBundling = Bundling::with(['items.produk', 'items.produkVarian'])
                 ->where('status_aktif', true)
                 ->get();
 
