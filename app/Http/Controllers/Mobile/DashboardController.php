@@ -19,9 +19,32 @@ class DashboardController extends Controller
 
             $rewardUnggulan = RewardKatalog::aktif()
                 ->where('jenis', 'voucher')
-                ->orderBy('poin_dibutuhkan')
-                ->take(3)
-                ->get();
+                ->where(function ($q) use ($member) {
+                    $q->where('target_member', 'semua');
+                    if ($member) {
+                        $q->orWhere(function ($sub) use ($member) {
+                            $sub->where('target_member', 'khusus')
+                                ->whereHas('members', fn ($m) => $m->where('members.id', $member->id));
+                        });
+                    }
+                })
+                ->latest()
+                ->take(4)
+                ->get()
+                ->map(function ($voucher) use ($member) {
+                    if ($member) {
+                        $status = $voucher->cekStatusUntukMember($member);
+                        $voucher->tersedia = $status['tersedia'];
+                        $voucher->alasan_nonaktif = $status['alasan'];
+                        $voucher->jumlah_pakai = $voucher->jumlahPemakaianMember($member->id);
+                        $voucher->sisa_jatah = max(0, ($voucher->batas_penggunaan_per_member ?: 1) - $voucher->jumlah_pakai);
+                    } else {
+                        $voucher->tersedia = true;
+                        $voucher->alasan_nonaktif = null;
+                        $voucher->sisa_jatah = $voucher->batas_penggunaan_per_member ?: 1;
+                    }
+                    return $voucher;
+                });
 
             $produkPilihan = Produk::with(['kategori', 'produkUkurans.ukuran'])
                 ->where('status_aktif', true)

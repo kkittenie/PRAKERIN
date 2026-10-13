@@ -310,10 +310,10 @@
 
                             <div class="min-w-0">
                                 <p class="truncate text-xs font-bold text-brand-800">
-                                    {{ $voucherDipilih->reward->nama ?? 'Voucher' }}
+                                    {{ $voucherDipilih->nama ?? 'Voucher' }}
                                 </p>
                                 <p class="mt-0.5 text-[11px] font-semibold text-brand-700">
-                                    Hemat Rp {{ number_format($diskon, 0, ',', '.') }} 🎉
+                                    Hemat Rp {{ number_format($diskonVoucher, 0, ',', '.') }} 🎉
                                 </p>
                             </div>
 
@@ -480,7 +480,7 @@
                         @forelse ($voucherAktif as $voucher)
 
                                         @php
-                                            $reward = $voucher->reward;
+                                            $reward = $voucher;
 
                                             $potonganLabel = null;
 
@@ -535,6 +535,7 @@
                                             $voucherTerpilih =
                                                 $voucherDipilih &&
                                                 $voucherDipilih->id === $voucher->id;
+                                            $sisaPakai = max(0, ($voucher->batas_penggunaan_per_member ?: 1) - $voucher->jumlahPemakaianMember($member->id));
                                         @endphp
 
 
@@ -551,7 +552,7 @@
                                                                                                 {{ $voucherTerpilih
                             ? 'bg-white text-brand-700'
                             : 'bg-brand-50 text-brand-700'
-                                                                                                }}">
+                                                                                        }}">
 
                                                     @include('mobile.components.icon-ticket', [
                                                         'class' => 'h-4 w-4'
@@ -568,7 +569,7 @@
                                                     </span>
 
                                                     <span class="mt-0.5 block text-[11px] text-gray-400">
-                                                        Kode {{ $voucher->kode_redeem }}
+                                                        Sisa: {{ $sisaPakai }}x · Berlaku s/d {{ $voucher->tanggal_selesai ? $voucher->tanggal_selesai->format('d/m/Y') : 'Seterusnya' }}
                                                     </span>
 
 
@@ -703,7 +704,7 @@
                     <div class="flex justify-between text-xs text-gray-500">
 
                         <span>
-                            {{ $voucherDipilih?->reward?->nama ?? 'Voucher' }}
+                            {{ $voucherDipilih?->nama ?? 'Voucher' }}
                         </span>
 
                         <span class="font-semibold text-red-500">

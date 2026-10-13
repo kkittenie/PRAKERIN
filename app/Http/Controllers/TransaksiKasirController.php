@@ -21,10 +21,12 @@ use App\Models\MemberStamp;
 use App\Models\StampRedemption;
 use App\Models\PenukaranPoin;
 use App\Models\PengaturanPajak;
+use App\Models\RewardKatalog;
+use App\Models\VoucherUsage;
 
 class TransaksiKasirController extends Controller
 {
-    private function validasiVoucherUntukTransaksi(?int $voucherId, ?int $memberId): ?PenukaranPoin
+    private function validasiVoucherUntukTransaksi(?int $voucherId, ?int $memberId): ?RewardKatalog
     {
         if (!$voucherId) {
             return null;
@@ -34,36 +36,52 @@ class TransaksiKasirController extends Controller
             throw new \Exception('Voucher hanya bisa dipakai jika member sudah dipilih.');
         }
 
-        $voucher = PenukaranPoin::with('reward')
+        $member = Member::find($memberId);
+        if (!$member) {
+            throw new \Exception('Member tidak ditemukan.');
+        }
+
+        $voucher = RewardKatalog::with('produks')
             ->where('id', $voucherId)
+            ->where('jenis', 'voucher')
             ->lockForUpdate()
             ->first();
 
-        if (!$voucher || !$voucher->reward || $voucher->reward->jenis !== 'voucher') {
+        if (!$voucher) {
             throw new \Exception('Voucher tidak ditemukan.');
         }
 
-        if ((int) $voucher->member_id !== (int) $memberId) {
-            throw new \Exception('Voucher ini bukan milik member yang dipilih.');
+        if (!$voucher->status_aktif) {
+            throw new \Exception('Voucher ini sedang tidak aktif.');
         }
 
-        if ($voucher->status !== 'menunggu_diambil') {
-            throw new \Exception('Voucher ini sudah pernah dipakai atau dibatalkan.');
+        if ($voucher->statusBelumMulai()) {
+            throw new \Exception('Voucher ini belum mulai berlaku.');
         }
 
-        if ($voucher->sudahExpired()) {
+        if ($voucher->statusKedaluwarsa()) {
             throw new \Exception('Voucher ini sudah kedaluwarsa.');
+        }
+
+        if (!$voucher->berhakDigunakan($member)) {
+            throw new \Exception('Member tidak memiliki akses atau telah mencapai batas penggunaan voucher ini.');
         }
 
         return $voucher;
     }
-    private function tandaiVoucherDigunakan(PenukaranPoin $voucher, Transaksi $transaksi): void
+
+    private function tandaiVoucherDigunakan(RewardKatalog $voucher, Transaksi $transaksi): void
     {
-        $voucher->update([
-            'status' => 'selesai',
-            'diambil_pada' => now(),
-            'transaksi_id' => $transaksi->id,
-        ]);
+        VoucherUsage::firstOrCreate(
+            [
+                'transaksi_id' => $transaksi->id,
+            ],
+            [
+                'reward_katalog_id' => $voucher->id,
+                'member_id' => $transaksi->member_id,
+                'used_at' => now(),
+            ]
+        );
     }
     private function validasiRewardStampUntukTransaksi(?int $stampRedemptionId, ?int $memberId): ?StampRedemption
     {
@@ -209,7 +227,7 @@ class TransaksiKasirController extends Controller
                 ->berlaku()
                 ->get();
 
-            $daftarDitahan = PesananDitahan::with(['transaksi.voucher.reward', 'transaksi.stampRedemptions.produk'])->orderBy('created_at', 'desc')->get();
+            $daftarDitahan = PesananDitahan::with(['transaksi.voucher', 'transaksi.stampRedemptions.produk'])->orderBy('created_at', 'desc')->get();
             $daftarMember = \App\Models\Member::orderBy('nama')->get();
             $pengaturanPajak = PengaturanPajak::getAktif();
 
@@ -694,7 +712,7 @@ class TransaksiKasirController extends Controller
             $validated = $request->validate([
                 'nama_pembeli' => 'nullable|string|max:255',
                 'member_id' => 'nullable|exists:members,id',
-                'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
+                'voucher_id' => 'nullable|integer|exists:reward_katalog,id',
                 'stamp_redemption_id' => 'nullable|integer|exists:stamp_redemptions,id',
                 'item_pesanan' => 'required|array',
                 'subtotal' => 'required|numeric',
@@ -859,7 +877,7 @@ class TransaksiKasirController extends Controller
     public function ambilDitahan()
     {
         try {
-            $daftarDitahan = PesananDitahan::with(['transaksi.voucher.reward', 'transaksi.stampRedemptions.produk'])->orderBy('created_at', 'desc')->get();
+            $daftarDitahan = PesananDitahan::with(['transaksi.voucher', 'transaksi.stampRedemptions.produk'])->orderBy('created_at', 'desc')->get();
             return response()->json([
                 'status' => 'success',
                 'data' => $daftarDitahan
@@ -873,11 +891,12 @@ class TransaksiKasirController extends Controller
     {
         DB::beginTransaction();
         try {
-            $pesanan = PesananDitahan::with(['transaksi.voucher.reward', 'transaksi.stampRedemptions.produk'])->findOrFail($id);
+            $pesanan = PesananDitahan::with(['transaksi.voucher', 'transaksi.stampRedemptions.produk'])->findOrFail($id);
              if ($pesanan->transaksi) {
                 $detailTransaksi = DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->get();
                 $this->kembalikanStokDariDetail($detailTransaksi);
                  $this->kembalikanRewardStampDariTransaksi($pesanan->transaksi);
+                 VoucherUsage::where('transaksi_id', $pesanan->transaksi->id)->delete();
 
                  DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->delete();
                 $pesanan->transaksi->delete();
@@ -918,6 +937,7 @@ class TransaksiKasirController extends Controller
                 $this->kembalikanStokDariDetail($detailTransaksi);
 
                 $this->kembalikanRewardStampDariTransaksi($pesanan->transaksi);
+                VoucherUsage::where('transaksi_id', $pesanan->transaksi->id)->delete();
 
                 DetailTransaksi::where('transaksi_id', $pesanan->transaksi->id)->delete();
                 $pesanan->transaksi->delete();
@@ -961,7 +981,7 @@ class TransaksiKasirController extends Controller
                 'kembalian' => 'required|numeric',
                 'metode_pembayaran' => 'required|string',
                 'member_id' => 'nullable|exists:members,id',
-                'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
+                'voucher_id' => 'nullable|integer|exists:reward_katalog,id',
                 'diskon_label' => 'nullable|string|max:255',
             ]);
 
@@ -1072,7 +1092,7 @@ class TransaksiKasirController extends Controller
             $validated = $request->validate([
                 'nama_pembeli' => 'nullable|string|max:255',
                 'member_id' => 'nullable|exists:members,id',
-                'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
+                'voucher_id' => 'nullable|integer|exists:reward_katalog,id',
                 'stamp_redemption_id' => 'nullable|integer|exists:stamp_redemptions,id',
                 'item_pesanan' => 'required|array',
                 'subtotal' => 'required|numeric',

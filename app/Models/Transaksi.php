@@ -92,7 +92,7 @@ class Transaksi extends Model
 
     public function voucher()
     {
-        return $this->belongsTo(PenukaranPoin::class, 'voucher_id');
+        return $this->belongsTo(RewardKatalog::class, 'voucher_id');
     }
 
     public function detailTransaksi()

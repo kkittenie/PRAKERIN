@@ -763,7 +763,9 @@
                                         <p class="text-xs font-bold text-gray-900 dark:text-white truncate"
                                             x-text="voucherTerpilih.nama"></p>
                                         <p class="text-[10px] text-gray-500 dark:text-gray-400">
-                                            <span x-text="voucherTerpilih.kode_redeem"></span> ·
+                                            <template x-if="voucherTerpilih.kode_reward || voucherTerpilih.kode_redeem">
+                                                <span x-text="(voucherTerpilih.kode_reward || voucherTerpilih.kode_redeem) + ' · '"></span>
+                                            </template>
                                             <span
                                                 x-text="voucherDiskon > 0 ? ('-' + formatRupiah(voucherDiskon)) : 'Belum aktif'"></span>
                                         </p>
@@ -949,46 +951,18 @@
                                     class="text-white hover:text-gray-200 font-bold text-lg leading-none">&times;</button>
                             </div>
 
-                            <div class="p-5 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
-                                <!-- Input kode manual -->
-                                <div>
-                                    <label
-                                        class="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-1.5">Masukkan
-                                        Kode Voucher</label>
-                                    <div class="flex gap-2">
-                                        <input type="text" x-model="kodeVoucherManual"
-                                            @input="kodeVoucherManual = kodeVoucherManual.toUpperCase()"
-                                            @keydown.enter="validasiKodeVoucherManual()"
-                                            placeholder="Contoh: ABC-1234"
-                                            class="flex-1 px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-rose-500 uppercase">
-                                        <button type="button" @click="validasiKodeVoucherManual()"
-                                            :disabled="voucherKodeLoading || !kodeVoucherManual.trim()"
-                                            class="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-lg transition shrink-0">
-                                            <span x-show="!voucherKodeLoading">Pakai</span>
-                                            <span x-show="voucherKodeLoading">...</span>
-                                        </button>
-                                    </div>
-                                    <template x-if="voucherModalError">
-                                        <p class="text-[10px] text-red-500 mt-1.5" x-text="voucherModalError"></p>
-                                    </template>
-                                </div>
-
-                                <div class="flex items-center gap-2">
-                                    <div class="flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
-                                    <span class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">atau
-                                        pilih</span>
-                                    <div class="flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
-                                </div>
-
+                            <div class="p-5 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
                                 <!-- Daftar voucher aktif member -->
                                 <div class="flex flex-col gap-2">
                                     <template x-if="voucherDaftarLoading">
-                                        <p class="text-xs text-center text-gray-400 py-4">Memuat voucher...</p>
+                                        <p class="text-xs text-center text-gray-400 py-6">Memuat voucher...</p>
                                     </template>
 
                                     <template x-if="!voucherDaftarLoading && daftarVoucherAktif.length === 0">
-                                        <p class="text-xs text-center text-gray-400 py-4">Member ini belum punya voucher
-                                            aktif.</p>
+                                        <div class="py-8 text-center text-gray-400">
+                                            <p class="text-xs font-semibold">Tidak ada voucher yang dapat digunakan</p>
+                                            <p class="text-[10px] text-gray-400 mt-1">Member ini belum memiliki voucher aktif atau kuota penggunaan telah tercapai.</p>
+                                        </div>
                                     </template>
 
                                     <template x-for="voucher in daftarVoucherAktif" :key="voucher.id">
@@ -1008,15 +982,20 @@
                                                     <span class="text-xs font-extrabold text-rose-600 dark:text-rose-400 shrink-0"
                                                         x-text="voucher.jenis_potongan === 'nominal' ? ('-' + formatRupiah(voucher.nominal_potongan)) : ('-' + formatPersen(voucher.persentase) + '%')"></span>
                                                 </div>
-                                                <div class="flex items-center gap-2 text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                                                    <span x-text="voucher.kode_redeem"></span>
+                                                <template x-if="voucher.deskripsi">
+                                                    <p class="text-[10px] text-gray-500 line-clamp-1 mt-0.5" x-text="voucher.deskripsi"></p>
+                                                </template>
+                                                <div class="flex flex-wrap items-center gap-2 text-[10px] text-gray-400 dark:text-gray-500 mt-1">
                                                     <template x-if="voucher.min_pembelian > 0">
-                                                        <span>· Min. <strong class="text-gray-600 dark:text-gray-300"
+                                                        <span>Min. <strong class="text-gray-600 dark:text-gray-300"
                                                                 x-text="formatRupiah(voucher.min_pembelian)"></strong></span>
                                                     </template>
                                                     <template x-if="voucher.berlaku_sampai">
                                                         <span>· Berlaku s/d <strong class="text-gray-600 dark:text-gray-300"
                                                                 x-text="voucher.berlaku_sampai"></strong></span>
+                                                    </template>
+                                                    <template x-if="voucher.sisa_penggunaan !== undefined">
+                                                        <span class="text-rose-600 dark:text-rose-400 font-medium">· Sisa: <strong x-text="voucher.sisa_penggunaan"></strong>x</span>
                                                     </template>
                                                 </div>
                                             </div>
@@ -2382,19 +2361,21 @@
                 // baik saat melanjutkan pesanan ditahan ke keranjang maupun saat langsung dilunaskan.
                 _formatVoucherDariRelasi(voucher) {
                     if (!voucher) return null;
-                    const reward = voucher.reward || {};
+                    const data = voucher.reward ? voucher.reward : voucher;
                     return {
                         id: voucher.id,
-                        kode_redeem: voucher.kode_redeem,
-                        nama: reward.nama || 'Voucher',
-                        deskripsi: reward.deskripsi || null,
-                        jenis_potongan: reward.jenis_potongan || 'nominal',
-                        nominal_potongan: parseFloat(reward.nominal_potongan || 0),
-                        persentase: parseFloat(reward.persentase || 0),
-                        maksimal_potongan: (reward.maksimal_potongan !== null && reward.maksimal_potongan !== undefined)
-                            ? parseFloat(reward.maksimal_potongan) : null,
-                        min_pembelian: parseFloat(reward.min_pembelian || 0),
-                        berlaku_sampai: voucher.berlaku_sampai || null,
+                        kode_redeem: voucher.kode_redeem || voucher.kode_reward || data.kode_reward || null,
+                        kode_reward: data.kode_reward || voucher.kode_reward || null,
+                        nama: data.nama || 'Voucher',
+                        deskripsi: data.deskripsi || null,
+                        jenis_potongan: data.jenis_potongan || 'nominal',
+                        nominal_potongan: parseFloat(data.nominal_potongan || 0),
+                        persentase: parseFloat(data.persentase || 0),
+                        maksimal_potongan: (data.maksimal_potongan !== null && data.maksimal_potongan !== undefined)
+                            ? parseFloat(data.maksimal_potongan) : null,
+                        min_pembelian: parseFloat(data.min_pembelian || 0),
+                        berlaku_sampai: data.tanggal_selesai || voucher.berlaku_sampai || null,
+                        produk_ids: (data.produks || []).map(p => (typeof p === 'object' ? p.id : p)),
                     };
                 },
 
@@ -3436,8 +3417,9 @@
                     }
 
                     if (this.voucherTerpilih && this.voucherDiskon > 0) {
+                        const namaVoucher = this.voucherTerpilih.nama || this.voucherTerpilih.kode_reward || this.voucherTerpilih.kode_redeem || 'Voucher';
                         result.push({
-                            nama: 'Voucher (' + this.voucherTerpilih.kode_redeem + ')',
+                            nama: 'Voucher (' + namaVoucher + ')',
                             nilai: this.voucherDiskon
                         });
                     }

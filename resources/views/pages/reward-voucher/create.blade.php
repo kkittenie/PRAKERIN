@@ -11,6 +11,7 @@
         <form action="{{ route('reward-voucher.store') }}" method="POST" enctype="multipart/form-data"
             x-data="{
                 jenisPotongan: '{{ old('jenis_potongan', 'nominal') }}',
+                targetMember: '{{ old('target_member', 'semua') }}',
                 persentaseDisplay: '{{ old('persentase') ? str_replace('.', ',', old('persentase')) : '' }}',
                 nominalDisplay: '{{ old('nominal_potongan') ? number_format(old('nominal_potongan'), 0, ',', '.') : '' }}',
                 maksimalDisplay: '{{ old('maksimal_potongan') ? number_format(old('maksimal_potongan'), 0, ',', '.') : '' }}',
@@ -21,7 +22,7 @@
                 getRawNumberNullable(val) {
                     return (val || '').toString().replace(/\D/g, '');
                 },
-                // Format & format-cursor-safe handler for rupiah (ribuan) inputs
+                // Format & cursor-safe handler for rupiah inputs
                 handleRupiahInput(event, prop) {
                     const input = event.target;
                     const oldValue = input.value;
@@ -49,7 +50,6 @@
                         input.setSelectionRange(newPos, newPos);
                     });
                 },
-                // Format & cursor-safe handler for persentase (allows koma sebagai desimal)
                 handlePersentaseInput(event) {
                     const input = event.target;
                     const oldValue = input.value;
@@ -96,6 +96,42 @@
                     if (v.endsWith('.')) v = v.slice(0, -1);
                     return v;
                 },
+                // Member data & multi-select
+                semuaMember: @js($members->map(function ($m) {
+                    return [
+                        'id' => $m->id,
+                        'nama' => $m->nama,
+                        'kode_member' => $m->kode_member,
+                        'no_hp' => $m->no_hp,
+                    ];
+                })->values()),
+                memberTerpilih: @js(old('member_ids') ? array_map('intval', old('member_ids')) : []),
+                cariMemberText: '',
+                dropdownMemberBuka: false,
+                get listMemberTerpilih() {
+                    return this.semuaMember.filter(m => this.memberTerpilih.includes(m.id));
+                },
+                get memberTersaring() {
+                    if (!this.cariMemberText.trim()) return this.semuaMember;
+                    const q = this.cariMemberText.toLowerCase();
+                    return this.semuaMember.filter(m =>
+                        (m.nama && m.nama.toLowerCase().includes(q)) ||
+                        (m.no_hp && m.no_hp.toLowerCase().includes(q)) ||
+                        (m.kode_member && m.kode_member.toLowerCase().includes(q))
+                    );
+                },
+                toggleMember(id) {
+                    const idx = this.memberTerpilih.indexOf(id);
+                    if (idx > -1) {
+                        this.memberTerpilih.splice(idx, 1);
+                    } else {
+                        this.memberTerpilih.push(id);
+                    }
+                },
+                pilihSemuaMember(status) {
+                    this.memberTerpilih = status ? this.semuaMember.map(m => m.id) : [];
+                },
+                // Produk data & multi-select
                 semuaProduk: @js($produks->map(function ($p) {
                     return [
                         'id' => $p->id,
@@ -153,12 +189,171 @@
                         Deskripsi
                     </label>
                     <textarea name="deskripsi" rows="2"
-                        placeholder="Contoh: Diskon 20% untuk pembelian minimal Rp 50.000 (tulis nilai/nominal vouchernya di sini)"
+                        placeholder="Contoh: Diskon 20% untuk pembelian minimal Rp 50.000"
                         class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400">{{ old('deskripsi') }}</textarea>
                     @error('deskripsi')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>
+
+                {{-- Target Member --}}
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Target Member <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex gap-6 items-center">
+                        <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 font-medium">
+                            <input type="radio" name="target_member" value="semua" x-model="targetMember" class="text-brand-500 focus:ring-brand-500">
+                            <span>Umum (Semua Member)</span>
+                        </label>
+                        <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 font-medium">
+                            <input type="radio" name="target_member" value="khusus" x-model="targetMember" class="text-brand-500 focus:ring-brand-500">
+                            <span>Member Tertentu (Khusus)</span>
+                        </label>
+                    </div>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Voucher umum otomatis tersedia untuk semua member, voucher khusus hanya tersedia untuk member yang dipilih.</span>
+                    @error('target_member')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
+                {{-- Multi-Select Member (Select Dropdown dengan Pencarian) --}}
+                <div class="md:col-span-2 space-y-2" x-show="targetMember === 'khusus'" x-cloak>
+                    <div class="flex items-center justify-between">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Pilih Member Yang Berhak <span class="text-red-500">*</span>
+                        </label>
+                        <span class="text-xs font-bold text-amber-700 dark:text-amber-400"
+                            x-text="memberTerpilih.length + ' member dipilih'"></span>
+                    </div>
+
+                    {{-- Dropdown Container --}}
+                    <div class="relative" @click.outside="dropdownMemberBuka = false">
+                        {{-- Dropdown Trigger Button --}}
+                        <button type="button" @click="dropdownMemberBuka = !dropdownMemberBuka"
+                            class="min-h-[48px] w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3.5 py-2.5 flex items-center justify-between text-left cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-amber-500 hover:border-amber-500">
+                            <div class="flex items-center gap-2 flex-wrap flex-1 min-w-0 pr-2">
+                                <template x-if="memberTerpilih.length === 0">
+                                    <span class="text-sm text-gray-400">Pilih member yang berhak menerima voucher...</span>
+                                </template>
+                                <template x-if="memberTerpilih.length > 0">
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                            <span x-text="memberTerpilih.length + ' Member Terpilih'"></span>
+                                        </span>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs"
+                                            x-text="listMemberTerpilih.slice(0, 2).map(m => m.nama).join(', ') + (listMemberTerpilih.length > 2 ? ' +' + (listMemberTerpilih.length - 2) + ' lainnya' : '')"></span>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="flex items-center gap-1 shrink-0 text-gray-400">
+                                <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': dropdownMemberBuka }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </button>
+
+                        {{-- Dropdown Menu Box --}}
+                        <div x-show="dropdownMemberBuka" x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            class="absolute left-0 right-0 z-50 mt-1.5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-3 space-y-2.5">
+
+                            {{-- Search Bar di dalam dropdown --}}
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </span>
+                                <input type="text" x-model="cariMemberText" placeholder="Cari nama, nomor HP, atau kode member..."
+                                    @click.stop
+                                    class="w-full h-10 pl-9 pr-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 placeholder-gray-400">
+                            </div>
+
+                            {{-- Quick action links --}}
+                            <div class="flex items-center justify-between px-1 text-xs">
+                                <div class="flex items-center gap-2">
+                                    <button type="button" @click.stop="pilihSemuaMember(true)" class="font-bold text-amber-700 hover:text-amber-800 dark:text-amber-400">Pilih Semua</button>
+                                    <span class="text-gray-300 dark:text-gray-600">|</span>
+                                    <button type="button" @click.stop="pilihSemuaMember(false)" class="font-semibold text-gray-500 hover:text-gray-600 dark:text-gray-400">Hapus Semua</button>
+                                </div>
+                                <span class="text-[11px] text-gray-400" x-text="memberTersaring.length + ' member ditemukan'"></span>
+                            </div>
+
+                            {{-- List Option --}}
+                            <div class="max-h-60 overflow-y-auto space-y-1 custom-scrollbar pr-1">
+                                <template x-for="member in memberTersaring" :key="member.id">
+                                    <div @click.stop="toggleMember(member.id)"
+                                        class="flex items-center justify-between p-2.5 rounded-lg border border-transparent hover:border-amber-200 dark:hover:border-amber-800/50 hover:bg-amber-50/60 dark:hover:bg-amber-950/30 cursor-pointer transition select-none"
+                                        :class="{ 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200/60 dark:border-amber-800/30': memberTerpilih.includes(member.id) }">
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                             <input type="checkbox" :checked="memberTerpilih.includes(member.id)"
+                                                @click.stop="toggleMember(member.id)"
+                                                class="rounded border-gray-300 text-amber-700 focus:ring-amber-500 pointer-events-none">
+                                            <div class="min-w-0">
+                                                <span class="block text-xs font-bold text-gray-900 dark:text-white truncate" x-text="member.nama"></span>
+                                                <span class="block text-[11px] text-gray-400 dark:text-gray-500" x-text="member.no_hp || '-'"></span>
+                                            </div>
+                                        </div>
+                                        <span class="font-mono text-[10px] text-amber-700 dark:text-amber-400 font-semibold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/50 shrink-0 ml-2" x-text="member.kode_member"></span>
+                                    </div>
+                                </template>
+                                <div x-show="memberTersaring.length === 0" class="py-6 text-center text-xs text-gray-400">
+                                    Member tidak ditemukan.
+                                </div>
+                            </div>
+
+                            <div class="pt-2 border-t border-gray-100 dark:border-gray-700/60 flex justify-end">
+                                <button type="button" @click="dropdownMemberBuka = false"
+                                    class="px-3.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-lg transition shadow-xs">
+                                    Selesai
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Render Hidden Inputs untuk Form Submission --}}
+                    <template x-for="id in memberTerpilih" :key="'input_mbr_' + id">
+                        <input type="hidden" name="member_ids[]" :value="id">
+                    </template>
+
+                    {{-- Badges / Tags Member Terpilih di Luar Dropdown (Bisa Dihapus) --}}
+                    <div x-show="memberTerpilih.length > 0" class="flex flex-wrap gap-1.5 pt-1">
+                        <template x-for="member in listMemberTerpilih" :key="'chip_' + member.id">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-white dark:bg-gray-800 border border-amber-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 shadow-2xs">
+                                <span x-text="member.nama"></span>
+                                <button type="button" @click="toggleMember(member.id)" class="text-gray-400 hover:text-red-500 font-bold leading-none">&times;</button>
+                            </span>
+                        </template>
+                    </div>
+
+                    @error('member_ids')
+                        <small class="text-red-500 block">{{ $message }}</small>
+                    @enderror
+                </div>
+
+                {{-- Batas Penggunaan Per Member --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Batas Penggunaan Per Member <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" name="batas_penggunaan_per_member" min="1" value="{{ old('batas_penggunaan_per_member', 1) }}"
+                            placeholder="1"
+                            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-4 pr-16 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
+                            required>
+                        <span class="absolute right-4 top-3 text-gray-500 font-bold text-sm">kali</span>
+                    </div>
+                    @error('batas_penggunaan_per_member')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
+
 
                 {{-- Jenis Potongan --}}
                 <div>
@@ -269,57 +464,29 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Masa Berlaku Voucher
+                        Status Voucher
                     </label>
-                    <div class="relative">
-                        <input type="number" name="masa_berlaku_hari" min="1" value="{{ old('masa_berlaku_hari') }}"
-                            placeholder="Kosongkan jika tidak ada batas waktu"
-                            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-4 pr-16 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400">
-                        <span class="absolute right-4 top-3 text-gray-500 font-bold text-sm">hari</span>
-                    </div>
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Dihitung sejak member menukar poin untuk voucher ini.</span>
-                    @error('masa_berlaku_hari')
+
+                    <label class="flex items-center gap-3 h-12 cursor-pointer">
+                        <input type="hidden" name="status_aktif" value="0">
+                        <input type="checkbox" name="status_aktif" value="1"
+                            class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                            {{ old('status_aktif', '1') == '1' ? 'checked' : '' }}>
+                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Aktifkan Sekarang</span>
+                    </label>
+                    @error('status_aktif')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>
 
-                <div>
+                <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Poin Dibutuhkan <span class="text-red-500">*</span>
-                    </label>
-                    <div class="relative">
-                        <input type="number" name="poin_dibutuhkan" min="1" value="{{ old('poin_dibutuhkan') }}"
-                            placeholder="Contoh: 100"
-                            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-4 pr-16 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
-                            required>
-                        <span class="absolute right-4 top-3 text-gray-500 font-bold text-sm">poin</span>
-                    </div>
-                    @error('poin_dibutuhkan')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Stok
-                    </label>
-                    <input type="number" name="stok" min="0" value="{{ old('stok') }}"
-                        placeholder="Kosongkan jika tidak terbatas"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400">
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Kosongkan = tidak terbatas.</span>
-                    @error('stok')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
-<div class="md:col-span-2">
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Gambar Reward
+                        Gambar Voucher
                     </label>
 
                     <div class="flex items-center gap-4">
                         <div class="w-24 h-24 shrink-0 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
-                            <img id="preview-gambar" src="" alt="Preview gambar reward" class="hidden w-full h-full object-cover">
+                            <img id="preview-gambar" src="" alt="Preview gambar voucher" class="hidden w-full h-full object-cover">
                             <svg id="icon-gambar-kosong" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
@@ -337,26 +504,9 @@
                             </p>
                         </div>
                     </div>
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-2 block">Ditampilkan di katalog reward member. Format jpg/png/webp, maks 2MB.</span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-2 block">Ditampilkan di halaman voucher member. Format jpg/png/webp, maks 2MB.</span>
 
                     @error('gambar')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Status Program
-                    </label>
-
-                    <label class="flex items-center gap-3 h-12 cursor-pointer">
-                        <input type="hidden" name="status_aktif" value="0">
-                        <input type="checkbox" name="status_aktif" value="1"
-                            class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                            {{ old('status_aktif', '1') == '1' ? 'checked' : '' }}>
-                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Aktifkan Sekarang</span>
-                    </label>
-                    @error('status_aktif')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>
@@ -367,7 +517,7 @@
             <div class="mb-8">
                 <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Pilih Produk Yang Diberi Reward Voucher <span class="text-red-500">*</span>
+                        Pilih Produk Yang Berlaku Untuk Voucher Ini <span class="text-red-500">*</span>
                     </label>
                     <div class="flex flex-wrap items-center gap-3">
                         <div class="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-600 dark:text-gray-400 shrink-0">

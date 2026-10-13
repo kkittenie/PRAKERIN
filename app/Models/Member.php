@@ -146,6 +146,16 @@ class Member extends Authenticatable
         return $this->hasMany(MemberStamp::class);
     }
 
+    public function vouchers()
+    {
+        return $this->belongsToMany(RewardKatalog::class, 'voucher_members', 'member_id', 'reward_katalog_id')->withTimestamps();
+    }
+
+    public function voucherUsages()
+    {
+        return $this->hasMany(VoucherUsage::class);
+    }
+
     public function stampRedemptions()
     {
         return $this->hasMany(StampRedemption::class);

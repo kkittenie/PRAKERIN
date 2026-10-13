@@ -475,8 +475,13 @@ class PesananPickupController extends Controller
                     }
                 }
 
+                // Kembalikan jatah penggunaan voucher member
+                \App\Models\VoucherUsage::where('transaksi_id', $transaksi->id)->delete();
+
                 if ($transaksi->voucher_id && $transaksi->voucher) {
-                    $transaksi->voucher->update(['status' => 'menunggu_diambil', 'diambil_pada' => null, 'transaksi_id' => null]);
+                    if ($transaksi->voucher instanceof \App\Models\PenukaranPoin) {
+                        $transaksi->voucher->update(['status' => 'menunggu_diambil', 'diambil_pada' => null, 'transaksi_id' => null]);
+                    }
                 }
 
                 $transaksi->update(['status_pesanan' => Transaksi::STATUS_DIBATALKAN]);

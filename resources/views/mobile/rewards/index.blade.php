@@ -1,30 +1,25 @@
-@extends('mobile.layout', ['title' => 'Vouchers'])
+@extends('mobile.layout', ['title' => 'Voucher Saya'])
 
 @section('content')
 
     {{-- ═══════════════════════════════════════════════════════════════════════
-         MOBILE LAYOUT (unchanged, hidden on lg+)
+         MOBILE LAYOUT (hidden on lg+)
          ═══════════════════════════════════════════════════════════════════════ --}}
     <div class="lg:hidden">
         <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-3 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10">
-            <h1 class="text-center text-lg font-extrabold text-gray-900">Vouchers</h1>
-        </div>
-
-        <div class="mt-3 flex items-center justify-center gap-1.5 rounded-2xl border border-gray-100 bg-brand-25 py-2.5 text-xs text-gray-500">
-            Poin kamu saat ini:
-            <span class="font-bold text-brand-800">{{ number_format($member->poin, 0, ',', '.') }}</span>
+            <h1 class="text-center text-lg font-extrabold text-gray-900">Voucher Saya</h1>
         </div>
 
         {{-- Fore-style underline tabs --}}
-        <div class="relative mt-5 grid grid-cols-3 border-b border-gray-100">
-            @foreach (['semua' => 'Semua', 'voucher' => 'Voucher', 'stamp' => 'Stamp'] as $key => $label)
+        <div class="relative mt-3 grid grid-cols-2 border-b border-gray-100">
+            @foreach (['voucher' => 'Voucher Saya', 'stamp' => 'Stamp'] as $key => $label)
                 <button type="button" data-tab="{{ $key }}" onclick="switchVoucherTab('{{ $key }}')"
-                        class="voucher-tab relative pb-3 text-center text-[13px] font-bold transition {{ $key === 'semua' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
+                        class="voucher-tab relative pb-3 text-center text-[13px] font-bold transition {{ $key === 'voucher' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
                     {{ $label }}
                 </button>
             @endforeach
             <span id="voucher-tab-indicator"
-                  class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/3 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
+                  class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/2 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
                   style="transform: translateX(0%);"></span>
         </div>
 
@@ -32,7 +27,7 @@
         <div id="voucher-tab-viewport" class="relative flex flex-1 flex-col overflow-hidden">
             <div id="voucher-tab-track" class="flex flex-1 transition-transform duration-300 ease-out">
 
-                {{-- Pane: Semua --}}
+                {{-- Pane: Voucher Saya --}}
                 <div class="voucher-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="0">
                     <button type="button" id="stamp-teaser-card" onclick="switchVoucherTab('stamp')"
                             class="mb-4 flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-[#5a3c27] to-[#8b5e3c] p-4 text-left text-white shadow-sm transition active:scale-[0.99]">
@@ -41,7 +36,7 @@
                         </span>
                         <div class="min-w-0 flex-1">
                             <p id="stamp-teaser-title" class="truncate text-sm font-extrabold">Program Stamp</p>
-                            <p id="stamp-teaser-subtitle" class="mt-0.5 text-[11px] text-white/75">Kumpulin stamp, tukar hadiah gratis</p>
+                            <p id="stamp-teaser-subtitle" class="mt-0.5 text-[11px] text-white/75">Kumpulin stamp, dapatkan hadiah gratis</p>
                         </div>
                         <span class="shrink-0 text-white/60">
                             @include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4'])
@@ -49,38 +44,16 @@
                     </button>
 
                     <div class="flex items-center justify-between">
-                        <h2 class="text-sm font-bold text-gray-900">Katalog Reward</h2>
-                        <span class="text-xs text-gray-400">{{ $rewards->count() }} reward</span>
+                        <h2 class="text-sm font-bold text-gray-900">Daftar Voucher</h2>
+                        <span class="text-xs text-gray-400">{{ $vouchers->count() }} voucher</span>
                     </div>
                     <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 space-y-0">
-                        @forelse ($rewards as $reward)
-                            @include('mobile.components.reward-card', ['reward' => $reward, 'member' => $member])
-                        @empty
-                            @include('mobile.components.empty-state', [
-                                'title' => 'Belum Ada Reward',
-                                'description' => 'Nanti kalau ada reward baru, langsung nongol di sini.',
-                                'icon' => 'icon-gift',
-                                'iconBg' => 'bg-brand-50',
-                                'iconColor' => 'text-brand-800',
-                            ])
-                        @endforelse
-                    </div>
-                </div>
-
-                {{-- Pane: Voucher --}}
-                @php $rewardsVoucher = $rewards->where('jenis', 'voucher'); @endphp
-                <div class="voucher-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="1">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-sm font-bold text-gray-900">Katalog Voucher</h2>
-                        <span class="text-xs text-gray-400">{{ $rewardsVoucher->count() }} voucher</span>
-                    </div>
-                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 space-y-0">
-                        @forelse ($rewardsVoucher as $reward)
-                            @include('mobile.components.reward-card', ['reward' => $reward, 'member' => $member])
+                        @forelse ($vouchers as $voucher)
+                            @include('mobile.components.reward-card', ['voucher' => $voucher, 'member' => $member])
                         @empty
                             @include('mobile.components.empty-state', [
                                 'title' => 'Belum Ada Voucher',
-                                'description' => 'Diskon-diskon menarik akan muncul di tab ini.',
+                                'description' => 'Voucher yang tersedia untuk kamu akan otomatis muncul di sini.',
                                 'icon' => 'icon-ticket',
                                 'iconBg' => 'bg-brand-50',
                                 'iconColor' => 'text-brand-800',
@@ -90,7 +63,7 @@
                 </div>
 
                 {{-- Pane: Stamp --}}
-                <div class="voucher-tab-pane flex shrink-0 flex-col bg-white" data-pane-index="2">
+                <div class="voucher-tab-pane flex shrink-0 flex-col bg-white" data-pane-index="1">
                     <div id="stamp-pane-content" class="flex flex-1 flex-col">
                         <div class="flex flex-1 flex-col items-center justify-center py-10 text-center">
                             <svg class="h-6 w-6 animate-spin text-gray-300" viewBox="0 0 24 24" fill="none">
@@ -107,34 +80,30 @@
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════════════════
-         DESKTOP LAYOUT (hidden below lg, completely different composition)
-         Two-column grid: left sidebar (stamp + info), right main (catalog)
+         DESKTOP LAYOUT (hidden below lg)
          ═══════════════════════════════════════════════════════════════════════ --}}
-    @php $rewardsVoucherDesktop = $rewards->where('jenis', 'voucher'); @endphp
     <div class="hidden lg:block lg:max-w-6xl lg:mx-auto lg:my-6 lg:bg-white lg:rounded-3xl lg:border lg:border-gray-200/80 lg:shadow-xl lg:p-8 lg:space-y-8">
         {{-- Desktop Page Header --}}
         <div class="flex items-center justify-between border-b border-gray-100 pb-6">
             <div>
-                <h1 class="text-2xl font-black text-brand-800 tracking-tight">Katalog Reward & Voucher</h1>
-                <p class="text-xs text-gray-500 mt-1">Tukarkan poin dan stamp member Saisho Anda dengan voucher potongan & produk pilihan gratis</p>
+                <h1 class="text-2xl font-black text-brand-800 tracking-tight">Voucher Saya & Program Reward</h1>
+                <p class="text-xs text-gray-500 mt-1">Gunakan voucher diskon Anda langsung saat checkout atau di kasir outlet</p>
             </div>
 
-            {{-- Member Reward Summary Pill --}}
             <div class="flex items-center gap-3 rounded-2xl bg-brand-50 border border-brand-100 px-5 py-3 shadow-xs">
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-800 text-white shadow-xs">
-                    <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Saisho" class="h-6 w-6 object-contain">
+                    @include('mobile.components.icon-ticket', ['class' => 'h-5 w-5'])
                 </span>
                 <div>
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-brand-700">Saldo Poin Kamu</p>
-                    <p class="text-lg font-black text-brand-900">{{ number_format($member->poin, 0, ',', '.') }} <span class="text-xs font-bold text-brand-700">Poin</span></p>
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-brand-700">Voucher Tersedia</p>
+                    <p class="text-lg font-black text-brand-900">{{ $vouchers->where('tersedia', true)->count() }} <span class="text-xs font-bold text-brand-700">Voucher Aktif</span></p>
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-12 gap-8 items-start">
-            {{-- Left Sidebar (Stamp Program + Stats) --}}
+            {{-- Left Sidebar (Stamp Program + Info) --}}
             <div class="col-span-4 space-y-5 sticky top-24">
-                {{-- Stamp Program Card (Desktop) --}}
                 <div id="desktop-stamp-sidebar" class="space-y-4">
                     <div id="desktop-stamp-sidebar-content">
                         <button type="button" id="desktop-stamp-teaser-card" onclick="switchDesktopTab('stamp')"
@@ -153,49 +122,47 @@
                     </div>
                 </div>
 
-                {{-- Quick info Card --}}
                 <div class="rounded-2xl border border-dashed border-brand-200/80 bg-brand-25/50 p-5 space-y-2">
                     <div class="flex items-center gap-2 text-xs font-extrabold text-brand-800">
                         <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-100 text-brand-800">💡</span>
-                        <span>Cara Mendapatkan Poin</span>
+                        <span>Cara Pakai Voucher</span>
                     </div>
                     <p class="text-xs leading-relaxed text-gray-600 font-medium">
-                        Setiap transaksi pemesanan melalui aplikasi member Saisho akan otomatis memberikan poin reward. Kumpulkan poin dan tukarkan dengan berbagai penawaran menarik!
+                        Pilih voucher aktif langsung pada halaman Checkout pemesanan Pickup di aplikasi atau sebutkan nama member Anda ke kasir saat bertransaksi di outlet. Tanpa perlu tukar poin!
                     </p>
                 </div>
             </div>
 
-            {{-- Right Main: Reward Catalog --}}
+            {{-- Right Main: Voucher Catalog --}}
             <div class="col-span-8 space-y-6">
-                {{-- Desktop Tab filter pills --}}
                 <div class="flex items-center justify-between border-b border-gray-100 pb-4">
                     <div class="inline-flex items-center gap-2 rounded-2xl bg-gray-100/80 p-1.5 border border-gray-200/60 shadow-inner">
                         <button type="button" data-desktop-tab="voucher" onclick="switchDesktopTab('voucher')"
                                 class="desktop-filter-tab rounded-xl px-5 py-2.5 text-xs font-extrabold transition bg-brand-800 text-white shadow-sm outline-none focus:outline-none focus:ring-0 cursor-pointer">
-                            Voucher Diskon
+                            Voucher Saya
                         </button>
                         <button type="button" data-desktop-tab="stamp" onclick="switchDesktopTab('stamp')"
                                 class="desktop-filter-tab rounded-xl px-5 py-2.5 text-xs font-bold transition bg-transparent text-gray-600 hover:text-gray-900 outline-none focus:outline-none focus:ring-0 cursor-pointer">
                             Stamp Reward
                         </button>
                     </div>
-                    <span class="text-xs font-semibold text-gray-400">Pilih penawaran yang ingin ditukarkan</span>
+                    <span class="text-xs font-semibold text-gray-400">Voucher khusus & umum untuk akun Anda</span>
                 </div>
 
                 {{-- Desktop: Voucher pane --}}
                 <div id="desktop-pane-voucher" class="desktop-pane pt-2">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-sm font-extrabold uppercase tracking-wide text-gray-900">Katalog Voucher</h2>
-                        <span class="text-xs text-gray-500 font-semibold">{{ $rewardsVoucherDesktop->count() }} voucher tersedia</span>
+                        <h2 class="text-sm font-extrabold uppercase tracking-wide text-gray-900">Voucher Saya</h2>
+                        <span class="text-xs text-gray-500 font-semibold">{{ $vouchers->count() }} voucher terdaftar</span>
                     </div>
                     <div class="grid grid-cols-2 xl:grid-cols-3 gap-5">
-                        @forelse ($rewardsVoucherDesktop as $reward)
-                            @include('mobile.components.reward-card', ['reward' => $reward, 'member' => $member])
+                        @forelse ($vouchers as $voucher)
+                            @include('mobile.components.reward-card', ['voucher' => $voucher, 'member' => $member])
                         @empty
                             <div class="col-span-full">
                                 @include('mobile.components.empty-state', [
                                     'title' => 'Belum Ada Voucher',
-                                    'description' => 'Diskon-diskon menarik akan muncul di tab ini.',
+                                    'description' => 'Voucher yang tersedia untuk kamu akan otomatis muncul di sini.',
                                     'icon' => 'icon-ticket',
                                     'iconBg' => 'bg-brand-50',
                                     'iconColor' => 'text-brand-800',
@@ -222,7 +189,7 @@
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════════════════
-         SHARED SCRIPTS (Mobile swipeable tabs + Desktop filter tabs)
+         SHARED SCRIPTS
          ═══════════════════════════════════════════════════════════════════════ --}}
     <script>
         window.bukaKonfirmasiTukarStamp = function (produkId, jumlah, namaProduk) {
@@ -243,7 +210,7 @@
 
         (function () {
             // ─── Mobile swipeable tabs ───
-            const tabs = ['semua', 'voucher', 'stamp'];
+            const tabs = ['voucher', 'stamp'];
             const requested = new URLSearchParams(window.location.search).get('tab');
             let current = Math.max(0, tabs.indexOf(requested));
             let stampLoaded = false;
@@ -291,7 +258,6 @@
 
                 track.style.transition = 'none';
 
-                // Swipe/drag gesture
                 let startX = 0;
                 let dragging = false;
                 viewport.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; dragging = true; }, { passive: true });
@@ -317,7 +283,6 @@
                 if (idx === -1) return;
                 desktopCurrent = idx;
 
-                // Update pill buttons
                 document.querySelectorAll('.desktop-filter-tab').forEach(btn => {
                     const isActive = btn.dataset.desktopTab === name;
                     btn.classList.toggle('bg-brand-800', isActive);
@@ -330,12 +295,10 @@
                     btn.classList.toggle('hover:text-gray-900', !isActive);
                 });
 
-                // Show/hide panes
                 document.querySelectorAll('.desktop-pane').forEach(pane => pane.classList.add('hidden'));
                 const target = document.getElementById('desktop-pane-' + name);
                 if (target) target.classList.remove('hidden');
 
-                // Load stamp if needed
                 if (name === 'stamp' && !desktopStampLoaded) {
                     loadDesktopStampPane();
                 } else if (name === 'stamp') {
@@ -388,7 +351,6 @@
                     : `${cur}/${tgt} stamp terkumpul`;
             }
 
-            // ─── Shared stamp helpers (mobile) ───
             function loadStampPane(shouldAnimate = false) {
                 stampLoaded = true;
                 fetch("{{ route('member.stamps.index') }}")
@@ -406,7 +368,6 @@
                             target.innerHTML = '<p class="flex-1 py-10 text-center text-xs text-gray-400">Gagal memuat stamp, coba lagi ya.</p>';
                         }
 
-                        // Also update desktop sidebar teaser if available
                         if (!desktopStampLoaded) {
                             desktopStampLoaded = true;
                             const desktopTarget = document.getElementById('desktop-stamp-pane-content');
@@ -435,10 +396,7 @@
                 const card = document.getElementById('stamp-teaser-card');
                 if (!card) return;
                 const data = paneEl.querySelector('#stamp-program-data');
-                if (!data) {
-                    card.remove();
-                    return;
-                }
+                if (!data) { card.remove(); return; }
                 const nama = data.dataset.namaProgram;
                 const cur = data.dataset.current;
                 const tgt = data.dataset.target;
@@ -449,12 +407,10 @@
                     : `${cur}/${tgt} stamp terkumpul`;
             }
 
-            // Desktop: prefetch stamp data on load (for sidebar teaser)
             if (!desktopStampLoaded && document.getElementById('desktop-stamp-sidebar')) {
                 loadDesktopStampPane();
             }
 
-            // Initial desktop tab if ?tab= is set
             if (requested && tabs.indexOf(requested) > 0) {
                 switchDesktopTab(requested);
             }

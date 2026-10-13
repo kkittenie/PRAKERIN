@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Member;
 use App\Models\Produk;
 use App\Models\RewardKatalog;
+use App\Models\VoucherUsage;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -26,11 +28,10 @@ class RewardVoucherController extends Controller
                     ->addColumn('kode_html', fn ($item) => view('pages.reward-voucher.partials.kode', compact('item'))->render())
                     ->addColumn('voucher_html', fn ($item) => view('pages.reward-voucher.partials.voucher', compact('item'))->render())
                     ->editColumn('deskripsi', fn ($item) => view('pages.reward-voucher.partials.deskripsi', compact('item'))->render())
-                    ->editColumn('poin_dibutuhkan', fn ($item) => number_format($item->poin_dibutuhkan, 0, ',', '.') . ' poin')
-                    ->addColumn('stok_html', fn ($item) => view('pages.reward-voucher.partials.stok', compact('item'))->render())
+                    ->addColumn('target_html', fn ($item) => view('pages.reward-voucher.partials.target', compact('item'))->render())
                     ->addColumn('status_html', fn ($item) => view('pages.reward-voucher.partials.status', compact('item'))->render())
                     ->addColumn('aksi', fn ($item) => view('pages.reward-voucher.partials.aksi', compact('item'))->render())
-                    ->rawColumns(['kode_html', 'voucher_html', 'deskripsi', 'stok_html', 'status_html', 'aksi'])
+                    ->rawColumns(['kode_html', 'voucher_html', 'deskripsi', 'target_html', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
                 activity('error')
@@ -51,10 +52,12 @@ class RewardVoucherController extends Controller
     {
         try {
             $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
+            $members = Member::orderBy('nama', 'asc')->get();
 
             return view('pages.reward-voucher.create', [
                 'title' => 'Tambah Reward Voucher',
                 'produks' => $produks,
+                'members' => $members,
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -66,11 +69,12 @@ class RewardVoucherController extends Controller
         try {
             abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
-            $rewardVoucher->load('produks.kategori');
+            $rewardVoucher->load(['produks.kategori', 'members', 'usages.member', 'usages.transaksi']);
 
             return view('pages.reward-voucher.show', [
                 'title' => 'Detail Reward Voucher',
                 'voucher' => $rewardVoucher,
+                'allMembers' => Member::orderBy('nama', 'asc')->get(),
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -87,15 +91,17 @@ class RewardVoucherController extends Controller
                 'jenis' => 'voucher',
                 'deskripsi' => $validated['deskripsi'] ?? null,
                 'gambar' => null,
-                'poin_dibutuhkan' => $validated['poin_dibutuhkan'],
-                'stok' => $validated['stok'] ?? null,
+                'poin_dibutuhkan' => 0,
+                'stok' => null,
                 'status_aktif' => (bool) $request->boolean('status_aktif'),
+                'target_member' => $validated['target_member'],
+                'batas_penggunaan_per_member' => $validated['batas_penggunaan_per_member'] ?? 1,
                 'jenis_potongan' => $validated['jenis_potongan'],
                 'nominal_potongan' => $validated['jenis_potongan'] === 'nominal' ? $validated['nominal_potongan'] : 0,
                 'persentase' => $validated['jenis_potongan'] === 'persentase' ? $validated['persentase'] : 0,
                 'maksimal_potongan' => $validated['jenis_potongan'] === 'persentase' ? ($validated['maksimal_potongan'] ?? null) : null,
                 'min_pembelian' => $validated['min_pembelian'] ?? 0,
-                'masa_berlaku_hari' => $validated['masa_berlaku_hari'] ?? null,
+                'masa_berlaku_hari' => null,
             ]);
 
             $kodeReward = 'RWD' . str_pad((string) $voucher->id, 3, '0', STR_PAD_LEFT);
@@ -110,6 +116,10 @@ class RewardVoucherController extends Controller
             ]);
 
             $voucher->produks()->sync($validated['produk_ids']);
+
+            if ($validated['target_member'] === 'khusus' && !empty($validated['member_ids'])) {
+                $voucher->members()->sync($validated['member_ids']);
+            }
 
             activity()
                 ->causedBy(auth()->user())
@@ -129,13 +139,17 @@ class RewardVoucherController extends Controller
             abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
             $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
+            $members = Member::orderBy('nama', 'asc')->get();
             $selectedProduks = $rewardVoucher->produks->pluck('id')->toArray();
+            $selectedMembers = $rewardVoucher->members->pluck('id')->toArray();
 
             return view('pages.reward-voucher.edit', [
                 'title' => 'Edit Reward Voucher',
                 'voucher' => $rewardVoucher,
                 'produks' => $produks,
+                'members' => $members,
                 'selectedProduks' => $selectedProduks,
+                'selectedMembers' => $selectedMembers,
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -152,15 +166,14 @@ class RewardVoucherController extends Controller
             $dataUpdate = [
                 'nama' => $validated['nama'],
                 'deskripsi' => $validated['deskripsi'] ?? null,
-                'poin_dibutuhkan' => $validated['poin_dibutuhkan'],
-                'stok' => $validated['stok'] ?? null,
                 'status_aktif' => (bool) $request->boolean('status_aktif'),
+                'target_member' => $validated['target_member'],
+                'batas_penggunaan_per_member' => $validated['batas_penggunaan_per_member'] ?? 1,
                 'jenis_potongan' => $validated['jenis_potongan'],
                 'nominal_potongan' => $validated['jenis_potongan'] === 'nominal' ? $validated['nominal_potongan'] : 0,
                 'persentase' => $validated['jenis_potongan'] === 'persentase' ? $validated['persentase'] : 0,
                 'maksimal_potongan' => $validated['jenis_potongan'] === 'persentase' ? ($validated['maksimal_potongan'] ?? null) : null,
                 'min_pembelian' => $validated['min_pembelian'] ?? 0,
-                'masa_berlaku_hari' => $validated['masa_berlaku_hari'] ?? null,
             ];
 
             if ($request->hasFile('gambar')) {
@@ -176,6 +189,12 @@ class RewardVoucherController extends Controller
 
             $rewardVoucher->produks()->sync($validated['produk_ids']);
 
+            if ($validated['target_member'] === 'khusus') {
+                $rewardVoucher->members()->sync($validated['member_ids'] ?? []);
+            } else {
+                $rewardVoucher->members()->detach();
+            }
+
             activity()
                 ->causedBy(auth()->user())
                 ->performedOn($rewardVoucher)
@@ -183,6 +202,41 @@ class RewardVoucherController extends Controller
                 ->log('Memperbarui reward voucher: ' . $rewardVoucher->nama);
 
             return redirect()->route('reward-voucher.index')->with('success', 'Reward voucher berhasil diperbarui.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    public function tambahMember(Request $request, RewardKatalog $rewardVoucher)
+    {
+        try {
+            abort_unless($rewardVoucher->jenis === 'voucher', 404);
+
+            $validated = $request->validate([
+                'member_ids' => 'required|array|min:1',
+                'member_ids.*' => 'exists:members,id',
+            ]);
+
+            $rewardVoucher->members()->syncWithoutDetaching($validated['member_ids']);
+
+            if ($rewardVoucher->target_member !== 'khusus') {
+                $rewardVoucher->update(['target_member' => 'khusus']);
+            }
+
+            return back()->with('success', 'Member berhasil ditambahkan ke voucher.');
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    public function cabutMember(RewardKatalog $rewardVoucher, Member $member)
+    {
+        try {
+            abort_unless($rewardVoucher->jenis === 'voucher', 404);
+
+            $rewardVoucher->members()->detach($member->id);
+
+            return back()->with('success', "Akses member {$member->nama} berhasil dicabut dari voucher ini.");
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -213,8 +267,8 @@ class RewardVoucherController extends Controller
         try {
             abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
-            if ($rewardVoucher->penukaran()->exists()) {
-                return back()->with('error', 'Voucher ini sudah pernah ditukar oleh member dan tidak bisa dihapus. Nonaktifkan saja agar riwayat penukaran tetap tersimpan.');
+            if ($rewardVoucher->usages()->exists()) {
+                return back()->with('error', 'Voucher ini sudah pernah digunakan dalam transaksi dan tidak bisa dihapus. Nonaktifkan saja agar riwayat penggunaan tetap tersimpan.');
             }
 
             activity()
@@ -244,20 +298,23 @@ class RewardVoucherController extends Controller
             'nama' => 'required|string|max:255',
             'deskripsi' => 'nullable|string|max:1000',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'poin_dibutuhkan' => 'required|integer|min:1',
-            'stok' => 'nullable|integer|min:0',
             'status_aktif' => 'nullable|boolean',
+            'target_member' => 'required|in:semua,khusus',
+            'member_ids' => 'required_if:target_member,khusus|array',
+            'member_ids.*' => 'exists:members,id',
+            'batas_penggunaan_per_member' => 'required|integer|min:1',
             'jenis_potongan' => 'required|in:nominal,persentase',
             'nominal_potongan' => 'required_if:jenis_potongan,nominal|nullable|numeric|min:0',
             'persentase' => 'required_if:jenis_potongan,persentase|nullable|numeric|min:0|max:100',
             'maksimal_potongan' => 'nullable|numeric|min:0',
             'min_pembelian' => 'nullable|numeric|min:0',
-            'masa_berlaku_hari' => 'nullable|integer|min:1',
             'produk_ids' => 'required|array|min:1',
             'produk_ids.*' => 'exists:produks,id',
         ], [
             'nama.required' => 'Nama voucher wajib diisi.',
-            'poin_dibutuhkan.required' => 'Jumlah poin yang dibutuhkan wajib diisi.',
+            'target_member.required' => 'Pilih target member voucher.',
+            'member_ids.required_if' => 'Pilih minimal satu member untuk voucher khusus.',
+            'batas_penggunaan_per_member.required' => 'Batas penggunaan per member wajib diisi (minimal 1).',
             'gambar.image' => 'File yang diunggah harus berupa gambar.',
             'gambar.mimes' => 'Format gambar harus jpg, jpeg, png, atau webp.',
             'gambar.max' => 'Ukuran gambar maksimal 2MB.',

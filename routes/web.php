@@ -341,6 +341,12 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
     Route::patch('/reward-voucher/{rewardVoucher}/toggle-status', [RewardVoucherController::class, 'toggleStatus'])
         ->name('reward-voucher.toggle-status')
         ->middleware('permission:edit_reward');
+    Route::post('/reward-voucher/{rewardVoucher}/tambah-member', [RewardVoucherController::class, 'tambahMember'])
+        ->name('reward-voucher.tambah-member')
+        ->middleware('permission:edit_reward');
+    Route::delete('/reward-voucher/{rewardVoucher}/cabut-member/{member}', [RewardVoucherController::class, 'cabutMember'])
+        ->name('reward-voucher.cabut-member')
+        ->middleware('permission:edit_reward');
 
     Route::resource('reward-voucher', RewardVoucherController::class)
         ->middleware('permission:lihat_reward|tambah_reward|edit_reward|hapus_reward');

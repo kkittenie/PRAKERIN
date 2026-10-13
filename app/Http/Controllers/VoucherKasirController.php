@@ -3,31 +3,37 @@
 namespace App\Http\Controllers;
 
 use App\Models\Member;
-use App\Models\PenukaranPoin;
+use App\Models\RewardKatalog;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class VoucherKasirController extends Controller
 {
     /**
-     * Daftar voucher aktif (belum dipakai, belum expired) milik seorang member.
+     * Daftar voucher aktif yang berhak digunakan oleh seorang member.
      * Dipakai untuk mengisi modal "Gunakan Voucher" di kasir.
      */
     public function daftarAktif(Member $member)
     {
         try {
-            $voucher = PenukaranPoin::with('reward.produks')
-                ->where('member_id', $member->id)
-                ->whereHas('reward', fn ($q) => $q->where('jenis', 'voucher'))
-                ->aktifDigunakan()
-                ->latest()
+            $vouchers = RewardKatalog::with('produks')
+                ->where('jenis', 'voucher')
+                ->where('status_aktif', true)
+                ->where(function ($q) use ($member) {
+                    $q->where('target_member', 'semua')
+                      ->orWhere(function ($sub) use ($member) {
+                          $sub->where('target_member', 'khusus')
+                              ->whereHas('members', fn ($m) => $m->where('members.id', $member->id));
+                      });
+                })
                 ->get()
-                ->map(fn (PenukaranPoin $penukaran) => $this->formatVoucher($penukaran));
+                ->filter(fn (RewardKatalog $v) => $v->berhakDigunakan($member))
+                ->values()
+                ->map(fn (RewardKatalog $voucher) => $this->formatVoucher($voucher, $member));
 
             return response()->json([
                 'status' => 'success',
-                'data' => $voucher,
+                'data' => $vouchers,
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -35,79 +41,37 @@ class VoucherKasirController extends Controller
     }
 
     /**
-     * Validasi voucher lewat kode yang diinput manual oleh kasir.
-     * Kode harus valid, milik member yang sedang dipilih, masih aktif,
-     * dan belum expired/dipakai.
+     * Validasi kode manual dinonaktifkan sesuai alur voucher baru
      */
     public function validasiKode(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'kode' => 'required|string|max:20',
-                'member_id' => 'required|exists:members,id',
-            ], [
-                'kode.required' => 'Kode voucher wajib diisi.',
-                'member_id.required' => 'Pilih member terlebih dahulu sebelum memakai voucher.',
-            ]);
-
-            $penukaran = PenukaranPoin::with(['reward.produks', 'member'])
-                ->where('kode_redeem', strtoupper(trim($validated['kode'])))
-                ->whereHas('reward', fn ($q) => $q->where('jenis', 'voucher'))
-                ->first();
-
-            if (!$penukaran) {
-                return response()->json([
-                    'status' => 'error',
-                    'pesan' => 'Kode voucher tidak ditemukan.',
-                ], 422);
-            }
-
-            if ((int) $penukaran->member_id !== (int) $validated['member_id']) {
-                return response()->json([
-                    'status' => 'error',
-                    'pesan' => 'Voucher ini bukan milik member yang dipilih.',
-                ], 422);
-            }
-
-            if ($penukaran->status !== 'menunggu_diambil') {
-                return response()->json([
-                    'status' => 'error',
-                    'pesan' => 'Voucher ini sudah pernah dipakai atau dibatalkan.',
-                ], 422);
-            }
-
-            if ($penukaran->sudahExpired()) {
-                return response()->json([
-                    'status' => 'error',
-                    'pesan' => 'Voucher ini sudah kadaluwarsa.',
-                ], 422);
-            }
-
-            return response()->json([
-                'status' => 'success',
-                'data' => $this->formatVoucher($penukaran),
-            ]);
-        } catch (\Throwable $e) {
-            return ActivityLogHelper::handleException($e);
-        }
+        return response()->json([
+            'status' => 'error',
+            'pesan' => 'Input kode manual sudah dinonaktifkan. Silakan pilih langsung voucher dari daftar voucher yang tersedia untuk member ini.',
+        ], 422);
     }
 
-    private function formatVoucher(PenukaranPoin $penukaran): array
+    private function formatVoucher(RewardKatalog $voucher, ?Member $member = null): array
     {
-        $reward = $penukaran->reward;
+        $pemakaian = $member ? $voucher->jumlahPemakaianMember($member->id) : 0;
+        $batas = $voucher->batas_penggunaan_per_member ?: 1;
 
         return [
-            'id' => $penukaran->id,
-            'kode_redeem' => $penukaran->kode_redeem,
-            'nama' => $reward->nama ?? 'Voucher',
-            'deskripsi' => $reward->deskripsi ?? null,
-            'jenis_potongan' => $reward->jenis_potongan ?? 'nominal',
-            'nominal_potongan' => (float) ($reward->nominal_potongan ?? 0),
-            'persentase' => (float) ($reward->persentase ?? 0),
-            'maksimal_potongan' => $reward->maksimal_potongan !== null ? (float) $reward->maksimal_potongan : null,
-            'min_pembelian' => (float) ($reward->min_pembelian ?? 0),
-            'berlaku_sampai' => $penukaran->berlaku_sampai ? $penukaran->berlaku_sampai->toDateString() : null,
-            'produk_ids' => $reward ? $reward->produks->pluck('id')->values()->all() : [],
+            'id' => $voucher->id,
+            'nama' => $voucher->nama,
+            'kode_reward' => $voucher->kode_reward,
+            'kode_redeem' => $voucher->kode_reward,
+            'deskripsi' => $voucher->deskripsi,
+            'jenis_potongan' => $voucher->jenis_potongan ?? 'nominal',
+            'nominal_potongan' => (float) ($voucher->nominal_potongan ?? 0),
+            'persentase' => (float) ($voucher->persentase ?? 0),
+            'maksimal_potongan' => $voucher->maksimal_potongan !== null ? (float) $voucher->maksimal_potongan : null,
+            'min_pembelian' => (float) ($voucher->min_pembelian ?? 0),
+            'berlaku_sampai' => $voucher->tanggal_selesai ? $voucher->tanggal_selesai->format('d/m/Y') : null,
+            'tanggal_mulai' => $voucher->tanggal_mulai ? $voucher->tanggal_mulai->format('d/m/Y') : null,
+            'sisa_penggunaan' => max(0, $batas - $pemakaian),
+            'batas_penggunaan' => $batas,
+            'produk_ids' => $voucher->produks->pluck('id')->values()->all(),
         ];
     }
 }

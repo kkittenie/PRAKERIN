@@ -369,7 +369,7 @@
 
         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-6 space-y-0 scroll-fade-up delay-150">
             @forelse ($rewardUnggulan as $reward)
-                @include('mobile.components.reward-card', ['reward' => $reward, 'member' => $member])
+                @include('mobile.components.reward-card', ['voucher' => $reward, 'member' => $member])
             @empty
                 <div class="rounded-2xl border border-gray-100 bg-white p-5 text-center text-xs font-medium text-gray-400">
                     Belum ada reward tersedia saat ini.
@@ -784,7 +784,7 @@
                 <div class="flex flex-wrap justify-center gap-6">
                     @forelse ($rewardUnggulan as $reward)
                         <div class="w-full max-w-sm sm:w-[350px] shrink-0">
-                            @include('mobile.components.reward-card', ['reward' => $reward, 'member' => $member])
+                            @include('mobile.components.reward-card', ['voucher' => $reward, 'member' => $member])
                         </div>
                     @empty
                         <div class="w-full max-w-md rounded-2xl border border-gray-100 bg-gray-50 p-8 text-center text-xs font-medium text-gray-400">

@@ -373,9 +373,16 @@
                     @endphp
                     @if (!empty($diskonItems))
                         @foreach ($diskonItems as $itemDiskon)
+                            @php
+                                $namaDiskon = $itemDiskon['nama'] ?? 'Diskon';
+                                if ($namaDiskon === 'Voucher (undefined)' || str_starts_with($namaDiskon, 'Voucher (undefined)')) {
+                                    $namaVoucher = $transaksi->voucher?->nama ?: ($transaksi->voucher?->kode_reward ?: 'Voucher');
+                                    $namaDiskon = 'Voucher (' . $namaVoucher . ')';
+                                }
+                            @endphp
                             <div class="flex-between"
                                 style="align-items: flex-start; gap: 6px; color: #000000; margin-bottom: 2px;">
-                                <span style="flex: 1; min-width: 0; word-break: break-word;">{{ $itemDiskon['nama'] }}</span>
+                                <span style="flex: 1; min-width: 0; word-break: break-word;">{{ $namaDiskon }}</span>
                                 <span style="white-space: nowrap; flex-shrink: 0; font-weight: 500;">-Rp
                                     {{ number_format($itemDiskon['nilai'], 0, ',', '.') }}</span>
                             </div>
@@ -695,7 +702,12 @@
 
             if (!empty($diskonItems)) {
                 foreach ($diskonItems as $itemDiskon) {
-                    $struk .= padLineStrukWrap($itemDiskon['nama'], "-Rp " . number_format($itemDiskon['nilai'], 0, ',', '.'));
+                    $namaDiskon = $itemDiskon['nama'] ?? 'Diskon';
+                    if ($namaDiskon === 'Voucher (undefined)' || str_starts_with($namaDiskon, 'Voucher (undefined)')) {
+                        $namaVoucher = $transaksi->voucher?->nama ?: ($transaksi->voucher?->kode_reward ?: 'Voucher');
+                        $namaDiskon = 'Voucher (' . $namaVoucher . ')';
+                    }
+                    $struk .= padLineStrukWrap($namaDiskon, "-Rp " . number_format($itemDiskon['nilai'], 0, ',', '.'));
                 }
             } elseif ($diskon > 0) {
                 $labelDiskon = $transaksi->diskon_label ?? formatPersenStruk($diskonPersen);

@@ -49,8 +49,7 @@
                             <th class="py-3">Kode</th>
                             <th class="py-3">Voucher</th>
                             <th class="py-3">Deskripsi</th>
-                            <th class="py-3 text-center">Poin Dibutuhkan</th>
-                            <th class="py-3 text-center">Stok</th>
+                            <th class="py-3 text-center">Target Member</th>
                             <th class="py-3 text-center">Status</th>
                             <th class="py-3 text-right">Aksi</th>
                         </tr>
@@ -97,8 +96,7 @@
                 { data: 'kode_html', name: 'kode_reward' },
                 { data: 'voucher_html', name: 'nama' },
                 { data: 'deskripsi', name: 'deskripsi', searchable: false, className: 'text-xs text-gray-600 dark:text-gray-400 max-w-xs' },
-                { data: 'poin_dibutuhkan', name: 'poin_dibutuhkan', searchable: false, className: 'text-center text-xs font-semibold' },
-                { data: 'stok_html', name: 'stok', searchable: false, className: 'text-center text-xs' },
+                { data: 'target_html', name: 'target_member', searchable: false, className: 'text-center text-xs' },
                 { data: 'status_html', name: 'status_aktif', searchable: false, className: 'text-center' },
                 { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
             ],
@@ -106,4 +104,5 @@
         });
     });
 </script>
+
 @endpush

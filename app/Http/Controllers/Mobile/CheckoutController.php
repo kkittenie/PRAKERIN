@@ -7,7 +7,8 @@ use App\Models\Bundling;
 use App\Models\PromoProdukEvent;
 use App\Models\DetailTransaksi;
 use App\Models\Member;
-use App\Models\PenukaranPoin;
+use App\Models\RewardKatalog;
+use App\Models\VoucherUsage;
 use App\Models\Produk;
 use App\Models\Transaksi;
 use App\Support\MemberCart;
@@ -42,12 +43,19 @@ class CheckoutController extends Controller
             $diskonProduk = MemberCart::totalDiskonProduk();
             $subtotalNet = MemberCart::subtotal();
 
-            $voucherAktif = PenukaranPoin::with('reward.produks')
-                ->where('member_id', $member->id)
-                ->whereHas('reward', fn ($q) => $q->where('jenis', 'voucher'))
-                ->aktifDigunakan()
-                ->latest()
-                ->get();
+            $voucherAktif = RewardKatalog::with('produks')
+                ->where('jenis', 'voucher')
+                ->where('status_aktif', true)
+                ->where(function ($q) use ($member) {
+                    $q->where('target_member', 'semua')
+                      ->orWhere(function ($sub) use ($member) {
+                          $sub->where('target_member', 'khusus')
+                              ->whereHas('members', fn ($m) => $m->where('members.id', $member->id));
+                      });
+                })
+                ->get()
+                ->filter(fn (RewardKatalog $v) => $v->berhakDigunakan($member))
+                ->values();
 
             $voucherId = Session::get(self::SESSION_VOUCHER_KEY);
             $voucherDipilih = $voucherId ? $voucherAktif->firstWhere('id', $voucherId) : null;
@@ -130,7 +138,7 @@ class CheckoutController extends Controller
     {
         try {
             $validated = $request->validate([
-                'voucher_id' => 'nullable|integer|exists:penukaran_poin,id',
+                'voucher_id' => 'nullable|integer|exists:reward_katalog,id',
             ]);
 
             if (empty($validated['voucher_id'])) {
@@ -139,12 +147,10 @@ class CheckoutController extends Controller
             }
 
             $member = Auth::guard('member')->user();
-            $milikMember = PenukaranPoin::where('id', $validated['voucher_id'])
-                ->where('member_id', $member->id)
-                ->exists();
+            $voucher = RewardKatalog::find($validated['voucher_id']);
 
-            if (! $milikMember) {
-                return back()->with('error', 'Voucher tidak ditemukan.');
+            if (! $voucher || ! $voucher->berhakDigunakan($member)) {
+                return back()->with('error', 'Voucher tidak dapat digunakan atau batas penggunaan telah tercapai.');
             }
 
             Session::put(self::SESSION_VOUCHER_KEY, (int) $validated['voucher_id']);
@@ -182,14 +188,14 @@ class CheckoutController extends Controller
                 $diskonVoucher = 0;
 
                 if ($voucherId) {
-                    $voucher = PenukaranPoin::with('reward.produks')
+                    $voucher = RewardKatalog::with('produks')
                         ->where('id', $voucherId)
-                        ->where('member_id', $member->id)
+                        ->where('jenis', 'voucher')
                         ->lockForUpdate()
                         ->first();
 
-                    if (! $voucher || $voucher->status !== 'menunggu_diambil' || $voucher->sudahExpired()) {
-                        throw new \Exception('Voucher yang dipilih sudah tidak berlaku, silakan pilih ulang.');
+                    if (! $voucher || ! $voucher->berhakDigunakan($member)) {
+                        throw new \Exception('Voucher yang dipilih sudah tidak berlaku atau batas penggunaan tercapai, silakan pilih ulang.');
                     }
 
                     $diskonVoucher = $this->hitungDiskonVoucher($voucher, $items, $subtotalNet);
@@ -229,7 +235,7 @@ class CheckoutController extends Controller
                 }
                 if ($voucher && $diskonVoucher > 0) {
                     $rincianDiskon[] = [
-                        'nama' => $voucher->reward->nama ?? 'Voucher',
+                        'nama' => $voucher->nama ?? 'Voucher',
                         'nilai' => (float) $diskonVoucher,
                     ];
                 }
@@ -259,11 +265,13 @@ class CheckoutController extends Controller
                 ]);
 
                 if ($voucher) {
-                    $voucher->update([
-                        'status' => 'selesai',
-                        'diambil_pada' => now(),
+                    VoucherUsage::create([
+                        'reward_katalog_id' => $voucher->id,
+                        'member_id' => $member->id,
                         'transaksi_id' => $transaksi->id,
+                        'used_at' => now(),
                     ]);
+                    Session::forget(self::SESSION_VOUCHER_KEY);
                 }
 
                 $stokTerpakai = [];
@@ -713,18 +721,13 @@ class CheckoutController extends Controller
         return $hasil;
     }
 
-    private function hitungDiskonVoucher(PenukaranPoin $voucher, $items, float $subtotal): float
+    private function hitungDiskonVoucher(RewardKatalog $voucher, $items, float $subtotal): float
     {
-        $reward = $voucher->reward;
-        if (! $reward) {
+        if ((float) ($voucher->min_pembelian ?? 0) > $subtotal) {
             return 0;
         }
 
-        if ((float) ($reward->min_pembelian ?? 0) > $subtotal) {
-            return 0;
-        }
-
-        $produkIds = $reward->produks->pluck('id')->values()->all();
+        $produkIds = $voucher->produks->pluck('id')->values()->all();
 
         $basis = $subtotal;
         if (! empty($produkIds)) {
@@ -733,12 +736,12 @@ class CheckoutController extends Controller
                 ->sum(fn ($item) => $item['harga_satuan'] * $item['jumlah']);
         }
 
-        if ($reward->jenis_potongan === 'nominal') {
-            $diskon = (float) $reward->nominal_potongan;
+        if ($voucher->jenis_potongan === 'nominal') {
+            $diskon = (float) $voucher->nominal_potongan;
         } else {
-            $diskon = $basis * ((float) $reward->persentase / 100);
-            if (! is_null($reward->maksimal_potongan)) {
-                $diskon = min($diskon, (float) $reward->maksimal_potongan);
+            $diskon = $basis * ((float) $voucher->persentase / 100);
+            if (! is_null($voucher->maksimal_potongan)) {
+                $diskon = min($diskon, (float) $voucher->maksimal_potongan);
             }
         }
 

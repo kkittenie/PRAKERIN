@@ -80,7 +80,6 @@ use Illuminate\Support\Facades\Route;
 
         Route::get('/reward', [RewardController::class, 'index'])->name('reward.index');
         Route::get('/reward/{reward}', [RewardController::class, 'show'])->name('reward.show');
-        Route::post('/reward/{reward}/tukar', [RewardController::class, 'redeem'])->name('reward.tukar');
 
         Route::get('/riwayat', [RiwayatController::class, 'index'])->name('riwayat');
 

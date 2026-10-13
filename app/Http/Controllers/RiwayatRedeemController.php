@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PenukaranPoin;
+use App\Models\VoucherUsage;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,20 +15,65 @@ class RiwayatRedeemController extends Controller
 
     public function index(Request $request)
     {
+        $tipe = $request->query('tipe', 'voucher'); // 'voucher' atau 'produk'
+
         if ($request->ajax()) {
             try {
+                if ($tipe === 'voucher') {
+                    $tanggalMulai = $request->tanggal_mulai;
+                    $tanggalSelesai = $request->tanggal_selesai;
+
+                    $query = VoucherUsage::with(['voucher', 'member', 'transaksi'])
+                        ->when($tanggalMulai, fn ($q) => $q->whereDate('used_at', '>=', $tanggalMulai))
+                        ->when($tanggalSelesai, fn ($q) => $q->whereDate('used_at', '<=', $tanggalSelesai))
+                        ->latest('used_at');
+
+                    return \Yajra\DataTables\Facades\DataTables::of($query)
+                        ->addIndexColumn()
+                        ->filterColumn('voucher_nama', function ($q, $keyword) {
+                            $q->where(function ($sub) use ($keyword) {
+                                $sub->whereHas('voucher', fn ($v) => $v->where('nama', 'like', "%{$keyword}%"))
+                                    ->orWhereHas('member', fn ($m) => $m->where('nama', 'like', "%{$keyword}%")->orWhere('no_hp', 'like', "%{$keyword}%"))
+                                    ->orWhereHas('transaksi', fn ($t) => $t->where('kode_transaksi', 'like', "%{$keyword}%"));
+                            });
+                        })
+                        ->addColumn('voucher_html', function ($item) {
+                            $potongan = '';
+                            if ($item->voucher) {
+                                $potongan = $item->voucher->jenis_potongan === 'nominal'
+                                    ? 'Rp ' . number_format($item->voucher->nominal_potongan, 0, ',', '.')
+                                    : $item->voucher->persentase . '%';
+                            }
+                            return '<div class="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">' . e($item->voucher->nama ?? 'Voucher') . '</div>'
+                                . '<div class="text-[11px] text-rose-600 dark:text-rose-400 font-medium">Potongan: ' . $potongan . '</div>';
+                        })
+                        ->addColumn('member_html', function ($item) {
+                            return '<div class="font-medium text-gray-800 dark:text-gray-200 text-xs sm:text-sm">' . e($item->member->nama ?? 'Non-member') . '</div>'
+                                . '<div class="text-[11px] text-gray-400">' . e($item->member->no_hp ?? '-') . '</div>';
+                        })
+                        ->addColumn('transaksi_html', function ($item) {
+                            if (!$item->transaksi) return '<span class="text-xs text-gray-400">-</span>';
+                            return '<div class="font-mono text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md inline-block">' . e($item->transaksi->kode_transaksi) . '</div>'
+                                . '<div class="text-[11px] text-gray-500 mt-0.5">Total: Rp ' . number_format($item->transaksi->total_bayar, 0, ',', '.') . '</div>';
+                        })
+                        ->addColumn('used_at_html', function ($item) {
+                            return '<span class="text-xs text-gray-600 dark:text-gray-300">' . ($item->used_at ? $item->used_at->translatedFormat('d M Y, H:i') : '-') . '</span>';
+                        })
+                        ->rawColumns(['voucher_html', 'member_html', 'transaksi_html', 'used_at_html'])
+                        ->make(true);
+                }
+
+                // Tipe reward non-voucher (misal reward produk fisik dengan poin)
                 $status = $request->status;
-                $jenis = $request->jenis;
                 $tanggalMulai = $request->tanggal_mulai;
                 $tanggalSelesai = $request->tanggal_selesai;
 
                 $query = PenukaranPoin::with(['member', 'reward'])
+                    ->whereHas('reward', fn ($r) => $r->where('jenis', '!=', 'voucher'))
                     ->when($status, fn ($q) => $q->where('status', $status))
-                    ->when($jenis, function ($q) use ($jenis) {
-                        $q->whereHas('reward', fn ($r) => $r->where('jenis', $jenis));
-                    })
                     ->when($tanggalMulai, fn ($q) => $q->whereDate('created_at', '>=', $tanggalMulai))
-                    ->when($tanggalSelesai, fn ($q) => $q->whereDate('created_at', '<=', $tanggalSelesai));
+                    ->when($tanggalSelesai, fn ($q) => $q->whereDate('created_at', '<=', $tanggalSelesai))
+                    ->latest('created_at');
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
@@ -49,16 +95,6 @@ class RiwayatRedeemController extends Controller
                     ->editColumn('poin_terpakai', fn ($item) => '-' . number_format($item->poin_terpakai, 0, ',', '.'))
                     ->editColumn('created_at', fn ($item) => $item->created_at->translatedFormat('d M Y, H:i'))
                     ->addColumn('status_html', fn ($item) => view('pages.riwayat-redeem.partials.status', compact('item'))->render())
-                    ->orderColumn('member.nama', function ($query, $order) {
-                        $query->leftJoin('members', 'penukaran_poin.member_id', '=', 'members.id')
-                            ->orderBy('members.nama', $order)
-                            ->select('penukaran_poin.*');
-                    })
-                    ->orderColumn('reward.nama', function ($query, $order) {
-                        $query->leftJoin('reward_katalog', 'penukaran_poin.reward_katalog_id', '=', 'reward_katalog.id')
-                            ->orderBy('reward_katalog.nama', $order)
-                            ->select('penukaran_poin.*');
-                    })
                     ->rawColumns(['kode_html', 'member_html', 'reward_html', 'status_html'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -67,20 +103,21 @@ class RiwayatRedeemController extends Controller
                     ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
                     ->log('Error: ' . $e->getMessage());
 
-                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data riwayat redeem.'], 500);
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data.'], 500);
             }
         }
 
         $ringkasan = [
-            'total' => PenukaranPoin::count(),
-            'menunggu_diambil' => PenukaranPoin::where('status', 'menunggu_diambil')->count(),
-            'selesai' => PenukaranPoin::where('status', 'selesai')->count(),
-            'dibatalkan' => PenukaranPoin::where('status', 'dibatalkan')->count(),
+            'total_voucher' => VoucherUsage::count(),
+            'total_produk' => PenukaranPoin::whereHas('reward', fn ($r) => $r->where('jenis', '!=', 'voucher'))->count(),
+            'menunggu_diambil' => PenukaranPoin::whereHas('reward', fn ($r) => $r->where('jenis', '!=', 'voucher'))->where('status', 'menunggu_diambil')->count(),
+            'selesai' => PenukaranPoin::whereHas('reward', fn ($r) => $r->where('jenis', '!=', 'voucher'))->where('status', 'selesai')->count(),
         ];
 
         return view('pages.riwayat-redeem.index', [
-            'title' => 'Riwayat Redeem',
+            'title' => 'Riwayat Penggunaan Voucher & Reward',
             'ringkasan' => $ringkasan,
+            'tipeAktif' => $tipe,
         ]);
     }
 
