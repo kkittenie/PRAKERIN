@@ -81,7 +81,6 @@
                 <p id="preview-produk-nama" class="font-semibold text-gray-800 dark:text-white text-sm truncate"></p>
                 <p id="preview-produk-kode" class="text-xs text-gray-500 dark:text-gray-400"></p>
                 <div id="preview-produk-ukuran" class="mt-1.5 hidden flex-wrap gap-1.5"></div>
-                <p id="preview-produk-rasa" class="mt-1.5 hidden text-xs text-gray-600 dark:text-gray-300"></p>
             </div>
             <button type="button" onclick="batalkanPilihProduk()"
                 class="shrink-0 text-gray-400 hover:text-red-500 transition text-lg leading-none px-1">&times;</button>
@@ -224,7 +223,7 @@ Pengambilan Bahan Baku <span class="text-red-500">*</span>
              yang dipilih (bisa 2 baris, bisa 5, gak lagi cuma Besar/Kecil). --}}
         <div class="md:col-span-2 hidden" id="wrapperRincianUkuranDinamis">
             <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
-                <span id="judulRincianUkuran">Rincian per Ukuran</span> <span class="text-red-500">*</span>
+                <span id="judulRincianUkuran">Rincian per Detail Produk</span> <span class="text-red-500">*</span>
             </label>
             <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
                 Isi "Jumlah Hasil" untuk tiap ukuran/varian yang diproduksi kali ini (boleh kosongkan/0 kalau varian itu gak diproduksi sekarang).
@@ -232,34 +231,16 @@ Pengambilan Bahan Baku <span class="text-red-500">*</span>
                 "Pesanan" opsional, kalau sebagian hasil langsung dipakai/dipotong lagi saat itu juga.
             </p>
 
-            <p id="petunjukRasa" class="hidden text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Produk ini punya varian rasa: isi "Jumlah Hasil" dan "Pesanan" untuk tiap rasa. Total tiap ukuran dihitung otomatis dari rasa-rasanya,
-                dan total semua rasa harus sama dengan Jumlah Hasil Produksi di atas.
-            </p>
-
             <div id="rincian-ukuran-container" class="space-y-3">
                 {{-- Baris per ukuran di-generate oleh JS (bangunRincianUkuranDinamis) --}}
             </div>
 
             <p id="peringatanRincianUkuran" class="hidden text-xs text-red-600 mt-2">
-                Total Jumlah Hasil per ukuran harus sama dengan Jumlah Hasil Produksi.
+                Total Jumlah Hasil semua detail harus sama dengan Jumlah Hasil Produksi.
             </p>
             <p id="peringatanKebutuhanUkuran" class="hidden text-xs text-red-600 mt-1">
-                Pesanan tidak boleh melebihi Jumlah Hasil pada ukuran/rasa yang sama.
+                Pesanan tidak boleh melebihi Jumlah Hasil pada detail yang sama.
             </p>
-        </div>
-
-        {{-- Field lama (Besar/Kecil) sengaja dipertahankan tersembunyi & selalu
-             disabled: backend (ProduksiController@store) masih boleh nerima
-             format ini sebagai fallback untuk skenario lain, jadi gak dihapus
-             total dari DOM supaya gak ada script lama yang nyari elemen ini
-             dan error. Tapi form ini sendiri SELALU mengirim format dinamis
-             (ukuran_hasil[]/ukuran_kebutuhan[]) kalau produknya punya ukuran. --}}
-        <div class="hidden">
-            <input type="number" id="jumlah_besar" name="jumlah_besar" value="0" disabled>
-            <input type="number" id="jumlah_kecil" name="jumlah_kecil" value="0" disabled>
-            <input type="number" id="kebutuhan_besar" name="kebutuhan_besar" value="0" disabled>
-            <input type="number" id="kebutuhan_kecil" name="kebutuhan_kecil" value="0" disabled>
         </div>
 
         {{-- Kebutuhan Produksi (biasa) - untuk produk yang TIDAK punya varian ukuran --}}
@@ -316,10 +297,6 @@ Pengambilan Bahan Baku <span class="text-red-500">*</span>
     <script>
         const daftarBahanBaku = @json($bahanBaku);
         const daftarProduk = @json($produk);
-        window.oldUkuranHasil = @json(old('ukuran_hasil', []));
-        window.oldUkuranKebutuhan = @json(old('ukuran_kebutuhan', []));
-        window.oldRasaHasil = @json(old('rasa_hasil', []));
-        window.oldRasaKebutuhan = @json(old('rasa_kebutuhan', []));
         window.oldVarianHasil = @json(old('varian_hasil', []));
         window.oldVarianKebutuhan = @json(old('varian_kebutuhan', []));
     </script>
@@ -562,28 +539,11 @@ function aktifkanSearch(element) {
             // daftar hasil pencarian — biar dari awal keliatan produk itu
             // punya ukuran apa aja dan mana yang stoknya udah perlu diproduksi.
             function badgeUkuranHtml(produk) {
-                if (produk.punya_varian_baru) {
-                    const dv = Array.isArray(produk.daftar_varian_produksi) ? produk.daftar_varian_produksi : [];
-                    if (dv.length === 0) {
-                        return `<span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 text-[11px] px-2 py-0.5">Belum ada varian aktif</span>`;
-                    }
-                    return dv.map(function (u) {
-                        const namaAman = String(u.nama).replace(/</g, '&lt;');
-                        const warna = u.perlu_produksi
-                            ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800'
-                            : 'bg-gray-100 text-gray-600 border border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600';
-                        return `<span class="inline-flex items-center rounded-full ${warna} text-[11px] px-2 py-0.5 whitespace-nowrap">${namaAman}: ${u.stok}${u.perlu_produksi ? ' ⚠' : ''}</span>`;
-                    }).join('');
+                const dv = Array.isArray(produk.daftar_varian_produksi) ? produk.daftar_varian_produksi : [];
+                if (dv.length === 0) {
+                    return `<span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 text-[11px] px-2 py-0.5">Belum ada detail aktif</span>`;
                 }
-
-                if (!produk.punya_ukuran) return '';
-
-                const daftar = Array.isArray(produk.daftar_ukuran) ? produk.daftar_ukuran : [];
-                if (daftar.length === 0) {
-                    return `<span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 text-[11px] px-2 py-0.5">Belum ada ukuran aktif</span>`;
-                }
-
-                return daftar.map(function (u) {
+                return dv.map(function (u) {
                     const namaAman = String(u.nama).replace(/</g, '&lt;');
                     const warna = u.perlu_produksi
                         ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800'
@@ -605,27 +565,10 @@ function aktifkanSearch(element) {
 
                 const previewUkuran = document.getElementById('preview-produk-ukuran');
 
-                if (produk.punya_ukuran || produk.punya_varian_baru) {
-                    previewKode.textContent = `Kode: ${produk.kode_produk}`;
-                    previewUkuran.innerHTML = badgeUkuranHtml(produk);
-                    previewUkuran.classList.remove('hidden');
-                    previewUkuran.classList.add('flex');
-                } else {
-                    previewKode.textContent = `Kode: ${produk.kode_produk} · Stok: ${produk.stok}`;
-                    previewUkuran.innerHTML = '';
-                    previewUkuran.classList.add('hidden');
-                    previewUkuran.classList.remove('flex');
-                }
-
-                const previewRasa = document.getElementById('preview-produk-rasa');
-                const daftarRasaPreview = (!produk.punya_varian_baru && produk.punya_varian_rasa && Array.isArray(produk.daftar_varian_rasa)) ? produk.daftar_varian_rasa : [];
-                if (daftarRasaPreview.length > 0) {
-                    previewRasa.textContent = 'Varian rasa: ' + daftarRasaPreview.map(function (r) { return r.nama; }).join(', ');
-                    previewRasa.classList.remove('hidden');
-                } else {
-                    previewRasa.textContent = '';
-                    previewRasa.classList.add('hidden');
-                }
+                previewKode.textContent = `Kode: ${produk.kode_produk}`;
+                previewUkuran.innerHTML = badgeUkuranHtml(produk);
+                previewUkuran.classList.remove('hidden');
+                previewUkuran.classList.add('flex');
 
                 preview.classList.remove('hidden');
 
@@ -692,9 +635,9 @@ function aktifkanSearch(element) {
                                     ${produk.nama_produk}
                                 </div>
                                 <div class="text-xs text-gray-400 truncate">
-                                    ${produk.kode_produk ?? '-'}${(produk.punya_ukuran || produk.punya_varian_baru) ? '' : ` · Stok: ${produk.stok}`}
+                                    ${produk.kode_produk ?? '-'}
                                 </div>
-                                ${(produk.punya_ukuran || produk.punya_varian_baru) ? `<div class="mt-1 flex flex-wrap gap-1">${badgeUkuranHtml(produk)}</div>` : ''}
+                                <div class="mt-1 flex flex-wrap gap-1">${badgeUkuranHtml(produk)}</div>
                             </div>
                         `;
 
@@ -923,14 +866,6 @@ function aktifkanSearch(element) {
         const elPeringatanRincian = document.getElementById('peringatanRincianUkuran');
         const elPeringatanKebutuhan = document.getElementById('peringatanKebutuhanUkuran');
 
-        const judul = document.getElementById('judulRincianUkuran');
-        const petunjukRasa = document.getElementById('petunjukRasa');
-        if (judul) {
-            judul.textContent = (punyaUkuran && punyaRasa) ? 'Rincian per Ukuran dan Rasa'
-                : (punyaRasa ? 'Rincian per Rasa' : 'Rincian per Ukuran');
-        }
-        if (petunjukRasa) petunjukRasa.classList.toggle('hidden', !punyaRasa);
-
         if (window.produkPakaiRincian) {
             wrapperRincianUkuranDinamis.classList.remove('hidden');
             wrapperKebutuhanBiasa.classList.add('hidden');
@@ -955,96 +890,34 @@ function aktifkanSearch(element) {
     }
 
     /**
-     * Bikin ulang baris "Rincian per Ukuran" sesuai daftar ukuran aktif
-     * produk yang lagi dipilih. Dipanggil tiap kali produk berubah (pilih
-     * baru / batal pilih), jadi jumlah barisnya otomatis ngikutin berapa
-     * banyak ukuran aktif produk itu — bukan cuma 2 (Besar/Kecil) lagi.
+     * Bikin ulang baris rincian sesuai detail produk AKTIF dari produk yang lagi dipilih.
+     * Dipanggil tiap kali produk berubah (pilih baru / batal pilih): satu baris per detail
+     * (kombinasi ukuran + variasi), berapa pun jumlahnya.
      */
     function bangunRincianUkuranDinamis(produk) {
         window.produkTerpilihSaatIni = produk;
 
-        // Produk dengan varian dari form produk: satu baris per varian aktif.
-        if (produk && produk.punya_varian_baru) {
-            terapkanModeUkuran(true, false);
-
-            const judulVarian = document.getElementById('judulRincianUkuran');
-            if (judulVarian) judulVarian.textContent = 'Rincian per Varian';
-
-            const wadah = document.getElementById('rincian-ukuran-container');
-            if (!wadah) return;
-            wadah.innerHTML = '';
-
-            bangunRincianVarian(wadah, produk);
-            cekSemuaUkuranDanTombol();
+        // Belum ada produk dipilih: tampilkan field Pesanan biasa, rincian dikosongkan.
+        if (!produk) {
+            terapkanModeUkuran(false, false);
             return;
         }
 
-        const punyaUkuran = !!(produk && produk.punya_ukuran);
-        const daftarRasa = (produk && produk.punya_varian_rasa && Array.isArray(produk.daftar_varian_rasa)) ? produk.daftar_varian_rasa : [];
-        const punyaRasa = daftarRasa.length > 0;
-        terapkanModeUkuran(punyaUkuran, punyaRasa);
+        terapkanModeUkuran(true, false);
 
-        const container = document.getElementById('rincian-ukuran-container');
-        if (!container) return;
+        const judul = document.getElementById('judulRincianUkuran');
+        if (judul) judul.textContent = 'Rincian per Detail Produk';
 
-        container.innerHTML = '';
+        const wadah = document.getElementById('rincian-ukuran-container');
+        if (!wadah) return;
+        wadah.innerHTML = '';
 
-        if (!punyaUkuran && !punyaRasa) return;
-
-        const daftar = Array.isArray(produk.daftar_ukuran) ? produk.daftar_ukuran : [];
-
-        if (punyaUkuran && daftar.length === 0) {
-            container.innerHTML = '<p class="text-xs italic text-gray-400">Produk ini ditandai "Punya Ukuran" tapi belum ada baris ukuran aktif. Tambahkan dulu lewat halaman Edit Produk.</p>';
-            return;
-        }
-
-        if (punyaRasa) {
-            bangunRincianRasa(container, produk, punyaUkuran ? daftar : null, daftarRasa);
-            cekSemuaUkuranDanTombol();
-            return;
-        }
-
-        daftar.forEach(function (opsi) {
-            const baris = document.createElement('div');
-            baris.className = 'grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 items-end border border-gray-200 dark:border-gray-800 rounded-lg p-3';
-            baris.dataset.produkUkuranId = opsi.produk_ukuran_id;
-
-            const namaAman = String(opsi.nama).replace(/</g, '&lt;');
-            const idStr = String(opsi.produk_ukuran_id);
-            const oldHasil = (window.oldUkuranHasil && window.oldUkuranHasil[idStr] !== undefined) ? window.oldUkuranHasil[idStr] : 0;
-            const oldKebutuhan = (window.oldUkuranKebutuhan && window.oldUkuranKebutuhan[idStr] !== undefined) ? window.oldUkuranKebutuhan[idStr] : 0;
-
-            baris.innerHTML = `
-                <div>
-                    <span class="block text-sm font-semibold text-gray-800 dark:text-gray-200">${namaAman}</span>
-                    <span class="block text-xs text-gray-400">Stok saat ini: ${opsi.stok}</span>
-                </div>
-                <div class="w-full sm:w-32">
-                    <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Jumlah Hasil</label>
-                    <input type="number" min="0" placeholder="0" value="${oldHasil}"
-                        class="input-ukuran-hasil w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:border-brand-500 focus:ring-brand-500"
-                        name="ukuran_hasil[${opsi.produk_ukuran_id}]">
-                </div>
-                <div class="w-full sm:w-32">
-                    <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Pesanan</label>
-                    <input type="number" min="0" placeholder="0" value="${oldKebutuhan}"
-                        class="input-ukuran-kebutuhan w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:border-brand-500 focus:ring-brand-500"
-                        name="ukuran_kebutuhan[${opsi.produk_ukuran_id}]">
-                </div>
-            `;
-
-            container.appendChild(baris);
-        });
-
-        container.querySelectorAll('.input-ukuran-hasil, .input-ukuran-kebutuhan').forEach(function (el) {
-            el.addEventListener('input', cekSemuaUkuranDanTombol);
-        });
-
+        bangunRincianVarian(wadah, produk);
         cekSemuaUkuranDanTombol();
     }
 
     /**
-     * Produk dengan varian dari form produk (produk_varians): satu baris per varian aktif.
+     * Produk dengan varian dari form produk (detail_produks): satu baris per varian aktif.
      * Memakai class .input-ukuran-hasil / .input-ukuran-kebutuhan dan atribut
      * data-produk-ukuran-id supaya validasi total & pesanan yang sudah ada tetap jalan.
      * Yang dikirim ke server: varian_hasil[id] dan varian_kebutuhan[id].
@@ -1053,7 +926,7 @@ function aktifkanSearch(element) {
         const daftar = Array.isArray(produk.daftar_varian_produksi) ? produk.daftar_varian_produksi : [];
 
         if (daftar.length === 0) {
-            container.innerHTML = '<p class="text-xs italic text-gray-400">Produk ini belum punya varian aktif. Aktifkan atau tambahkan varian lewat halaman Edit Produk.</p>';
+            container.innerHTML = '<p class="text-xs italic text-gray-400">Produk ini belum punya detail produk aktif. Aktifkan atau tambahkan detail lewat halaman Edit Produk.</p>';
             return;
         }
 
@@ -1093,103 +966,6 @@ function aktifkanSearch(element) {
         container.querySelectorAll('.input-ukuran-hasil, .input-ukuran-kebutuhan').forEach(function (el) {
             el.addEventListener('input', cekSemuaUkuranDanTombol);
         });
-    }
-
-    /**
-     * Produk dengan varian rasa: satu kartu per ukuran (atau satu kartu saja kalau
-     * produk tanpa ukuran), isinya satu baris per rasa. Total ukuran dihitung
-     * otomatis dari rasa-rasanya dan dikirim lewat input readonly yang sama
-     * (.input-ukuran-hasil / .input-ukuran-kebutuhan) supaya validasi yang ada tetap jalan.
-     */
-    function bangunRincianRasa(container, produk, daftarUkuran, daftarRasa) {
-        const kelompok = daftarUkuran
-            ? daftarUkuran
-            : [{ produk_ukuran_id: 0, ukuran_id: null, nama: null, stok: parseInt(produk.stok, 10) || 0 }];
-
-        const esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
-        const inputCls = 'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:border-brand-500 focus:ring-brand-500';
-        const totalCls = 'w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 px-3 py-2 cursor-not-allowed';
-
-        kelompok.forEach(function (u) {
-            const puId = u.produk_ukuran_id;
-            const wrap = document.createElement('div');
-            wrap.className = 'rounded-lg border border-gray-200 dark:border-gray-800 p-4';
-            wrap.dataset.produkUkuranId = puId;
-
-            const judulKartu = u.nama ? esc(u.nama) : 'Semua Rasa';
-            const namaUkuranHasil = puId ? `name="ukuran_hasil[${puId}]"` : '';
-            const namaUkuranKebutuhan = puId ? `name="ukuran_kebutuhan[${puId}]"` : '';
-
-            let html = `
-                <div class="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-gray-100 dark:border-gray-800 pb-3">
-                    <div>
-                        <span class="block text-sm font-semibold text-gray-800 dark:text-gray-200">${judulKartu}</span>
-                        <span class="block text-xs text-gray-400">Stok saat ini: ${u.stok}</span>
-                    </div>
-                    <div class="flex gap-3">
-                        <div class="w-28">
-                            <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Total Hasil</label>
-                            <input type="number" readonly tabindex="-1" value="0" ${namaUkuranHasil} class="input-ukuran-hasil ${totalCls}">
-                        </div>
-                        <div class="w-28">
-                            <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Total Pesanan</label>
-                            <input type="number" readonly tabindex="-1" value="0" ${namaUkuranKebutuhan} class="input-ukuran-kebutuhan ${totalCls}">
-                        </div>
-                    </div>
-                </div>
-                <div class="space-y-3">
-            `;
-
-            daftarRasa.forEach(function (r) {
-                const rasaId = r.varian_rasa_id;
-                const stokRasa = (puId && u.ukuran_id !== null)
-                    ? ((r.stok_per_ukuran && r.stok_per_ukuran[u.ukuran_id] !== undefined) ? r.stok_per_ukuran[u.ukuran_id] : 0)
-                    : r.stok;
-                const oldH = (window.oldRasaHasil && window.oldRasaHasil[puId] && window.oldRasaHasil[puId][rasaId] !== undefined) ? window.oldRasaHasil[puId][rasaId] : 0;
-                const oldK = (window.oldRasaKebutuhan && window.oldRasaKebutuhan[puId] && window.oldRasaKebutuhan[puId][rasaId] !== undefined) ? window.oldRasaKebutuhan[puId][rasaId] : 0;
-
-                html += `
-                    <div data-rasa-baris class="grid grid-cols-1 sm:grid-cols-[1fr_8rem_8rem] gap-3 items-end">
-                        <div>
-                            <span class="block text-sm font-medium text-gray-800 dark:text-gray-200">${esc(r.nama)}</span>
-                            <span class="block text-xs text-gray-400">Stok rasa saat ini: ${stokRasa}</span>
-                        </div>
-                        <div>
-                            <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Jumlah Hasil</label>
-                            <input type="number" min="0" placeholder="0" value="${oldH}" name="rasa_hasil[${puId}][${rasaId}]" class="input-rasa-hasil ${inputCls}">
-                        </div>
-                        <div>
-                            <label class="mb-1 block text-xs text-gray-500 dark:text-gray-400">Pesanan</label>
-                            <input type="number" min="0" placeholder="0" value="${oldK}" name="rasa_kebutuhan[${puId}][${rasaId}]" class="input-rasa-kebutuhan ${inputCls}">
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-            wrap.innerHTML = html;
-            container.appendChild(wrap);
-
-            wrap.querySelectorAll('.input-rasa-hasil, .input-rasa-kebutuhan').forEach(function (el) {
-                el.addEventListener('input', function () {
-                    hitungTotalDariRasa(wrap);
-                    cekSemuaUkuranDanTombol();
-                });
-            });
-
-            hitungTotalDariRasa(wrap);
-        });
-    }
-
-    function hitungTotalDariRasa(wrap) {
-        let totalHasil = 0;
-        let totalKebutuhan = 0;
-
-        wrap.querySelectorAll('.input-rasa-hasil').forEach(function (el) { totalHasil += parseInt(el.value, 10) || 0; });
-        wrap.querySelectorAll('.input-rasa-kebutuhan').forEach(function (el) { totalKebutuhan += parseInt(el.value, 10) || 0; });
-
-        wrap.querySelector('.input-ukuran-hasil').value = totalHasil;
-        wrap.querySelector('.input-ukuran-kebutuhan').value = totalKebutuhan;
     }
 
     const inputHasil = document.getElementById('jumlah_hasil');
@@ -1304,21 +1080,6 @@ function aktifkanSearch(element) {
                 valid = false;
             } else {
                 inputKebutuhanUkuran.classList.remove('border-red-500');
-            }
-        });
-
-        document.querySelectorAll('#rincian-ukuran-container [data-rasa-baris]').forEach(function (barisRasa) {
-            const inputHasilRasa = barisRasa.querySelector('.input-rasa-hasil');
-            const inputKebutuhanRasa = barisRasa.querySelector('.input-rasa-kebutuhan');
-
-            const hasilRasa = parseInt(inputHasilRasa.value, 10) || 0;
-            const kebutuhanRasa = parseInt(inputKebutuhanRasa.value, 10) || 0;
-
-            if (kebutuhanRasa > hasilRasa) {
-                inputKebutuhanRasa.classList.add('border-red-500');
-                valid = false;
-            } else {
-                inputKebutuhanRasa.classList.remove('border-red-500');
             }
         });
 

@@ -4,13 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Rincian produksi per detail produk. Kode, ukuran, variasi, dan harga disalin saat
+ * produksi dicatat, jadi riwayat tetap terbaca walau detail produknya diubah atau dihapus.
+ */
 class ProduksiVarian extends Model
 {
     protected $table = 'produksi_varians';
 
     protected $fillable = [
         'produksi_id',
-        'produk_varian_id',
+        'produk_varian_id', // id detail produk (nama kolom diganti di pembersihan akhir)
         'ukuran',
         'variasi',
         'kode_barcode',
@@ -30,9 +34,15 @@ class ProduksiVarian extends Model
         return $this->belongsTo(Produksi::class, 'produksi_id');
     }
 
+    public function detailProduk()
+    {
+        return $this->belongsTo(DetailProduk::class, 'produk_varian_id');
+    }
+
+    /** @deprecated Nama lama dari detailProduk(). */
     public function produkVarian()
     {
-        return $this->belongsTo(ProdukVarian::class, 'produk_varian_id');
+        return $this->detailProduk();
     }
 
     public function getNamaLengkapAttribute(): string

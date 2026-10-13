@@ -9,27 +9,27 @@ class Produksi extends Model
     protected $table = 'produksis';
 
     protected $fillable = [
-            'tanggal',
-            'jam_produksi',
-            'produk_id',
-            'jumlah_hasil',
-            'jumlah_besar',      
-            'jumlah_kecil',
-            'kebutuhan_produksi',
-            'kebutuhan_besar',
-            'kebutuhan_kecil',
-            'user_id',
-            'keterangan',
-            'kadaluarsa_tipe',
-            'kadaluarsa_tanggal',
-            'kadaluarsa_jam',
-            'status',
-            'jumlah_disesuaikan',
-        ];
+        'tanggal',
+        'jam_produksi',
+        'produk_id',
+        'jumlah_hasil',
+        'jumlah_besar',
+        'jumlah_kecil',
+        'kebutuhan_produksi',
+        'kebutuhan_besar',
+        'kebutuhan_kecil',
+        'user_id',
+        'keterangan',
+        'kadaluarsa_tipe',
+        'kadaluarsa_tanggal',
+        'kadaluarsa_jam',
+        'status',
+        'jumlah_disesuaikan',
+    ];
 
     protected $casts = [
         'jumlah_hasil' => 'integer',
-        'jumlah_besar' => 'integer',   
+        'jumlah_besar' => 'integer',
         'jumlah_kecil' => 'integer',
         'kebutuhan_produksi' => 'integer',
         'kebutuhan_besar' => 'integer',
@@ -44,19 +44,10 @@ class Produksi extends Model
         return $this->belongsTo(Produk::class, 'produk_id');
     }
 
-    public function produksiUkurans()
-    {
-        return $this->hasMany(ProduksiUkuran::class, 'produksi_id')->with('produkUkuran.ukuran');
-    }
-
+    /** Rincian produksi per detail produk (satu baris = satu kombinasi ukuran + variasi). */
     public function produksiVarians()
     {
         return $this->hasMany(ProduksiVarian::class, 'produksi_id')->orderBy('id');
-    }
-
-    public function produksiRasas()
-    {
-        return $this->hasMany(ProduksiRasa::class, 'produksi_id')->with('produkUkuran.ukuran');
     }
 
     public function user()
@@ -104,25 +95,8 @@ class Produksi extends Model
     }
 
     /**
-     * Baris rincian ukuran dinamis punya produksi ini (mode ukuran_hasil[]),
-     * diurutkan sesuai urutan ukuran & difilter yang hasilnya > 0.
-     * Null kalau produksi ini bukan produksi mode dinamis (dulu dicatat
-     * lewat kolom lama jumlah_besar/jumlah_kecil, atau produk tanpa ukuran).
-     */
-    protected function rincianUkuranDinamis()
-    {
-        if ($this->produksiUkurans->isEmpty()) {
-            return null;
-        }
-
-        return $this->produksiUkurans
-            ->sortBy(fn ($item) => optional(optional($item->produkUkuran)->ukuran)->urutan ?? 0)
-            ->values();
-    }
-
-    /**
      * Ringkasan per ukuran dari produksi_varians. Contoh: "5 Besar, 3 Kecil".
-     * "-" kalau varian-varian produksi ini tidak punya ukuran.
+     * "-" kalau detail-detail produksi ini tidak punya ukuran.
      */
     protected function ringkasVarianPerUkuran(string $kolom): string
     {
@@ -163,112 +137,27 @@ class Produksi extends Model
 
     public function getRincianUkuranAttribute(): string
     {
-        if ($this->produksiVarians->isNotEmpty()) {
-            return $this->ringkasVarianPerUkuran('jumlah_hasil');
-        }
-
-        $dinamis = $this->rincianUkuranDinamis();
-
-        if ($dinamis !== null) {
-            $bagian = $dinamis
-                ->filter(fn ($item) => $item->jumlah_hasil > 0)
-                ->map(fn ($item) => $item->jumlah_hasil . ' ' . (optional(optional($item->produkUkuran)->ukuran)->nama_ukuran ?? '-'));
-
-            return $bagian->isNotEmpty() ? $bagian->implode(', ') : '-';
-        }
-
-        $bagian = [];
-
-        if ($this->jumlah_besar > 0) {
-            $bagian[] = $this->jumlah_besar . ' Besar';
-        }
-
-        if ($this->jumlah_kecil > 0) {
-            $bagian[] = $this->jumlah_kecil . ' Kecil';
-        }
-
-        return $bagian ? implode(', ', $bagian) : '-';
+        return $this->ringkasVarianPerUkuran('jumlah_hasil');
     }
 
     public function getRincianKebutuhanUkuranAttribute(): string
     {
-        if ($this->produksiVarians->isNotEmpty()) {
-            return $this->ringkasVarianPerUkuran('kebutuhan');
-        }
-
-        $dinamis = $this->rincianUkuranDinamis();
-
-        if ($dinamis !== null) {
-            $bagian = $dinamis
-                ->filter(fn ($item) => $item->kebutuhan > 0)
-                ->map(fn ($item) => $item->kebutuhan . ' ' . (optional(optional($item->produkUkuran)->ukuran)->nama_ukuran ?? '-'));
-
-            return $bagian->isNotEmpty() ? $bagian->implode(', ') : '-';
-        }
-
-        $bagian = [];
-
-        if ($this->kebutuhan_besar > 0) {
-            $bagian[] = $this->kebutuhan_besar . ' Besar';
-        }
-
-        if ($this->kebutuhan_kecil > 0) {
-            $bagian[] = $this->kebutuhan_kecil . ' Kecil';
-        }
-
-        return $bagian ? implode(', ', $bagian) : '-';
-    }
-
-    /**
-     * Rincian hasil per rasa, dikelompokkan per ukuran. Contoh:
-     * "Kecil: Coklat 3, Keju 2 | Besar: Coklat 1". Produk tanpa ukuran: "Coklat 3, Keju 2".
-     * Null kalau produksi ini tidak mencatat rasa.
-     */
-    protected function kelompokRasa(string $kolom)
-    {
-        $baris = $this->produksiRasas->filter(fn ($r) => $r->{$kolom} > 0);
-
-        if ($baris->isEmpty()) {
-            return null;
-        }
-
-        return $baris
-            ->groupBy(fn ($r) => (int) $r->produk_ukuran_id)
-            ->sortBy(fn ($grup) => optional(optional($grup->first()->produkUkuran)->ukuran)->urutan ?? 0)
-            ->map(function ($grup) use ($kolom) {
-                $namaUkuran = optional(optional($grup->first()->produkUkuran)->ukuran)->nama_ukuran;
-                $teks = $grup->map(fn ($r) => $r->nama_rasa . ' ' . $r->{$kolom})->implode(', ');
-
-                return $namaUkuran ? $namaUkuran . ': ' . $teks : $teks;
-            })
-            ->implode(' | ');
+        return $this->ringkasVarianPerUkuran('kebutuhan');
     }
 
     public function getRincianRasaAttribute(): string
     {
-        if ($this->produksiVarians->isNotEmpty()) {
-            return $this->kelompokVarian('jumlah_hasil') ?? '-';
-        }
-
-        return $this->kelompokRasa('jumlah_hasil') ?? '-';
+        return $this->kelompokVarian('jumlah_hasil') ?? '-';
     }
 
     public function getRincianKebutuhanRasaAttribute(): string
     {
-        if ($this->produksiVarians->isNotEmpty()) {
-            return $this->kelompokVarian('kebutuhan') ?? '-';
-        }
-
-        return $this->kelompokRasa('kebutuhan') ?? '-';
+        return $this->kelompokVarian('kebutuhan') ?? '-';
     }
 
     public function getPunyaRincianRasaAttribute(): bool
     {
-        if ($this->produksiVarians->isNotEmpty()) {
-            return $this->produksiVarians->contains(fn ($v) => filled($v->variasi));
-        }
-
-        return $this->produksiRasas->isNotEmpty();
+        return $this->produksiVarians->contains(fn ($v) => filled($v->variasi));
     }
 
     public function getJumlahEfektifAttribute(): int

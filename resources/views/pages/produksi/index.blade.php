@@ -4,23 +4,10 @@
 
     <x-common.page-breadcrumb pageTitle="Produksi" />
 
-    <div class="space-y-6" x-data="{ modalOpen: false, produksiId: null, produksiNama: '', jumlahMax: 0, sisaBelum: 0, stokTotal: 0, punyaUkuran: false, ukuran: null, daftarUkuran: [], punyaRasa: false, rasa: null, daftarRasa: [], punyaVarian: false, varianId: null, daftarVarian: [],
-            stokRasaSaatIni(r) { return this.punyaUkuran ? ((r.stok_ukuran && r.stok_ukuran[this.ukuran] !== undefined) ? r.stok_ukuran[this.ukuran] : 0) : r.stok; },
+    <div class="space-y-6" x-data="{ modalOpen: false, produksiId: null, produksiNama: '', jumlahMax: 0, sisaBelum: 0, varianId: null, daftarVarian: [],
             hitungMax() {
-                let stok = 0;
-                if (this.punyaVarian) {
-                    const v = this.daftarVarian.find(x => x.id === this.varianId);
-                    stok = v ? v.stok : 0;
-                } else if (this.punyaRasa) {
-                    const r = this.daftarRasa.find(x => x.nama === this.rasa);
-                    stok = r ? this.stokRasaSaatIni(r) : 0;
-                } else if (this.punyaUkuran) {
-                    const u = this.daftarUkuran.find(x => x.nama === this.ukuran);
-                    stok = u ? u.stok : 0;
-                } else {
-                    stok = this.stokTotal;
-                }
-                this.jumlahMax = Math.min(this.sisaBelum, stok);
+                const v = this.daftarVarian.find(x => x.id === this.varianId);
+                this.jumlahMax = Math.min(this.sisaBelum, v ? v.stok : 0);
             } }">
 
         <div id="banner-produksi-kadaluwarsa" class="{{ $produksiKadaluarsa->count() > 0 ? '' : 'hidden' }} p-4 rounded-2xl border border-red-200 dark:border-red-500/20 bg-red-50/80 dark:bg-red-500/10 backdrop-blur-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -143,9 +130,9 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4" x-text="'Produk: ' + produksiNama"></p>
                 <form :action="'/produksi/' + produksiId + '/kurangi-stok'" method="POST">
                     @csrf
-                    <template x-if="punyaVarian">
+                    <template x-if="daftarVarian.length > 0">
                         <div class="mb-3">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Varian</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Detail Produk</label>
                             <div class="flex flex-wrap gap-2">
                                 <template x-for="v in daftarVarian" :key="v.id">
                                     <button type="button" @click="varianId = v.id; hitungMax()"
@@ -156,39 +143,6 @@
                                 </template>
                             </div>
                             <input type="hidden" name="varian_id" :value="varianId">
-                        </div>
-                    </template>
-                    <template x-if="punyaUkuran">
-                        <div class="mb-3">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ukuran</label>
-                            <div class="flex flex-wrap gap-2">
-                                <template x-if="!daftarUkuran || daftarUkuran.length === 0">
-                                    <p class="text-xs text-gray-400 italic">Belum ada ukuran aktif untuk produk ini.</p>
-                                </template>
-                                <template x-for="opsi in daftarUkuran" :key="opsi.nama">
-                                    <button type="button" @click="ukuran = opsi.nama; hitungMax()"
-                                        :class="ukuran === opsi.nama ? 'bg-brand-500 text-white border-brand-500' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'"
-                                        class="flex-1 min-w-[45%] rounded-lg border px-3 py-2 text-sm font-semibold transition">
-                                        <span x-text="opsi.nama"></span> <span class="font-normal" x-text="'(' + opsi.stok + ' pcs)'"></span>
-                                    </button>
-                                </template>
-                            </div>
-                            <input type="hidden" name="ukuran" :value="ukuran">
-                        </div>
-                    </template>
-                    <template x-if="punyaRasa">
-                        <div class="mb-3">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rasa</label>
-                            <div class="flex flex-wrap gap-2">
-                                <template x-for="r in daftarRasa" :key="r.nama">
-                                    <button type="button" @click="rasa = r.nama; hitungMax()"
-                                        :class="rasa === r.nama ? 'bg-brand-500 text-white border-brand-500' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700'"
-                                        class="flex-1 min-w-[45%] rounded-lg border px-3 py-2 text-sm font-semibold transition">
-                                        <span x-text="r.nama"></span> <span class="font-normal" x-text="'(' + stokRasaSaatIni(r) + ' pcs)'"></span>
-                                    </button>
-                                </template>
-                            </div>
-                            <input type="hidden" name="rasa" :value="rasa">
                         </div>
                     </template>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jumlah yang dikurangi (pcs)</label>
