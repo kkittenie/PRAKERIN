@@ -27,9 +27,10 @@ class KeranjangController extends Controller
 
             $produkVarian = null;
             if (!empty($validated['produk_varian_id'])) {
-                $produkVarian = $produk->produkVarians()->where('id', $validated['produk_varian_id'])->first();
+                $produkVarian = $produk->produkVarians()->where('id', $validated['produk_varian_id'])->where('status_aktif', true)->first();
             } elseif ($produk->produkVarians()->exists()) {
                 $produkVarian = $produk->produkVarians()
+                    ->where('status_aktif', true)
                     ->where(function ($q) use ($validated) {
                         if (!empty($validated['ukuran'])) {
                             $q->where('ukuran', $validated['ukuran']);
@@ -37,7 +38,17 @@ class KeranjangController extends Controller
                         if (!empty($validated['varian_rasa'])) {
                             $q->where('variasi', $validated['varian_rasa']);
                         }
-                    })->first() ?? $produk->produkVarians()->first();
+                    })->first();
+            }
+
+            if ($produk->produkVarians()->exists() && !$produkVarian) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Varian yang dipilih sedang nonaktif atau tidak tersedia.',
+                    ], 422);
+                }
+                return back()->with('error', 'Varian yang dipilih sedang nonaktif atau tidak tersedia.');
             }
 
             if ($produkVarian) {
@@ -257,9 +268,10 @@ class KeranjangController extends Controller
 
             $produkVarian = null;
             if (!empty($validated['produk_varian_id'])) {
-                $produkVarian = $produk->produkVarians()->where('id', $validated['produk_varian_id'])->first();
+                $produkVarian = $produk->produkVarians()->where('id', $validated['produk_varian_id'])->where('status_aktif', true)->first();
             } elseif ($produk->produkVarians()->exists()) {
                 $produkVarian = $produk->produkVarians()
+                    ->where('status_aktif', true)
                     ->where(function ($q) use ($validated) {
                         if (!empty($validated['ukuran'])) {
                             $q->where('ukuran', $validated['ukuran']);
@@ -267,7 +279,11 @@ class KeranjangController extends Controller
                         if (!empty($validated['varian_rasa'])) {
                             $q->where('variasi', $validated['varian_rasa']);
                         }
-                    })->first() ?? $produk->produkVarians()->first();
+                    })->first();
+            }
+
+            if ($produk->produkVarians()->exists() && !$produkVarian) {
+                return back()->with('error', 'Varian yang dipilih sedang nonaktif atau tidak tersedia.');
             }
 
             if ($produkVarian) {

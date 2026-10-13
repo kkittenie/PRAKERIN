@@ -26,17 +26,38 @@
                     hargaAsliDasar: {{ (float) $hargaAsli }},
                     fotoProdukUtama: @js($produk->foto ? asset('storage/' . $produk->foto) : null),
 
+                    init() {
+                        if (this.punyaVarianBaru && !this.varianTerpilih) {
+                            let pertama = this.daftarVarian.find(v => v.aktif);
+                            if (pertama) {
+                                this.ukuran = pertama.ukuran || '';
+                                this.varianRasa = pertama.variasi || '';
+                            }
+                        }
+                    },
+
                     get varianTerpilih() {
                         if (!this.punyaVarianBaru) return null;
                         let cocok = this.daftarVarian.find(v => {
                             let matchU = !this.ukuran || v.ukuran === this.ukuran;
                             let matchR = !this.varianRasa || v.variasi === this.varianRasa;
-                            return matchU && matchR;
+                            return v.aktif && matchU && matchR;
                         });
-                        if (!cocok && this.daftarVarian.length > 0) {
-                            cocok = this.daftarVarian.find(v => !this.ukuran || v.ukuran === this.ukuran);
-                        }
-                        return cocok || this.daftarVarian[0] || null;
+                        return cocok || null;
+                    },
+
+                    ukuranTersedia(u) {
+                        if (!this.punyaVarianBaru) return true;
+                        return this.daftarVarian.some(v =>
+                            v.aktif && v.ukuran === u
+                            && (!this.varianRasa || v.variasi === this.varianRasa));
+                    },
+
+                    variasiTersedia(vr) {
+                        if (!this.punyaVarianBaru) return true;
+                        return this.daftarVarian.some(v =>
+                            v.aktif && v.variasi === vr
+                            && (!this.ukuran || v.ukuran === this.ukuran));
                     },
 
                     get idVarianTerpilih() {
@@ -92,21 +113,29 @@
                     },
 
                     pilihUkuran(u) {
+                        if (!this.ukuranTersedia(u)) return;
                         this.ukuran = u;
                         if (this.punyaVarianBaru) {
-                            let varianCocok = this.daftarVarian.filter(v => v.ukuran === u);
-                            if (varianCocok.length > 0 && !varianCocok.some(v => v.variasi === this.varianRasa)) {
-                                this.varianRasa = varianCocok[0].variasi || '';
+                            let cocok = this.daftarVarian.some(v => v.aktif && v.ukuran === u && v.variasi === this.varianRasa);
+                            if (!cocok) {
+                                let varianCocok = this.daftarVarian.find(v => v.aktif && v.ukuran === u);
+                                if (varianCocok) {
+                                    this.varianRasa = varianCocok.variasi || '';
+                                }
                             }
                         }
                     },
 
                     pilihVariasi(r) {
+                        if (!this.variasiTersedia(r)) return;
                         this.varianRasa = r;
                         if (this.punyaVarianBaru) {
-                            let varianCocok = this.daftarVarian.filter(v => v.variasi === r);
-                            if (varianCocok.length > 0 && !varianCocok.some(v => v.ukuran === this.ukuran)) {
-                                this.ukuran = varianCocok[0].ukuran || '';
+                            let cocok = this.daftarVarian.some(v => v.aktif && v.variasi === r && v.ukuran === this.ukuran);
+                            if (!cocok) {
+                                let varianCocok = this.daftarVarian.find(v => v.aktif && v.variasi === r);
+                                if (varianCocok) {
+                                    this.ukuran = varianCocok.ukuran || '';
+                                }
                             }
                         }
                     },
@@ -252,11 +281,18 @@
 
                         <div class="mt-2 grid grid-cols-2 gap-2">
                             <template x-for="u in opsiUkuran" :key="u">
-                                <button type="button" @click="pilihUkuran(u)" :class="
-                                    ukuran === u
-                                        ? 'border-brand-800 bg-brand-50 text-brand-800 font-extrabold'
-                                        : 'border-gray-200 text-gray-600'
-                                " class="rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]">
+                                <button type="button" @click="pilihUkuran(u)"
+                                    :disabled="!ukuranTersedia(u)"
+                                    :title="ukuranTersedia(u) ? '' : 'Nonaktif'"
+                                    :class="
+                                        !ukuranTersedia(u)
+                                            ? 'border-dashed border-gray-200 bg-gray-100/80 text-gray-400 cursor-not-allowed opacity-50'
+                                            : (ukuran === u
+                                                ? 'border-brand-800 bg-brand-50 text-brand-800 font-extrabold shadow-xs cursor-pointer'
+                                                : 'border-gray-200 text-gray-600 hover:border-brand-500 active:scale-[0.99] cursor-pointer')
+                                    "
+                                    :style="ukuranTersedia(u) ? '' : 'text-decoration:line-through;'"
+                                    class="rounded-2xl border px-4 py-3 text-left transition relative">
                                     <span class="block text-xs font-bold" x-text="u"></span>
                                 </button>
                             </template>
@@ -272,15 +308,25 @@
 
                         <div class="mt-2 grid grid-cols-2 gap-2">
                             <template x-for="v in opsiVariasi" :key="v">
-                                <button type="button" @click="pilihVariasi(v)" :class="
-                                    varianRasa === v
-                                        ? 'border-brand-800 bg-brand-50 text-brand-800 font-extrabold'
-                                        : 'border-gray-200 text-gray-600'
-                                " class="flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition active:scale-[0.99]">
-                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800 text-[10px] font-bold">
+                                <button type="button" @click="pilihVariasi(v)"
+                                    :disabled="!variasiTersedia(v)"
+                                    :title="variasiTersedia(v) ? '' : 'Nonaktif'"
+                                    :class="
+                                        !variasiTersedia(v)
+                                            ? 'border-dashed border-gray-200 bg-gray-100/80 text-gray-400 cursor-not-allowed opacity-50'
+                                            : (varianRasa === v
+                                                ? 'border-brand-800 bg-brand-50 text-brand-800 font-extrabold shadow-xs cursor-pointer'
+                                                : 'border-gray-200 text-gray-600 hover:border-brand-500 active:scale-[0.99] cursor-pointer')
+                                    "
+                                    :style="variasiTersedia(v) ? '' : 'text-decoration:line-through;'"
+                                    class="flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition relative">
+                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+                                        :class="variasiTersedia(v) ? 'bg-brand-50 text-brand-800' : 'bg-gray-200 text-gray-400'">
                                         <span x-text="(v || '').charAt(0).toUpperCase()"></span>
                                     </div>
-                                    <span class="block text-xs font-bold truncate" x-text="v"></span>
+                                    <div class="min-w-0 flex-1">
+                                        <span class="block text-xs font-bold truncate" x-text="v"></span>
+                                    </div>
                                 </button>
                             </template>
                         </div>
@@ -419,8 +465,10 @@
 
                                 {{-- Tombol Update --}}
                                 <button type="submit"
-                                    class="flex min-w-0 flex-1 items-center justify-center rounded-full bg-brand-800 px-6 py-4 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]"
-                                    x-text="'Update – Rp ' + total.toLocaleString('id-ID')">
+                                    :disabled="punyaVarianBaru && !varianTerpilih"
+                                    :class="(punyaVarianBaru && !varianTerpilih) ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-brand-800 active:scale-[0.99]'"
+                                    class="flex min-w-0 flex-1 items-center justify-center rounded-full px-6 py-4 text-sm font-bold text-white shadow-sm transition"
+                                    x-text="(punyaVarianBaru && !varianTerpilih) ? 'Varian Nonaktif' : ('Update – Rp ' + total.toLocaleString('id-ID'))">
                                 </button>
 
                             </div>
@@ -478,12 +526,12 @@
 
                             {{-- Tombol Add --}}
                             <button type="submit"
-                                class="flex min-w-0 flex-1 lg:max-w-[260px] items-center justify-between rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
-                                <span>
-                                    Add
-                                </span>
+                                :disabled="punyaVarianBaru && !varianTerpilih"
+                                :class="(punyaVarianBaru && !varianTerpilih) ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-brand-800 active:scale-[0.99]'"
+                                class="flex min-w-0 flex-1 lg:max-w-[260px] items-center justify-between rounded-full px-6 py-3.5 text-sm font-bold text-white shadow-sm transition">
+                                <span x-text="(punyaVarianBaru && !varianTerpilih) ? 'Varian Nonaktif' : 'Add'"></span>
 
-                                <span x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
+                                <span x-show="!punyaVarianBaru || varianTerpilih" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                             </button>
 
                         </div>

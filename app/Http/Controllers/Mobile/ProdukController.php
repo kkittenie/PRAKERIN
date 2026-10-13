@@ -62,14 +62,17 @@ class ProdukController extends Controller
                         });
                     }
 
-                    $varianIdDipilihAwal = $varianEdit['id'] ?? null;
-                    $ukuranDipilihAwal = $varianEdit['ukuran'] ?? ($itemEdit['ukuran'] ?? ($opsiUkuran[0] ?? null));
-                    $varianRasaDipilihAwal = $varianEdit['variasi'] ?? ($itemEdit['varian_rasa'] ?? ($opsiVariasi[0] ?? null));
+                    // Ambil varian aktif pertama sebagai default
+                    $varianAktifPertama = collect($daftarVarian)->firstWhere('aktif', true);
+
+                    $varianIdDipilihAwal = $varianEdit['id'] ?? ($varianAktifPertama['id'] ?? null);
+                    $ukuranDipilihAwal = $varianEdit['ukuran'] ?? ($itemEdit['ukuran'] ?? ($varianAktifPertama['ukuran'] ?? ($opsiUkuran[0] ?? null)));
+                    $varianRasaDipilihAwal = $varianEdit['variasi'] ?? ($itemEdit['varian_rasa'] ?? ($varianAktifPertama['variasi'] ?? ($opsiVariasi[0] ?? null)));
 
                     $termurah = collect($daftarVarian)->where('aktif', true)->sortBy('harga_diskon')->first();
                     $hargaAsli = $termurah['harga_asli'] ?? (float) $produk->harga_jual;
                     $hargaFinal = $termurah['harga_diskon'] ?? (float) $produk->harga_diskon;
-                    $adaPromo = collect($daftarVarian)->contains('sedang_promo', true);
+                    $adaPromo = collect($daftarVarian)->where('aktif', true)->contains('sedang_promo', true);
                     $habis = collect($daftarVarian)->where('aktif', true)->where('stok', '>', 0)->isEmpty();
                 } elseif ($punyaUkuran) {
                     $daftarUkuran = collect($produk->daftar_ukuran)
