@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Promo;
 use App\Models\Produk;
 use App\Models\PromoProdukUkuran;
+use App\Models\PromoProdukRasa;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -55,11 +56,12 @@ class PromoController extends Controller
     public function tambah()
     {
         try {
-            $produks = Produk::with(['produkUkurans.ukuran'])
+            $produks = Produk::with(['produkVarians', 'produkUkurans', 'produkVarianRasas.varianRasa'])
                 ->where('status_aktif', true)
                 ->orderBy('nama_produk', 'asc')
                 ->get();
-            return view('pages.promo.create', compact('produks'));
+            $produkData = $this->dataProdukUntukForm($produks);
+            return view('pages.promo.create', compact('produks', 'produkData'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -81,10 +83,15 @@ class PromoController extends Controller
                 'selesai_berlaku' => 'nullable|date|after_or_equal:mulai_berlaku',
                 'produk_ids' => 'required|array',
                 'produk_ids.*' => 'exists:produks,id',
-                // Dikirim per-produk: ukuran_ids[<produk_id>][] = <ukuran_id>
-                'ukuran_ids' => 'nullable|array',
-                'ukuran_ids.*' => 'nullable|array',
-                'ukuran_ids.*.*' => 'integer|exists:ukurans,id',
+                // Dikirim per-produk berupa NAMA (sama kayak form Promo Event):
+                // ukuran_names[<produk_id>][] = 'Kecil', rasa_names[<produk_id>][] = 'Vanilla'.
+                // Nama di-resolve ke ID master waktu disimpan.
+                'ukuran_names' => 'nullable|array',
+                'ukuran_names.*' => 'nullable|array',
+                'ukuran_names.*.*' => 'string|max:100',
+                'rasa_names' => 'nullable|array',
+                'rasa_names.*' => 'nullable|array',
+                'rasa_names.*.*' => 'string|max:100',
             ]);
 
             $promo = Promo::create([
@@ -99,7 +106,10 @@ class PromoController extends Controller
             ]);
 
             $promo->produks()->sync($validated['produk_ids']);
-            $this->simpanPembatasanUkuranPerProduk($promo, $validated['produk_ids'], $validated['ukuran_ids'] ?? []);
+            $ukuranIdsPerProduk = $this->resolveIdsPerProduk($validated['produk_ids'], $validated['ukuran_names'] ?? [], 'ukuran');
+            $rasaIdsPerProduk = $this->resolveIdsPerProduk($validated['produk_ids'], $validated['rasa_names'] ?? [], 'rasa');
+            $this->simpanPembatasanUkuranPerProduk($promo, $validated['produk_ids'], $ukuranIdsPerProduk);
+            $this->simpanPembatasanRasaPerProduk($promo, $validated['produk_ids'], $rasaIdsPerProduk);
 
             activity()
                 ->causedBy(auth()->user())
@@ -109,7 +119,7 @@ class PromoController extends Controller
                     'jenis_potongan' => $promo->jenis_potongan,
                     'potongan' => $promo->jenis_potongan === 'nominal' ? $promo->nominal_potongan : $promo->persentase,
                     'produks' => $validated['produk_ids'],
-                    'ukuran_ids' => $validated['ukuran_ids'] ?? [],
+                    'ukuran_ids' => $ukuranIdsPerProduk,
                 ])
                 ->log('menambahkan promo');
 
@@ -119,6 +129,114 @@ class PromoController extends Controller
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
+    }
+
+    /**
+     * Data produk buat form promo (create/edit): id, nama, foto, harga, plus
+     * daftar ukuran & rasa tiap produk — dasarnya sama kayak form Promo Event.
+     * Pilihan diidentifikasi lewat NAMA (bukan ID), karena baris produk_varians
+     * yang dibuat dari form Produk cuma nyimpen teks ukuran/variasi tanpa
+     * ukuran_id / varian_rasa_id. Nama di-resolve ke ID master pas disimpan.
+     */
+    private function dataProdukUntukForm($produks)
+    {
+        $unikNama = fn ($daftar) => $daftar
+            ->map(fn ($nama) => trim((string) $nama))
+            ->filter()
+            ->unique(fn ($nama) => mb_strtolower($nama))
+            ->map(fn ($nama) => ['nama' => $nama])
+            ->values();
+
+        return $produks->map(function ($p) use ($unikNama) {
+            if ($p->produkVarians && $p->produkVarians->isNotEmpty()) {
+                $ukurans = $unikNama($p->produkVarians->pluck('ukuran'));
+                $rasas = $unikNama($p->produkVarians->pluck('variasi'));
+            } else {
+                $ukurans = $p->punya_ukuran
+                    ? $unikNama($p->produkUkurans->map(fn ($pu) => optional($pu->ukuran)->nama_ukuran))
+                    : collect();
+                $rasas = $p->punya_varian_rasa
+                    ? $unikNama(collect($p->daftar_varian_rasa)->pluck('nama'))
+                    : collect();
+            }
+
+            return [
+                'id' => $p->id,
+                'nama_produk' => $p->nama_produk,
+                'kode_produk' => $p->kode_produk,
+                'foto' => $p->foto,
+                'harga_jual' => (float) $p->harga_jual,
+                'punya_ukuran' => $ukurans->isNotEmpty(),
+                'ukurans' => $ukurans,
+                'punya_varian_rasa' => $rasas->isNotEmpty(),
+                'rasas' => $rasas,
+            ];
+        })->values();
+    }
+
+    /**
+     * Ubah nama ukuran/rasa yang dikirim form jadi ID master, per produk.
+     * $namaPerProduk: [produk_id => ['Kecil', 'Besar', ...]]
+     * Hasil: [produk_id => [ukuran_id, ...]] (atau varian_rasa_id kalau $jenis = 'rasa').
+     * Logikanya sama dengan resolveUkuranIds/resolveRasaIds di Promo Event:
+     * cari di produk_varians dulu, lalu master; kalau belum ada, dibuat.
+     */
+    private function resolveIdsPerProduk(array $produkIds, array $namaPerProduk, string $jenis): array
+    {
+        if (empty($namaPerProduk)) {
+            return [];
+        }
+
+        $produkIds = array_map('intval', $produkIds);
+        $produks = Produk::with('produkVarians')->whereIn('id', $produkIds)->get()->keyBy('id');
+
+        $kolomNama = $jenis === 'ukuran' ? 'ukuran' : 'variasi';
+        $kolomId = $jenis === 'ukuran' ? 'ukuran_id' : 'varian_rasa_id';
+
+        $hasil = [];
+        foreach ($namaPerProduk as $produkId => $namaList) {
+            $produkId = (int) $produkId;
+            $produk = $produks->get($produkId);
+            if (!$produk || !is_array($namaList)) {
+                continue;
+            }
+
+            $ids = [];
+            foreach ($namaList as $nama) {
+                $nama = trim((string) $nama);
+                if ($nama === '') {
+                    continue;
+                }
+
+                $varian = $produk->produkVarians->first(
+                    fn ($v) => strcasecmp((string) ($v->{$kolomNama} ?? ''), $nama) === 0 && !empty($v->{$kolomId})
+                );
+
+                if ($varian) {
+                    $ids[] = (int) $varian->{$kolomId};
+                    continue;
+                }
+
+                if ($jenis === 'ukuran') {
+                    $master = \App\Models\Ukuran::firstOrCreate(
+                        ['nama_ukuran' => $nama],
+                        ['urutan' => 99, 'status_aktif' => true]
+                    );
+                } else {
+                    $master = \App\Models\VarianRasa::firstOrCreate(
+                        ['nama_rasa' => $nama],
+                        ['status_aktif' => true]
+                    );
+                }
+                $ids[] = (int) $master->id;
+            }
+
+            if (!empty($ids)) {
+                $hasil[$produkId] = array_values(array_unique($ids));
+            }
+        }
+
+        return $hasil;
     }
 
     /**
@@ -161,21 +279,69 @@ class PromoController extends Controller
         }
     }
 
+    /**
+     * Simpan ulang pembatasan rasa per-produk buat promo ini.
+     * $rasaIdsPerProduk formatnya: [produk_id => [varian_rasa_id, ...], ...]
+     */
+    private function simpanPembatasanRasaPerProduk(Promo $promo, array $produkIds, array $rasaIdsPerProduk): void
+    {
+        $promo->produkRasaPivots()->delete();
+
+        $produkIds = array_map('intval', $produkIds);
+
+        $rows = [];
+        $now = now();
+        foreach ($rasaIdsPerProduk as $produkId => $rasaIds) {
+            $produkId = (int) $produkId;
+            if (!in_array($produkId, $produkIds, true) || empty($rasaIds)) {
+                continue;
+            }
+            foreach (array_unique($rasaIds) as $rasaId) {
+                $rows[] = [
+                    'promo_id' => $promo->id,
+                    'produk_id' => $produkId,
+                    'varian_rasa_id' => (int) $rasaId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+
+        if (!empty($rows)) {
+            PromoProdukRasa::insert($rows);
+        }
+    }
+
     public function ubah($id)
     {
         try {
-            $promo = Promo::with(['produks', 'produkUkuranPivots'])->findOrFail($id);
-            $produks = Produk::with(['produkUkurans.ukuran'])
+            $promo = Promo::with(['produks', 'produkUkuranPivots', 'produkRasaPivots'])->findOrFail($id);
+            $produks = Produk::with(['produkVarians', 'produkUkurans', 'produkVarianRasas.varianRasa'])
                 ->where('status_aktif', true)
                 ->orderBy('nama_produk', 'asc')
                 ->get();
+            $produkData = $this->dataProdukUntukForm($produks);
             $selectedProduks = $promo->produks->pluck('id')->toArray();
-            // [produk_id => [ukuran_id, ...]] — pembatasan yang udah kesimpen per produk
-            $selectedUkuranPerProduk = $promo->produkUkuranPivots
+            // [produk_id => [nama ukuran, ...]] — pembatasan yang udah kesimpen per produk.
+            // Nama diambil dari master & disamakan huruf besar/kecilnya dengan nama di data produk,
+            // karena form ngidentifikasi pilihan lewat nama.
+            $produkMap = collect($produkData)->keyBy('id');
+            $samakanNama = function ($produkId, $nama, $kunci) use ($produkMap) {
+                $daftar = collect(($produkMap->get($produkId) ?? [])[$kunci] ?? []);
+                $cocok = $daftar->first(fn ($x) => strcasecmp($x['nama'], $nama) === 0);
+                return $cocok['nama'] ?? $nama;
+            };
+            $selectedUkuranPerProduk = $promo->produkUkuranPivots->load('ukuran')
                 ->groupBy('produk_id')
-                ->map(fn ($rows) => $rows->pluck('ukuran_id')->values());
+                ->map(fn ($rows, $pid) => $rows->map(fn ($r) => optional($r->ukuran)->nama_ukuran)->filter()
+                    ->map(fn ($n) => $samakanNama((int) $pid, $n, 'ukurans'))->values());
+            // [produk_id => [nama rasa, ...]] — pembatasan rasa per produk
+            $selectedRasaPerProduk = $promo->produkRasaPivots->load('varianRasa')
+                ->groupBy('produk_id')
+                ->map(fn ($rows, $pid) => $rows->map(fn ($r) => optional($r->varianRasa)->nama_rasa)->filter()
+                    ->map(fn ($n) => $samakanNama((int) $pid, $n, 'rasas'))->values());
 
-            return view('pages.promo.edit', compact('promo', 'produks', 'selectedProduks', 'selectedUkuranPerProduk'));
+            return view('pages.promo.edit', compact('promo', 'produks', 'produkData', 'selectedProduks', 'selectedUkuranPerProduk', 'selectedRasaPerProduk'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -199,9 +365,12 @@ class PromoController extends Controller
                 'selesai_berlaku' => 'nullable|date|after_or_equal:mulai_berlaku',
                 'produk_ids' => 'required|array',
                 'produk_ids.*' => 'exists:produks,id',
-                'ukuran_ids' => 'nullable|array',
-                'ukuran_ids.*' => 'nullable|array',
-                'ukuran_ids.*.*' => 'integer|exists:ukurans,id',
+                'ukuran_names' => 'nullable|array',
+                'ukuran_names.*' => 'nullable|array',
+                'ukuran_names.*.*' => 'string|max:100',
+                'rasa_names' => 'nullable|array',
+                'rasa_names.*' => 'nullable|array',
+                'rasa_names.*.*' => 'string|max:100',
             ]);
 
             $promo->update([
@@ -216,7 +385,10 @@ class PromoController extends Controller
             ]);
 
             $promo->produks()->sync($validated['produk_ids']);
-            $this->simpanPembatasanUkuranPerProduk($promo, $validated['produk_ids'], $validated['ukuran_ids'] ?? []);
+            $ukuranIdsPerProduk = $this->resolveIdsPerProduk($validated['produk_ids'], $validated['ukuran_names'] ?? [], 'ukuran');
+            $rasaIdsPerProduk = $this->resolveIdsPerProduk($validated['produk_ids'], $validated['rasa_names'] ?? [], 'rasa');
+            $this->simpanPembatasanUkuranPerProduk($promo, $validated['produk_ids'], $ukuranIdsPerProduk);
+            $this->simpanPembatasanRasaPerProduk($promo, $validated['produk_ids'], $rasaIdsPerProduk);
 
             activity()
                 ->causedBy(auth()->user())
@@ -226,7 +398,7 @@ class PromoController extends Controller
                     'jenis_potongan' => $promo->jenis_potongan,
                     'potongan' => $promo->jenis_potongan === 'nominal' ? $promo->nominal_potongan : $promo->persentase,
                     'produks' => $validated['produk_ids'],
-                    'ukuran_ids' => $validated['ukuran_ids'] ?? [],
+                    'ukuran_ids' => $ukuranIdsPerProduk,
                 ])
                 ->log('memperbarui promo');
 

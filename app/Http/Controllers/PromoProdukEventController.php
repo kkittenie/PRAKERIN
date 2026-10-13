@@ -52,7 +52,7 @@ class PromoProdukEventController extends Controller
     public function tambah()
     {
         try {
-            $produks = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkVarians'])
+            $produks = Produk::with(['produkVarians'])
                 ->where('status_aktif', true)
                 ->orderBy('nama_produk', 'asc')
                 ->get();
@@ -66,33 +66,31 @@ class PromoProdukEventController extends Controller
     {
         try {
             $validated = $request->validate([
-                'produk_id' => 'required|exists:produks,id',
-                'nama_event' => 'required|string|max:255',
-                'isi_normal' => 'required|integer|min:1',
-                'isi_event' => 'required|integer|min:1',
-                'harga_event' => 'required|numeric|min:0',
-                'mulai_berlaku' => 'required|date',
+                'produk_id'       => 'required|exists:produks,id',
+                'nama_event'      => 'required|string|max:255',
+                'harga_event'     => 'required|numeric|min:0',
+                'mulai_berlaku'   => 'required|date',
                 'selesai_berlaku' => 'required|date|after_or_equal:mulai_berlaku',
-                'status_aktif' => 'nullable|boolean',
-                'ukuran_ids' => 'nullable|array',
-                'ukuran_ids.*' => 'exists:ukurans,id',
-                'varian_rasa_ids' => 'nullable|array',
-                'varian_rasa_ids.*' => 'exists:varian_rasas,id',
+                'status_aktif'    => 'nullable|boolean',
+                'nama_ukurans'    => 'nullable|array',
+                'nama_ukurans.*'  => 'string|max:100',
+                'nama_rasas'      => 'nullable|array',
+                'nama_rasas.*'    => 'string|max:100',
             ]);
 
-            $produk = Produk::with(['produkVarians', 'produkUkurans', 'produkVarianRasas'])->findOrFail($validated['produk_id']);
-            $ukuranIds = $this->ukuranIdsValid($produk, $validated['ukuran_ids'] ?? []);
-            $rasaIds = $this->rasaIdsValid($produk, $validated['varian_rasa_ids'] ?? []);
+            $produk    = Produk::with('produkVarians')->findOrFail($validated['produk_id']);
+            $ukuranIds = $this->resolveUkuranIds($produk, $request->input('nama_ukurans', []));
+            $rasaIds   = $this->resolveRasaIds($produk, $request->input('nama_rasas', []));
 
             $promoEvent = PromoProdukEvent::create([
-                'produk_id' => $validated['produk_id'],
-                'nama_event' => $validated['nama_event'],
-                'isi_normal' => $validated['isi_normal'],
-                'isi_event' => $validated['isi_event'],
-                'harga_event' => $validated['harga_event'],
-                'mulai_berlaku' => $validated['mulai_berlaku'],
+                'produk_id'       => $validated['produk_id'],
+                'nama_event'      => $validated['nama_event'],
+                'isi_normal'      => 1,
+                'isi_event'       => 1,
+                'harga_event'     => $validated['harga_event'],
+                'mulai_berlaku'   => $validated['mulai_berlaku'],
                 'selesai_berlaku' => $validated['selesai_berlaku'],
-                'status_aktif' => $request->has('status_aktif') ? (bool) $request->status_aktif : true,
+                'status_aktif'    => $request->has('status_aktif') ? (bool) $request->status_aktif : true,
             ]);
 
             $promoEvent->ukurans()->sync($ukuranIds);
@@ -102,13 +100,11 @@ class PromoProdukEventController extends Controller
                 ->causedBy(auth()->user())
                 ->performedOn($promoEvent)
                 ->withProperties([
-                    'nama_event' => $promoEvent->nama_event,
-                    'produk_id' => $promoEvent->produk_id,
-                    'isi_normal' => $promoEvent->isi_normal,
-                    'isi_event' => $promoEvent->isi_event,
+                    'nama_event'  => $promoEvent->nama_event,
+                    'produk_id'   => $promoEvent->produk_id,
                     'harga_event' => $promoEvent->harga_event,
-                    'ukuran_ids' => $ukuranIds,
-                    'varian_rasa_ids' => $rasaIds,
+                    'ukuran_ids'  => $ukuranIds,
+                    'rasa_ids'    => $rasaIds,
                 ])
                 ->log('menambahkan promo produk event');
 
@@ -124,35 +120,31 @@ class PromoProdukEventController extends Controller
     {
         try {
             $promoEvent = PromoProdukEvent::with(['ukurans', 'varianRasas', 'produk.produkVarians'])->findOrFail($id);
-            $produks = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkVarians'])
+            $produks    = Produk::with(['produkVarians'])
                 ->where('status_aktif', true)
                 ->orderBy('nama_produk', 'asc')
                 ->get();
-            $selectedUkurans = $promoEvent->ukurans->pluck('id')->toArray();
-            $selectedRasas = $promoEvent->varianRasas->pluck('id')->toArray();
 
-            // Jika produk memiliki varian di detail produk, filter selected agar hanya varian yang benar-benar ada di detail produk
+            // Kirim nama string ke view, bukan ID
+            $selectedNamaUkurans = $promoEvent->ukurans->pluck('nama_ukuran')->toArray();
+            $selectedNamaRasas   = $promoEvent->varianRasas->pluck('nama_rasa')->toArray();
+
+            // Jika produk pakai produkVarians, ambil nama dari sana dan filter yang cocok
             if ($promoEvent->produk && $promoEvent->produk->produkVarians->isNotEmpty()) {
-                $validUkuranIds = $promoEvent->produk->produkVarians
+                $validNamaUkurans     = $promoEvent->produk->produkVarians
                     ->filter(fn ($v) => !empty($v->ukuran))
-                    ->map(fn ($v) => (int) ($v->ukuran_id ?: (\App\Models\Ukuran::where('nama_ukuran', $v->ukuran)->value('id') ?? 0)))
-                    ->filter(fn ($vid) => $vid > 0)
-                    ->unique()
-                    ->values()
-                    ->all();
-                $selectedUkurans = array_values(array_intersect($selectedUkurans, $validUkuranIds));
+                    ->pluck('ukuran')->unique()->values()->all();
+                $selectedNamaUkurans  = array_values(array_intersect($selectedNamaUkurans, $validNamaUkurans));
 
-                $validRasaIds = $promoEvent->produk->produkVarians
+                $validNamaRasas    = $promoEvent->produk->produkVarians
                     ->filter(fn ($v) => !empty($v->variasi))
-                    ->map(fn ($v) => (int) ($v->varian_rasa_id ?: (\App\Models\VarianRasa::where('nama_rasa', $v->variasi)->value('id') ?? 0)))
-                    ->filter(fn ($vid) => $vid > 0)
-                    ->unique()
-                    ->values()
-                    ->all();
-                $selectedRasas = array_values(array_intersect($selectedRasas, $validRasaIds));
+                    ->pluck('variasi')->unique()->values()->all();
+                $selectedNamaRasas = array_values(array_intersect($selectedNamaRasas, $validNamaRasas));
             }
 
-            return view('pages.promo-event.edit', compact('promoEvent', 'produks', 'selectedUkurans', 'selectedRasas'));
+            return view('pages.promo-event.edit', compact(
+                'promoEvent', 'produks', 'selectedNamaUkurans', 'selectedNamaRasas'
+            ));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -164,33 +156,29 @@ class PromoProdukEventController extends Controller
             $promoEvent = PromoProdukEvent::findOrFail($id);
 
             $validated = $request->validate([
-                'produk_id' => 'required|exists:produks,id',
-                'nama_event' => 'required|string|max:255',
-                'isi_normal' => 'required|integer|min:1',
-                'isi_event' => 'required|integer|min:1',
-                'harga_event' => 'required|numeric|min:0',
-                'mulai_berlaku' => 'required|date',
+                'produk_id'       => 'required|exists:produks,id',
+                'nama_event'      => 'required|string|max:255',
+                'harga_event'     => 'required|numeric|min:0',
+                'mulai_berlaku'   => 'required|date',
                 'selesai_berlaku' => 'required|date|after_or_equal:mulai_berlaku',
-                'status_aktif' => 'nullable|boolean',
-                'ukuran_ids' => 'nullable|array',
-                'ukuran_ids.*' => 'exists:ukurans,id',
-                'varian_rasa_ids' => 'nullable|array',
-                'varian_rasa_ids.*' => 'exists:varian_rasas,id',
+                'status_aktif'    => 'nullable|boolean',
+                'nama_ukurans'    => 'nullable|array',
+                'nama_ukurans.*'  => 'string|max:100',
+                'nama_rasas'      => 'nullable|array',
+                'nama_rasas.*'    => 'string|max:100',
             ]);
 
-            $produk = Produk::with(['produkVarians', 'produkUkurans', 'produkVarianRasas'])->findOrFail($validated['produk_id']);
-            $ukuranIds = $this->ukuranIdsValid($produk, $validated['ukuran_ids'] ?? []);
-            $rasaIds = $this->rasaIdsValid($produk, $validated['varian_rasa_ids'] ?? []);
+            $produk    = Produk::with('produkVarians')->findOrFail($validated['produk_id']);
+            $ukuranIds = $this->resolveUkuranIds($produk, $request->input('nama_ukurans', []));
+            $rasaIds   = $this->resolveRasaIds($produk, $request->input('nama_rasas', []));
 
             $promoEvent->update([
-                'produk_id' => $validated['produk_id'],
-                'nama_event' => $validated['nama_event'],
-                'isi_normal' => $validated['isi_normal'],
-                'isi_event' => $validated['isi_event'],
-                'harga_event' => $validated['harga_event'],
-                'mulai_berlaku' => $validated['mulai_berlaku'],
+                'produk_id'       => $validated['produk_id'],
+                'nama_event'      => $validated['nama_event'],
+                'harga_event'     => $validated['harga_event'],
+                'mulai_berlaku'   => $validated['mulai_berlaku'],
                 'selesai_berlaku' => $validated['selesai_berlaku'],
-                'status_aktif' => $request->has('status_aktif') ? (bool) $request->status_aktif : false,
+                'status_aktif'    => $request->has('status_aktif') ? (bool) $request->status_aktif : false,
             ]);
 
             $promoEvent->ukurans()->sync($ukuranIds);
@@ -200,13 +188,11 @@ class PromoProdukEventController extends Controller
                 ->causedBy(auth()->user())
                 ->performedOn($promoEvent)
                 ->withProperties([
-                    'nama_event' => $promoEvent->nama_event,
-                    'produk_id' => $promoEvent->produk_id,
-                    'isi_normal' => $promoEvent->isi_normal,
-                    'isi_event' => $promoEvent->isi_event,
+                    'nama_event'  => $promoEvent->nama_event,
+                    'produk_id'   => $promoEvent->produk_id,
                     'harga_event' => $promoEvent->harga_event,
-                    'ukuran_ids' => $ukuranIds,
-                    'varian_rasa_ids' => $rasaIds,
+                    'ukuran_ids'  => $ukuranIds,
+                    'rasa_ids'    => $rasaIds,
                 ])
                 ->log('memperbarui promo produk event');
 
@@ -267,76 +253,72 @@ class PromoProdukEventController extends Controller
     }
 
     /**
-     * Ukuran yang dibatasi hanya boleh milik produk yang dipilih.
-     * Jika produk memiliki varian di detail produk (produk_varians), gunakan varian tersebut.
+     * Resolve nama ukuran (string) ke array ukuran_id.
+     * Jika belum ada di master ukurans, buat baru otomatis.
      */
-    private function ukuranIdsValid(Produk $produk, array $ukuranIds): array
+    private function resolveUkuranIds(Produk $produk, array $namaUkurans): array
     {
-        if (empty($ukuranIds)) {
+        if (empty($namaUkurans)) {
             return [];
         }
 
-        if ($produk->produkVarians()->exists()) {
-            $varians = $produk->produkVarians()->get();
-            $validUkuranIds = $varians->filter(fn ($v) => !empty($v->ukuran))
-                ->map(fn ($v) => (int) ($v->ukuran_id ?: (\App\Models\Ukuran::where('nama_ukuran', $v->ukuran)->value('id') ?? 0)))
-                ->filter(fn ($id) => $id > 0)
-                ->unique()
-                ->values();
+        $ids = [];
+        foreach ($namaUkurans as $nama) {
+            $nama = trim($nama);
+            if (!$nama) continue;
 
-            return collect($ukuranIds)
-                ->map(fn ($id) => (int) $id)
-                ->filter(fn ($id) => $validUkuranIds->contains($id))
-                ->values()
-                ->all();
+            // Coba cari di produk_varians dulu
+            $varian = $produk->produkVarians
+                ->first(fn ($v) => strcasecmp($v->ukuran ?? '', $nama) === 0);
+
+            if ($varian && $varian->ukuran_id) {
+                $ids[] = (int) $varian->ukuran_id;
+                continue;
+            }
+
+            // Fallback: cari/buat di master ukurans
+            $ukuran = \App\Models\Ukuran::firstOrCreate(
+                ['nama_ukuran' => $nama],
+                ['urutan' => 99, 'status_aktif' => true]
+            );
+            $ids[] = $ukuran->id;
         }
 
-        if (!$produk->punya_ukuran) {
-            return [];
-        }
-
-        return $produk->produkUkurans()
-            ->whereIn('ukuran_id', $ukuranIds)
-            ->pluck('ukuran_id')
-            ->map(fn ($id) => (int) $id)
-            ->values()
-            ->all();
+        return array_values(array_unique($ids));
     }
 
     /**
-     * Rasa/variasi yang dibatasi hanya boleh milik produk yang dipilih.
-     * Jika produk memiliki varian di detail produk (produk_varians), gunakan varian tersebut.
+     * Resolve nama rasa/variasi (string) ke array varian_rasa_id.
+     * Jika belum ada di master varian_rasas, buat baru otomatis.
      */
-    private function rasaIdsValid(Produk $produk, array $rasaIds): array
+    private function resolveRasaIds(Produk $produk, array $namaRasas): array
     {
-        if (empty($rasaIds)) {
+        if (empty($namaRasas)) {
             return [];
         }
 
-        if ($produk->produkVarians()->exists()) {
-            $varians = $produk->produkVarians()->get();
-            $validRasaIds = $varians->filter(fn ($v) => !empty($v->variasi))
-                ->map(fn ($v) => (int) ($v->varian_rasa_id ?: (\App\Models\VarianRasa::where('nama_rasa', $v->variasi)->value('id') ?? 0)))
-                ->filter(fn ($id) => $id > 0)
-                ->unique()
-                ->values();
+        $ids = [];
+        foreach ($namaRasas as $nama) {
+            $nama = trim($nama);
+            if (!$nama) continue;
 
-            return collect($rasaIds)
-                ->map(fn ($id) => (int) $id)
-                ->filter(fn ($id) => $validRasaIds->contains($id))
-                ->values()
-                ->all();
+            // Coba cari di produk_varians dulu
+            $varian = $produk->produkVarians
+                ->first(fn ($v) => strcasecmp($v->variasi ?? '', $nama) === 0);
+
+            if ($varian && $varian->varian_rasa_id) {
+                $ids[] = (int) $varian->varian_rasa_id;
+                continue;
+            }
+
+            // Fallback: cari/buat di master varian_rasas
+            $rasa = \App\Models\VarianRasa::firstOrCreate(
+                ['nama_rasa' => $nama],
+                ['status_aktif' => true]
+            );
+            $ids[] = $rasa->id;
         }
 
-        if (!$produk->punya_varian_rasa) {
-            return [];
-        }
-
-        return $produk->produkVarianRasas()
-            ->whereIn('varian_rasa_id', $rasaIds)
-            ->pluck('varian_rasa_id')
-            ->map(fn ($id) => (int) $id)
-            ->values()
-            ->all();
+        return array_values(array_unique($ids));
     }
 }

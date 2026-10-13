@@ -8,6 +8,49 @@
 
 <x-common.component-card title="Form Tambah Promo Produk">
 
+<script>
+    window.__promoEventProduks = {{ \Illuminate\Support\Js::from($produks->map(function ($p) {
+        $hasVarian = $p->produkVarians && $p->produkVarians->isNotEmpty();
+        if ($hasVarian) {
+            $ukurans = $p->produkVarians
+                ->filter(fn ($v) => !empty($v->ukuran))
+                ->map(fn ($v) => ['id' => $v->ukuran_id, 'nama' => $v->ukuran])
+                ->unique('nama')->values();
+            $rasas = $p->produkVarians
+                ->filter(fn ($v) => !empty($v->variasi))
+                ->map(fn ($v) => ['id' => $v->varian_rasa_id, 'nama' => $v->variasi])
+                ->unique('nama')->values();
+            $punyaUkuran = $ukurans->isNotEmpty();
+            $punyaRasa   = $rasas->isNotEmpty();
+        } else {
+            $punyaUkuran = (bool) $p->punya_ukuran;
+            $ukurans = $punyaUkuran
+                ? $p->produkUkurans->map(fn ($pu) => ['id' => $pu->ukuran_id, 'nama' => $pu->ukuran->nama_ukuran])->unique('nama')->values()
+                : collect();
+            $punyaRasa = (bool) $p->punya_varian_rasa;
+            $rasas = $punyaRasa
+                ? collect($p->daftar_varian_rasa)->map(fn ($r) => ['id' => $r['varian_rasa_id'], 'nama' => $r['nama']])->values()
+                : collect();
+        }
+        return [
+            'id'              => $p->id,
+            'nama_produk'     => $p->nama_produk,
+            'kode_produk'     => $p->kode_produk,
+            'foto'            => $p->foto,
+            'harga_jual'      => (float) $p->harga_jual,
+            'punya_ukuran'    => (bool) $punyaUkuran,
+            'ukurans'         => $ukurans,
+            'punya_varian_rasa' => (bool) $punyaRasa,
+            'rasas'           => $rasas,
+        ];
+    })->values()) }};
+    window.__promoEventUkuranTerpilih = {{ \Illuminate\Support\Js::from(old('nama_ukurans') && old('produk_id')
+        ? [(int) old('produk_id') => (array) old('nama_ukurans')]
+        : []) }};
+    window.__promoEventRasaTerpilih = {{ \Illuminate\Support\Js::from(old('nama_rasas') && old('produk_id')
+        ? [(int) old('produk_id') => (array) old('nama_rasas')]
+        : []) }};
+</script>
 <form action="{{ route('promo-event.store') }}" method="POST" x-data="{
         hargaDisplay: '{{ old('harga_event') ? number_format(old('harga_event'), 0, ',', '.') : '' }}',
         getRawNumber(val) {
@@ -40,64 +83,11 @@
                 input.setSelectionRange(newPos, newPos);
             });
         },
-        semuaProduk: @js($produks->map(function ($p) {
-            $hasVarian = $p->produkVarians && $p->produkVarians->isNotEmpty();
-            if ($hasVarian) {
-                $ukurans = $p->produkVarians
-                    ->filter(fn ($v) => !empty($v->ukuran))
-                    ->map(fn ($v) => [
-                        'id' => (int) ($v->ukuran_id ?: (\App\Models\Ukuran::where('nama_ukuran', $v->ukuran)->value('id') ?? 0)),
-                        'nama' => $v->ukuran,
-                    ])
-                    ->filter(fn ($u) => $u['id'] > 0)
-                    ->unique('id')
-                    ->values();
-
-                $rasas = $p->produkVarians
-                    ->filter(fn ($v) => !empty($v->variasi))
-                    ->map(fn ($v) => [
-                        'id' => (int) ($v->varian_rasa_id ?: (\App\Models\VarianRasa::where('nama_rasa', $v->variasi)->value('id') ?? 0)),
-                        'nama' => $v->variasi,
-                    ])
-                    ->filter(fn ($r) => $r['id'] > 0)
-                    ->unique('id')
-                    ->values();
-
-                $punyaUkuran = $ukurans->isNotEmpty();
-                $punyaRasa = $rasas->isNotEmpty();
-            } else {
-                $punyaUkuran = (bool) $p->punya_ukuran;
-                $ukurans = $punyaUkuran
-                    ? $p->produkUkurans->map(fn ($pu) => ['id' => $pu->ukuran_id, 'nama' => $pu->ukuran->nama_ukuran])->unique('id')->values()
-                    : collect();
-
-                $punyaRasa = (bool) $p->punya_varian_rasa;
-                $rasas = $punyaRasa
-                    ? collect($p->daftar_varian_rasa)->map(fn ($r) => ['id' => $r['varian_rasa_id'], 'nama' => $r['nama']])->values()
-                    : collect();
-            }
-
-            return [
-                'id' => $p->id,
-                'nama_produk' => $p->nama_produk,
-                'kode_produk' => $p->kode_produk,
-                'foto' => $p->foto,
-                'harga_jual' => $p->harga_jual,
-                'punya_ukuran' => (bool) $punyaUkuran,
-                'ukurans' => $ukurans,
-                'punya_varian_rasa' => (bool) $punyaRasa,
-                'rasas' => $rasas,
-            ];
-        })->values()),
+        semuaProduk: window.__promoEventProduks || [],
         produkTerpilih: {{ old('produk_id') ? (int) old('produk_id') : 'null' }},
-        // { produk_id: [ukuran_id, ...] } — ukuran cuma disimpen buat produk yang lagi dipilih
-        ukuranTerpilihPerProduk: @js(old('ukuran_ids') && old('produk_id')
-            ? [(int) old('produk_id') => array_map('intval', old('ukuran_ids'))]
-            : []),
-        // { produk_id: [varian_rasa_id, ...] } — kosong = berlaku ke semua rasa
-        rasaTerpilihPerProduk: @js(old('varian_rasa_ids') && old('produk_id')
-            ? [(int) old('produk_id') => array_map('intval', old('varian_rasa_ids'))]
-            : []),
+        // { produk_id: [nama_ukuran, ...] } — ukuran pakai nama string, bukan ID
+        ukuranTerpilihPerProduk: window.__promoEventUkuranTerpilih || {},
+        rasaTerpilihPerProduk: window.__promoEventRasaTerpilih || {},
         modalUkuranTerbuka: false,
         modalUkuranSnapshot: [],
         modalRasaSnapshot: [],
@@ -118,30 +108,30 @@
         get produkUntukModalUkuran() {
             return this.semuaProduk.find(p => p.id === this.produkTerpilih) || null;
         },
-        isUkuranTerpilih(ukuranId) {
-            return (this.ukuranTerpilihPerProduk[this.produkTerpilih] || []).includes(ukuranId);
+        isUkuranTerpilih(nama) {
+            return (this.ukuranTerpilihPerProduk[this.produkTerpilih] || []).includes(nama);
         },
-        toggleUkuranProduk(ukuranId) {
+        toggleUkuranProduk(nama) {
             const pid = this.produkTerpilih;
             if (!pid) return;
             if (!this.ukuranTerpilihPerProduk[pid]) this.ukuranTerpilihPerProduk[pid] = [];
             const list = this.ukuranTerpilihPerProduk[pid];
-            const idx = list.indexOf(ukuranId);
-            if (idx === -1) list.push(ukuranId); else list.splice(idx, 1);
+            const idx = list.indexOf(nama);
+            if (idx === -1) list.push(nama); else list.splice(idx, 1);
         },
         jumlahUkuranTerpilih() {
             return (this.ukuranTerpilihPerProduk[this.produkTerpilih] || []).length;
         },
-        isRasaTerpilih(rasaId) {
-            return (this.rasaTerpilihPerProduk[this.produkTerpilih] || []).includes(rasaId);
+        isRasaTerpilih(nama) {
+            return (this.rasaTerpilihPerProduk[this.produkTerpilih] || []).includes(nama);
         },
-        toggleRasaProduk(rasaId) {
+        toggleRasaProduk(nama) {
             const pid = this.produkTerpilih;
             if (!pid) return;
             if (!this.rasaTerpilihPerProduk[pid]) this.rasaTerpilihPerProduk[pid] = [];
             const list = this.rasaTerpilihPerProduk[pid];
-            const idx = list.indexOf(rasaId);
-            if (idx === -1) list.push(rasaId); else list.splice(idx, 1);
+            const idx = list.indexOf(nama);
+            if (idx === -1) list.push(nama); else list.splice(idx, 1);
         },
         jumlahRasaTerpilih() {
             return (this.rasaTerpilihPerProduk[this.produkTerpilih] || []).length;
@@ -197,39 +187,7 @@
         @enderror
     </div>
 
-    {{-- Isi Normal --}}
-    <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Isi Normal (pcs/kemasan) <span class="text-red-500">*</span>
-        </label>
-        <input
-            type="number"
-            name="isi_normal"
-            value="{{ old('isi_normal') }}"
-            min="1"
-            placeholder="Contoh: 6"
-            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400">
-        @error('isi_normal')
-            <small class="text-red-500">{{ $message }}</small>
-        @enderror
-    </div>
 
-    {{-- Isi Event --}}
-    <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Isi Saat Event (pcs/kemasan) <span class="text-red-500">*</span>
-        </label>
-        <input
-            type="number"
-            name="isi_event"
-            value="{{ old('isi_event') }}"
-            min="1"
-            placeholder="Contoh: 2"
-            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400">
-        @error('isi_event')
-            <small class="text-red-500">{{ $message }}</small>
-        @enderror
-    </div>
 
     {{-- Harga Event --}}
     <div>
@@ -365,9 +323,9 @@
                             <template x-if="jumlahUkuranTerpilih() === 0">
                                 <span class="text-[9px] font-semibold text-gray-400 dark:text-gray-500 italic">Semua ukuran</span>
                             </template>
-                            <template x-for="ukuranId in (ukuranTerpilihPerProduk[produk.id] || [])" :key="'badge-' + produk.id + '-' + ukuranId">
+                            <template x-for="namaUkuran in (ukuranTerpilihPerProduk[produk.id] || [])" :key="'badge-' + produk.id + '-' + namaUkuran">
                                 <span class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 px-1.5 py-0.5 rounded-full"
-                                    x-text="(produk.ukurans.find(u => u.id === ukuranId) || {}).nama"></span>
+                                    x-text="namaUkuran"></span>
                             </template>
                             <button type="button" @click.stop.prevent="bukaModalUkuran()"
                                 class="text-[9px] font-bold text-gray-400 dark:text-gray-500 underline hover:text-brand-600 dark:hover:text-brand-400">
@@ -382,9 +340,9 @@
                             <template x-if="jumlahRasaTerpilih() === 0">
                                 <span class="text-[9px] font-semibold text-gray-400 dark:text-gray-500 italic">Semua rasa</span>
                             </template>
-                            <template x-for="rasaId in (rasaTerpilihPerProduk[produk.id] || [])" :key="'badge-rasa-' + produk.id + '-' + rasaId">
+                            <template x-for="namaRasa in (rasaTerpilihPerProduk[produk.id] || [])" :key="'badge-rasa-' + produk.id + '-' + namaRasa">
                                 <span class="text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full"
-                                    x-text="(produk.rasas.find(r => r.id === rasaId) || {}).nama"></span>
+                                    x-text="namaRasa"></span>
                             </template>
                             <button type="button" @click.stop.prevent="bukaModalUkuran()"
                                 class="text-[9px] font-bold text-gray-400 dark:text-gray-500 underline hover:text-brand-600 dark:hover:text-brand-400">
@@ -428,15 +386,14 @@
     </div>
 </div>
 
-{{-- Hidden inputs "Berlaku Untuk Ukuran" — checklist-nya ada di modal yang muncul otomatis
-     pas produk ber-ukuran dipilih, keterangannya juga sudah tampil langsung di card produk. --}}
-<template x-for="ukuranId in (ukuranTerpilihPerProduk[produkTerpilih] || [])" :key="'hidden-ukuran-' + ukuranId">
-    <input type="hidden" name="ukuran_ids[]" :value="ukuranId">
+{{-- Hidden inputs "Berlaku Untuk Ukuran" (nama string) --}}
+<template x-for="namaUkuran in (ukuranTerpilihPerProduk[produkTerpilih] || [])" :key="'hidden-ukuran-' + namaUkuran">
+    <input type="hidden" name="nama_ukurans[]" :value="namaUkuran">
 </template>
 
-{{-- Hidden inputs "Berlaku Untuk Rasa" — checklist-nya ada di modal yang sama dengan ukuran. --}}
-<template x-for="rasaId in (rasaTerpilihPerProduk[produkTerpilih] || [])" :key="'hidden-rasa-' + rasaId">
-    <input type="hidden" name="varian_rasa_ids[]" :value="rasaId">
+{{-- Hidden inputs "Berlaku Untuk Rasa" (nama string) --}}
+<template x-for="namaRasa in (rasaTerpilihPerProduk[produkTerpilih] || [])" :key="'hidden-rasa-' + namaRasa">
+    <input type="hidden" name="nama_rasas[]" :value="namaRasa">
 </template>
 
 @error('ukuran_ids')
@@ -471,12 +428,12 @@
                                 Kosongkan semua supaya event berlaku ke semua ukuran produk ini.
                             </p>
                             <div class="flex flex-wrap gap-2">
-                                <template x-for="ukuran in produkUntukModalUkuran.ukurans" :key="ukuran.id">
+                                <template x-for="ukuran in produkUntukModalUkuran.ukurans" :key="ukuran.nama">
                                     <label class="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer select-none text-sm font-medium transition"
-                                        :class="isUkuranTerpilih(ukuran.id) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
+                                        :class="isUkuranTerpilih(ukuran.nama) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
                                         <input type="checkbox"
-                                            :checked="isUkuranTerpilih(ukuran.id)"
-                                            @change="toggleUkuranProduk(ukuran.id)"
+                                            :checked="isUkuranTerpilih(ukuran.nama)"
+                                            @change="toggleUkuranProduk(ukuran.nama)"
                                             class="rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500">
                                         <span x-text="ukuran.nama"></span>
                                     </label>
@@ -493,12 +450,12 @@
                                 Kosongkan semua supaya event berlaku ke semua rasa produk ini.
                             </p>
                             <div class="flex flex-wrap gap-2">
-                                <template x-for="rasa in produkUntukModalUkuran.rasas" :key="rasa.id">
+                                <template x-for="rasa in produkUntukModalUkuran.rasas" :key="rasa.nama">
                                     <label class="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer select-none text-sm font-medium transition"
-                                        :class="isRasaTerpilih(rasa.id) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
+                                        :class="isRasaTerpilih(rasa.nama) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
                                         <input type="checkbox"
-                                            :checked="isRasaTerpilih(rasa.id)"
-                                            @change="toggleRasaProduk(rasa.id)"
+                                            :checked="isRasaTerpilih(rasa.nama)"
+                                            @change="toggleRasaProduk(rasa.nama)"
                                             class="rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500">
                                         <span x-text="rasa.nama"></span>
                                     </label>

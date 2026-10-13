@@ -51,15 +51,7 @@
         <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $badgeColor }}">{{ $status }}</span>
     </div>
 
-    <div>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Isi Normal</p>
-        <p class="font-semibold text-gray-800 dark:text-white">{{ $promoEvent->isi_normal }} pcs / kemasan</p>
-    </div>
 
-    <div>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Isi Saat Event</p>
-        <p class="font-semibold text-amber-600 dark:text-amber-400">{{ $promoEvent->isi_event }} pcs / kemasan</p>
-    </div>
 
     <div>
         <p class="text-sm text-gray-500 dark:text-gray-400">Harga Event</p>

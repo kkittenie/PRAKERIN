@@ -45,6 +45,14 @@ class Promo extends Model
     }
 
     /**
+     * Baris pembatasan rasa per-produk buat promo ini.
+     */
+    public function produkRasaPivots()
+    {
+        return $this->hasMany(PromoProdukRasa::class, 'promo_id');
+    }
+
+    /**
      * ID ukuran yang dibatasi buat promo ini, KHUSUS produk tertentu.
      * Kosong = gak dibatasi (berlaku ke semua ukuran produk itu) — sama
      * kayak sebelum fitur ini ada.
@@ -71,6 +79,34 @@ class Promo extends Model
         }
 
         return $ukuranId !== null && $daftar->contains($ukuranId);
+    }
+
+    /**
+     * ID varian rasa yang dibatasi buat promo ini, KHUSUS produk tertentu.
+     * Kosong = gak dibatasi (berlaku ke semua rasa produk itu).
+     */
+    public function rasaIdsUntukProduk(int $produkId): \Illuminate\Support\Collection
+    {
+        if ($this->relationLoaded('produkRasaPivots')) {
+            return $this->produkRasaPivots
+                ->where('produk_id', $produkId)
+                ->pluck('varian_rasa_id')
+                ->values();
+        }
+
+        return $this->produkRasaPivots()
+            ->where('produk_id', $produkId)
+            ->pluck('varian_rasa_id');
+    }
+
+    public function berlakuUntukRasa(int $produkId, ?int $rasaId): bool
+    {
+        $daftar = $this->rasaIdsUntukProduk($produkId);
+        if ($daftar->isEmpty()) {
+            return true;
+        }
+
+        return $rasaId !== null && $daftar->contains($rasaId);
     }
 
     public function scopeBerlaku($query)

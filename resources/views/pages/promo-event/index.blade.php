@@ -48,7 +48,6 @@
                             <th class="py-3">No</th>
                             <th class="py-3">Nama Event</th>
                             <th class="py-3">Produk</th>
-                            <th class="py-3 text-center">Isi Normal &rarr; Event</th>
                             <th class="py-3 text-center">Harga Event</th>
                             <th class="py-3 text-center">Periode</th>
                             <th class="py-3 text-center">Status</th>
@@ -95,7 +94,6 @@
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'nama_event_html', name: 'nama_event' },
                 { data: 'produk.nama_produk', name: 'produk.nama_produk', defaultContent: '-' },
-                { data: 'isi_html', name: 'isi_normal', className: 'text-center text-xs' },
                 { data: 'harga_event_html', name: 'harga_event', className: 'text-center font-bold text-brand-600 dark:text-brand-400 whitespace-nowrap' },
                 { data: 'periode_html', name: 'mulai_berlaku', className: 'text-center text-xs' },
                 { data: 'status_html', name: 'status_aktif', className: 'text-center' },
