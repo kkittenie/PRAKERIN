@@ -98,7 +98,6 @@ class GoogleAuthController extends Controller
             'nama'     => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-zA-Z0-9_.]+$/', 'unique:members,username'],
             'no_hp'    => ['required', 'string', 'max:20'],
-            'otp'      => ['required', 'string', 'size:6'],
         ], [
             'nama.required'     => 'Nama wajib diisi.',
             'username.required' => 'Username wajib diisi.',
@@ -106,24 +105,12 @@ class GoogleAuthController extends Controller
             'username.regex'    => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi).',
             'username.unique'   => 'Username ini sudah dipakai. Coba username lain.',
             'no_hp.required'    => 'Nomor HP wajib diisi.',
-            'otp.required'      => 'Kode OTP wajib diisi.',
-            'otp.size'          => 'Kode OTP harus 6 digit.',
         ]);
 
         $noHp = Member::normalizeNoHp($data['no_hp']);
 
         if (Member::where('no_hp', $noHp)->exists()) {
             return back()->withErrors(['no_hp' => 'Nomor HP ini sudah terdaftar. Gunakan nomor lain atau langsung masuk.'])->withInput();
-        }
-
-        $otpVerification = OtpVerification::where('no_hp', $noHp)
-            ->where('otp', $data['otp'])
-            ->where('is_used', true)
-            ->latest()
-            ->first();
-
-        if (! $otpVerification || $otpVerification->isExpired()) {
-            return back()->withErrors(['otp' => 'Kode OTP tidak valid atau sudah kadaluarsa. Silakan minta kode OTP baru.'])->withInput();
         }
 
         // Nomor HP format lokal (diawali angka 0, contoh: 088xxxx) dijadikan password awal member
@@ -153,7 +140,6 @@ class GoogleAuthController extends Controller
             ]);
         }
 
-        OtpVerification::where('no_hp', $noHp)->delete();
         $request->session()->forget(self::SESSION_KEY);
 
         return $this->loginMember($request, $member, 'Selamat datang, ' . $member->nama . '! Akun kamu berhasil didaftarkan.');

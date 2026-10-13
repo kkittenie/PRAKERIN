@@ -131,6 +131,45 @@
                     </div>
                 @endif
 
+                {{-- Header Bar --}}
+                <div class="relative flex items-center justify-center py-2 mb-4 md:mb-6">
+                    <a href="{{ route('member.welcome') }}"
+                        onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+                        class="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-brand-800 transition hover:bg-gray-50 active:scale-95">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5">
+                            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </a>
+                    <h1 class="text-base md:text-lg font-bold text-brand-800">Daftar Member</h1>
+                </div>
+
+                {{-- Main Title & Description --}}
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold text-brand-800">Bergabung Bersama Saisho</h2>
+                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                        Daftar dengan akun Google kamu untuk mulai mengumpulkan poin reward dan menikmati berbagai promo spesial member.
+                    </p>
+                </div>
+
+                {{-- Tombol Daftar dengan Google --}}
+                <div class="space-y-4">
+                    <a href="{{ route('member.google.redirect') }}"
+                        class="flex w-full items-center justify-center gap-3 rounded-2xl border border-gray-300 bg-white py-3.5 text-base font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-[0.99]">
+                        <svg class="h-5 w-5" viewBox="0 0 48 48">
+                            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" />
+                            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z" />
+                            <path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.1z" />
+                            <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z" />
+                        </svg>
+                        Daftar dengan Google
+                    </a>
+                </div>
+
+                {{-- ========================================================================= --}}
+                {{-- FORM REGISTER NOMOR HP (DIHIDE SEMENTARA SESUAI PERMINTAAN, JANGAN DIHAPUS) --}}
+                {{-- ========================================================================= --}}
+                <div id="container-form-register-no-hp" class="hidden" style="display: none;">
                 {{-- Single Form Envelope submitting all 4 data fields to server --}}
                 <form id="form-register" method="POST" action="{{ route('member.register.store') }}">
                     @csrf
@@ -323,8 +362,7 @@
                         </div>
                     </div>
                 </form>
-
-                @include('mobile.auth._google-button')
+                </div>
             </div>
 
             {{-- Bottom Notice / Links --}}
