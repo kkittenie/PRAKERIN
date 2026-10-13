@@ -41,23 +41,6 @@
                     @enderror
                 </div>
 
-                {{-- Kode Produk --}}
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Kode Produk <span class="text-red-500">*</span>
-                    </label>
-
-                    <input
-                        type="text"
-                        name="kode_produk"
-                        value="{{ old('kode_produk') }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-
-                    @error('kode_produk')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
                 {{-- Nama Produk --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -92,94 +75,10 @@
                     @enderror
                 </div>
 
-                {{-- Varian Produk (ukuran / variasi, diketik bebas) --}}
+                {{-- Detail Produk (kode, ukuran, variasi, harga, stok per baris) --}}
                 @include('pages.produk.partials.form-varian', [
-                    'punyaVarian' => $punyaVarian,
-                    'varianBaris' => $varianBaris,
+                    'detailBaris' => $detailBaris,
                 ])
-
-                {{-- Harga Modal & Harga Jual --}}
-                <div id="wrapper-harga-modal">
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Harga Modal <span class="text-red-500">*</span>
-                    </label>
-
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-sm">
-                            Rp
-                        </span>
-                        <input
-                            type="text"
-                            inputmode="numeric"
-                            name="harga_modal"
-                            placeholder="8.000"
-                            value="{{ old('harga_modal') ? number_format((int) old('harga_modal'), 0, ',', '.') : '' }}"
-                            class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-10 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-                    </div>
-
-                    @error('harga_modal')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
-                <div id="wrapper-harga-jual">
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Harga Jual <span class="text-red-500">*</span>
-                    </label>
-
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-sm">
-                            Rp
-                        </span>
-                        <input
-                            type="text"
-                            inputmode="numeric"
-                            name="harga_jual"
-                            placeholder="10.000"
-                            value="{{ old('harga_jual') ? number_format((int) old('harga_jual'), 0, ',', '.') : '' }}"
-                            class="input-rupiah h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-10 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-                    </div>
-
-                    @error('harga_jual')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
-                {{-- Stok --}}
-                <div id="wrapper-stok">
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Stok Awal
-                    </label>
-
-                    <input
-                        type="number"
-                        name="stok"
-                        placeholder="1"
-                        value="{{ old('stok') }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-                   
-                    @error('stok')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
-
-                {{-- Stok Minimum --}}
-                <div id="wrapper-stok-minimum">
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Stok Minimum
-                    </label>
-
-                    <input
-                        type="number"
-                        name="stok_minimum"
-                        placeholder="1"
-                        value="{{ old('stok_minimum') }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-                    
-                    @error('stok_minimum')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
 
                 {{-- Status Aktif --}}
                 <div>
@@ -195,26 +94,6 @@
                         <option value="0">Tidak Aktif</option>
 
                     </select>
-                </div>
-
-                {{-- Status Ketersediaan --}}
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Status Ketersediaan
-                    </label>
-
-                    <select
-                        name="status_ketersediaan"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-
-                        <option value="stok_ada">Stok Ada</option>
-                        <option value="perlu_diproduksi">Perlu Diproduksi</option>
-
-                    </select>
-
-                    <small class="text-gray-400">
-                        Otomatis menjadi "Perlu Diproduksi" jika stok awal 0.
-                    </small>
                 </div>
 
                 {{-- Foto --}}

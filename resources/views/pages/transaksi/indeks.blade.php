@@ -48,7 +48,8 @@
                             </svg>
                         </span>
                         <input type="text" x-model="kataKunciPencarian" @input="halamanProduk = 1"
-                            placeholder="Cari nama atau kode produk..."
+                            @keydown.enter.prevent="scanKode()"
+                            placeholder="Cari nama produk atau scan kode..."
                             class="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm bg-gray-50 dark:bg-gray-800 focus:bg-white dark:focus:bg-gray-900 dark:text-white transition-all">
                     </div>
                     <button @click="bukaModalDaftarDitahan()"
@@ -2571,6 +2572,29 @@
                     this.tutupModalVarian();
                 },
 
+                // Scan barcode: scanner mengetik kode lalu menekan Enter. Kode yang cocok persis
+                // langsung masuk keranjang sebagai detail produk yang tepat (qty 1).
+                scanKode() {
+                    const kode = String(this.kataKunciPencarian || '').trim().toLowerCase();
+                    if (!kode) return;
+
+                    for (const produk of this.daftarProduk) {
+                        const detail = this.daftarVarianProduk(produk)
+                            .find(v => String(v.kode_barcode || '').trim().toLowerCase() === kode);
+                        if (!detail) continue;
+
+                        if (!detail.aktif) {
+                            this.tambahToast('Kode ' + detail.kode_barcode + ' sedang nonaktif.', 'error');
+                            return;
+                        }
+
+                        this.tambahVarianKeKeranjang(produk, detail, 1);
+                        this.kataKunciPencarian = '';
+                        this.halamanProduk = 1;
+                        return;
+                    }
+                },
+
                 // Stok ready dipakai dulu, kelebihannya jadi baris "Perlu Diproduksi" (sama seperti logika lama).
                 tambahVarianKeKeranjang(produk, varian, qty = 1) {
                     if (!varian.aktif) {
@@ -2840,7 +2864,12 @@
                 get semuaProdukTersaring() {
                     const produkList = this.daftarProduk.filter(p => {
                         const cocokKategori = this.kategoriTerpilih === 'semua' || p.kategori_id === this.kategoriTerpilih;
-                        const cocokCari = p.nama_produk.toLowerCase().includes(this.kataKunciPencarian.toLowerCase()) || p.kode_produk.toLowerCase().includes(this.kataKunciPencarian.toLowerCase());
+                        const kataKunci = this.kataKunciPencarian.toLowerCase();
+                        const daftarDetail = this.daftarVarianProduk(p);
+                        const cocokCari = p.nama_produk.toLowerCase().includes(kataKunci)
+                            || daftarDetail.some(v => String(v.kode_barcode || '').toLowerCase().includes(kataKunci))
+                            // produk lama yang belum punya detail produk: masih dicari lewat kode produknya
+                            || (daftarDetail.length === 0 && String(p.kode_produk || '').toLowerCase().includes(kataKunci));
 
                         let cocokKetersediaan = false;
                         if (this.filterKetersediaan === 'semua') {

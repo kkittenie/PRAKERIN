@@ -1198,7 +1198,7 @@ class ProduksiController extends Controller
     {
         $request->validate([
             'jumlah' => 'required|integer|min:1',
-            'varian_id' => ['required', 'integer', Rule::exists('produk_varians', 'id')->where('produk_id', $produk->id)],
+            'varian_id' => ['required', 'integer', Rule::exists('detail_produks', 'id')->where('produk_id', $produk->id)],
         ]);
 
         $jumlah = (int) $request->jumlah;

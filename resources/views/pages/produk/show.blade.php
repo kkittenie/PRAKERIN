@@ -34,20 +34,13 @@
                     </div>
 
                     <div>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Kode Produk</p>
-                        <p class="font-semibold text-gray-800 dark:text-white">
-                            {{ $produk->kode_produk }}
-                        </p>
-                    </div>
-
-                    <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Kategori</p>
                         <p class="font-semibold text-gray-800 dark:text-white">
                             {{ $produk->kategori->nama_kategori ?? '-' }}
                         </p>
                     </div>
 
-                    @php $varians = $produk->produkVarians; @endphp
+                    @php $varians = $produk->detailProduks; @endphp
 
                     <div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Harga Jual</p>

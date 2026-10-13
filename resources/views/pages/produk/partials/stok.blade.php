@@ -1,4 +1,4 @@
-@php $varians = $item->produkVarians; @endphp
+@php $varians = $item->detailProduks; @endphp
 @if($varians->isNotEmpty())
     @php
         $totalStok = (int) $varians->sum('stok');

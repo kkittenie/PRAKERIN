@@ -1,5 +1,5 @@
 @php
-    $varians = $item->produkVarians;
+    $varians = $item->detailProduks;
     $daftarUkuran = $varians->pluck('ukuran')->filter()->unique()->values();
     $daftarVariasi = $varians->pluck('variasi')->filter()->unique()->values();
 @endphp

@@ -1,4 +1,4 @@
-@php $varians = $item->produkVarians; @endphp
+@php $varians = $item->detailProduks; @endphp
 @if($varians->isNotEmpty())
     @php $jumlahHabis = $varians->filter(fn ($v) => $v->perlu_diproduksi)->count(); @endphp
     @if($jumlahHabis === $varians->count())

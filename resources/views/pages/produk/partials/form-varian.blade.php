@@ -1,41 +1,23 @@
 @php
-    $punyaVarian = $punyaVarian ?? false;
-    $varianBaris = $varianBaris ?? [];
+    $detailBaris = $detailBaris ?? [];
     $inputClass = 'h-10 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500';
 @endphp
 
-{{-- Checkbox: produk punya varian --}}
-<div class="md:col-span-2">
-    <label class="flex items-center gap-3 h-12 cursor-pointer">
-        <input type="hidden" name="punya_varian" value="0">
-        <input
-            type="checkbox"
-            id="punya_varian"
-            name="punya_varian"
-            value="1"
-            class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-            {{ $punyaVarian ? 'checked' : '' }}>
-        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Produk ini punya varian (ukuran / variasi)</span>
+{{-- Tabel Detail Produk: satu baris per kombinasi ukuran + variasi --}}
+<div id="wrapper-detail" class="md:col-span-2" x-data="formDetail()">
+    <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        Detail Produk <span class="text-red-500">*</span>
     </label>
-    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">
-        Kalau dicentang, harga modal, harga jual, stok, stok minimum, dan foto diatur per varian di tabel di bawah. Ukuran dan variasi diketik bebas.
+    <span class="mb-2 block text-xs text-gray-400 dark:text-gray-500">
+        Satu baris per kombinasi ukuran dan variasi. Kode, harga, dan stok diatur di tiap baris. Produk tanpa ukuran/variasi cukup satu baris dengan Ukuran dan Variasi dikosongkan.
     </span>
-    @error('punya_varian')
-        <small class="text-red-500">{{ $message }}</small>
-    @enderror
-</div>
-
-{{-- Tabel Varian --}}
-<div id="wrapper-varian" class="hidden md:col-span-2" x-data="formVarian()" @varian-toggle.window="if ($event.detail) pastikanSatuBaris()">
-    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Daftar Varian Produk <span class="text-red-500">*</span>
-    </label>
 
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
-        <table class="w-full text-sm min-w-[1000px]">
+        <table class="w-full text-sm min-w-[1150px]">
             <thead class="bg-gray-50 dark:bg-gray-800/60">
                 <tr class="text-left text-gray-500 dark:text-gray-400">
                     <th class="py-2 px-3 w-20">Foto</th>
+                    <th class="py-2 px-3 w-40">Kode <span class="text-red-500">*</span></th>
                     <th class="py-2 px-3">Ukuran</th>
                     <th class="py-2 px-3">Variasi</th>
                     <th class="py-2 px-3">Harga Modal</th>
@@ -47,62 +29,60 @@
                 </tr>
             </thead>
             <tbody>
-                <template x-if="baris.length === 0">
-                    <tr>
-                        <td colspan="9" class="py-3 px-3 text-center text-gray-400 text-xs">Belum ada varian. Klik "+ Tambah Varian".</td>
-                    </tr>
-                </template>
-
                 <template x-for="(item, index) in baris" :key="item.uid">
-                    <tr class="border-t border-gray-100 dark:border-gray-800 align-middle" :class="{ 'opacity-50': !item.status_aktif }">
+                    <tr class="border-t border-gray-100 dark:border-gray-800 align-top" :class="{ 'opacity-50': !item.status_aktif }">
                         <td class="py-2 px-3">
                             <label class="block w-12 h-12 cursor-pointer" title="Klik untuk pilih foto">
                                 <template x-if="item.foto_url">
-                                    <img :src="item.foto_url" alt="Foto varian" class="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700">
+                                    <img :src="item.foto_url" alt="Foto detail produk" class="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-gray-700">
                                 </template>
                                 <template x-if="!item.foto_url">
                                     <div class="w-12 h-12 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 text-lg">+</div>
                                 </template>
-                                <input type="file" accept="image/png,image/jpeg,image/webp" class="hidden" :name="'varian_baris[' + index + '][foto]'" @change="pilihFoto(item, $event)">
+                                <input type="file" accept="image/png,image/jpeg,image/webp" class="hidden" :name="'detail_baris[' + index + '][foto]'" @change="pilihFoto(item, $event)">
                             </label>
-                            <input type="hidden" :name="'varian_baris[' + index + '][id]'" :value="item.id">
+                            <input type="hidden" :name="'detail_baris[' + index + '][id]'" :value="item.id">
                         </td>
                         <td class="py-2 px-3">
-                            <input type="text" maxlength="50" placeholder="Mis. Kecil" x-model="item.ukuran" :name="'varian_baris[' + index + '][ukuran]'" :style="pesanBaris(index) ? 'border-color:#ef4444' : ''" class="{{ $inputClass }}">
+                            <input type="text" maxlength="60" placeholder="Mis. DN-K-COK" x-model="item.kode" :name="'detail_baris[' + index + '][kode]'" :style="pesanKode(index) ? 'border-color:#ef4444' : ''" class="{{ $inputClass }} font-mono">
+                            <p x-show="pesanKode(index)" x-text="pesanKode(index)" class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"></p>
                         </td>
                         <td class="py-2 px-3">
-                            <input type="text" maxlength="100" placeholder="Mis. Coklat" x-model="item.variasi" :name="'varian_baris[' + index + '][variasi]'" :style="pesanBaris(index) ? 'border-color:#ef4444' : ''" class="{{ $inputClass }}">
-                            <p x-show="pesanBaris(index)" x-text="pesanBaris(index)" class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"></p>
+                            <input type="text" maxlength="50" placeholder="Mis. Kecil" x-model="item.ukuran" :name="'detail_baris[' + index + '][ukuran]'" :style="pesanKombinasi(index) ? 'border-color:#ef4444' : ''" class="{{ $inputClass }}">
+                        </td>
+                        <td class="py-2 px-3">
+                            <input type="text" maxlength="100" placeholder="Mis. Coklat" x-model="item.variasi" :name="'detail_baris[' + index + '][variasi]'" :style="pesanKombinasi(index) ? 'border-color:#ef4444' : ''" class="{{ $inputClass }}">
+                            <p x-show="pesanKombinasi(index)" x-text="pesanKombinasi(index)" class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"></p>
                         </td>
                         <td class="py-2 px-3">
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-xs">Rp</span>
-                                <input type="text" inputmode="numeric" placeholder="8.000" :style="kosongHarga(item.harga_modal) ? 'border-color:#ef4444' : ''" :value="fmt(item.harga_modal)" @input="item.harga_modal = digits($event.target.value); $event.target.value = fmt(item.harga_modal)" class="{{ $inputClass }} pl-8">
-                                <input type="hidden" :name="'varian_baris[' + index + '][harga_modal]'" :value="item.harga_modal">
+                                <input type="text" inputmode="numeric" placeholder="8.000" :style="kosongAngka(item.harga_modal) ? 'border-color:#ef4444' : ''" :value="fmt(item.harga_modal)" @input="item.harga_modal = digits($event.target.value); $event.target.value = fmt(item.harga_modal)" class="{{ $inputClass }} pl-8">
+                                <input type="hidden" :name="'detail_baris[' + index + '][harga_modal]'" :value="item.harga_modal">
                             </div>
                         </td>
                         <td class="py-2 px-3">
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-xs">Rp</span>
-                                <input type="text" inputmode="numeric" placeholder="10.000" :style="kosongHarga(item.harga_jual) ? 'border-color:#ef4444' : ''" :value="fmt(item.harga_jual)" @input="item.harga_jual = digits($event.target.value); $event.target.value = fmt(item.harga_jual)" class="{{ $inputClass }} pl-8">
-                                <input type="hidden" :name="'varian_baris[' + index + '][harga_jual]'" :value="item.harga_jual">
+                                <input type="text" inputmode="numeric" placeholder="10.000" :style="kosongAngka(item.harga_jual) ? 'border-color:#ef4444' : ''" :value="fmt(item.harga_jual)" @input="item.harga_jual = digits($event.target.value); $event.target.value = fmt(item.harga_jual)" class="{{ $inputClass }} pl-8">
+                                <input type="hidden" :name="'detail_baris[' + index + '][harga_jual]'" :value="item.harga_jual">
                             </div>
                         </td>
                         <td class="py-2 px-3">
-                            <input type="number" min="0" placeholder="0" x-model="item.stok" :name="'varian_baris[' + index + '][stok]'" class="{{ $inputClass }}">
+                            <input type="number" min="0" placeholder="0" x-model="item.stok" :name="'detail_baris[' + index + '][stok]'" class="{{ $inputClass }}">
                         </td>
                         <td class="py-2 px-3">
-                            <input type="number" min="0" placeholder="0" x-model="item.stok_minimum" :name="'varian_baris[' + index + '][stok_minimum]'" class="{{ $inputClass }}">
+                            <input type="number" min="0" placeholder="0" x-model="item.stok_minimum" :name="'detail_baris[' + index + '][stok_minimum]'" class="{{ $inputClass }}">
                         </td>
                         <td class="py-2 px-3">
-                            <label class="relative inline-flex items-center cursor-pointer" title="Aktifkan/nonaktifkan varian ini">
+                            <label class="relative inline-flex items-center cursor-pointer mt-2" title="Aktifkan/nonaktifkan detail ini">
                                 <input type="checkbox" class="sr-only peer" :checked="item.status_aktif" @change="item.status_aktif = $event.target.checked">
                                 <div class="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-4"></div>
                             </label>
-                            <input type="hidden" :name="'varian_baris[' + index + '][status_aktif]'" :value="item.status_aktif ? 1 : 0">
+                            <input type="hidden" :name="'detail_baris[' + index + '][status_aktif]'" :value="item.status_aktif ? 1 : 0">
                         </td>
                         <td class="py-2 px-3 text-right">
-                            <button type="button" @click="bukaModalHapus(index)" title="Hapus" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
+                            <button type="button" @click="bukaModalHapus(index)" :disabled="baris.length <= 1" :class="baris.length <= 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-red-50 dark:hover:bg-red-500/10'" :title="baris.length <= 1 ? 'Minimal 1 detail produk' : 'Hapus'" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 dark:text-red-400 transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-[17px] h-[17px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                         </td>
@@ -113,12 +93,12 @@
     </div>
 
     <div class="mt-3">
-        <button type="button" @click="tambahBaris()" class="h-11 px-5 rounded-lg bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition">+ Tambah Varian</button>
+        <button type="button" @click="tambahBaris()" class="h-11 px-5 rounded-lg bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition">+ Tambah Detail</button>
     </div>
 
-    {{-- Peringatan merah (muncul langsung saat ada varian dobel, dan saat simpan kalau ada yang kurang) --}}
+    {{-- Peringatan merah: muncul langsung saat kode/kombinasi dobel, dan saat simpan kalau ada yang kurang --}}
     <div x-show="daftarGalat().length > 0" x-cloak class="mt-3 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3">
-        <p class="text-sm font-semibold text-red-700 dark:text-red-400">Periksa kembali daftar varian:</p>
+        <p class="text-sm font-semibold text-red-700 dark:text-red-400">Periksa kembali detail produk:</p>
         <ul class="mt-1 list-disc pl-5 text-xs text-red-600 dark:text-red-400 space-y-0.5">
             <template x-for="p in daftarGalat()" :key="p">
                 <li x-text="p"></li>
@@ -127,24 +107,24 @@
     </div>
 
     @php
-        $pesanServerVarian = collect($errors->get('varian_baris*'))->flatten()->unique()->take(3);
+        $pesanServer = collect($errors->get('detail_baris*'))->flatten()->unique()->take(3);
     @endphp
-    @if ($pesanServerVarian->isNotEmpty())
+    @if ($pesanServer->isNotEmpty())
         <div class="mt-3 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3">
-            @foreach ($pesanServerVarian as $pesanVarian)
-                <p class="text-xs font-medium text-red-600 dark:text-red-400">{{ $pesanVarian }}</p>
+            @foreach ($pesanServer as $pesan)
+                <p class="text-xs font-medium text-red-600 dark:text-red-400">{{ $pesan }}</p>
             @endforeach
         </div>
     @endif
 
-    {{-- MODAL HAPUS BARIS VARIAN --}}
+    {{-- MODAL HAPUS BARIS DETAIL --}}
     <div x-show="modalHapus" x-cloak x-transition class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
         <div @click.away="modalHapus = false" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
             <div class="p-6 text-center">
                 <div class="w-14 h-14 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">⚠</div>
-                <h3 class="font-extrabold text-gray-900 dark:text-white text-base">Hapus Varian?</h3>
+                <h3 class="font-extrabold text-gray-900 dark:text-white text-base">Hapus Detail Produk?</h3>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Varian <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="namaHapus"></span> akan dihapus dari daftar ini.
+                    Detail <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="namaHapus"></span> akan dihapus dari daftar ini dan dari database setelah produk disimpan.
                 </p>
             </div>
             <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3">
@@ -156,55 +136,69 @@
 </div>
 
 <script>
-    function formVarian() {
+    function formDetail() {
         return {
-            baris: @json($varianBaris),
+            baris: @json($detailBaris),
             uid: 0,
             modalHapus: false,
             indexHapus: null,
             namaHapus: '',
             tampilkanGalat: false,
 
+            norm(v) {
+                return String(v ?? '').trim().toLowerCase();
+            },
+
             kosongBaris(b) {
-                return !String(b.ukuran || '').trim() && !String(b.variasi || '').trim();
+                return !this.norm(b.ukuran) && !this.norm(b.variasi);
             },
 
-            kunciBaris(b) {
-                return (String(b.ukuran || '').trim() + '|' + String(b.variasi || '').trim()).toLowerCase();
-            },
-
-            dobel(index) {
-                const b = this.baris[index];
-                if (!b || this.kosongBaris(b)) return false;
-                const k = this.kunciBaris(b);
-                return this.baris.some((x, i) => i !== index && !this.kosongBaris(x) && this.kunciBaris(x) === k);
-            },
-
-            kosongHarga(v) {
+            kosongAngka(v) {
                 return this.tampilkanGalat && (v === '' || v === null || v === undefined);
             },
 
+            kodeDobel(index) {
+                const b = this.baris[index];
+                const k = this.norm(b && b.kode);
+                if (!k) return false;
+                return this.baris.some((x, i) => i !== index && this.norm(x.kode) === k);
+            },
+
+            kombinasiDobel(index) {
+                const b = this.baris[index];
+                if (!b || this.kosongBaris(b)) return false;
+                const kunci = (x) => this.norm(x.ukuran) + '|' + this.norm(x.variasi);
+                return this.baris.some((x, i) => i !== index && !this.kosongBaris(x) && kunci(x) === kunci(b));
+            },
+
             // Dobel selalu tampil langsung; kolom yang kosong baru ditandai merah setelah klik simpan.
-            pesanBaris(index) {
+            pesanKode(index) {
                 const b = this.baris[index];
                 if (!b) return '';
-                if (this.dobel(index)) return 'Kombinasi ukuran & variasi ini sudah dipakai di baris lain.';
-                if (this.tampilkanGalat && this.kosongBaris(b)) return 'Isi minimal Ukuran atau Variasi.';
+                if (this.kodeDobel(index)) return 'Kode ini sudah dipakai di baris lain.';
+                if (this.tampilkanGalat && !this.norm(b.kode)) return 'Kode wajib diisi.';
+                return '';
+            },
+
+            pesanKombinasi(index) {
+                const b = this.baris[index];
+                if (!b) return '';
+                if (this.kombinasiDobel(index)) return 'Kombinasi ukuran & variasi ini sudah dipakai di baris lain.';
+                if (this.tampilkanGalat && this.baris.length > 1 && this.kosongBaris(b)) return 'Isi minimal Ukuran atau Variasi.';
                 return '';
             },
 
             hitungGalat(paksa) {
                 const out = [];
-                if (paksa && this.baris.length === 0) out.push('Tambahkan minimal 1 varian sebelum menyimpan produk.');
+                if (paksa && this.baris.length === 0) out.push('Tambahkan minimal 1 detail produk sebelum menyimpan.');
                 this.baris.forEach((b, i) => {
                     const nomor = 'Baris ' + (i + 1) + ': ';
-                    if (this.dobel(i)) {
-                        out.push(nomor + 'kombinasi ukuran & variasi ini sudah ada di baris lain.');
-                    } else if (paksa && this.kosongBaris(b)) {
-                        out.push(nomor + 'isi minimal Ukuran atau Variasi.');
-                    }
-                    if (paksa && (b.harga_modal === '' || b.harga_jual === '')) {
-                        out.push(nomor + 'Harga Modal dan Harga Jual wajib diisi.');
+                    if (this.kodeDobel(i)) out.push(nomor + 'kode "' + String(b.kode).trim() + '" sudah dipakai di baris lain.');
+                    if (this.kombinasiDobel(i)) out.push(nomor + 'kombinasi ukuran & variasi ini sudah ada di baris lain.');
+                    if (paksa) {
+                        if (!this.norm(b.kode)) out.push(nomor + 'kode wajib diisi.');
+                        if (this.baris.length > 1 && this.kosongBaris(b)) out.push(nomor + 'isi minimal Ukuran atau Variasi.');
+                        if (b.harga_modal === '' || b.harga_jual === '') out.push(nomor + 'Harga Modal dan Harga Jual wajib diisi.');
                     }
                 });
                 return out;
@@ -216,18 +210,26 @@
 
             init() {
                 this.baris = this.baris.map(b => ({ ...b, uid: ++this.uid }));
-                const cb = document.getElementById('punya_varian');
-                if (cb && cb.checked) this.pastikanSatuBaris();
-            },
-
-            pastikanSatuBaris() {
                 if (this.baris.length === 0) this.tambahBaris();
+
+                // Klik simpan: munculkan semua peringatan; kalau masih ada yang salah, simpan dibatalkan.
+                const form = this.$root.closest('form');
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        this.tampilkanGalat = true;
+                        if (this.hitungGalat(true).length > 0) {
+                            e.preventDefault();
+                            this.$root.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                }
             },
 
             tambahBaris() {
                 this.baris.push({
                     uid: ++this.uid,
                     id: '',
+                    kode: '',
                     ukuran: '',
                     variasi: '',
                     harga_modal: '',
@@ -254,55 +256,19 @@
             },
 
             bukaModalHapus(index) {
+                if (this.baris.length <= 1) return;
                 const b = this.baris[index];
                 if (!b) return;
                 this.indexHapus = index;
-                this.namaHapus = [b.ukuran, b.variasi].filter(Boolean).join(' / ') || 'ini';
+                this.namaHapus = String(b.kode || '').trim() || [b.ukuran, b.variasi].filter(Boolean).join(' / ') || 'ini';
                 this.modalHapus = true;
             },
 
             konfirmasiHapus() {
-                if (this.indexHapus !== null) this.baris.splice(this.indexHapus, 1);
+                if (this.indexHapus !== null && this.baris.length > 1) this.baris.splice(this.indexHapus, 1);
                 this.modalHapus = false;
                 this.indexHapus = null;
             },
         };
     }
-
-    (function () {
-        function terapkan() {
-            const cb = document.getElementById('punya_varian');
-            if (!cb) return;
-
-            const wrapVarian = document.getElementById('wrapper-varian');
-            if (wrapVarian) wrapVarian.classList.toggle('hidden', !cb.checked);
-
-            // Harga & stok produk dasar disembunyikan kalau diatur per varian.
-            ['wrapper-harga-modal', 'wrapper-harga-jual', 'wrapper-stok', 'wrapper-stok-minimum'].forEach(function (id) {
-                const el = document.getElementById(id);
-                if (el) el.classList.toggle('hidden', cb.checked);
-            });
-
-            window.dispatchEvent(new CustomEvent('varian-toggle', { detail: cb.checked }));
-        }
-
-        document.getElementById('punya_varian').addEventListener('change', terapkan);
-        window.addEventListener('load', terapkan);
-
-        document.getElementById('punya_varian').closest('form').addEventListener('submit', function (e) {
-            const cb = document.getElementById('punya_varian');
-            if (!cb.checked) return;
-
-            const wrapper = document.getElementById('wrapper-varian');
-            const data = Alpine.$data(wrapper);
-
-            // Munculkan semua peringatan merah; kalau masih ada yang salah, simpan dibatalkan.
-            data.tampilkanGalat = true;
-
-            if (data.hitungGalat(true).length > 0) {
-                e.preventDefault();
-                wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        });
-    })();
 </script>

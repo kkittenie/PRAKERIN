@@ -77,25 +77,33 @@ class Produk extends Model
         return $this->hasMany(ProdukUkuranRasa::class, 'produk_id');
     }
 
+    /** Semua detail produk (kombinasi ukuran + variasi) milik produk ini. */
+    public function detailProduks()
+    {
+        return $this->hasMany(DetailProduk::class, 'produk_id')->orderBy('urutan')->orderBy('id');
+    }
+
+    /** @deprecated Nama lama dari detailProduks(); masih dipakai bundling. */
     public function produkVarians()
     {
         return $this->hasMany(ProdukVarian::class, 'produk_id')->orderBy('urutan')->orderBy('id');
     }
 
     /**
-     * Daftar varian untuk kasir (tabel produk_varians), termasuk yang nonaktif
+     * Daftar detail produk untuk kasir (tabel detail_produks), termasuk yang nonaktif
      * (ditandai 'aktif' => false, tampil abu-abu & tidak bisa dipilih). Satu baris =
      * satu kombinasi ukuran + variasi, lengkap dengan harga (sudah termasuk
      * promo), stok, dan foto.
      */
     public function daftarVarianKasir(): array
     {
-        $daftar = $this->relationLoaded('produkVarians')
-            ? $this->produkVarians
-            : $this->produkVarians()->get();
+        // Pakai relasi yang sudah dimuat (detailProduks atau nama lamanya produkVarians) supaya tidak ada query ulang.
+        $daftar = $this->relationLoaded('detailProduks')
+            ? $this->detailProduks
+            : ($this->relationLoaded('produkVarians') ? $this->produkVarians : $this->detailProduks()->get());
 
         return $daftar
-            ->map(function (ProdukVarian $v) {
+            ->map(function (DetailProduk $v) {
                 $hargaAsli = (float) $v->harga_jual;
                 $promo = $this->promoAktifUntukUkuran($v->ukuran_id ? (int) $v->ukuran_id : null);
                 $hargaDiskon = $hargaAsli;

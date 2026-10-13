@@ -17,6 +17,7 @@ class DetailTransaksi extends Model
         'nama_produk',
         'ukuran',
         'varian_rasa',
+        'kode_barcode',
         'harga_satuan',
         'jumlah',
         'catatan',
@@ -34,6 +35,12 @@ class DetailTransaksi extends Model
         return $this->belongsTo(Produk::class, 'produk_id');
     }
 
+    public function detailProduk()
+    {
+        return $this->belongsTo(DetailProduk::class, 'produk_varian_id');
+    }
+
+    /** @deprecated Nama lama dari detailProduk(). */
     public function produkVarian()
     {
         return $this->belongsTo(ProdukVarian::class, 'produk_varian_id');
