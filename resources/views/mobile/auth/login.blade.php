@@ -371,8 +371,8 @@
             const label = document.getElementById('label-jangan-tampilkan');
             if (label) {
                 label.textContent = isChecked
-                    ? 'Preferensi disimpan (tidak akan muncul lagi)'
-                    : 'Jangan tampilkan pop-up ini lagi secara otomatis';
+                    ? 'Jangan tampilkan lagi'
+                    : 'Jangan tampilkan lagi';
             }
         }
 
@@ -396,8 +396,8 @@
                 const label = document.getElementById('label-jangan-tampilkan');
                 if (label) {
                     label.textContent = cb.checked
-                        ? 'Preferensi disimpan (tidak akan muncul lagi)'
-                        : 'Jangan tampilkan pop-up ini lagi secara otomatis';
+                        ? 'Jangan tampilkan lagi'
+                        : 'Jangan tampilkan lagi';
                 }
             }
 
