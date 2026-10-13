@@ -111,6 +111,63 @@
             </div>
         @endif
 
+        {{-- Daftar Hadiah Stamp yang Sudah Ditukar & Menunggu Diambil --}}
+        @if (!empty($rewardAktif) && $rewardAktif->isNotEmpty())
+            <div class="mt-6 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                        <span class="text-base">🎁</span>
+                        <span>Hadiah Stamp Siap Diambil</span>
+                    </h2>
+                    <span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
+                        {{ $rewardAktif->count() }} Siap
+                    </span>
+                </div>
+
+                @foreach ($rewardAktif as $reward)
+                    @php
+                        $produkHadiah = $reward->produk;
+                        $isCroissant = str_contains(strtolower($produkHadiah?->nama_produk ?? ''), 'croissant');
+                    @endphp
+                    <div class="overflow-hidden rounded-2xl border border-amber-200/90 bg-gradient-to-br from-amber-50/70 via-white to-orange-50/40 p-4 shadow-sm">
+                        <div class="flex items-start gap-3">
+                            <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white border border-amber-200 shadow-xs">
+                                @if ($produkHadiah?->foto)
+                                    <img src="{{ asset('storage/' . $produkHadiah->foto) }}" alt="{{ $produkHadiah->nama_produk }}" class="h-full w-full object-cover">
+                                @else
+                                    <span class="text-brand-800">@include('mobile.components.icon-gift', ['class' => 'h-6 w-6'])</span>
+                                @endif
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="truncate text-sm font-extrabold text-gray-900">{{ $reward->jumlah ?: 1 }}x {{ $produkHadiah?->nama_produk ?? 'Produk Hadiah' }}</p>
+                                    <span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                                        Menunggu Diambil
+                                    </span>
+                                </div>
+                                <p class="mt-0.5 text-[11px] text-gray-500 font-mono tracking-wider font-semibold">Kode: {{ $reward->kode_redeem }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-3.5 pt-3 border-t border-amber-200/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                            <p class="text-[11px] text-gray-500 leading-tight">
+                            </p>
+                            <form method="POST" action="{{ route('member.stamps.ambil-aplikasi', $reward->id) }}" class="shrink-0">
+                                @csrf
+                                <button type="submit"
+                                    class="w-full sm:w-auto rounded-xl bg-[#5a3c27] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#4a3020] active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
+                                    <span>Ambil sekarang</span>
+                                    <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5">
+                                        <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
         {{-- Section header --}}
         <div class="mt-6 flex items-center justify-between">
             <h2 class="text-sm font-bold text-gray-900">Tukar Hadiah</h2>
@@ -173,13 +230,27 @@
                 @include('mobile.components.icon-gift', ['class' => 'h-6 w-6'])
             </span>
             <p class="mt-3 text-sm font-semibold text-gray-800">Tukar <span id="konfirmasi-tukar-stamp-nama"></span>?</p>
-            <p class="mt-1 text-xs text-gray-500">Stamp kamu akan dipotong dan tidak bisa dibatalkan.</p>
+            <p class="mt-1 text-xs text-gray-500">Pilih metode pengambilan hadiah kamu:</p>
 
-            <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-5 space-y-2 pb-2">
+            <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-5 space-y-2.5 pb-2">
                 @csrf
                 <input type="hidden" name="produk_id" id="konfirmasi-tukar-stamp-produk-id">
-                <button type="submit" class="w-full rounded-xl bg-[#5a3c27] py-3 text-sm font-semibold text-white hover:bg-[#4a3020]">Ya, Tukar Sekarang</button>
-                <button type="button" onclick="closeSheet('konfirmasi-tukar-stamp')" class="w-full rounded-xl py-3 text-sm font-medium text-gray-500 hover:bg-gray-100">Batal</button>
+                <input type="hidden" name="metode_ambil" id="konfirmasi-tukar-stamp-metode" value="aplikasi">
+
+                <button type="submit" onclick="document.getElementById('konfirmasi-tukar-stamp-metode').value='aplikasi'"
+                    class="w-full rounded-2xl bg-[#5a3c27] py-3 text-sm font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Ambil di Aplikasi (Pesanan Pickup)</span>
+                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                        <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+
+                <button type="submit" onclick="document.getElementById('konfirmasi-tukar-stamp-metode').value='kasir'"
+                    class="w-full rounded-2xl border border-gray-300 bg-white py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 active:scale-[0.99] cursor-pointer">
+                    Ambil di Kasir (Offline dengan Kode)
+                </button>
+
+                <button type="button" onclick="closeSheet('konfirmasi-tukar-stamp')" class="w-full rounded-xl py-2 text-xs font-medium text-gray-400 hover:text-gray-600">Batal</button>
             </form>
         </div>
     </dialog>

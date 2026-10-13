@@ -6,8 +6,10 @@ use App\Models\Member;
 use App\Models\MemberStamp;
 use App\Models\PengaturanMember;
 use App\Models\StampProgram;
+use App\Models\StampRedemption;
 use App\Models\Transaksi;
 use App\Support\ActivityLogHelper;
+use App\Support\NotificationHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -441,6 +443,11 @@ class PesananPickupController extends Controller
 
                 if ($perluKembalikanStok) {
                     foreach ($transaksi->detailTransaksi as $detail) {
+                        // Jangan kembalikan stok untuk item hadiah stamp karena hadiahnya tetap aktif berstatus menunggu diambil
+                        if (str_contains($detail->catatan ?? '', 'Hadiah Stamp') || ((float) $detail->harga_satuan == 0 && str_contains($detail->nama_produk ?? '', 'Hadiah'))) {
+                            continue;
+                        }
+
                         if (! $detail->butuh_produksi && $detail->produk_id) {
                             if ($detail->produk_varian_id) {
                                 $varian = \App\Models\ProdukVarian::lockForUpdate()->find($detail->produk_varian_id);
@@ -484,16 +491,52 @@ class PesananPickupController extends Controller
                     }
                 }
 
+                // Kembalikan reward stamp ke status menunggu_diambil (bukan dalam bentuk stamp poin),
+                // sehingga kartu hadiah siap diambil kembali via aplikasi (pickup) atau kasir offline.
+                $stampRedemptions = StampRedemption::with(['stampProgram', 'produk'])
+                    ->where(function ($q) use ($transaksi) {
+                        $q->where('transaksi_id', $transaksi->id);
+                        if (preg_match('/STP-[A-Z0-9]+/', $transaksi->catatan_pesanan ?? '', $matches)) {
+                            $q->orWhere('kode_redeem', $matches[0]);
+                        }
+                    })
+                    ->get();
+
+                $jumlahRewardDikembalikan = 0;
+                foreach ($stampRedemptions as $redemption) {
+                    $redemption->update([
+                        'status' => 'menunggu_diambil',
+                        'diambil_pada' => null,
+                        'transaksi_id' => null,
+                    ]);
+
+                    $jumlahRewardDikembalikan++;
+
+                    NotificationHelper::untukMember(
+                        $transaksi->member_id,
+                        'Pesanan Dibatalkan - Hadiah Stamp Siap Diambil',
+                        'Pesanan #' . $transaksi->kode_transaksi . ' dibatalkan oleh toko. Hadiah ' . ($redemption->produk?->nama_produk ?? 'stamp') . ' (Kode: ' . $redemption->kode_redeem . ') siap diambil kembali via aplikasi atau kasir.',
+                        'stamps',
+                        route('member.stamps.index'),
+                        'info'
+                    );
+                }
+
                 $transaksi->update(['status_pesanan' => Transaksi::STATUS_DIBATALKAN]);
 
                 DB::commit();
 
                 activity()->causedBy(auth()->user())->performedOn($transaksi)
-                    ->log('membatalkan pesanan pick up dari member app');
+                    ->log('membatalkan pesanan pick up dari member app' . ($jumlahRewardDikembalikan > 0 ? " ($jumlahRewardDikembalikan hadiah stamp dikembalikan ke status menunggu diambil)" : ''));
 
                 \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'batal')));
 
-                return back()->with('success', "Pesanan {$transaksi->kode_transaksi} dibatalkan, stok & voucher dikembalikan.");
+                $pesanSukses = "Pesanan {$transaksi->kode_transaksi} dibatalkan, stok & voucher dikembalikan.";
+                if ($jumlahRewardDikembalikan > 0) {
+                    $pesanSukses = "Pesanan {$transaksi->kode_transaksi} dibatalkan. Stok/voucher dikembalikan & hadiah stamp siap diambil kembali oleh member.";
+                }
+
+                return back()->with('success', $pesanSukses);
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('Error batalkan pesanan pickup: ' . $e->getMessage());

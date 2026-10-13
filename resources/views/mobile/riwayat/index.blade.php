@@ -340,6 +340,8 @@
                                 type="button"
                                 onclick="bukaDetailRedeem(this)"
                                 data-jenis="stamp"
+                                data-id="{{ $item->id }}"
+                                data-status-raw="{{ $item->status }}"
                                 data-nama="{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}"
                                 data-status-label="{{ $statusBadge[$item->status]['label'] }}"
                                 data-status-class="{{ $statusBadge[$item->status]['class'] }}"
@@ -677,6 +679,8 @@
                             <button type="button"
                                 onclick="bukaDetailRedeem(this)"
                                 data-jenis="stamp"
+                                data-id="{{ $item->id }}"
+                                data-status-raw="{{ $item->status }}"
                                 data-nama="{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}"
                                 data-status-label="{{ $statusBadge[$item->status]['label'] }}"
                                 data-status-class="{{ $statusBadge[$item->status]['class'] }}"
@@ -807,9 +811,19 @@
                     <p class="text-theme-sm font-bold text-gray-800" id="detail-redeem-diambil">–</p>
                 </div>
             </div>
-            <div class="shrink-0 px-6 pb-6 pt-4">
+            <div class="shrink-0 px-6 pb-6 pt-4 space-y-2.5">
+                <form id="form-detail-redeem-ambil-aplikasi" method="POST" action="" class="hidden">
+                    @csrf
+                    <button type="submit"
+                            class="w-full rounded-2xl bg-[#5a3c27] py-3.5 text-theme-sm font-bold text-white hover:bg-[#4a3020] active:scale-[0.99] flex items-center justify-center gap-2 shadow-md cursor-pointer">
+                        <span>Ambil Hadiah via Aplikasi (Pickup)</span>
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                            <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </form>
                 <button type="button" onclick="closeSheet('sheet-detail-redeem')"
-                        class="w-full rounded-full bg-brand-700 py-3.5 text-theme-sm font-semibold text-white active:bg-brand-800">
+                        class="w-full rounded-2xl bg-gray-100 py-3 text-theme-sm font-semibold text-gray-700 active:bg-gray-200 cursor-pointer">
                     Tutup
                 </button>
             </div>
@@ -983,6 +997,16 @@
                 document.getElementById('detail-redeem-diambil').textContent = d.diambil;
             } else {
                 diambilRow.classList.add('hidden');
+            }
+
+            const formAmbil = document.getElementById('form-detail-redeem-ambil-aplikasi');
+            if (formAmbil) {
+                if (isStamp && d.statusRaw === 'menunggu_diambil' && d.id) {
+                    formAmbil.action = '/mobile/stamps/' + d.id + '/ambil-aplikasi';
+                    formAmbil.classList.remove('hidden');
+                } else {
+                    formAmbil.classList.add('hidden');
+                }
             }
 
             openSheet('sheet-detail-redeem');

@@ -427,13 +427,27 @@
                 @include('mobile.components.icon-gift', ['class' => 'h-6 w-6'])
             </span>
             <p class="mt-3 text-sm font-semibold text-gray-800">Tukar <span id="konfirmasi-tukar-stamp-nama"></span>?</p>
-            <p class="mt-1 text-xs text-gray-500">Stamp kamu akan dipotong dan tidak bisa dibatalkan.</p>
+            <p class="mt-1 text-xs text-gray-500">Pilih metode pengambilan hadiah kamu:</p>
 
-            <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-5 space-y-2 pb-2">
+            <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-5 space-y-2.5 pb-2">
                 @csrf
                 <input type="hidden" name="produk_id" id="konfirmasi-tukar-stamp-produk-id">
-                <button type="submit" class="w-full rounded-xl bg-[#5a3c27] py-3 text-sm font-semibold text-white hover:bg-[#4a3020]">Ya, Tukar Sekarang</button>
-                <button type="button" onclick="closeSheet('konfirmasi-tukar-stamp')" class="w-full rounded-xl py-3 text-sm font-medium text-gray-500 hover:bg-gray-100">Batal</button>
+                <input type="hidden" name="metode_ambil" id="konfirmasi-tukar-stamp-metode" value="aplikasi">
+
+                <button type="submit" onclick="document.getElementById('konfirmasi-tukar-stamp-metode').value='aplikasi'"
+                    class="w-full rounded-2xl bg-[#5a3c27] py-3 text-sm font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Ambil di Aplikasi (Pesanan Pickup)</span>
+                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                        <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+
+                <button type="submit" onclick="document.getElementById('konfirmasi-tukar-stamp-metode').value='kasir'"
+                    class="w-full rounded-2xl border border-gray-300 bg-white py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 active:scale-[0.99] cursor-pointer">
+                    Ambil di Kasir (Offline dengan Kode)
+                </button>
+
+                <button type="button" onclick="closeSheet('konfirmasi-tukar-stamp')" class="w-full rounded-xl py-2 text-xs font-medium text-gray-400 hover:text-gray-600">Batal</button>
             </form>
         </div>
     </dialog>

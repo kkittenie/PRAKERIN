@@ -7,10 +7,11 @@ use App\Models\Bundling;
 use App\Models\PromoProdukEvent;
 use App\Models\DetailTransaksi;
 use App\Models\Member;
-use App\Models\RewardKatalog;
-use App\Models\VoucherUsage;
 use App\Models\Produk;
+use App\Models\RewardKatalog;
+use App\Models\StampRedemption;
 use App\Models\Transaksi;
+use App\Models\VoucherUsage;
 use App\Support\MemberCart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,6 +27,7 @@ class CheckoutController extends Controller
     private const NAMA_TOKO = 'Saisho Cake & Bakery';
     private const ALAMAT_TOKO = 'Jl. Kamboja No. 1 Tuparev, Cirebon';
     private const SESSION_VOUCHER_KEY = 'member_checkout_voucher_id';
+    public const SESSION_STAMP_REDEMPTION_KEY = 'member_checkout_stamp_redemption_id';
 
     public function index()
     {
@@ -55,12 +57,22 @@ class CheckoutController extends Controller
                 })
                 ->get()
                 ->filter(fn (RewardKatalog $v) => $v->berhakDigunakan($member))
+                ->map(function (RewardKatalog $v) use ($items, $subtotalNet) {
+                    $v->kelayakan = $this->cekKelayakanVoucher($v, $items, $subtotalNet);
+                    return $v;
+                })
                 ->values();
 
             $voucherId = Session::get(self::SESSION_VOUCHER_KEY);
             $voucherDipilih = $voucherId ? $voucherAktif->firstWhere('id', $voucherId) : null;
 
-            $diskonVoucher = $voucherDipilih ? $this->hitungDiskonVoucher($voucherDipilih, $items, $subtotalNet) : 0;
+            // Jika voucher yang tersimpan di session ternyata tidak layak digunakan saat ini
+            if ($voucherDipilih && ! ($voucherDipilih->kelayakan['layak'] ?? false)) {
+                Session::forget(self::SESSION_VOUCHER_KEY);
+                $voucherDipilih = null;
+            }
+
+            $diskonVoucher = $voucherDipilih ? ($voucherDipilih->kelayakan['diskon'] ?? 0) : 0;
             $diskonTotal = $diskonProduk + $diskonVoucher;
             $pajak = $this->hitungPajak($subtotalGross, $diskonTotal);
             $totalBayar = max(0, $subtotalGross - $diskonTotal + $pajak);
@@ -68,15 +80,16 @@ class CheckoutController extends Controller
             $voucherTerbaik = null;
             if (! $voucherDipilih) {
                 $kandidatTerbaik = $voucherAktif
-                    ->map(fn ($v) => [
-                        'voucher' => $v,
-                        'diskon' => $this->hitungDiskonVoucher($v, $items, $subtotalNet),
-                    ])
-                    ->filter(fn ($x) => $x['diskon'] > 0)
-                    ->sortByDesc('diskon')
+                    ->filter(fn ($v) => ($v->kelayakan['layak'] ?? false) && ($v->kelayakan['diskon'] ?? 0) > 0)
+                    ->sortByDesc(fn ($v) => $v->kelayakan['diskon'])
                     ->first();
 
-                $voucherTerbaik = $kandidatTerbaik ?: null;
+                if ($kandidatTerbaik) {
+                    $voucherTerbaik = [
+                        'voucher' => $kandidatTerbaik,
+                        'diskon' => $kandidatTerbaik->kelayakan['diskon'],
+                    ];
+                }
             }
 
             $pajakInfo = $this->getPajakInfo();
@@ -125,10 +138,75 @@ class CheckoutController extends Controller
                 'voucherAktif' => $voucherAktif,
                 'voucherDipilih' => $voucherDipilih,
                 'voucherTerbaik' => $voucherTerbaik,
+                'stampRedemptionsAktif' => StampRedemption::with('produk')
+                    ->where('member_id', $member->id)
+                    ->where('status', 'menunggu_diambil')
+                    ->get(),
+                'stampRedemptionDipilih' => Session::get(self::SESSION_STAMP_REDEMPTION_KEY)
+                    ? StampRedemption::with('produk')
+                        ->where('id', Session::get(self::SESSION_STAMP_REDEMPTION_KEY))
+                        ->where('member_id', $member->id)
+                        ->where('status', 'menunggu_diambil')
+                        ->first()
+                    : null,
                 'storeNama' => self::NAMA_TOKO,
                 'storeAlamat' => self::ALAMAT_TOKO,
                 'poinPotensial' => $this->estimasiPoin($member, $totalBayar),
             ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    public function pilihRewardStamp(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'stamp_redemption_id' => 'nullable|integer|exists:stamp_redemptions,id',
+            ]);
+
+            // Bersihkan item reward stamp dari keranjang jika ada
+            foreach (MemberCart::items() as $it) {
+                if (!empty($it['is_reward_stamp'])) {
+                    MemberCart::hapus($it['id']);
+                }
+            }
+
+            if (empty($validated['stamp_redemption_id'])) {
+                Session::forget(self::SESSION_STAMP_REDEMPTION_KEY);
+                return back()->with('success', 'Reward stamp berhasil dilepas dari keranjang.');
+            }
+
+            $member = Auth::guard('member')->user();
+            $redemption = StampRedemption::with('produk')
+                ->where('id', $validated['stamp_redemption_id'])
+                ->where('member_id', $member->id)
+                ->where('status', 'menunggu_diambil')
+                ->first();
+
+            if (! $redemption || ! $redemption->produk) {
+                Session::forget(self::SESSION_STAMP_REDEMPTION_KEY);
+                return back()->with('error', 'Reward stamp tidak ditemukan atau sudah pernah diambil.');
+            }
+
+            MemberCart::tambah([
+                'produk_id' => $redemption->produk->id,
+                'produk_varian_id' => null,
+                'nama_produk' => $redemption->produk->nama_produk,
+                'foto' => $redemption->produk->foto,
+                'harga_satuan' => 0,
+                'harga_asal' => (float) ($redemption->produk->harga_jual ?? 0),
+                'diskon_produk_satuan' => (float) ($redemption->produk->harga_jual ?? 0),
+                'nama_promo' => 'Reward Stamp',
+                'catatan' => 'Hadiah Stamp (' . $redemption->kode_redeem . ')',
+                'jumlah' => $redemption->jumlah ?: 1,
+                'is_reward_stamp' => true,
+                'stamp_redemption_id' => $redemption->id,
+            ]);
+
+            Session::put(self::SESSION_STAMP_REDEMPTION_KEY, $redemption->id);
+
+            return back()->with('success', 'Reward stamp berhasil ditambahkan ke keranjang.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -143,19 +221,28 @@ class CheckoutController extends Controller
 
             if (empty($validated['voucher_id'])) {
                 Session::forget(self::SESSION_VOUCHER_KEY);
-                return back();
+                return back()->with('success', 'Voucher berhasil dilepas.');
             }
 
             $member = Auth::guard('member')->user();
-            $voucher = RewardKatalog::find($validated['voucher_id']);
+            $voucher = RewardKatalog::with('produks')->find($validated['voucher_id']);
 
             if (! $voucher || ! $voucher->berhakDigunakan($member)) {
                 return back()->with('error', 'Voucher tidak dapat digunakan atau batas penggunaan telah tercapai.');
             }
 
+            MemberCart::terapkanMinimalPembelian();
+            $items = MemberCart::items();
+            $subtotalNet = MemberCart::subtotal();
+
+            $kelayakan = $this->cekKelayakanVoucher($voucher, $items, $subtotalNet);
+            if (! $kelayakan['layak']) {
+                return back()->with('error', $kelayakan['pesan']);
+            }
+
             Session::put(self::SESSION_VOUCHER_KEY, (int) $validated['voucher_id']);
 
-            return back();
+            return back()->with('success', 'Voucher ' . ($voucher->nama ?? '') . ' berhasil diterapkan! 🎉');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -181,11 +268,22 @@ class CheckoutController extends Controller
             $diskonProduk = MemberCart::totalDiskonProduk();
             $subtotalNet = MemberCart::subtotal();
             $voucherId = Session::get(self::SESSION_VOUCHER_KEY);
+            $stampRedemptionId = Session::get(self::SESSION_STAMP_REDEMPTION_KEY);
 
             DB::beginTransaction();
             try {
                 $voucher = null;
                 $diskonVoucher = 0;
+                $stampRedemption = null;
+
+                if ($stampRedemptionId) {
+                    $stampRedemption = StampRedemption::with('produk')
+                        ->where('id', $stampRedemptionId)
+                        ->where('member_id', $member->id)
+                        ->where('status', 'menunggu_diambil')
+                        ->lockForUpdate()
+                        ->first();
+                }
 
                 if ($voucherId) {
                     $voucher = RewardKatalog::with('produks')
@@ -198,7 +296,12 @@ class CheckoutController extends Controller
                         throw new \Exception('Voucher yang dipilih sudah tidak berlaku atau batas penggunaan tercapai, silakan pilih ulang.');
                     }
 
-                    $diskonVoucher = $this->hitungDiskonVoucher($voucher, $items, $subtotalNet);
+                    $kelayakan = $this->cekKelayakanVoucher($voucher, $items, $subtotalNet);
+                    if (! $kelayakan['layak']) {
+                        throw new \Exception('Voucher tidak memenuhi syarat: ' . $kelayakan['pesan']);
+                    }
+
+                    $diskonVoucher = $kelayakan['diskon'];
                 }
 
                 $diskonTotal = $diskonProduk + $diskonVoucher;
@@ -244,6 +347,8 @@ class CheckoutController extends Controller
 
                 $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
 
+                $isGratis = ($totalBayar <= 0);
+
                 $transaksi = Transaksi::create([
                     'kode_transaksi' => $kodeTransaksi,
                     'nama_pembeli' => $member->nama,
@@ -253,15 +358,17 @@ class CheckoutController extends Controller
                     'pajak' => $pajak,
                     'diskon' => $diskonTotal,
                     'diskon_persen' => 0,
-                    'diskon_label' => $diskonLabel,
+                    'diskon_label' => $diskonLabel ?: ($stampRedemption ? 'Reward Stamp' : null),
                     'total_bayar' => $totalBayar,
                     'jumlah_diterima' => $totalBayar,
                     'kembalian' => 0,
-                    'metode_pembayaran' => 'Transfer/QRIS',
-                    'status_pembayaran' => 'Menunggu Pembayaran',
+                    'metode_pembayaran' => $isGratis ? 'Reward Stamp' : 'Transfer/QRIS',
+                    'status_pembayaran' => $isGratis ? 'Lunas' : 'Menunggu Pembayaran',
                     'asal_pesanan' => Transaksi::ASAL_MEMBER_APP,
                     'status_pesanan' => Transaksi::STATUS_DIPROSES,
+                    'kode_pickup' => Transaksi::buatKodePickupUnik(),
                     'catatan_pesanan' => $request->input('catatan'),
+                    'diproses_pada' => $isGratis ? now() : null,
                 ]);
 
                 if ($voucher) {
@@ -277,6 +384,39 @@ class CheckoutController extends Controller
                 $stokTerpakai = [];
 
                 foreach ($items as $item) {
+                    if (! empty($item['is_reward_stamp'])) {
+                        $produk = Produk::lockForUpdate()->findOrFail($item['produk_id']);
+                        DetailTransaksi::create([
+                            'transaksi_id' => $transaksi->id,
+                            'produk_id' => $produk->id,
+                            'nama_produk' => $produk->nama_produk,
+                            'ukuran' => $item['ukuran'] ?? null,
+                            'varian_rasa' => $item['varian_rasa'] ?? null,
+                            'harga_satuan' => 0,
+                            'jumlah' => $item['jumlah'] ?: 1,
+                            'catatan' => $item['catatan'] ?: 'Hadiah Stamp',
+                            'subtotal' => 0,
+                            'butuh_produksi' => $produk->habisSemuaUkuran(),
+                        ]);
+
+                        $stampRedemptionIdToUpdate = $item['stamp_redemption_id'] ?? $stampRedemptionId;
+                        if ($stampRedemptionIdToUpdate) {
+                            $sr = StampRedemption::where('id', $stampRedemptionIdToUpdate)
+                                ->where('member_id', $member->id)
+                                ->first();
+                            if ($sr) {
+                                $sr->update([
+                                    'status' => 'selesai',
+                                    'diambil_pada' => now(),
+                                    'transaksi_id' => $transaksi->id,
+                                    'sumber' => 'member',
+                                ]);
+                                $stampRedemption = null;
+                            }
+                        }
+                        Session::forget(self::SESSION_STAMP_REDEMPTION_KEY);
+                        continue;
+                    }
                     if (! empty($item['bundling_id'])) {
                         $this->prosesItemBundlingCheckout($transaksi, $item, $stokTerpakai);
                         continue;
@@ -369,6 +509,28 @@ class CheckoutController extends Controller
                             ]);
                         }
                     }
+                }
+
+                if ($stampRedemption && $stampRedemption->produk) {
+                    DetailTransaksi::create([
+                        'transaksi_id' => $transaksi->id,
+                        'produk_id' => $stampRedemption->produk->id,
+                        'nama_produk' => $stampRedemption->produk->nama_produk,
+                        'harga_satuan' => 0,
+                        'jumlah' => $stampRedemption->jumlah ?: 1,
+                        'catatan' => 'Hadiah Stamp (' . $stampRedemption->kode_redeem . ')',
+                        'subtotal' => 0,
+                        'butuh_produksi' => $stampRedemption->produk->habisSemuaUkuran(),
+                    ]);
+
+                    $stampRedemption->update([
+                        'status' => 'selesai',
+                        'diambil_pada' => now(),
+                        'transaksi_id' => $transaksi->id,
+                        'sumber' => 'member',
+                    ]);
+
+                    Session::forget(self::SESSION_STAMP_REDEMPTION_KEY);
                 }
 
                 DB::commit();
@@ -719,6 +881,60 @@ class CheckoutController extends Controller
         }
 
         return $hasil;
+    }
+
+    public function cekKelayakanVoucher(RewardKatalog $voucher, $items, float $subtotal): array
+    {
+        $minBelanja = (float) ($voucher->min_pembelian ?? 0);
+        if ($minBelanja > $subtotal) {
+            $kurang = $minBelanja - $subtotal;
+            return [
+                'layak' => false,
+                'alasan' => 'min_pembelian',
+                'min_pembelian' => $minBelanja,
+                'kurang' => $kurang,
+                'pesan' => 'Kurang Rp ' . number_format($kurang, 0, ',', '.') . ' lagi (Min. belanja Rp ' . number_format($minBelanja, 0, ',', '.') . ')',
+                'diskon' => 0,
+            ];
+        }
+
+        $produkIds = $voucher->produks->pluck('id')->values()->all();
+        if (! empty($produkIds)) {
+            $adaProduk = collect($items)
+                ->contains(fn ($item) => in_array($item['produk_id'] ?? null, $produkIds, true));
+
+            if (! $adaProduk) {
+                return [
+                    'layak' => false,
+                    'alasan' => 'produk_tidak_cocok',
+                    'min_pembelian' => $minBelanja,
+                    'kurang' => 0,
+                    'pesan' => 'Hanya berlaku untuk produk tertentu (belum ada di keranjang)',
+                    'diskon' => 0,
+                ];
+            }
+        }
+
+        $diskon = $this->hitungDiskonVoucher($voucher, $items, $subtotal);
+        if ($diskon <= 0) {
+            return [
+                'layak' => false,
+                'alasan' => 'diskon_nol',
+                'min_pembelian' => $minBelanja,
+                'kurang' => 0,
+                'pesan' => 'Voucher tidak dapat digunakan untuk pesanan saat ini',
+                'diskon' => 0,
+            ];
+        }
+
+        return [
+            'layak' => true,
+            'alasan' => null,
+            'min_pembelian' => $minBelanja,
+            'kurang' => 0,
+            'pesan' => null,
+            'diskon' => $diskon,
+        ];
     }
 
     private function hitungDiskonVoucher(RewardKatalog $voucher, $items, float $subtotal): float

@@ -9,6 +9,7 @@ use App\Models\Produk;
 use App\Support\MemberCart;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
 
 class KeranjangController extends Controller
 {
@@ -445,6 +446,17 @@ class KeranjangController extends Controller
                 'jumlah' => 'required|integer|min:0|max:50',
             ]);
 
+            $item = MemberCart::cariItem($itemId);
+            if ($item && !empty($item['is_reward_stamp'])) {
+                if ($validated['jumlah'] <= 0) {
+                    Session::forget(CheckoutController::SESSION_STAMP_REDEMPTION_KEY);
+                    MemberCart::hapus($itemId);
+                    return back()->with('success', 'Hadiah stamp dilepas dari keranjang.');
+                }
+                // Reward stamp quantity cannot be increased
+                return back();
+            }
+
             MemberCart::ubahJumlah($itemId, $validated['jumlah']);
 
             return back();
@@ -456,6 +468,11 @@ class KeranjangController extends Controller
     public function hapus(string $itemId)
     {
         try {
+            $item = MemberCart::cariItem($itemId);
+            if ($item && (!empty($item['is_reward_stamp']) || !empty($item['stamp_redemption_id']))) {
+                Session::forget(CheckoutController::SESSION_STAMP_REDEMPTION_KEY);
+            }
+
             MemberCart::hapus($itemId);
 
             return back()->with('success', 'Item dihapus dari keranjang.');

@@ -91,6 +91,7 @@ use Illuminate\Support\Facades\Route;
 
         Route::get('/stamps', [StampController::class, 'index'])->name('stamps.index');
         Route::post('/stamps/redeem', [StampController::class, 'redeem'])->name('stamps.redeem');
+        Route::post('/stamps/{stampRedemption}/ambil-aplikasi', [StampController::class, 'ambilDiAplikasi'])->name('stamps.ambil-aplikasi');
 
         Route::post('/produk/{produk}/keranjang', [KeranjangController::class, 'tambah'])->name('keranjang.tambah');
         Route::post('/bundling/{bundling}/keranjang', [KeranjangController::class, 'tambahBundling'])->name('keranjang.tambah-bundling');
@@ -103,6 +104,7 @@ use Illuminate\Support\Facades\Route;
 
         Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
         Route::post('/checkout/voucher', [CheckoutController::class, 'pilihVoucher'])->name('checkout.voucher');
+        Route::post('/checkout/reward-stamp', [CheckoutController::class, 'pilihRewardStamp'])->name('checkout.reward-stamp');
         Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
         Route::get('/pesanan/{transaksi}', [PesananController::class, 'show'])->name('pesanan.show');

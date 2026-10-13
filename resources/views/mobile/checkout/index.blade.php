@@ -83,6 +83,14 @@
 
                             <div class="min-w-0 flex-1">
 
+                                @if (!empty($item['is_reward_stamp']))
+                                    <div class="mb-1">
+                                        <span class="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800">
+                                            🎁 Hadiah Stamp (Gratis)
+                                        </span>
+                                    </div>
+                                @endif
+
                                 <p class="text-xs font-bold leading-snug text-gray-900">
                                     {{ $item['nama_produk'] }}
                                 </p>
@@ -165,67 +173,88 @@
                                     </div>
                                 @endif
 
-                                <p class="text-sm font-extrabold text-gray-900">
-                                    Rp {{ number_format($item['harga_satuan'] * $item['jumlah'], 0, ',', '.') }}
-                                </p>
+                                @if (!empty($item['is_reward_stamp']))
+                                    <p class="text-sm font-extrabold text-emerald-600">
+                                        Rp 0
+                                    </p>
+                                @else
+                                    <p class="text-sm font-extrabold text-gray-900">
+                                        Rp {{ number_format($item['harga_satuan'] * $item['jumlah'], 0, ',', '.') }}
+                                    </p>
+                                @endif
                             </div>
 
                             <div class="flex items-center gap-2">
 
-                                @php
-                                    if (!empty($item['bundling_id'])) {
-                                        $urlUbahItem = route('member.bundling.show', $item['bundling_id']) . '?edit=' . $item['id'];
-                                    } elseif (!empty($item['promo_event_id'])) {
-                                        $urlUbahItem = route('member.promo-event.show', $item['promo_event_id']) . '?edit=' . $item['id'];
-                                    } else {
-                                        $urlUbahItem = route('member.produk.show', $item['produk_id']) . '?edit=' . $item['id'];
-                                    }
-                                @endphp
-
-                                <a href="{{ $urlUbahItem }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                                    class="text-[11px] font-bold text-brand-800 transition active:opacity-70">
-                                    Change
-                                </a>
-
-                                <span class="h-4 border-l border-dashed border-gray-300"></span>
-
-                                <div class="flex items-center gap-0.5 rounded-full border border-brand-800 p-0.5">
-
-                                    <form method="POST"
-                                        action="{{ route('member.keranjang.ubah-jumlah', $item['id']) }}">
-                                        @csrf
-                                        @method('PATCH')
-
-                                        <input type="hidden" name="jumlah" value="{{ $item['jumlah'] - 1 }}">
-
-                                        <button type="submit"
-                                            class="flex h-6 w-6 items-center justify-center rounded-full text-brand-800 transition active:scale-90">
-                                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none">
-                                                <path d="M5 12h14" stroke="currentColor" stroke-width="2.5"
-                                                    stroke-linecap="round" />
-                                            </svg>
-                                        </button>
-                                    </form>
-
-                                    <span class="w-4 text-center text-[11px] font-bold text-gray-900">
-                                        {{ $item['jumlah'] }}
+                                @if (!empty($item['is_reward_stamp']))
+                                    <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800">
+                                        {{ $item['jumlah'] }}x
                                     </span>
-
-                                    <form method="POST"
-                                        action="{{ route('member.keranjang.ubah-jumlah', $item['id']) }}">
+                                    <form method="POST" action="{{ route('member.keranjang.hapus', $item['id']) }}" onsubmit="return confirm('Hapus hadiah stamp dari keranjang? Hadiah tetap tersimpan di akun kamu.')">
                                         @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="jumlah" value="{{ $item['jumlah'] + 1 }}">
-                                        <button type="submit"
-                                            class="flex h-6 w-6 items-center justify-center rounded-full text-brand-800 transition active:scale-90">
-                                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none">
-                                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
-                                                    stroke-linecap="round" />
+                                        @method('DELETE')
+                                        <button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-red-50 transition active:scale-90" title="Hapus Hadiah">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
                                         </button>
                                     </form>
+                                @else
+                                    @php
+                                        if (!empty($item['bundling_id'])) {
+                                            $urlUbahItem = route('member.bundling.show', $item['bundling_id']) . '?edit=' . $item['id'];
+                                        } elseif (!empty($item['promo_event_id'])) {
+                                            $urlUbahItem = route('member.promo-event.show', $item['promo_event_id']) . '?edit=' . $item['id'];
+                                        } else {
+                                            $urlUbahItem = route('member.produk.show', $item['produk_id']) . '?edit=' . $item['id'];
+                                        }
+                                    @endphp
 
-                                </div>
+                                    <a href="{{ $urlUbahItem }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                        class="text-[11px] font-bold text-brand-800 transition active:opacity-70">
+                                        Change
+                                    </a>
+
+                                    <span class="h-4 border-l border-dashed border-gray-300"></span>
+
+                                    <div class="flex items-center gap-0.5 rounded-full border border-brand-800 p-0.5">
+
+                                        <form method="POST"
+                                            action="{{ route('member.keranjang.ubah-jumlah', $item['id']) }}">
+                                            @csrf
+                                            @method('PATCH')
+
+                                            <input type="hidden" name="jumlah" value="{{ $item['jumlah'] - 1 }}">
+
+                                            <button type="submit"
+                                                class="flex h-6 w-6 items-center justify-center rounded-full text-brand-800 transition active:scale-90">
+                                                <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none">
+                                                    <path d="M5 12h14" stroke="currentColor" stroke-width="2.5"
+                                                        stroke-linecap="round" />
+                                                </svg>
+                                            </button>
+                                        </form>
+
+                                        <span class="w-4 text-center text-[11px] font-bold text-gray-900">
+                                            {{ $item['jumlah'] }}
+                                        </span>
+
+                                        <form method="POST"
+                                            action="{{ route('member.keranjang.ubah-jumlah', $item['id']) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="jumlah" value="{{ $item['jumlah'] + 1 }}">
+                                            <button type="submit"
+                                                class="flex h-6 w-6 items-center justify-center rounded-full text-brand-800 transition active:scale-90">
+                                                <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none">
+                                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
+                                                        stroke-linecap="round" />
+                                                </svg>
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                @endif
 
                             </div>
 
@@ -234,6 +263,34 @@
                     </div>
 
                 @endforeach
+
+                @php
+                    $rewardSudahDiItems = collect($items)->contains(fn ($it) => !empty($it['is_reward_stamp']));
+                @endphp
+                @if (!empty($stampRedemptionDipilih) && $stampRedemptionDipilih->produk && ! $rewardSudahDiItems)
+                    <div class="flex items-center gap-3 border-t border-dashed border-amber-200/80 bg-amber-50/50 -mx-4 -mb-4 p-4 rounded-b-2xl">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white border border-amber-200 shadow-xs">
+                            @if ($stampRedemptionDipilih->produk->foto)
+                                <img src="{{ asset('storage/' . $stampRedemptionDipilih->produk->foto) }}" alt="{{ $stampRedemptionDipilih->produk->nama_produk }}" class="h-full w-full object-cover">
+                            @else
+                                <span class="text-xl">🎁</span>
+                            @endif
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <span class="rounded px-1.5 py-0.5 text-[10px] font-extrabold bg-amber-200 text-amber-900">
+                                    Gratis · Reward Stamp
+                                </span>
+                            </div>
+                            <p class="truncate text-xs font-bold text-gray-900">
+                                {{ $stampRedemptionDipilih->jumlah ?: 1 }}x {{ $stampRedemptionDipilih->produk->nama_produk }}
+                            </p>
+                            <p class="text-xs font-extrabold text-emerald-600">
+                                Rp 0
+                            </p>
+                        </div>
+                    </div>
+                @endif
 
             </div>
 
@@ -312,17 +369,32 @@
                                 <p class="truncate text-xs font-bold text-brand-800">
                                     {{ $voucherDipilih->nama ?? 'Voucher' }}
                                 </p>
-                                <p class="mt-0.5 text-[11px] font-semibold text-brand-700">
-                                    Hemat Rp {{ number_format($diskonVoucher, 0, ',', '.') }} 🎉
-                                </p>
+                                @if ($diskonVoucher > 0)
+                                    <p class="mt-0.5 text-[11px] font-semibold text-brand-700">
+                                        Hemat Rp {{ number_format($diskonVoucher, 0, ',', '.') }} 🎉
+                                    </p>
+                                @else
+                                    <p class="mt-0.5 text-[11px] font-semibold text-amber-700">
+                                        Syarat belum terpenuhi
+                                    </p>
+                                @endif
                             </div>
 
                         </div>
 
-                        <button type="button" onclick="openSheet('modal-pilih-voucher')"
-                            class="shrink-0 rounded-full border border-brand-800 bg-white px-4 py-1.5 text-[11px] font-bold text-brand-800 transition active:scale-95">
-                            Ganti
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <form method="POST" action="{{ route('member.checkout.voucher') }}">
+                                @csrf
+                                <input type="hidden" name="voucher_id" value="">
+                                <button type="submit" class="shrink-0 rounded-full border border-gray-300 bg-white px-2.5 py-1.5 text-[10px] font-bold text-gray-500 transition active:scale-95">
+                                    Hapus
+                                </button>
+                            </form>
+                            <button type="button" onclick="openSheet('modal-pilih-voucher')"
+                                class="shrink-0 rounded-full border border-brand-800 bg-white px-3.5 py-1.5 text-[11px] font-bold text-brand-800 transition active:scale-95">
+                                Ganti
+                            </button>
+                        </div>
 
                     </div>
 
@@ -388,6 +460,61 @@
             </div>
 
         </div>
+
+        {{-- ========================================================= --}}
+        {{-- HADIAH STAMP (BISA DIAMBIL SAAT CHECKOUT) --}}
+        {{-- ========================================================= --}}
+        @if (!empty($stampRedemptionsAktif) && $stampRedemptionsAktif->isNotEmpty())
+            <div class="mt-4">
+                <p class="text-xs font-bold text-gray-900">
+                    Hadiah Stamp
+                </p>
+
+                <div class="mt-2 overflow-hidden rounded-2xl border border-amber-200/90 bg-amber-50/40 shadow-xs">
+                    @if ($stampRedemptionDipilih)
+                        <div class="flex items-center justify-between gap-3 bg-gradient-to-r from-amber-50 to-orange-50/30 p-3.5">
+                            <div class="flex min-w-0 items-center gap-3">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-brand-800 shadow-xs">
+                                    🎁
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="truncate text-xs font-bold text-gray-900">
+                                        {{ $stampRedemptionDipilih->jumlah ?: 1 }}x {{ $stampRedemptionDipilih->produk?->nama_produk ?? 'Produk Hadiah' }}
+                                    </p>
+                                    <p class="mt-0.5 text-[11px] font-semibold text-emerald-700">
+                                        Gratis dari Stamp 🎉
+                                    </p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="openSheet('modal-pilih-reward-stamp')"
+                                class="shrink-0 rounded-full border border-brand-800 bg-white px-3.5 py-1.5 text-[11px] font-bold text-brand-800 transition active:scale-95 cursor-pointer">
+                                Ganti
+                            </button>
+                        </div>
+                    @else
+                        <button type="button" onclick="openSheet('modal-pilih-reward-stamp')"
+                            class="flex w-full items-center justify-between gap-3 p-3.5 text-left transition hover:bg-amber-100/40 active:bg-amber-100/60 cursor-pointer">
+                            <div class="flex min-w-0 items-center gap-3">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-800">
+                                    🎁
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-bold text-gray-900">
+                                        {{ $stampRedemptionsAktif->count() }} Hadiah Stamp Siap Diambil
+                                    </p>
+                                    <p class="mt-0.5 text-[11px] text-gray-500">
+                                        Gunakan gratis pada pesanan ini
+                                    </p>
+                                </div>
+                            </div>
+                            <span class="rounded-full bg-brand-800 px-3 py-1 text-[11px] font-bold text-white shadow-xs">
+                                Pakai
+                            </span>
+                        </button>
+                    @endif
+                </div>
+            </div>
+        @endif
 
 
         {{-- ========================================================= --}}
@@ -479,139 +606,133 @@
                         {{-- Voucher tersedia --}}
                         @forelse ($voucherAktif as $voucher)
 
-                                        @php
-                                            $reward = $voucher;
+                            @php
+                                $reward = $voucher;
+                                $potonganLabel = null;
 
-                                            $potonganLabel = null;
+                                if ($reward) {
+                                    if ($reward->jenis_potongan === 'nominal') {
+                                        $potonganLabel = 'Potongan Rp ' . number_format($reward->nominal_potongan, 0, ',', '.');
+                                    } else {
+                                        $potonganLabel = 'Diskon ' . rtrim(rtrim(number_format($reward->persentase, 1, ',', '.'), '0'), ',') . '%';
+                                        if (!is_null($reward->maksimal_potongan)) {
+                                            $potonganLabel .= ' (maks Rp ' . number_format($reward->maksimal_potongan, 0, ',', '.') . ')';
+                                        }
+                                    }
+                                }
 
-                                            if ($reward) {
+                                $minBelanja = (float) ($reward->min_pembelian ?? 0);
+                                $voucherTerpilih = $voucherDipilih && $voucherDipilih->id === $voucher->id;
+                                $sisaPakai = max(0, ($voucher->batas_penggunaan_per_member ?: 1) - $voucher->jumlahPemakaianMember($member->id));
+                                $kelayakan = $voucher->kelayakan ?? ['layak' => false, 'pesan' => 'Syarat belum terpenuhi', 'diskon' => 0];
+                                $bisaDipakai = (bool) ($kelayakan['layak'] ?? false);
+                            @endphp
 
-                                                if ($reward->jenis_potongan === 'nominal') {
+                            @if ($bisaDipakai)
+                                {{-- Voucher memenuhi syarat: BISA DIPILIH --}}
+                                <button type="submit" name="voucher_id" value="{{ $voucher->id }}"
+                                    class="flex w-full items-start justify-between rounded-2xl border px-4 py-3.5 text-left transition active:bg-gray-50
+                                    {{ $voucherTerpilih ? 'border-brand-800 bg-brand-50' : 'border-gray-200 bg-white hover:border-brand-200' }}">
 
-                                                    $potonganLabel =
-                                                        'Potongan Rp ' .
-                                                        number_format(
-                                                            $reward->nominal_potongan,
-                                                            0,
-                                                            ',',
-                                                            '.'
-                                                        );
+                                    <div class="flex min-w-0 items-start gap-3">
+                                        {{-- Icon --}}
+                                        <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                                            {{ $voucherTerpilih ? 'bg-white text-brand-700' : 'bg-brand-50 text-brand-700' }}">
+                                            @include('mobile.components.icon-ticket', ['class' => 'h-4 w-4'])
+                                        </span>
 
-                                                } else {
+                                        {{-- Detail --}}
+                                        <span class="min-w-0">
+                                            <span class="block truncate text-xs font-bold text-gray-900">
+                                                {{ $reward->nama ?? 'Voucher' }}
+                                            </span>
 
-                                                    $potonganLabel =
-                                                        'Diskon ' .
-                                                        rtrim(
-                                                            rtrim(
-                                                                number_format(
-                                                                    $reward->persentase,
-                                                                    1,
-                                                                    ',',
-                                                                    '.'
-                                                                ),
-                                                                '0'
-                                                            ),
-                                                            ','
-                                                        ) . '%';
+                                            <span class="mt-0.5 block text-[11px] text-gray-400">
+                                                Sisa: {{ $sisaPakai }}x · Berlaku s/d {{ $voucher->tanggal_selesai ? $voucher->tanggal_selesai->format('d/m/Y') : 'Seterusnya' }}
+                                            </span>
 
-                                                    if (!is_null($reward->maksimal_potongan)) {
-
-                                                        $potonganLabel .=
-                                                            ' (maks Rp ' .
-                                                            number_format(
-                                                                $reward->maksimal_potongan,
-                                                                0,
-                                                                ', ',
-                                                                '. '
-                                                            ) . ')';
-
-                                                    }
-
-                                                }
-
-                                            }
-
-                                            $minBelanja = (float) ($reward->min_pembelian ?? 0);
-                                            $voucherTerpilih =
-                                                $voucherDipilih &&
-                                                $voucherDipilih->id === $voucher->id;
-                                            $sisaPakai = max(0, ($voucher->batas_penggunaan_per_member ?: 1) - $voucher->jumlahPemakaianMember($member->id));
-                                        @endphp
-
-
-                                        <button type="submit" name="voucher_id" value="{{ $voucher->id }}" class="flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left transition active:bg-gray-50
-                                                                                        {{ $voucherTerpilih
-                            ? 'border-brand-800 bg-brand-50'
-                            : 'border-gray-200 bg-white'
-                                                                                        }}">
-
-                                            <div class="flex min-w-0 items-start gap-3">
-
-                                                {{-- Icon --}}
-                                                <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full
-                                                                                                {{ $voucherTerpilih
-                            ? 'bg-white text-brand-700'
-                            : 'bg-brand-50 text-brand-700'
-                                                                                        }}">
-
-                                                    @include('mobile.components.icon-ticket', [
-                                                        'class' => 'h-4 w-4'
-                                                    ])
-
+                                            @if ($potonganLabel)
+                                                <span class="mt-1 block text-[11px] font-semibold text-brand-700">
+                                                    {{ $potonganLabel }}
                                                 </span>
-
-
-                                                {{-- Detail --}}
-                                                <span class="min-w-0">
-
-                                                    <span class="block truncate text-xs font-bold text-gray-900">
-                                                        {{ $reward->nama ?? 'Voucher' }}
-                                                    </span>
-
-                                                    <span class="mt-0.5 block text-[11px] text-gray-400">
-                                                        Sisa: {{ $sisaPakai }}x · Berlaku s/d {{ $voucher->tanggal_selesai ? $voucher->tanggal_selesai->format('d/m/Y') : 'Seterusnya' }}
-                                                    </span>
-
-
-                                                    @if ($potonganLabel)
-
-                                                        <span class="mt-1 block text-[11px] font-semibold text-brand-700">
-                                                            {{ $potonganLabel }}
-                                                        </span>
-
-                                                    @endif
-
-
-                                                    @if ($minBelanja > 0)
-
-                                                        <span class="block text-[11px] text-gray-400">
-                                                            Min. belanja Rp
-                                                            {{ number_format($minBelanja, 0, ',', '.') }}
-                                                        </span>
-
-                                                    @endif
-
-                                                </span>
-
-                                            </div>
-
-
-                                            {{-- Check --}}
-                                            @if ($voucherTerpilih)
-
-                                                <span
-                                                    class="ml-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white">
-
-                                                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none">
-                                                        <path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                                            stroke-linejoin="round" />
-                                                    </svg>
-
-                                                </span>
-
                                             @endif
 
-                                        </button>
+                                            @if ($minBelanja > 0)
+                                                <span class="block text-[11px] text-gray-400">
+                                                    Min. belanja Rp {{ number_format($minBelanja, 0, ',', '.') }}
+                                                </span>
+                                            @endif
+
+                                            @if (!empty($kelayakan['diskon']) && $kelayakan['diskon'] > 0)
+                                                <span class="mt-1.5 inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                                                    Hemat Rp {{ number_format($kelayakan['diskon'], 0, ',', '.') }}
+                                                </span>
+                                            @endif
+                                        </span>
+                                    </div>
+
+                                    {{-- Check / Status --}}
+                                    @if ($voucherTerpilih)
+                                        <span class="ml-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white">
+                                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none">
+                                                <path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </span>
+                                    @else
+                                        <span class="ml-3 shrink-0 rounded-full border border-brand-800 bg-white px-3 py-1 text-[11px] font-bold text-brand-800">
+                                            Pakai
+                                        </span>
+                                    @endif
+
+                                </button>
+                            @else
+                                {{-- Voucher BELUM memenuhi syarat: TIDAK BISA DIPILIH & ADA INFORMASI LENGKAP --}}
+                                <div class="flex w-full items-start justify-between rounded-2xl border border-gray-200 bg-gray-50/80 p-4 text-left opacity-85">
+
+                                    <div class="flex min-w-0 items-start gap-3">
+                                        {{-- Icon --}}
+                                        <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-200/80 text-gray-400">
+                                            @include('mobile.components.icon-ticket', ['class' => 'h-4 w-4'])
+                                        </span>
+
+                                        {{-- Detail --}}
+                                        <div class="min-w-0 flex-1">
+                                            <span class="block truncate text-xs font-bold text-gray-700">
+                                                {{ $reward->nama ?? 'Voucher' }}
+                                            </span>
+
+                                            <span class="mt-0.5 block text-[11px] text-gray-400">
+                                                Sisa: {{ $sisaPakai }}x · Berlaku s/d {{ $voucher->tanggal_selesai ? $voucher->tanggal_selesai->format('d/m/Y') : 'Seterusnya' }}
+                                            </span>
+
+                                            @if ($potonganLabel)
+                                                <span class="mt-1 block text-[11px] font-medium text-gray-500">
+                                                    {{ $potonganLabel }}
+                                                </span>
+                                            @endif
+
+                                            @if ($minBelanja > 0)
+                                                <span class="block text-[11px] text-gray-400">
+                                                    Min. belanja Rp {{ number_format($minBelanja, 0, ',', '.') }}
+                                                </span>
+                                            @endif
+
+                                            {{-- Penjelasan detail kenapa tidak bisa digunakan --}}
+                                            <div class="mt-2.5 flex items-start gap-1.5 rounded-xl border border-amber-200/80 bg-amber-50 p-2 text-[11px] text-amber-900 leading-tight">
+                                                <svg class="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                                </svg>
+                                                <span>{{ $kelayakan['pesan'] }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <span class="ml-2 shrink-0 rounded-full bg-gray-200/90 px-2.5 py-1 text-[10px] font-semibold text-gray-500">
+                                        Tidak Berlaku
+                                    </span>
+
+                                </div>
+                            @endif
 
                         @empty
 
@@ -656,6 +777,92 @@
             </div>
 
         </dialog>
+
+        {{-- ========================================================= --}}
+        {{-- BOTTOM SHEET PILIH HADIAH STAMP --}}
+        {{-- ========================================================= --}}
+        @if (!empty($stampRedemptionsAktif) && $stampRedemptionsAktif->isNotEmpty())
+            <dialog id="modal-pilih-reward-stamp"
+                class="sheet fixed inset-x-0 bottom-0 top-auto m-0 mx-auto max-h-[82vh] w-full max-w-md rounded-t-3xl border-0 p-0 shadow-2xl sm:max-w-xl md:max-w-2xl">
+                <div class="flex max-h-[82vh] flex-col">
+                    <div class="flex shrink-0 justify-center pb-1 pt-3">
+                        <span class="h-1 w-10 rounded-full bg-gray-200"></span>
+                    </div>
+
+                    <div class="shrink-0 px-6 pt-3">
+                        <h3 class="text-center text-sm font-bold text-brand-800">
+                            Pilih Hadiah Stamp
+                        </h3>
+                        <p class="text-center text-[11px] text-gray-500 mt-0.5">
+                            Pilih hadiah stamp untuk diambil gratis bersamaan pesanan pickup ini.
+                        </p>
+                    </div>
+
+                    <div class="overflow-y-auto px-6 pb-4 pt-4">
+                        <form method="POST" action="{{ route('member.checkout.reward-stamp') }}" class="space-y-2.5">
+                            @csrf
+
+                            {{-- Tanpa Hadiah Stamp --}}
+                            <button type="submit" name="stamp_redemption_id" value=""
+                                class="flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition active:bg-gray-50 cursor-pointer
+                                    {{ !$stampRedemptionDipilih ? 'border-brand-800 bg-brand-50' : 'border-gray-200 bg-white' }}">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ !$stampRedemptionDipilih ? 'bg-white text-brand-700' : 'bg-gray-50 text-gray-400' }}">
+                                        ✕
+                                    </span>
+                                    <div>
+                                        <span class="block text-xs font-bold text-gray-900">Tanpa Hadiah Stamp</span>
+                                        <span class="block text-[11px] text-gray-500">Ambil hadiah stamp di waktu lain</span>
+                                    </div>
+                                </div>
+                                <span class="h-5 w-5 rounded-full border-2 flex items-center justify-center {{ !$stampRedemptionDipilih ? 'border-brand-800 bg-brand-800' : 'border-gray-300' }}">
+                                    @if (!$stampRedemptionDipilih)
+                                        <span class="h-2 w-2 rounded-full bg-white"></span>
+                                    @endif
+                                </span>
+                            </button>
+
+                            {{-- Daftar Hadiah Stamp --}}
+                            @foreach ($stampRedemptionsAktif as $redemption)
+                                @php
+                                    $isDipilih = $stampRedemptionDipilih && $stampRedemptionDipilih->id === $redemption->id;
+                                    $produkR = $redemption->produk;
+                                @endphp
+                                <button type="submit" name="stamp_redemption_id" value="{{ $redemption->id }}"
+                                    class="flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition active:bg-gray-50 cursor-pointer
+                                        {{ $isDipilih ? 'border-brand-800 bg-brand-50' : 'border-gray-200 bg-white' }}">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-xl border border-amber-200/80">
+                                            🎁
+                                        </span>
+                                        <div class="min-w-0">
+                                            <p class="truncate text-xs font-bold text-gray-900">
+                                                {{ $redemption->jumlah ?: 1 }}x {{ $produkR?->nama_produk ?? 'Hadiah Stamp' }}
+                                            </p>
+                                            <p class="text-[11px] font-semibold text-emerald-700 mt-0.5">
+                                                Gratis · Kode: {{ $redemption->kode_redeem }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span class="h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 ml-2 {{ $isDipilih ? 'border-brand-800 bg-brand-800' : 'border-gray-300' }}">
+                                        @if ($isDipilih)
+                                            <span class="h-2 w-2 rounded-full bg-white"></span>
+                                        @endif
+                                    </span>
+                                </button>
+                            @endforeach
+                        </form>
+                    </div>
+
+                    <div class="shrink-0 border-t border-gray-100 p-4">
+                        <button type="button" onclick="closeSheet('modal-pilih-reward-stamp')"
+                            class="w-full rounded-full bg-gray-100 py-3 text-xs font-semibold text-gray-700 hover:bg-gray-200 cursor-pointer">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </dialog>
+        @endif
 
 
         {{-- ========================================================= --}}

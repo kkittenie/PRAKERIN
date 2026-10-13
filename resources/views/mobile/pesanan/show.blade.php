@@ -3,30 +3,49 @@
 @php
     $detailRingkas = $detailRingkas ?? $transaksi->detailTransaksi ?? $transaksi->detail ?? collect();
     $lunas = $transaksi->status_pembayaran === 'Lunas';
-    $steps = [
-        'menunggu_pembayaran' => 'Menunggu Pembayaran',
-        'pembayaran_dikonfirmasi' => 'Pembayaran Dikonfirmasi',
-        \App\Models\Transaksi::STATUS_DIPROSES => 'Diproses',
-        \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => 'Ready for Pickup',
-        \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => 'Sudah Diambil',
-    ];
-    $stepIcons = [
-        'menunggu_pembayaran' => 'mobile.components.icon-clock',
-        'pembayaran_dikonfirmasi' => 'mobile.components.icon-receipt-check',
-        \App\Models\Transaksi::STATUS_DIPROSES => 'mobile.components.icon-package',
-        \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => 'mobile.components.icon-shopping-bag',
-        \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => 'mobile.components.icon-check-circle',
-    ];
-    $urutan = array_keys($steps);
+    $isPesananStamp = ($transaksi->metode_pembayaran === 'Reward Stamp')
+        || $transaksi->stampRedemptions()->exists()
+        || str_contains($transaksi->catatan_pesanan ?? '', 'Stamp')
+        || ((float) $transaksi->total_bayar <= 0 && $lunas);
 
-    if (! $lunas) {
-        $statusSekarang = 'menunggu_pembayaran';
-    } elseif (! $transaksi->diproses_pada) {
-        $statusSekarang = 'pembayaran_dikonfirmasi';
-    } else {
+    if ($isPesananStamp) {
+        $steps = [
+            \App\Models\Transaksi::STATUS_DIPROSES => 'Diproses',
+            \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => 'Ready for Pickup',
+            \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => 'Sudah Diambil',
+        ];
+        $stepIcons = [
+            \App\Models\Transaksi::STATUS_DIPROSES => 'mobile.components.icon-package',
+            \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => 'mobile.components.icon-shopping-bag',
+            \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => 'mobile.components.icon-check-circle',
+        ];
         $statusSekarang = $transaksi->status_pesanan;
+    } else {
+        $steps = [
+            'menunggu_pembayaran' => 'Menunggu Pembayaran',
+            'pembayaran_dikonfirmasi' => 'Pembayaran Dikonfirmasi',
+            \App\Models\Transaksi::STATUS_DIPROSES => 'Diproses',
+            \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => 'Ready for Pickup',
+            \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => 'Sudah Diambil',
+        ];
+        $stepIcons = [
+            'menunggu_pembayaran' => 'mobile.components.icon-clock',
+            'pembayaran_dikonfirmasi' => 'mobile.components.icon-receipt-check',
+            \App\Models\Transaksi::STATUS_DIPROSES => 'mobile.components.icon-package',
+            \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => 'mobile.components.icon-shopping-bag',
+            \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => 'mobile.components.icon-check-circle',
+        ];
+
+        if (! $lunas) {
+            $statusSekarang = 'menunggu_pembayaran';
+        } elseif (! $transaksi->diproses_pada) {
+            $statusSekarang = 'pembayaran_dikonfirmasi';
+        } else {
+            $statusSekarang = $transaksi->status_pesanan;
+        }
     }
 
+    $urutan = array_keys($steps);
     $dibatalkan = $transaksi->status_pesanan === \App\Models\Transaksi::STATUS_DIBATALKAN;
     $indexSekarang = array_search($statusSekarang, $urutan, true);
     $selesaiSemua = $lunas && $transaksi->status_pesanan === \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL;
