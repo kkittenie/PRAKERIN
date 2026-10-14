@@ -61,11 +61,20 @@ class Member extends Authenticatable
         return (int) round((1 + $terisi) / 2 * 100);
     }
 
+    public function getTotalTransaksiAttribute(): float
+    {
+        return (float) $this->transaksi()
+            ->where('status_pembayaran', 'Lunas')
+            ->sum('total_bayar');
+    }
+
     protected function levelAktif(): ?MemberLevel
     {
+        $total = $this->total_transaksi;
+
         return MemberLevel::aktif()
-            ->where('minimal_poin', '<=', $this->poin)
-            ->reorder('minimal_poin', 'desc')
+            ->where('minimal_transaksi', '<=', $total)
+            ->reorder('minimal_transaksi', 'desc')
             ->first();
     }
 
@@ -77,9 +86,9 @@ class Member extends Authenticatable
             return $level->nama_level;
         }
 
-        $levelTerendah = MemberLevel::aktif()->orderBy('minimal_poin')->first();
+        $levelTerendah = MemberLevel::aktif()->orderBy('minimal_transaksi')->first();
 
-        if ($levelTerendah && (int) $levelTerendah->minimal_poin === 0) {
+        if ($levelTerendah && (float) $levelTerendah->minimal_transaksi <= 0) {
             return $levelTerendah->nama_level;
         }
 
@@ -94,9 +103,9 @@ class Member extends Authenticatable
             return $level->warna_badge ?? 'gray';
         }
 
-        $levelTerendah = MemberLevel::aktif()->orderBy('minimal_poin')->first();
+        $levelTerendah = MemberLevel::aktif()->orderBy('minimal_transaksi')->first();
 
-        if ($levelTerendah && (int) $levelTerendah->minimal_poin === 0) {
+        if ($levelTerendah && (float) $levelTerendah->minimal_transaksi <= 0) {
             return $levelTerendah->warna_badge ?? 'gray';
         }
 
@@ -105,28 +114,31 @@ class Member extends Authenticatable
 
     public function getProgresTierAttribute(): ?array
     {
+        $total = $this->total_transaksi;
+
         $levelSaatIni = MemberLevel::aktif()
-            ->where('minimal_poin', '<=', $this->poin)
-            ->reorder('minimal_poin', 'desc')
+            ->where('minimal_transaksi', '<=', $total)
+            ->reorder('minimal_transaksi', 'desc')
             ->first();
 
         $levelBerikutnya = MemberLevel::aktif()
-            ->where('minimal_poin', '>', $this->poin)
-            ->orderBy('minimal_poin')
+            ->where('minimal_transaksi', '>', $total)
+            ->orderBy('minimal_transaksi')
             ->first();
 
         if (!$levelBerikutnya) {
             return null;
         }
 
-        $batasSaatIni = $levelSaatIni->minimal_poin ?? 0;
-        $batasBerikutnya = $levelBerikutnya->minimal_poin;
+        $batasSaatIni = (float) ($levelSaatIni->minimal_transaksi ?? 0);
+        $batasBerikutnya = (float) $levelBerikutnya->minimal_transaksi;
 
-        $persen = (($this->poin - $batasSaatIni) / max(1, $batasBerikutnya - $batasSaatIni)) * 100;
+        $persen = (($total - $batasSaatIni) / max(1, $batasBerikutnya - $batasSaatIni)) * 100;
 
         return [
             'tier_berikutnya' => $levelBerikutnya->nama_level,
-            'poin_dibutuhkan' => max(0, $batasBerikutnya - $this->poin),
+            'transaksi_dibutuhkan' => max(0, $batasBerikutnya - $total),
+            'poin_dibutuhkan' => max(0, $batasBerikutnya - $total),
             'persen' => (int) min(100, max(0, round($persen))),
         ];
     }

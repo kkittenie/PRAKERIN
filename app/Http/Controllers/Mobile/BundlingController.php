@@ -15,7 +15,7 @@ class BundlingController extends Controller
         try {
             abort_unless($bundling->status_aktif, 404);
 
-            $bundling->load('items.produk');
+            $bundling->load(['items.produk.detailProduks', 'items.detailProduk']);
 
             $itemEdit = null;
             if ($request->filled('edit')) {

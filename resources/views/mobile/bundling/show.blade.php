@@ -181,16 +181,40 @@
                     <div class="mt-3 divide-y divide-gray-100 rounded-2xl border border-gray-100 bg-white shadow-xs">
                         @foreach ($bundling->items as $index => $bundlingItem)
                             @if($bundlingItem->produk)
+                                @php
+                                    $dp = $bundlingItem->detailProduk;
+                                    $ukuran = $dp?->ukuran ?: $bundlingItem->ukuran;
+                                    $rasa = $dp?->variasi ?: $bundlingItem->varian_rasa;
+                                    if (!$ukuran && !$rasa && $bundlingItem->produk->detailProduks && $bundlingItem->produk->detailProduks->isNotEmpty()) {
+                                        $firstDp = $bundlingItem->produk->detailProduks->first();
+                                        $ukuran = $firstDp->ukuran;
+                                        $rasa = $firstDp->variasi;
+                                    }
+                                @endphp
                                 <div class="p-3.5 space-y-2">
                                     <div class="flex items-center justify-between">
-                                        <div>
+                                        <div class="min-w-0 flex-1 pr-2">
                                             <p class="text-xs font-bold text-gray-800">
                                                 {{ $bundlingItem->produk->nama_produk }}
                                             </p>
+                                            @if ($ukuran || $rasa)
+                                                <div class="mt-0.5 flex flex-wrap items-center gap-1">
+                                                    @if ($ukuran)
+                                                        <span class="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-800">
+                                                            {{ $ukuran }}
+                                                        </span>
+                                                    @endif
+                                                    @if ($rasa)
+                                                        <span class="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                                                            Rasa: {{ $rasa }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            @endif
                                         </div>
 
                                         {{-- Controller Varian Counter (+/-) --}}
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex items-center gap-2 shrink-0">
                                             <button type="button" @click="kurangiVarian({{ $bundlingItem->produk_id }})"
                                                 class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-700 transition active:scale-90 disabled:opacity-30"
                                                 :disabled="(varianQty[{{ $bundlingItem->produk_id }}] || 0) <= 0">
@@ -228,8 +252,34 @@
 
                     <div class="mt-2 divide-y divide-gray-100 rounded-2xl border border-gray-100 bg-white">
                         @foreach ($bundling->items as $bundlingItem)
+                            @php
+                                $dp = $bundlingItem->detailProduk;
+                                $ukuran = $dp?->ukuran ?: $bundlingItem->ukuran;
+                                $rasa = $dp?->variasi ?: $bundlingItem->varian_rasa;
+                                if (!$ukuran && !$rasa && $bundlingItem->produk && $bundlingItem->produk->detailProduks && $bundlingItem->produk->detailProduks->isNotEmpty()) {
+                                    $firstDp = $bundlingItem->produk->detailProduks->first();
+                                    $ukuran = $firstDp->ukuran;
+                                    $rasa = $firstDp->variasi;
+                                }
+                            @endphp
                             <div class="flex items-center justify-between p-3">
-                                <p class="text-xs font-semibold text-gray-800">{{ $bundlingItem->produk->nama_produk ?? 'Produk tidak ditemukan' }}</p>
+                                <div class="min-w-0 flex-1 pr-2">
+                                    <p class="text-xs font-semibold text-gray-800">{{ $bundlingItem->produk->nama_produk ?? 'Produk tidak ditemukan' }}</p>
+                                    @if ($ukuran || $rasa)
+                                        <div class="mt-0.5 flex flex-wrap items-center gap-1">
+                                            @if ($ukuran)
+                                                <span class="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-800">
+                                                    {{ $ukuran }}
+                                                </span>
+                                            @endif
+                                            @if ($rasa)
+                                                <span class="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                                                    Rasa: {{ $rasa }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
                                 <span class="shrink-0 text-xs font-bold text-gray-500">x{{ $bundlingItem->qty }}</span>
                             </div>
                         @endforeach

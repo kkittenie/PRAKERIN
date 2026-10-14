@@ -104,18 +104,8 @@
             </div>
         </div>
 
-        {{-- Right column: highlight deal badge, catatan & order form --}}
+        {{-- Right column: catatan & order form --}}
         <div class="mt-5 lg:col-span-7 lg:mt-0 space-y-4">
-
-            {{-- Highlight deal --}}
-            <div class="rounded-2xl bg-rose-50 px-4 py-3 border border-rose-100">
-                <p class="text-xs font-bold text-rose-700">
-                    Dapatkan {{ $promoEvent->isi_event }} pcs
-                </p>
-                <p class="mt-0.5 text-[11px] text-rose-600">
-                    Normal isi {{ $promoEvent->isi_normal }} pcs — hemat lebih banyak dengan paket promo ini.
-                </p>
-            </div>
 
             {{-- Banner: promo event berakhir selagi dibuka --}}
             <div x-show="berakhir" x-cloak class="flex items-start gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-rose-800 border border-rose-100">

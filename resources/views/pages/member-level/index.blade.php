@@ -47,7 +47,7 @@
                         <tr>
                             <th class="py-3">No</th>
                             <th class="py-3">Nama Level</th>
-                            <th class="py-3 text-center">Minimal Poin</th>
+                            <th class="py-3 text-center">Minimal Transaksi</th>
                             <th class="py-3 text-center">Status</th>
                             <th class="py-3 text-right">Aksi</th>
                         </tr>
@@ -91,7 +91,7 @@
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'nama_level_html', name: 'nama_level' },
-                { data: 'minimal_poin_html', name: 'minimal_poin', className: 'text-center text-xs font-semibold' },
+                { data: 'minimal_transaksi_html', name: 'minimal_transaksi', className: 'text-center text-xs font-semibold' },
                 { data: 'status_html', name: 'status_aktif', className: 'text-center' },
                 { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
             ],

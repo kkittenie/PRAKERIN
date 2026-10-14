@@ -217,6 +217,10 @@
                                                     <p class="text-xs text-gray-400 dark:text-gray-500"
                                                         x-text="produk.kode_bundling">
                                                     </p>
+                                                    <template x-if="teksIsiBundling(produk)">
+                                                        <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1 leading-snug"
+                                                            x-text="'Isi: ' + teksIsiBundling(produk)"></p>
+                                                    </template>
                                                 </div>
                                                 <div
                                                     class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
@@ -443,6 +447,10 @@
                                                 x-text="bundling.nama_bundling"></h3>
                                             <p class="text-xs text-gray-400 dark:text-gray-500"
                                                 x-text="bundling.kode_bundling"></p>
+                                            <template x-if="teksIsiBundling(bundling)">
+                                                <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1 leading-snug"
+                                                    x-text="'Isi: ' + teksIsiBundling(bundling)"></p>
+                                            </template>
                                         </div>
                                         <div
                                             class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
@@ -1056,6 +1064,19 @@
                                                 </button>
                                             </template>
                                         </div>
+                                        <template x-if="item.is_bundling && rincianIsiBundling(item).length > 0">
+                                            <div class="mt-1 rounded-md bg-amber-50/70 dark:bg-amber-950/30 p-1.5 border border-amber-200/50 dark:border-amber-800/40 space-y-0.5">
+                                                <div class="text-[9px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1">
+                                                    <span>📦 Isi Paket:</span>
+                                                </div>
+                                                <template x-for="(isi, idx) in rincianIsiBundling(item)" :key="idx">
+                                                    <div class="text-[10px] text-gray-700 dark:text-gray-300 leading-tight flex items-start gap-1">
+                                                        <span class="text-amber-600 dark:text-amber-400 font-bold">•</span>
+                                                        <span x-text="isi"></span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
                                         <template x-if="itemButuhProduksi(item)">
                                             <div>
                                                 <span
@@ -1356,6 +1377,13 @@
                                             <span class="text-purple-600 dark:text-purple-400 font-extrabold text-[10px] ml-1" x-text="'(' + item.varian_rasa + ')'"></span>
                                         </template>
                                     </p>
+                                    <template x-if="item.is_bundling && rincianIsiBundling(item).length > 0">
+                                        <div class="mt-0.5 mb-1 pl-1.5 border-l-2 border-amber-400 space-y-0.5">
+                                            <template x-for="(isi, idx) in rincianIsiBundling(item)" :key="idx">
+                                                <span class="block text-[10px] text-gray-500 dark:text-gray-400" x-text="'• ' + isi"></span>
+                                            </template>
+                                        </div>
+                                    </template>
                                     <p class="text-xxs text-gray-400 dark:text-gray-500">
                                         <span x-text="item.jumlah"></span> x <span
                                             x-text="formatRupiah(item.harga_jual_asli)"></span>
@@ -3075,13 +3103,107 @@
                             const prod = this.daftarProduk.find(x => x.id === p.produk_id);
                             const stokP = prod ? (parseFloat(prod.stok) || 0) : 0;
                             const subButuh = prod ? (prod.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < p.qty) : true;
-                            return { produk_id: p.produk_id, qty: p.qty, butuh_produksi: subButuh };
+                            return { produk_id: p.produk_id, nama_produk: prod ? prod.nama_produk : 'Produk', qty: p.qty, butuh_produksi: subButuh };
                         }),
-                        pilihan_khusus: pilihanKhusus.map(p => ({ produk_id: p.produk_id, qty: p.qty, catatan: p.catatan || '' })),
+                        pilihan_khusus: pilihanKhusus.map(p => {
+                            const prod = this.daftarProduk.find(x => x.id === p.produk_id);
+                            return { produk_id: p.produk_id, nama_produk: prod ? prod.nama_produk : 'Produk', qty: p.qty, catatan: p.catatan || '' };
+                        }),
                         jumlah: jumlah,
                         butuh_produksi: perluProduksi,
                         catatan: catatanUmum || ''
                     };
+                },
+
+                rincianIsiBundling(item) {
+                    if (!item || !item.is_bundling) return [];
+
+                    // 1. Jika bundling khusus dengan pilihan varian
+                    if (item.pilihan_khusus && item.pilihan_khusus.length > 0) {
+                        return item.pilihan_khusus.map(pk => {
+                            const p = this.daftarProduk.find(x => x.id === pk.produk_id);
+                            const nama = pk.nama_produk || (p ? p.nama_produk : 'Produk');
+                            let text = (pk.qty || 1) + 'x ' + nama;
+                            if (pk.catatan) {
+                                text += ' ("' + pk.catatan + '")';
+                            }
+                            return text;
+                        });
+                    }
+
+                    // 2. Jika bundling biasa dengan items terstruktur
+                    if (item.items && item.items.length > 0) {
+                        return item.items.map(it => {
+                            const p = this.daftarProduk.find(x => x.id === it.produk_id);
+                            const nama = it.nama_produk || (p ? p.nama_produk : 'Produk');
+                            let detail = [];
+                            if (it.ukuran) detail.push(it.ukuran);
+                            if (it.varian_rasa) detail.push(it.varian_rasa);
+
+                            if (detail.length === 0 && it.detail_produk_id && p && p.daftar_varian) {
+                                const v = p.daftar_varian.find(dv => dv.id === it.detail_produk_id);
+                                if (v) {
+                                    if (v.ukuran) detail.push(v.ukuran);
+                                    if (v.variasi) detail.push(v.variasi);
+                                }
+                            }
+
+                            let text = (it.qty || 1) + 'x ' + nama;
+                            if (detail.length > 0) {
+                                text += ' (' + detail.join(' - ') + ')';
+                            }
+                            return text;
+                        });
+                    }
+
+                    // 3. Fallback: ambil dari daftarBundling
+                    const b = (this.daftarBundling || []).find(x => x.id === item.bundling_id);
+                    if (b && b.items && b.items.length > 0) {
+                        return b.items.map(bi => {
+                            const p = this.daftarProduk.find(x => x.id === bi.produk_id) || bi.produk;
+                            const nama = p ? p.nama_produk : 'Produk';
+                            let detail = [];
+                            if (bi.detail_produk) {
+                                if (bi.detail_produk.ukuran) detail.push(bi.detail_produk.ukuran);
+                                if (bi.detail_produk.variasi) detail.push(bi.detail_produk.variasi);
+                            } else {
+                                if (bi.ukuran) detail.push(bi.ukuran);
+                                if (bi.varian_rasa) detail.push(bi.varian_rasa);
+                            }
+                            let text = (bi.qty || 1) + 'x ' + nama;
+                            if (detail.length > 0) {
+                                text += ' (' + detail.join(' - ') + ')';
+                            }
+                            return text;
+                        });
+                    }
+
+                    return [];
+                },
+
+                teksIsiBundling(bundling) {
+                    if (!bundling || !bundling.items || bundling.items.length === 0) return '';
+                    if (bundling.jenis_produk === 'khusus_bundling') {
+                        const target = parseInt(bundling.total_qty_khusus) || bundling.items.reduce((s, i) => s + (parseInt(i.qty) || 0), 0);
+                        return 'Bebas pilih ' + target + ' pcs varian';
+                    }
+                    return bundling.items.map(bi => {
+                        const p = this.daftarProduk.find(x => x.id === bi.produk_id) || bi.produk;
+                        const nama = p ? p.nama_produk : 'Produk';
+                        let detail = [];
+                        if (bi.detail_produk) {
+                            if (bi.detail_produk.ukuran) detail.push(bi.detail_produk.ukuran);
+                            if (bi.detail_produk.variasi) detail.push(bi.detail_produk.variasi);
+                        } else {
+                            if (bi.ukuran) detail.push(bi.ukuran);
+                            if (bi.varian_rasa) detail.push(bi.varian_rasa);
+                        }
+                        let text = (bi.qty || 1) + 'x ' + nama;
+                        if (detail.length > 0) {
+                            text += ' (' + detail.join(' - ') + ')';
+                        }
+                        return text;
+                    }).join(', ');
                 },
 
                 simpanVarianBundling() {
@@ -3601,16 +3723,34 @@
                         harga_jual_asli: parseFloat(bundling.harga),
                         foto: bundling.gambar,
                         items: (bundling.items || []).map(i => {
-                            const p = this.daftarProduk.find(x => x.id === i.produk_id);
+                            const p = this.daftarProduk.find(x => x.id === i.produk_id) || i.produk;
                             let stokP = 0;
+                            let ukuran = i.ukuran || null;
+                            let varianRasa = i.varian_rasa || null;
                             if (i.detail_produk_id && p && p.daftar_varian) {
                                 const v = p.daftar_varian.find(dv => dv.id === i.detail_produk_id);
                                 stokP = v ? v.stok : 0;
+                                if (v) {
+                                    ukuran = v.ukuran || ukuran;
+                                    varianRasa = v.variasi || varianRasa;
+                                }
+                            } else if (i.detail_produk) {
+                                ukuran = i.detail_produk.ukuran || ukuran;
+                                varianRasa = i.detail_produk.variasi || varianRasa;
+                                stokP = i.detail_produk.stok ?? 0;
                             } else {
                                 stokP = this.stokUntukUkuran(p, i.ukuran, i.varian_rasa);
                             }
                             const subButuh = p ? (p.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < i.qty) : true;
-                            return { produk_id: i.produk_id, detail_produk_id: i.detail_produk_id || null, qty: i.qty, ukuran: i.ukuran || null, varian_rasa: i.varian_rasa || null, butuh_produksi: subButuh };
+                            return {
+                                produk_id: i.produk_id,
+                                nama_produk: p ? p.nama_produk : (i.produk ? i.produk.nama_produk : 'Produk'),
+                                detail_produk_id: i.detail_produk_id || null,
+                                qty: i.qty,
+                                ukuran: ukuran,
+                                varian_rasa: varianRasa,
+                                butuh_produksi: subButuh
+                            };
                         }),
                         jumlah: jumlah,
                         butuh_produksi: perluProduksi,

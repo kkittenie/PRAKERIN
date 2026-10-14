@@ -32,10 +32,13 @@ class MemberController extends Controller
                     ->addColumn('level_html', fn($item) => view('pages.member.partials.level', compact('item'))->render())
                     ->addColumn('aksi', fn($item) => view('pages.member.partials.aksi', compact('item'))->render())
                     ->orderColumn('level_html', function ($query, $order) {
-                        // Level adalah hasil hitungan dari poin (bukan kolom asli di DB),
-                        // jadi sort level diarahkan ke sort poin karena level selalu
-                        // berbanding lurus dengan ambang poin (minimal_poin) member_levels.
-                        $query->orderBy('poin', $order);
+                        // Level adalah hasil hitungan dari akumulasi transaksi lunas
+                        $query->orderBy(
+                            \App\Models\Transaksi::selectRaw('COALESCE(SUM(total_bayar), 0)')
+                                ->whereColumn('transaksis.id_member', 'members.id')
+                                ->where('transaksis.status_pembayaran', 'Lunas'),
+                            $order
+                        );
                     })
                     ->rawColumns(['foto_html', 'nama_html', 'level_html', 'aksi'])
                     ->make(true);

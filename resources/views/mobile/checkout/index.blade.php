@@ -23,7 +23,24 @@
         }
     </style>
 
-    <div x-data="{ pilihVoucherOpen: false }">
+    <div x-data="{
+        pilihVoucherOpen: false,
+        modalHapusTerbuka: false,
+        itemHapusId: null,
+        itemHapusNama: '',
+        konfirmasiHapus(id, nama) {
+            this.itemHapusId = id;
+            this.itemHapusNama = nama;
+            this.modalHapusTerbuka = true;
+        },
+        eksekusiHapus() {
+            if (this.itemHapusId) {
+                const form = document.getElementById('form-hapus-item-' + this.itemHapusId);
+                if (form) form.submit();
+            }
+            this.modalHapusTerbuka = false;
+        }
+    }">
         <div
             class="checkout-sticky-header relative -mx-5 -mt-6 flex h-14 items-center justify-center border-b border-gray-100 px-5 sm:-mx-8 md:-mx-10 lg:-mx-12 lg:hidden">
             <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
@@ -43,13 +60,8 @@
             <div class="lg:col-span-7 space-y-5">
 
                 <div class="mt-5 flex items-center gap-3 rounded-2xl bg-brand-50 p-3.5 lg:mt-0">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-brand-800">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                            <path d="M4 10.5V20a1 1 0 0 1 1h4v-5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5h4a1 1 0 0 0 1-1v-9.5"
-                                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                            <path d="M2.5 10 12 3l9.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                        </svg>
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-brand-800 shadow-xs">
+                        @include('mobile.components.icon-home', ['class' => 'h-5 w-5'])
                     </span>
                     <div class="min-w-0 flex-1">
                         <p class="text-[10px] font-bold uppercase tracking-wide text-brand-700">
@@ -94,6 +106,64 @@
                                 <p class="text-xs font-bold leading-snug text-gray-900">
                                     {{ $item['nama_produk'] }}
                                 </p>
+
+                                @if (!empty($item['bundling_id']))
+                                    @php
+                                        $rincianBundling = $item['rincian_bundling'] ?? null;
+                                        if (!$rincianBundling) {
+                                            $bObj = \App\Models\Bundling::with(['items.produk.detailProduks', 'items.detailProduk'])->find($item['bundling_id']);
+                                            if ($bObj) {
+                                                if ($bObj->jenis_produk === 'khusus_bundling' && !empty($item['pilihan_khusus'])) {
+                                                    $produkMap = $bObj->items->keyBy('produk_id');
+                                                    $rincianBundling = [];
+                                                    foreach ($item['pilihan_khusus'] as $pk) {
+                                                        $bi = $produkMap->get($pk['produk_id']);
+                                                        $prod = $bi?->produk;
+                                                        $dp = $bi?->detailProduk ?? $prod?->detailProduks?->first();
+                                                        $rincianBundling[] = [
+                                                            'nama_produk' => $prod?->nama_produk ?? 'Produk',
+                                                            'ukuran' => $dp?->ukuran ?: $bi?->ukuran,
+                                                            'varian_rasa' => $dp?->variasi ?: $bi?->varian_rasa,
+                                                            'qty' => (int) ($pk['qty'] ?? 1),
+                                                            'catatan' => $pk['catatan'] ?? null,
+                                                        ];
+                                                    }
+                                                } else {
+                                                    $rincianBundling = $bObj->items->map(function($bi) {
+                                                        $dp = $bi->detailProduk ?? $bi->produk?->detailProduks?->first();
+                                                        return [
+                                                            'nama_produk' => $bi->produk?->nama_produk ?? 'Produk',
+                                                            'ukuran' => $dp?->ukuran ?: $bi->ukuran,
+                                                            'varian_rasa' => $dp?->variasi ?: $bi->varian_rasa,
+                                                            'qty' => (int) $bi->qty,
+                                                        ];
+                                                    })->all();
+                                                }
+                                            }
+                                        }
+                                    @endphp
+                                    @if (!empty($rincianBundling))
+                                        <div class="mt-1 space-y-0.5 rounded-lg bg-gray-50/80 p-2 border border-gray-100">
+                                            <p class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Isi Paket:</p>
+                                            @foreach ($rincianBundling as $rb)
+                                                <div class="text-[11px] text-gray-600 flex items-center justify-between gap-2">
+                                                    <span class="font-medium text-gray-800">
+                                                        {{ $rb['qty'] }}x {{ $rb['nama_produk'] }}
+                                                        @php
+                                                            $tags = array_filter([$rb['ukuran'] ?? null, $rb['varian_rasa'] ?? null]);
+                                                        @endphp
+                                                        @if (!empty($tags))
+                                                            <span class="text-[10px] text-amber-700 font-semibold">({{ implode(' - ', $tags) }})</span>
+                                                        @endif
+                                                    </span>
+                                                    @if (!empty($rb['catatan']))
+                                                        <span class="text-[10px] text-gray-400 italic">"{{ $rb['catatan'] }}"</span>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                @endif
 
                                 @if (!empty($item['ukuran']) || !empty($item['varian_rasa']))
                                     <div class="mt-0.5 flex flex-wrap items-center gap-1">
@@ -190,10 +260,10 @@
                                     <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800">
                                         {{ $item['jumlah'] }}x
                                     </span>
-                                    <form method="POST" action="{{ route('member.keranjang.hapus', $item['id']) }}" onsubmit="return confirm('Hapus hadiah stamp dari keranjang? Hadiah tetap tersimpan di akun kamu.')">
+                                    <form id="form-hapus-item-{{ $item['id'] }}" method="POST" action="{{ route('member.keranjang.hapus', $item['id']) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-red-50 transition active:scale-90" title="Hapus Hadiah">
+                                        <button type="button" @click="konfirmasiHapus('{{ $item['id'] }}', 'Hadiah Stamp: {{ addslashes($item['nama_produk']) }}')" class="flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-red-50 transition active:scale-90" title="Hapus Hadiah">
                                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
@@ -254,6 +324,18 @@
                                         </form>
 
                                     </div>
+
+                                    <form id="form-hapus-item-{{ $item['id'] }}" method="POST" action="{{ route('member.keranjang.hapus', $item['id']) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" @click="konfirmasiHapus('{{ $item['id'] }}', '{{ addslashes($item['nama_produk']) }}')"
+                                            class="flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-red-50 transition active:scale-90"
+                                            title="Hapus dari keranjang">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                    </form>
                                 @endif
 
                             </div>
@@ -1003,6 +1085,47 @@
         </div>{{-- end lg:col-span-5 --}}
 
         </div>{{-- end lg:grid --}}
+
+        <!-- MODAL KONFIRMASI HAPUS PRODUK KERANJANG (ALPINE) -->
+        <div x-show="modalHapusTerbuka" x-cloak
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+            <div @click.away="modalHapusTerbuka = false"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                class="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden border border-gray-100">
+                <div class="p-5 text-center">
+                    <div class="w-12 h-12 bg-red-50 text-red-500 flex items-center justify-center rounded-full mx-auto mb-3">
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-extrabold text-gray-900 text-sm">Hapus dari Keranjang?</h3>
+                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                        Yakin ingin menghapus <span class="font-bold text-gray-800" x-text="itemHapusNama"></span> dari keranjang?
+                    </p>
+                </div>
+                <div class="bg-gray-50/80 px-4 py-3 border-t border-gray-100 flex items-center justify-end gap-2">
+                    <button type="button" @click="modalHapusTerbuka = false"
+                        class="flex-1 py-2.5 px-3 bg-white hover:bg-gray-100 font-bold text-xs rounded-xl transition text-gray-700 border border-gray-200 active:scale-[0.98]">
+                        Batal
+                    </button>
+                    <button type="button" @click="eksekusiHapus()"
+                        class="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition shadow-xs active:scale-[0.98]">
+                        Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
 
     </div>
 

@@ -1,14 +1,26 @@
 @extends('mobile.layout', ['title' => 'Status Pesanan'])
 
 @php
-    $detailRingkas = $detailRingkas ?? $transaksi->detailTransaksi ?? $transaksi->detail ?? collect();
+    $detailRingkas = ($detailRingkas ?? $transaksi->detailTransaksi ?? $transaksi->detail ?? collect())
+        ->reject(function ($item) {
+            return ($item->bundling_id || $item->promo_event_id) && $item->produk_id && (float) $item->subtotal == 0;
+        });
     $lunas = $transaksi->status_pembayaran === 'Lunas';
-    $isPesananStamp = ($transaksi->metode_pembayaran === 'Reward Stamp')
-        || $transaksi->stampRedemptions()->exists()
-        || str_contains($transaksi->catatan_pesanan ?? '', 'Stamp')
-        || ((float) $transaksi->total_bayar <= 0 && $lunas);
 
-    if ($isPesananStamp) {
+    // Cek apakah ada produk biasa (bukan reward stamp) di pesanan ini
+    $adaProdukBiasa = $detailRingkas->contains(function ($d) {
+        $catatan = strtolower($d->catatan ?? '');
+        $isRewardStamp = str_contains($catatan, 'hadiah stamp') || str_contains($catatan, 'reward stamp');
+        return ! $isRewardStamp;
+    });
+
+    // Pesanan hanya reward stamp jika TIDAK ada produk biasa di keranjang/detail
+    $isHanyaRewardStamp = ! $adaProdukBiasa && (
+        $transaksi->metode_pembayaran === 'Reward Stamp' ||
+        ((float) $transaksi->total_bayar <= 0 && $lunas)
+    );
+
+    if ($isHanyaRewardStamp) {
         $steps = [
             \App\Models\Transaksi::STATUS_DIPROSES => 'Diproses',
             \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => 'Ready for Pickup',

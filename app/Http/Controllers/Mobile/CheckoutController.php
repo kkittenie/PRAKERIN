@@ -347,6 +347,7 @@ class CheckoutController extends Controller
 
                 $kodeTransaksi = 'TRX-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
 
+                $isHanyaRewardStamp = collect($items)->isNotEmpty() && collect($items)->every(fn ($it) => !empty($it['is_reward_stamp']));
                 $isGratis = ($totalBayar <= 0);
 
                 $transaksi = Transaksi::create([
@@ -362,13 +363,13 @@ class CheckoutController extends Controller
                     'total_bayar' => $totalBayar,
                     'jumlah_diterima' => $totalBayar,
                     'kembalian' => 0,
-                    'metode_pembayaran' => $isGratis ? 'Reward Stamp' : 'Transfer/QRIS',
-                    'status_pembayaran' => $isGratis ? 'Lunas' : 'Menunggu Pembayaran',
+                    'metode_pembayaran' => $isHanyaRewardStamp ? 'Reward Stamp' : ($isGratis ? 'Voucher' : 'Transfer/QRIS'),
+                    'status_pembayaran' => ($isGratis && $isHanyaRewardStamp) ? 'Lunas' : ($isGratis ? 'Lunas' : 'Menunggu Pembayaran'),
                     'asal_pesanan' => Transaksi::ASAL_MEMBER_APP,
                     'status_pesanan' => Transaksi::STATUS_DIPROSES,
                     'kode_pickup' => Transaksi::buatKodePickupUnik(),
                     'catatan_pesanan' => $request->input('catatan'),
-                    'diproses_pada' => $isGratis ? now() : null,
+                    'diproses_pada' => ($isGratis && $isHanyaRewardStamp) ? now() : null,
                 ]);
 
                 if ($voucher) {

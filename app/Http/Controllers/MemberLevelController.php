@@ -19,10 +19,10 @@ class MemberLevelController extends Controller
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
                     ->addColumn('nama_level_html', fn($item) => view('pages.member-level.partials.nama', compact('item'))->render())
-                    ->addColumn('minimal_poin_html', fn($item) => view('pages.member-level.partials.minimal_poin', compact('item'))->render())
+                    ->addColumn('minimal_transaksi_html', fn($item) => view('pages.member-level.partials.minimal_transaksi', compact('item'))->render())
                     ->addColumn('status_html', fn($item) => view('pages.member-level.partials.status', compact('item'))->render())
                     ->addColumn('aksi', fn($item) => view('pages.member-level.partials.aksi', compact('item'))->render())
-                    ->rawColumns(['nama_level_html', 'minimal_poin_html', 'status_html', 'aksi'])
+                    ->rawColumns(['nama_level_html', 'minimal_transaksi_html', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
                 activity('error')
@@ -57,7 +57,7 @@ class MemberLevelController extends Controller
 
             $level = MemberLevel::create([
                 'nama_level' => $validated['nama_level'],
-                'minimal_poin' => $validated['minimal_poin'],
+                'minimal_transaksi' => $validated['minimal_transaksi'],
                 'warna_badge' => $validated['warna_badge'] ?? 'gray',
                 'status_aktif' => $request->boolean('status_aktif'),
             ]);
@@ -93,7 +93,7 @@ class MemberLevelController extends Controller
 
             $memberLevel->update([
                 'nama_level' => $validated['nama_level'],
-                'minimal_poin' => $validated['minimal_poin'],
+                'minimal_transaksi' => $validated['minimal_transaksi'],
                 'warna_badge' => $validated['warna_badge'] ?? $memberLevel->warna_badge,
                 'status_aktif' => $request->boolean('status_aktif'),
             ]);
@@ -157,22 +157,33 @@ class MemberLevelController extends Controller
 
     private function validasi(Request $request, ?int $ignoreId = null): array
     {
+        if ($request->has('minimal_transaksi')) {
+            $val = $request->input('minimal_transaksi');
+            if (!is_numeric($val) && is_string($val)) {
+                $request->merge([
+                    'minimal_transaksi' => preg_replace('/\D/', '', $val) ?: '0',
+                ]);
+            }
+        }
+
         return $request->validate([
             'nama_level' => [
                 'required', 'string', 'max:50',
                 Rule::unique('member_levels', 'nama_level')->ignore($ignoreId),
             ],
-            'minimal_poin' => [
-                'required', 'integer', 'min:0',
-                Rule::unique('member_levels', 'minimal_poin')->ignore($ignoreId),
+            'minimal_transaksi' => [
+                'required', 'numeric', 'min:0',
+                Rule::unique('member_levels', 'minimal_transaksi')->ignore($ignoreId),
             ],
             'warna_badge' => 'nullable|string|max:20',
             'status_aktif' => 'nullable|boolean',
         ], [
             'nama_level.required' => 'Nama level wajib diisi.',
             'nama_level.unique' => 'Nama level ini sudah dipakai.',
-            'minimal_poin.required' => 'Minimal poin wajib diisi.',
-            'minimal_poin.unique' => 'Minimal poin ini sudah dipakai level lain. Setiap level harus punya ambang batas poin yang berbeda supaya urutan tingkatannya jelas.',
+            'minimal_transaksi.required' => 'Minimal transaksi wajib diisi.',
+            'minimal_transaksi.numeric' => 'Minimal transaksi harus berupa angka.',
+            'minimal_transaksi.min' => 'Minimal transaksi tidak boleh negatif.',
+            'minimal_transaksi.unique' => 'Minimal transaksi ini sudah dipakai level lain. Setiap level harus punya ambang batas transaksi yang berbeda supaya urutan tingkatannya jelas.',
         ]);
     }
 }

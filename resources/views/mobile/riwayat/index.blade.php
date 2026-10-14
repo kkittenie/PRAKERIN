@@ -204,6 +204,7 @@
                                     @php
                                         $belumLunas = strtolower($trx->status_pembayaran ?? 'lunas') !== 'lunas';
                                         $itemsJson = $trx->detailTransaksi
+                                            ->reject(fn ($i) => ($i->bundling_id || $i->promo_event_id) && $i->produk_id && (float) $i->subtotal == 0)
                                             ->groupBy(function ($item) {
                                                 return $item->nama_produk . '_' . ($item->ukuran ?? 'std') . '_' . ($item->varian_rasa ?? 'none');
                                             })
@@ -535,6 +536,7 @@
                                         @php
                                             $belumLunas = strtolower($trx->status_pembayaran ?? 'lunas') !== 'lunas';
                                             $itemsJson = $trx->detailTransaksi
+                                                ->reject(fn ($i) => ($i->bundling_id || $i->promo_event_id) && $i->produk_id && (float) $i->subtotal == 0)
                                                 ->groupBy(function ($item) {
                                                     return $item->nama_produk . '_' . ($item->ukuran ?? 'std') . '_' . ($item->varian_rasa ?? 'none');
                                                 })

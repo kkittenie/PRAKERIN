@@ -157,6 +157,8 @@ class KeranjangController extends Controller
                 ->values()
                 ->all();
 
+            $rincianBundling = $this->susunRincianBundling($bundling, $pilihanKhusus);
+
             MemberCart::tambah([
                 'bundling_id' => $bundling->id,
                 'nama_produk' => $bundling->nama_bundling,
@@ -166,6 +168,7 @@ class KeranjangController extends Controller
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
                 'pilihan_khusus' => $pilihanKhusus,
+                'rincian_bundling' => $rincianBundling,
             ]);
 
             $pesan = "{$bundling->nama_bundling} ditambahkan ke keranjang.";
@@ -383,6 +386,8 @@ class KeranjangController extends Controller
                 ->values()
                 ->all();
 
+            $rincianBundling = $this->susunRincianBundling($bundling, $pilihanKhusus);
+
             MemberCart::perbarui($itemId, [
                 'bundling_id' => $bundling->id,
                 'nama_produk' => $bundling->nama_bundling,
@@ -392,6 +397,7 @@ class KeranjangController extends Controller
                 'catatan' => $validated['catatan'] ?? null,
                 'jumlah' => $validated['jumlah'],
                 'pilihan_khusus' => $pilihanKhusus,
+                'rincian_bundling' => $rincianBundling,
             ]);
 
             return redirect()
@@ -459,6 +465,10 @@ class KeranjangController extends Controller
 
             MemberCart::ubahJumlah($itemId, $validated['jumlah']);
 
+            if (MemberCart::isEmpty()) {
+                return redirect()->route('member.menu')->with('info', 'Item dihapus. Keranjang kamu sekarang kosong.');
+            }
+
             return back();
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -474,6 +484,10 @@ class KeranjangController extends Controller
             }
 
             MemberCart::hapus($itemId);
+
+            if (MemberCart::isEmpty()) {
+                return redirect()->route('member.menu')->with('info', 'Item dihapus. Keranjang kamu sekarang kosong.');
+            }
 
             return back()->with('success', 'Item dihapus dari keranjang.');
         } catch (\Throwable $e) {
@@ -510,5 +524,41 @@ class KeranjangController extends Controller
         }
 
         return $daftar[0]['nama'] ?? null;
+    }
+
+    private function susunRincianBundling(Bundling $bundling, array $pilihanKhusus = []): array
+    {
+        $rincian = [];
+        if ($bundling->jenis_produk === 'khusus_bundling') {
+            $bundling->loadMissing(['items.produk.detailProduks', 'items.detailProduk']);
+            $produkMap = $bundling->items->keyBy('produk_id');
+            foreach ($pilihanKhusus as $pk) {
+                $bi = $produkMap->get($pk['produk_id']);
+                $prod = $bi?->produk;
+                $dp = $bi?->detailProduk ?? $prod?->detailProduks?->first();
+                $rincian[] = [
+                    'produk_id' => $pk['produk_id'],
+                    'nama_produk' => $prod?->nama_produk ?? 'Produk',
+                    'ukuran' => $dp?->ukuran ?: $bi?->ukuran,
+                    'varian_rasa' => $dp?->variasi ?: $bi?->varian_rasa,
+                    'qty' => (int) ($pk['qty'] ?? 1),
+                    'catatan' => $pk['catatan'] ?? null,
+                ];
+            }
+        } else {
+            $bundling->loadMissing(['items.produk.detailProduks', 'items.detailProduk']);
+            foreach ($bundling->items as $bi) {
+                $dp = $bi->detailProduk ?? $bi->produk?->detailProduks?->first();
+                $rincian[] = [
+                    'produk_id' => $bi->produk_id,
+                    'nama_produk' => $bi->produk?->nama_produk ?? 'Produk',
+                    'ukuran' => $dp?->ukuran ?: $bi->ukuran,
+                    'varian_rasa' => $dp?->variasi ?: $bi->varian_rasa,
+                    'qty' => (int) $bi->qty,
+                    'catatan' => null,
+                ];
+            }
+        }
+        return $rincian;
     }
 }

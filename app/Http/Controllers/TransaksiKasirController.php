@@ -193,6 +193,7 @@ class TransaksiKasirController extends Controller
             $daftarKategori = KategoriProduk::all();
 
             $daftarBundling = Bundling::with([
+                'items.produk',
                 'items.detailProduk',
             ])
                 ->where('status_aktif', true)

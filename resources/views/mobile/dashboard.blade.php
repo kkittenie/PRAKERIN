@@ -751,7 +751,7 @@
                             @include('mobile.components.icon-crown', ['class' => 'h-7 w-7'])
                         </div>
                         <h3 class="mt-5 text-base font-extrabold text-white">Member Tier</h3>
-                        <p class="mt-2 text-xs leading-relaxed text-stone-400">Naik tier secara otomatis berdasarkan total poin. Tier lebih tinggi = promo eksklusif dan keuntungan lebih banyak.</p>
+                        <p class="mt-2 text-xs leading-relaxed text-stone-400">Naik tier secara otomatis berdasarkan akumulasi transaksi. Tier lebih tinggi = promo eksklusif dan keuntungan lebih banyak.</p>
                         @auth('member')
                             <div class="mt-4 rounded-xl bg-white/10 px-4 py-2.5 border border-white/10">
                                 <span class="text-[11px] font-bold text-emerald-300">Level kamu: Tier {{ $member->level }}</span>
@@ -863,7 +863,7 @@
 
                 @if ($progresTier)
                     <p class="mt-1 text-center text-theme-sm text-gray-500">
-                        {{ $progresTier['poin_dibutuhkan'] }} poin lagi menuju Tier {{ $progresTier['tier_berikutnya'] }}
+                        Rp {{ number_format($progresTier['transaksi_dibutuhkan'], 0, ',', '.') }} transaksi lagi menuju Tier {{ $progresTier['tier_berikutnya'] }}
                     </p>
                     <div class="mt-3">
                         <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
@@ -892,7 +892,7 @@
                                     </span>
                                     <span class="text-theme-sm font-semibold {{ $iniTierSaatIni ? 'text-brand-700' : 'text-gray-800' }}">{{ $tier->nama_level }}</span>
                                 </div>
-                                <span class="text-theme-xs text-gray-400">Min. {{ number_format($tier->minimal_poin, 0, ',', '.') }} poin</span>
+                                <span class="text-theme-xs text-gray-400">Min. Rp {{ number_format($tier->minimal_transaksi ?? 0, 0, ',', '.') }}</span>
                             </div>
                         @endforeach
                     </div>

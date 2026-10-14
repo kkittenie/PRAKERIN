@@ -53,7 +53,7 @@
             <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/15">
                 <div class="h-full rounded-full bg-white" style="width: {{ $progres['persen'] }}%"></div>
             </div>
-            <p class="mt-1.5 text-[11px] text-white/60">{{ $progres['poin_dibutuhkan'] }} poin lagi menuju {{ $progres['tier_berikutnya'] }}</p>
+            <p class="mt-1.5 text-[11px] text-white/60">Rp {{ number_format($progres['transaksi_dibutuhkan'], 0, ',', '.') }} transaksi lagi menuju {{ $progres['tier_berikutnya'] }}</p>
         </div>
     @else
         <p class="relative mt-5 text-[11px] text-white/60">Kamu sudah di tier tertinggi ✨</p>

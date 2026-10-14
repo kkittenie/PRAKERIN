@@ -226,31 +226,27 @@
             <span class="h-1 w-10 rounded-full bg-gray-200"></span>
         </div>
         <div class="p-5 pt-2 text-center">
-            <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-800">
-                @include('mobile.components.icon-gift', ['class' => 'h-6 w-6'])
+            <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-800">
+                @include('mobile.components.icon-gift', ['class' => 'h-7 w-7'])
             </span>
-            <p class="mt-3 text-sm font-semibold text-gray-800">Tukar <span id="konfirmasi-tukar-stamp-nama"></span>?</p>
-            <p class="mt-1 text-xs text-gray-500">Pilih metode pengambilan hadiah kamu:</p>
+            <h3 class="mt-3 text-base font-bold text-gray-900">Tukar hadiah <span id="konfirmasi-tukar-stamp-nama"></span>?</h3>
+            <p class="mt-1 text-xs text-gray-500">Stamp kamu yang sudah terkumpul akan ditukarkan dengan hadiah ini.</p>
 
-            <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-5 space-y-2.5 pb-2">
+            <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-6 pb-2">
                 @csrf
                 <input type="hidden" name="produk_id" id="konfirmasi-tukar-stamp-produk-id">
                 <input type="hidden" name="metode_ambil" id="konfirmasi-tukar-stamp-metode" value="aplikasi">
 
-                <button type="submit" onclick="document.getElementById('konfirmasi-tukar-stamp-metode').value='aplikasi'"
-                    class="w-full rounded-2xl bg-[#5a3c27] py-3 text-sm font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer">
-                    <span>Ambil di Aplikasi (Pesanan Pickup)</span>
-                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
-                        <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                </button>
-
-                <button type="submit" onclick="document.getElementById('konfirmasi-tukar-stamp-metode').value='kasir'"
-                    class="w-full rounded-2xl border border-gray-300 bg-white py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 active:scale-[0.99] cursor-pointer">
-                    Ambil di Kasir (Offline dengan Kode)
-                </button>
-
-                <button type="button" onclick="closeSheet('konfirmasi-tukar-stamp')" class="w-full rounded-xl py-2 text-xs font-medium text-gray-400 hover:text-gray-600">Batal</button>
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button" onclick="closeSheet('konfirmasi-tukar-stamp')"
+                        class="w-full rounded-2xl border border-gray-200 bg-white py-3 text-xs font-bold text-gray-600 hover:bg-gray-50 active:scale-[0.99] cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="submit"
+                        class="w-full rounded-2xl bg-[#5a3c27] py-3 text-xs font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] cursor-pointer">
+                        Ya, Tukar
+                    </button>
+                </div>
             </form>
         </div>
     </dialog>

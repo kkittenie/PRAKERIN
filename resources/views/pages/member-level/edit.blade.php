@@ -19,6 +19,37 @@
                     green: 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400',
                     purple: 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400',
                     red: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400',
+                },
+                minimalTransaksiDisplay: '{{ old('minimal_transaksi', $level->minimal_transaksi) !== null ? number_format((float) old('minimal_transaksi', $level->minimal_transaksi), 0, ',', '.') : '0' }}',
+                getRawNumber(val) {
+                    return (val || '').toString().replace(/\D/g, '') || '0';
+                },
+                handleRupiahInput(event, prop) {
+                    const input = event.target;
+                    const oldValue = input.value;
+                    const cursorPos = input.selectionStart;
+                    const digitsBeforeCursor = oldValue.slice(0, cursorPos).replace(/\D/g, '').length;
+
+                    const rawDigits = oldValue.replace(/\D/g, '');
+                    const formatted = rawDigits ? new Intl.NumberFormat('id-ID').format(rawDigits) : '';
+
+                    this[prop] = formatted;
+
+                    this.$nextTick(() => {
+                        let newPos = formatted.length;
+                        let count = 0;
+                        for (let i = 0; i < formatted.length; i++) {
+                            if (/\d/.test(formatted[i])) {
+                                count++;
+                                if (count === digitsBeforeCursor) {
+                                    newPos = i + 1;
+                                    break;
+                                }
+                            }
+                        }
+                        if (digitsBeforeCursor === 0) newPos = 0;
+                        input.setSelectionRange(newPos, newPos);
+                    });
                 }
             }">
             @csrf
@@ -41,14 +72,19 @@
 
                 <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Minimal Poin <span class="text-red-500">*</span>
+                        Minimal Transaksi (Rp) <span class="text-red-500">*</span>
                     </label>
-                    <input type="number" name="minimal_poin" min="0" value="{{ old('minimal_poin', $level->minimal_poin) }}"
-                        placeholder="Contoh: 0, 500, 2000"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
-                        required>
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Poin minimal yang harus dimiliki member untuk naik ke level ini. Urutan tampil level otomatis mengikuti angka ini dari yang terkecil.</span>
-                    @error('minimal_poin')
+                    <div class="relative">
+                        <span class="absolute left-4 top-3 text-gray-500 font-bold text-sm">Rp</span>
+                        <input type="text" inputmode="numeric" autocomplete="off" x-model="minimalTransaksiDisplay"
+                            @input="handleRupiahInput($event, 'minimalTransaksiDisplay')"
+                            placeholder="Contoh: 50.000"
+                            class="h-12 w-full rounded-lg border border-gray-300 bg-white pl-12 pr-4 py-3 text-gray-900 font-semibold dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-brand-500 focus:ring-brand-500"
+                            required>
+                        <input type="hidden" name="minimal_transaksi" :value="getRawNumber(minimalTransaksiDisplay)">
+                    </div>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Total nominal transaksi minimal yang harus dicapai member untuk naik ke level ini.</span>
+                    @error('minimal_transaksi')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
                 </div>
