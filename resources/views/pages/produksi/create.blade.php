@@ -565,7 +565,7 @@ function aktifkanSearch(element) {
 
                 const previewUkuran = document.getElementById('preview-produk-ukuran');
 
-                previewKode.textContent = `Kode: ${produk.kode_produk}`;
+                previewKode.textContent = `Kode: ${produk.kode_detail || '-'}`;
                 previewUkuran.innerHTML = badgeUkuranHtml(produk);
                 previewUkuran.classList.remove('hidden');
                 previewUkuran.classList.add('flex');
@@ -608,7 +608,7 @@ function aktifkanSearch(element) {
 
                 const hasil = daftarProduk.filter(function (produk) {
                     return produk.nama_produk.toLowerCase().includes(keyword)
-                        || (produk.kode_produk || '').toLowerCase().includes(keyword);
+                        || (produk.kode_cari || '').toLowerCase().includes(keyword);
                 });
 
                 hasilSearch.innerHTML = '';
@@ -635,7 +635,7 @@ function aktifkanSearch(element) {
                                     ${produk.nama_produk}
                                 </div>
                                 <div class="text-xs text-gray-400 truncate">
-                                    ${produk.kode_produk ?? '-'}
+                                    ${produk.kode_detail || '-'}
                                 </div>
                                 <div class="mt-1 flex flex-wrap gap-1">${badgeUkuranHtml(produk)}</div>
                             </div>

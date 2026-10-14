@@ -117,10 +117,10 @@
                 { data: 'kode_html', name: 'kode_html', orderable: false, className: 'font-mono text-sm text-gray-600 dark:text-gray-400' },
                 { data: 'kategori.nama_kategori', name: 'kategori.nama_kategori', defaultContent: '-', className: 'text-sm font-medium text-gray-700 dark:text-gray-300' },
                 { data: 'varian_rasa_html', name: 'varian_rasa_html', orderable: false, searchable: false, className: 'text-center' },
-                { data: 'harga_jual_html', name: 'harga_jual', className: 'text-right font-bold text-amber-700 dark:text-amber-400 whitespace-nowrap text-sm sm:text-base' },
-                { data: 'stok_html', name: 'stok', className: 'text-center' },
+                { data: 'harga_jual_html', name: 'harga_jual_html', searchable: false, className: 'text-right font-bold text-amber-700 dark:text-amber-400 whitespace-nowrap text-sm sm:text-base' },
+                { data: 'stok_html', name: 'stok_html', searchable: false, className: 'text-center' },
                 { data: 'status_html', name: 'status_aktif', className: 'text-center' },
-                { data: 'ketersediaan_html', name: 'status_ketersediaan', className: 'text-center' },
+                { data: 'ketersediaan_html', name: 'ketersediaan_html', searchable: false, className: 'text-center' },
                 { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
             ],
             emptyText: 'Belum ada produk'

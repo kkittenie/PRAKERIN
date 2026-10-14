@@ -153,7 +153,9 @@ class ProduksiController extends Controller
                     ->filterColumn('produk.nama_produk', function ($q, $keyword) {
                         $q->whereHas('produk', function ($qp) use ($keyword) {
                             $qp->where('nama_produk', 'like', "%{$keyword}%")
-                              ->orWhere('kode_produk', 'like', "%{$keyword}%");
+                              ->orWhereHas('detailProduks', function ($qd) use ($keyword) {
+                                  $qd->where('kode_barcode', 'like', "%{$keyword}%");
+                              });
                         });
                     })
                     ->filterColumn('user.name', function ($q, $keyword) {
@@ -220,7 +222,12 @@ class ProduksiController extends Controller
                 ->get()
                 ->map(fn (Produk $p) => [
                     'id' => $p->id,
-                    'kode_produk' => $p->kode_produk,
+                    // Kode ada di detail produk: ringkasan untuk tampilan, lengkap untuk pencarian.
+                    'kode_detail' => $p->detailProduks->pluck('kode_barcode')->filter()->take(3)->implode(', ')
+                        . ($p->detailProduks->pluck('kode_barcode')->filter()->count() > 3
+                            ? ' +' . ($p->detailProduks->pluck('kode_barcode')->filter()->count() - 3) . ' lainnya'
+                            : ''),
+                    'kode_cari' => $p->detailProduks->pluck('kode_barcode')->filter()->implode(' '),
                     'nama_produk' => $p->nama_produk,
                     'foto' => $p->foto,
                     'punya_varian_baru' => $p->detailProduks->isNotEmpty(),
@@ -286,7 +293,7 @@ class ProduksiController extends Controller
             $labelItems = $produksi->produksiVarians
                 ->filter(fn ($item) => $item->jumlah_hasil > 0)
                 ->map(fn ($item) => [
-                    'kode_barcode' => optional($item->detailProduk)->kode_barcode ?: ($item->kode_barcode ?: $produksi->produk->kode_produk),
+                    'kode_barcode' => optional($item->detailProduk)->kode_barcode ?: ($item->kode_barcode ?: '-'),
                     'nama_ukuran' => $item->ukuran,
                     'nama_rasa' => $item->variasi,
                     'harga_jual' => optional($item->detailProduk)->harga_jual ?? $item->harga_jual,
@@ -634,7 +641,6 @@ class ProduksiController extends Controller
                     $varian->stok -= $r['kebutuhan'];
                 }
 
-                $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
                 $varian->save();
 
                 ProduksiVarian::create([
@@ -711,7 +717,6 @@ class ProduksiController extends Controller
             }
 
             $v->stok = (int) $v->stok - $jumlah;
-            $v->status_ketersediaan = $v->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
             $v->save();
 
             $this->sinkronStokProdukDariVarian(Produk::lockForUpdate()->findOrFail($produk->id));
@@ -732,7 +737,11 @@ class ProduksiController extends Controller
         return back()->with('success', "Stok \"{$produk->nama_produk}\" varian {$varian->nama_lengkap} berhasil dikurangi {$jumlah} pcs.");
     }
 
-    /** Stok & status produk = total semua varian (sama seperti form produk & kasir). */
+    /**
+     * SEMENTARA: salinan total stok di tabel produks, karena dashboard, notifikasi,
+     * kasir lama, mobile, promo, dan bundling masih membacanya. Stok yang sebenarnya
+     * ada di detail produk; hapus method ini setelah modul-modul itu pindah.
+     */
     private function sinkronStokProdukDariVarian(Produk $produk): void
     {
         $total = (int) DetailProduk::where('produk_id', $produk->id)->sum('stok');

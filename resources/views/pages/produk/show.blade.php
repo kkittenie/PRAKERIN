@@ -52,7 +52,7 @@
                                     Rp {{ number_format($varians->min('harga_jual'), 0, ',', '.') }} &ndash; Rp {{ number_format($varians->max('harga_jual'), 0, ',', '.') }}
                                 @endif
                             @else
-                                Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}
+                                <span class="text-gray-400 text-sm">Belum ada detail produk</span>
                             @endif
                         </p>
                     </div>
@@ -67,7 +67,7 @@
                                     Rp {{ number_format($varians->min('harga_modal'), 0, ',', '.') }} &ndash; Rp {{ number_format($varians->max('harga_modal'), 0, ',', '.') }}
                                 @endif
                             @else
-                                Rp {{ number_format($produk->harga_modal, 0, ',', '.') }}
+                                <span class="text-gray-400 text-sm">Belum ada detail produk</span>
                             @endif
                         </p>
                     </div>
@@ -81,10 +81,7 @@
                                 <span class="text-gray-400 font-normal text-xs">(Total {{ $varians->count() }} varian)</span>
                             </p>
                         @else
-                            <p class="font-semibold {{ $produk->stok <= $produk->stok_minimum ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                                {{ $produk->stok }}
-                                <span class="text-gray-400 font-normal text-xs">(Min: {{ $produk->stok_minimum }})</span>
-                            </p>
+                            <p class="text-gray-400 text-sm">Belum ada detail produk</p>
                         @endif
                     </div>
 
@@ -115,10 +112,8 @@
                                 @else
                                     <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">✓ Semua varian tersedia</span>
                                 @endif
-                            @elseif($produk->stok <= 0 || $produk->status_ketersediaan == 'perlu_diproduksi')
-                                <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">⚠ Perlu Diproduksi</span>
                             @else
-                                <span class="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">✓ Stok Ada</span>
+                                <span class="text-gray-400 text-sm">-</span>
                             @endif
                         </div>
                     </div>

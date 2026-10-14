@@ -11,5 +11,5 @@
     @endif
     <div class="text-[11px] font-medium text-gray-400">{{ $varians->count() }} varian</div>
 @else
-    Rp {{ number_format($item->harga_jual, 0, ',', '.') }}
+    <span class="text-xs text-gray-400 italic">-</span>
 @endif

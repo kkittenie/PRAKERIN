@@ -33,7 +33,7 @@
                     {{ $produksi->produk->nama_produk }}
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ $produksi->produk->kode_produk ?? '-' }}
+                    {{ $produksi->produksiVarians->pluck('kode_barcode')->filter()->unique()->implode(', ') ?: '-' }}
                 </p>
             </div>
 

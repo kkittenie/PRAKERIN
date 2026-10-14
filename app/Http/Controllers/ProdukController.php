@@ -48,6 +48,26 @@ class ProdukController extends Controller
                           ->orderBy('kategori_produks.nama_kategori', $order)
                           ->select('produks.*');
                     })
+                    // Harga, stok, dan ketersediaan dihitung dari detail produk, jadi urutannya juga dari detail produk.
+                    ->orderColumn('harga_jual_html', function ($q, $order) {
+                        $q->orderBy(
+                            DetailProduk::selectRaw('MIN(harga_jual)')->whereColumn('detail_produks.produk_id', 'produks.id'),
+                            $order
+                        );
+                    })
+                    ->orderColumn('stok_html', function ($q, $order) {
+                        $q->orderBy(
+                            DetailProduk::selectRaw('COALESCE(SUM(stok), 0)')->whereColumn('detail_produks.produk_id', 'produks.id'),
+                            $order
+                        );
+                    })
+                    ->orderColumn('ketersediaan_html', function ($q, $order) {
+                        $q->orderBy(
+                            DetailProduk::selectRaw('COALESCE(SUM(CASE WHEN status_aktif = 1 AND stok > 0 THEN 1 ELSE 0 END), 0)')
+                                ->whereColumn('detail_produks.produk_id', 'produks.id'),
+                            $order
+                        );
+                    })
                     ->addColumn('foto', fn($item) => view('pages.produk.partials.foto', compact('item'))->render())
                     ->editColumn('nama_produk', fn($item) => view('pages.produk.partials.nama', compact('item'))->render())
                     ->addColumn('kode_html', fn($item) => view('pages.produk.partials.kode', compact('item'))->render())
@@ -105,10 +125,9 @@ class ProdukController extends Controller
             $this->pastikanBarisValid($baris);
 
             $validated = $this->terapkanDataProduk($validated, $baris);
-            $validated['kode_produk'] = $this->buatKodeProduk();
 
             if ($request->hasFile('foto')) {
-                $validated['foto'] = $request->file('foto')->store('produk/' . $validated['kode_produk'], 'public');
+                $validated['foto'] = $request->file('foto')->store('produk', 'public');
             }
 
             $produk = DB::transaction(function () use ($validated, $baris) {
@@ -162,17 +181,16 @@ class ProdukController extends Controller
                     ->map(fn (DetailProduk $d) => $this->barisUntukForm($d))
                     ->values();
             } else {
-                // Produk lama yang belum punya baris detail: satu baris diisi dari data produk,
-                // baru tersimpan sebagai detail produk kalau form ini disimpan.
+                // Produk yang belum punya detail: satu baris kosong untuk diisi.
                 $detailBaris = collect([[
                     'id' => '',
-                    'kode' => (string) $produk->kode_produk,
+                    'kode' => '',
                     'ukuran' => '',
                     'variasi' => '',
-                    'harga_modal' => (int) $produk->harga_modal,
-                    'harga_jual' => (int) $produk->harga_jual,
-                    'stok' => (int) $produk->stok,
-                    'stok_minimum' => (int) $produk->stok_minimum,
+                    'harga_modal' => '',
+                    'harga_jual' => '',
+                    'stok' => 0,
+                    'stok_minimum' => 0,
                     'foto_url' => null,
                     'status_aktif' => true,
                 ]]);
@@ -196,12 +214,10 @@ class ProdukController extends Controller
 
             if ($request->hasFile('foto')) {
                 if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
-                    Storage::disk('public')->deleteDirectory('produk/' . $produk->kode_produk);
+                    Storage::disk('public')->delete($produk->foto);
                 }
 
-                $validated['foto'] = $request
-                    ->file('foto')
-                    ->store('produk/' . $produk->kode_produk, 'public');
+                $validated['foto'] = $request->file('foto')->store('produk', 'public');
             }
 
             DB::transaction(function () use ($produk, $validated, $baris) {
@@ -247,10 +263,13 @@ class ProdukController extends Controller
             }
 
             DB::transaction(function () use ($produk) {
+                if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
+                    Storage::disk('public')->delete($produk->foto);
+                }
+
+                // Produk lama menyimpan foto di folder berkode.
                 if ($produk->kode_produk) {
                     Storage::disk('public')->deleteDirectory('produk/' . $produk->kode_produk);
-                } elseif ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
-                    Storage::disk('public')->delete($produk->foto);
                 }
 
                 Storage::disk('public')->deleteDirectory(self::FOTO_DETAIL_PATH . '/' . $produk->id);
@@ -397,9 +416,13 @@ class ProdukController extends Controller
     }
 
     /**
-     * Isi kolom di tabel produks. Kode, harga, dan stok yang sebenarnya ada di
-     * detail produk; kolom di produks hanya salinan ringkas (harga termurah,
-     * total stok) untuk halaman lain yang masih membacanya.
+     * Kode, harga, dan stok yang sebenarnya hanya ada di detail produk. Halaman
+     * produk dan produksi tidak membaca kolom di tabel produks.
+     *
+     * SEMENTARA: kolom harga/stok di produks masih diisi sebagai salinan ringkas
+     * (harga termurah, total stok) karena dashboard, notifikasi stok menipis,
+     * kasir lama, mobile, promo, dan bundling masih membacanya. Hapus method ini
+     * dan kolomnya setelah modul-modul itu membaca dari detail produk.
      */
     private function terapkanDataProduk(array $validated, Collection $baris): array
     {
@@ -420,19 +443,6 @@ class ProdukController extends Controller
         $validated['stok_kecil'] = 0;
 
         return $validated;
-    }
-
-    /** Kode internal produk (tidak ditampilkan di form; kode yang dipakai kasir ada di detail produk). */
-    private function buatKodeProduk(): string
-    {
-        $nomor = (int) Produk::max('id') + 1;
-
-        do {
-            $kode = 'PRD-' . str_pad($nomor, 4, '0', STR_PAD_LEFT);
-            $nomor++;
-        } while (Produk::where('kode_produk', $kode)->exists());
-
-        return $kode;
     }
 
     /**
