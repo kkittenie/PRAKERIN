@@ -10,37 +10,24 @@
 
 <script>
     window.__promoEventProduks = {{ \Illuminate\Support\Js::from($produks->map(function ($p) {
-        $hasVarian = $p->produkVarians && $p->produkVarians->isNotEmpty();
-        if ($hasVarian) {
-            $ukurans = $p->produkVarians
-                ->filter(fn ($v) => !empty($v->ukuran))
-                ->map(fn ($v) => ['id' => $v->ukuran_id, 'nama' => $v->ukuran])
-                ->unique('nama')->values();
-            $rasas = $p->produkVarians
-                ->filter(fn ($v) => !empty($v->variasi))
-                ->map(fn ($v) => ['id' => $v->varian_rasa_id, 'nama' => $v->variasi])
-                ->unique('nama')->values();
-            $punyaUkuran = $ukurans->isNotEmpty();
-            $punyaRasa   = $rasas->isNotEmpty();
-        } else {
-            $punyaUkuran = (bool) $p->punya_ukuran;
-            $ukurans = $punyaUkuran
-                ? $p->produkUkurans->map(fn ($pu) => ['id' => $pu->ukuran_id, 'nama' => $pu->ukuran->nama_ukuran])->unique('nama')->values()
-                : collect();
-            $punyaRasa = (bool) $p->punya_varian_rasa;
-            $rasas = $punyaRasa
-                ? collect($p->daftar_varian_rasa)->map(fn ($r) => ['id' => $r['varian_rasa_id'], 'nama' => $r['nama']])->values()
-                : collect();
-        }
+        $detail = $p->daftarDetail();
+        $ukurans = $detail
+            ->filter(fn ($v) => !empty($v->ukuran))
+            ->map(fn ($v) => ['nama' => $v->ukuran])
+            ->unique('nama')->values();
+        $rasas = $detail
+            ->filter(fn ($v) => !empty($v->variasi))
+            ->map(fn ($v) => ['nama' => $v->variasi])
+            ->unique('nama')->values();
         return [
             'id'              => $p->id,
             'nama_produk'     => $p->nama_produk,
             'kode_produk'     => $p->kode_produk,
             'foto'            => $p->foto,
             'harga_jual'      => (float) $p->harga_jual,
-            'punya_ukuran'    => (bool) $punyaUkuran,
+            'punya_ukuran'    => $ukurans->isNotEmpty(),
             'ukurans'         => $ukurans,
-            'punya_varian_rasa' => (bool) $punyaRasa,
+            'punya_varian_rasa' => $rasas->isNotEmpty(),
             'rasas'           => $rasas,
         ];
     })->values()) }};

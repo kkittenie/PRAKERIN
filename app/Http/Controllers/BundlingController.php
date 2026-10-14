@@ -16,7 +16,7 @@ class BundlingController extends Controller
     {
         if ($request->ajax()) {
             try {
-                $data = Bundling::with(['items.produk.produkUkurans.ukuran', 'items.produk.produkVarianRasas.varianRasa', 'items.produk.produkUkuranRasas'])->get();
+                $data = Bundling::with(['items.produk.detailProduks'])->get();
 
                 return \Yajra\DataTables\Facades\DataTables::of($data)
                     ->addIndexColumn()
@@ -48,11 +48,11 @@ class BundlingController extends Controller
         try {
             $produkBiasa = Produk::reguler()
                 ->where('status_aktif', true)
-                ->with(['produkVarians' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id'), 'produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])
+                ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id')])
                 ->orderBy('nama_produk')
                 ->get()
                 ->each(function (Produk $p) {
-                    $p->setAttribute('punya_varian', $p->produkVarians->isNotEmpty());
+                    $p->setAttribute('punya_varian', $p->detailProduks->isNotEmpty());
                     $p->setAttribute('daftar_varian', $p->daftarVarianKasir());
                 });
             $produkKhusus = Produk::khususBundling()->orderBy('nama_produk')->get();
@@ -93,8 +93,8 @@ class BundlingController extends Controller
                 'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'produk_id' => 'required|array|min:1',
                 'produk_id.*' => ['required', 'exists:produks,id'],
-                'produk_varian_id' => 'nullable|array',
-                'produk_varian_id.*' => 'nullable|integer',
+                'detail_produk_id' => 'nullable|array',
+                'detail_produk_id.*' => 'nullable|integer',
                 'ukuran' => 'nullable|array',
                 'ukuran.*' => 'nullable|string|max:50',
                 'varian_rasa' => 'nullable|array',
@@ -132,12 +132,12 @@ class BundlingController extends Controller
                 $isBiasa = $request->jenis_produk === 'biasa';
 
                 foreach ($request->produk_id as $i => $produkId) {
-                    $varianId = $isBiasa && !empty($request->produk_varian_id[$i]) ? (int) $request->produk_varian_id[$i] : null;
+                    $varianId = $isBiasa && !empty($request->detail_produk_id[$i]) ? (int) $request->detail_produk_id[$i] : null;
                     $ukuran = $isBiasa && !empty($request->ukuran[$i]) ? $request->ukuran[$i] : null;
                     $varianRasa = $isBiasa && !empty($request->varian_rasa[$i]) ? $request->varian_rasa[$i] : null;
 
                     if ($varianId) {
-                        $varian = \App\Models\ProdukVarian::find($varianId);
+                        $varian = \App\Models\DetailProduk::find($varianId);
                         if ($varian) {
                             $ukuran = $varian->ukuran ?: $ukuran;
                             $varianRasa = $varian->variasi ?: $varianRasa;
@@ -147,7 +147,7 @@ class BundlingController extends Controller
                     BundlingItem::create([
                         'bundling_id' => $bundling->id,
                         'produk_id' => $produkId,
-                        'produk_varian_id' => $varianId,
+                        'detail_produk_id' => $varianId,
                         'ukuran' => $ukuran,
                         'varian_rasa' => $varianRasa,
                         'qty' => isset($request->qty[$i]) ? (int) $request->qty[$i] : 1,
@@ -167,13 +167,13 @@ class BundlingController extends Controller
     {
         try {
             $produkIds = $request->produk_id ?? [];
-            $varianIds = $request->produk_varian_id ?? [];
+            $varianIds = $request->detail_produk_id ?? [];
             $ukuranList = $request->ukuran ?? [];
             $rasaList = $request->varian_rasa ?? [];
             $rasaBersih = [];
 
             $produkTerpakai = Produk::whereIn('id', $produkIds)
-                ->with(['produkVarians' => fn ($q) => $q->where('status_aktif', true), 'produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])
+                ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)])
                 ->get()
                 ->keyBy('id');
 
@@ -189,13 +189,13 @@ class BundlingController extends Controller
                 $varianId = !empty($varianIds[$i]) ? (int) $varianIds[$i] : null;
 
                 // Jika produk punya varian dari sistem baru (produk_varians)
-                if ($produk->produkVarians->isNotEmpty()) {
+                if ($produk->detailProduks->isNotEmpty()) {
                     if (!$varianId) {
-                        $errors["produk_varian_id.$i"] = "Pilih varian untuk produk \"{$produk->nama_produk}\".";
+                        $errors["detail_produk_id.$i"] = "Pilih varian untuk produk \"{$produk->nama_produk}\".";
                     } else {
-                        $varianObj = $produk->produkVarians->firstWhere('id', $varianId);
+                        $varianObj = $produk->detailProduks->firstWhere('id', $varianId);
                         if (!$varianObj) {
-                            $errors["produk_varian_id.$i"] = "Varian yang dipilih untuk \"{$produk->nama_produk}\" tidak valid.";
+                            $errors["detail_produk_id.$i"] = "Varian yang dipilih untuk \"{$produk->nama_produk}\" tidak valid.";
                         }
                     }
 
@@ -327,11 +327,8 @@ class BundlingController extends Controller
     {
         try {
             $bundling->load([
-                'items.produkVarian',
-                'items.produk.produkVarians',
-                'items.produk.produkUkurans.ukuran',
-                'items.produk.produkVarianRasas.varianRasa',
-                'items.produk.produkUkuranRasas',
+                'items.detailProduk',
+                'items.produk.detailProduks',
             ]);
 
             return view('pages.bundling.show', compact('bundling'));
@@ -344,19 +341,16 @@ class BundlingController extends Controller
     {
         try {
             $bundling->load([
-                'items.produkVarian',
-                'items.produk.produkVarians' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id'),
-                'items.produk.produkUkurans.ukuran',
-                'items.produk.produkVarianRasas.varianRasa',
-                'items.produk.produkUkuranRasas',
+                'items.detailProduk',
+                'items.produk.detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id'),
             ]);
             $produkBiasa = Produk::reguler()
                 ->where('status_aktif', true)
-                ->with(['produkVarians' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id'), 'produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])
+                ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id')])
                 ->orderBy('nama_produk')
                 ->get()
                 ->each(function (Produk $p) {
-                    $p->setAttribute('punya_varian', $p->produkVarians->isNotEmpty());
+                    $p->setAttribute('punya_varian', $p->detailProduks->isNotEmpty());
                     $p->setAttribute('daftar_varian', $p->daftarVarianKasir());
                 });
             $produkKhusus = Produk::khususBundling()->orderBy('nama_produk')->get();
@@ -383,8 +377,8 @@ class BundlingController extends Controller
                 'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
                 'produk_id' => 'required|array|min:1',
                 'produk_id.*' => ['required', 'exists:produks,id'],
-                'produk_varian_id' => 'nullable|array',
-                'produk_varian_id.*' => 'nullable|integer',
+                'detail_produk_id' => 'nullable|array',
+                'detail_produk_id.*' => 'nullable|integer',
                 'ukuran' => 'nullable|array',
                 'ukuran.*' => 'nullable|string|max:50',
                 'varian_rasa' => 'nullable|array',
@@ -425,12 +419,12 @@ class BundlingController extends Controller
                 $bundling->items()->delete();
 
                 foreach ($request->produk_id as $i => $produkId) {
-                    $varianId = $isBiasa && !empty($request->produk_varian_id[$i]) ? (int) $request->produk_varian_id[$i] : null;
+                    $varianId = $isBiasa && !empty($request->detail_produk_id[$i]) ? (int) $request->detail_produk_id[$i] : null;
                     $ukuran = $isBiasa && !empty($request->ukuran[$i]) ? $request->ukuran[$i] : null;
                     $varianRasa = $isBiasa && !empty($request->varian_rasa[$i]) ? $request->varian_rasa[$i] : null;
 
                     if ($varianId) {
-                        $varian = \App\Models\ProdukVarian::find($varianId);
+                        $varian = \App\Models\DetailProduk::find($varianId);
                         if ($varian) {
                             $ukuran = $varian->ukuran ?: $ukuran;
                             $varianRasa = $varian->variasi ?: $varianRasa;
@@ -440,7 +434,7 @@ class BundlingController extends Controller
                     BundlingItem::create([
                         'bundling_id' => $bundling->id,
                         'produk_id' => $produkId,
-                        'produk_varian_id' => $varianId,
+                        'detail_produk_id' => $varianId,
                         'ukuran' => $ukuran,
                         'varian_rasa' => $varianRasa,
                         'qty' => isset($request->qty[$i]) ? (int) $request->qty[$i] : 1,

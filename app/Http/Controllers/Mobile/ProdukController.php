@@ -19,11 +19,8 @@ class ProdukController extends Controller
 
             $produk->load([
                 'kategori',
-                'promos',
-                'produkVarians' => fn ($q) => $q->orderBy('urutan')->orderBy('id'),
-                'produkVarianRasas.varianRasa',
-                'produkUkuranRasas',
-                'produkUkurans.ukuran',
+                'promos.detailProduks',
+                'detailProduks' => fn ($q) => $q->orderBy('urutan')->orderBy('id'),
             ]);
 
             $pengaturan = PengaturanMember::aktifSekarang();
@@ -36,7 +33,7 @@ class ProdukController extends Controller
                 }
             }
 
-            $punyaVarianBaru = $produk->produkVarians->isNotEmpty();
+            $punyaVarianBaru = $produk->detailProduks->isNotEmpty();
             $daftarVarian = [];
             $opsiUkuran = [];
             $opsiVariasi = [];
@@ -52,8 +49,8 @@ class ProdukController extends Controller
                     $opsiVariasi = collect($daftarVarian)->pluck('variasi')->filter()->unique()->values()->all();
 
                     $varianEdit = null;
-                    if (!empty($itemEdit['produk_varian_id'])) {
-                        $varianEdit = collect($daftarVarian)->firstWhere('id', (int) $itemEdit['produk_varian_id']);
+                    if (!empty($itemEdit['detail_produk_id'])) {
+                        $varianEdit = collect($daftarVarian)->firstWhere('id', (int) $itemEdit['detail_produk_id']);
                     } elseif (!empty($itemEdit['ukuran']) || !empty($itemEdit['varian_rasa'])) {
                         $varianEdit = collect($daftarVarian)->first(function ($v) use ($itemEdit) {
                             $matchU = empty($itemEdit['ukuran']) || $v['ukuran'] === $itemEdit['ukuran'];

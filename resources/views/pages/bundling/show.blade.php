@@ -140,7 +140,7 @@
                         @foreach($bundling->items as $item)
                             @php
                                 $p = $item->produk;
-                                $v = $item->produkVarian;
+                                $v = $item->detailProduk;
                                 if ($v) {
                                     $stokUkuran = (int) $v->stok;
                                     $stokHabis = !$v->status_aktif || $v->perlu_diproduksi || $stokUkuran <= 0;
@@ -195,7 +195,7 @@
                 @foreach($bundling->items as $item)
                     @php
                         $p = $item->produk;
-                        $v = $item->produkVarian;
+                        $v = $item->detailProduk;
                         if ($v) {
                             $stokUkuran = (int) $v->stok;
                             $stokHabis = !$v->status_aktif || $v->perlu_diproduksi || $stokUkuran <= 0;

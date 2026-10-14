@@ -16,7 +16,7 @@ class MenuController extends Controller
             $kategoris = KategoriProduk::with(['produk' => function ($query) {
                 $query->where('status_aktif', true)
                     ->reguler()
-                    ->with(['produkVarians', 'promos'])
+                    ->with(['detailProduks', 'promos'])
                     ->orderBy('nama_produk');
             }])
                 ->orderBy('nama_kategori')
@@ -63,7 +63,7 @@ class MenuController extends Controller
             }
 
             $totalProduk = $kategoris->sum(fn ($kategori) => $kategori->produk->count());
-            $daftarBundling = Bundling::with(['items.produk', 'items.produkVarian'])
+            $daftarBundling = Bundling::with(['items.produk', 'items.detailProduk'])
                 ->where('status_aktif', true)
                 ->get();
 

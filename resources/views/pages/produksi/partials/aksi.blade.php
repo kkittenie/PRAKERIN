@@ -6,7 +6,7 @@
 
     // Stok yang dikurangi dipilih per detail produk. Detail dari produksi ini diurutkan paling atas,
     // lalu yang masih punya stok. Detail nonaktif tetap muncul karena stok kadaluwarsa harus bisa dibuang.
-    $idDetailProduksi = $item->produksiVarians->pluck('produk_varian_id')->filter()->all();
+    $idDetailProduksi = $item->produksiVarians->pluck('detail_produk_id')->filter()->all();
     $daftarVarianJson = $item->produk
         ? $item->produk->detailProduks
             ->map(fn ($v) => [

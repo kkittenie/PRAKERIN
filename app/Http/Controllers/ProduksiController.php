@@ -477,7 +477,7 @@ class ProduksiController extends Controller
 
     /**
      * Simpan produksi untuk produk yang punya varian dari form produk (tabel detail_produks).
-     * Input: varian_hasil[produk_varian_id] dan varian_kebutuhan[produk_varian_id].
+     * Input: varian_hasil[detail_produk_id] dan varian_kebutuhan[detail_produk_id].
      * Stok varian bertambah sebesar hasil, lalu berkurang sebesar pesanan (kebutuhan).
      */
     private function simpanProduksiVarian(Request $request, Produk $produk)
@@ -530,7 +530,7 @@ class ProduksiController extends Controller
             ],
         ]);
 
-        // Susun rincian per varian: [produk_varian_id => ['hasil' => x, 'kebutuhan' => y]]
+        // Susun rincian per varian: [detail_produk_id => ['hasil' => x, 'kebutuhan' => y]]
         $varianProduk = DetailProduk::where('produk_id', $produk->id)->get()->keyBy('id');
         $kebutuhanInput = (array) $request->input('varian_kebutuhan', []);
         $rincian = [];
@@ -645,7 +645,7 @@ class ProduksiController extends Controller
 
                 ProduksiVarian::create([
                     'produksi_id' => $produksi->id,
-                    'produk_varian_id' => $varian->id,
+                    'detail_produk_id' => $varian->id,
                     'ukuran' => $varian->ukuran,
                     'variasi' => $varian->variasi,
                     'kode_barcode' => $varian->kode_barcode,
@@ -729,7 +729,7 @@ class ProduksiController extends Controller
             ->performedOn($produksi)
             ->withProperties([
                 'jumlah_dikurangi' => $jumlah,
-                'produk_varian_id' => $varian->id,
+                'detail_produk_id' => $varian->id,
                 'varian' => $varian->nama_lengkap,
             ])
             ->log('menyesuaikan stok produk kadaluwarsa');

@@ -34,79 +34,42 @@ class Promo extends Model
     }
 
     /**
-     * Baris pembatasan ukuran per-produk buat promo ini. Satu promo bisa
-     * kepasang ke beberapa produk (lewat produks()), dan tiap produk itu
-     * punya checklist ukurannya sendiri-sendiri lewat tabel ini —
-     * bukan 1 checklist global yang berlaku sama buat semua produk.
+     * Detail produk (kombinasi ukuran + variasi) yang dipilih buat promo ini.
+     * Satu promo bisa kepasang ke beberapa produk (lewat produks()), dan tiap
+     * produk punya pilihan detailnya sendiri-sendiri. Produk yang tidak punya
+     * baris di tabel ini = promo berlaku ke SEMUA detail produk itu.
      */
-    public function produkUkuranPivots()
+    public function detailProduks()
     {
-        return $this->hasMany(PromoProdukUkuran::class, 'promo_id');
+        return $this->belongsToMany(DetailProduk::class, 'promo_detail_produks', 'promo_id', 'detail_produk_id')->withTimestamps();
     }
 
     /**
-     * Baris pembatasan rasa per-produk buat promo ini.
+     * ID detail produk yang dibatasi buat promo ini, KHUSUS produk tertentu.
+     * Kosong = gak dibatasi (berlaku ke semua detail produk itu).
      */
-    public function produkRasaPivots()
+    public function detailIdsUntukProduk(int $produkId): \Illuminate\Support\Collection
     {
-        return $this->hasMany(PromoProdukRasa::class, 'promo_id');
-    }
+        $detail = $this->relationLoaded('detailProduks')
+            ? $this->detailProduks
+            : $this->detailProduks()->get();
 
-    /**
-     * ID ukuran yang dibatasi buat promo ini, KHUSUS produk tertentu.
-     * Kosong = gak dibatasi (berlaku ke semua ukuran produk itu) — sama
-     * kayak sebelum fitur ini ada.
-     */
-    public function ukuranIdsUntukProduk(int $produkId): \Illuminate\Support\Collection
-    {
-        if ($this->relationLoaded('produkUkuranPivots')) {
-            return $this->produkUkuranPivots
-                ->where('produk_id', $produkId)
-                ->pluck('ukuran_id')
-                ->values();
-        }
-
-        return $this->produkUkuranPivots()
+        return $detail
             ->where('produk_id', $produkId)
-            ->pluck('ukuran_id');
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values();
     }
 
-    public function berlakuUntukUkuran(int $produkId, ?int $ukuranId): bool
+    /** Apakah promo ini berlaku untuk detail produk tersebut (milik produk $produkId). */
+    public function berlakuUntukDetail(int $produkId, ?DetailProduk $detail): bool
     {
-        $daftar = $this->ukuranIdsUntukProduk($produkId);
+        $daftar = $this->detailIdsUntukProduk($produkId);
         if ($daftar->isEmpty()) {
             return true;
         }
 
-        return $ukuranId !== null && $daftar->contains($ukuranId);
-    }
-
-    /**
-     * ID varian rasa yang dibatasi buat promo ini, KHUSUS produk tertentu.
-     * Kosong = gak dibatasi (berlaku ke semua rasa produk itu).
-     */
-    public function rasaIdsUntukProduk(int $produkId): \Illuminate\Support\Collection
-    {
-        if ($this->relationLoaded('produkRasaPivots')) {
-            return $this->produkRasaPivots
-                ->where('produk_id', $produkId)
-                ->pluck('varian_rasa_id')
-                ->values();
-        }
-
-        return $this->produkRasaPivots()
-            ->where('produk_id', $produkId)
-            ->pluck('varian_rasa_id');
-    }
-
-    public function berlakuUntukRasa(int $produkId, ?int $rasaId): bool
-    {
-        $daftar = $this->rasaIdsUntukProduk($produkId);
-        if ($daftar->isEmpty()) {
-            return true;
-        }
-
-        return $rasaId !== null && $daftar->contains($rasaId);
+        return $detail !== null && $daftar->contains((int) $detail->id);
     }
 
     public function scopeBerlaku($query)

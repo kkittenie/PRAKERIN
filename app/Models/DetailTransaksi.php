@@ -11,7 +11,7 @@ class DetailTransaksi extends Model
     protected $fillable = [
         'transaksi_id',
         'produk_id',
-        'produk_varian_id',
+        'detail_produk_id',
         'bundling_id',
         'promo_event_id',
         'nama_produk',
@@ -37,12 +37,6 @@ class DetailTransaksi extends Model
 
     public function detailProduk()
     {
-        return $this->belongsTo(DetailProduk::class, 'produk_varian_id');
-    }
-
-    /** @deprecated Nama lama dari detailProduk(). */
-    public function produkVarian()
-    {
-        return $this->belongsTo(ProdukVarian::class, 'produk_varian_id');
+        return $this->belongsTo(DetailProduk::class, 'detail_produk_id');
     }
 }

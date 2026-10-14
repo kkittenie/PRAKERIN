@@ -42,7 +42,7 @@ class PromoProdukEventController extends Controller
     public function lihat($id)
     {
         try {
-            $promoEvent = PromoProdukEvent::with(['produk', 'ukurans', 'varianRasas'])->findOrFail($id);
+            $promoEvent = PromoProdukEvent::with(['produk.detailProduks', 'detailProduks'])->findOrFail($id);
             return view('pages.promo-event.show', compact('promoEvent'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -52,7 +52,7 @@ class PromoProdukEventController extends Controller
     public function tambah()
     {
         try {
-            $produks = Produk::with(['produkVarians'])
+            $produks = Produk::with(['detailProduks'])
                 ->where('status_aktif', true)
                 ->orderBy('nama_produk', 'asc')
                 ->get();
@@ -78,9 +78,8 @@ class PromoProdukEventController extends Controller
                 'nama_rasas.*'    => 'string|max:100',
             ]);
 
-            $produk    = Produk::with('produkVarians')->findOrFail($validated['produk_id']);
-            $ukuranIds = $this->resolveUkuranIds($produk, $request->input('nama_ukurans', []));
-            $rasaIds   = $this->resolveRasaIds($produk, $request->input('nama_rasas', []));
+            $produk    = Produk::with('detailProduks')->findOrFail($validated['produk_id']);
+            $detailIds = $this->resolveDetailIds($produk, $request->input('nama_ukurans', []), $request->input('nama_rasas', []));
 
             $promoEvent = PromoProdukEvent::create([
                 'produk_id'       => $validated['produk_id'],
@@ -93,8 +92,7 @@ class PromoProdukEventController extends Controller
                 'status_aktif'    => $request->has('status_aktif') ? (bool) $request->status_aktif : true,
             ]);
 
-            $promoEvent->ukurans()->sync($ukuranIds);
-            $promoEvent->varianRasas()->sync($rasaIds);
+            $promoEvent->detailProduks()->sync($detailIds);
 
             activity()
                 ->causedBy(auth()->user())
@@ -103,8 +101,7 @@ class PromoProdukEventController extends Controller
                     'nama_event'  => $promoEvent->nama_event,
                     'produk_id'   => $promoEvent->produk_id,
                     'harga_event' => $promoEvent->harga_event,
-                    'ukuran_ids'  => $ukuranIds,
-                    'rasa_ids'    => $rasaIds,
+                    'detail_produk_ids' => $detailIds,
                 ])
                 ->log('menambahkan promo produk event');
 
@@ -119,28 +116,22 @@ class PromoProdukEventController extends Controller
     public function ubah($id)
     {
         try {
-            $promoEvent = PromoProdukEvent::with(['ukurans', 'varianRasas', 'produk.produkVarians'])->findOrFail($id);
-            $produks    = Produk::with(['produkVarians'])
+            $promoEvent = PromoProdukEvent::with(['detailProduks', 'produk.detailProduks'])->findOrFail($id);
+            $produks    = Produk::with(['detailProduks'])
                 ->where('status_aktif', true)
                 ->orderBy('nama_produk', 'asc')
                 ->get();
 
-            // Kirim nama string ke view, bukan ID
-            $selectedNamaUkurans = $promoEvent->ukurans->pluck('nama_ukuran')->toArray();
-            $selectedNamaRasas   = $promoEvent->varianRasas->pluck('nama_rasa')->toArray();
-
-            // Jika produk pakai produkVarians, ambil nama dari sana dan filter yang cocok
-            if ($promoEvent->produk && $promoEvent->produk->produkVarians->isNotEmpty()) {
-                $validNamaUkurans     = $promoEvent->produk->produkVarians
-                    ->filter(fn ($v) => !empty($v->ukuran))
-                    ->pluck('ukuran')->unique()->values()->all();
-                $selectedNamaUkurans  = array_values(array_intersect($selectedNamaUkurans, $validNamaUkurans));
-
-                $validNamaRasas    = $promoEvent->produk->produkVarians
-                    ->filter(fn ($v) => !empty($v->variasi))
-                    ->pluck('variasi')->unique()->values()->all();
-                $selectedNamaRasas = array_values(array_intersect($selectedNamaRasas, $validNamaRasas));
-            }
+            // Kirim nama string ke view: ukuran & variasi dari detail produk yang dipilih event ini.
+            $terpilih = $promoEvent->detailProduks->where('produk_id', $promoEvent->produk_id);
+            $namaUnik = fn ($kolom) => $terpilih->pluck($kolom)
+                ->map(fn ($n) => trim((string) $n))
+                ->filter()
+                ->unique(fn ($n) => mb_strtolower($n))
+                ->values()
+                ->all();
+            $selectedNamaUkurans = $namaUnik('ukuran');
+            $selectedNamaRasas   = $namaUnik('variasi');
 
             return view('pages.promo-event.edit', compact(
                 'promoEvent', 'produks', 'selectedNamaUkurans', 'selectedNamaRasas'
@@ -168,9 +159,8 @@ class PromoProdukEventController extends Controller
                 'nama_rasas.*'    => 'string|max:100',
             ]);
 
-            $produk    = Produk::with('produkVarians')->findOrFail($validated['produk_id']);
-            $ukuranIds = $this->resolveUkuranIds($produk, $request->input('nama_ukurans', []));
-            $rasaIds   = $this->resolveRasaIds($produk, $request->input('nama_rasas', []));
+            $produk    = Produk::with('detailProduks')->findOrFail($validated['produk_id']);
+            $detailIds = $this->resolveDetailIds($produk, $request->input('nama_ukurans', []), $request->input('nama_rasas', []));
 
             $promoEvent->update([
                 'produk_id'       => $validated['produk_id'],
@@ -181,8 +171,7 @@ class PromoProdukEventController extends Controller
                 'status_aktif'    => $request->has('status_aktif') ? (bool) $request->status_aktif : false,
             ]);
 
-            $promoEvent->ukurans()->sync($ukuranIds);
-            $promoEvent->varianRasas()->sync($rasaIds);
+            $promoEvent->detailProduks()->sync($detailIds);
 
             activity()
                 ->causedBy(auth()->user())
@@ -191,8 +180,7 @@ class PromoProdukEventController extends Controller
                     'nama_event'  => $promoEvent->nama_event,
                     'produk_id'   => $promoEvent->produk_id,
                     'harga_event' => $promoEvent->harga_event,
-                    'ukuran_ids'  => $ukuranIds,
-                    'rasa_ids'    => $rasaIds,
+                    'detail_produk_ids' => $detailIds,
                 ])
                 ->log('memperbarui promo produk event');
 
@@ -253,72 +241,27 @@ class PromoProdukEventController extends Controller
     }
 
     /**
-     * Resolve nama ukuran (string) ke array ukuran_id.
-     * Jika belum ada di master ukurans, buat baru otomatis.
+     * Ubah pilihan ukuran & rasa (nama) dari form jadi daftar ID detail produk.
+     * Detail yang dipilih = ukurannya ada di $namaUkurans DAN variasinya ada di
+     * $namaRasas (salah satu kosong = tidak dibatasi di sisi itu). Dua-duanya kosong
+     * = array kosong = event berlaku ke semua detail aktif produk.
      */
-    private function resolveUkuranIds(Produk $produk, array $namaUkurans): array
+    private function resolveDetailIds(Produk $produk, array $namaUkurans, array $namaRasas): array
     {
-        if (empty($namaUkurans)) {
+        $norm = fn ($x) => mb_strtolower(trim((string) $x));
+        $u = collect($namaUkurans)->map($norm)->filter()->values();
+        $r = collect($namaRasas)->map($norm)->filter()->values();
+
+        if ($u->isEmpty() && $r->isEmpty()) {
             return [];
         }
 
-        $ids = [];
-        foreach ($namaUkurans as $nama) {
-            $nama = trim($nama);
-            if (!$nama) continue;
-
-            // Coba cari di produk_varians dulu
-            $varian = $produk->produkVarians
-                ->first(fn ($v) => strcasecmp($v->ukuran ?? '', $nama) === 0);
-
-            if ($varian && $varian->ukuran_id) {
-                $ids[] = (int) $varian->ukuran_id;
-                continue;
-            }
-
-            // Fallback: cari/buat di master ukurans
-            $ukuran = \App\Models\Ukuran::firstOrCreate(
-                ['nama_ukuran' => $nama],
-                ['urutan' => 99, 'status_aktif' => true]
-            );
-            $ids[] = $ukuran->id;
-        }
-
-        return array_values(array_unique($ids));
-    }
-
-    /**
-     * Resolve nama rasa/variasi (string) ke array varian_rasa_id.
-     * Jika belum ada di master varian_rasas, buat baru otomatis.
-     */
-    private function resolveRasaIds(Produk $produk, array $namaRasas): array
-    {
-        if (empty($namaRasas)) {
-            return [];
-        }
-
-        $ids = [];
-        foreach ($namaRasas as $nama) {
-            $nama = trim($nama);
-            if (!$nama) continue;
-
-            // Coba cari di produk_varians dulu
-            $varian = $produk->produkVarians
-                ->first(fn ($v) => strcasecmp($v->variasi ?? '', $nama) === 0);
-
-            if ($varian && $varian->varian_rasa_id) {
-                $ids[] = (int) $varian->varian_rasa_id;
-                continue;
-            }
-
-            // Fallback: cari/buat di master varian_rasas
-            $rasa = \App\Models\VarianRasa::firstOrCreate(
-                ['nama_rasa' => $nama],
-                ['status_aktif' => true]
-            );
-            $ids[] = $rasa->id;
-        }
-
-        return array_values(array_unique($ids));
+        return $produk->detailProduks
+            ->filter(fn ($d) => ($u->isEmpty() || $u->contains($norm($d->ukuran)))
+                && ($r->isEmpty() || $r->contains($norm($d->variasi))))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
     }
 }

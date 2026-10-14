@@ -14,7 +14,7 @@ class ProduksiVarian extends Model
 
     protected $fillable = [
         'produksi_id',
-        'produk_varian_id', // id detail produk (nama kolom diganti di pembersihan akhir)
+        'detail_produk_id', // id detail produk (nama kolom diganti di pembersihan akhir)
         'ukuran',
         'variasi',
         'kode_barcode',
@@ -36,13 +36,7 @@ class ProduksiVarian extends Model
 
     public function detailProduk()
     {
-        return $this->belongsTo(DetailProduk::class, 'produk_varian_id');
-    }
-
-    /** @deprecated Nama lama dari detailProduk(). */
-    public function produkVarian()
-    {
-        return $this->detailProduk();
+        return $this->belongsTo(DetailProduk::class, 'detail_produk_id');
     }
 
     public function getNamaLengkapAttribute(): string

@@ -2426,6 +2426,15 @@
                 },
 
                 // Semua varian (termasuk nonaktif) dan hanya yang aktif.
+                // Promo berlaku untuk detail produk ini? Daftar detail yang dipilih promo ikut terkirim
+                // di promo.detail_produks; tidak ada detail milik produk ini = promo berlaku ke semua detailnya.
+                promoBerlakuUntukDetail(promo, produkId, detailId) {
+                    if (!promo) return false;
+                    const daftar = (promo.detail_produks || []).filter(d => d.produk_id === produkId);
+                    if (daftar.length === 0) return true;
+                    return detailId != null && daftar.some(d => d.id === detailId);
+                },
+
                 daftarVarianProduk(produk) {
                     return (produk && produk.daftar_varian) ? produk.daftar_varian : [];
                 },
@@ -2625,13 +2634,10 @@
                 },
 
                 buatItemVarianKeranjang(produk, varian, qty, perluProduksi = false) {
-                    const ukuranId = varian.ukuran_id || null;
+                    const ukuranId = varian.ukuran_key || null;
                     // Sama seperti server: promo yang dibatasi ke ukuran tertentu hanya berlaku kalau ukuran varian cocok.
                     const promoBerlaku = (promo) => {
-                        if (!promo) return false;
-                        const daftar = promo.ukurans || [];
-                        if (daftar.length === 0) return true;
-                        return !!ukuranId && daftar.some(u => u.id === ukuranId);
+                        return this.promoBerlakuUntukDetail(promo, produk.id, varian.id);
                     };
                     const promosTersedia = ((produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0)
                         ? produk.promos_aktif_semua
@@ -2645,7 +2651,7 @@
                         nama_produk: produk.nama_produk,
                         ukuran: varian.ukuran,
                         varian_rasa: varian.variasi,
-                        ukuran_id: ukuranId,
+                        ukuran_key: ukuranId,
                         harga_jual: parseFloat(varian.harga),
                         harga_jual_asli: parseFloat(varian.harga),
                         promo_aktif: promoBerlaku(produk.promo_aktif) ? produk.promo_aktif : null,
@@ -2703,8 +2709,8 @@
                             const punyaUkuran = produk.punya_ukuran == 1 || produk.punya_ukuran === true;
                             if (punyaUkuran && ukuran && rasaObj.stok_per_ukuran) {
                                 const ukuranObj = (produk.daftar_ukuran || []).find(o => (o.nama || '').toLowerCase() === String(ukuran).toLowerCase());
-                                if (ukuranObj && rasaObj.stok_per_ukuran[ukuranObj.ukuran_id] !== undefined) {
-                                    return parseInt(rasaObj.stok_per_ukuran[ukuranObj.ukuran_id]) || 0;
+                                if (ukuranObj && rasaObj.stok_per_ukuran[ukuranObj.ukuran_key] !== undefined) {
+                                    return parseInt(rasaObj.stok_per_ukuran[ukuranObj.ukuran_key]) || 0;
                                 }
                             }
                             // Hanya rasa, tanpa ukuran → stok rasa keseluruhan
@@ -2776,7 +2782,7 @@
                         }
                         if (opsi) {
                             hargaAsli = parseFloat(opsi.harga || 0);
-                            ukuranId = opsi.ukuran_id ?? null;
+                            ukuranId = opsi.ukuran_key ?? null;
                         } else if (ukuran === 'Besar') {
                             hargaAsli = parseFloat(produk.harga_besar || 0);
                         } else if (ukuran === 'Kecil') {
@@ -2789,12 +2795,11 @@
                     // Promo cuma dianggap "tersedia" buat baris ini kalau memang berlaku
                     // buat ukuran ini — promo yang dibatasi ke ukuran lain difilter di sini,
                     // biar badge/diskon di keranjang gak nyasar ke ukuran yang gak dituju.
+                    const detailItem = this.daftarVarianProduk(produk).find(v => (v.ukuran || null) === (ukuran || null) && (v.variasi || null) === (varianRasa || null));
                     const promoBerlakuUntukItem = (promo) => {
                         if (!promo) return false;
-                        if (!ukuranId) return true; // produk tanpa varian ukuran -> promo produk berlaku penuh
-                        const daftarUkuranPromo = promo.ukurans || [];
-                        if (daftarUkuranPromo.length === 0) return true; // gak dibatasi -> semua ukuran kena
-                        return daftarUkuranPromo.some(u => u.id === ukuranId);
+                        if (!detailItem) return true; // tidak ketemu detail yang pas -> promo produk berlaku penuh
+                        return this.promoBerlakuUntukDetail(promo, produk.id, detailItem.id);
                     };
                     const promosTersedia = ((produk.promos_aktif_semua && produk.promos_aktif_semua.length > 0)
                         ? produk.promos_aktif_semua
@@ -2812,7 +2817,7 @@
                         nama_produk: produk.nama_produk,
                         ukuran: ukuran,
                         varian_rasa: varianRasa,
-                        ukuran_id: ukuranId,
+                        ukuran_key: ukuranId,
                         harga_jual: hargaAsli,
                         harga_jual_asli: hargaAsli,
                         promo_aktif: promoAktifItem,
@@ -2829,13 +2834,11 @@
                 normalisasiItemKeranjang(items) {
                     return (items || []).map(item => {
                         const produk = this.daftarProduk.find(p => p.id === item.produk_id);
-                        const ukuranId = item.ukuran_id ?? null;
+                        const ukuranId = item.ukuran_key ?? null;
                         const promoBerlakuUntukItem = (promo) => {
                             if (!promo) return false;
-                            if (!ukuranId) return true;
-                            const daftarUkuranPromo = promo.ukurans || [];
-                            if (daftarUkuranPromo.length === 0) return true;
-                            return daftarUkuranPromo.some(u => u.id === ukuranId);
+                            if (!item.varian_id) return true;
+                            return this.promoBerlakuUntukDetail(promo, item.produk_id, item.varian_id);
                         };
                         const promosTersedia = (item.is_bundling || item.is_promo_event)
                             ? (item.promos_tersedia || [])
@@ -2948,8 +2951,8 @@
                     bundling.items.forEach(it => {
                         const p = this.daftarProduk.find(x => x.id === it.produk_id);
                         let stokP = 0;
-                        if (it.produk_varian_id && p && p.daftar_varian) {
-                            const v = p.daftar_varian.find(dv => dv.id === it.produk_varian_id);
+                        if (it.detail_produk_id && p && p.daftar_varian) {
+                            const v = p.daftar_varian.find(dv => dv.id === it.detail_produk_id);
                             stokP = v ? v.stok : 0;
                         } else {
                             stokP = this.stokUntukUkuran(p, it.ukuran, it.varian_rasa);
@@ -2968,8 +2971,8 @@
                         const p = this.daftarProduk.find(x => x.id === it.produk_id);
                         if (!p) return true;
                         let stokP = 0;
-                        if (it.produk_varian_id && p && p.daftar_varian) {
-                            const v = p.daftar_varian.find(dv => dv.id === it.produk_varian_id);
+                        if (it.detail_produk_id && p && p.daftar_varian) {
+                            const v = p.daftar_varian.find(dv => dv.id === it.detail_produk_id);
                             stokP = v ? v.stok : 0;
                         } else {
                             stokP = this.stokUntukUkuran(p, it.ukuran, it.varian_rasa);
@@ -3600,14 +3603,14 @@
                         items: (bundling.items || []).map(i => {
                             const p = this.daftarProduk.find(x => x.id === i.produk_id);
                             let stokP = 0;
-                            if (i.produk_varian_id && p && p.daftar_varian) {
-                                const v = p.daftar_varian.find(dv => dv.id === i.produk_varian_id);
+                            if (i.detail_produk_id && p && p.daftar_varian) {
+                                const v = p.daftar_varian.find(dv => dv.id === i.detail_produk_id);
                                 stokP = v ? v.stok : 0;
                             } else {
                                 stokP = this.stokUntukUkuran(p, i.ukuran, i.varian_rasa);
                             }
                             const subButuh = p ? (p.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < i.qty) : true;
-                            return { produk_id: i.produk_id, produk_varian_id: i.produk_varian_id || null, qty: i.qty, ukuran: i.ukuran || null, varian_rasa: i.varian_rasa || null, butuh_produksi: subButuh };
+                            return { produk_id: i.produk_id, detail_produk_id: i.detail_produk_id || null, qty: i.qty, ukuran: i.ukuran || null, varian_rasa: i.varian_rasa || null, butuh_produksi: subButuh };
                         }),
                         jumlah: jumlah,
                         butuh_produksi: perluProduksi,
@@ -4176,7 +4179,7 @@
                             rasaObj.stok = (parseInt(rasaObj.stok) || 0) + delta;
                             if (punyaUkuran && ukuran && rasaObj.stok_per_ukuran) {
                                 const opsiUkuran = this.cariOpsiUkuran(produk, ukuran);
-                                const kunci = opsiUkuran ? opsiUkuran.ukuran_id : null;
+                                const kunci = opsiUkuran ? opsiUkuran.ukuran_key : null;
                                 if (kunci !== null && rasaObj.stok_per_ukuran[kunci] !== undefined) {
                                     rasaObj.stok_per_ukuran[kunci] = (parseInt(rasaObj.stok_per_ukuran[kunci]) || 0) + delta;
                                 }

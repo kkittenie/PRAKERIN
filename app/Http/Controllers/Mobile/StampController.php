@@ -114,7 +114,7 @@ class StampController extends Controller
 
                     MemberCart::tambah([
                         'produk_id' => $produk->id,
-                        'produk_varian_id' => null,
+                        'detail_produk_id' => null,
                         'nama_produk' => $produk->nama_produk,
                         'foto' => $produk->foto,
                         'harga_satuan' => 0,
@@ -188,7 +188,7 @@ class StampController extends Controller
 
             MemberCart::tambah([
                 'produk_id' => $produk->id,
-                'produk_varian_id' => null,
+                'detail_produk_id' => null,
                 'nama_produk' => $produk->nama_produk,
                 'foto' => $produk->foto,
                 'harga_satuan' => 0,

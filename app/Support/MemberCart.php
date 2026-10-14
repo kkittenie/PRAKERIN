@@ -11,7 +11,18 @@ class MemberCart
 
     public static function items(): array
     {
-        return Session::get(self::SESSION_KEY, []);
+        $items = Session::get(self::SESSION_KEY, []);
+
+        // Keranjang yang sudah tersimpan di sesi sebelum rename memakai kunci lama produk_varian_id.
+        foreach ($items as &$item) {
+            if (is_array($item) && array_key_exists('produk_varian_id', $item)) {
+                $item['detail_produk_id'] = $item['detail_produk_id'] ?? $item['produk_varian_id'];
+                unset($item['produk_varian_id']);
+            }
+        }
+        unset($item);
+
+        return $items;
     }
 
     public static function isEmpty(): bool
@@ -94,7 +105,7 @@ class MemberCart
     public static function tambah(array $data): void
     {
         $data['produk_id'] = $data['produk_id'] ?? null;
-        $data['produk_varian_id'] = $data['produk_varian_id'] ?? null;
+        $data['detail_produk_id'] = $data['detail_produk_id'] ?? null;
         $data['bundling_id'] = $data['bundling_id'] ?? null;
         $data['promo_event_id'] = $data['promo_event_id'] ?? null;
 
@@ -104,7 +115,7 @@ class MemberCart
         foreach ($items as $key => $item) {
             if (
                 ($item['produk_id'] ?? null) === $data['produk_id']
-                && ($item['produk_varian_id'] ?? null) === $data['produk_varian_id']
+                && ($item['detail_produk_id'] ?? null) === $data['detail_produk_id']
                 && ($item['bundling_id'] ?? null) === $data['bundling_id']
                 && ($item['promo_event_id'] ?? null) === $data['promo_event_id']
                 && ($item['ukuran'] ?? null) === ($data['ukuran'] ?? null)

@@ -61,33 +61,10 @@ class Produk extends Model
         return $this->belongsTo(KategoriProduk::class, 'kategori_id');
     }
 
-    // Relasi ke master lama: masih dipakai promo (menarget ukuran/rasa). Stok dan harga TIDAK
-    // dibaca dari sini lagi, hanya dari detail produk.
-    public function produkUkurans()
-    {
-        return $this->hasMany(ProdukUkuran::class, 'produk_id')->with('ukuran')->orderBy('id');
-    }
-
-    public function produkVarianRasas()
-    {
-        return $this->hasMany(ProdukVarianRasa::class, 'produk_id')->with('varianRasa')->orderBy('id');
-    }
-
-    public function produkUkuranRasas()
-    {
-        return $this->hasMany(ProdukUkuranRasa::class, 'produk_id');
-    }
-
     /** Semua detail produk (kombinasi ukuran + variasi) milik produk ini. */
     public function detailProduks()
     {
         return $this->hasMany(DetailProduk::class, 'produk_id')->orderBy('urutan')->orderBy('id');
-    }
-
-    /** @deprecated Nama lama dari detailProduks(); masih dipakai bundling. */
-    public function produkVarians()
-    {
-        return $this->hasMany(ProdukVarian::class, 'produk_id')->orderBy('urutan')->orderBy('id');
     }
 
     /** Semua detail produk ini (memakai relasi yang sudah di-eager load kalau ada). */
@@ -95,10 +72,6 @@ class Produk extends Model
     {
         if ($this->relationLoaded('detailProduks')) {
             return $this->getRelation('detailProduks');
-        }
-
-        if ($this->relationLoaded('produkVarians')) {
-            return $this->getRelation('produkVarians');
         }
 
         $this->setRelation('detailProduks', $this->detailProduks()->get());
@@ -115,7 +88,12 @@ class Produk extends Model
     public function segarkanStok(): void
     {
         $this->unsetRelation('detailProduks');
-        $this->unsetRelation('produkVarians');
+    }
+
+    /** Kunci stabil sebuah ukuran (nama tanpa spasi pinggir, huruf kecil) — dipakai JS kasir/bundling sebagai kunci stok per ukuran. */
+    public static function kunciUkuran(?string $ukuran): ?string
+    {
+        return filled($ukuran) ? mb_strtolower(trim($ukuran)) : null;
     }
 
     protected static function samaNama($a, $b): bool
@@ -228,7 +206,7 @@ class Produk extends Model
         return $daftar
             ->map(function (DetailProduk $v) {
                 $hargaAsli = (float) $v->harga_jual;
-                $promo = $this->promoAktifUntukUkuran($v->ukuran_id ? (int) $v->ukuran_id : null);
+                $promo = $this->promoAktifUntukDetail($v);
                 $hargaDiskon = $hargaAsli;
 
                 if ($promo) {
@@ -246,7 +224,7 @@ class Produk extends Model
                     'nama' => $v->nama_lengkap,
                     'kode_produk' => $v->kode_produk,
                     'kode_barcode' => $v->kode_produk,
-                    'ukuran_id' => $v->ukuran_id ? (int) $v->ukuran_id : null,
+                    'ukuran_key' => static::kunciUkuran($v->ukuran),
                     'harga' => $hargaAsli,
                     'harga_asli' => $hargaAsli,
                     'harga_diskon' => $hargaDiskon,
@@ -282,7 +260,7 @@ class Produk extends Model
         };
 
         if ($this->relationLoaded('promos')) {
-            return $this->promos->filter($isPromoBerlaku)->values()->loadMissing('produkUkuranPivots');
+            return $this->promos->filter($isPromoBerlaku)->values()->loadMissing('detailProduks');
         }
 
         return $this->promos()
@@ -292,7 +270,7 @@ class Produk extends Model
                 $q->whereNull('selesai_berlaku')
                   ->orWhere('selesai_berlaku', '>=', $now);
             })
-            ->with('produkUkuranPivots')
+            ->with('detailProduks')
             ->get();
     }
 
@@ -311,7 +289,7 @@ class Produk extends Model
                 return $p->jenis_potongan === 'nominal'
                     ? $p->nominal_potongan
                     : (($p->persentase ?? 0) / 100 * $this->getHarga());
-            })->first()?->loadMissing('produkUkuranPivots');
+            })->first()?->loadMissing('detailProduks');
         }
 
         return $this->promos()
@@ -321,7 +299,7 @@ class Produk extends Model
                 $q->whereNull('selesai_berlaku')
                   ->orWhere('selesai_berlaku', '>=', $now);
             })
-            ->with('produkUkuranPivots')
+            ->with('detailProduks')
             ->get()
             ->sortByDesc(function ($p) {
                 return $p->jenis_potongan === 'nominal'
@@ -359,19 +337,21 @@ class Produk extends Model
 
         $detail = $this->daftarDetailAktif()->first(fn ($d) => static::samaNama($d->ukuran, $ukuran));
 
-        return $this->promoAktifUntukUkuran($detail && $detail->ukuran_id ? (int) $detail->ukuran_id : null);
+        return $this->promoAktifUntukDetail($detail);
     }
 
-    public function promoAktifUntukUkuran(?int $ukuranId): ?Promo
+    /** Promo aktif terbaik untuk satu detail produk (ukuran + variasi) milik produk ini. */
+    public function promoAktifUntukDetail(?DetailProduk $detail): ?Promo
     {
         $now = now();
         $promos = $this->relationLoaded('promos') ? $this->promos : $this->promos()->get();
+        $promos->loadMissing('detailProduks');
 
-        return $promos->filter(function ($promo) use ($now, $ukuranId) {
+        return $promos->filter(function ($promo) use ($now, $detail) {
             if (!$promo->status_aktif) return false;
             if ($promo->mulai_berlaku > $now) return false;
             if ($promo->selesai_berlaku && $promo->selesai_berlaku < $now) return false;
-            return $promo->berlakuUntukUkuran($this->id, $ukuranId);
+            return $promo->berlakuUntukDetail($this->id, $detail);
         })->sortByDesc(function ($p) {
             return $p->jenis_potongan === 'nominal'
                 ? $p->nominal_potongan
@@ -402,7 +382,7 @@ class Produk extends Model
             ->map(function ($grup) {
                 $d = $grup->sortBy('harga_jual')->first();
                 $hargaAsli = (float) $d->harga_jual;
-                $promo = $this->promoAktifUntukUkuran($d->ukuran_id ? (int) $d->ukuran_id : null);
+                $promo = $this->promoAktifUntukDetail($d);
                 $hargaDiskon = $hargaAsli;
 
                 if ($promo) {
@@ -416,7 +396,7 @@ class Produk extends Model
 
                 return [
                     'produk_ukuran_id' => $d->id,
-                    'ukuran_id' => $d->ukuran_id,
+                    'ukuran_key' => static::kunciUkuran($d->ukuran),
                     'nama' => $d->ukuran,
                     'harga' => $hargaAsli,
                     'harga_asli' => $hargaAsli,
@@ -448,14 +428,13 @@ class Produk extends Model
 
                 return [
                     'produk_varian_rasa_id' => $d->id,
-                    'varian_rasa_id' => $d->varian_rasa_id,
                     'nama' => $d->variasi,
                     'gambar' => $grup->first(fn ($x) => $x->foto)?->foto_url,
                     'stok' => (int) $grup->sum('stok'),
                     'stok_minimum' => (int) $grup->sum('stok_minimum'),
                     'stok_per_ukuran' => $grup
-                        ->filter(fn ($x) => $x->ukuran_id)
-                        ->mapWithKeys(fn ($x) => [$x->ukuran_id => (int) $x->stok])
+                        ->filter(fn ($x) => filled($x->ukuran))
+                        ->mapWithKeys(fn ($x) => [static::kunciUkuran($x->ukuran) => (int) $x->stok])
                         ->all(),
                 ];
             })

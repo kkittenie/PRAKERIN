@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\KategoriProduk;
 use App\Models\Produk;
 use App\Models\DetailProduk;
-use App\Models\ProdukVarian;
 use App\Models\PesananDitahan;
 use App\Models\Transaksi;
 use App\Models\DetailTransaksi;
@@ -181,7 +180,7 @@ class TransaksiKasirController extends Controller
     public function indeks()
     {
         try {
-            $daftarProduk = Produk::with(['kategori', 'promos', 'produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas', 'detailProduks'])
+            $daftarProduk = Produk::with(['kategori', 'promos.detailProduks', 'detailProduks'])
                 ->where('status_aktif', true)
                 ->reguler()
                 ->get()
@@ -194,10 +193,7 @@ class TransaksiKasirController extends Controller
             $daftarKategori = KategoriProduk::all();
 
             $daftarBundling = Bundling::with([
-                'items.produk.produkUkurans.ukuran',
-                'items.produk.produkVarianRasas.varianRasa',
-                'items.produk.produkUkuranRasas',
-                'items.produkVarian',
+                'items.detailProduk',
             ])
                 ->where('status_aktif', true)
                 ->get()
@@ -206,8 +202,8 @@ class TransaksiKasirController extends Controller
                         if (!$item->produk) {
                             return 0;
                         }
-                        if ($item->produkVarian) {
-                            $stokVarian = (int) $item->produkVarian->stok;
+                        if ($item->detailProduk) {
+                            $stokVarian = (int) $item->detailProduk->stok;
                             $bisaDibuat = intdiv($stokVarian, max(1, $item->qty));
                             return is_null($carry) ? $bisaDibuat : min($carry, $bisaDibuat);
                         }
@@ -250,7 +246,7 @@ class TransaksiKasirController extends Controller
     {
         $bundlingId = (int) $item['bundling_id'];
         $jumlahBundling = (int) $item['jumlah'];
-        $bundling = Bundling::with('items.produk', 'items.produkVarian')->findOrFail($bundlingId);
+        $bundling = Bundling::with('items.produk', 'items.detailProduk')->findOrFail($bundlingId);
 
         $perluProduksiBundling = (bool) ($item['butuh_produksi'] ?? false);
 
@@ -304,9 +300,9 @@ class TransaksiKasirController extends Controller
             $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
             $totalDibutuhkan = (int) ($qtySatuBundling * $jumlahBundling);
 
-            // ── Sistem baru: deduct stok dari ProdukVarian ──
-            if ($bundlingItem->produk_varian_id) {
-                $varian = ProdukVarian::where('id', $bundlingItem->produk_varian_id)
+            // ── Sistem baru: deduct stok dari DetailProduk ──
+            if ($bundlingItem->detail_produk_id) {
+                $varian = DetailProduk::where('id', $bundlingItem->detail_produk_id)
                     ->lockForUpdate()
                     ->first();
 
@@ -338,7 +334,7 @@ class TransaksiKasirController extends Controller
                     DetailTransaksi::create([
                         'transaksi_id' => $transaksi->id,
                         'produk_id' => $produk->id,
-                        'produk_varian_id' => $varian->id,
+                        'detail_produk_id' => $varian->id,
                         'bundling_id' => $bundling->id,
                         'nama_produk' => $produk->nama_produk,
                         'ukuran' => $varian->ukuran,
@@ -356,7 +352,7 @@ class TransaksiKasirController extends Controller
                     DetailTransaksi::create([
                         'transaksi_id' => $transaksi->id,
                         'produk_id' => $produk->id,
-                        'produk_varian_id' => $varian->id,
+                        'detail_produk_id' => $varian->id,
                         'bundling_id' => $bundling->id,
                         'nama_produk' => $produk->nama_produk,
                         'ukuran' => $varian->ukuran,
@@ -421,7 +417,7 @@ class TransaksiKasirController extends Controller
     {
         $promoEventId = (int) $item['promo_event_id'];
         $jumlahEvent = (int) $item['jumlah'];
-        $promoEvent = PromoProdukEvent::with('produk.produkVarians')->findOrFail($promoEventId);
+        $promoEvent = PromoProdukEvent::with('produk.detailProduks')->findOrFail($promoEventId);
         $produk = $promoEvent->produk;
 
         $perluProduksiEvent = (bool) ($item['butuh_produksi'] ?? false);
@@ -444,13 +440,13 @@ class TransaksiKasirController extends Controller
 
         $totalDibutuhkan = (int) ($promoEvent->isi_event * $jumlahEvent);
 
-        // ── Sistem baru: cari ProdukVarian yang cocok dengan pembatasan event ──
+        // ── Sistem baru: cari DetailProduk yang cocok dengan pembatasan event ──
         $ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi();
         $kandidatRasa = $promoEvent->kandidatRasaUntukProduksi();
 
-        // Cari semua ProdukVarian yang cocok dengan pembatasan ukuran & rasa event
-        $variansCocok = $produk->produkVarians
-            ->filter(function (ProdukVarian $v) use ($ukuranEvent, $kandidatRasa) {
+        // Cari semua DetailProduk yang cocok dengan pembatasan ukuran & rasa event
+        $variansCocok = $produk->detailProduks
+            ->filter(function (DetailProduk $v) use ($ukuranEvent, $kandidatRasa) {
                 if (!$v->status_aktif) return false;
                 // Filter ukuran
                 if ($ukuranEvent && $v->ukuran && strcasecmp($v->ukuran, $ukuranEvent) !== 0) return false;
@@ -470,14 +466,14 @@ class TransaksiKasirController extends Controller
             })
             ->values();
 
-        // Jika ada ProdukVarian yang cocok, gunakan sistem baru
+        // Jika ada DetailProduk yang cocok, gunakan sistem baru
         if ($variansCocok->isNotEmpty()) {
             $sisa = $totalDibutuhkan;
 
             foreach ($variansCocok as $varian) {
                 if ($sisa <= 0) break;
 
-                $varian = ProdukVarian::where('id', $varian->id)->lockForUpdate()->first();
+                $varian = DetailProduk::where('id', $varian->id)->lockForUpdate()->first();
                 if (!$varian) continue;
 
                 $stokTersedia = (int) $varian->stok;
@@ -495,7 +491,7 @@ class TransaksiKasirController extends Controller
                     DetailTransaksi::create([
                         'transaksi_id' => $transaksi->id,
                         'produk_id' => $produk->id,
-                        'produk_varian_id' => $varian->id,
+                        'detail_produk_id' => $varian->id,
                         'promo_event_id' => $promoEvent->id,
                         'nama_produk' => $produk->nama_produk,
                         'ukuran' => $varian->ukuran,
@@ -519,7 +515,7 @@ class TransaksiKasirController extends Controller
                 DetailTransaksi::create([
                     'transaksi_id' => $transaksi->id,
                     'produk_id' => $produk->id,
-                    'produk_varian_id' => $varianProduksi->id,
+                    'detail_produk_id' => $varianProduksi->id,
                     'promo_event_id' => $promoEvent->id,
                     'nama_produk' => $produk->nama_produk,
                     'ukuran' => $varianProduksi->ukuran,
@@ -629,7 +625,7 @@ class TransaksiKasirController extends Controller
             DetailTransaksi::create([
                 'transaksi_id' => $transaksi->id,
                 'produk_id' => $produk->id,
-                'produk_varian_id' => $detailProduk->id,
+                'detail_produk_id' => $detailProduk->id,
                 'nama_produk' => $produk->nama_produk,
                 'ukuran' => $detailProduk->ukuran,
                 'varian_rasa' => $detailProduk->variasi,
@@ -651,11 +647,11 @@ class TransaksiKasirController extends Controller
 
     private function kembalikanStokVarian(DetailTransaksi $detail): void
     {
-        $varian = DetailProduk::where('id', $detail->produk_varian_id)->lockForUpdate()->first();
+        $varian = DetailProduk::where('id', $detail->detail_produk_id)->lockForUpdate()->first();
         if (!$varian) {
             Log::warning('Detail produk sudah dihapus, stok tidak dikembalikan', [
                 'detail_transaksi_id' => $detail->id,
-                'produk_varian_id' => $detail->produk_varian_id,
+                'detail_produk_id' => $detail->detail_produk_id,
             ]);
             return;
         }
@@ -677,7 +673,7 @@ class TransaksiKasirController extends Controller
             }
 
             // Detail dari varian baru: kembalikan ke baris varian yang sama.
-            if ($detail->produk_varian_id) {
+            if ($detail->detail_produk_id) {
                 if (!$detail->butuh_produksi) {
                     $this->kembalikanStokVarian($detail);
                 }
@@ -686,7 +682,7 @@ class TransaksiKasirController extends Controller
 
             if (!$detail->butuh_produksi) {
                 try {
-                    $produk = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])->find($detail->produk_id);
+                    $produk = Produk::with(['detailProduks'])->find($detail->produk_id);
                     if ($produk) {
                         // Kalau detail punya varian_rasa, kembalikan lewat
                         // ubahStokRasa supaya stok di keempat tabel sinkron.
@@ -789,7 +785,7 @@ class TransaksiKasirController extends Controller
                     throw new \Exception('Pilih ukuran/variasi produk terlebih dahulu.');
                 }
 
-                 $produk = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])->findOrFail($item['produk_id']);
+                 $produk = Produk::with(['detailProduks'])->findOrFail($item['produk_id']);
                 $perluProduksi = $this->tentukanPerluProduksi($produk, $item);
                 $ukuranItem = $item['ukuran'] ?? null;
                 $varianRasa = $item['varian_rasa'] ?? null;
@@ -1228,7 +1224,7 @@ class TransaksiKasirController extends Controller
                     throw new \Exception('Pilih ukuran/variasi produk terlebih dahulu.');
                 }
 
-                 $produk = Produk::with(['produkUkurans.ukuran', 'produkVarianRasas.varianRasa', 'produkUkuranRasas'])->findOrFail($item['produk_id']);
+                 $produk = Produk::with(['detailProduks'])->findOrFail($item['produk_id']);
                 $perluProduksi = $this->tentukanPerluProduksi($produk, $item);
                 $ukuranItem = $item['ukuran'] ?? null;
                 $varianRasa = $item['varian_rasa'] ?? null;

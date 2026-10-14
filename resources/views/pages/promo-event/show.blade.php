@@ -69,32 +69,18 @@
     </div>
 
     @php
-        $hasVarianBaru = $promoEvent->produk && $promoEvent->produk->produkVarians()->exists();
-        if ($hasVarianBaru) {
-            $validUkuranIds = $promoEvent->produk->produkVarians
-                ->filter(fn ($v) => !empty($v->ukuran))
-                ->map(fn ($v) => (int) ($v->ukuran_id ?: (\App\Models\Ukuran::where('nama_ukuran', $v->ukuran)->value('id') ?? 0)))
-                ->filter(fn ($id) => $id > 0)
-                ->unique()
-                ->values();
-            $ukuransDitampilkan = $promoEvent->ukurans->filter(fn ($u) => $validUkuranIds->contains($u->id));
+        $detailTerpilih = $promoEvent->detailTerpilih();
+        $namaUnik = fn ($kolom) => $detailTerpilih->pluck($kolom)
+            ->map(fn ($n) => trim((string) $n))
+            ->filter()
+            ->unique(fn ($n) => mb_strtolower($n))
+            ->values();
 
-            $validRasaIds = $promoEvent->produk->produkVarians
-                ->filter(fn ($v) => !empty($v->variasi))
-                ->map(fn ($v) => (int) ($v->varian_rasa_id ?: (\App\Models\VarianRasa::where('nama_rasa', $v->variasi)->value('id') ?? 0)))
-                ->filter(fn ($id) => $id > 0)
-                ->unique()
-                ->values();
-            $rasasDitampilkan = $promoEvent->varianRasas->filter(fn ($r) => $validRasaIds->contains($r->id));
-
-            $tampilUkuran = $validUkuranIds->isNotEmpty();
-            $tampilRasa = $validRasaIds->isNotEmpty();
-        } else {
-            $tampilUkuran = (bool) optional($promoEvent->produk)->punya_ukuran;
-            $ukuransDitampilkan = $promoEvent->ukurans;
-            $tampilRasa = (bool) optional($promoEvent->produk)->punya_varian_rasa;
-            $rasasDitampilkan = $promoEvent->varianRasas;
-        }
+        $semuaDetail = $promoEvent->produk ? $promoEvent->produk->daftarDetail() : collect();
+        $tampilUkuran = $semuaDetail->contains(fn ($d) => filled($d->ukuran));
+        $tampilRasa = $semuaDetail->contains(fn ($d) => filled($d->variasi));
+        $ukuransDitampilkan = $namaUnik('ukuran');
+        $rasasDitampilkan = $namaUnik('variasi');
     @endphp
 
     @if($tampilUkuran)
@@ -102,7 +88,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Berlaku Untuk Ukuran</p>
         <div class="flex flex-wrap gap-1.5">
             @forelse($ukuransDitampilkan as $ukuran)
-                <span class="inline-flex items-center rounded-full bg-brand-50 dark:bg-brand-500/10 px-3 py-1 text-xs font-semibold text-brand-700 dark:text-brand-400">{{ $ukuran->nama_ukuran }}</span>
+                <span class="inline-flex items-center rounded-full bg-brand-50 dark:bg-brand-500/10 px-3 py-1 text-xs font-semibold text-brand-700 dark:text-brand-400">{{ $ukuran }}</span>
             @empty
                 <span class="text-sm font-semibold text-gray-800 dark:text-white">Semua ukuran</span>
             @endforelse
@@ -115,7 +101,7 @@
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Berlaku Untuk Rasa</p>
         <div class="flex flex-wrap gap-1.5">
             @forelse($rasasDitampilkan as $rasa)
-                <span class="inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400">{{ $rasa->nama_rasa }}</span>
+                <span class="inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400">{{ $rasa }}</span>
             @empty
                 <span class="text-sm font-semibold text-gray-800 dark:text-white">Semua rasa</span>
             @endforelse

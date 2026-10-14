@@ -20,17 +20,17 @@ class KeranjangController extends Controller
 
             $validated = $request->validate([
                 'jumlah' => 'required|integer|min:1|max:50',
-                'produk_varian_id' => 'nullable|integer',
+                'detail_produk_id' => 'nullable|integer',
                 'ukuran' => 'nullable|string|max:50',
                 'varian_rasa' => 'nullable|string|max:100',
                 'catatan' => 'nullable|string|max:255',
             ]);
 
             $produkVarian = null;
-            if (!empty($validated['produk_varian_id'])) {
-                $produkVarian = $produk->produkVarians()->where('id', $validated['produk_varian_id'])->where('status_aktif', true)->first();
-            } elseif ($produk->produkVarians()->exists()) {
-                $produkVarian = $produk->produkVarians()
+            if (!empty($validated['detail_produk_id'])) {
+                $produkVarian = $produk->detailProduks()->where('id', $validated['detail_produk_id'])->where('status_aktif', true)->first();
+            } elseif ($produk->detailProduks()->exists()) {
+                $produkVarian = $produk->detailProduks()
                     ->where('status_aktif', true)
                     ->where(function ($q) use ($validated) {
                         if (!empty($validated['ukuran'])) {
@@ -42,7 +42,7 @@ class KeranjangController extends Controller
                     })->first();
             }
 
-            if ($produk->produkVarians()->exists() && !$produkVarian) {
+            if ($produk->detailProduks()->exists() && !$produkVarian) {
                 if ($request->wantsJson()) {
                     return response()->json([
                         'success' => false,
@@ -56,7 +56,7 @@ class KeranjangController extends Controller
                 $ukuran = $produkVarian->ukuran;
                 $varianRasa = $produkVarian->variasi;
                 $hargaAsal = (float) $produkVarian->harga_jual;
-                $promoBerlaku = $produk->promoAktifUntukUkuran($produkVarian->ukuran_id ? (int) $produkVarian->ukuran_id : null);
+                $promoBerlaku = $produk->promoAktifUntukDetail($produkVarian);
 
                 $diskonSatuan = 0;
                 if ($promoBerlaku) {
@@ -92,7 +92,7 @@ class KeranjangController extends Controller
 
             MemberCart::tambah([
                 'produk_id' => $produk->id,
-                'produk_varian_id' => $produkVarianId,
+                'detail_produk_id' => $produkVarianId,
                 'nama_produk' => $produk->nama_produk,
                 'foto' => $foto,
                 'harga_satuan' => $hargaSatuan,
@@ -252,7 +252,7 @@ class KeranjangController extends Controller
         try {
             $validated = $request->validate([
                 'produk_id' => 'required|integer|exists:produks,id',
-                'produk_varian_id' => 'nullable|integer',
+                'detail_produk_id' => 'nullable|integer',
                 'jumlah' => 'required|integer|min:1|max:50',
                 'ukuran' => 'nullable|string|max:50',
                 'varian_rasa' => 'nullable|string|max:100',
@@ -268,10 +268,10 @@ class KeranjangController extends Controller
             }
 
             $produkVarian = null;
-            if (!empty($validated['produk_varian_id'])) {
-                $produkVarian = $produk->produkVarians()->where('id', $validated['produk_varian_id'])->where('status_aktif', true)->first();
-            } elseif ($produk->produkVarians()->exists()) {
-                $produkVarian = $produk->produkVarians()
+            if (!empty($validated['detail_produk_id'])) {
+                $produkVarian = $produk->detailProduks()->where('id', $validated['detail_produk_id'])->where('status_aktif', true)->first();
+            } elseif ($produk->detailProduks()->exists()) {
+                $produkVarian = $produk->detailProduks()
                     ->where('status_aktif', true)
                     ->where(function ($q) use ($validated) {
                         if (!empty($validated['ukuran'])) {
@@ -283,7 +283,7 @@ class KeranjangController extends Controller
                     })->first();
             }
 
-            if ($produk->produkVarians()->exists() && !$produkVarian) {
+            if ($produk->detailProduks()->exists() && !$produkVarian) {
                 return back()->with('error', 'Varian yang dipilih sedang nonaktif atau tidak tersedia.');
             }
 
@@ -291,7 +291,7 @@ class KeranjangController extends Controller
                 $ukuran = $produkVarian->ukuran;
                 $varianRasa = $produkVarian->variasi;
                 $hargaAsal = (float) $produkVarian->harga_jual;
-                $promoBerlaku = $produk->promoAktifUntukUkuran($produkVarian->ukuran_id ? (int) $produkVarian->ukuran_id : null);
+                $promoBerlaku = $produk->promoAktifUntukDetail($produkVarian);
 
                 $diskonSatuan = 0;
                 if ($promoBerlaku) {
@@ -327,7 +327,7 @@ class KeranjangController extends Controller
 
             MemberCart::perbarui($itemId, [
                 'produk_id' => $produk->id,
-                'produk_varian_id' => $produkVarianId,
+                'detail_produk_id' => $produkVarianId,
                 'nama_produk' => $produk->nama_produk,
                 'foto' => $foto,
                 'harga_satuan' => $hargaSatuan,

@@ -284,7 +284,7 @@ function tambahBarisProduk() {
             </label>
 
             <select
-                name="produk_varian_id[]"
+                name="detail_produk_id[]"
                 class="input-varian-produk w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
                 <option value="">Pilih varian</option>
             </select>
@@ -396,7 +396,7 @@ function stokRasaProduk(produk, namaUkuran, namaRasa) {
             return null;
         }
         const perUkuran = rasa.stok_per_ukuran || {};
-        return perUkuran[opsi.ukuran_id] !== undefined ? (parseInt(perUkuran[opsi.ukuran_id]) || 0) : 0;
+        return perUkuran[opsi.ukuran_key] !== undefined ? (parseInt(perUkuran[opsi.ukuran_key]) || 0) : 0;
     }
 
     return parseInt(rasa.stok) || 0;
@@ -801,7 +801,7 @@ function pulihkanBaris(div, produk, namaUkuran, namaRasa, varianId) {
 
 // ==== Isi ulang baris produk dari old() kalau validasi gagal, kalau tidak 1 baris kosong ====
 const oldProdukId = @json(old('produk_id', []));
-const oldVarian = @json(old('produk_varian_id', []));
+const oldVarian = @json(old('detail_produk_id', []));
 const oldQty = @json(old('qty', []));
 const oldUkuran = @json(old('ukuran', []));
 const oldRasa = @json(old('varian_rasa', []));

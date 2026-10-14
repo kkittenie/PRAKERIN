@@ -191,7 +191,7 @@ class CheckoutController extends Controller
 
             MemberCart::tambah([
                 'produk_id' => $redemption->produk->id,
-                'produk_varian_id' => null,
+                'detail_produk_id' => null,
                 'nama_produk' => $redemption->produk->nama_produk,
                 'foto' => $redemption->produk->foto,
                 'harga_satuan' => 0,
@@ -434,10 +434,10 @@ class CheckoutController extends Controller
                     $hargaSatuanDetail = (float) ($item['harga_asal'] ?? $item['harga_satuan']);
 
                     $varian = null;
-                    if (!empty($item['produk_varian_id'])) {
-                        $varian = \App\Models\ProdukVarian::lockForUpdate()->find($item['produk_varian_id']);
-                    } elseif ($produk->produkVarians()->exists()) {
-                        $varian = $produk->produkVarians()
+                    if (!empty($item['detail_produk_id'])) {
+                        $varian = \App\Models\DetailProduk::lockForUpdate()->find($item['detail_produk_id']);
+                    } elseif ($produk->detailProduks()->exists()) {
+                        $varian = $produk->detailProduks()
                             ->where(function ($q) use ($ukuranItem, $varianRasaItem) {
                                 if ($ukuranItem) $q->where('ukuran', $ukuranItem);
                                 if ($varianRasaItem) $q->where('variasi', $varianRasaItem);
@@ -464,7 +464,7 @@ class CheckoutController extends Controller
                             DetailTransaksi::create([
                                 'transaksi_id' => $transaksi->id,
                                 'produk_id' => $produk->id,
-                                'produk_varian_id' => $varian->id,
+                                'detail_produk_id' => $varian->id,
                                 'nama_produk' => $produk->nama_produk,
                                 'ukuran' => $varian->ukuran,
                                 'varian_rasa' => $varian->variasi,
@@ -480,7 +480,7 @@ class CheckoutController extends Controller
                             DetailTransaksi::create([
                                 'transaksi_id' => $transaksi->id,
                                 'produk_id' => $produk->id,
-                                'produk_varian_id' => $varian->id,
+                                'detail_produk_id' => $varian->id,
                                 'nama_produk' => $produk->nama_produk,
                                 'ukuran' => $varian->ukuran,
                                 'varian_rasa' => $varian->variasi,
@@ -575,7 +575,7 @@ class CheckoutController extends Controller
     }
     private function prosesItemBundlingCheckout(Transaksi $transaksi, array $item, array &$stokTerpakai): void
     {
-        $bundling = Bundling::with('items.produk', 'items.produkVarian')->findOrFail($item['bundling_id']);
+        $bundling = Bundling::with('items.produk', 'items.detailProduk')->findOrFail($item['bundling_id']);
         $jumlahBundling = (int) $item['jumlah'];
 
         DetailTransaksi::create([
@@ -625,9 +625,9 @@ class CheckoutController extends Controller
             $totalDibutuhkan = (int) ($qtySatuBundling * $jumlahBundling);
             $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
 
-            // ── Sistem baru: track stok via ProdukVarian ──
-            if ($bundlingItem->produk_varian_id) {
-                $varian = $bundlingItem->produkVarian;
+            // ── Sistem baru: track stok via DetailProduk ──
+            if ($bundlingItem->detail_produk_id) {
+                $varian = $bundlingItem->detailProduk;
                 if (!$varian) continue;
 
                 // Track stok yang sudah "dipakai" dalam checkout ini (belum dikurangi dari DB)
@@ -642,7 +642,7 @@ class CheckoutController extends Controller
                     DetailTransaksi::create([
                         'transaksi_id' => $transaksi->id,
                         'produk_id' => $produk->id,
-                        'produk_varian_id' => $varian->id,
+                        'detail_produk_id' => $varian->id,
                         'bundling_id' => $bundling->id,
                         'nama_produk' => $produk->nama_produk,
                         'ukuran' => $varian->ukuran,
@@ -663,7 +663,7 @@ class CheckoutController extends Controller
                         DetailTransaksi::create([
                             'transaksi_id' => $transaksi->id,
                             'produk_id' => $produk->id,
-                            'produk_varian_id' => $varian->id,
+                            'detail_produk_id' => $varian->id,
                             'bundling_id' => $bundling->id,
                             'nama_produk' => $produk->nama_produk,
                             'ukuran' => $varian->ukuran,
@@ -680,7 +680,7 @@ class CheckoutController extends Controller
                         DetailTransaksi::create([
                             'transaksi_id' => $transaksi->id,
                             'produk_id' => $produk->id,
-                            'produk_varian_id' => $varian->id,
+                            'detail_produk_id' => $varian->id,
                             'bundling_id' => $bundling->id,
                             'nama_produk' => $produk->nama_produk,
                             'ukuran' => $varian->ukuran,
@@ -723,7 +723,7 @@ class CheckoutController extends Controller
 
     private function prosesItemPromoEventCheckout(Transaksi $transaksi, array $item, array &$stokTerpakai): void
     {
-        $promoEvent = PromoProdukEvent::with('produk.produkVarians')->findOrFail($item['promo_event_id']);
+        $promoEvent = PromoProdukEvent::with('produk.detailProduks')->findOrFail($item['promo_event_id']);
         $jumlahEvent = (int) $item['jumlah'];
         $produk = $promoEvent->produk;
 
@@ -747,8 +747,8 @@ class CheckoutController extends Controller
         $ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi();
         $kandidatRasa = $promoEvent->kandidatRasaUntukProduksi();
 
-        // ── Sistem baru: cari ProdukVarian yang cocok ──
-        $variansCocok = $produk->produkVarians
+        // ── Sistem baru: cari DetailProduk yang cocok ──
+        $variansCocok = $produk->detailProduks
             ->filter(function ($v) use ($ukuranEvent, $kandidatRasa) {
                 if (!$v->status_aktif) return false;
                 if ($ukuranEvent && $v->ukuran && strcasecmp($v->ukuran, $ukuranEvent) !== 0) return false;
@@ -786,7 +786,7 @@ class CheckoutController extends Controller
                     DetailTransaksi::create([
                         'transaksi_id' => $transaksi->id,
                         'produk_id' => $produk->id,
-                        'produk_varian_id' => $varian->id,
+                        'detail_produk_id' => $varian->id,
                         'promo_event_id' => $promoEvent->id,
                         'nama_produk' => $produk->nama_produk,
                         'ukuran' => $varian->ukuran,
@@ -808,7 +808,7 @@ class CheckoutController extends Controller
                 DetailTransaksi::create([
                     'transaksi_id' => $transaksi->id,
                     'produk_id' => $produk->id,
-                    'produk_varian_id' => $varianProduksi->id,
+                    'detail_produk_id' => $varianProduksi->id,
                     'promo_event_id' => $promoEvent->id,
                     'nama_produk' => $produk->nama_produk,
                     'ukuran' => $varianProduksi->ukuran,

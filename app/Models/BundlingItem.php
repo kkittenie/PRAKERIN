@@ -11,7 +11,7 @@ class BundlingItem extends Model
     protected $fillable = [
         'bundling_id',
         'produk_id',
-        'produk_varian_id',
+        'detail_produk_id',
         'ukuran',
         'varian_rasa',
         'qty',
@@ -27,8 +27,8 @@ class BundlingItem extends Model
         return $this->belongsTo(Produk::class, 'produk_id');
     }
 
-    public function produkVarian()
+    public function detailProduk()
     {
-        return $this->belongsTo(ProdukVarian::class, 'produk_varian_id');
+        return $this->belongsTo(DetailProduk::class, 'detail_produk_id');
     }
 }

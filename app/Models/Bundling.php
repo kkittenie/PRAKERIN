@@ -45,14 +45,14 @@ class Bundling extends Model
     {
         $items = $this->relationLoaded('items')
             ? $this->items
-            : $this->items()->with(['produkVarian', 'produk.produkVarianRasas.varianRasa', 'produk.produkUkuranRasas'])->get();
+            : $this->items()->with(['detailProduk', 'produk.detailProduks'])->get();
 
         foreach ($items as $item) {
-            // Sistem baru: cek stok langsung dari ProdukVarian
-            if ($item->produk_varian_id) {
-                $varian = $item->relationLoaded('produkVarian')
-                    ? $item->produkVarian
-                    : $item->produkVarian()->first();
+            // Sistem baru: cek stok langsung dari DetailProduk
+            if ($item->detail_produk_id) {
+                $varian = $item->relationLoaded('detailProduk')
+                    ? $item->detailProduk
+                    : $item->detailProduk()->first();
 
                 if (!$varian || !$varian->status_aktif || $varian->perlu_diproduksi || (int) $varian->stok < (int) $item->qty) {
                     return true;

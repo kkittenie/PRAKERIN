@@ -46,7 +46,7 @@ class DashboardController extends Controller
                     return $voucher;
                 });
 
-            $produkPilihan = Produk::with(['kategori', 'produkUkurans.ukuran'])
+            $produkPilihan = Produk::with(['kategori'])
                 ->where('status_aktif', true)
                 ->reguler()
                 ->inRandomOrder()

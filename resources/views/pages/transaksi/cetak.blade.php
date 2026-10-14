@@ -304,8 +304,8 @@
                             return !$adalahKomponenInternal;
                         })
                         ->groupBy(function ($item) {
-                            $ukuran = $item->ukuran ?: optional($item->produkVarian)->ukuran;
-                            $rasa = $item->varian_rasa ?: optional($item->produkVarian)->variasi;
+                            $ukuran = $item->ukuran ?: optional($item->detailProduk)->ukuran;
+                            $rasa = $item->varian_rasa ?: optional($item->detailProduk)->variasi;
                             $v = array_filter([$ukuran, $rasa]);
                             return $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : '');
                         })
@@ -488,8 +488,8 @@
                                 ->filter(fn ($c) => filled($c))
                                 ->unique()
                                 ->implode(' | ');
-                            $ukuran = $item->ukuran ?: optional($item->produkVarian)->ukuran;
-                            $rasa = $item->varian_rasa ?: optional($item->produkVarian)->variasi;
+                            $ukuran = $item->ukuran ?: optional($item->detailProduk)->ukuran;
+                            $rasa = $item->varian_rasa ?: optional($item->detailProduk)->variasi;
                             $v = array_filter([$ukuran, $rasa]);
                             return (object) [
                                 'nama_produk' => $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : ''),
@@ -659,8 +659,8 @@
                     return !$adalahKomponenInternal;
                 })
                 ->groupBy(function ($item) {
-                    $ukuran = $item->ukuran ?: optional($item->produkVarian)->ukuran;
-                    $rasa = $item->varian_rasa ?: optional($item->produkVarian)->variasi;
+                    $ukuran = $item->ukuran ?: optional($item->detailProduk)->ukuran;
+                    $rasa = $item->varian_rasa ?: optional($item->detailProduk)->variasi;
                     $v = array_filter([$ukuran, $rasa]);
                     return $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : '');
                 })
@@ -780,8 +780,8 @@
                         ->filter(fn ($c) => filled($c))
                         ->unique()
                         ->implode(' | ');
-                    $ukuran = $item->ukuran ?: optional($item->produkVarian)->ukuran;
-                    $rasa = $item->varian_rasa ?: optional($item->produkVarian)->variasi;
+                    $ukuran = $item->ukuran ?: optional($item->detailProduk)->ukuran;
+                    $rasa = $item->varian_rasa ?: optional($item->detailProduk)->variasi;
                     $v = array_filter([$ukuran, $rasa]);
                     return (object) [
                         'nama_produk' => $item->nama_produk . (!empty($v) ? ' (' . implode(' - ', $v) . ')' : ''),

@@ -429,7 +429,7 @@
                             @method('PATCH')
 
                             <input type="hidden" name="produk_id" value="{{ $produk->id }}">
-                            <input type="hidden" name="produk_varian_id" :value="idVarianTerpilih">
+                            <input type="hidden" name="detail_produk_id" :value="idVarianTerpilih">
                             <input type="hidden" name="jumlah" :value="jumlah">
                             <input type="hidden" name="ukuran" :value="ukuran">
                             <input type="hidden" name="varian_rasa" :value="varianRasa">
@@ -481,7 +481,7 @@
                         onsubmit="event.preventDefault(); kirimTambahKeranjang(this);">
                         @csrf
 
-                        <input type="hidden" name="produk_varian_id" :value="idVarianTerpilih">
+                        <input type="hidden" name="detail_produk_id" :value="idVarianTerpilih">
 
                         <input type="hidden" name="jumlah" :value="jumlah">
 

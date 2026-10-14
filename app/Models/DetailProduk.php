@@ -28,8 +28,6 @@ class DetailProduk extends Model
         'status_ketersediaan',
         'status_aktif',
         'urutan',
-        'ukuran_id',
-        'varian_rasa_id',
     ];
 
     protected $casts = [

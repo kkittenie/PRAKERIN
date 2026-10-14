@@ -207,8 +207,8 @@ class PesananPickupController extends Controller
                         // saat checkout, butuh_produksi sudah diset.
                         // Kurangi stok untuk yang tidak butuh_produksi.
                         if (! $detail->butuh_produksi) {
-                            if ($detail->produk_varian_id) {
-                                $varian = \App\Models\ProdukVarian::lockForUpdate()->find($detail->produk_varian_id);
+                            if ($detail->detail_produk_id) {
+                                $varian = \App\Models\DetailProduk::lockForUpdate()->find($detail->detail_produk_id);
                                 if ($varian) {
                                     $varian->stok = max(0, (int) $varian->stok - (int) $detail->jumlah);
                                     $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
@@ -248,8 +248,8 @@ class PesananPickupController extends Controller
                     }
 
                     // Tentukan apakah perlu diproduksi untuk varian baru
-                    if ($detail->produk_varian_id) {
-                        $varian = \App\Models\ProdukVarian::lockForUpdate()->find($detail->produk_varian_id);
+                    if ($detail->detail_produk_id) {
+                        $varian = \App\Models\DetailProduk::lockForUpdate()->find($detail->detail_produk_id);
                         if ($varian) {
                             $stokTersedia = max(0, (int) $varian->stok);
                             if ($varian->perlu_diproduksi || $stokTersedia <= 0) {
@@ -272,7 +272,7 @@ class PesananPickupController extends Controller
                                 \App\Models\DetailTransaksi::create([
                                     'transaksi_id' => $transaksi->id,
                                     'produk_id' => $produk->id,
-                                    'produk_varian_id' => $varian->id,
+                                    'detail_produk_id' => $varian->id,
                                     'nama_produk' => $detail->nama_produk,
                                     'ukuran' => $varian->ukuran,
                                     'varian_rasa' => $varian->variasi,
@@ -449,8 +449,8 @@ class PesananPickupController extends Controller
                         }
 
                         if (! $detail->butuh_produksi && $detail->produk_id) {
-                            if ($detail->produk_varian_id) {
-                                $varian = \App\Models\ProdukVarian::lockForUpdate()->find($detail->produk_varian_id);
+                            if ($detail->detail_produk_id) {
+                                $varian = \App\Models\DetailProduk::lockForUpdate()->find($detail->detail_produk_id);
                                 if ($varian) {
                                     $varian->stok = (int) $varian->stok + (int) $detail->jumlah;
                                     $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
