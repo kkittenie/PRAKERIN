@@ -102,8 +102,9 @@ class DashboardController extends Controller
                 ->get();
 
             // ===== NOTIFIKASI STOK MENIPIS =====
-            $lowStockProduk = \App\Models\Produk::where('status_aktif', true)
-                ->whereColumn('stok', '<=', 'stok_minimum')
+            $lowStockProduk = \App\Models\Produk::with('detailProduks')
+                ->where('status_aktif', true)
+                ->stokMenipis()
                 ->get();
             $lowStockBahan = \App\Models\BahanBaku::whereColumn('stok', '<=', 'stok_minimum')
                 ->get();

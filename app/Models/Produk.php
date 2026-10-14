@@ -3,43 +3,33 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class Produk extends Model
 {
     protected $table = 'produks';
 
+    // Tabel produks hanya berisi informasi umum. Kode, harga, stok, ukuran, dan variasi
+    // ada di detail_produks; atribut di bawah ($appends) dihitung dari detail produk.
     protected $fillable = [
         'kategori_id',
-        'kode_produk',
         'nama_produk',
         'deskripsi',
-        'harga_jual',
-        'harga_modal',
-        'stok',
-        'stok_besar',
-        'stok_kecil',
-        'stok_minimum',
         'foto',
         'status_aktif',
-        'status_ketersediaan',
-        'punya_ukuran',
-        'punya_varian_rasa',
-        'harga_besar',
-        'harga_kecil',
         'is_khusus_bundling',
     ];
 
-    protected $casts = [
-        'punya_ukuran' => 'boolean',
-        'punya_varian_rasa' => 'boolean',
-        'harga_besar' => 'decimal:2',
-        'harga_kecil' => 'decimal:2',
-        'stok_besar' => 'integer',
-        'stok_kecil' => 'integer',
-    ];
-
     protected $appends = [
+        'kode_produk',
+        'harga_jual',
+        'harga_modal',
+        'stok',
+        'stok_minimum',
+        'status_ketersediaan',
+        'punya_ukuran',
+        'punya_varian_rasa',
         'promo_aktif',
         'promos_aktif_semua',
         'harga_diskon',
@@ -57,11 +47,22 @@ class Produk extends Model
         return $query->where('is_khusus_bundling', true);
     }
 
+    /** Produk yang total stok detailnya sudah di bawah atau sama dengan total stok minimum. */
+    public function scopeStokMenipis($query)
+    {
+        return $query->whereRaw(
+            '(SELECT COALESCE(SUM(d.stok), 0) FROM detail_produks d WHERE d.produk_id = produks.id)'
+            . ' <= (SELECT COALESCE(SUM(d.stok_minimum), 0) FROM detail_produks d WHERE d.produk_id = produks.id)'
+        );
+    }
+
     public function kategori()
     {
         return $this->belongsTo(KategoriProduk::class, 'kategori_id');
     }
 
+    // Relasi ke master lama: masih dipakai promo (menarget ukuran/rasa). Stok dan harga TIDAK
+    // dibaca dari sini lagi, hanya dari detail produk.
     public function produkUkurans()
     {
         return $this->hasMany(ProdukUkuran::class, 'produk_id')->with('ukuran')->orderBy('id');
@@ -89,6 +90,131 @@ class Produk extends Model
         return $this->hasMany(ProdukVarian::class, 'produk_id')->orderBy('urutan')->orderBy('id');
     }
 
+    /** Semua detail produk ini (memakai relasi yang sudah di-eager load kalau ada). */
+    public function daftarDetail(): Collection
+    {
+        if ($this->relationLoaded('detailProduks')) {
+            return $this->getRelation('detailProduks');
+        }
+
+        if ($this->relationLoaded('produkVarians')) {
+            return $this->getRelation('produkVarians');
+        }
+
+        $this->setRelation('detailProduks', $this->detailProduks()->get());
+
+        return $this->getRelation('detailProduks');
+    }
+
+    public function daftarDetailAktif(): Collection
+    {
+        return $this->daftarDetail()->filter(fn ($d) => (bool) $d->status_aktif)->values();
+    }
+
+    /** Lepas cache relasi supaya pembacaan berikutnya mengambil stok terbaru dari database. */
+    public function segarkanStok(): void
+    {
+        $this->unsetRelation('detailProduks');
+        $this->unsetRelation('produkVarians');
+    }
+
+    protected static function samaNama($a, $b): bool
+    {
+        return strcasecmp(trim((string) $a), trim((string) $b)) === 0;
+    }
+
+    public function punyaUkuranDetail(): bool
+    {
+        return $this->daftarDetail()->contains(fn ($d) => filled($d->ukuran));
+    }
+
+    public function punyaVariasiDetail(): bool
+    {
+        return $this->daftarDetail()->contains(fn ($d) => filled($d->variasi));
+    }
+
+    // ------------------------------------------------------------------
+    // Atribut yang dulu kolom di tabel produks, sekarang dihitung dari detail produk
+    // ------------------------------------------------------------------
+
+    /** Kode detail pertama (produk tanpa varian hanya punya satu kode). */
+    public function getKodeProdukAttribute(): ?string
+    {
+        return $this->daftarDetail()->first()?->kode_produk;
+    }
+
+    /** Harga jual termurah di antara detail aktif (atau semua detail kalau tidak ada yang aktif). */
+    public function getHargaJualAttribute(): float
+    {
+        $aktif = $this->daftarDetailAktif();
+        $d = ($aktif->isNotEmpty() ? $aktif : $this->daftarDetail())->sortBy('harga_jual')->first();
+
+        return $d ? (float) $d->harga_jual : 0.0;
+    }
+
+    public function getHargaModalAttribute(): float
+    {
+        $aktif = $this->daftarDetailAktif();
+        $d = ($aktif->isNotEmpty() ? $aktif : $this->daftarDetail())->sortBy('harga_jual')->first();
+
+        return $d ? (float) $d->harga_modal : 0.0;
+    }
+
+    /** Total stok semua detail. */
+    public function getStokAttribute(): int
+    {
+        return (int) $this->daftarDetail()->sum('stok');
+    }
+
+    public function getStokMinimumAttribute(): int
+    {
+        return (int) $this->daftarDetail()->sum('stok_minimum');
+    }
+
+    /** Perlu diproduksi kalau tidak ada detail aktif yang stoknya masih ada. */
+    public function getStatusKetersediaanAttribute(): string
+    {
+        return $this->daftarDetailAktif()->contains(fn ($d) => (int) $d->stok > 0)
+            ? 'stok_ada'
+            : 'perlu_diproduksi';
+    }
+
+    public function getPunyaUkuranAttribute(): bool
+    {
+        return $this->punyaUkuranDetail();
+    }
+
+    public function getPunyaVarianRasaAttribute(): bool
+    {
+        return $this->punyaVariasiDetail();
+    }
+
+    /**
+     * Kurangi total stok sebesar $jumlah (dipakai hadiah stamp, yang tidak memilih ukuran).
+     * Detail dengan stok terbanyak dikurangi lebih dulu.
+     */
+    public function kurangiStokTotal(int $jumlah): void
+    {
+        $sisa = $jumlah;
+
+        $detail = DetailProduk::where('produk_id', $this->id)->lockForUpdate()->get()->sortByDesc('stok');
+
+        foreach ($detail as $d) {
+            if ($sisa <= 0) {
+                break;
+            }
+
+            $ambil = min((int) $d->stok, $sisa);
+            if ($ambil > 0) {
+                $d->stok = (int) $d->stok - $ambil;
+                $d->save();
+                $sisa -= $ambil;
+            }
+        }
+
+        $this->segarkanStok();
+    }
+
     /**
      * Daftar detail produk untuk kasir (tabel detail_produks), termasuk yang nonaktif
      * (ditandai 'aktif' => false, tampil abu-abu & tidak bisa dipilih). Satu baris =
@@ -97,10 +223,7 @@ class Produk extends Model
      */
     public function daftarVarianKasir(): array
     {
-        // Pakai relasi yang sudah dimuat (detailProduks atau nama lamanya produkVarians) supaya tidak ada query ulang.
-        $daftar = $this->relationLoaded('detailProduks')
-            ? $this->detailProduks
-            : ($this->relationLoaded('produkVarians') ? $this->produkVarians : $this->detailProduks()->get());
+        $daftar = $this->daftarDetail();
 
         return $daftar
             ->map(function (DetailProduk $v) {
@@ -121,7 +244,8 @@ class Produk extends Model
                     'ukuran' => $v->ukuran,
                     'variasi' => $v->variasi,
                     'nama' => $v->nama_lengkap,
-                    'kode_barcode' => $v->kode_barcode,
+                    'kode_produk' => $v->kode_produk,
+                    'kode_barcode' => $v->kode_produk,
                     'ukuran_id' => $v->ukuran_id ? (int) $v->ukuran_id : null,
                     'harga' => $hargaAsli,
                     'harga_asli' => $hargaAsli,
@@ -229,12 +353,13 @@ class Produk extends Model
 
     public function promoUntukHitungHarga(?string $ukuran): ?Promo
     {
-        if (!$this->punya_ukuran) {
+        if (!$this->punyaUkuranDetail()) {
             return $this->promo_aktif;
         }
 
-        $ukuranId = optional($this->cariBarisUkuran($ukuran))->ukuran_id;
-        return $this->promoAktifUntukUkuran($ukuranId);
+        $detail = $this->daftarDetailAktif()->first(fn ($d) => static::samaNama($d->ukuran, $ukuran));
+
+        return $this->promoAktifUntukUkuran($detail && $detail->ukuran_id ? (int) $detail->ukuran_id : null);
     }
 
     public function promoAktifUntukUkuran(?int $ukuranId): ?Promo
@@ -259,36 +384,25 @@ class Produk extends Model
         return $this->hasMany(PromoProdukEvent::class);
     }
 
-    protected function daftarBarisUkuranAktif()
-    {
-        $daftar = $this->relationLoaded('produkUkurans')
-            ? $this->produkUkurans
-            : $this->produkUkurans()->get();
-
-        return $daftar->filter(fn ($pu) => (bool) $pu->status_aktif && $pu->ukuran && (bool) $pu->ukuran->status_aktif);
-    }
-
-    protected function cariBarisUkuran(?string $ukuran): ?ProdukUkuran
-    {
-        if (!$ukuran || !$this->punya_ukuran) {
-            return null;
-        }
-
-        return $this->daftarBarisUkuranAktif()
-            ->first(fn ($pu) => strcasecmp($pu->ukuran->nama_ukuran, $ukuran) === 0);
-    }
+    // ------------------------------------------------------------------
+    // Harga & stok per ukuran / variasi, dihitung dari detail_produks.
+    // Nama method dipertahankan karena bundling, promo, kasir, dan mobile masih memanggilnya.
+    // ------------------------------------------------------------------
 
     public function getDaftarUkuranAttribute(): array
     {
-        if (!$this->punya_ukuran) {
+        $aktif = $this->daftarDetailAktif()->filter(fn ($d) => filled($d->ukuran));
+
+        if ($aktif->isEmpty()) {
             return [];
         }
 
-        return $this->daftarBarisUkuranAktif()
-            ->sortBy(fn ($pu) => $pu->ukuran->urutan ?? 0)
-            ->map(function ($pu) {
-                $hargaAsli = (float) $pu->harga_jual;
-                $promo = $this->promoAktifUntukUkuran($pu->ukuran_id);
+        return $aktif
+            ->groupBy(fn ($d) => mb_strtolower(trim($d->ukuran)))
+            ->map(function ($grup) {
+                $d = $grup->sortBy('harga_jual')->first();
+                $hargaAsli = (float) $d->harga_jual;
+                $promo = $this->promoAktifUntukUkuran($d->ukuran_id ? (int) $d->ukuran_id : null);
                 $hargaDiskon = $hargaAsli;
 
                 if ($promo) {
@@ -298,19 +412,21 @@ class Produk extends Model
                     $hargaDiskon = max(0, $hargaAsli - $diskon);
                 }
 
+                $stok = (int) $grup->sum('stok');
+
                 return [
-                    'produk_ukuran_id' => $pu->id,
-                    'ukuran_id' => $pu->ukuran_id,
-                    'nama' => $pu->ukuran->nama_ukuran,
+                    'produk_ukuran_id' => $d->id,
+                    'ukuran_id' => $d->ukuran_id,
+                    'nama' => $d->ukuran,
                     'harga' => $hargaAsli,
                     'harga_asli' => $hargaAsli,
                     'harga_diskon' => $hargaDiskon,
                     'sedang_promo' => (bool) $promo,
                     'nama_promo' => $promo?->nama_promo,
-                    'harga_modal' => (float) $pu->harga_modal,
-                    'stok' => (int) $pu->stok,
-                    'stok_minimum' => (int) $pu->stok_minimum,
-                    'perlu_produksi' => $pu->status_ketersediaan === 'perlu_diproduksi' || $pu->stok <= 0,
+                    'harga_modal' => (float) $d->harga_modal,
+                    'stok' => $stok,
+                    'stok_minimum' => (int) $grup->sum('stok_minimum'),
+                    'perlu_produksi' => $stok <= 0,
                 ];
             })
             ->values()
@@ -319,65 +435,39 @@ class Produk extends Model
 
     public function getDaftarVarianRasaAttribute(): array
     {
-        if (!$this->punya_varian_rasa) {
+        $aktif = $this->daftarDetailAktif()->filter(fn ($d) => filled($d->variasi));
+
+        if ($aktif->isEmpty()) {
             return [];
         }
 
-        $daftar = $this->relationLoaded('produkVarianRasas')
-            ? $this->produkVarianRasas
-            : $this->produkVarianRasas()->get();
+        return $aktif
+            ->groupBy(fn ($d) => mb_strtolower(trim($d->variasi)))
+            ->map(function ($grup) {
+                $d = $grup->first();
 
-        return $daftar->filter(fn ($pvr) => $pvr->varianRasa && (bool) $pvr->varianRasa->status_aktif)
-            ->map(function ($pvr) {
-                $gambar = $pvr->varianRasa->gambar;
-                $gambarUrl = null;
-                if ($gambar) {
-                    $gambarUrl = (str_starts_with($gambar, 'http://') || str_starts_with($gambar, 'https://'))
-                        ? $gambar
-                        : asset('storage/' . $gambar);
-                }
                 return [
-                    'produk_varian_rasa_id' => $pvr->id,
-                    'varian_rasa_id' => $pvr->varian_rasa_id,
-                    'nama' => $pvr->varianRasa->nama_rasa,
-                    'gambar' => $gambarUrl,
-                    'stok' => (int) $pvr->stok,
-                    'stok_minimum' => (int) $pvr->stok_minimum,
-                    'stok_per_ukuran' => $this->stokRasaPerUkuran($pvr->varian_rasa_id),
+                    'produk_varian_rasa_id' => $d->id,
+                    'varian_rasa_id' => $d->varian_rasa_id,
+                    'nama' => $d->variasi,
+                    'gambar' => $grup->first(fn ($x) => $x->foto)?->foto_url,
+                    'stok' => (int) $grup->sum('stok'),
+                    'stok_minimum' => (int) $grup->sum('stok_minimum'),
+                    'stok_per_ukuran' => $grup
+                        ->filter(fn ($x) => $x->ukuran_id)
+                        ->mapWithKeys(fn ($x) => [$x->ukuran_id => (int) $x->stok])
+                        ->all(),
                 ];
             })
             ->values()
             ->all();
     }
 
-    /**
-     * Stok satu rasa per ukuran: [ukuran_id => stok]. Hanya dihitung kalau relasi
-     * produkUkuranRasas sudah di-eager load, supaya tidak ada query per produk.
-     */
-    protected function stokRasaPerUkuran(int $varianRasaId): array
-    {
-        if (!$this->punya_ukuran || !$this->relationLoaded('produkUkuranRasas')) {
-            return [];
-        }
-
-        return $this->produkUkuranRasas
-            ->where('varian_rasa_id', $varianRasaId)
-            ->mapWithKeys(fn ($r) => [$r->ukuran_id => (int) $r->stok])
-            ->all();
-    }
-
     public function ukuranTermurah(): ?array
     {
-        if (!$this->punya_ukuran) {
-            return null;
-        }
-
         $daftar = $this->daftar_ukuran;
-        if (empty($daftar)) {
-            return null;
-        }
 
-        return collect($daftar)->sortBy('harga')->first();
+        return empty($daftar) ? null : collect($daftar)->sortBy('harga')->first();
     }
 
     public function ukuranDefault(): ?string
@@ -387,278 +477,139 @@ class Produk extends Model
 
     public function getHarga(?string $ukuran = null): float
     {
-        if ($this->punya_ukuran) {
-            $baris = $this->cariBarisUkuran($ukuran);
-            if ($baris) {
-                return (float) $baris->harga_jual;
-            }
+        $aktif = $this->daftarDetailAktif();
 
-            if ($ukuran === 'Besar') {
-                return (float) ($this->harga_besar ?? 0);
+        if ($ukuran !== null) {
+            $d = $aktif->filter(fn ($x) => static::samaNama($x->ukuran, $ukuran))->sortBy('harga_jual')->first();
+            if ($d) {
+                return (float) $d->harga_jual;
             }
-            if ($ukuran === 'Kecil') {
-                return (float) ($this->harga_kecil ?? 0);
-            }
-            return (float) ($this->harga_kecil ?? $this->harga_besar ?? $this->harga_jual ?? 0);
         }
 
-        return (float) ($this->harga_jual ?? 0);
+        $d = ($aktif->isNotEmpty() ? $aktif : $this->daftarDetail())->sortBy('harga_jual')->first();
+
+        return $d ? (float) $d->harga_jual : (float) ($this->harga_jual ?? 0);
     }
 
     public function stokUntukUkuran(?string $ukuran = null): int
     {
-        if ($this->punya_ukuran) {
-            $baris = $this->cariBarisUkuran($ukuran);
-            if ($baris) {
-                return (int) $baris->stok;
-            }
+        $aktif = $this->daftarDetailAktif();
 
-            if ($ukuran === 'Besar') {
-                return (int) ($this->stok_besar ?? 0);
-            }
-            if ($ukuran === 'Kecil') {
-                return (int) ($this->stok_kecil ?? 0);
-            }
-
-            $totalDinamis = (int) $this->daftarBarisUkuranAktif()->sum('stok');
-            if ($totalDinamis > 0) {
-                return $totalDinamis;
-            }
-            return (int) ($this->stok_besar ?? 0) + (int) ($this->stok_kecil ?? 0);
+        if ($ukuran !== null) {
+            $aktif = $aktif->filter(fn ($d) => static::samaNama($d->ukuran, $ukuran));
         }
 
-        return (int) $this->stok;
+        return (int) $aktif->sum('stok');
     }
 
-    /**
-     * Stok untuk kombinasi (ukuran + rasa). Kalau keduanya ada, ambil dari
-     * produk_ukuran_rasas. Kalau cuma rasa, ambil dari produk_varian_rasas.
-     * Kalau cuma ukuran, delegasi ke stokUntukUkuran(). Kalau keduanya null,
-     * kembalikan stok produk gabungan.
-     */
+    /** Stok satu kombinasi (ukuran + variasi). Salah satunya boleh null. */
     public function stokUntukUkuranRasa(?string $ukuran = null, ?string $namaRasa = null): int
     {
-        // Tidak ada rasa → gunakan logika stok per ukuran biasa
-        if (!$namaRasa || !$this->punya_varian_rasa) {
+        if (!$namaRasa) {
             return $this->stokUntukUkuran($ukuran);
         }
 
-        $pvr = $this->cariBarisRasa($namaRasa);
-        if (!$pvr) {
-            return $this->stokUntukUkuran($ukuran);
-        }
-
-        // Ada rasa + ada ukuran → cek tabel silang produk_ukuran_rasas
-        if ($ukuran && $this->punya_ukuran) {
-            $baris = $this->cariBarisUkuran($ukuran);
-            if ($baris) {
-                $pur = $this->relationLoaded('produkUkuranRasas')
-                    ? $this->produkUkuranRasas
-                        ->where('ukuran_id', $baris->ukuran_id)
-                        ->where('varian_rasa_id', $pvr->varian_rasa_id)
-                        ->first()
-                    : $this->produkUkuranRasas()
-                        ->where('ukuran_id', $baris->ukuran_id)
-                        ->where('varian_rasa_id', $pvr->varian_rasa_id)
-                        ->first();
-                if ($pur) {
-                    return (int) $pur->stok;
-                }
-            }
-            // Fallback: stok rasa keseluruhan
-            return (int) $pvr->stok;
-        }
-
-        // Ada rasa, tidak ada ukuran → stok rasa keseluruhan
-        return (int) $pvr->stok;
+        return (int) $this->daftarDetailAktif()
+            ->filter(fn ($d) => static::samaNama($d->variasi, $namaRasa)
+                && ($ukuran === null || static::samaNama($d->ukuran, $ukuran)))
+            ->sum('stok');
     }
 
     public function habisUntukUkuran(?string $ukuran = null): bool
     {
-        return $this->status_ketersediaan === 'perlu_diproduksi' || $this->stokUntukUkuran($ukuran) <= 0;
+        return $this->stokUntukUkuran($ukuran) <= 0;
     }
 
     public function habisSemuaUkuran(): bool
     {
-        if (!$this->punya_ukuran) {
-            return $this->habisUntukUkuran();
-        }
+        $aktif = $this->daftarDetailAktif();
 
-        if ($this->status_ketersediaan === 'perlu_diproduksi') {
+        return $aktif->isEmpty() || $aktif->every(fn ($d) => (int) $d->stok <= 0);
+    }
+
+    /** Cari detail untuk diubah stoknya: kombinasi persis, atau (kalau variasi tidak disebut) ukuran yang cocok. */
+    protected function cariDetailUntukStok(?string $ukuran, ?string $namaRasa, bool $kurangi): ?DetailProduk
+    {
+        $semua = DetailProduk::where('produk_id', $this->id)->orderBy('urutan')->orderBy('id')->get();
+
+        $cocok = $semua->filter(function ($d) use ($ukuran, $namaRasa) {
+            if ($namaRasa && !static::samaNama($d->variasi, $namaRasa)) {
+                return false;
+            }
+            if ($ukuran !== null && !static::samaNama($d->ukuran, $ukuran)) {
+                return false;
+            }
             return true;
+        });
+
+        if ($cocok->isEmpty()) {
+            $cocok = $semua;
         }
 
-        $daftarAktif = $this->daftarBarisUkuranAktif();
-        if ($daftarAktif->isNotEmpty()) {
-            return $daftarAktif->every(fn ($pu) => (int) $pu->stok <= 0);
-        }
+        $aktif = $cocok->filter(fn ($d) => (bool) $d->status_aktif);
+        $kandidat = $aktif->isNotEmpty() ? $aktif : $cocok;
 
-        return (int) ($this->stok_besar ?? 0) <= 0 && (int) ($this->stok_kecil ?? 0) <= 0;
+        return $kurangi
+            ? $kandidat->sortByDesc('stok')->first()
+            : $kandidat->first();
     }
 
-    public function decrementStokUkuran(?string $ukuran, int $jumlah): void
-    {
-        if ($jumlah <= 0) {
-            return;
-        }
-
-        if (!$this->punya_ukuran) {
-            $this->decrement('stok', $jumlah);
-            return;
-        }
-
-        $baris = $this->cariBarisUkuran($ukuran);
-        if ($baris) {
-            $baris->stok = max(0, $baris->stok - $jumlah);
-            $baris->status_ketersediaan = $baris->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
-            $baris->save();
-        }
-
-        if ($ukuran === 'Besar') {
-            $this->newQuery()->whereKey($this->getKey())->update([
-                'stok_besar' => DB::raw("GREATEST(0, stok_besar - {$jumlah})"),
-            ]);
-        } elseif ($ukuran === 'Kecil') {
-            $this->newQuery()->whereKey($this->getKey())->update([
-                'stok_kecil' => DB::raw("GREATEST(0, stok_kecil - {$jumlah})"),
-            ]);
-        }
-
-        $this->newQuery()->whereKey($this->getKey())->update([
-            'stok' => DB::raw("GREATEST(0, stok - {$jumlah})"),
-        ]);
-
-        $this->refresh();
-    }
-
-    public function incrementStokUkuran(?string $ukuran, int $jumlah): void
-    {
-        if ($jumlah <= 0) {
-            return;
-        }
-
-        if (!$this->punya_ukuran) {
-            $this->increment('stok', $jumlah);
-            return;
-        }
-
-        $baris = $this->cariBarisUkuran($ukuran);
-        if ($baris) {
-            $baris->stok = $baris->stok + $jumlah;
-            $baris->status_ketersediaan = $baris->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
-            $baris->save();
-        }
-
-        if ($ukuran === 'Besar') {
-            $this->increment('stok_besar', $jumlah);
-        } elseif ($ukuran === 'Kecil') {
-            $this->increment('stok_kecil', $jumlah);
-        }
-
-        $this->increment('stok', $jumlah);
-    }
-
-    protected function cariBarisRasa(?string $namaRasa): ?ProdukVarianRasa
-    {
-        if (!$this->punya_varian_rasa || !$namaRasa) {
-            return null;
-        }
-
-        $daftar = $this->relationLoaded('produkVarianRasas')
-            ? $this->produkVarianRasas
-            : $this->produkVarianRasas()->get();
-
-        return $daftar->first(fn ($pvr) => $pvr->varianRasa && strcasecmp($pvr->varianRasa->nama_rasa, $namaRasa) === 0);
-    }
-
-    /**
-     * Ubah stok satu rasa (dan stok ukuran/produk yang menjadi totalnya).
-     * $delta negatif = kurangi (penjualan), positif = tambah (produksi/retur).
-     * Dipakai kasir/produksi supaya stok rasa & stok ukuran tetap sinkron.
-     */
-    public function ubahStokRasa(?string $ukuran, ?string $namaRasa, int $delta): void
+    protected function ubahStokDetail(?string $ukuran, ?string $namaRasa, int $delta): void
     {
         if ($delta === 0) {
             return;
         }
 
-        $pvr = $this->cariBarisRasa($namaRasa);
+        $detail = $this->cariDetailUntukStok($ukuran, $namaRasa, $delta < 0);
 
-        if ($pvr) {
-            $pvr->stok = max(0, $pvr->stok + $delta);
-            $pvr->status_ketersediaan = $pvr->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
-            $pvr->save();
-
-            $baris = $this->cariBarisUkuran($ukuran);
-            if ($baris) {
-                $pur = ProdukUkuranRasa::firstOrNew([
-                    'produk_id' => $this->id,
-                    'ukuran_id' => $baris->ukuran_id,
-                    'varian_rasa_id' => $pvr->varian_rasa_id,
-                ]);
-                $pur->stok = max(0, (int) $pur->stok + $delta);
-                $pur->status_ketersediaan = $pur->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
-                $pur->save();
-            }
+        if ($detail) {
+            $detail->stok = max(0, (int) $detail->stok + $delta);
+            $detail->status_ketersediaan = $detail->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+            $detail->save();
         }
 
-        // Stok ukuran/produk = total semua rasa, jadi tetap pakai jalur yang sudah ada.
-        if ($delta < 0) {
-            $this->decrementStokUkuran($ukuran, abs($delta));
-        } else {
-            $this->incrementStokUkuran($ukuran, $delta);
+        $this->segarkanStok();
+    }
+
+    public function decrementStokUkuran(?string $ukuran, int $jumlah): void
+    {
+        if ($jumlah > 0) {
+            $this->ubahStokDetail($ukuran, null, -$jumlah);
         }
     }
 
-    /**
-     * Kurangi stok untuk kombinasi (ukuran + rasa). Kalau produk punya rasa
-     * DAN rasanya diketahui, stok rasa / stok ukuran x rasa / stok ukuran /
-     * stok total ikut berkurang bareng (lewat ubahStokRasa). Kalau tidak,
-     * jatuh ke pengurangan stok per ukuran biasa.
-     *
-     * Dipakai untuk item di dalam bundling & promo event, yang sebelumnya
-     * cuma mengurangi stok ukuran sehingga stok rasanya tidak pernah turun.
-     */
+    public function incrementStokUkuran(?string $ukuran, int $jumlah): void
+    {
+        if ($jumlah > 0) {
+            $this->ubahStokDetail($ukuran, null, $jumlah);
+        }
+    }
+
+    /** $delta negatif = kurangi (penjualan), positif = tambah (produksi/retur). */
+    public function ubahStokRasa(?string $ukuran, ?string $namaRasa, int $delta): void
+    {
+        $this->ubahStokDetail($ukuran, $namaRasa, $delta);
+    }
+
     public function kurangiStokKombinasi(?string $ukuran, ?string $namaRasa, int $jumlah): void
     {
-        if ($jumlah <= 0) {
-            return;
+        if ($jumlah > 0) {
+            $this->ubahStokDetail($ukuran, $namaRasa, -$jumlah);
         }
-
-        if ($namaRasa && $this->punya_varian_rasa) {
-            $this->ubahStokRasa($ukuran, $namaRasa, -$jumlah);
-            return;
-        }
-
-        $this->decrementStokUkuran($ukuran, $jumlah);
     }
 
-    /**
-     * Nama semua rasa aktif produk ini (urut sesuai daftar_varian_rasa).
-     * Kosong kalau produk tidak punya varian rasa.
-     */
+    /** Nama semua variasi aktif produk ini. Kosong kalau produk tidak punya variasi. */
     public function namaRasaAktif(): array
     {
         return collect($this->daftar_varian_rasa)->pluck('nama')->values()->all();
     }
 
     /**
-     * Bagi kebutuhan $jumlah ke stok READY (ukuran x rasa) yang tersedia, sisanya
-     * jadi kebutuhan produksi.
+     * Bagi kebutuhan $jumlah ke stok READY (ukuran x variasi) yang tersedia, sisanya jadi
+     * kebutuhan produksi. $kandidatRasa = variasi yang boleh dipakai, urut prioritas.
+     * $terpakai = stok yang sudah "diambil" baris lain dalam transaksi yang sama.
      *
-     * $kandidatRasa = rasa yang boleh dipakai, urut prioritas. Isi dengan satu
-     * rasa untuk item bundling (rasanya sudah tetap), atau beberapa rasa untuk
-     * promo event yang tidak dibatasi ke satu rasa. Kosong / [null] = produk
-     * tanpa rasa (cek stok per ukuran saja).
-     *
-     * $terpakai = stok yang sudah "diambil" baris lain dalam transaksi yang sama
-     * tapi belum dikurangi dari database (checkout member app baru mengurangi
-     * stok saat pesanan diproses). Kunci: "produk_id|ukuran|rasa" — boleh dipakai
-     * bareng untuk banyak produk dalam satu transaksi.
-     *
-     * Return:
-     *   ['ready' => [['varian_rasa' => ?string, 'jumlah' => int], ...],
-     *    'produksi' => int]
+     * Return: ['ready' => [['varian_rasa' => ?string, 'jumlah' => int], ...], 'produksi' => int]
      */
     public function alokasiStok(?string $ukuran, array $kandidatRasa, int $jumlah, array &$terpakai = []): array
     {
@@ -666,12 +617,7 @@ class Produk extends Model
             return ['ready' => [], 'produksi' => 0];
         }
 
-        // Status manual "perlu diproduksi" → semuanya masuk produksi.
-        if ($this->status_ketersediaan === 'perlu_diproduksi') {
-            return ['ready' => [], 'produksi' => $jumlah];
-        }
-
-        $kandidat = $this->punya_varian_rasa ? array_values($kandidatRasa) : [null];
+        $kandidat = $this->punyaVariasiDetail() ? array_values($kandidatRasa) : [null];
         if (empty($kandidat)) {
             $kandidat = [null];
         }

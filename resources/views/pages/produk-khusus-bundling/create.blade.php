@@ -169,26 +169,6 @@
                     </select>
                 </div>
 
-                {{-- Status Ketersediaan --}}
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Status Ketersediaan
-                    </label>
-
-                    <select
-                        name="status_ketersediaan"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-
-                        <option value="stok_ada">Stok Ada</option>
-                        <option value="perlu_diproduksi">Perlu Diproduksi</option>
-
-                    </select>
-
-                    <small class="text-gray-400">
-                        Otomatis menjadi "Perlu Diproduksi" jika stok awal 0.
-                    </small>
-                </div>
-
                 {{-- Foto --}}
                 <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">

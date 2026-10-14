@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\DetailProduk;
 use App\Models\KategoriProduk;
 use App\Models\Produk;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Arr;
 
 class ProdukSeeder extends Seeder
 {
@@ -164,9 +166,23 @@ class ProdukSeeder extends Seeder
         ];
 
         foreach ($products as $prod) {
-            Produk::updateOrCreate(
+            $detail = DetailProduk::where('kode_produk', $prod['kode_produk'])->first();
+            $produk = $detail?->produk ?? new Produk();
+
+            // Tabel produks hanya informasi umum; kode, harga, dan stok masuk ke detail produk.
+            $produk->fill(Arr::only($prod, ['kategori_id', 'nama_produk', 'deskripsi', 'foto', 'status_aktif', 'is_khusus_bundling']))->save();
+
+            DetailProduk::updateOrCreate(
                 ['kode_produk' => $prod['kode_produk']],
-                $prod
+                [
+                    'produk_id' => $produk->id,
+                    'harga_modal' => $prod['harga_modal'] ?? 0,
+                    'harga_jual' => $prod['harga_jual'] ?? 0,
+                    'stok' => $prod['stok'] ?? 0,
+                    'stok_minimum' => $prod['stok_minimum'] ?? 0,
+                    'status_aktif' => true,
+                    'urutan' => 0,
+                ]
             );
         }
     }

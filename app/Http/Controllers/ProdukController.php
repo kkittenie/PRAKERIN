@@ -21,13 +21,7 @@ class ProdukController extends Controller
     {
         if ($request->ajax()) {
             try {
-                $query = Produk::with([
-                    'kategori',
-                    'detailProduks',
-                    // relasi lama masih dimuat karena accessor di model Produk masih membacanya
-                    'produkUkurans.ukuran',
-                    'produkVarianRasas.varianRasa',
-                ])->when($request->filled('kategori_id'), function ($q) use ($request) {
+                $query = Produk::with(['kategori', 'detailProduks'])->when($request->filled('kategori_id'), function ($q) use ($request) {
                     $q->where('kategori_id', $request->kategori_id);
                 });
 
@@ -40,7 +34,7 @@ class ProdukController extends Controller
                     })
                     ->filterColumn('kode_html', function ($q, $keyword) {
                         $q->whereHas('detailProduks', function ($qd) use ($keyword) {
-                            $qd->where('kode_barcode', 'like', "%{$keyword}%");
+                            $qd->where('kode_produk', 'like', "%{$keyword}%");
                         });
                     })
                     ->orderColumn('kategori.nama_kategori', function ($q, $order) {
@@ -123,8 +117,6 @@ class ProdukController extends Controller
 
             $baris = $this->ambilBarisDetail($request);
             $this->pastikanBarisValid($baris);
-
-            $validated = $this->terapkanDataProduk($validated, $baris);
 
             if ($request->hasFile('foto')) {
                 $validated['foto'] = $request->file('foto')->store('produk', 'public');
@@ -210,8 +202,6 @@ class ProdukController extends Controller
             $baris = $this->ambilBarisDetail($request);
             $this->pastikanBarisValid($baris, $produk);
 
-            $validated = $this->terapkanDataProduk($validated, $baris);
-
             if ($request->hasFile('foto')) {
                 if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
                     Storage::disk('public')->delete($produk->foto);
@@ -267,11 +257,6 @@ class ProdukController extends Controller
                     Storage::disk('public')->delete($produk->foto);
                 }
 
-                // Produk lama menyimpan foto di folder berkode.
-                if ($produk->kode_produk) {
-                    Storage::disk('public')->deleteDirectory('produk/' . $produk->kode_produk);
-                }
-
                 Storage::disk('public')->deleteDirectory(self::FOTO_DETAIL_PATH . '/' . $produk->id);
 
                 activity()
@@ -280,7 +265,7 @@ class ProdukController extends Controller
                     ->withProperties([
                         'nama_produk' => $produk->nama_produk,
                         'kategori_id' => $produk->kategori_id,
-                        'kode_detail' => $produk->detailProduks()->pluck('kode_barcode')->all(),
+                        'kode_detail' => $produk->detailProduks()->pluck('kode_produk')->all(),
                     ])
                     ->log('menghapus produk');
 
@@ -399,9 +384,9 @@ class ProdukController extends Controller
         }
 
         // Kode yang sudah dipakai produk lain
-        $bentrok = DetailProduk::whereIn('kode_barcode', $baris->pluck('kode')->all())
+        $bentrok = DetailProduk::whereIn('kode_produk', $baris->pluck('kode')->all())
             ->when($produk, fn ($q) => $q->where('produk_id', '!=', $produk->id))
-            ->pluck('kode_barcode')
+            ->pluck('kode_produk')
             ->map(fn ($k) => mb_strtolower($k))
             ->flip();
 
@@ -413,36 +398,6 @@ class ProdukController extends Controller
                 ]);
             }
         }
-    }
-
-    /**
-     * Kode, harga, dan stok yang sebenarnya hanya ada di detail produk. Halaman
-     * produk dan produksi tidak membaca kolom di tabel produks.
-     *
-     * SEMENTARA: kolom harga/stok di produks masih diisi sebagai salinan ringkas
-     * (harga termurah, total stok) karena dashboard, notifikasi stok menipis,
-     * kasir lama, mobile, promo, dan bundling masih membacanya. Hapus method ini
-     * dan kolomnya setelah modul-modul itu membaca dari detail produk.
-     */
-    private function terapkanDataProduk(array $validated, Collection $baris): array
-    {
-        $termurah = $baris->sortBy('harga_jual')->first();
-        $totalStok = (int) $baris->sum('stok');
-
-        $validated['punya_ukuran'] = $baris->contains(fn ($b) => $b['ukuran'] !== null);
-        $validated['punya_varian_rasa'] = $baris->contains(fn ($b) => $b['variasi'] !== null);
-        $validated['harga_jual'] = $termurah['harga_jual'];
-        $validated['harga_modal'] = $termurah['harga_modal'];
-        $validated['stok'] = $totalStok;
-        $validated['stok_minimum'] = (int) $baris->sum('stok_minimum');
-        $validated['status_ketersediaan'] = $totalStok > 0 ? 'stok_ada' : 'perlu_diproduksi';
-
-        $validated['harga_besar'] = null;
-        $validated['harga_kecil'] = null;
-        $validated['stok_besar'] = 0;
-        $validated['stok_kecil'] = 0;
-
-        return $validated;
     }
 
     /**
@@ -466,7 +421,7 @@ class ProdukController extends Controller
             }
 
             $data = [
-                'kode_barcode' => $b['kode'],
+                'kode_produk' => $b['kode'],
                 'ukuran' => $b['ukuran'],
                 'variasi' => $b['variasi'],
                 'harga_modal' => $b['harga_modal'],
@@ -509,7 +464,7 @@ class ProdukController extends Controller
     {
         return [
             'id' => $d->id,
-            'kode' => (string) $d->kode_barcode,
+            'kode' => (string) $d->kode_produk,
             'ukuran' => $d->ukuran ?? '',
             'variasi' => $d->variasi ?? '',
             'harga_modal' => (int) $d->harga_modal,

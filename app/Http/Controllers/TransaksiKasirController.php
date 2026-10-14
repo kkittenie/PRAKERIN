@@ -643,15 +643,10 @@ class TransaksiKasirController extends Controller
         }
     }
 
-    /** Stok & status produk = total semua detail produk (sama seperti form produk). */
+    /** Stok & status produk dihitung dari detail produk, jadi cukup menyegarkan cache stoknya. */
     private function sinkronStokProduk(Produk $produk): void
     {
-        $total = (int) DetailProduk::where('produk_id', $produk->id)->sum('stok');
-
-        $produk->update([
-            'stok' => $total,
-            'status_ketersediaan' => $total > 0 ? 'stok_ada' : 'perlu_diproduksi',
-        ]);
+        $produk->segarkanStok();
     }
 
     private function kembalikanStokVarian(DetailTransaksi $detail): void

@@ -655,14 +655,9 @@ class PesananPickupController extends Controller
         }
     }
 
+    /** Stok & status produk dihitung dari detail produk, jadi cukup menyegarkan cache stoknya. */
     private function sinkronStokProduk(\App\Models\Produk $produk): void
     {
-        $totalStok = (int) \App\Models\ProdukVarian::where('produk_id', $produk->id)
-            ->where('status_aktif', true)
-            ->sum('stok');
-
-        $produk->stok = $totalStok;
-        $produk->status_ketersediaan = $totalStok > 0 ? 'stok_ada' : 'perlu_diproduksi';
-        $produk->save();
+        $produk->segarkanStok();
     }
 }

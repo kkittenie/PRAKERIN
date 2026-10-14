@@ -90,7 +90,7 @@ class StampController extends Controller
                 if ($produk->stok < $hadiah->jumlah) {
                     abort(422, 'Stok produk hadiah ini tidak mencukupi. Hubungi kasir/admin.');
                 }
-                $produk->decrement('stok', $hadiah->jumlah);
+                $produk->kurangiStokTotal((int) $hadiah->jumlah);
 
                 $memberStamp->decrement('jumlah_stamp', $program->jumlah_stamp_dibutuhkan);
                 $program->increment('jumlah_redeem');

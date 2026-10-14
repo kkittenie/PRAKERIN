@@ -19,7 +19,7 @@ class DetailProduk extends Model
         'produk_id',
         'ukuran',
         'variasi',
-        'kode_barcode',
+        'kode_produk',
         'harga_modal',
         'harga_jual',
         'stok',
@@ -84,27 +84,34 @@ class DetailProduk extends Model
             $detail->status_ketersediaan = (int) $detail->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
         });
 
-        // Kalau kode dikosongkan, dibuatkan otomatis dari kode produk.
+        // Kalau kode dikosongkan, dibuatkan otomatis: PRD{id produk}-{nomor urut}.
         static::creating(function (DetailProduk $detail) {
-            if (empty($detail->kode_barcode)) {
-                $detail->kode_barcode = static::buatKodeBarcode((int) $detail->produk_id);
+            if (empty($detail->kode_produk)) {
+                $detail->kode_produk = static::buatKodeProduk((int) $detail->produk_id);
             }
         });
     }
 
-    public static function buatKodeBarcode(int $produkId): ?string
+    /** Nama lama (kode_barcode) tetap bisa dibaca/ditulis supaya view dan JS yang belum diganti tidak error. */
+    public function getKodeBarcodeAttribute(): ?string
     {
-        $kodeProduk = Produk::whereKey($produkId)->value('kode_produk');
-        if (!$kodeProduk) {
-            return null;
-        }
+        return $this->kode_produk;
+    }
 
+    public function setKodeBarcodeAttribute($value): void
+    {
+        $this->attributes['kode_produk'] = $value;
+    }
+
+    public static function buatKodeProduk(int $produkId): string
+    {
+        $induk = 'PRD' . str_pad((string) $produkId, 4, '0', STR_PAD_LEFT);
         $nomor = static::where('produk_id', $produkId)->count() + 1;
 
         do {
-            $kandidat = $kodeProduk . '-' . str_pad($nomor, 2, '0', STR_PAD_LEFT);
+            $kandidat = $induk . '-' . str_pad((string) $nomor, 2, '0', STR_PAD_LEFT);
             $nomor++;
-        } while (static::where('kode_barcode', $kandidat)->exists());
+        } while (static::where('kode_produk', $kandidat)->exists());
 
         return $kandidat;
     }

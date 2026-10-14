@@ -166,22 +166,6 @@
                     </select>
                 </div>
 
-                {{-- Status Ketersediaan --}}
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Status Ketersediaan
-                    </label>
-
-                    <select
-                        name="status_ketersediaan"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-
-                        <option value="stok_ada" {{ old('status_ketersediaan', $produk->status_ketersediaan) == 'stok_ada' ? 'selected' : '' }}>Stok Ada</option>
-                        <option value="perlu_diproduksi" {{ old('status_ketersediaan', $produk->status_ketersediaan) == 'perlu_diproduksi' ? 'selected' : '' }}>Perlu Diproduksi</option>
-
-                    </select>
-                </div>
-
                 {{-- Foto --}}
                 <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">

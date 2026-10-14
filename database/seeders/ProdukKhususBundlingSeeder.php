@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\DetailProduk;
 use App\Models\KategoriProduk;
 use App\Models\Produk;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Arr;
 
 class ProdukKhususBundlingSeeder extends Seeder
 {
@@ -96,9 +98,23 @@ class ProdukKhususBundlingSeeder extends Seeder
         ];
 
         foreach ($donuts as $donut) {
-            Produk::updateOrCreate(
+            $detail = DetailProduk::where('kode_produk', $donut['kode_produk'])->first();
+            $produk = $detail?->produk ?? new Produk();
+
+            // Tabel produks hanya informasi umum; kode, harga, dan stok masuk ke detail produk.
+            $produk->fill(Arr::only($donut, ['kategori_id', 'nama_produk', 'deskripsi', 'foto', 'status_aktif', 'is_khusus_bundling']))->save();
+
+            DetailProduk::updateOrCreate(
                 ['kode_produk' => $donut['kode_produk']],
-                $donut
+                [
+                    'produk_id' => $produk->id,
+                    'harga_modal' => $donut['harga_modal'] ?? 0,
+                    'harga_jual' => $donut['harga_jual'] ?? 0,
+                    'stok' => $donut['stok'] ?? 0,
+                    'stok_minimum' => $donut['stok_minimum'] ?? 0,
+                    'status_aktif' => true,
+                    'urutan' => 0,
+                ]
             );
         }
     }

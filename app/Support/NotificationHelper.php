@@ -87,7 +87,7 @@ class NotificationHelper
         }
 
         // 4. Alert sistem: Stok Produk Menipis
-        $lowStockProduk = Produk::where('status_aktif', true)->whereColumn('stok', '<=', 'stok_minimum')->get();
+        $lowStockProduk = Produk::with('detailProduks')->where('status_aktif', true)->stokMenipis()->get();
         foreach ($lowStockProduk as $produk) {
             $idKey = 'produk_' . $produk->id;
             $notifications[] = [

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DetailProduk;
 use App\Models\Produk;
 use App\Models\KategoriProduk;
 use App\Support\ActivityLogHelper;
@@ -18,9 +19,31 @@ class ProdukKhususBundlingController extends Controller
     {
         if ($request->ajax()) {
             try {
-                $query = Produk::with('kategori')->khususBundling();
+                $query = Produk::with(['kategori', 'detailProduks'])->khususBundling();
+
+                // Kode, stok, dan ketersediaan sekarang ada di detail produk, jadi dicari dan diurutkan dari sana.
+                $detailPertama = fn (string $kolom) => DetailProduk::select($kolom)
+                    ->whereColumn('detail_produks.produk_id', 'produks.id')
+                    ->orderBy('urutan')->orderBy('id')->limit(1);
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
+                    ->filterColumn('kode_produk', function ($q, $keyword) {
+                        $q->whereHas('detailProduks', fn ($qd) => $qd->where('kode_produk', 'like', "%{$keyword}%"));
+                    })
+                    ->orderColumn('kode_produk', fn ($q, $order) => $q->orderBy($detailPertama('kode_produk'), $order))
+                    ->orderColumn('stok', function ($q, $order) {
+                        $q->orderBy(
+                            DetailProduk::selectRaw('COALESCE(SUM(stok), 0)')->whereColumn('detail_produks.produk_id', 'produks.id'),
+                            $order
+                        );
+                    })
+                    ->orderColumn('status_ketersediaan', function ($q, $order) {
+                        $q->orderBy(
+                            DetailProduk::selectRaw('COALESCE(SUM(CASE WHEN status_aktif = 1 AND stok > 0 THEN 1 ELSE 0 END), 0)')
+                                ->whereColumn('detail_produks.produk_id', 'produks.id'),
+                            $order
+                        );
+                    })
                     ->addColumn('foto', fn($item) => view('pages.produk-khusus-bundling.partials.foto', compact('item'))->render())
                     ->addColumn('nama_produk_html', fn($item) => view('pages.produk-khusus-bundling.partials.nama', compact('item'))->render())
                     ->editColumn('kode_produk', fn($item) => view('pages.produk-khusus-bundling.partials.kode', compact('item'))->render())
@@ -80,16 +103,11 @@ class ProdukKhususBundlingController extends Controller
     public function store(Request $request)
     {
         try {
-            if ($request->has('harga_modal')) {
-                $request->merge(['harga_modal' => (float) str_replace('.', '', $request->harga_modal)]);
-            }
-            if ($request->has('harga_jual')) {
-                $request->merge(['harga_jual' => (float) str_replace('.', '', $request->harga_jual)]);
-            }
+            $this->bersihkanAngka($request);
 
             $validated = $request->validate([
                 'kategori_id' => 'required|exists:kategori_produks,id',
-                'kode_produk' => 'required|max:50|unique:produks,kode_produk',
+                'kode_produk' => 'required|max:50|unique:detail_produks,kode_produk',
                 'nama_produk' => 'required|max:100',
                 'deskripsi' => 'nullable|string|max:1000',
                 'harga_jual' => 'nullable|numeric|min:0',
@@ -97,27 +115,35 @@ class ProdukKhususBundlingController extends Controller
                 'stok' => 'required|integer|min:0',
                 'stok_minimum' => 'required|integer|min:0',
                 'status_aktif' => 'required|boolean',
-                'status_ketersediaan' => [
-                    'required',
-                    Rule::in(['stok_ada', 'perlu_diproduksi']),
-                ],
                 'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
-            $validated['is_khusus_bundling'] = true;
-            $validated['punya_ukuran'] = false;
-            $validated['harga_jual'] = $validated['harga_jual'] ?? 0;
+            DB::transaction(function () use ($request, $validated) {
+                $dataProduk = [
+                    'kategori_id' => $validated['kategori_id'],
+                    'nama_produk' => $validated['nama_produk'],
+                    'deskripsi' => $validated['deskripsi'] ?? null,
+                    'status_aktif' => $validated['status_aktif'],
+                    'is_khusus_bundling' => true,
+                ];
 
-            $validated['status_ketersediaan'] = $validated['stok'] <= 0
-                ? 'perlu_diproduksi'
-                : 'stok_ada';
-
-            DB::transaction(function () use ($request, &$validated) {
                 if ($request->hasFile('foto')) {
-                    $validated['foto'] = $request->file('foto')->store('produk/' . $validated['kode_produk'], 'public');
+                    $dataProduk['foto'] = $request->file('foto')->store(self::FOTO_PATH, 'public');
                 }
 
-                $produk = Produk::create($validated);
+                $produk = Produk::create($dataProduk);
+
+                // Produk khusus bundling juga punya satu detail: kode, harga, dan stoknya ada di sana.
+                DetailProduk::create([
+                    'produk_id' => $produk->id,
+                    'kode_produk' => $validated['kode_produk'],
+                    'harga_modal' => $validated['harga_modal'],
+                    'harga_jual' => $validated['harga_jual'] ?? 0,
+                    'stok' => $validated['stok'],
+                    'stok_minimum' => $validated['stok_minimum'],
+                    'status_aktif' => true,
+                    'urutan' => 0,
+                ]);
 
                 activity()
                     ->causedBy(auth()->user())
@@ -144,7 +170,7 @@ class ProdukKhususBundlingController extends Controller
     {
         try {
             abort_unless($produk->is_khusus_bundling, 404);
-            $produk->load('kategori');
+            $produk->load(['kategori', 'detailProduks']);
 
             return view('pages.produk-khusus-bundling.show', compact('produk'));
         } catch (\Throwable $e) {
@@ -156,6 +182,7 @@ class ProdukKhususBundlingController extends Controller
     {
         try {
             abort_unless($produk->is_khusus_bundling, 404);
+            $produk->load('detailProduks');
             $kategori = KategoriProduk::orderBy('nama_kategori')->get();
 
             return view('pages.produk-khusus-bundling.edit', compact('produk', 'kategori'));
@@ -169,19 +196,16 @@ class ProdukKhususBundlingController extends Controller
         try {
             abort_unless($produk->is_khusus_bundling, 404);
 
-            if ($request->has('harga_modal')) {
-                $request->merge(['harga_modal' => (float) str_replace('.', '', $request->harga_modal)]);
-            }
-            if ($request->has('harga_jual')) {
-                $request->merge(['harga_jual' => (float) str_replace('.', '', $request->harga_jual)]);
-            }
+            $this->bersihkanAngka($request);
+
+            $detail = $produk->detailProduks()->first();
 
             $validated = $request->validate([
                 'kategori_id' => 'required|exists:kategori_produks,id',
                 'kode_produk' => [
                     'required',
                     'max:50',
-                    Rule::unique('produks', 'kode_produk')->ignore($produk->id),
+                    Rule::unique('detail_produks', 'kode_produk')->ignore($detail?->id),
                 ],
                 'nama_produk' => 'required|max:100',
                 'deskripsi' => 'nullable|string|max:1000',
@@ -190,48 +214,41 @@ class ProdukKhususBundlingController extends Controller
                 'stok' => 'required|integer|min:0',
                 'stok_minimum' => 'required|integer|min:0',
                 'status_aktif' => 'required|boolean',
-                'status_ketersediaan' => [
-                    'required',
-                    Rule::in(['stok_ada', 'perlu_diproduksi']),
-                ],
                 'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
-
-            $validated['is_khusus_bundling'] = true;
-            $validated['punya_ukuran'] = false;
-            $validated['harga_jual'] = $validated['harga_jual'] ?? 0;
-
-            $validated['status_ketersediaan'] = $validated['stok'] <= 0
-                ? 'perlu_diproduksi'
-                : 'stok_ada';
-
-            DB::transaction(function () use ($request, $produk, &$validated) {
-                $oldKode = $produk->kode_produk;
-                $newKode = $validated['kode_produk'];
+            DB::transaction(function () use ($request, $produk, $detail, $validated) {
+                $dataProduk = [
+                    'kategori_id' => $validated['kategori_id'],
+                    'nama_produk' => $validated['nama_produk'],
+                    'deskripsi' => $validated['deskripsi'] ?? null,
+                    'status_aktif' => $validated['status_aktif'],
+                    'is_khusus_bundling' => true,
+                ];
 
                 if ($request->hasFile('foto')) {
                     if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
-                        Storage::disk('public')->deleteDirectory('produk/' . $oldKode);
+                        Storage::disk('public')->delete($produk->foto);
                     }
 
-                    $validated['foto'] = $request
-                        ->file('foto')
-                        ->store('produk/' . $newKode, 'public');
-                } elseif ($oldKode !== $newKode && $produk->foto) {
-                    $oldFolder = 'produk/' . $oldKode;
-                    $newFolder = 'produk/' . $newKode;
-
-                    if (Storage::disk('public')->exists($oldPath = $produk->foto)) {
-                        $filename = basename($oldPath);
-                        $newPath = $newFolder . '/' . $filename;
-                        Storage::disk('public')->move($oldPath, $newPath);
-                        $validated['foto'] = $newPath;
-                    }
-                    Storage::disk('public')->deleteDirectory($oldFolder);
+                    $dataProduk['foto'] = $request->file('foto')->store(self::FOTO_PATH, 'public');
                 }
 
-                $produk->update($validated);
+                $produk->update($dataProduk);
+
+                $dataDetail = [
+                    'kode_produk' => $validated['kode_produk'],
+                    'harga_modal' => $validated['harga_modal'],
+                    'harga_jual' => $validated['harga_jual'] ?? 0,
+                    'stok' => $validated['stok'],
+                    'stok_minimum' => $validated['stok_minimum'],
+                ];
+
+                if ($detail) {
+                    $detail->update($dataDetail);
+                } else {
+                    DetailProduk::create($dataDetail + ['produk_id' => $produk->id, 'status_aktif' => true, 'urutan' => 0]);
+                }
 
                 activity()
                     ->causedBy(auth()->user())
@@ -271,9 +288,7 @@ class ProdukKhususBundlingController extends Controller
             }
 
             DB::transaction(function () use ($produk) {
-                if ($produk->kode_produk) {
-                    Storage::disk('public')->deleteDirectory('produk/' . $produk->kode_produk);
-                } elseif ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
+                if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
                     Storage::disk('public')->delete($produk->foto);
                 }
 
@@ -297,6 +312,16 @@ class ProdukKhususBundlingController extends Controller
                 ->with('success', 'Produk Khusus Bundling berhasil dihapus.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    /** Harga di form memakai titik ribuan ("10.000"); ubah jadi angka sebelum divalidasi. */
+    private function bersihkanAngka(Request $request): void
+    {
+        foreach (['harga_modal', 'harga_jual'] as $kolom) {
+            if ($request->has($kolom)) {
+                $request->merge([$kolom => (float) str_replace('.', '', (string) $request->input($kolom))]);
+            }
         }
     }
 }

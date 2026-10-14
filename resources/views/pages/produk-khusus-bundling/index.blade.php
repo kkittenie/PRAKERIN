@@ -98,9 +98,9 @@
                 { data: 'nama_produk_html', name: 'nama_produk' },
                 { data: 'kode_produk', name: 'kode_produk', className: 'font-mono text-sm text-gray-600 dark:text-gray-400' },
                 { data: 'kategori.nama_kategori', name: 'kategori.nama_kategori', defaultContent: '-', className: 'text-sm font-medium text-gray-700 dark:text-gray-300' },
-                { data: 'stok_html', name: 'stok', className: 'text-center' },
+                { data: 'stok_html', name: 'stok', searchable: false, className: 'text-center' },
                 { data: 'status_html', name: 'status_aktif', className: 'text-center' },
-                { data: 'ketersediaan_html', name: 'status_ketersediaan', className: 'text-center' },
+                { data: 'ketersediaan_html', name: 'status_ketersediaan', searchable: false, className: 'text-center' },
                 { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
             ],
             emptyText: 'Belum ada produk khusus bundling'

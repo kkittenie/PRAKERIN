@@ -154,7 +154,7 @@ class ProduksiController extends Controller
                         $q->whereHas('produk', function ($qp) use ($keyword) {
                             $qp->where('nama_produk', 'like', "%{$keyword}%")
                               ->orWhereHas('detailProduks', function ($qd) use ($keyword) {
-                                  $qd->where('kode_barcode', 'like', "%{$keyword}%");
+                                  $qd->where('kode_produk', 'like', "%{$keyword}%");
                               });
                         });
                     })
@@ -737,18 +737,9 @@ class ProduksiController extends Controller
         return back()->with('success', "Stok \"{$produk->nama_produk}\" varian {$varian->nama_lengkap} berhasil dikurangi {$jumlah} pcs.");
     }
 
-    /**
-     * SEMENTARA: salinan total stok di tabel produks, karena dashboard, notifikasi,
-     * kasir lama, mobile, promo, dan bundling masih membacanya. Stok yang sebenarnya
-     * ada di detail produk; hapus method ini setelah modul-modul itu pindah.
-     */
+    /** Stok total produk dihitung dari detail produk, jadi tidak ada yang perlu disalin ke tabel produks. */
     private function sinkronStokProdukDariVarian(Produk $produk): void
     {
-        $total = (int) DetailProduk::where('produk_id', $produk->id)->sum('stok');
-
-        $produk->update([
-            'stok' => $total,
-            'status_ketersediaan' => $total > 0 ? 'stok_ada' : 'perlu_diproduksi',
-        ]);
+        $produk->segarkanStok();
     }
 }
