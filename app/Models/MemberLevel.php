@@ -15,6 +15,15 @@ class MemberLevel extends Model
         'status_aktif' => 'boolean',
     ];
 
+    /**
+     * Apakah ada minimal 1 level aktif? Kalau semua level dinonaktifkan,
+     * fitur tier dianggap mati dan info tier disembunyikan di Member App.
+     */
+    public static function adaYangAktif(): bool
+    {
+        return static::where('status_aktif', true)->exists();
+    }
+
     public function scopeAktif($query)
     {
         return $query->where('status_aktif', true)->orderBy('minimal_transaksi');

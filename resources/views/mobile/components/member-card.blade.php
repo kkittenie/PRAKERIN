@@ -14,7 +14,8 @@
         'red' => 'text-red-200',
         default => 'text-white/80',
     };
-    $progres = $member->progres_tier;
+    $tierAktif = \App\Models\MemberLevel::adaYangAktif();
+    $progres = $tierAktif ? $member->progres_tier : null;
     $nomorSamar = str_repeat('•', max(0, strlen($member->no_hp) - 4)).substr($member->no_hp, -4);
 @endphp
 
@@ -34,10 +35,12 @@
             <p class="text-theme-xs font-medium uppercase tracking-widest text-white/60">Kartu Member</p>
             <p class="mt-0.5 text-theme-sm font-semibold">{{ $member->nama }}</p>
         </div>
-        <span class="flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">
-            @include('mobile.components.icon-crown', ['class' => 'h-3.5 w-3.5 '.$tierIcon])
-            {{ $member->level }}
-        </span>
+        @if ($tierAktif)
+            <span class="flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">
+                @include('mobile.components.icon-crown', ['class' => 'h-3.5 w-3.5 '.$tierIcon])
+                {{ $member->level }}
+            </span>
+        @endif
     </div>
 
     <div class="relative mt-6 flex items-end justify-between">
@@ -48,7 +51,9 @@
         <p class="font-mono text-theme-sm tracking-[0.2em] text-white/70">{{ $nomorSamar }}</p>
     </div>
 
-    @if ($progres)
+    @if (! $tierAktif)
+        {{-- Tier dinonaktifkan: tidak ada info progres/tier --}}
+    @elseif ($progres)
         <div class="relative mt-5">
             <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/15">
                 <div class="h-full rounded-full bg-white" style="width: {{ $progres['persen'] }}%"></div>

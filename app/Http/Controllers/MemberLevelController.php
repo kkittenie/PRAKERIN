@@ -113,12 +113,6 @@ class MemberLevelController extends Controller
     public function toggleStatus(MemberLevel $memberLevel)
     {
         try {
-            $akanDinonaktifkan = $memberLevel->status_aktif;
-
-            if ($akanDinonaktifkan && MemberLevel::aktif()->count() <= 1) {
-                return back()->with('error', 'Tidak bisa menonaktifkan level ini karena ini satu-satunya level aktif. Minimal harus ada 1 level aktif supaya semua member tetap punya level.');
-            }
-
             $memberLevel->status_aktif = !$memberLevel->status_aktif;
             $memberLevel->save();
 
@@ -137,10 +131,6 @@ class MemberLevelController extends Controller
     public function destroy(MemberLevel $memberLevel)
     {
         try {
-            if ($memberLevel->status_aktif && MemberLevel::aktif()->count() <= 1) {
-                return back()->with('error', 'Tidak bisa menghapus level ini karena ini satu-satunya level aktif. Minimal harus ada 1 level aktif supaya semua member tetap punya level.');
-            }
-
             activity()
                 ->causedBy(auth()->user())
                 ->performedOn($memberLevel)
