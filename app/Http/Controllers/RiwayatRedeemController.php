@@ -25,11 +25,22 @@ class RiwayatRedeemController extends Controller
 
                     $query = VoucherUsage::with(['voucher', 'member', 'transaksi'])
                         ->when($tanggalMulai, fn ($q) => $q->whereDate('used_at', '>=', $tanggalMulai))
-                        ->when($tanggalSelesai, fn ($q) => $q->whereDate('used_at', '<=', $tanggalSelesai))
-                        ->latest('used_at');
+                        ->when($tanggalSelesai, fn ($q) => $q->whereDate('used_at', '<=', $tanggalSelesai));
+                    // Catatan: jangan pakai ->latest()/orderBy di query dasar. Urutan dari klik
+                    // header kolom (DataTables) cuma ditambahkan SETELAH order bawaan query,
+                    // jadi order bawaan akan menang dan sort kolom tidak berfungsi.
 
                     return \Yajra\DataTables\Facades\DataTables::of($query)
                         ->addIndexColumn()
+                        ->orderColumn('voucher_nama', fn ($q, $order) => $q->orderByRaw(
+                            '(select nama from reward_katalog where reward_katalog.id = voucher_usages.reward_katalog_id) ' . $order
+                        ))
+                        ->orderColumn('member_nama', fn ($q, $order) => $q->orderByRaw(
+                            '(select nama from members where members.id = voucher_usages.member_id) ' . $order
+                        ))
+                        ->orderColumn('transaksi_kode', fn ($q, $order) => $q->orderByRaw(
+                            '(select kode_transaksi from transaksi where transaksi.id = voucher_usages.transaksi_id) ' . $order
+                        ))
                         ->filterColumn('voucher_nama', function ($q, $keyword) {
                             $q->where(function ($sub) use ($keyword) {
                                 $sub->whereHas('voucher', fn ($v) => $v->where('nama', 'like', "%{$keyword}%"))
@@ -72,11 +83,17 @@ class RiwayatRedeemController extends Controller
                     ->whereHas('reward', fn ($r) => $r->where('jenis', '!=', 'voucher'))
                     ->when($status, fn ($q) => $q->where('status', $status))
                     ->when($tanggalMulai, fn ($q) => $q->whereDate('created_at', '>=', $tanggalMulai))
-                    ->when($tanggalSelesai, fn ($q) => $q->whereDate('created_at', '<=', $tanggalSelesai))
-                    ->latest('created_at');
+                    ->when($tanggalSelesai, fn ($q) => $q->whereDate('created_at', '<=', $tanggalSelesai));
+                // Tanpa order bawaan di query dasar supaya sort dari header kolom berfungsi.
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
+                    ->orderColumn('member_nama', fn ($q, $order) => $q->orderByRaw(
+                        '(select nama from members where members.id = penukaran_poin.member_id) ' . $order
+                    ))
+                    ->orderColumn('reward_nama', fn ($q, $order) => $q->orderByRaw(
+                        '(select nama from reward_katalog where reward_katalog.id = penukaran_poin.reward_katalog_id) ' . $order
+                    ))
                     ->filterColumn('kode_redeem', function ($q, $keyword) {
                         $q->where(function ($sub) use ($keyword) {
                             $sub->where('kode_redeem', 'like', "%{$keyword}%")

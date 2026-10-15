@@ -186,8 +186,8 @@
             columnsConfig = [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'voucher_html', name: 'voucher_nama' },
-                { data: 'member_html', name: 'member.nama', searchable: false },
-                { data: 'transaksi_html', name: 'transaksi.kode_transaksi', searchable: false },
+                { data: 'member_html', name: 'member_nama', searchable: false },
+                { data: 'transaksi_html', name: 'transaksi_kode', searchable: false },
                 { data: 'used_at_html', name: 'used_at', searchable: false }
             ];
             orderConfig = [[4, 'desc']];
@@ -195,8 +195,8 @@
             columnsConfig = [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'kode_html', name: 'kode_redeem' },
-                { data: 'member_html', name: 'member.nama', searchable: false },
-                { data: 'reward_html', name: 'reward.nama', searchable: false },
+                { data: 'member_html', name: 'member_nama', searchable: false },
+                { data: 'reward_html', name: 'reward_nama', searchable: false },
                 { data: 'poin_terpakai', name: 'poin_terpakai', searchable: false, className: 'text-center font-semibold text-red-500' },
                 { data: 'created_at', name: 'created_at', searchable: false, className: 'text-xs text-gray-500 dark:text-gray-400' },
                 { data: 'status_html', name: 'status', searchable: false, className: 'text-center' }

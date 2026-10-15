@@ -10,9 +10,9 @@ class MemberLevelSeeder extends Seeder
     public function run(): void
     {
         $levels = [
-            ['nama_level' => 'Bronze', 'minimal_transaksi' => 50000, 'minimal_poin' => 0, 'warna_badge' => 'amber'],
-            ['nama_level' => 'Silver', 'minimal_transaksi' => 150000, 'minimal_poin' => 300, 'warna_badge' => 'slate'],
-            ['nama_level' => 'Gold', 'minimal_transaksi' => 500000, 'minimal_poin' => 500, 'warna_badge' => 'yellow'],
+            ['nama_level' => 'Bronze', 'minimal_transaksi' => 50000, 'warna_badge' => 'amber'],
+            ['nama_level' => 'Silver', 'minimal_transaksi' => 150000, 'warna_badge' => 'slate'],
+            ['nama_level' => 'Gold', 'minimal_transaksi' => 500000, 'warna_badge' => 'yellow'],
         ];
 
         foreach ($levels as $level) {
