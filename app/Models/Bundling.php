@@ -10,7 +10,10 @@ class Bundling extends Model
     /** Isi paket ditentukan admin, pembeli tidak memilih. */
     public const JENIS_TETAP = 'tetap';
 
-    /** Admin menentukan daftar produk + varian yang boleh dipilih, pembeli memilih sendiri sejumlah total isi. */
+    /**
+     * Admin menentukan produk + ukuran yang boleh dipilih. Rasa dipilih sendiri oleh pembeli
+     * (dari semua rasa aktif produk + ukuran itu), sejumlah total isi bundling.
+     */
     public const JENIS_BEBAS = 'bebas';
 
     protected $table = 'bundlings';
@@ -60,13 +63,37 @@ class Bundling extends Model
     }
 
     /**
-     * Ubah pilihan pembeli/kasir jadi peta [bundling_item_id => ['qty' => int, 'catatan' => ?string]].
-     * Tidak memvalidasi total. Pilihan lama yang hanya membawa produk_id dipetakan ke
-     * baris isi pertama dari produk itu.
+     * Cocokkan satu pilihan pembeli/kasir ({item_id, detail_produk_id, ...}) ke baris isi bundling
+     * dan rasa (detail produk) yang sah. Mengembalikan [BundlingItem, DetailProduk], atau null kalau
+     * baris bukan milik bundling ini, atau rasa tidak ada / nonaktif / beda produk / beda ukuran.
+     */
+    private function cocokkanPilihanBebas(array $p): ?array
+    {
+        $itemId = (int) ($p['item_id'] ?? 0);
+        $detailId = (int) ($p['detail_produk_id'] ?? 0);
+        if ($itemId <= 0 || $detailId <= 0) {
+            return null;
+        }
+
+        $item = $this->items->firstWhere('id', $itemId);
+        if (!$item) {
+            return null;
+        }
+
+        $detail = $item->opsiRasa()->firstWhere('id', $detailId);
+
+        return $detail ? [$item, $detail] : null;
+    }
+
+    /**
+     * Ubah pilihan pembeli/kasir jadi peta ["{item_id}:{detail_produk_id}" => [item_id, detail_produk_id, qty, catatan]].
+     * Pilihan yang tidak sah (lihat cocokkanPilihanBebas) dan qty 0 dibuang. Tidak memvalidasi total.
+     * Pilihan lama yang belum membawa detail_produk_id (format sebelum rasa dipilih pembeli) ikut dibuang,
+     * sehingga total tidak akan pas dan pembeli diminta memilih ulang.
      */
     public function petaPilihanBebas(array $pilihan): array
     {
-        $this->loadMissing('items');
+        $this->loadMissing('items.produk');
         $peta = [];
 
         foreach ($pilihan as $p) {
@@ -75,29 +102,34 @@ class Bundling extends Model
                 continue;
             }
 
-            $item = null;
-            if (!empty($p['item_id'])) {
-                $item = $this->items->firstWhere('id', (int) $p['item_id']);
-            } elseif (!empty($p['produk_id'])) {
-                $item = $this->items->firstWhere('produk_id', (int) $p['produk_id']);
-            }
-
-            if (!$item) {
+            $cocok = $this->cocokkanPilihanBebas($p);
+            if (!$cocok) {
                 continue;
             }
 
-            $peta[$item->id] = [
-                'qty' => ($peta[$item->id]['qty'] ?? 0) + $qty,
-                'catatan' => filled($p['catatan'] ?? null) ? $p['catatan'] : ($peta[$item->id]['catatan'] ?? null),
+            [$item, $detail] = $cocok;
+            $kunci = $item->id . ':' . $detail->id;
+
+            $peta[$kunci] = [
+                'item_id' => (int) $item->id,
+                'detail_produk_id' => (int) $detail->id,
+                'qty' => ($peta[$kunci]['qty'] ?? 0) + $qty,
+                'catatan' => filled($p['catatan'] ?? null) ? $p['catatan'] : ($peta[$kunci]['catatan'] ?? null),
             ];
         }
 
         return $peta;
     }
 
+    /** Apakah total pilihan (yang sah) pas dengan total isi bundling bebas. */
+    public function pilihanBebasLengkap(array $pilihan): bool
+    {
+        return array_sum(array_column($this->petaPilihanBebas($pilihan), 'qty')) === $this->targetQtyBebas();
+    }
+
     /**
-     * Validasi pilihan untuk bundling bebas: hanya baris isi milik bundling ini, dan total
-     * qty harus pas dengan total isi. Mengembalikan daftar bersih
+     * Validasi pilihan untuk bundling bebas: hanya baris isi milik bundling ini, rasa harus aktif dan
+     * sesuai produk + ukuran barisnya, dan total qty harus pas dengan total isi. Mengembalikan daftar bersih
      * [['item_id', 'produk_id', 'detail_produk_id', 'qty', 'catatan'], ...].
      * Untuk bundling tetap, hasilnya selalu kosong.
      *
@@ -109,18 +141,14 @@ class Bundling extends Model
             return [];
         }
 
-        $this->loadMissing('items');
+        $this->loadMissing('items.produk');
 
         foreach ($pilihan as $p) {
             if ((int) ($p['qty'] ?? 0) <= 0) {
                 continue;
             }
-            $cocok = !empty($p['item_id'])
-                ? $this->items->firstWhere('id', (int) $p['item_id'])
-                : (!empty($p['produk_id']) ? $this->items->firstWhere('produk_id', (int) $p['produk_id']) : null);
-
-            if (!$cocok) {
-                throw ValidationException::withMessages([$kunciError => 'Ada pilihan yang bukan bagian dari bundling ini.']);
+            if (!$this->cocokkanPilihanBebas($p)) {
+                throw ValidationException::withMessages([$kunciError => 'Ada pilihan rasa yang tidak tersedia untuk bundling ini. Silakan pilih ulang.']);
             }
         }
 
@@ -135,18 +163,71 @@ class Bundling extends Model
         }
 
         $hasil = [];
-        foreach ($peta as $itemId => $data) {
-            $item = $this->items->firstWhere('id', $itemId);
+        foreach ($peta as $data) {
+            $item = $this->items->firstWhere('id', $data['item_id']);
             $hasil[] = [
-                'item_id' => (int) $itemId,
+                'item_id' => $data['item_id'],
                 'produk_id' => (int) $item->produk_id,
-                'detail_produk_id' => $item->detail_produk_id ? (int) $item->detail_produk_id : null,
+                'detail_produk_id' => $data['detail_produk_id'],
                 'qty' => (int) $data['qty'],
                 'catatan' => $data['catatan'],
             ];
         }
 
         return $hasil;
+    }
+
+    /**
+     * Baris isi yang diproses saat bundling dipesan (checkout / kasir), satu elemen per varian yang diambil:
+     * [['item' => BundlingItem, 'qty' => int per satu paket, 'catatan' => ?string], ...].
+     *  - Tetap : tiap baris isi apa adanya (varian sudah ditentukan admin).
+     *  - Bebas : satu elemen per rasa yang dipilih pembeli. 'item' adalah salinan baris isi (di memori saja)
+     *            yang detail_produk_id, ukuran, dan varian_rasa-nya sudah diisi rasa terpilih, jadi kode
+     *            pemrosesan stok bisa memperlakukannya sama seperti baris tetap.
+     */
+    public function barisIsi(array $pilihan = []): array
+    {
+        $this->loadMissing(['items.produk', 'items.detailProduk']);
+
+        if (!$this->isBebas()) {
+            return $this->items->map(fn (BundlingItem $bi) => [
+                'item' => $bi,
+                'qty' => (int) $bi->qty,
+                'catatan' => null,
+            ])->all();
+        }
+
+        $baris = [];
+        foreach ($this->petaPilihanBebas($pilihan) as $p) {
+            $item = $this->items->firstWhere('id', $p['item_id']);
+            $detail = $item->opsiRasa()->firstWhere('id', $p['detail_produk_id']);
+
+            $salinan = $item->replicate();
+            $salinan->id = $item->id;
+            $salinan->detail_produk_id = $detail->id;
+            $salinan->ukuran = $detail->ukuran;
+            $salinan->varian_rasa = $detail->variasi;
+            $salinan->setRelation('produk', $item->produk);
+            $salinan->setRelation('detailProduk', $detail);
+
+            $baris[] = [
+                'item' => $salinan,
+                'qty' => (int) $p['qty'],
+                'catatan' => $p['catatan'],
+            ];
+        }
+
+        return $baris;
+    }
+
+    /** Total stok semua rasa aktif dari semua baris isi (hanya bermakna untuk bundling bebas). */
+    public function stokTotalBebas(): int
+    {
+        $this->loadMissing('items.produk');
+
+        return (int) $this->items->sum(
+            fn (BundlingItem $item) => $item->opsiRasa()->sum(fn (DetailProduk $d) => max(0, (int) $d->stok))
+        );
     }
 
     public function getJumlahProdukAttribute(): int
@@ -162,21 +243,15 @@ class Bundling extends Model
 
     public function getPerluDiproduksiAttribute(): bool
     {
+        // Bundling bebas: pembeli bebas memilih rasa, jadi yang dihitung total stok semua rasa
+        // aktif dibanding total isi. Satu rasa habis tidak membuatnya "perlu diproduksi".
+        if ($this->isBebas()) {
+            return $this->stokTotalBebas() < $this->targetQtyBebas();
+        }
+
         $items = $this->relationLoaded('items')
             ? $this->items
             : $this->items()->with(['detailProduk', 'produk.detailProduks'])->get();
-
-        // Bundling bebas: pembeli bebas memilih, jadi yang dihitung total stok semua
-        // pilihan yang aktif dibanding total isi. Satu pilihan habis tidak membuatnya "perlu diproduksi".
-        if ($this->isBebas()) {
-            $stokTotal = $items->sum(function ($item) {
-                $detail = $item->relationLoaded('detailProduk') ? $item->detailProduk : $item->detailProduk()->first();
-
-                return ($detail && $detail->status_aktif) ? max(0, (int) $detail->stok) : 0;
-            });
-
-            return $stokTotal < $this->targetQtyBebas();
-        }
 
         foreach ($items as $item) {
             // Sistem baru: cek stok langsung dari DetailProduk

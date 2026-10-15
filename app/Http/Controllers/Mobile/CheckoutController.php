@@ -579,14 +579,14 @@ class CheckoutController extends Controller
         $bundling = Bundling::with('items.produk', 'items.detailProduk')->findOrFail($item['bundling_id']);
         $jumlahBundling = (int) $item['jumlah'];
 
-        // Bundling bebas: qty & catatan tiap baris isi ikut pilihan pembeli (dipetakan per
-        // id baris isi, jadi varian berbeda dari produk yang sama tidak tertukar).
-        // Bundling tetap: pakai qty tetap dari paket.
+        // Bundling bebas: pembeli memilih rasa dari produk + ukuran yang ditentukan admin. Tiap rasa
+        // yang dipilih jadi satu baris isi (barisIsi) dengan qty & catatannya sendiri, jadi rasa berbeda
+        // dari produk yang sama tidak tertukar. Bundling tetap: pakai qty tetap dari paket.
         $isBebas = $bundling->isBebas();
-        $petaPilihan = $isBebas ? $bundling->petaPilihanBebas($item['pilihan_khusus'] ?? []) : [];
+        $pilihanBebas = $isBebas ? ($item['pilihan_khusus'] ?? []) : [];
 
-        if ($isBebas && array_sum(array_column($petaPilihan, 'qty')) !== $bundling->targetQtyBebas()) {
-            throw new \RuntimeException("Pilihan isi untuk \"{$bundling->nama_bundling}\" belum lengkap. Silakan pilih ulang isi bundling di keranjang.");
+        if ($isBebas && ! $bundling->pilihanBebasLengkap($pilihanBebas)) {
+            throw new \RuntimeException("Pilihan isi untuk \"{$bundling->nama_bundling}\" belum lengkap atau ada rasa yang sudah tidak tersedia. Silakan pilih ulang isi bundling di keranjang.");
         }
 
         DetailTransaksi::create([
@@ -601,7 +601,8 @@ class CheckoutController extends Controller
             'butuh_produksi' => false,
         ]);
 
-        foreach ($bundling->items as $bundlingItem) {
+        foreach ($bundling->barisIsi($pilihanBebas) as $baris) {
+            $bundlingItem = $baris['item'];
             $produk = $bundlingItem->produk;
             if (! $produk) {
                 continue;
@@ -610,14 +611,12 @@ class CheckoutController extends Controller
             $produk = Produk::lockForUpdate()->find($produk->id);
             if (!$produk) continue;
 
-            $qtySatuBundling = $isBebas
-                ? (int) ($petaPilihan[$bundlingItem->id]['qty'] ?? 0)
-                : (int) $bundlingItem->qty;
+            $qtySatuBundling = (int) $baris['qty'];
             if ($qtySatuBundling <= 0) {
                 continue;
             }
             $totalDibutuhkan = (int) ($qtySatuBundling * $jumlahBundling);
-            $catatanProduk = $isBebas ? ($petaPilihan[$bundlingItem->id]['catatan'] ?? null) : null;
+            $catatanProduk = $baris['catatan'];
 
             // ── Sistem baru: track stok via DetailProduk ──
             if ($bundlingItem->detail_produk_id) {

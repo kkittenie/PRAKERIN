@@ -114,19 +114,16 @@
                                             $bObj = \App\Models\Bundling::with(['items.produk.detailProduks', 'items.detailProduk'])->find($item['bundling_id']);
                                             if ($bObj) {
                                                 if ($bObj->isBebas() && !empty($item['pilihan_khusus'])) {
+                                                    // Satu baris per rasa yang dipilih pembeli (produk + ukuran + rasa).
                                                     $rincianBundling = [];
-                                                    foreach ($item['pilihan_khusus'] as $pk) {
-                                                        $bi = !empty($pk['item_id'])
-                                                            ? $bObj->items->firstWhere('id', (int) $pk['item_id'])
-                                                            : $bObj->items->firstWhere('produk_id', (int) ($pk['produk_id'] ?? 0));
-                                                        $prod = $bi?->produk;
-                                                        $dp = $bi?->detailProduk ?? $prod?->detailProduks?->first();
+                                                    foreach ($bObj->barisIsi($item['pilihan_khusus']) as $baris) {
+                                                        $bi = $baris['item'];
                                                         $rincianBundling[] = [
-                                                            'nama_produk' => $prod?->nama_produk ?? 'Produk',
-                                                            'ukuran' => $dp?->ukuran ?: $bi?->ukuran,
-                                                            'varian_rasa' => $dp?->variasi ?: $bi?->varian_rasa,
-                                                            'qty' => (int) ($pk['qty'] ?? 1),
-                                                            'catatan' => $pk['catatan'] ?? null,
+                                                            'nama_produk' => $bi->produk?->nama_produk ?? 'Produk',
+                                                            'ukuran' => $bi->ukuran,
+                                                            'varian_rasa' => $bi->varian_rasa,
+                                                            'qty' => (int) $baris['qty'],
+                                                            'catatan' => $baris['catatan'],
                                                         ];
                                                     }
                                                 } else {

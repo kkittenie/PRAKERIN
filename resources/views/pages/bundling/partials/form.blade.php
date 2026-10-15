@@ -64,7 +64,7 @@
                 <input type="radio" name="jenis_produk" value="bebas" class="mt-1 w-4 h-4 text-amber-600 focus:ring-amber-500" {{ $jenisAwal === 'bebas' ? 'checked' : '' }} onchange="gantiJenis('bebas')">
                 <div>
                     <span class="block font-bold text-sm text-gray-900 dark:text-white">Produk Bebas</span>
-                    <span class="block text-xs text-gray-500">Pembeli memilih sendiri, tapi hanya dari produk dan varian yang admin tentukan.</span>
+                    <span class="block text-xs text-gray-500">Admin menentukan produk dan ukurannya. Pembeli memilih rasanya sendiri.</span>
                 </div>
             </label>
         </div>
@@ -133,12 +133,12 @@
 <h4 id="judul-isi" class="font-semibold text-lg mb-1 text-gray-850 dark:text-white">Isi Bundling</h4>
 <p id="petunjuk-isi" class="text-sm text-gray-500 dark:text-gray-400 mb-4"></p>
 
-@foreach (['produk_id', 'detail_produk_id', 'qty'] as $kunci)
+@foreach (['produk_id', 'varian_isi', 'qty'] as $kunci)
     @if ($errors->has($kunci))
         <p class="mb-2 text-sm text-red-500">{{ $errors->first($kunci) }}</p>
     @endif
 @endforeach
-@foreach ($errors->get('detail_produk_id.*') as $pesan)
+@foreach ($errors->get('varian_isi.*') as $pesan)
     <p class="mb-2 text-sm text-red-500">{{ $pesan[0] }}</p>
 @endforeach
 @foreach ($errors->get('produk_id.*') as $pesan)
@@ -164,11 +164,13 @@
 </form>
 
 <script>
-    // Tiap baris isi bundling = satu produk + satu varian (detail produk).
-    //  - Produk Tetap : baris punya qty, pembeli mendapat isi persis seperti ini.
-    //  - Produk Bebas : baris adalah pilihan yang boleh diambil pembeli (qty dipilih pembeli,
-    //                   total mengikuti "Total Isi Bundling"), jadi kolom qty disembunyikan.
+    // Tiap baris isi bundling:
+    //  - Produk Tetap : produk + varian (detail produk) + qty. Pembeli mendapat isi persis seperti ini.
+    //  - Produk Bebas : produk + UKURAN. Rasa tidak dipilih di sini, pembeli yang memilih rasa dari semua
+    //                   rasa aktif produk + ukuran itu (total mengikuti "Total Isi Bundling"), jadi qty disembunyikan.
+    // Pilihan baris dikirim lewat satu field, varian_isi[]: id varian (tetap) atau nama ukuran (bebas).
     const DAFTAR_PRODUK = @json($produkForm);
+    const TANPA_UKURAN = '__tanpa__';
     let jenisAktif = @json($jenisAwal);
 
     const wadahProduk = document.getElementById('produk-container');
@@ -183,20 +185,87 @@
         return DAFTAR_PRODUK.find(function (p) { return p.id == id; });
     }
 
+    function nilaiUkuran(ukuran) {
+        const u = String(ukuran ?? '').trim();
+        return u === '' ? TANPA_UKURAN : u;
+    }
+
+    // Isi pilihan (opsi) select sesuai jenis aktif. 'dipilih' = nilai yang ingin dipilih lagi (kalau ada).
+    function isiOpsiVarian(div, produk, dipilih) {
+        const select = div.querySelector('.input-varian-produk');
+        const label = div.querySelector('.label-varian');
+        const bebas = jenisAktif === 'bebas';
+
+        label.firstChild.textContent = bebas ? 'Ukuran ' : 'Varian ';
+        select.disabled = false;
+
+        if (bebas) {
+            let daftar = produk.ukuran.slice();
+            // Ukuran tersimpan yang sudah tidak punya rasa aktif tetap ditampilkan supaya jelas, tapi akan ditolak saat simpan.
+            if (dipilih && !daftar.some(function (u) { return nilaiUkuran(u.nilai) === dipilih; })) {
+                daftar.push({nilai: dipilih === TANPA_UKURAN ? '' : dipilih, nama: (dipilih === TANPA_UKURAN ? 'Tanpa ukuran' : dipilih) + ' (tidak ada rasa aktif)', jumlah_rasa: 0, stok: 0, rasa: []});
+            }
+            select.innerHTML = '<option value="">Pilih ukuran</option>' + daftar.map(function (u) {
+                return '<option value="' + esc(nilaiUkuran(u.nilai)) + '">' + esc(u.nama) + ' (' + u.jumlah_rasa + ' rasa)</option>';
+            }).join('');
+        } else {
+            select.innerHTML = '<option value="">Pilih varian</option>' + produk.varian.map(function (v) {
+                return '<option value="' + v.id + '">' + esc(v.nama) + ' (Stok: ' + v.stok + ')' + (v.aktif ? '' : ' - nonaktif') + '</option>';
+            }).join('');
+        }
+
+        if (dipilih) {
+            select.value = String(dipilih);
+        }
+        if (!select.value) {
+            // Hanya satu pilihan -> langsung dipilih.
+            const jumlahOpsi = select.options.length - 1;
+            if (jumlahOpsi === 1) {
+                select.selectedIndex = 1;
+            }
+        }
+    }
+
     function gantiJenis(jenis) {
+        const jenisLama = jenisAktif;
         jenisAktif = jenis;
         const bebas = jenis === 'bebas';
 
         document.getElementById('wrapper-total-qty').classList.toggle('hidden', !bebas);
         document.getElementById('judul-isi').textContent = bebas ? 'Pilihan Produk untuk Pembeli' : 'Isi Bundling';
         document.getElementById('petunjuk-isi').textContent = bebas
-            ? 'Tambahkan produk dan varian yang boleh dipilih pembeli. Satu baris = satu varian. Pembeli memilih sejumlah "Total Isi Bundling" dari daftar ini.'
+            ? 'Tambahkan produk dan ukuran yang boleh dipilih pembeli. Satu baris = satu produk + satu ukuran. Rasanya dipilih pembeli dari semua rasa aktif ukuran itu, sebanyak "Total Isi Bundling".'
             : 'Tambahkan produk beserta variannya dan jumlah yang didapat pembeli. Isi paket ini tetap, pembeli tidak bisa mengubahnya.';
         document.getElementById('label-tambah').textContent = bebas ? 'Tambah Pilihan' : 'Tambah Produk';
 
         wadahProduk.querySelectorAll('.col-qty-produk').forEach(function (el) {
             el.classList.toggle('hidden', bebas);
         });
+
+        // Baris yang sudah diisi tidak dihapus. Pilihan varian/ukuran dibuat ulang sesuai jenis baru:
+        // varian -> ukuran ikut ukuran varian itu, ukuran -> varian harus dipilih lagi.
+        if (jenisLama !== jenis) {
+            wadahProduk.querySelectorAll(':scope > div').forEach(function (div) {
+                const produk = cariProduk(div.querySelector('.input-id-produk').value);
+                if (!produk) {
+                    return;
+                }
+                const select = div.querySelector('.input-varian-produk');
+                const lama = select.value;
+                let baru = '';
+
+                if (lama) {
+                    if (bebas) {
+                        const v = produk.varian.find(function (x) { return x.id == lama; });
+                        baru = v ? nilaiUkuran(v.ukuran) : '';
+                    }
+                }
+                isiOpsiVarian(div, produk, baru);
+                isiInfoStok(div);
+            });
+        }
+
+        cekForm();
     }
 
     function tambahBaris(awal) {
@@ -214,8 +283,8 @@
                 </div>
 
                 <div class="md:col-span-5">
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Varian <span class="text-red-500">*</span></label>
-                    <select name="detail_produk_id[]" class="input-varian-produk w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500" disabled>
+                    <label class="label-varian mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Varian <span class="text-red-500">*</span></label>
+                    <select name="varian_isi[]" class="input-varian-produk w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500" disabled>
                         <option value="">Pilih produk dulu</option>
                     </select>
                 </div>
@@ -231,7 +300,7 @@
                 <button type="button" class="btn-hapus-produk text-sm text-red-600 hover:text-red-800">Hapus</button>
             </div>
 
-            <p class="peringatan-duplikat hidden text-xs text-red-600 mt-1">Produk dan varian ini sudah dipilih di baris lain!</p>
+            <p class="peringatan-duplikat hidden text-xs text-red-600 mt-1">Pilihan ini sudah ada di baris lain!</p>
         `;
 
         wadahProduk.appendChild(div);
@@ -240,7 +309,7 @@
         if (awal && awal.produk_id) {
             const produk = cariProduk(awal.produk_id);
             if (produk) {
-                pilihProduk(div, produk, awal.detail_produk_id);
+                pilihProduk(div, produk, awal.pilihan);
                 if (awal.qty) {
                     div.querySelector('.input-qty').value = awal.qty;
                 }
@@ -255,13 +324,25 @@
         const info = div.querySelector('.info-produk');
         const select = div.querySelector('.input-varian-produk');
         const produk = cariProduk(div.querySelector('.input-id-produk').value);
+        const bebas = jenisAktif === 'bebas';
 
         if (!produk) {
             info.textContent = 'Pilih produk terlebih dahulu';
             return;
         }
         if (!select.value) {
-            info.textContent = 'Pilih varian untuk melihat stok';
+            info.textContent = bebas ? 'Pilih ukuran untuk melihat rasa yang tersedia' : 'Pilih varian untuk melihat stok';
+            return;
+        }
+
+        if (bebas) {
+            const u = produk.ukuran.find(function (x) { return nilaiUkuran(x.nilai) === select.value; });
+            if (!u || u.jumlah_rasa === 0) {
+                info.innerHTML = '<span class="text-red-600">Ukuran ini tidak punya rasa aktif</span>';
+                return;
+            }
+            info.innerHTML = 'Rasa yang bisa dipilih pembeli: <strong>' + esc(u.rasa.join(', ')) + '</strong>'
+                + ' · Total stok: <strong>' + u.stok + '</strong>';
             return;
         }
 
@@ -275,26 +356,15 @@
             + (v.aktif ? '' : ' <span class="text-red-600">— varian nonaktif</span>');
     }
 
-    function pilihProduk(div, produk, detailTerpilih) {
+    function pilihProduk(div, produk, pilihan) {
         const inputSearch = div.querySelector('.input-search-produk');
         const inputId = div.querySelector('.input-id-produk');
-        const select = div.querySelector('.input-varian-produk');
 
         inputSearch.value = produk.nama_produk;
         inputId.value = produk.id;
         div.querySelector('.hasil-search').classList.add('hidden');
 
-        select.disabled = false;
-        select.innerHTML = '<option value="">Pilih varian</option>' + produk.varian.map(function (v) {
-            return '<option value="' + v.id + '">' + esc(v.nama) + ' (Stok: ' + v.stok + ')' + (v.aktif ? '' : ' - nonaktif') + '</option>';
-        }).join('');
-
-        if (detailTerpilih) {
-            select.value = String(detailTerpilih);
-        } else if (produk.varian.length === 1) {
-            select.value = String(produk.varian[0].id);
-        }
-
+        isiOpsiVarian(div, produk, pilihan ? String(pilihan) : '');
         isiInfoStok(div);
         cekForm();
     }
@@ -332,7 +402,7 @@
                 item.type = 'button';
                 item.className = 'block w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700';
                 item.innerHTML = '<div class="font-medium text-gray-800 dark:text-white">' + esc(p.nama_produk) + '</div>'
-                    + '<div class="text-xs text-gray-500">' + p.varian.length + ' varian'
+                    + '<div class="text-xs text-gray-500">' + p.varian.length + ' varian · ' + p.ukuran.length + ' ukuran'
                     + (p.dijual_satuan ? '' : ' · <span class="text-amber-600">Hanya untuk bundling</span>') + '</div>';
                 item.addEventListener('click', function () { pilihProduk(div, p); });
                 hasil.appendChild(item);
@@ -360,37 +430,52 @@
         });
     });
 
-    // Tombol simpan aktif kalau: ada minimal 1 baris, semua baris sudah pilih produk + varian,
-    // dan tidak ada kombinasi produk + varian yang kembar.
+    // Tombol simpan aktif kalau: ada minimal 1 baris, semua baris sudah pilih produk + varian/ukuran,
+    // tidak ada pilihan yang kembar (tetap: varian sama; bebas: produk + ukuran sama), dan
+    // pada bundling bebas ukuran yang dipilih punya minimal satu rasa aktif.
     function cekForm() {
         const baris = wadahProduk.querySelectorAll(':scope > div');
+        const bebas = jenisAktif === 'bebas';
         const hitung = {};
-        let ada = false;
         let masalah = baris.length === 0;
 
-        baris.forEach(function (b) {
+        function kunciBaris(b) {
             const id = b.querySelector('.input-id-produk').value;
-            const varian = b.querySelector('.input-varian-produk').value;
-            if (id && varian) {
-                hitung[varian] = (hitung[varian] || 0) + 1;
+            const nilai = b.querySelector('.input-varian-produk').value;
+            if (!id || !nilai) {
+                return null;
+            }
+            return bebas ? (id + '|' + nilai.toLowerCase()) : nilai;
+        }
+
+        baris.forEach(function (b) {
+            const kunci = kunciBaris(b);
+            if (kunci) {
+                hitung[kunci] = (hitung[kunci] || 0) + 1;
             }
         });
 
         baris.forEach(function (b) {
             const id = b.querySelector('.input-id-produk').value;
             const select = b.querySelector('.input-varian-produk');
-            const varian = select.value;
-            const kembar = !!(id && varian && hitung[varian] > 1);
-            const belumLengkap = !id || !varian;
+            const kunci = kunciBaris(b);
+            const kembar = !!(kunci && hitung[kunci] > 1);
+            const belumLengkap = !id || !select.value;
+
+            let tanpaRasa = false;
+            if (bebas && id && select.value) {
+                const produk = cariProduk(id);
+                const u = produk ? produk.ukuran.find(function (x) { return nilaiUkuran(x.nilai) === select.value; }) : null;
+                tanpaRasa = !u || u.jumlah_rasa === 0;
+            }
 
             b.querySelector('.peringatan-duplikat').classList.toggle('hidden', !kembar);
             b.querySelector('.input-search-produk').classList.toggle('border-red-500', kembar);
-            select.classList.toggle('border-red-500', !!(id && !varian));
+            select.classList.toggle('border-red-500', !!(id && !select.value) || tanpaRasa);
 
-            if (kembar || belumLengkap) {
+            if (kembar || belumLengkap || tanpaRasa) {
                 masalah = true;
             }
-            ada = true;
         });
 
         const tombol = document.getElementById('btnSubmitBundling');
@@ -406,7 +491,7 @@
     // ==== Isi awal baris: dari old() kalau validasi gagal, kalau tidak dari data tersimpan (edit) ====
     (function () {
         const oldProduk = @json(old('produk_id', []));
-        const oldDetail = @json(old('detail_produk_id', []));
+        const oldPilihan = @json(old('varian_isi', []));
         const oldQty = @json(old('qty', []));
         const tersimpan = @json($isiTersimpan);
 
@@ -414,11 +499,13 @@
 
         if (oldProduk.length > 0) {
             oldProduk.forEach(function (id, i) {
-                tambahBaris({produk_id: id, detail_produk_id: oldDetail[i] || null, qty: oldQty[i] || 1});
+                tambahBaris({produk_id: id, pilihan: oldPilihan[i] || null, qty: oldQty[i] || 1});
             });
         } else if (tersimpan.length > 0) {
             tersimpan.forEach(function (item) {
-                tambahBaris(item);
+                // Bundling bebas menyimpan ukuran, bundling tetap menyimpan id varian.
+                const pilihan = jenisAktif === 'bebas' ? nilaiUkuran(item.ukuran) : item.detail_produk_id;
+                tambahBaris({produk_id: item.produk_id, pilihan: pilihan, qty: item.qty});
             });
         } else {
             tambahBaris();

@@ -193,23 +193,29 @@ class TransaksiKasirController extends Controller
             $daftarKategori = KategoriProduk::all();
 
             $daftarBundling = Bundling::with([
-                'items.produk',
+                'items.produk.detailProduks',
                 'items.detailProduk',
             ])
                 ->where('status_aktif', true)
                 ->get()
                 ->map(function ($bundling) {
-                    // Bundling bebas: kasir memilih sendiri, jadi stok = total stok semua
-                    // pilihan aktif dibagi total isi per paket.
+                    // Bundling bebas: kasir memilih rasa sendiri, jadi stok = total stok semua rasa
+                    // aktif dari produk + ukuran yang ditentukan admin, dibagi total isi per paket.
+                    // Daftar rasa tiap baris isi dikirim ke JS lewat 'opsi_rasa'.
                     if ($bundling->isBebas()) {
-                        $totalStok = $bundling->items->sum(fn ($it) => ($it->detailProduk && $it->detailProduk->status_aktif)
-                            ? max(0, (int) $it->detailProduk->stok)
-                            : 0);
-                        $bundling->stok_bundling = intdiv($totalStok, max(1, $bundling->targetQtyBebas()));
+                        $bundling->stok_bundling = intdiv($bundling->stokTotalBebas(), max(1, $bundling->targetQtyBebas()));
                         $bundling->perlu_diproduksi = $bundling->stok_bundling <= 0;
+
+                        $bundling->items->each(function ($it) {
+                            $it->setAttribute('opsi_rasa', $it->opsiRasaData());
+                            // Detail produk lengkap (harga modal dll.) tidak perlu ikut ke browser kasir.
+                            $it->produk?->makeHidden('detailProduks');
+                        });
 
                         return $bundling;
                     }
+
+                    $bundling->items->each(fn ($it) => $it->produk?->makeHidden('detailProduks'));
 
                     $stokMaksimal = $bundling->items->reduce(function ($carry, $item) {
                         if (!$item->produk) {
@@ -263,14 +269,14 @@ class TransaksiKasirController extends Controller
 
         $perluProduksiBundling = (bool) ($item['butuh_produksi'] ?? false);
 
-        // Bundling bebas: kasir memilih sendiri qty & catatan tiap pilihan lewat modal di POS
-        // (dikirim di item['pilihan_khusus'], dikunci per id baris isi bundling supaya varian
-        // berbeda dari produk yang sama tidak tertukar). Bundling tetap: pakai qty tetap dari paket.
+        // Bundling bebas: kasir memilih rasa (dari produk + ukuran yang ditentukan admin) lewat modal di POS.
+        // Pilihan dikirim di item['pilihan_khusus'] dan dikunci per baris isi + rasa (detail_produk_id), jadi
+        // rasa berbeda dari produk yang sama tidak tertukar. Bundling tetap: pakai qty tetap dari paket.
         $isBebas = $bundling->isBebas();
-        $petaPilihan = $isBebas ? $bundling->petaPilihanBebas($item['pilihan_khusus'] ?? []) : [];
+        $pilihanBebas = $isBebas ? ($item['pilihan_khusus'] ?? []) : [];
 
-        if ($isBebas && array_sum(array_column($petaPilihan, 'qty')) !== $bundling->targetQtyBebas()) {
-            throw new \RuntimeException("Pilihan isi untuk \"{$bundling->nama_bundling}\" belum lengkap (harus pas {$bundling->targetQtyBebas()} pcs).");
+        if ($isBebas && !$bundling->pilihanBebasLengkap($pilihanBebas)) {
+            throw new \RuntimeException("Pilihan isi untuk \"{$bundling->nama_bundling}\" belum lengkap (harus pas {$bundling->targetQtyBebas()} pcs) atau ada rasa yang sudah tidak tersedia.");
         }
 
         DetailTransaksi::create([
@@ -285,20 +291,19 @@ class TransaksiKasirController extends Controller
             'butuh_produksi' => $perluProduksiBundling,
         ]);
 
-        foreach ($bundling->items as $bundlingItem) {
+        foreach ($bundling->barisIsi($pilihanBebas) as $baris) {
+            $bundlingItem = $baris['item'];
             $produk = $bundlingItem->produk;
             if (!$produk) {
                 continue;
             }
 
-            $qtySatuBundling = $isBebas
-                ? (int) ($petaPilihan[$bundlingItem->id]['qty'] ?? 0)
-                : (int) $bundlingItem->qty;
+            $qtySatuBundling = (int) $baris['qty'];
             if ($qtySatuBundling <= 0) {
                 continue;
             }
 
-            $catatanProduk = $isBebas ? ($petaPilihan[$bundlingItem->id]['catatan'] ?? null) : null;
+            $catatanProduk = $baris['catatan'];
             $totalDibutuhkan = (int) ($qtySatuBundling * $jumlahBundling);
 
             // ── Sistem baru: deduct stok dari DetailProduk ──

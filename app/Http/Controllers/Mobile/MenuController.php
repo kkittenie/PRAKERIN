@@ -63,7 +63,7 @@ class MenuController extends Controller
             }
 
             $totalProduk = $kategoris->sum(fn ($kategori) => $kategori->produk->count());
-            $daftarBundling = Bundling::with(['items.produk', 'items.detailProduk'])
+            $daftarBundling = Bundling::with(['items.produk.detailProduks', 'items.detailProduk'])
                 ->where('status_aktif', true)
                 ->get();
 

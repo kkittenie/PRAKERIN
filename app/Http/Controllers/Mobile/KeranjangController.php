@@ -144,8 +144,9 @@ class KeranjangController extends Controller
                 'jumlah' => 'required|integer|min:1|max:50',
                 'catatan' => 'nullable|string|max:255',
                 'pilihan_khusus' => 'nullable|array',
-                // item_id = id baris isi bundling (bundling_items) yang dipilih pembeli.
+                // item_id = id baris isi bundling (produk + ukuran), detail_produk_id = rasa yang dipilih pembeli.
                 'pilihan_khusus.*.item_id' => 'required_with:pilihan_khusus|integer',
+                'pilihan_khusus.*.detail_produk_id' => 'required_with:pilihan_khusus|integer',
                 // Boleh 0: form selalu ngirim baris utk SEMUA pilihan bundling
                 // (termasuk yang gak dipilih member). Baris qty 0 dibuang di
                 // validasiPilihanBebas(), bukan ditolak validasi di sini.
@@ -365,8 +366,9 @@ class KeranjangController extends Controller
                 'jumlah' => 'required|integer|min:1|max:50',
                 'catatan' => 'nullable|string|max:255',
                 'pilihan_khusus' => 'nullable|array',
-                // item_id = id baris isi bundling (bundling_items) yang dipilih pembeli.
+                // item_id = id baris isi bundling (produk + ukuran), detail_produk_id = rasa yang dipilih pembeli.
                 'pilihan_khusus.*.item_id' => 'required_with:pilihan_khusus|integer',
+                'pilihan_khusus.*.detail_produk_id' => 'required_with:pilihan_khusus|integer',
                 // Boleh 0: form selalu ngirim baris utk SEMUA pilihan bundling
                 // (termasuk yang gak dipilih member). Baris qty 0 dibuang di
                 // validasiPilihanBebas(), bukan ditolak validasi di sini.
@@ -532,21 +534,18 @@ class KeranjangController extends Controller
         $bundling->loadMissing(['items.produk', 'items.detailProduk']);
 
         if ($bundling->isBebas()) {
-            // Satu baris rincian per pilihan pembeli (produk + varian + qty).
-            foreach ($pilihanKhusus as $pk) {
-                $bi = $bundling->items->firstWhere('id', $pk['item_id']);
-                if (! $bi) {
-                    continue;
-                }
-                $dp = $bi->detailProduk;
+            // Satu baris rincian per rasa yang dipilih pembeli (produk + ukuran + rasa + qty).
+            foreach ($bundling->barisIsi($pilihanKhusus) as $baris) {
+                $bi = $baris['item'];
                 $rincian[] = [
                     'item_id' => $bi->id,
                     'produk_id' => $bi->produk_id,
+                    'detail_produk_id' => $bi->detail_produk_id,
                     'nama_produk' => $bi->produk?->nama_produk ?? 'Produk',
-                    'ukuran' => $dp?->ukuran ?: $bi->ukuran,
-                    'varian_rasa' => $dp?->variasi ?: $bi->varian_rasa,
-                    'qty' => (int) $pk['qty'],
-                    'catatan' => $pk['catatan'] ?? null,
+                    'ukuran' => $bi->ukuran,
+                    'varian_rasa' => $bi->varian_rasa,
+                    'qty' => (int) $baris['qty'],
+                    'catatan' => $baris['catatan'],
                 ];
             }
 

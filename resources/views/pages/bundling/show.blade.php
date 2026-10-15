@@ -119,7 +119,7 @@
 
             @if($bundling->isBebas())
                 <div class="mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-semibold">
-                    💡 <strong>Produk Bebas:</strong> Pembeli memilih sendiri total <span class="text-amber-700 dark:text-amber-400 font-extrabold text-sm">{{ $bundling->targetQtyBebas() }} pcs</span> dari daftar produk dan varian di bawah ini.
+                    💡 <strong>Produk Bebas:</strong> Pembeli memilih sendiri total <span class="text-amber-700 dark:text-amber-400 font-extrabold text-sm">{{ $bundling->targetQtyBebas() }} pcs</span> dari rasa yang tersedia untuk produk dan ukuran di bawah ini. Rasa dipilih pembeli sendiri.
                 </div>
             @endif
 
@@ -131,7 +131,7 @@
                             <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">No</th>
                             <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Produk</th>
                             <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Ukuran</th>
-                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Rasa</th>
+                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $bundling->isBebas() ? 'Rasa yang Bisa Dipilih' : 'Rasa' }}</th>
                             <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $bundling->isBebas() ? 'Jumlah' : 'Qty Bundling' }}</th>
                             <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status Stok</th>
                         </tr>
@@ -141,7 +141,14 @@
                             @php
                                 $p = $item->produk;
                                 $v = $item->detailProduk;
-                                if ($v) {
+                                if ($bundling->isBebas()) {
+                                    // Produk Bebas: satu baris = produk + ukuran, rasa dipilih pembeli dari semua rasa aktif.
+                                    $opsiRasa = $item->opsiRasa();
+                                    $stokUkuran = (int) $opsiRasa->sum(fn ($d) => max(0, (int) $d->stok));
+                                    $stokHabis = $opsiRasa->isEmpty() || $stokUkuran <= 0;
+                                    $ukuranTampil = $item->ukuran ?: '-';
+                                    $rasaTampil = $opsiRasa->pluck('variasi')->filter()->implode(', ') ?: null;
+                                } elseif ($v) {
                                     $stokUkuran = (int) $v->stok;
                                     $stokHabis = !$v->status_aktif || $v->perlu_diproduksi || $stokUkuran <= 0;
                                     $ukuranTampil = $v->ukuran ?? '-';
@@ -168,7 +175,7 @@
                                 </td>
                                 <td class="text-center font-bold text-amber-700 dark:text-amber-400">
                                     @if($bundling->isBebas())
-                                        <span class="inline-flex rounded-full bg-amber-100 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300">Dipilih pembeli</span>
+                                        <span class="inline-flex rounded-full bg-amber-100 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300">Rasa dipilih pembeli</span>
                                     @else
                                         {{ $item->qty }} pcs
                                     @endif
@@ -196,7 +203,14 @@
                     @php
                         $p = $item->produk;
                         $v = $item->detailProduk;
-                        if ($v) {
+                        if ($bundling->isBebas()) {
+                            // Produk Bebas: satu baris = produk + ukuran, rasa dipilih pembeli dari semua rasa aktif.
+                            $opsiRasa = $item->opsiRasa();
+                            $stokUkuran = (int) $opsiRasa->sum(fn ($d) => max(0, (int) $d->stok));
+                            $stokHabis = $opsiRasa->isEmpty() || $stokUkuran <= 0;
+                            $ukuranTampil = $item->ukuran ?: null;
+                            $rasaTampil = $opsiRasa->pluck('variasi')->filter()->implode(', ') ?: null;
+                        } elseif ($v) {
                             $stokUkuran = (int) $v->stok;
                             $stokHabis = !$v->status_aktif || $v->perlu_diproduksi || $stokUkuran <= 0;
                             $ukuranTampil = $v->ukuran;
@@ -224,7 +238,7 @@
                             <span
                                 class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
                                 @if($bundling->isBebas())
-                                    Dipilih pembeli
+                                    Rasa dipilih pembeli
                                 @else
                                     {{ $item->qty }} pcs
                                 @endif

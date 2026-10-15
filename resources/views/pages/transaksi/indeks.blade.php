@@ -1955,10 +1955,10 @@
 
         <!-- ========== MODAL: PILIH VARIAN RASA BUNDLING KHUSUS ========== -->
         <div x-show="modalVarianBundlingTerbuka"
-            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4"
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-2 sm:p-4"
             x-transition x-cloak>
             <div @click.away="tutupModalVarianBundling()"
-                class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh]">
+                class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col max-h-[96vh] max-h-[96dvh] min-h-0">
                 <div class="bg-amber-800 dark:bg-amber-900 text-white p-4 flex items-center justify-between shrink-0">
                     <div class="min-w-0">
                         <h3 class="font-extrabold text-sm">Pilih Isi Bundling</h3>
@@ -1969,11 +1969,11 @@
                         class="text-white hover:text-gray-200 font-bold text-lg leading-none shrink-0 ml-2">&times;</button>
                 </div>
 
-                <div class="p-4 flex flex-col gap-3 overflow-y-auto">
+                <div class="p-4 flex flex-col gap-3 overflow-y-auto min-h-0 flex-1 overscroll-contain">
 
-                    <div class="flex items-center justify-between rounded-xl bg-amber-50 dark:bg-amber-500/10 p-3 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-500/25">
+                    <div class="shrink-0 flex items-center justify-between rounded-xl bg-amber-50 dark:bg-amber-500/10 p-3 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-500/25">
                         <div>
-                            <h4 class="text-xs font-bold">Wajib pilih total isi</h4>
+                            <h4 class="text-xs font-bold">Wajib pilih rasa sesuai total isi</h4>
                             <p class="text-[11px] text-amber-700 dark:text-amber-400">
                                 Total <strong class="font-extrabold" x-text="targetQtyVarianModal"></strong> pcs dari daftar di bawah
                             </p>
@@ -1990,47 +1990,60 @@
                         <span x-show="totalVarianModalTerpilih > targetQtyVarianModal" class="text-red-600 dark:text-red-400">Pilihan melebihi total isi bundling!</span>
                     </div>
 
-                    <div class="divide-y divide-gray-100 dark:divide-gray-800 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-                        <template x-for="bi in (bundlingUntukVarian ? bundlingUntukVarian.items : [])" :key="bi.id">
-                            <div class="p-3 space-y-2">
-                                <div class="flex items-center justify-between gap-2">
-                                    <div class="min-w-0">
-                                        <p class="text-xs font-bold text-gray-800 dark:text-gray-200 truncate"
-                                            x-text="namaItemBundling(bi).nama"></p>
-                                        <div class="mt-0.5 flex flex-wrap items-center gap-1">
-                                            <template x-if="namaItemBundling(bi).varian">
-                                                <span class="rounded bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300"
-                                                    x-text="namaItemBundling(bi).varian"></span>
-                                            </template>
-                                            <span class="text-[10px] font-semibold"
-                                                :class="stokItemBundling(bi) > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-amber-600 dark:text-amber-400'"
-                                                x-text="stokItemBundling(bi) > 0 ? ('Stok ' + stokItemBundling(bi)) : 'Perlu diproduksi'"></span>
+                    {{-- Satu kelompok per baris isi (produk + ukuran). Rasa dipilih kasir dari semua rasa aktif. --}}
+                    <template x-for="bi in (bundlingUntukVarian ? bundlingUntukVarian.items : [])" :key="bi.id">
+                        <div class="shrink-0 overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+                            <div class="flex flex-wrap items-center gap-1.5 bg-gray-50 dark:bg-gray-800/60 px-3 py-2">
+                                <p class="text-xs font-bold text-gray-800 dark:text-gray-200"
+                                    x-text="namaItemBundling(bi).nama"></p>
+                                <template x-if="namaItemBundling(bi).varian">
+                                    <span class="rounded bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300"
+                                        x-text="namaItemBundling(bi).varian"></span>
+                                </template>
+                                <span class="text-[10px] font-semibold text-gray-400 dark:text-gray-500">· pilih rasa</span>
+                            </div>
+
+                            <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                                <template x-for="r in (bi.opsi_rasa || [])" :key="kunciPilihanBundling(bi.id, r.id)">
+                                    <div class="p-3 space-y-2">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <div class="min-w-0">
+                                                <p class="text-xs font-bold text-gray-800 dark:text-gray-200 truncate"
+                                                    x-text="'Rasa: ' + r.nama"></p>
+                                                <span class="text-[10px] font-semibold"
+                                                    :class="r.stok > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-amber-600 dark:text-amber-400'"
+                                                    x-text="r.stok > 0 ? ('Stok ' + r.stok) : 'Perlu diproduksi'"></span>
+                                            </div>
+
+                                            <div class="flex items-center gap-2 shrink-0">
+                                                <button type="button" @click="kurangiVarianModalQty(kunciPilihanBundling(bi.id, r.id))"
+                                                    class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 transition active:scale-90 disabled:opacity-30"
+                                                    :disabled="(varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0) <= 0">-</button>
+                                                <span class="w-5 text-center text-xs font-bold text-gray-900 dark:text-white"
+                                                    x-text="varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0"></span>
+                                                <button type="button" @click="tambahVarianModalQty(kunciPilihanBundling(bi.id, r.id))"
+                                                    class="flex h-7 w-7 items-center justify-center rounded-full bg-amber-700 text-white transition active:scale-90 disabled:opacity-30"
+                                                    :disabled="totalVarianModalTerpilih >= targetQtyVarianModal">+</button>
+                                            </div>
+                                        </div>
+
+                                        <div x-show="(varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0) > 0" x-transition class="mt-1">
+                                            <input type="text" x-model="varianModalCatatan[kunciPilihanBundling(bi.id, r.id)]"
+                                                :placeholder="'Catatan untuk ' + namaItemBundling(bi).nama + ' ' + r.nama + ' (opsional)'"
+                                                maxlength="255"
+                                                class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-[11px] text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:border-amber-600 focus:outline-none">
                                         </div>
                                     </div>
+                                </template>
 
-                                    <div class="flex items-center gap-2 shrink-0">
-                                        <button type="button" @click="kurangiVarianModalQty(bi.id)"
-                                            class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 transition active:scale-90 disabled:opacity-30"
-                                            :disabled="(varianModalQty[bi.id] || 0) <= 0">-</button>
-                                        <span class="w-5 text-center text-xs font-bold text-gray-900 dark:text-white"
-                                            x-text="varianModalQty[bi.id] || 0"></span>
-                                        <button type="button" @click="tambahVarianModalQty(bi.id)"
-                                            class="flex h-7 w-7 items-center justify-center rounded-full bg-amber-700 text-white transition active:scale-90 disabled:opacity-30"
-                                            :disabled="totalVarianModalTerpilih >= targetQtyVarianModal">+</button>
-                                    </div>
-                                </div>
-
-                                <div x-show="(varianModalQty[bi.id] || 0) > 0" x-transition class="mt-1">
-                                    <input type="text" x-model="varianModalCatatan[bi.id]"
-                                        :placeholder="'Catatan untuk ' + namaItemBundling(bi).nama + ' (opsional)'"
-                                        maxlength="255"
-                                        class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-[11px] text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:border-amber-600 focus:outline-none">
-                                </div>
+                                <template x-if="!bi.opsi_rasa || bi.opsi_rasa.length === 0">
+                                    <p class="p-3 text-[11px] font-medium text-gray-400">Belum ada rasa yang tersedia untuk pilihan ini.</p>
+                                </template>
                             </div>
-                        </template>
-                    </div>
+                        </div>
+                    </template>
 
-                    <div class="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 p-3">
+                    <div class="shrink-0 flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 p-3">
                         <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Jumlah Paket</span>
                         <div class="flex items-center gap-2">
                             <button type="button" @click="kurangiJumlahPaketVarianModal()"
@@ -2989,6 +3002,10 @@
                 // HANYA berisi produk reguler — produk khusus bundling tidak ada di
                 // sana, jadi dulu dianggap stok 0 / "Perlu Diproduksi".
                 stokItemBundling(it) {
+                    // Baris isi bundling bebas (produk + ukuran): stok = total stok semua rasa aktifnya.
+                    if (Array.isArray(it.opsi_rasa)) {
+                        return it.opsi_rasa.reduce((sum, r) => sum + (parseInt(r.stok) || 0), 0);
+                    }
                     if (it.detail_produk_id) {
                         if (it.detail_produk) return parseInt(it.detail_produk.stok) || 0;
                         const pv = this.daftarProduk.find(x => x.id === it.produk_id);
@@ -3005,6 +3022,19 @@
                     const dp = bi.detail_produk || null;
                     const varian = [dp ? dp.ukuran : bi.ukuran, dp ? dp.variasi : bi.varian_rasa].filter(Boolean).join(' / ');
                     return { nama: nama, varian: varian, lengkap: varian ? (nama + ' (' + varian + ')') : nama };
+                },
+
+                // Kunci pilihan di modal = baris isi bundling + rasa, supaya rasa berbeda dari produk yang sama tidak tertukar.
+                kunciPilihanBundling(itemId, detailId) {
+                    return itemId + ':' + detailId;
+                },
+
+                // Cari baris isi + rasa dari kunci pilihan. Hasil: { bi, rasa } atau null.
+                cariPilihanBundling(bundling, itemId, detailId) {
+                    const bi = (bundling.items || []).find(x => x.id === itemId);
+                    if (!bi) return null;
+                    const rasa = (bi.opsi_rasa || []).find(r => r.id === detailId);
+                    return rasa ? { bi: bi, rasa: rasa } : null;
                 },
 
                 targetQtyBundlingKhusus(bundling) {
@@ -3079,8 +3109,11 @@
                     this.varianModalQty = {};
                     this.varianModalCatatan = {};
                     (bundling.items || []).forEach(bi => {
-                        this.varianModalQty[bi.id] = 0;
-                        this.varianModalCatatan[bi.id] = '';
+                        (bi.opsi_rasa || []).forEach(r => {
+                            const kunci = this.kunciPilihanBundling(bi.id, r.id);
+                            this.varianModalQty[kunci] = 0;
+                            this.varianModalCatatan[kunci] = '';
+                        });
                     });
 
                     if (existingItem) {
@@ -3088,11 +3121,13 @@
                         this.varianModalJumlahPaket = existingItem.jumlah;
                         this.varianModalCatatanUmum = existingItem.catatan || '';
                         (existingItem.pilihan_khusus || []).forEach(p => {
-                            // Item lama (sebelum pilihan dikunci per baris isi) hanya punya produk_id.
-                            const bi = (bundling.items || []).find(x => p.item_id ? x.id === p.item_id : x.produk_id === p.produk_id);
-                            if (!bi) return;
-                            this.varianModalQty[bi.id] = p.qty;
-                            this.varianModalCatatan[bi.id] = p.catatan || '';
+                            // Item lama (sebelum rasa dipilih kasir) tidak punya detail_produk_id dan tidak bisa
+                            // dipetakan ke rasa, jadi dilewati: kasir diminta memilih ulang.
+                            const cocok = this.cariPilihanBundling(bundling, p.item_id, p.detail_produk_id);
+                            if (!cocok) return;
+                            const kunci = this.kunciPilihanBundling(p.item_id, p.detail_produk_id);
+                            this.varianModalQty[kunci] = p.qty;
+                            this.varianModalCatatan[kunci] = p.catatan || '';
                         });
                     } else {
                         this.varianModalEditKey = null;
@@ -3129,23 +3164,29 @@
                 },
 
                 buatItemBundlingKeranjangKhusus(bundling, jumlah, catatanUmum, pilihanKhusus) {
-                    // Butuh produksi hanya kalau ada pilihan kasir yang stoknya tidak cukup
+                    // Butuh produksi hanya kalau ada rasa pilihan kasir yang stoknya tidak cukup
                     // untuk jumlah paket ini (stok diambil dari data server).
-                    const itemsKeranjang = pilihanKhusus.map(p => {
-                        const bi = (bundling.items || []).find(x => x.id === p.item_id);
-                        const stokP = bi ? this.stokItemBundling(bi) : 0;
-                        const subButuh = stokP <= 0 || stokP < (p.qty * jumlah);
+                    const rincian = pilihanKhusus.map(p => {
+                        const cocok = this.cariPilihanBundling(bundling, p.item_id, p.detail_produk_id);
+                        const bi = cocok ? cocok.bi : null;
+                        const rasa = cocok ? cocok.rasa : null;
+                        const stokP = rasa ? (parseInt(rasa.stok) || 0) : 0;
                         const label = bi ? this.namaItemBundling(bi) : { nama: 'Produk', varian: '' };
+                        const varianLabel = [label.varian, rasa ? rasa.variasi : null].filter(Boolean).join(' / ');
                         return {
+                            item_id: p.item_id,
                             produk_id: bi ? bi.produk_id : null,
-                            detail_produk_id: bi ? bi.detail_produk_id : null,
+                            detail_produk_id: p.detail_produk_id,
                             nama_produk: label.nama,
-                            varian_label: label.varian,
+                            varian_label: varianLabel,
+                            ukuran: bi ? (bi.ukuran || null) : null,
+                            varian_rasa: rasa ? (rasa.variasi || null) : null,
                             qty: p.qty,
-                            butuh_produksi: subButuh
+                            catatan: p.catatan || '',
+                            butuh_produksi: stokP <= 0 || stokP < (p.qty * jumlah)
                         };
                     });
-                    const perluProduksi = itemsKeranjang.some(i => i.butuh_produksi);
+                    const perluProduksi = rincian.some(i => i.butuh_produksi);
                     return {
                         key: 'bundling_bebas_' + bundling.id + '_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
                         bundling_id: bundling.id,
@@ -3154,20 +3195,23 @@
                         harga_jual: parseFloat(bundling.harga),
                         harga_jual_asli: parseFloat(bundling.harga),
                         foto: bundling.gambar,
-                        items: itemsKeranjang,
-                        pilihan_khusus: pilihanKhusus.map(p => {
-                            const bi = (bundling.items || []).find(x => x.id === p.item_id);
-                            const label = bi ? this.namaItemBundling(bi) : { nama: 'Produk', varian: '' };
-                            return {
-                                item_id: p.item_id,
-                                produk_id: bi ? bi.produk_id : null,
-                                detail_produk_id: bi ? bi.detail_produk_id : null,
-                                nama_produk: label.nama,
-                                varian_label: label.varian,
-                                qty: p.qty,
-                                catatan: p.catatan || ''
-                            };
-                        }),
+                        items: rincian.map(r => ({
+                            produk_id: r.produk_id,
+                            detail_produk_id: r.detail_produk_id,
+                            nama_produk: r.nama_produk,
+                            varian_label: r.varian_label,
+                            qty: r.qty,
+                            butuh_produksi: r.butuh_produksi
+                        })),
+                        pilihan_khusus: rincian.map(r => ({
+                            item_id: r.item_id,
+                            produk_id: r.produk_id,
+                            detail_produk_id: r.detail_produk_id,
+                            nama_produk: r.nama_produk,
+                            varian_label: r.varian_label,
+                            qty: r.qty,
+                            catatan: r.catatan
+                        })),
                         jumlah: jumlah,
                         butuh_produksi: perluProduksi,
                         catatan: catatanUmum || ''
@@ -3244,7 +3288,7 @@
                     if (!bundling || !bundling.items || bundling.items.length === 0) return '';
                     if (bundling.jenis_produk === 'bebas') {
                         const target = parseInt(bundling.total_qty_khusus) || bundling.items.reduce((s, i) => s + (parseInt(i.qty) || 0), 0);
-                        return 'Pilih sendiri ' + target + ' pcs dari ' + bundling.items.length + ' pilihan';
+                        return 'Pilih rasa sendiri ' + target + ' pcs: ' + bundling.items.map(bi => this.namaItemBundling(bi).lengkap).join(', ');
                     }
                     return bundling.items.map(bi => {
                         const p = this.daftarProduk.find(x => x.id === bi.produk_id) || bi.produk;
@@ -3272,12 +3316,17 @@
                     }
 
                     const bundling = this.bundlingUntukVarian;
+                    // Kunci modal = "itemId:detailId" (lihat kunciPilihanBundling).
                     const pilihanKhusus = Object.keys(this.varianModalQty)
-                        .map(id => ({
-                            item_id: parseInt(id),
-                            qty: parseInt(this.varianModalQty[id]) || 0,
-                            catatan: (this.varianModalCatatan[id] || '').trim()
-                        }))
+                        .map(kunci => {
+                            const [itemId, detailId] = kunci.split(':');
+                            return {
+                                item_id: parseInt(itemId),
+                                detail_produk_id: parseInt(detailId),
+                                qty: parseInt(this.varianModalQty[kunci]) || 0,
+                                catatan: (this.varianModalCatatan[kunci] || '').trim()
+                            };
+                        })
                         .filter(p => p.qty > 0);
 
                     const itemBaru = this.buatItemBundlingKeranjangKhusus(bundling, this.varianModalJumlahPaket, this.varianModalCatatanUmum, pilihanKhusus);

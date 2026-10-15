@@ -5,20 +5,45 @@
     $isKhusus = $bundling->isBebas();
     $targetQtyKhusus = $bundling->targetQtyBebas();
 
-    // Inisialisasi awal untuk Alpine JS
+    // Bundling bebas: admin menentukan produk + ukuran (satu baris isi), pembeli memilih rasanya.
+    // $kelompokRasa = satu kelompok per baris isi, berisi rasa aktif yang boleh dipilih.
+    // Kunci pilihan = "i{id baris isi}_d{id rasa}", jadi rasa berbeda dari produk yang sama dihitung terpisah.
+    $kelompokRasa = [];
+    $daftarPilihan = []; // urutan datar, dipakai untuk input form
     $initialVarian = [];
     $initialVarianCatatan = [];
+
     if ($isKhusus) {
-        // Kunci pilihan = id baris isi bundling (bundling_items.id), jadi varian berbeda
-        // dari produk yang sama dihitung terpisah.
         foreach ($bundling->items as $bi) {
-            $initialVarian[(int) $bi->id] = 0;
-            $initialVarianCatatan[(int) $bi->id] = '';
+            if (!$bi->produk) {
+                continue;
+            }
+            $opsi = [];
+            foreach ($bi->opsiRasa() as $dp) {
+                $kunci = 'i' . $bi->id . '_d' . $dp->id;
+                $opsi[] = [
+                    'kunci' => $kunci,
+                    'item_id' => (int) $bi->id,
+                    'detail_id' => (int) $dp->id,
+                    'rasa' => $dp->variasi ?: 'Standar',
+                    'stok' => max(0, (int) $dp->stok),
+                ];
+                $daftarPilihan[] = end($opsi);
+                $initialVarian[$kunci] = 0;
+                $initialVarianCatatan[$kunci] = '';
+            }
+            $kelompokRasa[] = [
+                'produk' => $bi->produk->nama_produk,
+                'ukuran' => $bi->ukuran,
+                'opsi' => $opsi,
+            ];
         }
+
         if ($itemEdit && !empty($itemEdit['pilihan_khusus'])) {
-            foreach ($bundling->petaPilihanBebas($itemEdit['pilihan_khusus']) as $itemId => $p) {
-                $initialVarian[(int) $itemId] = (int) $p['qty'];
-                $initialVarianCatatan[(int) $itemId] = $p['catatan'] ?? '';
+            foreach ($bundling->petaPilihanBebas($itemEdit['pilihan_khusus']) as $p) {
+                $kunci = 'i' . $p['item_id'] . '_d' . $p['detail_produk_id'];
+                $initialVarian[$kunci] = (int) $p['qty'];
+                $initialVarianCatatan[$kunci] = $p['catatan'] ?? '';
             }
         }
     }
@@ -163,7 +188,7 @@
                                 Pilih Isi Bundling
                             </h3>
                             <p class="text-[11px] text-amber-700">
-                                Pilih total <strong class="font-extrabold">{{ $targetQtyKhusus }} pcs</strong> dari daftar di bawah
+                                Pilih rasa, total <strong class="font-extrabold">{{ $targetQtyKhusus }} pcs</strong> dari daftar di bawah
                             </p>
                         </div>
                         <div class="text-right">
@@ -178,69 +203,64 @@
                         <span x-show="totalVarianTerpilih > targetQtyKhusus" class="text-red-600">Pilihan melebihi total isi bundling!</span>
                     </div>
 
-                    <div class="mt-3 divide-y divide-gray-100 rounded-2xl border border-gray-100 bg-white shadow-xs">
-                        @foreach ($bundling->items as $index => $bundlingItem)
-                            @if($bundlingItem->produk)
-                                @php
-                                    $dp = $bundlingItem->detailProduk;
-                                    $ukuran = $dp?->ukuran ?: $bundlingItem->ukuran;
-                                    $rasa = $dp?->variasi ?: $bundlingItem->varian_rasa;
-                                    if (!$ukuran && !$rasa && $bundlingItem->produk->detailProduks && $bundlingItem->produk->detailProduks->isNotEmpty()) {
-                                        $firstDp = $bundlingItem->produk->detailProduks->first();
-                                        $ukuran = $firstDp->ukuran;
-                                        $rasa = $firstDp->variasi;
-                                    }
-                                @endphp
-                                <div class="p-3.5 space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <div class="min-w-0 flex-1 pr-2">
-                                            <p class="text-xs font-bold text-gray-800">
-                                                {{ $bundlingItem->produk->nama_produk }}
-                                            </p>
-                                            @if ($ukuran || $rasa)
-                                                <div class="mt-0.5 flex flex-wrap items-center gap-1">
-                                                    @if ($ukuran)
-                                                        <span class="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-800">
-                                                            {{ $ukuran }}
-                                                        </span>
-                                                    @endif
-                                                    @if ($rasa)
-                                                        <span class="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
-                                                            Rasa: {{ $rasa }}
-                                                        </span>
+                    <div class="mt-3 space-y-3">
+                        @foreach ($kelompokRasa as $kelompok)
+                            <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xs">
+                                <div class="flex flex-wrap items-center gap-1.5 bg-gray-50 px-3.5 py-2.5">
+                                    <p class="text-xs font-bold text-gray-800">{{ $kelompok['produk'] }}</p>
+                                    @if ($kelompok['ukuran'])
+                                        <span class="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-800">
+                                            {{ $kelompok['ukuran'] }}
+                                        </span>
+                                    @endif
+                                    <span class="text-[10px] font-semibold text-gray-400">· pilih rasa</span>
+                                </div>
+
+                                <div class="divide-y divide-gray-100">
+                                    @forelse ($kelompok['opsi'] as $opsi)
+                                        <div class="p-3.5 space-y-2">
+                                            <div class="flex items-center justify-between">
+                                                <div class="min-w-0 flex-1 pr-2">
+                                                    <span class="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-amber-800">
+                                                        Rasa: {{ $opsi['rasa'] }}
+                                                    </span>
+                                                    @if ($opsi['stok'] <= 0)
+                                                        <span class="ml-1 text-[10px] font-semibold text-amber-600">Diproduksi dulu</span>
                                                     @endif
                                                 </div>
-                                            @endif
+
+                                                {{-- Controller rasa (+/-) --}}
+                                                <div class="flex items-center gap-2 shrink-0">
+                                                    <button type="button" @click="kurangiVarian('{{ $opsi['kunci'] }}')"
+                                                        class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-700 transition active:scale-90 disabled:opacity-30"
+                                                        :disabled="(varianQty['{{ $opsi['kunci'] }}'] || 0) <= 0">
+                                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><path d="M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                                                    </button>
+
+                                                    <span class="w-5 text-center text-xs font-bold text-gray-900"
+                                                        x-text="varianQty['{{ $opsi['kunci'] }}'] || 0"></span>
+
+                                                    <button type="button" @click="tambahVarian('{{ $opsi['kunci'] }}')"
+                                                        class="flex h-7 w-7 items-center justify-center rounded-full bg-brand-800 text-white shadow-xs transition active:scale-90 disabled:opacity-30"
+                                                        :disabled="totalVarianTerpilih >= targetQtyKhusus">
+                                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div x-show="(varianQty['{{ $opsi['kunci'] }}'] || 0) > 0" x-transition class="mt-1">
+                                                <input type="text"
+                                                       x-model="varianCatatan['{{ $opsi['kunci'] }}']"
+                                                       placeholder="Catatan untuk {{ $kelompok['produk'] }} {{ $opsi['rasa'] }} (opsional)"
+                                                       maxlength="255"
+                                                       class="w-full rounded-xl border border-gray-200 px-3 py-1.5 text-[11px] text-gray-700 placeholder:text-gray-400 focus:border-brand-700 focus:outline-none">
+                                            </div>
                                         </div>
-
-                                        {{-- Controller Varian Counter (+/-) --}}
-                                        <div class="flex items-center gap-2 shrink-0">
-                                            <button type="button" @click="kurangiVarian({{ $bundlingItem->id }})"
-                                                class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-700 transition active:scale-90 disabled:opacity-30"
-                                                :disabled="(varianQty[{{ $bundlingItem->id }}] || 0) <= 0">
-                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><path d="M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                                            </button>
-
-                                            <span class="w-5 text-center text-xs font-bold text-gray-900"
-                                                x-text="varianQty[{{ $bundlingItem->id }}] || 0"></span>
-
-                                            <button type="button" @click="tambahVarian({{ $bundlingItem->id }})"
-                                                class="flex h-7 w-7 items-center justify-center rounded-full bg-brand-800 text-white shadow-xs transition active:scale-90 disabled:opacity-30"
-                                                :disabled="totalVarianTerpilih >= targetQtyKhusus">
-                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div x-show="(varianQty[{{ $bundlingItem->id }}] || 0) > 0" x-transition class="mt-1">
-                                        <input type="text"
-                                               x-model="varianCatatan[{{ $bundlingItem->id }}]"
-                                               placeholder="Catatan untuk {{ $bundlingItem->produk->nama_produk }} (opsional)"
-                                               maxlength="255"
-                                               class="w-full rounded-xl border border-gray-200 px-3 py-1.5 text-[11px] text-gray-700 placeholder:text-gray-400 focus:border-brand-700 focus:outline-none">
-                                    </div>
+                                    @empty
+                                        <p class="p-3.5 text-[11px] font-medium text-gray-400">Belum ada rasa yang tersedia untuk pilihan ini.</p>
+                                    @endforelse
                                 </div>
-                            @endif
+                            </div>
                         @endforeach
                     </div>
 
@@ -318,10 +338,11 @@
                         <input type="hidden" name="catatan" :value="catatan">
 
                         @if($isKhusus)
-                            @foreach ($bundling->items as $index => $bi)
-                                <input type="hidden" name="pilihan_khusus[{{ $index }}][item_id]" value="{{ $bi->id }}">
-                                <input type="hidden" name="pilihan_khusus[{{ $index }}][qty]" :value="varianQty[{{ $bi->id }}] || 0">
-                                <input type="hidden" name="pilihan_khusus[{{ $index }}][catatan]" :value="varianCatatan[{{ $bi->id }}] || ''">
+                            @foreach ($daftarPilihan as $index => $pil)
+                                <input type="hidden" name="pilihan_khusus[{{ $index }}][item_id]" value="{{ $pil['item_id'] }}">
+                                <input type="hidden" name="pilihan_khusus[{{ $index }}][detail_produk_id]" value="{{ $pil['detail_id'] }}">
+                                <input type="hidden" name="pilihan_khusus[{{ $index }}][qty]" :value="varianQty['{{ $pil['kunci'] }}'] || 0">
+                                <input type="hidden" name="pilihan_khusus[{{ $index }}][catatan]" :value="varianCatatan['{{ $pil['kunci'] }}'] || ''">
                             @endforeach
                         @endif
 
@@ -369,10 +390,11 @@
                     <input type="hidden" name="catatan" :value="catatan">
 
                     @if($isKhusus)
-                        @foreach ($bundling->items as $index => $bi)
-                            <input type="hidden" name="pilihan_khusus[{{ $index }}][item_id]" value="{{ $bi->id }}">
-                            <input type="hidden" name="pilihan_khusus[{{ $index }}][qty]" :value="varianQty[{{ $bi->id }}] || 0">
-                            <input type="hidden" name="pilihan_khusus[{{ $index }}][catatan]" :value="varianCatatan[{{ $bi->id }}] || ''">
+                        @foreach ($daftarPilihan as $index => $pil)
+                            <input type="hidden" name="pilihan_khusus[{{ $index }}][item_id]" value="{{ $pil['item_id'] }}">
+                            <input type="hidden" name="pilihan_khusus[{{ $index }}][detail_produk_id]" value="{{ $pil['detail_id'] }}">
+                            <input type="hidden" name="pilihan_khusus[{{ $index }}][qty]" :value="varianQty['{{ $pil['kunci'] }}'] || 0">
+                            <input type="hidden" name="pilihan_khusus[{{ $index }}][catatan]" :value="varianCatatan['{{ $pil['kunci'] }}'] || ''">
                         @endforeach
                     @endif
 
