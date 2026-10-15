@@ -144,18 +144,18 @@ class KeranjangController extends Controller
                 'jumlah' => 'required|integer|min:1|max:50',
                 'catatan' => 'nullable|string|max:255',
                 'pilihan_khusus' => 'nullable|array',
-                'pilihan_khusus.*.produk_id' => 'required_with:pilihan_khusus|integer|exists:produks,id',
-                // Boleh 0: form selalu ngirim baris utk SEMUA item bundling
-                // (termasuk varian yang gak dipilih member). Baris qty 0
-                // difilter di bawah, bukan ditolak validasi di sini.
+                // item_id = id baris isi bundling (bundling_items) yang dipilih pembeli.
+                'pilihan_khusus.*.item_id' => 'required_with:pilihan_khusus|integer',
+                // Boleh 0: form selalu ngirim baris utk SEMUA pilihan bundling
+                // (termasuk yang gak dipilih member). Baris qty 0 dibuang di
+                // validasiPilihanBebas(), bukan ditolak validasi di sini.
                 'pilihan_khusus.*.qty' => 'required_with:pilihan_khusus|integer|min:0',
                 'pilihan_khusus.*.catatan' => 'nullable|string|max:255',
             ]);
 
-            $pilihanKhusus = collect($validated['pilihan_khusus'] ?? [])
-                ->filter(fn ($p) => (int) ($p['qty'] ?? 0) > 0)
-                ->values()
-                ->all();
+            // Bundling bebas: total pilihan harus pas dengan total isi, dan hanya boleh
+            // dari pilihan yang ditentukan admin. Bundling tetap: pilihan diabaikan.
+            $pilihanKhusus = $bundling->validasiPilihanBebas($validated['pilihan_khusus'] ?? []);
 
             $rincianBundling = $this->susunRincianBundling($bundling, $pilihanKhusus);
 
@@ -365,10 +365,11 @@ class KeranjangController extends Controller
                 'jumlah' => 'required|integer|min:1|max:50',
                 'catatan' => 'nullable|string|max:255',
                 'pilihan_khusus' => 'nullable|array',
-                'pilihan_khusus.*.produk_id' => 'required_with:pilihan_khusus|integer|exists:produks,id',
-                // Boleh 0: form selalu ngirim baris utk SEMUA item bundling
-                // (termasuk varian yang gak dipilih member). Baris qty 0
-                // difilter di bawah, bukan ditolak validasi di sini.
+                // item_id = id baris isi bundling (bundling_items) yang dipilih pembeli.
+                'pilihan_khusus.*.item_id' => 'required_with:pilihan_khusus|integer',
+                // Boleh 0: form selalu ngirim baris utk SEMUA pilihan bundling
+                // (termasuk yang gak dipilih member). Baris qty 0 dibuang di
+                // validasiPilihanBebas(), bukan ditolak validasi di sini.
                 'pilihan_khusus.*.qty' => 'required_with:pilihan_khusus|integer|min:0',
                 'pilihan_khusus.*.catatan' => 'nullable|string|max:255',
             ]);
@@ -381,10 +382,9 @@ class KeranjangController extends Controller
                     ->with('error', 'Item keranjang tidak ditemukan, mungkin sudah dihapus.');
             }
 
-            $pilihanKhusus = collect($validated['pilihan_khusus'] ?? [])
-                ->filter(fn ($p) => (int) ($p['qty'] ?? 0) > 0)
-                ->values()
-                ->all();
+            // Bundling bebas: total pilihan harus pas dengan total isi, dan hanya boleh
+            // dari pilihan yang ditentukan admin. Bundling tetap: pilihan diabaikan.
+            $pilihanKhusus = $bundling->validasiPilihanBebas($validated['pilihan_khusus'] ?? []);
 
             $rincianBundling = $this->susunRincianBundling($bundling, $pilihanKhusus);
 
@@ -529,36 +529,42 @@ class KeranjangController extends Controller
     private function susunRincianBundling(Bundling $bundling, array $pilihanKhusus = []): array
     {
         $rincian = [];
-        if ($bundling->jenis_produk === 'khusus_bundling') {
-            $bundling->loadMissing(['items.produk.detailProduks', 'items.detailProduk']);
-            $produkMap = $bundling->items->keyBy('produk_id');
+        $bundling->loadMissing(['items.produk', 'items.detailProduk']);
+
+        if ($bundling->isBebas()) {
+            // Satu baris rincian per pilihan pembeli (produk + varian + qty).
             foreach ($pilihanKhusus as $pk) {
-                $bi = $produkMap->get($pk['produk_id']);
-                $prod = $bi?->produk;
-                $dp = $bi?->detailProduk ?? $prod?->detailProduks?->first();
+                $bi = $bundling->items->firstWhere('id', $pk['item_id']);
+                if (! $bi) {
+                    continue;
+                }
+                $dp = $bi->detailProduk;
                 $rincian[] = [
-                    'produk_id' => $pk['produk_id'],
-                    'nama_produk' => $prod?->nama_produk ?? 'Produk',
-                    'ukuran' => $dp?->ukuran ?: $bi?->ukuran,
-                    'varian_rasa' => $dp?->variasi ?: $bi?->varian_rasa,
-                    'qty' => (int) ($pk['qty'] ?? 1),
-                    'catatan' => $pk['catatan'] ?? null,
-                ];
-            }
-        } else {
-            $bundling->loadMissing(['items.produk.detailProduks', 'items.detailProduk']);
-            foreach ($bundling->items as $bi) {
-                $dp = $bi->detailProduk ?? $bi->produk?->detailProduks?->first();
-                $rincian[] = [
+                    'item_id' => $bi->id,
                     'produk_id' => $bi->produk_id,
                     'nama_produk' => $bi->produk?->nama_produk ?? 'Produk',
                     'ukuran' => $dp?->ukuran ?: $bi->ukuran,
                     'varian_rasa' => $dp?->variasi ?: $bi->varian_rasa,
-                    'qty' => (int) $bi->qty,
-                    'catatan' => null,
+                    'qty' => (int) $pk['qty'],
+                    'catatan' => $pk['catatan'] ?? null,
                 ];
             }
+
+            return $rincian;
         }
+
+        foreach ($bundling->items as $bi) {
+            $dp = $bi->detailProduk;
+            $rincian[] = [
+                'produk_id' => $bi->produk_id,
+                'nama_produk' => $bi->produk?->nama_produk ?? 'Produk',
+                'ukuran' => $dp?->ukuran ?: $bi->ukuran,
+                'varian_rasa' => $dp?->variasi ?: $bi->varian_rasa,
+                'qty' => (int) $bi->qty,
+                'catatan' => null,
+            ];
+        }
+
         return $rincian;
     }
 }

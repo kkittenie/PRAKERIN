@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Bundling;
 use App\Models\BundlingItem;
+use App\Models\DetailProduk;
 use App\Models\Produk;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class BundlingController extends Controller
     {
         if ($request->ajax()) {
             try {
-                $data = Bundling::with(['items.produk.detailProduks'])->get();
+                $data = Bundling::with(['items.produk', 'items.detailProduk'])->get();
 
                 return \Yajra\DataTables\Facades\DataTables::of($data)
                     ->addIndexColumn()
@@ -46,17 +47,9 @@ class BundlingController extends Controller
     public function create()
     {
         try {
-            $produkBiasa = Produk::where('status_aktif', true)
-                ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id')])
-                ->orderBy('nama_produk')
-                ->get()
-                ->each(function (Produk $p) {
-                    $p->setAttribute('punya_varian', $p->detailProduks->isNotEmpty());
-                    $p->setAttribute('daftar_varian', $p->daftarVarianKasir());
-                });
-            $produkKhusus = Produk::tidakDijualSatuan()->orderBy('nama_produk')->get();
+            $produkForm = $this->daftarProdukForm();
 
-            return view('pages.bundling.create', compact('produkBiasa', 'produkKhusus'));
+            return view('pages.bundling.create', compact('produkForm'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -79,34 +72,9 @@ class BundlingController extends Controller
     public function store(Request $request)
     {
         try {
-            $hargaBersih = (int) str_replace('.', '', $request->harga);
-            $request->merge(['harga' => $hargaBersih]);
-
-            $request->validate([
-                'nama_bundling' => 'required|string|max:150',
-                'harga' => 'required|integer|min:1',
-                'deskripsi' => 'nullable|string',
-                'status_aktif' => 'nullable|boolean',
-                'jenis_produk' => 'required|in:biasa,khusus_bundling',
-                'total_qty_khusus' => 'required_if:jenis_produk,khusus_bundling|nullable|integer|min:1',
-                'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-                'produk_id' => 'required|array|min:1',
-                'produk_id.*' => ['required', 'exists:produks,id'],
-                'detail_produk_id' => 'nullable|array',
-                'detail_produk_id.*' => 'nullable|integer',
-                'ukuran' => 'nullable|array',
-                'ukuran.*' => 'nullable|string|max:50',
-                'varian_rasa' => 'nullable|array',
-                'varian_rasa.*' => 'nullable|string|max:100',
-                'qty' => 'nullable|array',
-                'qty.*' => 'nullable|integer|min:1',
-            ]);
-
-            if ($request->jenis_produk === 'biasa') {
-                $this->validasiUkuranBundling($request);
-            } else {
-                $this->validasiDistinctKhusus($request);
-            }
+            $this->normalisasiInput($request);
+            $request->validate($this->aturanValidasi(), $this->pesanValidasi());
+            $this->validasiIsiBundling($request);
 
             DB::transaction(function () use ($request, &$bundling) {
 
@@ -116,7 +84,7 @@ class BundlingController extends Controller
                     'deskripsi' => $request->deskripsi,
                     'status_aktif' => $request->boolean('status_aktif', true),
                     'jenis_produk' => $request->jenis_produk,
-                    'total_qty_khusus' => $request->jenis_produk === 'khusus_bundling' ? (int) $request->total_qty_khusus : null,
+                    'total_qty_khusus' => $request->jenis_produk === Bundling::JENIS_BEBAS ? (int) $request->total_qty_khusus : null,
                     'gambar' => null,
                 ]);
 
@@ -128,196 +96,157 @@ class BundlingController extends Controller
                     $bundling->update(['gambar' => $pathGambar]);
                 }
 
-                $isBiasa = $request->jenis_produk === 'biasa';
-
-                foreach ($request->produk_id as $i => $produkId) {
-                    $varianId = $isBiasa && !empty($request->detail_produk_id[$i]) ? (int) $request->detail_produk_id[$i] : null;
-                    $ukuran = $isBiasa && !empty($request->ukuran[$i]) ? $request->ukuran[$i] : null;
-                    $varianRasa = $isBiasa && !empty($request->varian_rasa[$i]) ? $request->varian_rasa[$i] : null;
-
-                    if ($varianId) {
-                        $varian = \App\Models\DetailProduk::find($varianId);
-                        if ($varian) {
-                            $ukuran = $varian->ukuran ?: $ukuran;
-                            $varianRasa = $varian->variasi ?: $varianRasa;
-                        }
-                    }
-
-                    BundlingItem::create([
-                        'bundling_id' => $bundling->id,
-                        'produk_id' => $produkId,
-                        'detail_produk_id' => $varianId,
-                        'ukuran' => $ukuran,
-                        'varian_rasa' => $varianRasa,
-                        'qty' => isset($request->qty[$i]) ? (int) $request->qty[$i] : 1,
-                    ]);
-                }
+                $this->simpanIsiBundling($bundling, $request);
             });
 
             return redirect()
                 ->route('bundling.index')
                 ->with('success', 'Bundling berhasil ditambahkan.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
     }
 
-    private function validasiUkuranBundling(Request $request): void
+    /**
+     * Daftar produk aktif untuk pilihan isi bundling (tetap maupun bebas), lengkap dengan varian
+     * (detail produk) aktifnya. Produk yang tidak dijual satuan ikut ditampilkan karena memang
+     * boleh jadi isi bundling. $sertakanDetailId = detail yang sudah dipakai bundling ini
+     * (tetap tampil walau sudah dinonaktifkan, supaya baris lama tidak hilang saat diedit).
+     */
+    private function daftarProdukForm(array $sertakanDetailId = []): array
     {
-        try {
-            $produkIds = $request->produk_id ?? [];
-            $varianIds = $request->detail_produk_id ?? [];
-            $ukuranList = $request->ukuran ?? [];
-            $rasaList = $request->varian_rasa ?? [];
-            $rasaBersih = [];
+        $sertakanProdukId = $sertakanDetailId
+            ? DetailProduk::whereIn('id', $sertakanDetailId)->pluck('produk_id')->all()
+            : [];
 
-            $produkTerpakai = Produk::whereIn('id', $produkIds)
-                ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)])
-                ->get()
-                ->keyBy('id');
-
-            $errors = [];
-            $kombinasiSudahAda = [];
-
-            foreach ($produkIds as $i => $produkId) {
-                $produk = $produkTerpakai->get($produkId);
-                if (!$produk) {
-                    continue;
+        return Produk::query()
+            ->where(function ($q) use ($sertakanProdukId) {
+                $q->where('status_aktif', true);
+                if ($sertakanProdukId) {
+                    $q->orWhereIn('id', $sertakanProdukId);
                 }
-
-                $varianId = !empty($varianIds[$i]) ? (int) $varianIds[$i] : null;
-
-                // Jika produk punya varian dari sistem baru (produk_varians)
-                if ($produk->detailProduks->isNotEmpty()) {
-                    if (!$varianId) {
-                        $errors["detail_produk_id.$i"] = "Pilih varian untuk produk \"{$produk->nama_produk}\".";
-                    } else {
-                        $varianObj = $produk->detailProduks->firstWhere('id', $varianId);
-                        if (!$varianObj) {
-                            $errors["detail_produk_id.$i"] = "Varian yang dipilih untuk \"{$produk->nama_produk}\" tidak valid.";
-                        }
+            })
+            ->with(['detailProduks' => function ($q) use ($sertakanDetailId) {
+                $q->where(function ($w) use ($sertakanDetailId) {
+                    $w->where('status_aktif', true);
+                    if ($sertakanDetailId) {
+                        $w->orWhereIn('id', $sertakanDetailId);
                     }
+                });
+            }])
+            ->orderBy('nama_produk')
+            ->get()
+            ->filter(fn (Produk $p) => $p->detailProduks->isNotEmpty())
+            ->map(fn (Produk $p) => [
+                'id' => $p->id,
+                'nama_produk' => $p->nama_produk,
+                'dijual_satuan' => (bool) $p->dijual_satuan,
+                'varian' => $p->detailProduks->map(fn (DetailProduk $d) => [
+                    'id' => $d->id,
+                    'nama' => $d->nama_lengkap ?: 'Standar',
+                    'kode' => $d->kode_produk,
+                    'stok' => (int) $d->stok,
+                    'aktif' => (bool) $d->status_aktif,
+                ])->values()->all(),
+            ])
+            ->values()
+            ->all();
+    }
 
-                    $kunci = $produkId . '|var_' . $varianId;
-                    if (isset($kombinasiSudahAda[$kunci])) {
-                        $namaVarian = isset($varianObj) ? $varianObj->nama_lengkap : 'ini';
-                        $errors["produk_id.$i"] = "Produk \"{$produk->nama_produk}\" varian \"{$namaVarian}\" sudah dipilih di baris lain.";
-                    }
-                    $kombinasiSudahAda[$kunci] = true;
-                    $rasaBersih[$i] = isset($varianObj) ? $varianObj->variasi : null;
-                    continue;
-                }
+    private function normalisasiInput(Request $request): void
+    {
+        $request->merge(['harga' => (int) str_replace('.', '', (string) $request->harga)]);
+    }
 
-                $ukuranBaris = $ukuranList[$i] ?? null;
-                $ukuranBaris = $ukuranBaris !== '' ? $ukuranBaris : null;
+    private function aturanValidasi(): array
+    {
+        return [
+            'nama_bundling' => 'required|string|max:150',
+            'harga' => 'required|integer|min:1',
+            'deskripsi' => 'nullable|string',
+            'status_aktif' => 'nullable|boolean',
+            'jenis_produk' => 'required|in:' . Bundling::JENIS_TETAP . ',' . Bundling::JENIS_BEBAS,
+            'total_qty_khusus' => 'required_if:jenis_produk,' . Bundling::JENIS_BEBAS . '|nullable|integer|min:1',
+            'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'produk_id' => 'required|array|min:1',
+            'produk_id.*' => ['required', 'exists:produks,id'],
+            'detail_produk_id' => 'required|array',
+            'detail_produk_id.*' => ['required', 'integer', 'exists:detail_produks,id'],
+            'qty' => 'nullable|array',
+            'qty.*' => 'nullable|integer|min:1',
+        ];
+    }
 
-                if ($produk->punya_ukuran) {
-                    $ukuranValid = collect($produk->daftar_ukuran)->pluck('nama')->map(fn ($n) => strtolower($n));
+    private function pesanValidasi(): array
+    {
+        return [
+            'produk_id.required' => 'Tambahkan minimal satu produk.',
+            'produk_id.*.required' => 'Pilih produk dari hasil pencarian.',
+            'detail_produk_id.required' => 'Pilih varian untuk setiap produk.',
+            'detail_produk_id.*.required' => 'Pilih varian untuk setiap produk.',
+            'total_qty_khusus.required_if' => 'Isi total pilihan untuk bundling produk bebas.',
+        ];
+    }
 
-                    if (!$ukuranBaris) {
-                        $errors["ukuran.$i"] = "Pilih ukuran untuk produk \"{$produk->nama_produk}\".";
-                    } elseif (!$ukuranValid->contains(strtolower($ukuranBaris))) {
-                        $errors["ukuran.$i"] = "Ukuran yang dipilih untuk \"{$produk->nama_produk}\" tidak valid.";
-                    }
-                } else {
-                     $ukuranBaris = null;
-                }
+    /**
+     * Tiap baris isi = satu varian (detail produk). Varian harus milik produk di baris itu,
+     * aktif (kecuali sudah dipakai bundling ini sebelumnya), dan tidak boleh kembar.
+     */
+    private function validasiIsiBundling(Request $request, ?Bundling $bundling = null): void
+    {
+        $produkIds = $request->produk_id ?? [];
+        $detailIds = $request->detail_produk_id ?? [];
 
-                // Rasa wajib dipilih kalau produknya punya varian rasa aktif, karena
-                // stok disimpan per rasa. Produk tanpa rasa: nilainya dikosongkan.
-                $rasaBaris = $rasaList[$i] ?? null;
-                $rasaBaris = $rasaBaris !== '' ? $rasaBaris : null;
-                $daftarRasa = $produk->punya_varian_rasa
-                    ? collect($produk->daftar_varian_rasa)->pluck('nama')
-                    : collect();
+        $detailMap = DetailProduk::whereIn('id', array_filter($detailIds))->get()->keyBy('id');
+        $produkMap = Produk::whereIn('id', $produkIds)->get()->keyBy('id');
+        $detailLama = $bundling ? $bundling->items()->pluck('detail_produk_id')->filter()->all() : [];
 
-                if ($daftarRasa->isNotEmpty()) {
-                    $rasaCocok = $rasaBaris
-                        ? $daftarRasa->first(fn ($nama) => strcasecmp($nama, $rasaBaris) === 0)
-                        : null;
+        $errors = [];
+        $sudahAda = [];
 
-                    if (!$rasaBaris) {
-                        $errors["varian_rasa.$i"] = "Pilih varian rasa untuk produk \"{$produk->nama_produk}\".";
-                    } elseif (!$rasaCocok) {
-                        $errors["varian_rasa.$i"] = "Varian rasa yang dipilih untuk \"{$produk->nama_produk}\" tidak valid.";
-                    } else {
-                        $rasaBaris = $rasaCocok;
-                    }
-                } else {
-                    $rasaBaris = null;
-                }
-                $rasaBersih[$i] = $rasaBaris;
+        foreach ($produkIds as $i => $produkId) {
+            $detail = $detailMap->get((int) ($detailIds[$i] ?? 0));
+            $namaProduk = $produkMap->get($produkId)?->nama_produk ?? 'produk ini';
 
-                $kunci = $produkId . '|' . strtolower((string) $ukuranBaris) . '|' . strtolower((string) $rasaBaris);
-                if (isset($kombinasiSudahAda[$kunci])) {
-                    $errors["produk_id.$i"] = "Produk \"{$produk->nama_produk}\""
-                        . ($ukuranBaris ? " ukuran \"$ukuranBaris\"" : '')
-                        . ($rasaBaris ? " rasa \"$rasaBaris\"" : '')
-                        . " sudah dipilih di baris lain.";
-                }
-                $kombinasiSudahAda[$kunci] = true;
+            if (!$detail || (int) $detail->produk_id !== (int) $produkId) {
+                $errors["detail_produk_id.$i"] = "Varian yang dipilih untuk \"{$namaProduk}\" tidak valid.";
+                continue;
             }
 
-            if (!empty($errors)) {
-                throw \Illuminate\Validation\ValidationException::withMessages($errors);
+            if (!$detail->status_aktif && !in_array($detail->id, $detailLama, true)) {
+                $errors["detail_produk_id.$i"] = "Varian \"{$detail->nama_lengkap}\" untuk \"{$namaProduk}\" sedang nonaktif.";
+                continue;
             }
 
-            // Simpan nama rasa yang sudah dibersihkan (huruf sesuai master, kosong
-            // untuk produk tanpa rasa) supaya store()/update() tinggal memakainya.
-            $request->merge(['varian_rasa' => $rasaBersih]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-             throw $e;
-        } catch (\Throwable $e) {
-             activity('error')
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'error_message' => $e->getMessage(),
-                    'exception' => get_class($e),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'input' => $request->except(['password', 'password_confirmation', 'pin', 'token', '_token']),
-                ])
-                ->log('Error validasi ukuran bundling: ' . $e->getMessage());
+            if (isset($sudahAda[$detail->id])) {
+                $errors["detail_produk_id.$i"] = "Produk \"{$namaProduk}\" varian \"" . ($detail->nama_lengkap ?: 'Standar') . "\" sudah dipilih di baris lain.";
+            }
+            $sudahAda[$detail->id] = true;
+        }
 
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'produk_id' => 'Gagal memvalidasi ukuran produk: ' . $e->getMessage(),
-            ]);
+        if (!empty($errors)) {
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
         }
     }
 
-    private function validasiDistinctKhusus(Request $request): void
+    /** Ganti seluruh isi bundling dengan baris dari form. Bundling bebas selalu qty 1 (pembeli yang menentukan jumlahnya). */
+    private function simpanIsiBundling(Bundling $bundling, Request $request): void
     {
-        try {
-            $produkIds = $request->produk_id ?? [];
-            $sudahDipilih = [];
-            $errors = [];
+        $isBebas = $request->jenis_produk === Bundling::JENIS_BEBAS;
+        $detailMap = DetailProduk::whereIn('id', $request->detail_produk_id)->get()->keyBy('id');
 
-            foreach ($produkIds as $i => $produkId) {
-                if (isset($sudahDipilih[$produkId])) {
-                    $errors["produk_id.$i"] = 'Produk ini sudah dipilih di baris lain.';
-                }
-                $sudahDipilih[$produkId] = true;
-            }
+        foreach ($request->produk_id as $i => $produkId) {
+            $detail = $detailMap->get((int) $request->detail_produk_id[$i]);
 
-            if (!empty($errors)) {
-                throw \Illuminate\Validation\ValidationException::withMessages($errors);
-            }
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (\Throwable $e) {
-            activity('error')
-                ->causedBy(auth()->user())
-                ->withProperties([
-                    'error_message' => $e->getMessage(),
-                    'exception' => get_class($e),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'input' => $request->except(['password', 'password_confirmation', 'pin', 'token', '_token']),
-                ])
-                ->log('Error validasi produk khusus bundling: ' . $e->getMessage());
-
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'produk_id' => 'Gagal memvalidasi produk: ' . $e->getMessage(),
+            BundlingItem::create([
+                'bundling_id' => $bundling->id,
+                'produk_id' => $produkId,
+                'detail_produk_id' => $detail->id,
+                'ukuran' => $detail->ukuran,
+                'varian_rasa' => $detail->variasi,
+                'qty' => $isBebas ? 1 : max(1, (int) ($request->qty[$i] ?? 1)),
             ]);
         }
     }
@@ -339,21 +268,17 @@ class BundlingController extends Controller
     public function edit(Bundling $bundling)
     {
         try {
-            $bundling->load([
-                'items.detailProduk',
-                'items.produk.detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id'),
-            ]);
-            $produkBiasa = Produk::where('status_aktif', true)
-                ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id')])
-                ->orderBy('nama_produk')
-                ->get()
-                ->each(function (Produk $p) {
-                    $p->setAttribute('punya_varian', $p->detailProduks->isNotEmpty());
-                    $p->setAttribute('daftar_varian', $p->daftarVarianKasir());
-                });
-            $produkKhusus = Produk::tidakDijualSatuan()->orderBy('nama_produk')->get();
+            $bundling->load(['items.detailProduk', 'items.produk']);
 
-            return view('pages.bundling.edit', compact('bundling', 'produkBiasa', 'produkKhusus'));
+            $produkForm = $this->daftarProdukForm($bundling->items->pluck('detail_produk_id')->filter()->all());
+
+            $isiTersimpan = $bundling->items->map(fn (BundlingItem $item) => [
+                'produk_id' => $item->produk_id,
+                'detail_produk_id' => $item->detail_produk_id,
+                'qty' => $item->qty,
+            ])->values()->all();
+
+            return view('pages.bundling.edit', compact('bundling', 'produkForm', 'isiTersimpan'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -362,87 +287,40 @@ class BundlingController extends Controller
     public function update(Request $request, Bundling $bundling)
     {
         try {
-            $hargaBersih = (int) str_replace('.', '', $request->harga);
-            $request->merge(['harga' => $hargaBersih]);
-
-            $request->validate([
-                'nama_bundling' => 'required|string|max:150',
-                'harga' => 'required|integer|min:1',
-                'deskripsi' => 'nullable|string',
-                'status_aktif' => 'nullable|boolean',
-                'jenis_produk' => 'required|in:biasa,khusus_bundling',
-                'total_qty_khusus' => 'required_if:jenis_produk,khusus_bundling|nullable|integer|min:1',
-                'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-                'produk_id' => 'required|array|min:1',
-                'produk_id.*' => ['required', 'exists:produks,id'],
-                'detail_produk_id' => 'nullable|array',
-                'detail_produk_id.*' => 'nullable|integer',
-                'ukuran' => 'nullable|array',
-                'ukuran.*' => 'nullable|string|max:50',
-                'varian_rasa' => 'nullable|array',
-                'varian_rasa.*' => 'nullable|string|max:100',
-                'qty' => 'nullable|array',
-                'qty.*' => 'nullable|integer|min:1',
-            ]);
-
-            if ($request->jenis_produk === 'biasa') {
-                $this->validasiUkuranBundling($request);
-            } else {
-                $this->validasiDistinctKhusus($request);
-            }
+            $this->normalisasiInput($request);
+            $request->validate($this->aturanValidasi(), $this->pesanValidasi());
+            $this->validasiIsiBundling($request, $bundling);
 
             DB::transaction(function () use ($request, $bundling) {
 
-                $isBiasa = $request->jenis_produk === 'biasa';
+                $isBebas = $request->jenis_produk === Bundling::JENIS_BEBAS;
 
                 $dataUpdate = [
                     'nama_bundling' => $request->nama_bundling,
                     'harga' => $request->harga,
                     'deskripsi' => $request->deskripsi,
                     'jenis_produk' => $request->jenis_produk,
-                    'total_qty_khusus' => $isBiasa ? null : (int) $request->total_qty_khusus,
+                    'total_qty_khusus' => $isBebas ? (int) $request->total_qty_khusus : null,
                     'status_aktif' => $request->boolean('status_aktif', true),
                 ];
 
                 if ($request->hasFile('gambar')) {
                     $kodeBundling = $bundling->kode_bundling ?: ('BDL' . str_pad((string) $bundling->id, 4, '0', STR_PAD_LEFT));
-                    if ($kodeBundling) {
-                        Storage::disk('public')->deleteDirectory('bundling/' . $kodeBundling);
-                    }
+                    Storage::disk('public')->deleteDirectory('bundling/' . $kodeBundling);
                     $dataUpdate['gambar'] = $request->file('gambar')->store('bundling/' . $kodeBundling, 'public');
                 }
 
                 $bundling->update($dataUpdate);
 
                 $bundling->items()->delete();
-
-                foreach ($request->produk_id as $i => $produkId) {
-                    $varianId = $isBiasa && !empty($request->detail_produk_id[$i]) ? (int) $request->detail_produk_id[$i] : null;
-                    $ukuran = $isBiasa && !empty($request->ukuran[$i]) ? $request->ukuran[$i] : null;
-                    $varianRasa = $isBiasa && !empty($request->varian_rasa[$i]) ? $request->varian_rasa[$i] : null;
-
-                    if ($varianId) {
-                        $varian = \App\Models\DetailProduk::find($varianId);
-                        if ($varian) {
-                            $ukuran = $varian->ukuran ?: $ukuran;
-                            $varianRasa = $varian->variasi ?: $varianRasa;
-                        }
-                    }
-
-                    BundlingItem::create([
-                        'bundling_id' => $bundling->id,
-                        'produk_id' => $produkId,
-                        'detail_produk_id' => $varianId,
-                        'ukuran' => $ukuran,
-                        'varian_rasa' => $varianRasa,
-                        'qty' => isset($request->qty[$i]) ? (int) $request->qty[$i] : 1,
-                    ]);
-                }
+                $this->simpanIsiBundling($bundling, $request);
             });
 
             return redirect()
                 ->route('bundling.index')
                 ->with('success', 'Bundling berhasil diperbarui.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

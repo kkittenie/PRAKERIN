@@ -579,6 +579,16 @@ class CheckoutController extends Controller
         $bundling = Bundling::with('items.produk', 'items.detailProduk')->findOrFail($item['bundling_id']);
         $jumlahBundling = (int) $item['jumlah'];
 
+        // Bundling bebas: qty & catatan tiap baris isi ikut pilihan pembeli (dipetakan per
+        // id baris isi, jadi varian berbeda dari produk yang sama tidak tertukar).
+        // Bundling tetap: pakai qty tetap dari paket.
+        $isBebas = $bundling->isBebas();
+        $petaPilihan = $isBebas ? $bundling->petaPilihanBebas($item['pilihan_khusus'] ?? []) : [];
+
+        if ($isBebas && array_sum(array_column($petaPilihan, 'qty')) !== $bundling->targetQtyBebas()) {
+            throw new \RuntimeException("Pilihan isi untuk \"{$bundling->nama_bundling}\" belum lengkap. Silakan pilih ulang isi bundling di keranjang.");
+        }
+
         DetailTransaksi::create([
             'transaksi_id' => $transaksi->id,
             'produk_id' => null,
@@ -591,22 +601,6 @@ class CheckoutController extends Controller
             'butuh_produksi' => false,
         ]);
 
-        $pilihanKhusus = $item['pilihan_khusus'] ?? [];
-        $mapCatatanPilihan = [];
-        $mapQtyPilihan = [];
-        if (is_array($pilihanKhusus)) {
-            foreach ($pilihanKhusus as $p) {
-                if (isset($p['produk_id'])) {
-                    if (!empty($p['catatan'])) {
-                        $mapCatatanPilihan[$p['produk_id']] = $p['catatan'];
-                    }
-                    if (!empty($p['qty'])) {
-                        $mapQtyPilihan[$p['produk_id']] = (int) $p['qty'];
-                    }
-                }
-            }
-        }
-
         foreach ($bundling->items as $bundlingItem) {
             $produk = $bundlingItem->produk;
             if (! $produk) {
@@ -616,15 +610,14 @@ class CheckoutController extends Controller
             $produk = Produk::lockForUpdate()->find($produk->id);
             if (!$produk) continue;
 
-            // Kalau ada pilihan varian khusus, qty per produk ikut pilihan
-            // member (varian yang tidak dipilih otomatis di-skip / qty 0).
-            // Kalau tidak ada (bundling biasa), pakai qty tetap dari paket.
-            $qtySatuBundling = $mapQtyPilihan[$produk->id] ?? (empty($pilihanKhusus) ? $bundlingItem->qty : 0);
+            $qtySatuBundling = $isBebas
+                ? (int) ($petaPilihan[$bundlingItem->id]['qty'] ?? 0)
+                : (int) $bundlingItem->qty;
             if ($qtySatuBundling <= 0) {
                 continue;
             }
             $totalDibutuhkan = (int) ($qtySatuBundling * $jumlahBundling);
-            $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
+            $catatanProduk = $isBebas ? ($petaPilihan[$bundlingItem->id]['catatan'] ?? null) : null;
 
             // ── Sistem baru: track stok via DetailProduk ──
             if ($bundlingItem->detail_produk_id) {

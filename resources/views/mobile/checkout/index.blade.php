@@ -113,11 +113,12 @@
                                         if (!$rincianBundling) {
                                             $bObj = \App\Models\Bundling::with(['items.produk.detailProduks', 'items.detailProduk'])->find($item['bundling_id']);
                                             if ($bObj) {
-                                                if ($bObj->jenis_produk === 'khusus_bundling' && !empty($item['pilihan_khusus'])) {
-                                                    $produkMap = $bObj->items->keyBy('produk_id');
+                                                if ($bObj->isBebas() && !empty($item['pilihan_khusus'])) {
                                                     $rincianBundling = [];
                                                     foreach ($item['pilihan_khusus'] as $pk) {
-                                                        $bi = $produkMap->get($pk['produk_id']);
+                                                        $bi = !empty($pk['item_id'])
+                                                            ? $bObj->items->firstWhere('id', (int) $pk['item_id'])
+                                                            : $bObj->items->firstWhere('produk_id', (int) ($pk['produk_id'] ?? 0));
                                                         $prod = $bi?->produk;
                                                         $dp = $bi?->detailProduk ?? $prod?->detailProduks?->first();
                                                         $rincianBundling[] = [

@@ -199,6 +199,18 @@ class TransaksiKasirController extends Controller
                 ->where('status_aktif', true)
                 ->get()
                 ->map(function ($bundling) {
+                    // Bundling bebas: kasir memilih sendiri, jadi stok = total stok semua
+                    // pilihan aktif dibagi total isi per paket.
+                    if ($bundling->isBebas()) {
+                        $totalStok = $bundling->items->sum(fn ($it) => ($it->detailProduk && $it->detailProduk->status_aktif)
+                            ? max(0, (int) $it->detailProduk->stok)
+                            : 0);
+                        $bundling->stok_bundling = intdiv($totalStok, max(1, $bundling->targetQtyBebas()));
+                        $bundling->perlu_diproduksi = $bundling->stok_bundling <= 0;
+
+                        return $bundling;
+                    }
+
                     $stokMaksimal = $bundling->items->reduce(function ($carry, $item) {
                         if (!$item->produk) {
                             return 0;
@@ -251,6 +263,16 @@ class TransaksiKasirController extends Controller
 
         $perluProduksiBundling = (bool) ($item['butuh_produksi'] ?? false);
 
+        // Bundling bebas: kasir memilih sendiri qty & catatan tiap pilihan lewat modal di POS
+        // (dikirim di item['pilihan_khusus'], dikunci per id baris isi bundling supaya varian
+        // berbeda dari produk yang sama tidak tertukar). Bundling tetap: pakai qty tetap dari paket.
+        $isBebas = $bundling->isBebas();
+        $petaPilihan = $isBebas ? $bundling->petaPilihanBebas($item['pilihan_khusus'] ?? []) : [];
+
+        if ($isBebas && array_sum(array_column($petaPilihan, 'qty')) !== $bundling->targetQtyBebas()) {
+            throw new \RuntimeException("Pilihan isi untuk \"{$bundling->nama_bundling}\" belum lengkap (harus pas {$bundling->targetQtyBebas()} pcs).");
+        }
+
         DetailTransaksi::create([
             'transaksi_id' => $transaksi->id,
             'produk_id' => null,
@@ -263,42 +285,20 @@ class TransaksiKasirController extends Controller
             'butuh_produksi' => $perluProduksiBundling,
         ]);
 
-        // Kalau bundling ini "khusus" (bebas pilih varian rasa), kasir milih
-        // sendiri qty & catatan tiap varian lewat modal di POS — dikirim di
-        // item['pilihan_khusus']. Kalau bundling biasa (bukan khusus), array
-        // ini kosong dan kita fallback ke qty tetap dari bundling_items
-        // seperti semula.
-        $pilihanKhusus = $item['pilihan_khusus'] ?? [];
-        $mapQtyPilihan = [];
-        $mapCatatanPilihan = [];
-        if (is_array($pilihanKhusus)) {
-            foreach ($pilihanKhusus as $p) {
-                if (isset($p['produk_id'])) {
-                    if (isset($p['qty']) && (int) $p['qty'] > 0) {
-                        $mapQtyPilihan[(int) $p['produk_id']] = (int) $p['qty'];
-                    }
-                    if (!empty($p['catatan'])) {
-                        $mapCatatanPilihan[(int) $p['produk_id']] = $p['catatan'];
-                    }
-                }
-            }
-        }
-
         foreach ($bundling->items as $bundlingItem) {
             $produk = $bundlingItem->produk;
             if (!$produk) {
                 continue;
             }
 
-            // Kalau ada pilihan varian khusus, qty per produk ikut pilihan
-            // kasir (varian yang tidak dipilih otomatis di-skip / qty 0).
-            // Kalau tidak ada (bundling biasa), pakai qty tetap dari paket.
-            $qtySatuBundling = $mapQtyPilihan[$produk->id] ?? (empty($pilihanKhusus) ? $bundlingItem->qty : 0);
+            $qtySatuBundling = $isBebas
+                ? (int) ($petaPilihan[$bundlingItem->id]['qty'] ?? 0)
+                : (int) $bundlingItem->qty;
             if ($qtySatuBundling <= 0) {
                 continue;
             }
 
-            $catatanProduk = $mapCatatanPilihan[$produk->id] ?? null;
+            $catatanProduk = $isBebas ? ($petaPilihan[$bundlingItem->id]['catatan'] ?? null) : null;
             $totalDibutuhkan = (int) ($qtySatuBundling * $jumlahBundling);
 
             // ── Sistem baru: deduct stok dari DetailProduk ──

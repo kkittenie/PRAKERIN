@@ -51,25 +51,25 @@
                             Jenis Produk
                         </p>
                         <p class="font-semibold text-gray-800 dark:text-white">
-                            @if($bundling->jenis_produk === 'khusus_bundling')
+                            @if($bundling->isBebas())
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                                    Produk Khusus Bundling
+                                    Produk Bebas
                                 </span>
                             @else
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                    Produk Biasa
+                                    Produk Tetap
                                 </span>
                             @endif
                         </p>
                     </div>
 
-                    @if($bundling->jenis_produk === 'khusus_bundling')
+                    @if($bundling->isBebas())
                         <div>
                             <p class="text-sm text-gray-500 dark:text-gray-400">
                                 Total Isi Bundling
                             </p>
                             <p class="font-bold text-amber-600 dark:text-amber-400 text-base">
-                                {{ $bundling->total_qty_khusus ?? $bundling->items->sum('qty') }} pcs
+                                {{ $bundling->targetQtyBebas() }} pcs
                             </p>
                         </div>
                     @else
@@ -117,9 +117,9 @@
 
         <x-common.component-card title="Isi Bundling">
 
-            @if($bundling->jenis_produk === 'khusus_bundling')
+            @if($bundling->isBebas())
                 <div class="mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-semibold">
-                    💡 <strong>Produk Khusus Bundling:</strong> Pembeli dapat memilih total <span class="text-amber-700 dark:text-amber-400 font-extrabold text-sm">{{ $bundling->total_qty_khusus ?? $bundling->items->sum('qty') }} pcs</span> dari daftar varian rasa di bawah ini di aplikasi mobile.
+                    💡 <strong>Produk Bebas:</strong> Pembeli memilih sendiri total <span class="text-amber-700 dark:text-amber-400 font-extrabold text-sm">{{ $bundling->targetQtyBebas() }} pcs</span> dari daftar produk dan varian di bawah ini.
                 </div>
             @endif
 
@@ -132,8 +132,8 @@
                             <th class="py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Nama Produk</th>
                             <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Ukuran</th>
                             <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Rasa</th>
-                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Qty Bundling</th>
-                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status Stok Produk</th>
+                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $bundling->isBebas() ? 'Jumlah' : 'Qty Bundling' }}</th>
+                            <th class="py-4 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Status Stok</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -160,15 +160,15 @@
                                 <td class="text-center text-gray-500 dark:text-gray-400">
                                     @if($rasaTampil)
                                         {{ $rasaTampil }}
-                                    @elseif($p && $p->punya_varian_rasa && $bundling->jenis_produk !== 'khusus_bundling')
+                                    @elseif($p && $p->punya_varian_rasa && !$bundling->isBebas())
                                         <span class="text-xs font-semibold text-red-500">Belum dipilih</span>
                                     @else
                                         -
                                     @endif
                                 </td>
                                 <td class="text-center font-bold text-amber-700 dark:text-amber-400">
-                                    @if($bundling->jenis_produk === 'khusus_bundling')
-                                        <span class="inline-flex rounded-full bg-amber-100 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300">Varian Rasa</span>
+                                    @if($bundling->isBebas())
+                                        <span class="inline-flex rounded-full bg-amber-100 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300">Dipilih pembeli</span>
                                     @else
                                         {{ $item->qty }} pcs
                                     @endif
@@ -217,14 +217,14 @@
                                 @endif
                                 @if($rasaTampil)
                                     <span class="font-normal text-gray-400 dark:text-gray-500">· {{ $rasaTampil }}</span>
-                                @elseif($p && $p->punya_varian_rasa && $bundling->jenis_produk !== 'khusus_bundling')
+                                @elseif($p && $p->punya_varian_rasa && !$bundling->isBebas())
                                     <span class="text-xs font-semibold text-red-500">· Rasa belum dipilih</span>
                                 @endif
                             </span>
                             <span
                                 class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
-                                @if($bundling->jenis_produk === 'khusus_bundling')
-                                    Varian Rasa
+                                @if($bundling->isBebas())
+                                    Dipilih pembeli
                                 @else
                                     {{ $item->qty }} pcs
                                 @endif
