@@ -72,7 +72,7 @@
             </div>
 
             <p class="mt-4 text-[11px] text-white/70">
-                Setiap belanja min. Rp{{ number_format($program->minimal_pembelian, 0, ',', '.') }} = 1 stamp
+                Setiap transaksi dengan total bayar min. Rp{{ number_format($program->minimal_pembelian, 0, ',', '.') }} (setelah diskon) = 1 stamp
             </p>
 
             {{-- Stamp dots pop in one by one (staggered) as they load, so a filled

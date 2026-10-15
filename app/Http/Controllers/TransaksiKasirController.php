@@ -1033,8 +1033,8 @@ class TransaksiKasirController extends Controller
                 $stampProgram = StampProgram::aktifSekarang();
 
                 if ($stampProgram) {
-                    $nominalUntukStamp = $transaksi->subtotal + $transaksi->pajak;
-                    $stampDidapat = (int) floor($nominalUntukStamp / $stampProgram->minimal_pembelian);
+                    // Stamp dihitung dari total akhir (setelah diskon), maksimal 1 per transaksi.
+                    $stampDidapat = $stampProgram->hitungStampDidapat($transaksi->total_bayar);
 
                     if ($stampDidapat > 0) {
                         $memberStamp = MemberStamp::firstOrCreate(
@@ -1174,8 +1174,8 @@ class TransaksiKasirController extends Controller
                 $stampProgram = StampProgram::aktifSekarang();
 
                 if ($stampProgram) {
-                    $nominalUntukStamp = $transaksi->subtotal + $transaksi->pajak;
-                    $stampDidapat = (int) floor($nominalUntukStamp / $stampProgram->minimal_pembelian);
+                    // Stamp dihitung dari total akhir (setelah diskon), maksimal 1 per transaksi.
+                    $stampDidapat = $stampProgram->hitungStampDidapat($transaksi->total_bayar);
 
                     if ($stampDidapat > 0) {
                         $memberStamp = MemberStamp::firstOrCreate(

@@ -81,6 +81,24 @@ class StampProgram extends Model
             ->first();
     }
 
+    /**
+     * Stamp yang didapat dari satu transaksi.
+     *
+     * Dihitung dari TOTAL AKHIR (sesudah diskon/voucher, termasuk pajak), bukan subtotal
+     * sebelum diskon, dan maksimal 1 stamp per transaksi.
+     * Contoh (minimal_pembelian 25.000): total akhir 50.000 => 1 stamp, 10.000 => 0 stamp.
+     */
+    public function hitungStampDidapat(float|int|string|null $totalAkhir): int
+    {
+        $minimal = (float) $this->minimal_pembelian;
+
+        if ($minimal <= 0) {
+            return 0;
+        }
+
+        return ((float) $totalAkhir) >= $minimal ? 1 : 0;
+    }
+
     protected static function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

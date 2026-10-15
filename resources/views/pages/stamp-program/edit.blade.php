@@ -95,7 +95,7 @@
                                 required>
                         <input type="hidden" name="minimal_pembelian" :value="getRawNumber(minimalPembelianDisplay)">
                     </div>
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Tiap kelipatan belanja segini, member dapat 1 stamp</span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Total bayar (setelah diskon) minimal segini = 1 stamp per transaksi</span>
                     @error('minimal_pembelian')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
