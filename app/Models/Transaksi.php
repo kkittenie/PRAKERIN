@@ -44,6 +44,7 @@ class Transaksi extends Model
         'diambil_pada',
         'diproses_pada',
         'catatan_penolakan',
+        'alasan_pembatalan',
     ];
 
     protected $casts = [

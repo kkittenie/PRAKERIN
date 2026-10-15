@@ -4,7 +4,31 @@
     $detailRingkas = ($detailRingkas ?? $transaksi->detailTransaksi ?? $transaksi->detail ?? collect())
         ->reject(function ($item) {
             return ($item->bundling_id || $item->promo_event_id) && $item->produk_id && (float) $item->subtotal == 0;
-        });
+        })
+        // Produk yang sama bisa kepecah jadi 2 baris (porsi ready + porsi perlu
+        // diproduksi). Buat member cukup tampil 1 baris, jumlah & subtotal digabung.
+        // Cuma tampilan — data di DB (dipakai kasir/dapur) tidak diubah.
+        ->groupBy(fn ($item) => implode('|', [
+            $item->produk_id,
+            $item->detail_produk_id,
+            $item->bundling_id,
+            $item->promo_event_id,
+            $item->nama_produk,
+            $item->ukuran,
+            $item->varian_rasa,
+            (float) $item->harga_satuan,
+            $item->catatan,
+        ]))
+        ->map(function ($group) {
+            if ($group->count() === 1) {
+                return $group->first();
+            }
+            $gabungan = clone $group->first();
+            $gabungan->jumlah = $group->sum('jumlah');
+            $gabungan->subtotal = $group->sum('subtotal');
+            return $gabungan;
+        })
+        ->values();
     $lunas = $transaksi->status_pembayaran === 'Lunas';
 
     // Cek apakah ada produk biasa (bukan reward stamp) di pesanan ini
@@ -84,6 +108,20 @@
                     <div class="mt-6 lg:mt-0 rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
                         <p class="text-xs font-bold text-red-600">Pesanan Dibatalkan</p>
                         <p class="mt-1 text-[11px] text-red-400">{{ $transaksi->kode_transaksi }}</p>
+                        @if ($transaksi->alasan_pembatalan)
+                            <p class="mt-3 text-[11px] text-red-600">
+                                <span class="font-bold">Alasan:</span> {{ $transaksi->alasan_pembatalan }}
+                            </p>
+                        @endif
+                        {{-- Info refund cuma relevan kalau member sudah bayar / upload bukti --}}
+                        @if ($lunas || $transaksi->bukti_pembayaran)
+                            @php
+                                $pesanCs = "Halo Saisho, pesanan {$transaksi->kode_transaksi} saya dibatalkan. Saya ingin menanyakan pengembalian dana.";
+                            @endphp
+                            <p class="mt-2 text-[11px] font-medium text-red-500">
+                                Hubungi <a href="https://wa.me/6281313365554?text={{ urlencode($pesanCs) }}" target="_blank" rel="noopener" class="underline">customer service</a> untuk pengembalian dana.
+                            </p>
+                        @endif
                     </div>
                 @endif
 
@@ -126,7 +164,13 @@
 
                     <p class="mt-4 text-center text-[11px] font-medium text-gray-400">
                         @if ($statusSekarang === 'menunggu_pembayaran')
-                            Menunggu pembayaran kamu diverifikasi oleh toko.
+                            @if (! $transaksi->bukti_pembayaran)
+                                Menunggu bukti pembayaran.
+                            @elseif (! $transaksi->bukti_dikonfirmasi_pada)
+                                Bukti sudah diupload. Tap "Konfirmasi Pembayaran" untuk dikirim ke toko.
+                            @else
+                                Menunggu pembayaran kamu diverifikasi oleh toko.
+                            @endif
                         @elseif ($statusSekarang === 'pembayaran_dikonfirmasi')
                             Pembayaran kamu sudah dikonfirmasi toko. Pesanan akan segera mulai diproses.
                         @elseif ($statusSekarang === \App\Models\Transaksi::STATUS_DIPROSES)
@@ -373,12 +417,13 @@
                     @endif
                 @endif
 
-                <p class="mt-2 text-[11px] text-gray-400">
-                    Upload bukti agar kasir bisa verifikasi.
-                    @if ($transaksi->bukti_pembayaran && ! $terkonfirmasi)
+                @if (! $transaksi->bukti_pembayaran)
+                    <p class="mt-2 text-[11px] text-gray-400">Upload bukti agar kasir bisa verifikasi.</p>
+                @elseif (! $terkonfirmasi)
+                    <p class="mt-2 text-[11px] text-gray-400">
                         Setelah yakin fotonya benar, tap "Konfirmasi Pembayaran" — bukti tidak bisa diganti lagi setelah dikonfirmasi.
-                    @endif
-                </p>
+                    </p>
+                @endif
             </div>
         @elseif ($transaksi->bukti_pembayaran)
             <div class="mt-4">

@@ -146,7 +146,10 @@ class PesananPickupController extends Controller
             abort_unless($transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP, 404);
 
             $validated = $request->validate([
-                'alasan' => 'nullable|string|max:255',
+                'alasan' => 'required|string|max:255',
+            ], [
+                'alasan.required' => 'Alasan penolakan wajib diisi.',
+                'alasan.max' => 'Alasan penolakan maksimal 255 karakter.',
             ]);
 
             if ($transaksi->status_pembayaran === 'Lunas') {
@@ -162,7 +165,7 @@ class PesananPickupController extends Controller
             $transaksi->update([
                 'bukti_pembayaran' => null,
                 'bukti_dikonfirmasi_pada' => null,
-                'catatan_penolakan' => $validated['alasan'] ?: 'Bukti pembayaran tidak valid, silakan upload ulang.',
+                'catatan_penolakan' => trim($validated['alasan']),
             ]);
 
             activity()->causedBy(auth()->user())->performedOn($transaksi)
@@ -423,10 +426,17 @@ class PesananPickupController extends Controller
         }
     }
 
-    public function batalkan(Transaksi $transaksi)
+    public function batalkan(Request $request, Transaksi $transaksi)
     {
         try {
             abort_unless($transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP, 404);
+
+            $validated = $request->validate([
+                'alasan' => 'required|string|max:255',
+            ], [
+                'alasan.required' => 'Alasan pembatalan wajib diisi.',
+                'alasan.max' => 'Alasan pembatalan maksimal 255 karakter.',
+            ]);
 
             if (in_array($transaksi->status_pesanan, [Transaksi::STATUS_SUDAH_DIAMBIL, Transaksi::STATUS_DIBATALKAN], true)) {
                 return back()->with('error', 'Pesanan ini sudah tidak bisa dibatalkan.');
@@ -522,12 +532,15 @@ class PesananPickupController extends Controller
                     );
                 }
 
-                $transaksi->update(['status_pesanan' => Transaksi::STATUS_DIBATALKAN]);
+                $transaksi->update([
+                    'status_pesanan' => Transaksi::STATUS_DIBATALKAN,
+                    'alasan_pembatalan' => trim($validated['alasan']),
+                ]);
 
                 DB::commit();
 
                 activity()->causedBy(auth()->user())->performedOn($transaksi)
-                    ->log('membatalkan pesanan pick up dari member app' . ($jumlahRewardDikembalikan > 0 ? " ($jumlahRewardDikembalikan hadiah stamp dikembalikan ke status menunggu diambil)" : ''));
+                    ->log('membatalkan pesanan pick up dari member app (alasan: ' . trim($validated['alasan']) . ')' . ($jumlahRewardDikembalikan > 0 ? " ($jumlahRewardDikembalikan hadiah stamp dikembalikan ke status menunggu diambil)" : ''));
 
                 \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'batal')));
 

@@ -162,6 +162,13 @@
                                 </div>
                             </div>
 
+                            {{-- Alasan pembatalan --}}
+                            <template x-if="detailData.status_pesanan === 'dibatalkan' && detailData.alasan_pembatalan">
+                                <div class="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 rounded-xl p-3">
+                                    <span class="font-bold">Alasan dibatalkan:</span> <span x-text="detailData.alasan_pembatalan"></span>
+                                </div>
+                            </template>
+
                             {{-- Catatan Pesanan --}}
                             <template x-if="detailData.catatan_pesanan">
                                 <div class="text-xs italic text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3">
@@ -430,12 +437,7 @@
 
                             {{-- Batalkan: selama belum diambil/dibatalkan --}}
                             <template x-if="!['sudah_diambil','dibatalkan'].includes(detailData.status_pesanan)">
-                                <form :action="'/pesanan-pickup/' + detailData.id + '/batal'" method="POST" x-ref="formBatalkan">
-                                    @csrf @method('PATCH')
-                                </form>
-                            </template>
-                            <template x-if="!['sudah_diambil','dibatalkan'].includes(detailData.status_pesanan)">
-                                <button type="button" @click="modalBatalTerbuka = true"
+                                <button type="button" @click="bukaModalBatal()"
                                     class="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 font-semibold rounded-lg text-xs transition border border-gray-200 dark:border-gray-700">
                                     Batalkan
                                 </button>
@@ -456,22 +458,29 @@
             <div class="flex items-center justify-center p-4" style="min-height: 100%">
             <div @click.away="modalBatalTerbuka = false"
                 class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800 max-h-[90vh] overflow-y-auto">
-                <div class="p-6 text-center">
-                    <div class="w-14 h-14 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
-                        ⚠
+                <form :action="detailData ? '/pesanan-pickup/' + detailData.id + '/batal' : '#'" method="POST">
+                    @csrf @method('PATCH')
+                    <div class="p-6">
+                        <div class="w-14 h-14 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
+                            ⚠
+                        </div>
+                        <h3 class="font-extrabold text-gray-900 dark:text-white text-base text-center">Batalkan Pesanan?</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                            Pesanan <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="detailData?.kode_transaksi"></span>
+                            akan dibatalkan. Stok & voucher yang terpakai akan dikembalikan. Alasan ini akan ditampilkan ke member.
+                        </p>
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-4 mb-1">Alasan pembatalan <span class="text-red-500">*</span></label>
+                        <textarea name="alasan" x-model="alasanBatal" rows="3" maxlength="255" required
+                            placeholder="Contoh: stok bahan habis"
+                            class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"></textarea>
                     </div>
-                    <h3 class="font-extrabold text-gray-900 dark:text-white text-base">Batalkan Pesanan?</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        Pesanan <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="detailData?.kode_transaksi"></span>
-                        akan dibatalkan. Stok & voucher yang terpakai akan dikembalikan.
-                    </p>
-                </div>
-                <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3">
-                    <button type="button" @click="modalBatalTerbuka = false"
-                        class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-bold text-xs rounded-lg transition text-gray-700 dark:text-gray-300">Batal</button>
-                    <button type="button" @click="$refs.formBatalkan.submit()"
-                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Batalkan</button>
-                </div>
+                    <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3">
+                        <button type="button" @click="modalBatalTerbuka = false"
+                            class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-bold text-xs rounded-lg transition text-gray-700 dark:text-gray-300">Batal</button>
+                        <button type="submit" :disabled="!alasanBatal.trim()"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs disabled:opacity-50 disabled:cursor-not-allowed">Batalkan Pesanan</button>
+                    </div>
+                </form>
             </div>
             </div>
         </div>
@@ -492,16 +501,16 @@
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
                             Bukti akan dihapus & member diminta upload ulang. Alasan ini akan ditampilkan ke member.
                         </p>
-                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-4 mb-1">Alasan (opsional)</label>
-                        <textarea name="alasan" x-model="alasanTolak" rows="3" maxlength="255"
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-4 mb-1">Alasan penolakan <span class="text-red-500">*</span></label>
+                        <textarea name="alasan" x-model="alasanTolak" rows="3" maxlength="255" required
                             placeholder="Contoh: nominal transfer tidak sesuai"
                             class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"></textarea>
                     </div>
                     <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center gap-3">
                         <button type="button" @click="modalTolakTerbuka = false"
                             class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-bold text-xs rounded-lg transition text-gray-700 dark:text-gray-300">Batal</button>
-                        <button type="submit"
-                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs">Tolak Bukti</button>
+                        <button type="submit" :disabled="!alasanTolak.trim()"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs disabled:opacity-50 disabled:cursor-not-allowed">Tolak Bukti</button>
                     </div>
                 </form>
             </div>
@@ -594,6 +603,7 @@
                 modalTolakTerbuka: false,
                 modalSerahkanTerbuka: false,
                 alasanTolak: '',
+                alasanBatal: '',
                 kodePickupInput: '',
                 kodePickupError: '',
                 prosesSerahkan: false,
@@ -661,6 +671,11 @@
                 bukaModalTolak() {
                     this.alasanTolak = '';
                     this.modalTolakTerbuka = true;
+                },
+
+                bukaModalBatal() {
+                    this.alasanBatal = '';
+                    this.modalBatalTerbuka = true;
                 },
 
                 bukaModalSerahkan() {

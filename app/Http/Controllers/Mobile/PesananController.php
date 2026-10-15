@@ -84,6 +84,7 @@ class PesananController extends Controller
                 'bukti_pembayaran' => $transaksi->bukti_pembayaran,
                 'bukti_dikonfirmasi_pada' => optional($transaksi->bukti_dikonfirmasi_pada)->toJSON(),
                 'catatan_penolakan' => $transaksi->catatan_penolakan,
+                'alasan_pembatalan' => $transaksi->alasan_pembatalan,
                 'diproses_pada' => optional($transaksi->diproses_pada)->toJSON(),
                 'kode_pickup' => $transaksi->kode_pickup,
             ]);

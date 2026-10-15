@@ -281,7 +281,7 @@ class NotificationHelper
             ],
             'batal' => [
                 'Pesanan dibatalkan',
-                "Pesanan {$kode} dibatalkan oleh toko.",
+                "Pesanan {$kode} dibatalkan oleh toko. Alasan: " . ($transaksi->alasan_pembatalan ?: '-') . ". Hubungi customer service untuk pengembalian dana.",
                 'error',
             ],
             'selesai' => [
