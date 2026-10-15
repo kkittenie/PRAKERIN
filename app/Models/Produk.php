@@ -18,7 +18,11 @@ class Produk extends Model
         'deskripsi',
         'foto',
         'status_aktif',
-        'is_khusus_bundling',
+        'dijual_satuan',
+    ];
+
+    protected $casts = [
+        'dijual_satuan' => 'boolean',
     ];
 
     protected $appends = [
@@ -37,14 +41,16 @@ class Produk extends Model
         'daftar_varian_rasa',
     ];
 
-    public function scopeReguler($query)
+    /** Produk yang boleh dijual satuan (kasir dan menu mobile). */
+    public function scopeDijualSatuan($query)
     {
-        return $query->where('is_khusus_bundling', false);
+        return $query->where('dijual_satuan', true);
     }
 
-    public function scopeKhususBundling($query)
+    /** Produk yang tidak dijual satuan: hanya dipakai sebagai isi bundling. */
+    public function scopeTidakDijualSatuan($query)
     {
-        return $query->where('is_khusus_bundling', true);
+        return $query->where('dijual_satuan', false);
     }
 
     /** Produk yang total stok detailnya sudah di bawah atau sama dengan total stok minimum. */

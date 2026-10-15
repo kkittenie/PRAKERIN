@@ -170,7 +170,7 @@ class ProdukSeeder extends Seeder
             $produk = $detail?->produk ?? new Produk();
 
             // Tabel produks hanya informasi umum; kode, harga, dan stok masuk ke detail produk.
-            $produk->fill(Arr::only($prod, ['kategori_id', 'nama_produk', 'deskripsi', 'foto', 'status_aktif', 'is_khusus_bundling']))->save();
+            $produk->fill(Arr::only($prod, ['kategori_id', 'nama_produk', 'deskripsi', 'foto', 'status_aktif', 'dijual_satuan']))->save();
 
             DetailProduk::updateOrCreate(
                 ['kode_produk' => $prod['kode_produk']],

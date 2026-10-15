@@ -292,6 +292,7 @@ class ProdukController extends Controller
             'nama_produk' => 'required|max:100',
             'deskripsi' => 'nullable|string|max:1000',
             'status_aktif' => 'required|boolean',
+            'dijual_satuan' => 'required|boolean',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
             'detail_baris' => 'required|array|min:1',

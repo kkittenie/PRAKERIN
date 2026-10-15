@@ -102,6 +102,26 @@
                     </select>
                 </div>
 
+                {{-- Dijual Satuan --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Dijual Satuan
+                    </label>
+
+                    <select
+                        name="dijual_satuan"
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+
+                        <option value="1" {{ (string) old('dijual_satuan', $produk->dijual_satuan ? '1' : '0') === '1' ? 'selected' : '' }}>Ya, bisa dijual satuan</option>
+                        <option value="0" {{ (string) old('dijual_satuan', $produk->dijual_satuan ? '1' : '0') === '0' ? 'selected' : '' }}>Tidak, hanya untuk isi bundling</option>
+
+                    </select>
+                    <small class="text-gray-500 dark:text-gray-400">Produk yang tidak dijual satuan tidak muncul di kasir dan menu mobile, tapi tetap bisa dipilih di Bundling.</small>
+                    @error('dijual_satuan')
+                        <small class="text-red-500 block">{{ $message }}</small>
+                    @enderror
+                </div>
+
                 {{-- Foto --}}
                 <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">

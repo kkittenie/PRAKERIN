@@ -46,8 +46,7 @@ class BundlingController extends Controller
     public function create()
     {
         try {
-            $produkBiasa = Produk::reguler()
-                ->where('status_aktif', true)
+            $produkBiasa = Produk::where('status_aktif', true)
                 ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id')])
                 ->orderBy('nama_produk')
                 ->get()
@@ -55,7 +54,7 @@ class BundlingController extends Controller
                     $p->setAttribute('punya_varian', $p->detailProduks->isNotEmpty());
                     $p->setAttribute('daftar_varian', $p->daftarVarianKasir());
                 });
-            $produkKhusus = Produk::khususBundling()->orderBy('nama_produk')->get();
+            $produkKhusus = Produk::tidakDijualSatuan()->orderBy('nama_produk')->get();
 
             return view('pages.bundling.create', compact('produkBiasa', 'produkKhusus'));
         } catch (\Throwable $e) {
@@ -344,8 +343,7 @@ class BundlingController extends Controller
                 'items.detailProduk',
                 'items.produk.detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id'),
             ]);
-            $produkBiasa = Produk::reguler()
-                ->where('status_aktif', true)
+            $produkBiasa = Produk::where('status_aktif', true)
                 ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id')])
                 ->orderBy('nama_produk')
                 ->get()
@@ -353,7 +351,7 @@ class BundlingController extends Controller
                     $p->setAttribute('punya_varian', $p->detailProduks->isNotEmpty());
                     $p->setAttribute('daftar_varian', $p->daftarVarianKasir());
                 });
-            $produkKhusus = Produk::khususBundling()->orderBy('nama_produk')->get();
+            $produkKhusus = Produk::tidakDijualSatuan()->orderBy('nama_produk')->get();
 
             return view('pages.bundling.edit', compact('bundling', 'produkBiasa', 'produkKhusus'));
         } catch (\Throwable $e) {

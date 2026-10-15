@@ -48,7 +48,7 @@ class DashboardController extends Controller
 
             $produkPilihan = Produk::with(['kategori'])
                 ->where('status_aktif', true)
-                ->reguler()
+                ->dijualSatuan()
                 ->inRandomOrder()
                 ->take(4)
                 ->get();

@@ -32,7 +32,7 @@ class ProdukKhususBundlingSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'is_khusus_bundling' => true,
+                'dijual_satuan' => false,
                 'punya_ukuran' => false,
             ],
             [
@@ -47,7 +47,7 @@ class ProdukKhususBundlingSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'is_khusus_bundling' => true,
+                'dijual_satuan' => false,
                 'punya_ukuran' => false,
             ],
             [
@@ -62,7 +62,7 @@ class ProdukKhususBundlingSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'is_khusus_bundling' => true,
+                'dijual_satuan' => false,
                 'punya_ukuran' => false,
             ],
             [
@@ -77,7 +77,7 @@ class ProdukKhususBundlingSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'is_khusus_bundling' => true,
+                'dijual_satuan' => false,
                 'punya_ukuran' => false,
             ],
             [
@@ -92,7 +92,7 @@ class ProdukKhususBundlingSeeder extends Seeder
                 'stok_minimum' => 5,
                 'status_aktif' => true,
                 'status_ketersediaan' => 'stok_ada',
-                'is_khusus_bundling' => true,
+                'dijual_satuan' => false,
                 'punya_ukuran' => false,
             ],
         ];
@@ -102,7 +102,7 @@ class ProdukKhususBundlingSeeder extends Seeder
             $produk = $detail?->produk ?? new Produk();
 
             // Tabel produks hanya informasi umum; kode, harga, dan stok masuk ke detail produk.
-            $produk->fill(Arr::only($donut, ['kategori_id', 'nama_produk', 'deskripsi', 'foto', 'status_aktif', 'is_khusus_bundling']))->save();
+            $produk->fill(Arr::only($donut, ['kategori_id', 'nama_produk', 'deskripsi', 'foto', 'status_aktif', 'dijual_satuan']))->save();
 
             DetailProduk::updateOrCreate(
                 ['kode_produk' => $donut['kode_produk']],

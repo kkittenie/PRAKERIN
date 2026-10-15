@@ -182,7 +182,7 @@ class TransaksiKasirController extends Controller
         try {
             $daftarProduk = Produk::with(['kategori', 'promos.detailProduks', 'detailProduks'])
                 ->where('status_aktif', true)
-                ->reguler()
+                ->dijualSatuan()
                 ->get()
                 ->each(function (Produk $produk) {
                     // Detail produk (tabel detail_produks) yang dipakai kasir.
