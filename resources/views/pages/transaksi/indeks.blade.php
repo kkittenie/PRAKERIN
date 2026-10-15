@@ -2973,39 +2973,56 @@
                     return this.semuaProdukTersaring;
                 },
 
+                // Stok satu komponen bundling. Sumber utama = data dari server
+                // (items.detail_produk / items.produk) karena daftarProduk di kasir
+                // HANYA berisi produk reguler — produk khusus bundling tidak ada di
+                // sana, jadi dulu dianggap stok 0 / "Perlu Diproduksi".
+                stokItemBundling(it) {
+                    if (it.detail_produk_id) {
+                        if (it.detail_produk) return parseInt(it.detail_produk.stok) || 0;
+                        const pv = this.daftarProduk.find(x => x.id === it.produk_id);
+                        const v = pv && pv.daftar_varian ? pv.daftar_varian.find(dv => dv.id === it.detail_produk_id) : null;
+                        return v ? (parseInt(v.stok) || 0) : 0;
+                    }
+                    const p = this.daftarProduk.find(x => x.id === it.produk_id) || it.produk || null;
+                    return p ? (parseFloat(this.stokUntukUkuran(p, it.ukuran, it.varian_rasa)) || 0) : 0;
+                },
+
+                targetQtyBundlingKhusus(bundling) {
+                    const target = parseInt(bundling.total_qty_khusus);
+                    if (target > 0) return target;
+                    return (bundling.items || []).reduce((sum, it) => sum + (parseInt(it.qty) || 0), 0);
+                },
+
                 stokBundlingTersedia(bundling) {
                     if (!bundling.items || bundling.items.length === 0) return 0;
+
+                    // Bundling khusus: kasir bebas memilih varian, jadi yang dihitung
+                    // total stok semua pilihan dibanding total qty paket.
+                    if (bundling.jenis_produk === 'khusus_bundling') {
+                        const total = bundling.items.reduce((sum, it) => sum + this.stokItemBundling(it), 0);
+                        return Math.floor(total / Math.max(1, this.targetQtyBundlingKhusus(bundling)));
+                    }
+
                     let min = null;
                     bundling.items.forEach(it => {
-                        const p = this.daftarProduk.find(x => x.id === it.produk_id);
-                        let stokP = 0;
-                        if (it.detail_produk_id && p && p.daftar_varian) {
-                            const v = p.daftar_varian.find(dv => dv.id === it.detail_produk_id);
-                            stokP = v ? v.stok : 0;
-                        } else {
-                            stokP = this.stokUntukUkuran(p, it.ukuran, it.varian_rasa);
-                        }
-                        const bisaDibuat = Math.floor(stokP / Math.max(1, it.qty));
+                        const bisaDibuat = Math.floor(this.stokItemBundling(it) / Math.max(1, it.qty));
                         min = (min === null) ? bisaDibuat : Math.min(min, bisaDibuat);
                     });
                     return min ?? 0;
                 },
 
                 bundlingPerluDiproduksi(bundling) {
-                    if (bundling.perlu_diproduksi) return true;
-
                     if (!bundling.items || bundling.items.length === 0) return false;
+
+                    if (bundling.jenis_produk === 'khusus_bundling') {
+                        return this.stokBundlingTersedia(bundling) <= 0;
+                    }
+
                     return bundling.items.some(it => {
-                        const p = this.daftarProduk.find(x => x.id === it.produk_id);
-                        if (!p) return true;
-                        let stokP = 0;
-                        if (it.detail_produk_id && p && p.daftar_varian) {
-                            const v = p.daftar_varian.find(dv => dv.id === it.detail_produk_id);
-                            stokP = v ? v.stok : 0;
-                        } else {
-                            stokP = this.stokUntukUkuran(p, it.ukuran, it.varian_rasa);
-                        }
-                        return p.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < it.qty;
+                        if (it.detail_produk && it.detail_produk.status_aktif === false) return true;
+                        const stokP = this.stokItemBundling(it);
+                        return stokP <= 0 || stokP < Math.max(1, it.qty);
                     });
                 },
 
@@ -3090,7 +3107,17 @@
                 },
 
                 buatItemBundlingKeranjangKhusus(bundling, jumlah, catatanUmum, pilihanKhusus) {
-                    const perluProduksi = this.bundlingPerluDiproduksi(bundling);
+                    // Butuh produksi hanya kalau ada varian pilihan kasir yang stoknya
+                    // tidak cukup untuk jumlah paket ini (stok diambil dari data server).
+                    const itemsKeranjang = pilihanKhusus.map(p => {
+                        const komponen = (bundling.items || []).filter(bi => bi.produk_id === p.produk_id);
+                        const prod = this.daftarProduk.find(x => x.id === p.produk_id)
+                            || (komponen[0] && komponen[0].produk) || null;
+                        const stokP = komponen.reduce((sum, bi) => sum + this.stokItemBundling(bi), 0);
+                        const subButuh = stokP <= 0 || stokP < (p.qty * jumlah);
+                        return { produk_id: p.produk_id, nama_produk: prod ? prod.nama_produk : 'Produk', qty: p.qty, butuh_produksi: subButuh };
+                    });
+                    const perluProduksi = itemsKeranjang.some(i => i.butuh_produksi);
                     return {
                         key: 'bundling_khusus_' + bundling.id + '_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
                         bundling_id: bundling.id,
@@ -3099,14 +3126,10 @@
                         harga_jual: parseFloat(bundling.harga),
                         harga_jual_asli: parseFloat(bundling.harga),
                         foto: bundling.gambar,
-                        items: pilihanKhusus.map(p => {
-                            const prod = this.daftarProduk.find(x => x.id === p.produk_id);
-                            const stokP = prod ? (parseFloat(prod.stok) || 0) : 0;
-                            const subButuh = prod ? (prod.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < p.qty) : true;
-                            return { produk_id: p.produk_id, nama_produk: prod ? prod.nama_produk : 'Produk', qty: p.qty, butuh_produksi: subButuh };
-                        }),
+                        items: itemsKeranjang,
                         pilihan_khusus: pilihanKhusus.map(p => {
-                            const prod = this.daftarProduk.find(x => x.id === p.produk_id);
+                            const prod = this.daftarProduk.find(x => x.id === p.produk_id)
+                                || ((bundling.items || []).find(bi => bi.produk_id === p.produk_id) || {}).produk || null;
                             return { produk_id: p.produk_id, nama_produk: prod ? prod.nama_produk : 'Produk', qty: p.qty, catatan: p.catatan || '' };
                         }),
                         jumlah: jumlah,
@@ -3741,7 +3764,8 @@
                             } else {
                                 stokP = this.stokUntukUkuran(p, i.ukuran, i.varian_rasa);
                             }
-                            const subButuh = p ? (p.status_ketersediaan === 'perlu_diproduksi' || stokP <= 0 || stokP < i.qty) : true;
+                            stokP = this.stokItemBundling(i);
+                            const subButuh = stokP <= 0 || stokP < i.qty;
                             return {
                                 produk_id: i.produk_id,
                                 nama_produk: p ? p.nama_produk : (i.produk ? i.produk.nama_produk : 'Produk'),
