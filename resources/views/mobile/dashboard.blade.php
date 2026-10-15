@@ -25,7 +25,10 @@
         default => 'bg-gray-500',
     };
 
-    $progresTier = $member?->progres_tier;
+    // Semua level dinonaktifkan di POS = fitur tier mati, jadi info tier
+    // disembunyikan total dari Member App.
+    $tierAktif = \App\Models\MemberLevel::adaYangAktif();
+    $progresTier = $tierAktif ? $member?->progres_tier : null;
 @endphp
 
 @section('content')
@@ -176,13 +179,15 @@
                                 </span>
                                 {{ number_format($member->poin, 0, ',', '.') }} Poin
                             </button>
-                            <button type="button" onclick="openSheet('sheet-info-tier')"
-                                    class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 py-1.5 pl-1.5 pr-3 text-xs font-bold text-gray-800 transition active:scale-95">
-                                <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $warnaBadgeTier }} text-white">
-                                    @include('mobile.components.icon-crown', ['class' => 'h-3.5 w-3.5'])
-                                </span>
-                                Tier {{ $member->level }}
-                            </button>
+                            @if ($tierAktif)
+                                <button type="button" onclick="openSheet('sheet-info-tier')"
+                                        class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 py-1.5 pl-1.5 pr-3 text-xs font-bold text-gray-800 transition active:scale-95">
+                                    <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $warnaBadgeTier }} text-white">
+                                        @include('mobile.components.icon-crown', ['class' => 'h-3.5 w-3.5'])
+                                    </span>
+                                    Tier {{ $member->level }}
+                                </button>
+                            @endif
                         </div>
                     </div>
 
@@ -498,12 +503,14 @@
                                         </span>
                                         {{ number_format($member->poin, 0, ',', '.') }} Poin
                                     </button>
-                                    <button type="button" onclick="openSheet('sheet-info-tier')" class="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/10 py-1.5 pl-1.5 pr-3 text-[11px] font-bold transition hover:bg-white/20">
-                                        <span class="flex h-5 w-5 items-center justify-center rounded-full {{ $warnaBadgeTier }} text-white">
-                                            @include('mobile.components.icon-crown', ['class' => 'h-3 w-3'])
-                                        </span>
-                                        Tier {{ $member->level }}
-                                    </button>
+                                    @if ($tierAktif)
+                                        <button type="button" onclick="openSheet('sheet-info-tier')" class="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/10 py-1.5 pl-1.5 pr-3 text-[11px] font-bold transition hover:bg-white/20">
+                                            <span class="flex h-5 w-5 items-center justify-center rounded-full {{ $warnaBadgeTier }} text-white">
+                                                @include('mobile.components.icon-crown', ['class' => 'h-3 w-3'])
+                                            </span>
+                                            Tier {{ $member->level }}
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         @endauth
@@ -714,7 +721,7 @@
                     <p class="mt-2 text-sm text-stone-400 max-w-xl mx-auto">Daftar jadi member Saisho dan nikmati berbagai keuntungan eksklusif dari setiap transaksi kamu.</p>
                 </div>
 
-                <div class="grid grid-cols-3 gap-6">
+                <div class="grid {{ $tierAktif ? 'grid-cols-3' : 'grid-cols-2' }} gap-6">
                     {{-- Points --}}
                     <div class="rounded-3xl bg-white/5 border border-white/10 p-7 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
                         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-400/20 text-brand-300 border border-brand-400/20">
@@ -746,6 +753,7 @@
                     </div>
 
                     {{-- Tier --}}
+                    @if ($tierAktif)
                     <div class="rounded-3xl bg-white/5 border border-white/10 p-7 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
                         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-400/20 text-emerald-300 border border-emerald-400/20">
                             @include('mobile.components.icon-crown', ['class' => 'h-7 w-7'])
@@ -758,6 +766,7 @@
                             </div>
                         @endauth
                     </div>
+                    @endif
                 </div>
 
                 @guest('member')
@@ -850,6 +859,7 @@
     </dialog>
 
     {{-- Bottom sheet: Info Tier --}}
+    @if ($tierAktif)
     <dialog id="sheet-info-tier" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto max-h-[82vh] rounded-t-3xl border-0 p-0">
         <div class="flex max-h-[82vh] flex-col">
             <div class="flex shrink-0 justify-center pb-1 pt-3">
@@ -906,6 +916,7 @@
             </div>
         </div>
     </dialog>
+    @endif
 
     <script>
         // Badge titik merah di lonceng notifikasi — polling ringan tiap 20
