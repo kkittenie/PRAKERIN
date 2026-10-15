@@ -138,12 +138,12 @@ class CheckoutController extends Controller
                 'voucherAktif' => $voucherAktif,
                 'voucherDipilih' => $voucherDipilih,
                 'voucherTerbaik' => $voucherTerbaik,
-                'stampRedemptionsAktif' => StampRedemption::with('produk')
+                'stampRedemptionsAktif' => StampRedemption::with(['produk', 'detailProduk'])
                     ->where('member_id', $member->id)
                     ->where('status', 'menunggu_diambil')
                     ->get(),
                 'stampRedemptionDipilih' => Session::get(self::SESSION_STAMP_REDEMPTION_KEY)
-                    ? StampRedemption::with('produk')
+                    ? StampRedemption::with(['produk', 'detailProduk'])
                         ->where('id', Session::get(self::SESSION_STAMP_REDEMPTION_KEY))
                         ->where('member_id', $member->id)
                         ->where('status', 'menunggu_diambil')
@@ -178,7 +178,7 @@ class CheckoutController extends Controller
             }
 
             $member = Auth::guard('member')->user();
-            $redemption = StampRedemption::with('produk')
+            $redemption = StampRedemption::with(['produk', 'detailProduk'])
                 ->where('id', $validated['stamp_redemption_id'])
                 ->where('member_id', $member->id)
                 ->where('status', 'menunggu_diambil')
@@ -189,14 +189,18 @@ class CheckoutController extends Controller
                 return back()->with('error', 'Reward stamp tidak ditemukan atau sudah pernah diambil.');
             }
 
+            $detailHadiah = $redemption->detailProduk;
+
             MemberCart::tambah([
                 'produk_id' => $redemption->produk->id,
-                'detail_produk_id' => null,
+                'detail_produk_id' => $detailHadiah?->id,
                 'nama_produk' => $redemption->produk->nama_produk,
-                'foto' => $redemption->produk->foto,
+                'ukuran' => $detailHadiah?->ukuran,
+                'varian_rasa' => $detailHadiah?->variasi,
+                'foto' => $detailHadiah?->foto ?: $redemption->produk->foto,
                 'harga_satuan' => 0,
-                'harga_asal' => (float) ($redemption->produk->harga_jual ?? 0),
-                'diskon_produk_satuan' => (float) ($redemption->produk->harga_jual ?? 0),
+                'harga_asal' => (float) ($detailHadiah?->harga_jual ?? $redemption->produk->harga_jual ?? 0),
+                'diskon_produk_satuan' => (float) ($detailHadiah?->harga_jual ?? $redemption->produk->harga_jual ?? 0),
                 'nama_promo' => 'Reward Stamp',
                 'catatan' => 'Hadiah Stamp (' . $redemption->kode_redeem . ')',
                 'jumlah' => $redemption->jumlah ?: 1,
@@ -277,7 +281,7 @@ class CheckoutController extends Controller
                 $stampRedemption = null;
 
                 if ($stampRedemptionId) {
-                    $stampRedemption = StampRedemption::with('produk')
+                    $stampRedemption = StampRedemption::with(['produk', 'detailProduk'])
                         ->where('id', $stampRedemptionId)
                         ->where('member_id', $member->id)
                         ->where('status', 'menunggu_diambil')
@@ -390,6 +394,7 @@ class CheckoutController extends Controller
                         DetailTransaksi::create([
                             'transaksi_id' => $transaksi->id,
                             'produk_id' => $produk->id,
+                            'detail_produk_id' => $item['detail_produk_id'] ?? null,
                             'nama_produk' => $produk->nama_produk,
                             'ukuran' => $item['ukuran'] ?? null,
                             'varian_rasa' => $item['varian_rasa'] ?? null,
@@ -397,7 +402,8 @@ class CheckoutController extends Controller
                             'jumlah' => $item['jumlah'] ?: 1,
                             'catatan' => $item['catatan'] ?: 'Hadiah Stamp',
                             'subtotal' => 0,
-                            'butuh_produksi' => $produk->habisSemuaUkuran(),
+                            // Hadiah varian tertentu sudah dipotong stoknya saat ditukar, jadi tidak perlu produksi.
+                            'butuh_produksi' => !empty($item['detail_produk_id']) ? false : $produk->habisSemuaUkuran(),
                         ]);
 
                         $stampRedemptionIdToUpdate = $item['stamp_redemption_id'] ?? $stampRedemptionId;
@@ -516,12 +522,15 @@ class CheckoutController extends Controller
                     DetailTransaksi::create([
                         'transaksi_id' => $transaksi->id,
                         'produk_id' => $stampRedemption->produk->id,
+                        'detail_produk_id' => $stampRedemption->detail_produk_id,
                         'nama_produk' => $stampRedemption->produk->nama_produk,
+                        'ukuran' => $stampRedemption->detailProduk?->ukuran,
+                        'varian_rasa' => $stampRedemption->detailProduk?->variasi,
                         'harga_satuan' => 0,
                         'jumlah' => $stampRedemption->jumlah ?: 1,
                         'catatan' => 'Hadiah Stamp (' . $stampRedemption->kode_redeem . ')',
                         'subtotal' => 0,
-                        'butuh_produksi' => $stampRedemption->produk->habisSemuaUkuran(),
+                        'butuh_produksi' => $stampRedemption->detail_produk_id ? false : $stampRedemption->produk->habisSemuaUkuran(),
                     ]);
 
                     $stampRedemption->update([

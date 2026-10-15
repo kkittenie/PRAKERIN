@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DetailProduk;
 use App\Models\Produk;
 use App\Models\StampProgram;
 use App\Models\StampProgramHadiah;
@@ -53,7 +54,7 @@ class StampProgramController extends Controller
     public function create()
     {
         try {
-            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk')->get();
+            $produks = $this->produkUntukForm();
 
             return view('pages.stamp-program.create', [
                 'title' => 'Tambah Reward Stamp',
@@ -85,16 +86,7 @@ class StampProgramController extends Controller
                     'status_aktif' => (bool) ($validated['status_aktif'] ?? false),
                 ]);
 
-                $produkIds = $request->input('produk_hadiah', []);
-                $jumlahHadiah = $request->input('jumlah_hadiah', []);
-
-                foreach ($produkIds as $index => $produkId) {
-                    StampProgramHadiah::create([
-                        'stamp_program_id' => $program->id,
-                        'produk_id' => $produkId,
-                        'jumlah' => $jumlahHadiah[$index] ?? 1,
-                    ]);
-                }
+                $this->simpanHadiah($program, $request);
 
                 activity()
                     ->causedBy(auth()->user())
@@ -112,7 +104,7 @@ class StampProgramController extends Controller
     public function show(StampProgram $stampProgram)
     {
         try {
-            $stampProgram->load(['hadiah.produk', 'redemptions']);
+            $stampProgram->load(['hadiah.produk', 'hadiah.detailProduk', 'redemptions']);
 
             return view('pages.stamp-program.show', [
                 'title' => 'Detail Reward Stamp',
@@ -126,8 +118,8 @@ class StampProgramController extends Controller
     public function edit(StampProgram $stampProgram)
     {
         try {
-            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk')->get();
-            $stampProgram->load('hadiah.produk');
+            $produks = $this->produkUntukForm();
+            $stampProgram->load('hadiah.produk', 'hadiah.detailProduk');
 
             return view('pages.stamp-program.edit', [
                 'title' => 'Edit Reward Stamp',
@@ -165,16 +157,7 @@ class StampProgramController extends Controller
 
                 StampProgramHadiah::where('stamp_program_id', $stampProgram->id)->delete();
 
-                $produkIds = $request->input('produk_hadiah', []);
-                $jumlahHadiah = $request->input('jumlah_hadiah', []);
-
-                foreach ($produkIds as $index => $produkId) {
-                    StampProgramHadiah::create([
-                        'stamp_program_id' => $stampProgram->id,
-                        'produk_id' => $produkId,
-                        'jumlah' => $jumlahHadiah[$index] ?? 1,
-                    ]);
-                }
+                $this->simpanHadiah($stampProgram, $request);
 
                 activity()
                     ->causedBy(auth()->user())
@@ -248,7 +231,7 @@ class StampProgramController extends Controller
 
     private function validasi(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'nama_program' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'minimal_pembelian' => 'required|integer|min:1000',
@@ -272,7 +255,9 @@ class StampProgramController extends Controller
                 },
             ],
             'produk_hadiah' => 'required|array|min:1',
-            'produk_hadiah.*' => 'required|distinct|exists:produks,id',
+            'produk_hadiah.*' => 'required|exists:produks,id',
+            'detail_produk_hadiah' => 'nullable|array',
+            'detail_produk_hadiah.*' => 'nullable|integer',
             'jumlah_hadiah' => 'required|array|min:1',
             'jumlah_hadiah.*' => [
                 'required',
@@ -288,6 +273,17 @@ class StampProgramController extends Controller
                     }
 
                     $produk = Produk::find($produkId);
+                    $detailId = $request->detail_produk_hadiah[$index] ?? null;
+
+                    if ($detailId) {
+                        $detail = DetailProduk::where('produk_id', $produkId)->find($detailId);
+
+                        if ($produk && $detail && $value > $detail->stok) {
+                            $fail("Jumlah hadiah untuk \"{$produk->nama_produk} ({$detail->nama_lengkap})\" melebihi stok yang tersedia (stok saat ini: {$detail->stok}).");
+                        }
+
+                        return;
+                    }
 
                     if ($produk && $value > $produk->stok) {
                         $fail("Jumlah hadiah untuk \"{$produk->nama_produk}\" melebihi stok yang tersedia (stok saat ini: {$produk->stok}).");
@@ -300,9 +296,97 @@ class StampProgramController extends Controller
             'minimal_pembelian.min' => 'Minimal pembelian minimal Rp 1.000.',
             'jumlah_stamp_dibutuhkan.required' => 'Jumlah stamp yang dibutuhkan wajib diisi.',
             'produk_hadiah.required' => 'Pilih minimal 1 produk sebagai pilihan hadiah.',
-            'produk_hadiah.*.distinct' => 'Produk hadiah tidak boleh dipilih lebih dari sekali.',
             'jumlah_hadiah.*.required' => 'Isi jumlah untuk setiap hadiah yang dipilih.',
             'tanggal_berakhir.after_or_equal' => 'Tanggal berakhir tidak boleh sebelum tanggal mulai.',
         ]);
+
+        $this->validasiVarianHadiah($request);
+
+        return $validated;
+    }
+
+    /**
+     * Produk aktif + daftar varian/ukuran-nya (sama seperti form bundling), dipakai
+     * form tambah/edit supaya hadiah bisa menunjuk satu varian/ukuran tertentu.
+     */
+    private function produkUntukForm()
+    {
+        return Produk::where('status_aktif', true)
+            ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id')])
+            ->orderBy('nama_produk')
+            ->get()
+            ->each(function (Produk $p) {
+                $p->setAttribute('punya_varian', $p->detailProduks->isNotEmpty());
+                $p->setAttribute('daftar_varian', $p->daftarVarianKasir());
+            });
+    }
+
+    /**
+     * Produk yang punya varian aktif wajib memilih varian/ukuran, varian harus milik
+     * produk itu, dan kombinasi produk + varian tidak boleh kembar di baris lain.
+     */
+    private function validasiVarianHadiah(Request $request): void
+    {
+        $produkIds = $request->input('produk_hadiah', []);
+        $detailIds = $request->input('detail_produk_hadiah', []);
+
+        $produkTerpakai = Produk::whereIn('id', $produkIds)
+            ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)])
+            ->get()
+            ->keyBy('id');
+
+        $errors = [];
+        $sudahAda = [];
+
+        foreach ($produkIds as $i => $produkId) {
+            $produk = $produkTerpakai->get($produkId);
+            if (!$produk) {
+                continue;
+            }
+
+            $detailId = !empty($detailIds[$i]) ? (int) $detailIds[$i] : null;
+
+            if ($produk->detailProduks->isNotEmpty()) {
+                if (!$detailId) {
+                    $errors["detail_produk_hadiah.$i"] = "Pilih varian/ukuran untuk produk \"{$produk->nama_produk}\".";
+                    continue;
+                }
+
+                $detail = $produk->detailProduks->firstWhere('id', $detailId);
+                if (!$detail) {
+                    $errors["detail_produk_hadiah.$i"] = "Varian yang dipilih untuk \"{$produk->nama_produk}\" tidak valid atau sudah nonaktif.";
+                    continue;
+                }
+            } else {
+                $detailId = null;
+            }
+
+            $kunci = $produkId . '|' . ($detailId ?? 0);
+            if (isset($sudahAda[$kunci])) {
+                $nama = isset($detail) && $detailId ? "{$produk->nama_produk} ({$detail->nama_lengkap})" : $produk->nama_produk;
+                $errors["produk_hadiah.$i"] = "Hadiah \"{$nama}\" sudah dipilih di baris lain.";
+            }
+            $sudahAda[$kunci] = true;
+        }
+
+        if (!empty($errors)) {
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
+    }
+
+    private function simpanHadiah(StampProgram $program, Request $request): void
+    {
+        $produkIds = $request->input('produk_hadiah', []);
+        $detailIds = $request->input('detail_produk_hadiah', []);
+        $jumlahHadiah = $request->input('jumlah_hadiah', []);
+
+        foreach ($produkIds as $index => $produkId) {
+            StampProgramHadiah::create([
+                'stamp_program_id' => $program->id,
+                'produk_id' => $produkId,
+                'detail_produk_id' => !empty($detailIds[$index]) ? (int) $detailIds[$index] : null,
+                'jumlah' => $jumlahHadiah[$index] ?? 1,
+            ]);
+        }
     }
 }

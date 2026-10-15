@@ -363,7 +363,7 @@
                                 </span>
                             </div>
                             <p class="truncate text-xs font-bold text-gray-900">
-                                {{ $stampRedemptionDipilih->jumlah ?: 1 }}x {{ $stampRedemptionDipilih->produk->nama_produk }}
+                                {{ $stampRedemptionDipilih->jumlah ?: 1 }}x {{ $stampRedemptionDipilih->nama_tampil }}
                             </p>
                             <p class="text-xs font-extrabold text-emerald-600">
                                 Rp 0

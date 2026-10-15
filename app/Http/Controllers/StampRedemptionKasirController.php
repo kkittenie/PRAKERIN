@@ -13,7 +13,7 @@ class StampRedemptionKasirController extends Controller
     public function daftarAktif(Member $member)
     {
         try {
-            $redemption = StampRedemption::with('produk')
+            $redemption = StampRedemption::with(['produk', 'detailProduk'])
                 ->where('member_id', $member->id)
                 ->where('status', 'menunggu_diambil')
                 ->latest()
@@ -40,7 +40,7 @@ class StampRedemptionKasirController extends Controller
                 'member_id.required' => 'Pilih member terlebih dahulu sebelum memakai reward stamp.',
             ]);
 
-            $redemption = StampRedemption::with('produk')
+            $redemption = StampRedemption::with(['produk', 'detailProduk'])
                 ->where('kode_redeem', strtoupper(trim($validated['kode'])))
                 ->first();
 
@@ -81,12 +81,14 @@ class StampRedemptionKasirController extends Controller
         return [
             'id' => $redemption->id,
             'kode_redeem' => $redemption->kode_redeem,
-            'nama_produk' => $produk->nama_produk ?? 'Produk tidak tersedia',
-            'gambar' => $produk?->foto ? asset('storage/' . $produk->foto) : null,
+            'nama_produk' => $redemption->nama_tampil,
+            'gambar' => $redemption->detailProduk?->foto_url
+                ?: ($produk?->foto ? asset('storage/' . $produk->foto) : null),
             'jumlah' => $redemption->jumlah,
-            'butuh_produksi' => $produk
-                ? $produk->habisSemuaUkuran()
-                : false,
+            // Hadiah varian tertentu sudah dipotong stoknya saat ditukar, jadi tidak perlu produksi.
+            'butuh_produksi' => $redemption->detail_produk_id
+                ? false
+                : ($produk ? $produk->habisSemuaUkuran() : false),
         ];
     }
 }

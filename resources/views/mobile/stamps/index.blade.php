@@ -140,7 +140,7 @@
                             </span>
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-start justify-between gap-2">
-                                    <p class="truncate text-sm font-extrabold text-gray-900">{{ $reward->jumlah ?: 1 }}x {{ $produkHadiah?->nama_produk ?? 'Produk Hadiah' }}</p>
+                                    <p class="truncate text-sm font-extrabold text-gray-900">{{ $reward->jumlah ?: 1 }}x {{ $produkHadiah ? $reward->nama_tampil : 'Produk Hadiah' }}</p>
                                     <span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
                                         Menunggu Diambil
                                     </span>
@@ -192,7 +192,7 @@
                     </span>
 
                     <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-bold text-gray-900">{{ $hadiah->jumlah }}x {{ $produk?->nama_produk ?? 'Produk tidak tersedia' }}</p>
+                        <p class="truncate text-sm font-bold text-gray-900">{{ $hadiah->jumlah }}x {{ $produk ? $hadiah->nama_tampil : 'Produk tidak tersedia' }}</p>
                         <p class="text-xs text-gray-400">Gratis dengan stamp penuh</p>
                     </div>
 
@@ -200,7 +200,8 @@
                         @if ($bisaTukar && $produk)
                             data-produk-id="{{ $produk->id }}"
                             data-jumlah="{{ $hadiah->jumlah }}"
-                            data-nama-produk="{{ $produk->nama_produk }}"
+                            data-detail-id="{{ $hadiah->detail_produk_id }}"
+                            data-nama-produk="{{ $hadiah->nama_tampil }}"
                             onclick="bukaKonfirmasiTukarStampFromBtn(this)"
                         @else
                             onclick="alert('Stamp kamu belum cukup ({{ $current }}/{{ $target }} stamp terkumpul). Kumpulkan {{ $target - $current }} stamp lagi untuk menukar hadiah ini!')"
@@ -235,6 +236,7 @@
             <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-6 pb-2">
                 @csrf
                 <input type="hidden" name="produk_id" id="konfirmasi-tukar-stamp-produk-id">
+                <input type="hidden" name="detail_produk_id" id="konfirmasi-tukar-stamp-detail-id">
                 <input type="hidden" name="metode_ambil" id="konfirmasi-tukar-stamp-metode" value="aplikasi">
 
                 <div class="grid grid-cols-2 gap-3">
@@ -252,10 +254,12 @@
     </dialog>
 
     <script>
-        window.bukaKonfirmasiTukarStamp = function (produkId, jumlah, namaProduk) {
+        window.bukaKonfirmasiTukarStamp = function (produkId, jumlah, namaProduk, detailId) {
             const hiddenInput = document.getElementById('konfirmasi-tukar-stamp-produk-id');
+            const hiddenDetail = document.getElementById('konfirmasi-tukar-stamp-detail-id');
             const namaSpan = document.getElementById('konfirmasi-tukar-stamp-nama');
             if (hiddenInput) hiddenInput.value = produkId;
+            if (hiddenDetail) hiddenDetail.value = detailId || '';
             if (namaSpan) namaSpan.textContent = jumlah + 'x ' + namaProduk;
             openSheet('konfirmasi-tukar-stamp');
         };
@@ -265,7 +269,7 @@
             const produkId = btn.dataset.produkId;
             const jumlah = btn.dataset.jumlah;
             const namaProduk = btn.dataset.namaProduk;
-            window.bukaKonfirmasiTukarStamp(produkId, jumlah, namaProduk);
+            window.bukaKonfirmasiTukarStamp(produkId, jumlah, namaProduk, btn.dataset.detailId);
         };
 
         // Only runs when this page is opened directly (not when the Vouchers

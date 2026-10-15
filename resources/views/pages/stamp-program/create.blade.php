@@ -261,6 +261,19 @@
                 </div>
             </div>
 
+            <div class="col-varian-hadiah hidden mt-4">
+                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Pilihan Varian / Ukuran <span class="text-red-500">*</span>
+                </label>
+                <select name="detail_produk_hadiah[]"
+                    class="input-detail-hadiah w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+                    <option value="">Pilih varian</option>
+                </select>
+                <p class="peringatan-varian hidden text-xs text-red-600 mt-1">
+                    Pilih varian/ukuran untuk produk ini!
+                </p>
+            </div>
+
             <div class="mt-3 flex items-center justify-between">
                 <div class="info-stok-hadiah text-sm text-gray-500">
                     Pilih produk terlebih dahulu
@@ -271,7 +284,7 @@
             </div>
 
             <p class="peringatan-duplikat hidden text-xs text-red-600 mt-1">
-                Produk ini sudah dipilih di baris lain!
+                Produk (dan varian) ini sudah dipilih di baris lain!
             </p>
         `;
 
@@ -303,10 +316,16 @@
         const semuaBaris = document.querySelectorAll('#hadiah-container > div');
         const jumlahPerId = {};
 
-        semuaBaris.forEach(function (baris) {
+        const kunciBaris = function (baris) {
             const id = baris.querySelector('.input-id-hadiah').value;
-            if (id) {
-                jumlahPerId[id] = (jumlahPerId[id] || 0) + 1;
+            if (!id) return '';
+            return id + '|' + (baris.querySelector('.input-detail-hadiah').value || '');
+        };
+
+        semuaBaris.forEach(function (baris) {
+            const kunci = kunciBaris(baris);
+            if (kunci) {
+                jumlahPerId[kunci] = (jumlahPerId[kunci] || 0) + 1;
             }
         });
 
@@ -317,7 +336,7 @@
             const inputSearch = baris.querySelector('.input-search-hadiah');
             const peringatan = baris.querySelector('.peringatan-duplikat');
 
-            if (inputId.value && jumlahPerId[inputId.value] > 1) {
+            if (inputId.value && jumlahPerId[kunciBaris(baris)] > 1) {
                 peringatan.classList.remove('hidden');
                 inputSearch.classList.add('border-red-500');
                 adaDuplikat = true;
@@ -365,9 +384,19 @@
         const adaErrorStok = containerHadiah.querySelectorAll('.peringatan-stok:not(.hidden)').length > 0;
         const adaErrorDuplikat = containerHadiah.querySelectorAll('.peringatan-duplikat:not(.hidden)').length > 0;
         const adaErrorMasaBerlaku = !peringatanMasaBerlaku.classList.contains('hidden');
+        let adaVarianKosong = false;
+        containerHadiah.querySelectorAll(':scope > div').forEach(function (baris) {
+            const wrap = baris.querySelector('.col-varian-hadiah');
+            const select = baris.querySelector('.input-detail-hadiah');
+            const peringatan = baris.querySelector('.peringatan-varian');
+            const kosong = !!(baris.querySelector('.input-id-hadiah').value && !wrap.classList.contains('hidden') && !select.value);
+            peringatan.classList.toggle('hidden', !kosong);
+            select.classList.toggle('border-red-500', kosong);
+            if (kosong) adaVarianKosong = true;
+        });
         const btn = document.getElementById('btnSubmitStampProgram');
         if (btn) {
-            btn.disabled = adaErrorStok || adaErrorDuplikat || adaErrorMasaBerlaku;
+            btn.disabled = adaErrorStok || adaErrorDuplikat || adaErrorMasaBerlaku || adaVarianKosong;
         }
     }
 
@@ -383,9 +412,20 @@
             cekJumlahMelebihiStok(inputJumlah, peringatanStok);
         });
 
+        const selectVarian = element.querySelector('.input-detail-hadiah');
+        selectVarian.addEventListener('change', function () {
+            const produk = daftarProdukHadiah.find(function (p) { return p.id == inputId.value; });
+            if (produk) {
+                terapkanStokHadiah(produk, selectVarian.value, infoStok, inputJumlah);
+            }
+            cekDuplikatHadiah();
+        });
+
         inputSearch.addEventListener('input', function () {
             const keyword = this.value.toLowerCase();
             inputId.value = '';
+            element.querySelector('.col-varian-hadiah').classList.add('hidden');
+            selectVarian.innerHTML = '<option value="">Pilih varian</option>';
 
             if (keyword.length === 0) {
                 hasilSearch.classList.add('hidden');
@@ -443,21 +483,67 @@
         });
     }
 
-    function pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok, inputJumlah) {
+    function namaVarianHadiah(v) {
+        return v.nama || [v.ukuran, v.variasi].filter(Boolean).join(' / ') || ('Varian ' + v.id);
+    }
+
+    // Stok & batas jumlah mengikuti varian yang dipilih (atau stok total produk kalau tanpa varian).
+    function terapkanStokHadiah(produk, detailId, infoStok, inputJumlah) {
+        let stok = produk.stok;
+        let label = '';
+
+        if (produk.punya_varian) {
+            const v = (produk.daftar_varian || []).find(function (x) { return x.id == detailId; });
+            if (!v) {
+                infoStok.textContent = 'Pilih varian untuk melihat stok';
+                inputJumlah.dataset.stokMax = 0;
+                inputJumlah.dispatchEvent(new Event('input'));
+                return;
+            }
+            stok = v.stok;
+            label = ' (' + namaVarianHadiah(v) + ')';
+        }
+
+        infoStok.innerHTML = 'Stok saat ini' + label + ': <strong>' + stok + '</strong>';
+        inputJumlah.dataset.stokMax = stok;
+        inputJumlah.dispatchEvent(new Event('input'));
+    }
+
+    function pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok, inputJumlah, detailId) {
+        const baris = inputId.closest('.rounded-xl');
+        const wrapVarian = baris.querySelector('.col-varian-hadiah');
+        const selectVarian = baris.querySelector('.input-detail-hadiah');
+
         inputSearch.value = produk.nama_produk;
         inputId.value = produk.id;
-        infoStok.innerHTML = `Stok saat ini: <strong>${produk.stok}</strong>`;
         hasilSearch.classList.add('hidden');
 
-        if (inputJumlah) {
-            inputJumlah.dataset.stokMax = produk.stok;
-            inputJumlah.dispatchEvent(new Event('input'));
+        const varianAktif = (produk.daftar_varian || []).filter(function (v) { return v.aktif; });
+
+        if (produk.punya_varian && varianAktif.length > 0) {
+            wrapVarian.classList.remove('hidden');
+            selectVarian.innerHTML = '<option value="">Pilih varian</option>' + varianAktif.map(function (v) {
+                return '<option value="' + v.id + '">' + namaVarianHadiah(v) + ' (Stok: ' + v.stok + ')</option>';
+            }).join('');
+
+            // Cuma ada satu varian aktif: langsung dipilihkan.
+            if (!detailId && varianAktif.length === 1) {
+                detailId = varianAktif[0].id;
+            }
+            selectVarian.value = detailId ? String(detailId) : '';
+        } else {
+            wrapVarian.classList.add('hidden');
+            selectVarian.innerHTML = '<option value=""></option>';
+            selectVarian.value = '';
         }
+
+        terapkanStokHadiah(produk, selectVarian.value, infoStok, inputJumlah);
     }
 
     // Prefill ulang kalau validasi gagal (old input)
     const oldProdukHadiah = @json(old('produk_hadiah', []));
     const oldJumlahHadiah = @json(old('jumlah_hadiah', []));
+    const oldDetailHadiah = @json(old('detail_produk_hadiah', []));
 
     if (oldProdukHadiah.length > 0) {
         oldProdukHadiah.forEach(function (id, index) {
@@ -471,7 +557,7 @@
             const infoStok = div.querySelector('.info-stok-hadiah');
             const inputJumlah = div.querySelector('.input-jumlah-hadiah');
 
-            pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok, inputJumlah);
+            pilihProdukHadiah(produk, inputSearch, hasilSearch, inputId, infoStok, inputJumlah, oldDetailHadiah[index]);
             inputJumlah.value = oldJumlahHadiah[index] ?? 1;
             inputJumlah.dispatchEvent(new Event('input'));
         });

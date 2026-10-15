@@ -126,12 +126,12 @@
                     @forelse($program->hadiah as $item)
                         <tr class="border-b border-gray-100 dark:border-gray-800 text-gray-750 dark:text-gray-300">
                             <td class="py-4">{{ $loop->iteration }}</td>
-                            <td class="font-medium text-gray-800 dark:text-white">{{ $item->produk->nama_produk ?? 'Produk sudah dihapus' }}</td>
+                            <td class="font-medium text-gray-800 dark:text-white">{{ $item->nama_tampil }}</td>
                             <td class="text-center font-bold text-amber-700 dark:text-amber-400">{{ $item->jumlah }}</td>
                             <td class="text-center">
-                                @if($item->produk)
-                                    <span class="{{ $item->produk->stok < $item->jumlah ? 'text-red-600 dark:text-red-400 font-bold' : 'text-gray-600 dark:text-gray-300' }}">
-                                        {{ $item->produk->stok }}
+                                @if(!is_null($item->stok_tersedia))
+                                    <span class="{{ $item->stok_tersedia < $item->jumlah ? 'text-red-600 dark:text-red-400 font-bold' : 'text-gray-600 dark:text-gray-300' }}">
+                                        {{ $item->stok_tersedia }}
                                     </span>
                                 @else
                                     -
@@ -152,8 +152,8 @@
             @forelse($program->hadiah as $item)
                 <div class="py-3 flex items-center justify-between">
                     <div>
-                        <span class="font-bold text-gray-800 dark:text-white text-sm block">{{ $item->produk->nama_produk ?? 'Produk sudah dihapus' }}</span>
-                        <span class="text-xs text-gray-400">Stok: {{ $item->produk->stok ?? '-' }}</span>
+                        <span class="font-bold text-gray-800 dark:text-white text-sm block">{{ $item->nama_tampil }}</span>
+                        <span class="text-xs text-gray-400">Stok: {{ $item->stok_tersedia ?? '-' }}</span>
                     </div>
                     <span class="inline-flex rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
                         {{ $item->jumlah }}x

@@ -192,10 +192,12 @@
          SHARED SCRIPTS
          ═══════════════════════════════════════════════════════════════════════ --}}
     <script>
-        window.bukaKonfirmasiTukarStamp = function (produkId, jumlah, namaProduk) {
+        window.bukaKonfirmasiTukarStamp = function (produkId, jumlah, namaProduk, detailId) {
             const hiddenInput = document.getElementById('konfirmasi-tukar-stamp-produk-id');
+            const hiddenDetail = document.getElementById('konfirmasi-tukar-stamp-detail-id');
             const namaSpan = document.getElementById('konfirmasi-tukar-stamp-nama');
             if (hiddenInput) hiddenInput.value = produkId;
+            if (hiddenDetail) hiddenDetail.value = detailId || '';
             if (namaSpan) namaSpan.textContent = jumlah + 'x ' + namaProduk;
             openSheet('konfirmasi-tukar-stamp');
         };
@@ -205,7 +207,7 @@
             const produkId = btn.dataset.produkId;
             const jumlah = btn.dataset.jumlah;
             const namaProduk = btn.dataset.namaProduk;
-            window.bukaKonfirmasiTukarStamp(produkId, jumlah, namaProduk);
+            window.bukaKonfirmasiTukarStamp(produkId, jumlah, namaProduk, btn.dataset.detailId);
         };
 
         (function () {
@@ -432,6 +434,7 @@
             <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-6 pb-2">
                 @csrf
                 <input type="hidden" name="produk_id" id="konfirmasi-tukar-stamp-produk-id">
+                <input type="hidden" name="detail_produk_id" id="konfirmasi-tukar-stamp-detail-id">
                 <input type="hidden" name="metode_ambil" id="konfirmasi-tukar-stamp-metode" value="aplikasi">
 
                 <div class="grid grid-cols-2 gap-3">

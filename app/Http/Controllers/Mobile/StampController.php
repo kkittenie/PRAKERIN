@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Mobile;
 
 use App\Http\Controllers\Controller;
+use App\Models\DetailProduk;
 use App\Models\DetailTransaksi;
 use App\Models\MemberStamp;
 use App\Models\Produk;
@@ -24,7 +25,7 @@ class StampController extends Controller
         try {
             $member = Auth::guard('member')->user();
             $program = StampProgram::aktifSekarang();
-            $program?->load('hadiah.produk');
+            $program?->load('hadiah.produk', 'hadiah.detailProduk');
 
             $memberStamp = null;
             if ($program) {
@@ -35,7 +36,7 @@ class StampController extends Controller
             }
 
             // Hadiah stamp yang sudah ditukar dan menunggu diambil
-            $rewardAktif = StampRedemption::with(['produk', 'stampProgram'])
+            $rewardAktif = StampRedemption::with(['produk', 'detailProduk', 'stampProgram'])
                 ->where('member_id', $member->id)
                 ->where('status', 'menunggu_diambil')
                 ->latest()
@@ -59,6 +60,7 @@ class StampController extends Controller
 
             $validated = $request->validate([
                 'produk_id' => 'required|exists:produks,id',
+                'detail_produk_id' => 'nullable|integer',
                 'metode_ambil' => 'nullable|in:aplikasi,kasir',
             ]);
 
@@ -77,20 +79,45 @@ class StampController extends Controller
                     abort(422, 'Stamp kamu belum penuh.');
                 }
 
-                $hadiahValid = $program->hadiah()->where('produk_id', $validated['produk_id'])->exists();
-                abort_unless($hadiahValid, 422, 'Produk ini bukan pilihan hadiah yang tersedia.');
+                $detailId = !empty($validated['detail_produk_id']) ? (int) $validated['detail_produk_id'] : null;
+
+                $hadiahQuery = $program->hadiah()->where('produk_id', $validated['produk_id']);
+                $detailId
+                    ? $hadiahQuery->where('detail_produk_id', $detailId)
+                    : $hadiahQuery->whereNull('detail_produk_id');
+
+                $hadiah = $hadiahQuery->first();
+                abort_unless($hadiah, 422, 'Produk ini bukan pilihan hadiah yang tersedia.');
 
                 if ($program->maksimal_redeem_tercapai) {
                     abort(422, 'Kuota penukaran program stamp ini sudah habis.');
                 }
 
-                $hadiah = $program->hadiah()->where('produk_id', $validated['produk_id'])->first();
-
                 $produk = Produk::where('id', $validated['produk_id'])->lockForUpdate()->first();
-                if ($produk->stok < $hadiah->jumlah) {
-                    abort(422, 'Stok produk hadiah ini tidak mencukupi. Hubungi kasir/admin.');
+                $detail = null;
+
+                if ($detailId) {
+                    // Hadiah menunjuk varian/ukuran tertentu: stok diambil dari varian itu saja.
+                    $detail = DetailProduk::where('id', $detailId)
+                        ->where('produk_id', $produk->id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    abort_unless($detail && $detail->status_aktif, 422, 'Varian hadiah ini sudah tidak tersedia. Hubungi kasir/admin.');
+
+                    if ((int) $detail->stok < (int) $hadiah->jumlah) {
+                        abort(422, 'Stok varian hadiah ini tidak mencukupi. Hubungi kasir/admin.');
+                    }
+
+                    $detail->stok = (int) $detail->stok - (int) $hadiah->jumlah;
+                    $detail->save();
+                    $produk->segarkanStok();
+                } else {
+                    if ($produk->stok < $hadiah->jumlah) {
+                        abort(422, 'Stok produk hadiah ini tidak mencukupi. Hubungi kasir/admin.');
+                    }
+                    $produk->kurangiStokTotal((int) $hadiah->jumlah);
                 }
-                $produk->kurangiStokTotal((int) $hadiah->jumlah);
 
                 $memberStamp->decrement('jumlah_stamp', $program->jumlah_stamp_dibutuhkan);
                 $program->increment('jumlah_redeem');
@@ -99,6 +126,7 @@ class StampController extends Controller
                     'member_id' => $member->id,
                     'stamp_program_id' => $program->id,
                     'produk_id' => $validated['produk_id'],
+                    'detail_produk_id' => $detail?->id,
                     'jumlah' => $hadiah->jumlah ?: 1,
                     'sumber' => 'member',
                     'status' => 'menunggu_diambil',
@@ -114,12 +142,14 @@ class StampController extends Controller
 
                     MemberCart::tambah([
                         'produk_id' => $produk->id,
-                        'detail_produk_id' => null,
+                        'detail_produk_id' => $detail?->id,
                         'nama_produk' => $produk->nama_produk,
-                        'foto' => $produk->foto,
+                        'ukuran' => $detail?->ukuran,
+                        'varian_rasa' => $detail?->variasi,
+                        'foto' => $detail?->foto ?: $produk->foto,
                         'harga_satuan' => 0,
-                        'harga_asal' => (float) ($produk->harga_jual ?? 0),
-                        'diskon_produk_satuan' => (float) ($produk->harga_jual ?? 0),
+                        'harga_asal' => (float) ($detail?->harga_jual ?? $produk->harga_jual ?? 0),
+                        'diskon_produk_satuan' => (float) ($detail?->harga_jual ?? $produk->harga_jual ?? 0),
                         'nama_promo' => 'Reward Stamp',
                         'catatan' => 'Hadiah Stamp (' . $redemption->kode_redeem . ')',
                         'jumlah' => $hadiah->jumlah ?: 1,
@@ -132,7 +162,7 @@ class StampController extends Controller
                     NotificationHelper::untukMember(
                         $member->id,
                         'Hadiah Stamp Masuk ke Keranjang',
-                        'Hadiah ' . $produk->nama_produk . ' siap dipesan via aplikasi. Silakan selesaikan checkout.',
+                        'Hadiah ' . ($detail ? $produk->nama_produk . ' (' . $detail->nama_lengkap . ')' : $produk->nama_produk) . ' siap dipesan via aplikasi. Silakan selesaikan checkout.',
                         'stamps',
                         route('member.checkout.index'),
                         'success'
@@ -144,7 +174,7 @@ class StampController extends Controller
                 NotificationHelper::untukMember(
                     $member->id,
                     'Penukaran Stamp Berhasil',
-                    'Kamu berhasil menukar stamp dengan ' . ($produk->nama_produk ?? 'hadiah') . '. Kode: ' . $redemption->kode_redeem,
+                    'Kamu berhasil menukar stamp dengan ' . ($detail ? $produk->nama_produk . ' (' . $detail->nama_lengkap . ')' : ($produk->nama_produk ?? 'hadiah')) . '. Kode: ' . $redemption->kode_redeem,
                     'stamps',
                     route('member.stamps.index'),
                     'success'
@@ -186,14 +216,18 @@ class StampController extends Controller
                 }
             }
 
+            $detail = $stampRedemption->detailProduk;
+
             MemberCart::tambah([
                 'produk_id' => $produk->id,
-                'detail_produk_id' => null,
+                'detail_produk_id' => $detail?->id,
                 'nama_produk' => $produk->nama_produk,
-                'foto' => $produk->foto,
+                'ukuran' => $detail?->ukuran,
+                'varian_rasa' => $detail?->variasi,
+                'foto' => $detail?->foto ?: $produk->foto,
                 'harga_satuan' => 0,
-                'harga_asal' => (float) ($produk->harga_jual ?? 0),
-                'diskon_produk_satuan' => (float) ($produk->harga_jual ?? 0),
+                'harga_asal' => (float) ($detail?->harga_jual ?? $produk->harga_jual ?? 0),
+                'diskon_produk_satuan' => (float) ($detail?->harga_jual ?? $produk->harga_jual ?? 0),
                 'nama_promo' => 'Reward Stamp',
                 'catatan' => 'Hadiah Stamp (' . $stampRedemption->kode_redeem . ')',
                 'jumlah' => $stampRedemption->jumlah ?: 1,
