@@ -26,7 +26,7 @@
                         <span class="sdt-search-icon">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m2.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/></svg>
                         </span>
-                        <input type="text" class="sdt-search-input" placeholder="Cari level...">
+                        <input type="text" class="sdt-search-input" placeholder="Cari badge...">
                     </div>
                     <div class="sdt-pagesize">
                         <span>Tampilkan</span>
