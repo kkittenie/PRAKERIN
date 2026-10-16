@@ -1,0 +1,1 @@
+<img src="{{ asset('storage/' . $item->gambar) }}" alt="{{ $item->judul }}" class="h-20 w-16 rounded-lg border object-cover mx-auto">

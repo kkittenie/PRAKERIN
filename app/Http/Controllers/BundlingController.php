@@ -177,12 +177,17 @@ class BundlingController extends Controller
             $kunci = mb_strtolower($nilai);
 
             if (!isset($hasil[$kunci])) {
-                $hasil[$kunci] = ['nilai' => $nilai, 'nama' => $nilai !== '' ? $nilai : 'Tanpa ukuran', 'jumlah_rasa' => 0, 'stok' => 0, 'rasa' => []];
+                $hasil[$kunci] = ['nilai' => $nilai, 'nama' => $nilai !== '' ? $nilai : 'Tanpa ukuran', 'jumlah_rasa' => 0, 'stok' => 0, 'rasa' => [], 'opsi' => [], 'ada_rasa' => false];
             }
 
             $hasil[$kunci]['jumlah_rasa']++;
             $hasil[$kunci]['stok'] += max(0, (int) $d->stok);
             $hasil[$kunci]['rasa'][] = $d->variasi ?: 'Standar';
+            $hasil[$kunci]['opsi'][] = ['id' => $d->id, 'nama' => $d->variasi ?: 'Standar', 'stok' => max(0, (int) $d->stok)];
+            // Penanda produk punya varian rasa sungguhan (bukan sekadar "Standar").
+            if (trim((string) $d->variasi) !== '') {
+                $hasil[$kunci]['ada_rasa'] = true;
+            }
         }
 
         return array_values($hasil);
@@ -210,6 +215,9 @@ class BundlingController extends Controller
             'varian_isi.*' => ['required', 'string', 'max:100'],
             'qty' => 'nullable|array',
             'qty.*' => 'nullable|integer|min:1',
+            // Bundling bebas: rasa yang boleh dipilih pembeli per baris, JSON array id detail produk ('' = semua rasa).
+            'rasa_isi' => 'nullable|array',
+            'rasa_isi.*' => 'nullable|string|max:1000',
         ];
     }
 
@@ -233,7 +241,7 @@ class BundlingController extends Controller
      *                   aktif (kecuali sudah dipakai bundling ini sebelumnya), dan tidak boleh kembar.
      *  - Produk Bebas : tiap baris = satu produk + ukuran. Ukuran harus punya minimal satu rasa aktif,
      *                   dan kombinasi produk + ukuran tidak boleh kembar. Rasa dipilih pembeli.
-     * Hasil: [['produk_id', 'detail_produk_id', 'ukuran', 'varian_rasa', 'qty'], ...]
+     * Hasil: [['produk_id', 'detail_produk_id', 'ukuran', 'varian_rasa', 'rasa_diizinkan', 'qty'], ...]
      *
      * @throws \Illuminate\Validation\ValidationException
      */
@@ -273,11 +281,44 @@ class BundlingController extends Controller
                 }
                 $sudahAda[$kunci] = true;
 
+                // Rasa yang boleh dipilih pembeli: null = semua rasa aktif ukuran ini.
+                $rasaDiizinkan = null;
+                $rasaMentah = trim((string) ($request->input('rasa_isi')[$i] ?? ''));
+                if ($rasaMentah !== '') {
+                    $ids = json_decode($rasaMentah, true);
+                    $idsAktif = ($detailPerProduk->get($produkId) ?? collect())
+                        ->filter(fn (DetailProduk $d) => $d->status_aktif && BundlingItem::samaUkuran($d->ukuran, $ukuran))
+                        ->pluck('id')->map(fn ($v) => (int) $v)->all();
+
+                    if (!is_array($ids)) {
+                        $errors["varian_isi.$i"] = "Pilihan rasa untuk \"{$namaProduk}\" tidak valid.";
+                        continue;
+                    }
+
+                    $ids = array_values(array_unique(array_map('intval', $ids)));
+
+                    if (empty($ids)) {
+                        $errors["varian_isi.$i"] = "Pilih minimal satu rasa untuk \"{$namaProduk}\".";
+                        continue;
+                    }
+                    if (array_diff($ids, $idsAktif)) {
+                        $errors["varian_isi.$i"] = "Ada rasa yang tidak valid untuk \"{$namaProduk}\" ukuran \"" . ($ukuran ?? 'tanpa ukuran') . "\".";
+                        continue;
+                    }
+
+                    // Semua rasa dicentang = tidak dibatasi, jadi rasa baru yang ditambah nanti ikut otomatis.
+                    if (count($ids) < count($idsAktif)) {
+                        sort($ids);
+                        $rasaDiizinkan = $ids;
+                    }
+                }
+
                 $baris[] = [
                     'produk_id' => (int) $produkId,
                     'detail_produk_id' => null,
                     'ukuran' => $ukuran,
                     'varian_rasa' => null,
+                    'rasa_diizinkan' => $rasaDiizinkan,
                     'qty' => 1,
                 ];
             }
@@ -311,6 +352,7 @@ class BundlingController extends Controller
                     'detail_produk_id' => (int) $detail->id,
                     'ukuran' => $detail->ukuran,
                     'varian_rasa' => $detail->variasi,
+                    'rasa_diizinkan' => null,
                     'qty' => max(1, (int) ($request->qty[$i] ?? 1)),
                 ];
             }
@@ -333,6 +375,7 @@ class BundlingController extends Controller
                 'detail_produk_id' => $b['detail_produk_id'],
                 'ukuran' => $b['ukuran'],
                 'varian_rasa' => $b['varian_rasa'],
+                'rasa_diizinkan' => $b['rasa_diizinkan'] ?? null,
                 'qty' => $b['qty'],
             ]);
         }
@@ -367,6 +410,7 @@ class BundlingController extends Controller
                 'produk_id' => $item->produk_id,
                 'detail_produk_id' => $item->detail_produk_id,
                 'ukuran' => $item->ukuran,
+                'rasa_diizinkan' => $item->rasa_diizinkan,
                 'qty' => $item->qty,
             ])->values()->all();
 

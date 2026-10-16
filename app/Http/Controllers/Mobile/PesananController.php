@@ -52,6 +52,8 @@ class PesananController extends Controller
 
             return view('mobile.pesanan.cara-pembayaran', [
                 'transaksi' => $transaksi,
+                // Gambar QRIS aktif yang diatur admin (fallback ke placeholder kalau belum ada).
+                'qrisUrl' => \App\Models\QrisImage::urlAktif(),
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

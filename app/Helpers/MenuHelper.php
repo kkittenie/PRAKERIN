@@ -33,6 +33,8 @@ class MenuHelper
                     ['name' => 'Satuan', 'path' => '/satuan', 'permission' => 'lihat_satuan'],
                     ['name' => 'Bahan Baku', 'path' => '/bahan-baku', 'permission' => 'lihat_stok'],
                     ['name' => 'Banner', 'path' => '/banner', 'permission' => 'lihat_banner'],
+                    ['name' => 'Slide Welcome', 'path' => '/welcome-slide', 'permission' => 'lihat_welcome_slide'],
+                    ['name' => 'QRIS Pembayaran', 'path' => '/qris', 'permission' => 'lihat_qris'],
                     ['name' => 'Pengaturan Pajak', 'path' => '/pengaturan-pajak', 'permission' => 'lihat_pajak'],
                     ['name' => 'Konten Statis', 'path' => '/konten-statis'],
                 ]

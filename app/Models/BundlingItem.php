@@ -15,7 +15,13 @@ class BundlingItem extends Model
         'detail_produk_id',
         'ukuran',
         'varian_rasa',
+        'rasa_diizinkan',
         'qty',
+    ];
+
+    protected $casts = [
+        // Id detail produk (rasa) yang boleh dipilih pembeli. null = semua rasa aktif.
+        'rasa_diizinkan' => 'array',
     ];
 
     public function bundling()
@@ -40,8 +46,9 @@ class BundlingItem extends Model
     }
 
     /**
-     * Rasa yang boleh dipilih pembeli pada baris isi bundling bebas: semua detail produk
-     * aktif milik produk ini dengan ukuran yang sama dengan ukuran baris ini.
+     * Rasa yang boleh dipilih pembeli pada baris isi bundling bebas: detail produk aktif milik produk ini
+     * dengan ukuran yang sama dengan ukuran baris ini. Kalau admin membatasi rasa (rasa_diizinkan terisi),
+     * hanya rasa yang dicentang admin yang ikut; kalau kosong (null), semua rasa aktif ukuran itu.
      * (Pada bundling bebas satu baris isi = produk + ukuran, rasanya dipilih pembeli.)
      */
     public function opsiRasa(): Collection
@@ -53,6 +60,10 @@ class BundlingItem extends Model
 
         return $produk->daftarDetail()
             ->filter(fn (DetailProduk $d) => $d->status_aktif && static::samaUkuran($d->ukuran, $this->ukuran))
+            ->when(
+                !empty($this->rasa_diizinkan),
+                fn (Collection $c) => $c->filter(fn (DetailProduk $d) => in_array((int) $d->id, array_map('intval', $this->rasa_diizinkan), true))
+            )
             ->values();
     }
 

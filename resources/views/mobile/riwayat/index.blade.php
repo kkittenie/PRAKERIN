@@ -343,7 +343,7 @@
                                 data-jenis="stamp"
                                 data-id="{{ $item->id }}"
                                 data-status-raw="{{ $item->status }}"
-                                data-nama="{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}"
+                                data-nama="{{ ($item->produk ? $item->nama_tampil : 'Produk tidak tersedia') }}"
                                 data-status-label="{{ $statusBadge[$item->status]['label'] }}"
                                 data-status-class="{{ $statusBadge[$item->status]['class'] }}"
                                 data-tanggal="{{ $item->created_at->translatedFormat('d M Y, H:i') }}"
@@ -359,7 +359,7 @@
                                     </span>
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-start justify-between gap-2">
-                                            <p class="truncate text-sm font-bold text-gray-900">{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}</p>
+                                            <p class="truncate text-sm font-bold text-gray-900">{{ ($item->produk ? $item->nama_tampil : 'Produk tidak tersedia') }}</p>
                                             <span class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $statusBadge[$item->status]['class'] }}">
                                                 {{ $statusBadge[$item->status]['label'] }}
                                             </span>
@@ -683,7 +683,7 @@
                                 data-jenis="stamp"
                                 data-id="{{ $item->id }}"
                                 data-status-raw="{{ $item->status }}"
-                                data-nama="{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}"
+                                data-nama="{{ ($item->produk ? $item->nama_tampil : 'Produk tidak tersedia') }}"
                                 data-status-label="{{ $statusBadge[$item->status]['label'] }}"
                                 data-status-class="{{ $statusBadge[$item->status]['class'] }}"
                                 data-tanggal="{{ $item->created_at->translatedFormat('d M Y, H:i') }}"
@@ -698,7 +698,7 @@
                                     </span>
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-start justify-between gap-2">
-                                            <p class="truncate text-sm font-extrabold text-gray-900">{{ $item->produk?->nama_produk ?? 'Produk tidak tersedia' }}</p>
+                                            <p class="truncate text-sm font-extrabold text-gray-900">{{ ($item->produk ? $item->nama_tampil : 'Produk tidak tersedia') }}</p>
                                             <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold {{ $statusBadge[$item->status]['class'] }}">
                                                 {{ $statusBadge[$item->status]['label'] }}
                                             </span>

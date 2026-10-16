@@ -30,7 +30,10 @@ class AuthController extends Controller
                 return redirect()->route('member.beranda');
             }
 
-            return view('mobile.welcome');
+            // Slide welcome dinamis dari admin; kosong = pakai tampilan bawaan di view.
+            $slides = \App\Models\WelcomeSlide::tampil()->get();
+
+            return view('mobile.welcome', compact('slides'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

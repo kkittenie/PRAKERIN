@@ -28,6 +28,8 @@ use App\Http\Controllers\VoucherKasirController;
 use App\Http\Controllers\StampRedemptionKasirController;
 use App\Http\Controllers\PesananPickupController;
 use App\Http\Controllers\BannerController;
+use App\Http\Controllers\WelcomeSlideController;
+use App\Http\Controllers\QrisController;
 use App\Http\Controllers\PengaturanPajakController;
 use App\Http\Controllers\KontenStatisController;
 use App\Http\Controllers\NotificationController;
@@ -107,6 +109,33 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
     
     Route::resource('banner', BannerController::class)
         ->middleware('permission:lihat_banner|tambah_banner|edit_banner|hapus_banner');    
+
+    // Slide halaman welcome/login member (gambar dinamis)
+    Route::patch('/welcome-slide/{welcome_slide}/toggle-status', [WelcomeSlideController::class, 'toggleStatus'])
+        ->name('welcome-slide.toggle-status')
+        ->middleware('permission:edit_welcome_slide');
+
+    Route::resource('welcome-slide', WelcomeSlideController::class)
+        ->except(['show'])
+        ->parameters(['welcome-slide' => 'welcome_slide'])
+        ->middleware('permission:lihat_welcome_slide|tambah_welcome_slide|edit_welcome_slide|hapus_welcome_slide');
+
+    // QRIS pembayaran pesanan online (ganti gambar dinamis)
+    Route::middleware('permission:lihat_qris')->group(function () {
+        Route::get('/qris', [QrisController::class, 'index'])->name('qris.index');
+    });
+    Route::middleware('permission:tambah_qris')->group(function () {
+        Route::get('/qris/create', [QrisController::class, 'create'])->name('qris.create');
+        Route::post('/qris', [QrisController::class, 'store'])->name('qris.store');
+    });
+    Route::middleware('permission:edit_qris')->group(function () {
+        Route::get('/qris/{qris}/edit', [QrisController::class, 'edit'])->name('qris.edit');
+        Route::put('/qris/{qris}', [QrisController::class, 'update'])->name('qris.update');
+        Route::patch('/qris/{qris}/toggle-status', [QrisController::class, 'toggleStatus'])->name('qris.toggle-status');
+    });
+    Route::middleware('permission:hapus_qris')->group(function () {
+        Route::delete('/qris/{qris}', [QrisController::class, 'destroy'])->name('qris.destroy');
+    });
 
     // Pengaturan Pajak
     Route::middleware('permission:lihat_pajak')->group(function () {

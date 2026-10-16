@@ -179,11 +179,14 @@
                 @php
                     $produk = $hadiah->produk;
                     $isCroissant = str_contains(strtolower($produk?->nama_produk ?? ''), 'croissant');
+                    $fotoHadiah = $hadiah->detailProduk?->foto ?: $produk?->foto;
+                    $stokHabis = !is_null($hadiah->stok_tersedia) && $hadiah->stok_tersedia < $hadiah->jumlah;
+                    $bisaTukarHadiah = $bisaTukar && $produk && ! $stokHabis;
                 @endphp
-                <div class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm {{ ! $bisaTukar ? 'opacity-60' : '' }}">
+                <div class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm {{ ! $bisaTukarHadiah ? 'opacity-60' : '' }}">
                     <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-brand-50">
-                        @if ($produk?->foto)
-                            <img src="{{ asset('storage/'.$produk->foto) }}" alt="{{ $produk->nama_produk }}" class="h-full w-full object-cover">
+                        @if ($fotoHadiah)
+                            <img src="{{ asset('storage/'.$fotoHadiah) }}" alt="{{ $produk->nama_produk }}" class="h-full w-full object-cover">
                         @elseif ($isCroissant)
                             <span class="text-brand-800">@include('mobile.components.icon-cake', ['class' => 'h-6 w-6'])</span>
                         @else
@@ -193,20 +196,26 @@
 
                     <div class="min-w-0 flex-1">
                         <p class="truncate text-sm font-bold text-gray-900">{{ $hadiah->jumlah }}x {{ $produk ? $hadiah->nama_tampil : 'Produk tidak tersedia' }}</p>
-                        <p class="text-xs text-gray-400">Gratis dengan stamp penuh</p>
+                        @if ($stokHabis)
+                            <p class="text-xs font-semibold text-red-500">Stok hadiah ini sedang habis</p>
+                        @else
+                            <p class="text-xs text-gray-400">Gratis dengan stamp penuh</p>
+                        @endif
                     </div>
 
                     <button type="button"
-                        @if ($bisaTukar && $produk)
+                        @if ($bisaTukarHadiah)
                             data-produk-id="{{ $produk->id }}"
                             data-jumlah="{{ $hadiah->jumlah }}"
                             data-detail-id="{{ $hadiah->detail_produk_id }}"
                             data-nama-produk="{{ $hadiah->nama_tampil }}"
                             onclick="bukaKonfirmasiTukarStampFromBtn(this)"
+                        @elseif ($stokHabis)
+                            x-on:click="$dispatch('app-alert', { title: 'Stok habis', message: @js('Maaf, stok hadiah ini sedang habis. Coba pilih hadiah lain atau kembali lagi nanti.') })"
                         @else
-                            onclick="alert('Stamp kamu belum cukup ({{ $current }}/{{ $target }} stamp terkumpul). Kumpulkan {{ $target - $current }} stamp lagi untuk menukar hadiah ini!')"
+                            x-on:click="$dispatch('app-alert', { title: 'Stamp belum cukup', message: @js('Stamp kamu belum cukup ('.$current.'/'.$target.' stamp terkumpul). Kumpulkan '.($target - $current).' stamp lagi untuk menukar hadiah ini!') })"
                         @endif
-                        class="shrink-0 rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer {{ $bisaTukar && $produk ? 'bg-[#5a3c27] text-white hover:bg-[#4a3020] active:scale-95' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}">
+                        class="shrink-0 rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer {{ $bisaTukarHadiah ? 'bg-[#5a3c27] text-white hover:bg-[#4a3020] active:scale-95' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}">
                         Tukar
                     </button>
                 </div>

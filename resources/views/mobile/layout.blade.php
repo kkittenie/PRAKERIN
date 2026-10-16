@@ -669,7 +669,34 @@
 
     </div>
 
+
+    {{-- Alert global (Alpine.js). Pengganti alert() bawaan browser.
+         Panggil dari JS: appAlert('pesan', 'Judul opsional')
+         atau dari Alpine/HTML: $dispatch('app-alert', { message: '...', title: '...' })
+         Pakai <dialog> + showModal() supaya tetap muncul di atas bottom sheet yang sedang terbuka. --}}
+    <dialog x-data="{ judul: 'Perhatian', pesan: '' }"
+            x-ref="dlg"
+            x-on:app-alert.window="judul = $event.detail.title || 'Perhatian'; pesan = $event.detail.message || ''; if (! $refs.dlg.open) $refs.dlg.showModal()"
+            x-on:click.self="$refs.dlg.close()"
+            class="m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl border-0 bg-white p-0 shadow-2xl backdrop:bg-black/40">
+        <div class="p-6 text-center">
+            <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-800">
+                <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <h3 class="mt-3 text-base font-bold text-gray-900" x-text="judul"></h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-gray-500" x-text="pesan"></p>
+            <button type="button" x-on:click="$refs.dlg.close()"
+                    class="mt-5 w-full rounded-2xl bg-[#5a3c27] py-3 text-xs font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] cursor-pointer">
+                OK
+            </button>
+        </div>
+    </dialog>
+
     <script>
+        window.appAlert = function (message, title) {
+            window.dispatchEvent(new CustomEvent('app-alert', { detail: { message: message, title: title } }));
+        };
+
         let __tkCheckoutUrl = null;
         let __tkMenuUrl = null;
 
@@ -695,13 +722,13 @@
                 const data = await res.json();
 
                 if (!data.success) {
-                    alert((data.message) || 'Gagal menambahkan ke keranjang.');
+                    appAlert((data.message) || 'Gagal menambahkan ke keranjang.');
                     return;
                 }
 
                 tampilkanSheetTambahKeranjang(data);
             } catch (e) {
-                alert('Terjadi kesalahan, coba lagi.');
+                appAlert('Terjadi kesalahan, coba lagi.');
             } finally {
                 if (btn) btn.disabled = false;
             }

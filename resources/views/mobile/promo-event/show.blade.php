@@ -118,8 +118,7 @@
             <div x-show="habis" x-cloak class="flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800 border border-amber-100">
                 @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
                 <p class="text-[11px] font-semibold leading-relaxed">
-                    Stok produk untuk promo ini sedang kurang/habis, pesanan tetap bisa dibuat & akan
-                    diproduksi dulu di dapur — waktu tunggu bisa lebih lama dari biasanya.
+                    Salah satu isi paket ini stoknya sedang kurang/habis, pesanan tetap bisa dibuat di dapur — waktu tunggu bisa lebih lama dari biasanya.
                 </p>
             </div>
 

@@ -21,6 +21,7 @@ use App\Models\MemberStamp;
 use App\Models\StampRedemption;
 use App\Models\PenukaranPoin;
 use App\Models\PengaturanPajak;
+use App\Models\QrisImage;
 use App\Models\RewardKatalog;
 use App\Models\VoucherUsage;
 
@@ -93,7 +94,7 @@ class TransaksiKasirController extends Controller
             throw new \Exception('Reward stamp hanya bisa dipakai jika member sudah dipilih.');
         }
 
-        $redemption = StampRedemption::with('produk')
+        $redemption = StampRedemption::with(['produk', 'detailProduk'])
             ->where('id', $stampRedemptionId)
             ->lockForUpdate()
             ->first();
@@ -124,16 +125,21 @@ class TransaksiKasirController extends Controller
         }
 
         $produk = $redemption->produk;
+        $detail = $redemption->detailProduk;
 
         DetailTransaksi::create([
             'transaksi_id' => $transaksi->id,
             'produk_id' => $produk->id,
+            'detail_produk_id' => $detail?->id,
             'nama_produk' => $produk->nama_produk,
+            'ukuran' => $detail?->ukuran,
+            'varian_rasa' => $detail?->variasi,
             'harga_satuan' => 0,
             'jumlah' => $redemption->jumlah ?: 1,
             'catatan' => 'Reward Stamp',
             'subtotal' => 0,
-            'butuh_produksi' => $this->butuhProduksi($produk),
+            // Hadiah varian tertentu sudah dipotong stoknya saat ditukar, jadi tidak perlu produksi.
+            'butuh_produksi' => $detail ? false : $this->butuhProduksi($produk),
         ]);
 
         $redemption->update([
@@ -256,6 +262,8 @@ class TransaksiKasirController extends Controller
                 'daftarDitahan' => $daftarDitahan,
                 'daftarMember' => $daftarMember,
                 'pengaturanPajak' => $pengaturanPajak,
+                // Gambar QRIS aktif yang diatur admin (fallback ke placeholder kalau belum ada).
+                'qrisUrl' => QrisImage::urlAktif(),
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

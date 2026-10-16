@@ -190,6 +190,23 @@
         return u === '' ? TANPA_UKURAN : u;
     }
 
+    // Produk yang memang tidak punya ukuran (semua rasa aktifnya tanpa ukuran) tidak perlu memilih ukuran.
+    // Pada bundling bebas, kolom ukuran disembunyikan dan nilainya otomatis "tanpa ukuran".
+    function produkTanpaUkuran(produk) {
+        return produk.ukuran.length > 0 && produk.ukuran.every(function (u) {
+            return nilaiUkuran(u.nilai) === TANPA_UKURAN;
+        });
+    }
+
+    // Tampilkan / sembunyikan kolom ukuran. Kolom tetap ikut terkirim (select tidak di-disable),
+    // jadi varian_isi[] tetap berisi '__tanpa__' untuk produk tanpa ukuran.
+    function aturKolomUkuran(div, sembunyi) {
+        div.querySelector('.kolom-varian').classList.toggle('hidden', sembunyi);
+        const kolomProduk = div.querySelector('.kolom-produk');
+        kolomProduk.classList.toggle('md:col-span-5', !sembunyi);
+        kolomProduk.classList.toggle('md:col-span-10', sembunyi);
+    }
+
     // Isi pilihan (opsi) select sesuai jenis aktif. 'dipilih' = nilai yang ingin dipilih lagi (kalau ada).
     function isiOpsiVarian(div, produk, dipilih) {
         const select = div.querySelector('.input-varian-produk');
@@ -203,10 +220,10 @@
             let daftar = produk.ukuran.slice();
             // Ukuran tersimpan yang sudah tidak punya rasa aktif tetap ditampilkan supaya jelas, tapi akan ditolak saat simpan.
             if (dipilih && !daftar.some(function (u) { return nilaiUkuran(u.nilai) === dipilih; })) {
-                daftar.push({nilai: dipilih === TANPA_UKURAN ? '' : dipilih, nama: (dipilih === TANPA_UKURAN ? 'Tanpa ukuran' : dipilih) + ' (tidak ada rasa aktif)', jumlah_rasa: 0, stok: 0, rasa: []});
+                daftar.push({nilai: dipilih === TANPA_UKURAN ? '' : dipilih, nama: (dipilih === TANPA_UKURAN ? 'Tanpa ukuran' : dipilih) + ' (tidak ada rasa aktif)', jumlah_rasa: 0, stok: 0, rasa: [], ada_rasa: false});
             }
             select.innerHTML = '<option value="">Pilih ukuran</option>' + daftar.map(function (u) {
-                return '<option value="' + esc(nilaiUkuran(u.nilai)) + '">' + esc(u.nama) + ' (' + u.jumlah_rasa + ' rasa)</option>';
+                return '<option value="' + esc(nilaiUkuran(u.nilai)) + '">' + esc(u.nama) + (u.ada_rasa ? ' (' + u.jumlah_rasa + ' rasa)' : '') + '</option>';
             }).join('');
         } else {
             select.innerHTML = '<option value="">Pilih varian</option>' + produk.varian.map(function (v) {
@@ -217,6 +234,15 @@
         if (dipilih) {
             select.value = String(dipilih);
         }
+
+        // Produk tanpa ukuran: tidak perlu memilih apa pun, langsung "tanpa ukuran".
+        const otomatis = bebas && produkTanpaUkuran(produk) && (!dipilih || String(dipilih) === TANPA_UKURAN);
+        aturKolomUkuran(div, otomatis);
+        if (otomatis) {
+            select.value = TANPA_UKURAN;
+            return;
+        }
+
         if (!select.value) {
             // Hanya satu pilihan -> langsung dipilih.
             const jumlahOpsi = select.options.length - 1;
@@ -274,7 +300,7 @@
 
         div.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div class="relative md:col-span-5">
+                <div class="kolom-produk relative md:col-span-5">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Produk <span class="text-red-500">*</span></label>
                     <input type="text" class="input-search-produk w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3"
                         placeholder="Ketik nama produk..." autocomplete="off">
@@ -282,7 +308,7 @@
                     <input type="hidden" name="produk_id[]" class="input-id-produk">
                 </div>
 
-                <div class="md:col-span-5">
+                <div class="kolom-varian md:col-span-5">
                     <label class="label-varian mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Varian <span class="text-red-500">*</span></label>
                     <select name="varian_isi[]" class="input-varian-produk w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500" disabled>
                         <option value="">Pilih produk dulu</option>
@@ -293,6 +319,20 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Qty</label>
                     <input type="number" name="qty[]" min="1" value="1" class="input-qty w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3">
                 </div>
+            </div>
+
+            {{-- Bundling bebas: admin menentukan rasa mana saja yang boleh dipilih pembeli (nilai: JSON id rasa, kosong = semua). --}}
+            <input type="hidden" name="rasa_isi[]" class="input-rasa-isi" value="">
+            <div class="pilihan-rasa hidden mt-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+                <div class="flex items-center justify-between gap-2">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">Rasa yang boleh dipilih pembeli</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Centang rasa yang tersedia untuk pilihan ini.</p>
+                    </div>
+                    <button type="button" class="btn-semua-rasa shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/15">Pilih semua</button>
+                </div>
+                <div class="daftar-rasa mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3"></div>
+                <p class="peringatan-rasa hidden text-xs text-red-600 mt-2">Pilih minimal satu rasa.</p>
             </div>
 
             <div class="mt-3 flex items-center justify-between">
@@ -309,6 +349,7 @@
         if (awal && awal.produk_id) {
             const produk = cariProduk(awal.produk_id);
             if (produk) {
+                div._rasaAwal = awal.rasa || null;
                 pilihProduk(div, produk, awal.pilihan);
                 if (awal.qty) {
                     div.querySelector('.input-qty').value = awal.qty;
@@ -320,11 +361,76 @@
         return div;
     }
 
+    // ---- Pilihan rasa per baris (bundling bebas) ----
+    function bersihkanPilihanRasa(div) {
+        div.querySelector('.pilihan-rasa').classList.add('hidden');
+        div.querySelector('.daftar-rasa').innerHTML = '';
+        div.querySelector('.input-rasa-isi').value = '';
+    }
+
+    // Baca centang -> isi input tersembunyi (semua tercentang = '' = tidak dibatasi) dan perbarui info stok.
+    function sinkronRasa(div, u) {
+        const kotak = Array.from(div.querySelectorAll('.daftar-rasa input[type=checkbox]'));
+        const dicentang = kotak.filter(function (k) { return k.checked; });
+        const input = div.querySelector('.input-rasa-isi');
+
+        if (dicentang.length === kotak.length) {
+            input.value = '';
+        } else {
+            input.value = JSON.stringify(dicentang.map(function (k) { return parseInt(k.value, 10); }));
+        }
+
+        const stok = dicentang.reduce(function (total, k) { return total + (parseInt(k.dataset.stok, 10) || 0); }, 0);
+        div.querySelector('.info-produk').innerHTML = dicentang.length + ' dari ' + kotak.length + ' rasa dipilih'
+            + ' · Total stok: <strong>' + stok + '</strong>';
+        div.querySelector('.peringatan-rasa').classList.toggle('hidden', dicentang.length > 0);
+        cekForm();
+    }
+
+    // Tampilkan daftar centang rasa untuk ukuran yang dipilih. 'awal' = id rasa tersimpan (null = semua).
+    function tampilkanPilihanRasa(div, u, awal) {
+        const wadah = div.querySelector('.pilihan-rasa');
+        const daftar = div.querySelector('.daftar-rasa');
+        daftar.innerHTML = '';
+
+        u.opsi.forEach(function (o) {
+            const dipakai = !awal || awal.length === 0 || awal.some(function (id) { return id == o.id; });
+            // Chip rasa: checkbox asli disembunyikan (tetap bisa difokus lewat keyboard), tampilannya lewat kotak centang buatan
+            // dan warna chip yang berubah saat tercentang (group-has-[:checked]).
+            const label = document.createElement('label');
+            label.className = 'group flex cursor-pointer select-none items-center gap-3 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 transition '
+                + 'hover:border-brand-300 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/40 '
+                + 'has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 '
+                + 'dark:border-gray-700 dark:bg-gray-800 dark:has-[:checked]:bg-brand-500/15';
+            label.innerHTML = '<input type="checkbox" value="' + o.id + '" data-stok="' + o.stok + '" class="sr-only"' + (dipakai ? ' checked' : '') + '>'
+                + '<span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 border-gray-300 bg-white transition '
+                + 'group-has-[:checked]:border-brand-500 group-has-[:checked]:bg-brand-500 dark:border-gray-600 dark:bg-gray-900">'
+                + '<svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5 text-white opacity-0 transition group-has-[:checked]:opacity-100">'
+                + '<path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
+                + '<span class="flex flex-col leading-tight">'
+                + '<span class="text-sm font-semibold text-gray-800 dark:text-gray-100">' + esc(o.nama) + '</span>'
+                + '<span class="text-xs ' + (o.stok > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-amber-600') + '">'
+                + (o.stok > 0 ? 'Stok ' + o.stok : 'Stok habis') + '</span></span>';
+            label.querySelector('input').addEventListener('change', function () { sinkronRasa(div, u); });
+            daftar.appendChild(label);
+        });
+
+        div.querySelector('.btn-semua-rasa').onclick = function () {
+            daftar.querySelectorAll('input[type=checkbox]').forEach(function (k) { k.checked = true; });
+            sinkronRasa(div, u);
+        };
+
+        wadah.classList.remove('hidden');
+        sinkronRasa(div, u);
+    }
+
     function isiInfoStok(div) {
         const info = div.querySelector('.info-produk');
         const select = div.querySelector('.input-varian-produk');
         const produk = cariProduk(div.querySelector('.input-id-produk').value);
         const bebas = jenisAktif === 'bebas';
+
+        bersihkanPilihanRasa(div);
 
         if (!produk) {
             info.textContent = 'Pilih produk terlebih dahulu';
@@ -341,8 +447,16 @@
                 info.innerHTML = '<span class="text-red-600">Ukuran ini tidak punya rasa aktif</span>';
                 return;
             }
-            info.innerHTML = 'Rasa yang bisa dipilih pembeli: <strong>' + esc(u.rasa.join(', ')) + '</strong>'
-                + ' · Total stok: <strong>' + u.stok + '</strong>';
+            // Produk tanpa varian rasa: tidak perlu menampilkan daftar rasa, cukup stoknya.
+            // Beberapa rasa: admin boleh memilih rasa mana saja yang tersedia untuk pembeli.
+            if (u.ada_rasa && u.opsi.length > 1) {
+                const awal = div._rasaAwal || null;
+                div._rasaAwal = null;
+                tampilkanPilihanRasa(div, u, awal);
+                return;
+            }
+            info.innerHTML = (u.ada_rasa ? 'Rasa yang bisa dipilih pembeli: <strong>' + esc(u.rasa.join(', ')) + '</strong> · ' : '')
+                + 'Total stok: <strong>' + u.stok + '</strong>';
             return;
         }
 
@@ -380,6 +494,7 @@
             inputId.value = '';
             select.disabled = true;
             select.innerHTML = '<option value="">Pilih produk dulu</option>';
+            aturKolomUkuran(div, false);
             isiInfoStok(div);
             cekForm();
 
@@ -402,7 +517,7 @@
                 item.type = 'button';
                 item.className = 'block w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700';
                 item.innerHTML = '<div class="font-medium text-gray-800 dark:text-white">' + esc(p.nama_produk) + '</div>'
-                    + '<div class="text-xs text-gray-500">' + p.varian.length + ' varian · ' + p.ukuran.length + ' ukuran'
+                    + '<div class="text-xs text-gray-500">' + p.varian.length + ' varian · ' + (produkTanpaUkuran(p) ? 'tanpa ukuran' : p.ukuran.length + ' ukuran')
                     + (p.dijual_satuan ? '' : ' · <span class="text-amber-600">Hanya untuk bundling</span>') + '</div>';
                 item.addEventListener('click', function () { pilihProduk(div, p); });
                 hasil.appendChild(item);
@@ -469,11 +584,16 @@
                 tanpaRasa = !u || u.jumlah_rasa === 0;
             }
 
+            // Bundling bebas: kalau daftar rasa tampil, minimal satu rasa harus dicentang.
+            const rasaKosong = bebas
+                && !b.querySelector('.pilihan-rasa').classList.contains('hidden')
+                && b.querySelector('.daftar-rasa input[type=checkbox]:checked') === null;
+
             b.querySelector('.peringatan-duplikat').classList.toggle('hidden', !kembar);
             b.querySelector('.input-search-produk').classList.toggle('border-red-500', kembar);
             select.classList.toggle('border-red-500', !!(id && !select.value) || tanpaRasa);
 
-            if (kembar || belumLengkap || tanpaRasa) {
+            if (kembar || belumLengkap || tanpaRasa || rasaKosong) {
                 masalah = true;
             }
         });
@@ -493,19 +613,29 @@
         const oldProduk = @json(old('produk_id', []));
         const oldPilihan = @json(old('varian_isi', []));
         const oldQty = @json(old('qty', []));
+        const oldRasa = @json(old('rasa_isi', []));
+
+        function urai(json) {
+            try {
+                const hasil = json ? JSON.parse(json) : null;
+                return Array.isArray(hasil) ? hasil : null;
+            } catch (e) {
+                return null;
+            }
+        }
         const tersimpan = @json($isiTersimpan);
 
         gantiJenis(jenisAktif);
 
         if (oldProduk.length > 0) {
             oldProduk.forEach(function (id, i) {
-                tambahBaris({produk_id: id, pilihan: oldPilihan[i] || null, qty: oldQty[i] || 1});
+                tambahBaris({produk_id: id, pilihan: oldPilihan[i] || null, qty: oldQty[i] || 1, rasa: urai(oldRasa[i])});
             });
         } else if (tersimpan.length > 0) {
             tersimpan.forEach(function (item) {
                 // Bundling bebas menyimpan ukuran, bundling tetap menyimpan id varian.
                 const pilihan = jenisAktif === 'bebas' ? nilaiUkuran(item.ukuran) : item.detail_produk_id;
-                tambahBaris({produk_id: item.produk_id, pilihan: pilihan, qty: item.qty});
+                tambahBaris({produk_id: item.produk_id, pilihan: pilihan, qty: item.qty, rasa: item.rasa_diizinkan || null});
             });
         } else {
             tambahBaris();

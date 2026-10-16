@@ -40,6 +40,23 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <button type="button" @click="toggleModeScan(); $event.currentTarget.blur()"
+                        :aria-pressed="modeScan.toString()"
+                        :title="modeScan ? 'Klik untuk menonaktifkan scan barcode' : 'Klik untuk mengaktifkan scan barcode'"
+                        :class="modeScan
+                            ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
+                            : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                        class="relative flex items-center gap-2 px-4 py-2 font-semibold rounded-lg border transition text-sm shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6v12M7 6v12M11 6v12M14 6v12M18 6v12M20 6v12" />
+                        </svg>
+                        <span x-text="modeScan ? 'Scan Aktif' : 'Scan Barcode'"></span>
+                        <span x-show="modeScan" class="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+                            <span class="relative inline-flex h-3 w-3 rounded-full bg-white"></span>
+                        </span>
+                    </button>
                     <div class="relative flex-1 sm:w-80">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1329,8 +1346,7 @@
                             <div
                                 class="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-6 rounded-2xl border border-amber-100 dark:border-amber-500/20 flex flex-col items-center gap-4">
                                 <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100">
-                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&color=5a3c27&data=' + encodeURIComponent(qrisPayload)"
-                                        class="w-44 h-44" alt="QRIS QR Code">
+                                    <img src="{{ $qrisUrl }}" class="w-56 h-56 object-contain" alt="QRIS">
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span
@@ -2073,6 +2089,7 @@
         function aplikasiKasir() {
             return {
                 halamanAktif: 'beranda',
+                modeScan: false,
                 daftarProduk: @json($daftarProduk),
                 daftarKategori: @json($daftarKategori),
                 daftarBundling: @json($daftarBundling),
@@ -2190,6 +2207,91 @@
                     this._intervalPromoKadaluwarsa = setInterval(() => {
                         this.perbaruiPromoKadaluwarsa();
                     }, 5000);
+
+                    // Scan barcode langsung tanpa klik kolom pencarian dulu.
+                    // Pakai capture supaya jalan sebelum tombol yang kebetulan fokus menangkap Enter.
+                    this._bufferScan = '';
+                    this._waktuKarakterTerakhir = 0;
+                    this._handlerScanGlobal = (e) => this.tanganiKeydownScan(e);
+                    document.addEventListener('keydown', this._handlerScanGlobal, true);
+                },
+
+                destroy() {
+                    if (this._handlerScanGlobal) {
+                        document.removeEventListener('keydown', this._handlerScanGlobal, true);
+                    }
+                    if (this._intervalPromoKadaluwarsa) {
+                        clearInterval(this._intervalPromoKadaluwarsa);
+                    }
+                },
+
+                toggleModeScan(nilai = null) {
+                    this.modeScan = typeof nilai === 'boolean' ? nilai : !this.modeScan;
+                    this._bufferScan = '';
+                    this.tambahToast(
+                        this.modeScan ? 'Scan barcode aktif. Silakan scan produk (Esc untuk menonaktifkan).' : 'Scan barcode dinonaktifkan.',
+                        this.modeScan ? 'sukses' : 'info'
+                    );
+                },
+
+                // Ada modal yang lagi terbuka? Selama itu true, scan global dimatikan.
+                adaModalTerbuka() {
+                    return Object.keys(this).some(k => /^modal.*Terbuka$/.test(k) && this[k] === true);
+                },
+
+                // Hanya aktif setelah tombol "Scan Barcode" diklik (modeScan).
+                // Scanner barcode = mengetik karakter sangat cepat (selisih beberapa ms) lalu Enter.
+                // Supaya tidak salah tangkap:
+                //  - hanya aktif di halaman beranda kasir dan tidak ada modal terbuka
+                //  - dibiarkan kalau fokus lagi di kolom isian (nama, jumlah, member, dll.)
+                //  - ketikan manusia (lambat) tidak pernah dianggap scan
+                //  - minimal 4 karakter dan semuanya harus cepat berurutan
+                tanganiKeydownScan(e) {
+                    // Scan global cuma aktif setelah kasir klik tombol "Scan Barcode".
+                    if (!this.modeScan) {
+                        this._bufferScan = '';
+                        return;
+                    }
+                    // Esc = matikan mode scan.
+                    if (e.key === 'Escape') {
+                        this.toggleModeScan(false);
+                        return;
+                    }
+                    if (this.halamanAktif !== 'beranda' || this.adaModalTerbuka()) {
+                        this._bufferScan = '';
+                        return;
+                    }
+                    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+                    const el = e.target;
+                    const tag = el && el.tagName ? el.tagName.toLowerCase() : '';
+                    if (tag === 'input' || tag === 'textarea' || tag === 'select' || (el && el.isContentEditable)) {
+                        this._bufferScan = '';
+                        return;
+                    }
+
+                    const sekarang = performance.now();
+                    const MAKS_JEDA_MS = 60;
+
+                    if (e.key === 'Enter') {
+                        const kode = this._bufferScan;
+                        const cepat = (sekarang - this._waktuKarakterTerakhir) <= MAKS_JEDA_MS;
+                        this._bufferScan = '';
+                        if (kode.length >= 4 && cepat) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.scanKode(kode);
+                        }
+                        return;
+                    }
+
+                    if (e.key.length !== 1) return;
+
+                    if (sekarang - this._waktuKarakterTerakhir > MAKS_JEDA_MS) {
+                        this._bufferScan = '';
+                    }
+                    this._bufferScan += e.key;
+                    this._waktuKarakterTerakhir = sekarang;
                 },
 
                 // Menentukan apakah sebuah objek promo masih berlaku dibanding waktu sekarang (jam di browser kasir)
@@ -2432,30 +2534,6 @@
                     };
                 },
 
-                get qrisPayload() {
-                    // Base QRIS format for static/dynamic merchant
-                    const baseMerchant = "00020101021226380010co.saishos0115936000020012345520458125303360";
-                    const amtStr = this.totalTagihan.toString();
-                    const amtPart = "54" + amtStr.length.toString().padStart(2, '0') + amtStr;
-                    const rest = "5802ID5907saishoS6007Jakarta6304";
-                    const payloadWithoutCrc = baseMerchant + amtPart + rest;
-
-                    // Calculate CRC-16 CCITT
-                    let crc = 0xFFFF;
-                    for (let c = 0; c < payloadWithoutCrc.length; c++) {
-                        crc ^= payloadWithoutCrc.charCodeAt(c) << 8;
-                        for (let i = 0; i < 8; i++) {
-                            if ((crc & 0x8000) !== 0) {
-                                crc = (crc << 1) ^ 0x1021;
-                            } else {
-                                crc = crc << 1;
-                            }
-                        }
-                    }
-                    const crcHex = (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
-                    return payloadWithoutCrc + crcHex;
-                },
-
                 getFotoUrl(foto) {
                     if (foto) {
                         if (foto.startsWith('http://') || foto.startsWith('https://')) return foto;
@@ -2635,8 +2713,11 @@
 
                 // Scan barcode: scanner mengetik kode lalu menekan Enter. Kode yang cocok persis
                 // langsung masuk keranjang sebagai detail produk yang tepat (qty 1).
-                scanKode() {
-                    const kode = String(this.kataKunciPencarian || '').trim().toLowerCase();
+                // Tanpa argumen = dari kolom pencarian (kasir ketik/scan di situ).
+                // Dengan argumen = hasil tangkapan scanner global (kolom pencarian tidak difokus).
+                scanKode(kodeLangsung = null) {
+                    const dariScannerGlobal = typeof kodeLangsung === 'string';
+                    const kode = String(dariScannerGlobal ? kodeLangsung : (this.kataKunciPencarian || '')).trim().toLowerCase();
                     if (!kode) return;
 
                     for (const produk of this.daftarProduk) {
@@ -2650,9 +2731,15 @@
                         }
 
                         this.tambahVarianKeKeranjang(produk, detail, 1);
-                        this.kataKunciPencarian = '';
-                        this.halamanProduk = 1;
+                        if (!dariScannerGlobal) {
+                            this.kataKunciPencarian = '';
+                            this.halamanProduk = 1;
+                        }
                         return;
+                    }
+
+                    if (dariScannerGlobal) {
+                        this.tambahToast('Kode ' + kodeLangsung.trim() + ' tidak ditemukan.', 'error');
                     }
                 },
 

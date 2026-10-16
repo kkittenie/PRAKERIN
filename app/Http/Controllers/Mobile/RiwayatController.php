@@ -34,7 +34,7 @@ class RiwayatController extends Controller
             // Riwayat penukaran hadiah dari kartu stamp — terpisah dari $penukaran
             // (yang khusus penukaran poin).
             $riwayatStamp = $member->stampRedemptions()
-                ->with(['produk', 'stampProgram'])
+                ->with(['produk', 'detailProduk', 'stampProgram'])
                 ->latest()
                 ->get();
 

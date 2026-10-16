@@ -49,7 +49,7 @@
         </template>
 
         <div class="lg:col-span-6 text-center">
-            <img x-ref="qrisImage" src="{{ asset('images/payment/qris-placeholder.png') }}" alt="Kode QRIS"
+            <img x-ref="qrisImage" src="{{ $qrisUrl }}" alt="Kode QRIS"
                  class="mx-auto h-60 w-60 rounded-2xl border border-gray-100 object-contain">
 
             <button type="button" @click="download()" :disabled="downloading"

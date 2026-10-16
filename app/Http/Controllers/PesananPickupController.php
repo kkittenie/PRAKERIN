@@ -503,7 +503,7 @@ class PesananPickupController extends Controller
 
                 // Kembalikan reward stamp ke status menunggu_diambil (bukan dalam bentuk stamp poin),
                 // sehingga kartu hadiah siap diambil kembali via aplikasi (pickup) atau kasir offline.
-                $stampRedemptions = StampRedemption::with(['stampProgram', 'produk'])
+                $stampRedemptions = StampRedemption::with(['stampProgram', 'produk', 'detailProduk'])
                     ->where(function ($q) use ($transaksi) {
                         $q->where('transaksi_id', $transaksi->id);
                         if (preg_match('/STP-[A-Z0-9]+/', $transaksi->catatan_pesanan ?? '', $matches)) {
@@ -525,7 +525,7 @@ class PesananPickupController extends Controller
                     NotificationHelper::untukMember(
                         $transaksi->member_id,
                         'Pesanan Dibatalkan - Hadiah Stamp Siap Diambil',
-                        'Pesanan #' . $transaksi->kode_transaksi . ' dibatalkan oleh toko. Hadiah ' . ($redemption->produk?->nama_produk ?? 'stamp') . ' (Kode: ' . $redemption->kode_redeem . ') siap diambil kembali via aplikasi atau kasir.',
+                        'Pesanan #' . $transaksi->kode_transaksi . ' dibatalkan oleh toko. Hadiah ' . ($redemption->produk ? $redemption->nama_tampil : 'stamp') . ' (Kode: ' . $redemption->kode_redeem . ') siap diambil kembali via aplikasi atau kasir.',
                         'stamps',
                         route('member.stamps.index'),
                         'info'

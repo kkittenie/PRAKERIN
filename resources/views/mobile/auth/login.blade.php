@@ -80,7 +80,7 @@
 
         <!-- Left Column: Desktop Hero Visual Banner -->
         <div class="hidden md:flex relative h-full w-full overflow-hidden bg-[#5a3c27]">
-            <img src="{{ asset('images/welcome-slide-1.png') }}" alt="Saisho Bakery"
+            <img src="{{ \App\Models\WelcomeSlide::urlPertama(asset('images/welcome-slide-1.png')) }}" alt="Saisho Bakery"
                 class="absolute inset-0 w-full h-full object-cover object-center">
             <div class="absolute inset-0 bg-gradient-to-t from-[#2d1a0e] via-[#5a3c27]/70 to-black/30"></div>
             

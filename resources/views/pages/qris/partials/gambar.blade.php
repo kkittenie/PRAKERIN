@@ -1,0 +1,1 @@
+<img src="{{ asset('storage/' . $item->gambar) }}" alt="{{ $item->nama }}" class="h-20 w-20 rounded-lg border bg-white object-contain mx-auto">
