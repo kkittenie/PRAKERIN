@@ -202,9 +202,12 @@
                                             </div>
                                             <p class="mt-0.5 text-xs text-gray-400">Online &middot; {{ $trx->created_at->translatedFormat('d M Y, H:i') }}</p>
                                         </div>
-                                        <p class="shrink-0 text-sm font-bold {{ $sudahDiambil ? 'text-green-600' : 'text-gray-400' }}">
-                                            {{ $sudahDiambil ? '+' . number_format($trx->poin_didapat ?? 0, 0, ',', '.') . ' poin' : 'Rp' . number_format($trx->total_bayar, 0, ',', '.') }}
-                                        </p>
+                                        {{-- Poin dari transaksi ini disembunyikan di daftar riwayat; hanya total yang belum diambil yang tampil --}}
+                                        @unless ($sudahDiambil)
+                                            <p class="shrink-0 text-sm font-bold text-gray-400">
+                                                {{ 'Rp' . number_format($trx->total_bayar, 0, ',', '.') }}
+                                            </p>
+                                        @endunless
                                     </a>
                                 @else
                                     @php
@@ -253,9 +256,11 @@
                                             <p class="truncate text-sm font-bold text-gray-900">{{ $trx->kode_transaksi }}</p>
                                             <p class="mt-0.5 text-xs text-gray-400">Offline &middot; {{ $trx->created_at->translatedFormat('d M Y, H:i') }}</p>
                                         </div>
-                                        <p class="shrink-0 text-sm font-bold {{ $belumLunas ? 'text-red-500' : 'text-green-600' }}">
-                                            {{ $belumLunas ? 'Rp' . number_format($trx->total_bayar, 0, ',', '.') : '+' . number_format($trx->poin_didapat ?? 0, 0, ',', '.') . ' poin' }}
-                                        </p>
+                                        @if ($belumLunas)
+                                            <p class="shrink-0 text-sm font-bold text-red-500">
+                                                {{ 'Rp' . number_format($trx->total_bayar, 0, ',', '.') }}
+                                            </p>
+                                        @endif
                                     </button>
                                 @endif
                             @endforeach
@@ -537,9 +542,11 @@
                                                         {{ $pesananBadge['label'] }}
                                                     </span>
                                                 @endif
-                                                <p class="text-sm font-black {{ $sudahDiambil ? 'text-green-600' : 'text-gray-700' }}">
-                                                    {{ $sudahDiambil ? '+' . number_format($trx->poin_didapat ?? 0, 0, ',', '.') . ' poin' : 'Rp' . number_format($trx->total_bayar, 0, ',', '.') }}
-                                                </p>
+                                                @unless ($sudahDiambil)
+                                                    <p class="text-sm font-black text-gray-700">
+                                                        {{ 'Rp' . number_format($trx->total_bayar, 0, ',', '.') }}
+                                                    </p>
+                                                @endunless
                                             </div>
                                         </a>
                                     @else
@@ -596,9 +603,11 @@
                                                 <span class="rounded-full px-3 py-1 text-[11px] font-extrabold {{ $belumLunas ? 'bg-red-100 text-red-700' : 'bg-green-50 text-green-700' }}">
                                                     {{ $belumLunas ? 'Belum Lunas' : 'Selesai (Kasir)' }}
                                                 </span>
-                                                <p class="text-sm font-black {{ $belumLunas ? 'text-red-600' : 'text-green-600' }}">
-                                                    {{ $belumLunas ? 'Rp' . number_format($trx->total_bayar, 0, ',', '.') : '+' . number_format($trx->poin_didapat ?? 0, 0, ',', '.') . ' poin' }}
-                                                </p>
+                                                @if ($belumLunas)
+                                                    <p class="text-sm font-black text-red-600">
+                                                        {{ 'Rp' . number_format($trx->total_bayar, 0, ',', '.') }}
+                                                    </p>
+                                                @endif
                                             </div>
                                         </button>
                                     @endif
