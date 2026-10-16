@@ -56,7 +56,7 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'Member', 'path' => '/member', 'permission' => 'lihat_member'],
                     ['name' => 'Pengaturan Member', 'path' => '/pengaturan-member', 'permission' => 'lihat_member'],
-                    ['name' => 'Aturan Naik Level', 'path' => '/member-level', 'permission' => 'lihat_member'],
+                    ['name' => 'Badge', 'path' => '/member-level', 'permission' => 'lihat_member'],
                 ],
             ],
             [

@@ -48,6 +48,7 @@
                 <thead>
                     <tr>
                         <th class="py-3 text-center">Urutan</th>
+                        <th class="py-3">Kode</th>
                         <th class="py-3 text-center">Gambar</th>
                         <th class="py-3">Judul & Deskripsi</th>
                         <th class="py-3 text-center">Status</th>
@@ -93,6 +94,7 @@
             order: [[0, 'asc']],
             columns: [
                 { data: 'urutan', name: 'urutan', className: 'text-center font-semibold' },
+                { data: 'kode_html', name: 'kode_slide' },
                 { data: 'gambar_html', name: 'gambar', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'judul', name: 'judul' },
                 { data: 'status_html', name: 'status_aktif', className: 'text-center' },

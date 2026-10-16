@@ -14,8 +14,14 @@ use Illuminate\Validation\ValidationException;
 
 class ProdukController extends Controller
 {
-    /** Folder foto detail produk (terpisah dari folder foto produk supaya tidak ikut terhapus). */
-    private const FOTO_DETAIL_PATH = 'produk-varian';
+    /**
+     * Folder foto detail produk (varian/rasa). Tiap detail punya subfolder sesuai kodenya:
+     * varian-rasa/PRD0001-01/namafile.jpg
+     */
+    private const FOTO_DETAIL_PATH = 'varian-rasa';
+
+    /** Folder lama (per id produk), masih dikenali supaya foto lama tetap bisa dibersihkan. */
+    private const FOTO_DETAIL_PATH_LAMA = 'produk-varian';
 
     public function index(Request $request)
     {
@@ -257,7 +263,11 @@ class ProdukController extends Controller
                     Storage::disk('public')->delete($produk->foto);
                 }
 
-                Storage::disk('public')->deleteDirectory(self::FOTO_DETAIL_PATH . '/' . $produk->id);
+                foreach ($produk->detailProduks as $detail) {
+                    $this->hapusFotoDetail($detail->foto);
+                }
+
+                Storage::disk('public')->deleteDirectory(self::FOTO_DETAIL_PATH_LAMA . '/' . $produk->id);
 
                 activity()
                     ->causedBy(auth()->user())
@@ -418,7 +428,10 @@ class ProdukController extends Controller
             $foto = $detail?->foto;
             if ($b['file']) {
                 $this->hapusFotoDetail($foto);
-                $foto = $b['file']->store(self::FOTO_DETAIL_PATH . '/' . $produk->id, 'public');
+                $foto = $b['file']->store($this->folderFotoDetail($b['kode']), 'public');
+            } elseif ($foto) {
+                // Kode berubah -> foto ikut pindah ke folder kode yang baru.
+                $foto = $this->pindahkanFotoDetail($foto, $b['kode']);
             }
 
             $data = [
@@ -452,11 +465,66 @@ class ProdukController extends Controller
             });
     }
 
+    /** Folder foto untuk satu kode detail, mis. varian-rasa/PRD0001-01 (karakter aneh diganti "-"). */
+    private function folderFotoDetail(string $kode): string
+    {
+        $aman = trim(preg_replace('/[^A-Za-z0-9_-]+/', '-', $kode), '-');
+
+        return self::FOTO_DETAIL_PATH . '/' . ($aman !== '' ? $aman : 'tanpa-kode');
+    }
+
+    /**
+     * True kalau foto ini milik satu detail saja (ada di subfolder kode atau folder lama per produk).
+     * File lepas langsung di varian-rasa/ adalah file bersama dari master lama, jadi tidak boleh dihapus/dipindah.
+     */
+    private function fotoMilikDetail(?string $path): bool
+    {
+        if (! $path) {
+            return false;
+        }
+
+        if (str_starts_with($path, self::FOTO_DETAIL_PATH_LAMA . '/')) {
+            return true;
+        }
+
+        return str_starts_with($path, self::FOTO_DETAIL_PATH . '/') && substr_count($path, '/') >= 2;
+    }
+
+    /** Pindahkan foto ke folder kode yang sekarang; mengembalikan path foto (baru atau tetap). */
+    private function pindahkanFotoDetail(string $foto, string $kode): string
+    {
+        if (! $this->fotoMilikDetail($foto) || ! Storage::disk('public')->exists($foto)) {
+            return $foto;
+        }
+
+        $folderBaru = $this->folderFotoDetail($kode);
+        if (dirname($foto) === $folderBaru) {
+            return $foto;
+        }
+
+        $pathBaru = $folderBaru . '/' . basename($foto);
+        Storage::disk('public')->move($foto, $pathBaru);
+        $this->hapusFolderKosong(dirname($foto));
+
+        return $pathBaru;
+    }
+
     /** Hanya hapus file yang memang milik detail produk (bukan file bersama dari master lama). */
     private function hapusFotoDetail(?string $path): void
     {
-        if ($path && str_starts_with($path, self::FOTO_DETAIL_PATH . '/') && Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        if (! $this->fotoMilikDetail($path) || ! Storage::disk('public')->exists($path)) {
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
+        $this->hapusFolderKosong(dirname($path));
+    }
+
+    private function hapusFolderKosong(string $folder): void
+    {
+        if (! in_array($folder, [self::FOTO_DETAIL_PATH, self::FOTO_DETAIL_PATH_LAMA, '.', ''], true)
+            && empty(Storage::disk('public')->allFiles($folder))) {
+            Storage::disk('public')->deleteDirectory($folder);
         }
     }
 

@@ -2,7 +2,7 @@
 
 @section('content')
 
-    <x-common.page-breadcrumb pageTitle="Aturan Naik Level" />
+    <x-common.page-breadcrumb pageTitle="Badge" />
 
     <div class="space-y-6" x-data="{
             modalHapusTerbuka: false,
@@ -36,7 +36,7 @@
                 <div class="sdt-toolbar-right">
                     <a href="{{ route('member-level.create') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white px-5 py-2.5 font-semibold text-sm transition shadow-xs">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <span>Tambah Level</span>
+                        <span>Tambah Badge</span>
                     </a>
                 </div>
             </div>
@@ -46,7 +46,7 @@
                     <thead>
                         <tr>
                             <th class="py-3">No</th>
-                            <th class="py-3">Nama Level</th>
+                            <th class="py-3">Nama Badge</th>
                             <th class="py-3 text-center">Minimal Transaksi</th>
                             <th class="py-3 text-center">Status</th>
                             <th class="py-3 text-right">Aksi</th>

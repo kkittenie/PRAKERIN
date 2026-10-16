@@ -43,7 +43,7 @@ class MemberLevelController extends Controller
     {
         try {
             return view('pages.member-level.create', [
-                'title' => 'Tambah Level Membership',
+                'title' => 'Tambah Badge Membership',
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -168,8 +168,8 @@ class MemberLevelController extends Controller
             'warna_badge' => 'nullable|string|max:20',
             'status_aktif' => 'nullable|boolean',
         ], [
-            'nama_level.required' => 'Nama level wajib diisi.',
-            'nama_level.unique' => 'Nama level ini sudah dipakai.',
+            'nama_level.required' => 'Badge wajib diisi.',
+            'nama_level.unique' => 'Badge ini sudah dipakai.',
             'minimal_transaksi.required' => 'Minimal transaksi wajib diisi.',
             'minimal_transaksi.numeric' => 'Minimal transaksi harus berupa angka.',
             'minimal_transaksi.min' => 'Minimal transaksi tidak boleh negatif.',

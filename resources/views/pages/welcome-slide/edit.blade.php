@@ -9,7 +9,7 @@
         <form action="{{ route('welcome-slide.update', $slide->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
-            @include('pages.welcome-slide.partials-form', ['slide' => $slide])
+            @include('pages.welcome-slide.partials.form', ['slide' => $slide])
 
             <div class="mt-8 flex justify-end gap-3">
                 <a href="{{ route('welcome-slide.index') }}" class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Batal</a>

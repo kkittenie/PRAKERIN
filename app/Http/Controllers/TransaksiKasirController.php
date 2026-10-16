@@ -1396,9 +1396,19 @@ class TransaksiKasirController extends Controller
             $transaksi = Transaksi::with(['detailTransaksi.produk', 'member'])->where('kode_transaksi', $kodeTransaksi)->firstOrFail();
             $jenis = $request->get('jenis', 'pelanggan');
 
+            // Cash drawer cuma boleh kebuka kalau SEMUA terpenuhi:
+            // struk pelanggan + transaksi sudah Lunas + dibayar Tunai, dan
+            // cetaknya datang dari alur kasir (?laci=1), bukan cetak ulang
+            // dari riwayat/pesanan pickup.
+            $bukaLaci = $jenis === 'pelanggan'
+                && $request->boolean('laci')
+                && strtolower(trim((string) $transaksi->status_pembayaran)) === 'lunas'
+                && strtolower(trim((string) $transaksi->metode_pembayaran)) === 'tunai';
+
             return view('pages.transaksi.cetak', [
                 'transaksi' => $transaksi,
                 'jenis' => $jenis,
+                'bukaLaci' => $bukaLaci,
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

@@ -32,7 +32,17 @@
     };
     $riwayatStamp = $riwayatStamp ?? collect();
     $riwayat = $riwayat ?? collect();
-    $isEmpty = $penukaran->isEmpty() && $riwayat->isEmpty() && $riwayatStamp->isEmpty();
+
+    // Tab Voucher disembunyikan sementara (kodenya tetap ada). Ubah ke true untuk menampilkannya lagi.
+    $tampilTabVoucher = false;
+
+    $daftarTab = ['riwayat' => 'Order', 'voucher' => 'Voucher', 'stamp' => 'Stamp'];
+    if (! $tampilTabVoucher) {
+        unset($daftarTab['voucher']);
+    }
+
+    // Riwayat penukaran voucher tidak dihitung kalau tab-nya disembunyikan.
+    $isEmpty = ($tampilTabVoucher ? $penukaran->isEmpty() : true) && $riwayat->isEmpty() && $riwayatStamp->isEmpty();
 @endphp
 
 @section('content')
@@ -83,19 +93,15 @@
             <h1 class="text-center text-lg font-extrabold text-gray-900">Riwayat</h1>
 
             @unless ($isEmpty)
-                <div class="relative mt-4 grid grid-cols-3 border-b border-gray-100">
-                    @foreach ([
-                        'riwayat' => 'Order',
-                        'voucher' => 'Voucher',
-                        'stamp' => 'Stamp',
-                    ] as $key => $label)
+                <div class="relative mt-4 grid {{ count($daftarTab) === 3 ? 'grid-cols-3' : 'grid-cols-2' }} border-b border-gray-100">
+                    @foreach ($daftarTab as $key => $label)
                         <button type="button" data-tab="{{ $key }}" onclick="switchRiwayatTab('{{ $key }}')"
                                 class="riwayat-tab relative pb-3 text-center text-[13px] font-bold transition {{ $key === 'riwayat' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
                             {{ $label }}
                         </button>
                     @endforeach
                     <span id="riwayat-tab-indicator"
-                          class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] w-1/3 rounded-full bg-brand-800 transition-transform duration-300 ease-out"
+                          class="pointer-events-none absolute -bottom-px left-0 h-[2.5px] {{ count($daftarTab) === 3 ? 'w-1/3' : 'w-1/2' }} rounded-full bg-brand-800 transition-transform duration-300 ease-out"
                           style="transform: translateX(0%);"></span>
                 </div>
             @endunless
@@ -258,6 +264,7 @@
                 @endif
             </div>
 
+            @if ($tampilTabVoucher)
             {{-- TAB: VOUCHER MOBILE --}}
             <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="1">
                 @if ($penukaran->isEmpty())
@@ -319,9 +326,10 @@
                     </div>
                 @endif
             </div>
+            @endif
 
             {{-- TAB: STAMP MOBILE --}}
-            <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="2">
+            <div class="riwayat-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="{{ $tampilTabVoucher ? 2 : 1 }}">
                 @if ($riwayatStamp->isEmpty())
                     @include('mobile.components.empty-state', [
                         'title' => 'Belum Ada Penukaran Stamp',
@@ -393,7 +401,7 @@
         <div class="flex items-center justify-between border-b border-gray-100 pb-6">
             <div>
                 <h1 class="text-2xl font-black text-brand-800 tracking-tight">Aktivitas & Riwayat Transaksi</h1>
-                <p class="text-xs text-gray-500 mt-1">Pantau pesanan aktif, riwayat pembelian, penukaran voucher, dan stamp member Anda</p>
+                <p class="text-xs text-gray-500 mt-1">Pantau pesanan aktif, riwayat pembelian, {{ $tampilTabVoucher ? 'penukaran voucher, ' : '' }}dan stamp member Anda</p>
             </div>
 
             {{-- Desktop Tab Navigation Bar --}}
@@ -404,11 +412,13 @@
                         class="rounded-xl px-5 py-2.5 text-xs transition duration-150">
                         Order
                     </button>
+                    @if ($tampilTabVoucher)
                     <button type="button" @click="desktopTab = 'voucher'"
                         :class="desktopTab === 'voucher' ? 'bg-white text-brand-800 shadow-sm font-extrabold' : 'text-gray-600 hover:text-gray-900 font-bold'"
                         class="rounded-xl px-5 py-2.5 text-xs transition duration-150">
                         Voucher
                     </button>
+                    @endif
                     <button type="button" @click="desktopTab = 'stamp'"
                         :class="desktopTab === 'stamp' ? 'bg-white text-brand-800 shadow-sm font-extrabold' : 'text-gray-600 hover:text-gray-900 font-bold'"
                         class="rounded-xl px-5 py-2.5 text-xs transition duration-150">
@@ -599,6 +609,7 @@
                 @endif
             </div>
 
+            @if ($tampilTabVoucher)
             {{-- ================= DESKTOP TAB 2: VOUCHER ================= --}}
             <div x-show="desktopTab === 'voucher'" class="space-y-6">
                 @if ($penukaran->isEmpty())
@@ -659,6 +670,7 @@
                     </div>
                 @endif
             </div>
+            @endif
 
             {{-- ================= DESKTOP TAB 3: STAMP ================= --}}
             <div x-show="desktopTab === 'stamp'" class="space-y-6">
@@ -834,7 +846,7 @@
 
     <script>
         (function () {
-            const tabs = ['riwayat', 'voucher', 'stamp'];
+            const tabs = @json(array_keys($daftarTab));
             let current = 0;
 
             const track = document.getElementById('riwayat-tab-track');

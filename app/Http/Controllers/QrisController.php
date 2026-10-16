@@ -28,11 +28,12 @@ class QrisController extends Controller
 
                 return DataTables::of($query)
                     ->addIndexColumn()
+                    ->addColumn('kode_html', fn ($item) => view('pages.qris.partials.kode', compact('item'))->render())
                     ->addColumn('gambar_html', fn ($item) => view('pages.qris.partials.gambar', compact('item'))->render())
                     ->editColumn('nama', fn ($item) => view('pages.qris.partials.nama', compact('item'))->render())
                     ->addColumn('status_html', fn ($item) => view('pages.qris.partials.status', compact('item'))->render())
                     ->addColumn('aksi', fn ($item) => view('pages.qris.partials.aksi', compact('item'))->render())
-                    ->rawColumns(['gambar_html', 'nama', 'status_html', 'aksi'])
+                    ->rawColumns(['kode_html', 'gambar_html', 'nama', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
                 activity('error')
@@ -66,10 +67,18 @@ class QrisController extends Controller
             $data = $request->validate($this->aturan(true));
 
             $qris = DB::transaction(function () use ($request, $data) {
+                // Dibuat dulu supaya dapat id, lalu kode (QRS001, dst) dibentuk dari id
+                // dan dipakai sebagai nama folder gambar: qris/QRS001/namafile.png
                 $qris = QrisImage::create([
                     'nama' => $data['nama'],
-                    'gambar' => $request->file('gambar')->store(self::FOLDER, 'public'),
+                    'gambar' => '',
                     'status_aktif' => false,
+                ]);
+
+                $kode = 'QRS' . str_pad((string) $qris->id, 3, '0', STR_PAD_LEFT);
+                $qris->update([
+                    'kode_qris' => $kode,
+                    'gambar' => $request->file('gambar')->store(self::FOLDER . '/' . $kode, 'public'),
                 ]);
 
                 // QRIS pertama otomatis aktif.
@@ -109,8 +118,10 @@ class QrisController extends Controller
                 $perubahan = ['nama' => $data['nama']];
 
                 if ($request->hasFile('gambar')) {
+                    $kode = $qris->kode_qris;
                     $this->hapusFile($qris->gambar);
-                    $perubahan['gambar'] = $request->file('gambar')->store(self::FOLDER, 'public');
+                    $perubahan['kode_qris'] = $kode;
+                    $perubahan['gambar'] = $request->file('gambar')->store(self::FOLDER . '/' . $kode, 'public');
                 }
 
                 $qris->update($perubahan);
@@ -191,10 +202,18 @@ class QrisController extends Controller
         $qris->update(['status_aktif' => true]);
     }
 
+    /** Hapus file gambar; kalau folder kodenya jadi kosong, foldernya ikut dihapus. */
     private function hapusFile(?string $path): void
     {
-        if ($path && Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        if (! $path || ! Storage::disk('public')->exists($path)) {
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
+
+        $folder = dirname($path);
+        if ($folder !== self::FOLDER && $folder !== '.' && empty(Storage::disk('public')->allFiles($folder))) {
+            Storage::disk('public')->deleteDirectory($folder);
         }
     }
 }

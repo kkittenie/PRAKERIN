@@ -8,9 +8,19 @@ class WelcomeSlide extends Model
 {
     protected $table = 'welcome_slides';
 
-    protected $fillable = ['judul', 'deskripsi', 'gambar', 'urutan', 'status_aktif'];
+    protected $fillable = ['kode_slide', 'judul', 'deskripsi', 'gambar', 'urutan', 'status_aktif'];
 
     protected $casts = ['status_aktif' => 'boolean'];
+
+    /** Kode slide (WLS001, dst). Kalau kolomnya masih kosong, dibentuk dari id. */
+    public function getKodeSlideAttribute($value): string
+    {
+        if (! empty($value)) {
+            return $value;
+        }
+
+        return 'WLS' . str_pad((string) $this->id, 3, '0', STR_PAD_LEFT);
+    }
 
     /** URL gambar slide aktif pertama (dipakai halaman login); $default kalau belum ada slide. */
     public static function urlPertama(string $default): string

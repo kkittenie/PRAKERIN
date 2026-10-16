@@ -941,6 +941,28 @@
             img.src = @json(asset('images/logo/B&W-logo.svg'));
         }
 
+        // true hanya kalau server sudah memastikan: struk pelanggan + Lunas + Tunai.
+        const BUKA_LACI = @json($bukaLaci);
+
+        // Kirim pulsa buka cash drawer ke printer (laci tersambung ke port DK printer).
+        function bukaCashDrawer() {
+            try {
+                // Kalau aplikasi Android menyediakan method khusus, pakai itu.
+                if (typeof Android.openCashDrawer === 'function') {
+                    const hasil = Android.openCashDrawer();
+                    if (!(hasil === "true" || hasil === true)) {
+                        showToast("Gagal membuka cash drawer.", "error");
+                    }
+                    return;
+                }
+                // Fallback: perintah ESC/POS standar "ESC p 0 25 25" lewat printer.
+                Android.printText(String.fromCharCode(27, 112, 0, 25, 25));
+            } catch (e) {
+                console.error('Gagal membuka cash drawer:', e);
+                showToast("Gagal membuka cash drawer.", "error");
+            }
+        }
+
         function printStruk() {
             if (!window.Android) {
                 showToast("Koneksi Bluetooth hanya tersedia di aplikasi Android POS.", "info");
@@ -953,6 +975,10 @@
             function kirimHasilPrint(result) {
                 if (result === "true" || result === true) {
                     showToast("Berhasil dicetak ke printer Bluetooth!", "sukses");
+                    // Lunas + Tunai + struk pelanggan (ditentukan server) -> buka laci.
+                    if (BUKA_LACI) {
+                        bukaCashDrawer();
+                    }
                 } else {
                     showToast("Gagal mencetak ke printer Bluetooth.", "error");
                 }

@@ -4,10 +4,13 @@ namespace App\Console\Commands;
 
 use App\Models\Banner;
 use App\Models\Bundling;
+use App\Models\DetailProduk;
 use App\Models\Member;
 use App\Models\Produk;
+use App\Models\QrisImage;
 use App\Models\RewardKatalog;
 use App\Models\Transaksi;
+use App\Models\WelcomeSlide;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
@@ -176,6 +179,73 @@ class MigrasiStrukturFotoCommand extends Command
             }
         }
 
+        // 7. QRIS
+        foreach (QrisImage::whereNotNull('gambar')->where('gambar', '!=', '')->get() as $qris) {
+            $oldPath = $qris->gambar;
+            $kode = $qris->kode_qris;
+
+            $targetPrefix = "qris/{$kode}/";
+            if (str_starts_with($oldPath, $targetPrefix)) {
+                continue;
+            }
+
+            if (Storage::disk('public')->exists($oldPath)) {
+                $newPath = $targetPrefix . basename($oldPath);
+
+                Storage::disk('public')->move($oldPath, $newPath);
+                $qris->update(['gambar' => $newPath, 'kode_qris' => $kode]);
+                $this->line("QRIS [{$kode}]: {$oldPath} -> {$newPath}");
+                $totalMigrated++;
+            }
+        }
+
+        // 8. Welcome Slide
+        foreach (WelcomeSlide::whereNotNull('gambar')->where('gambar', '!=', '')->get() as $slide) {
+            $oldPath = $slide->gambar;
+            $kode = $slide->kode_slide;
+
+            $targetPrefix = "welcome-slide/{$kode}/";
+            if (str_starts_with($oldPath, $targetPrefix)) {
+                continue;
+            }
+
+            if (Storage::disk('public')->exists($oldPath)) {
+                $newPath = $targetPrefix . basename($oldPath);
+
+                Storage::disk('public')->move($oldPath, $newPath);
+                $slide->update(['gambar' => $newPath, 'kode_slide' => $kode]);
+                $this->line("Welcome Slide [{$kode}]: {$oldPath} -> {$newPath}");
+                $totalMigrated++;
+            }
+        }
+
+        // 9. Foto detail produk (varian/rasa) -> varian-rasa/{kode_produk}/
+        // Pakai COPY (bukan move): file lama di varian-rasa/ dulu dipakai bersama oleh
+        // beberapa detail sekaligus. File lama yang sudah tidak dipakai siapa pun
+        // dibersihkan oleh langkah pembersihan di bawah.
+        foreach (DetailProduk::whereNotNull('foto')->where('foto', '!=', '')->get() as $detail) {
+            $oldPath = $detail->foto;
+            $kode = $detail->kode_produk;
+            if (!$kode || str_starts_with($oldPath, 'http://') || str_starts_with($oldPath, 'https://')) {
+                continue;
+            }
+
+            $folderKode = trim(preg_replace('/[^A-Za-z0-9_-]+/', '-', $kode), '-');
+            $targetPrefix = "varian-rasa/{$folderKode}/";
+            if (str_starts_with($oldPath, $targetPrefix)) {
+                continue;
+            }
+
+            if (Storage::disk('public')->exists($oldPath)) {
+                $newPath = $targetPrefix . basename($oldPath);
+
+                Storage::disk('public')->copy($oldPath, $newPath);
+                $detail->update(['foto' => $newPath]);
+                $this->line("Detail Produk [{$kode}]: {$oldPath} -> {$newPath}");
+                $totalMigrated++;
+            }
+        }
+
         $this->info("Migrasi selesai! Total {$totalMigrated} file foto berhasil dipindahkan.");
 
         // Pembersihan file tidak terpakai (orphaned files)
@@ -187,6 +257,9 @@ class MigrasiStrukturFotoCommand extends Command
             ->merge(Produk::whereNotNull('foto')->where('foto', '!=', '')->pluck('foto'))
             ->merge(RewardKatalog::whereNotNull('gambar')->where('gambar', '!=', '')->pluck('gambar'))
             ->merge(Transaksi::whereNotNull('bukti_pembayaran')->where('bukti_pembayaran', '!=', '')->pluck('bukti_pembayaran'))
+            ->merge(QrisImage::whereNotNull('gambar')->where('gambar', '!=', '')->pluck('gambar'))
+            ->merge(WelcomeSlide::whereNotNull('gambar')->where('gambar', '!=', '')->pluck('gambar'))
+            ->merge(DetailProduk::whereNotNull('foto')->where('foto', '!=', '')->pluck('foto'))
             ->filter()
             ->unique()
             ->toArray();

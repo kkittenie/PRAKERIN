@@ -2,11 +2,11 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Tambah Level Membership" parentTitle="Aturan Naik Level" :parentUrl="route('member-level.index')" />
+<x-common.page-breadcrumb pageTitle="Tambah Badge Membership" parentTitle="Aturan Naik Level" :parentUrl="route('member-level.index')" />
 
 <div class="space-y-6">
 
-    <x-common.component-card title="Form Tambah Level Membership">
+    <x-common.component-card title="Form Tambah Badge Membership">
 
         <form action="{{ route('member-level.store') }}" method="POST" x-data="{
                 warnaBadge: '{{ old('warna_badge', 'gray') }}',
@@ -58,7 +58,7 @@
 
                 <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Nama Level <span class="text-red-500">*</span>
+                        Nama Badge <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="nama_level" value="{{ old('nama_level') }}"
                         placeholder="Contoh: Bronze, Silver, Gold"
@@ -108,7 +108,7 @@
                         <span class="text-xs text-gray-400">Preview:</span>
                         <span class="rounded-full px-3 py-1 text-xs font-medium"
                             :class="badgeClasses[warnaBadge] ?? badgeClasses.gray"
-                            x-text="document.querySelector('input[name=nama_level]').value || 'Nama Level'"></span>
+                            x-text="document.querySelector('input[name=nama_level]').value || 'Nama Badge'"></span>
                     </div>
                     @error('warna_badge')
                         <small class="text-red-500">{{ $message }}</small>

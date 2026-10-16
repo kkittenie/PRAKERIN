@@ -119,7 +119,7 @@
                                 $pesanCs = "Halo Saisho, pesanan {$transaksi->kode_transaksi} saya dibatalkan. Saya ingin menanyakan pengembalian dana.";
                             @endphp
                             <p class="mt-2 text-[11px] font-medium text-red-500">
-                                Hubungi <a href="https://wa.me/6281313365554?text={{ urlencode($pesanCs) }}" target="_blank" rel="noopener" class="underline">customer service</a> untuk pengembalian dana.
+                                Hubungi <a href="https://wa.me/6281313365554?text={{ urlencode($pesanCs) }}" target="_blank" rel="noopener" class="font-bold">customer service</a> untuk pengembalian dana.
                             </p>
                         @endif
                     </div>

@@ -153,6 +153,7 @@ class BundlingController extends Controller
                 'varian' => $p->detailProduks->map(fn (DetailProduk $d) => [
                     'id' => $d->id,
                     'ukuran' => $d->ukuran,
+                    'variasi' => $d->variasi,
                     'nama' => $d->nama_lengkap ?: 'Standar',
                     'kode' => $d->kode_produk,
                     'stok' => (int) $d->stok,

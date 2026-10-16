@@ -198,6 +198,14 @@
         });
     }
 
+    // Produk tetap: produk yang cuma punya satu varian tanpa ukuran & tanpa rasa (cuma "Standar")
+    // tidak perlu memilih varian, jadi kolom Varian disembunyikan dan varian satu-satunya otomatis terpilih.
+    function produkTanpaVarian(produk) {
+        return produk.varian.length === 1
+            && String(produk.varian[0].ukuran ?? '').trim() === ''
+            && String(produk.varian[0].variasi ?? '').trim() === '';
+    }
+
     // Tampilkan / sembunyikan kolom ukuran. Kolom tetap ikut terkirim (select tidak di-disable),
     // jadi varian_isi[] tetap berisi '__tanpa__' untuk produk tanpa ukuran.
     function aturKolomUkuran(div, sembunyi) {
@@ -235,11 +243,22 @@
             select.value = String(dipilih);
         }
 
-        // Produk tanpa ukuran: tidak perlu memilih apa pun, langsung "tanpa ukuran".
-        const otomatis = bebas && produkTanpaUkuran(produk) && (!dipilih || String(dipilih) === TANPA_UKURAN);
+        // Tidak perlu memilih apa pun kalau pilihannya pasti satu:
+        //  - bebas : produk tanpa ukuran -> langsung "tanpa ukuran".
+        //  - tetap : produk tanpa ukuran & rasa (satu varian "Standar") -> langsung varian itu.
+        let otomatis = false;
+        let nilaiOtomatis = '';
+        if (bebas) {
+            otomatis = produkTanpaUkuran(produk) && (!dipilih || String(dipilih) === TANPA_UKURAN);
+            nilaiOtomatis = TANPA_UKURAN;
+        } else if (produkTanpaVarian(produk)) {
+            const idVarian = String(produk.varian[0].id);
+            otomatis = !dipilih || String(dipilih) === idVarian;
+            nilaiOtomatis = idVarian;
+        }
         aturKolomUkuran(div, otomatis);
         if (otomatis) {
-            select.value = TANPA_UKURAN;
+            select.value = nilaiOtomatis;
             return;
         }
 
@@ -259,9 +278,9 @@
 
         document.getElementById('wrapper-total-qty').classList.toggle('hidden', !bebas);
         document.getElementById('judul-isi').textContent = bebas ? 'Pilihan Produk untuk Pembeli' : 'Isi Bundling';
-        document.getElementById('petunjuk-isi').textContent = bebas
-            ? 'Tambahkan produk dan ukuran yang boleh dipilih pembeli. Satu baris = satu produk + satu ukuran. Rasanya dipilih pembeli dari semua rasa aktif ukuran itu, sebanyak "Total Isi Bundling".'
-            : 'Tambahkan produk beserta variannya dan jumlah yang didapat pembeli. Isi paket ini tetap, pembeli tidak bisa mengubahnya.';
+        // document.getElementById('petunjuk-isi').textContent = bebas
+        //     ? 'Tambahkan produk dan ukuran yang boleh dipilih pembeli. Satu baris = satu produk + satu ukuran. Rasanya dipilih pembeli dari semua rasa aktif ukuran itu, sebanyak "Total Isi Bundling".'
+        //     : 'Tambahkan produk beserta variannya dan jumlah yang didapat pembeli. Isi paket ini tetap, pembeli tidak bisa mengubahnya.';
         document.getElementById('label-tambah').textContent = bebas ? 'Tambah Pilihan' : 'Tambah Produk';
 
         wadahProduk.querySelectorAll('.col-qty-produk').forEach(function (el) {
@@ -465,7 +484,7 @@
             info.textContent = '';
             return;
         }
-        info.innerHTML = 'Stok tersedia (' + esc(v.nama) + '): <strong>' + v.stok + '</strong>'
+        info.innerHTML = 'Stok tersedia' + (produkTanpaVarian(produk) ? '' : ' (' + esc(v.nama) + ')') + ': <strong>' + v.stok + '</strong>'
             + (v.stok <= 0 ? ' <span class="text-amber-600">— perlu diproduksi</span>' : '')
             + (v.aktif ? '' : ' <span class="text-red-600">— varian nonaktif</span>');
     }
@@ -503,6 +522,7 @@
                 return;
             }
 
+            const bebasAktif = jenisAktif === 'bebas';
             const cocok = DAFTAR_PRODUK.filter(function (p) {
                 return p.nama_produk.toLowerCase().includes(kata);
             });
@@ -517,7 +537,7 @@
                 item.type = 'button';
                 item.className = 'block w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700';
                 item.innerHTML = '<div class="font-medium text-gray-800 dark:text-white">' + esc(p.nama_produk) + '</div>'
-                    + '<div class="text-xs text-gray-500">' + p.varian.length + ' varian · ' + (produkTanpaUkuran(p) ? 'tanpa ukuran' : p.ukuran.length + ' ukuran')
+                    + '<div class="text-xs text-gray-500">' + (!bebasAktif && produkTanpaVarian(p) ? 'tanpa varian' : p.varian.length + ' varian · ' + (produkTanpaUkuran(p) ? 'tanpa ukuran' : p.ukuran.length + ' ukuran'))
                     + (p.dijual_satuan ? '' : ' · <span class="text-amber-600">Hanya untuk bundling</span>') + '</div>';
                 item.addEventListener('click', function () { pilihProduk(div, p); });
                 hasil.appendChild(item);

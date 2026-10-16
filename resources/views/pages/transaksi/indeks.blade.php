@@ -1989,7 +1989,7 @@
 
                     <div class="shrink-0 flex items-center justify-between rounded-xl bg-amber-50 dark:bg-amber-500/10 p-3 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-500/25">
                         <div>
-                            <h4 class="text-xs font-bold">Wajib pilih rasa sesuai total isi</h4>
+                            <h4 class="text-xs font-bold" x-text="'Wajib pilih ' + (bundlingModalAdaRasa ? 'rasa' : 'isi') + ' sesuai total isi'">Wajib pilih isi sesuai total isi</h4>
                             <p class="text-[11px] text-amber-700 dark:text-amber-400">
                                 Total <strong class="font-extrabold" x-text="targetQtyVarianModal"></strong> pcs dari daftar di bawah
                             </p>
@@ -2006,56 +2006,106 @@
                         <span x-show="totalVarianModalTerpilih > targetQtyVarianModal" class="text-red-600 dark:text-red-400">Pilihan melebihi total isi bundling!</span>
                     </div>
 
-                    {{-- Satu kelompok per baris isi (produk + ukuran). Rasa dipilih kasir dari semua rasa aktif. --}}
+                    {{-- Satu kelompok per baris isi (produk + ukuran). Kalau produknya punya varian rasa, kasir memilih
+                         rasanya; kalau tidak (cuma "Standar"), tampil sebagai baris ringkas tanpa label rasa (sama seperti mobile).
+                         Stok tetap ditampilkan di kasir. --}}
                     <template x-for="bi in (bundlingUntukVarian ? bundlingUntukVarian.items : [])" :key="bi.id">
-                        <div class="shrink-0 overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-                            <div class="flex flex-wrap items-center gap-1.5 bg-gray-50 dark:bg-gray-800/60 px-3 py-2">
-                                <p class="text-xs font-bold text-gray-800 dark:text-gray-200"
-                                    x-text="namaItemBundling(bi).nama"></p>
-                                <template x-if="namaItemBundling(bi).varian">
-                                    <span class="rounded bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300"
-                                        x-text="namaItemBundling(bi).varian"></span>
-                                </template>
-                                <span class="text-[10px] font-semibold text-gray-400 dark:text-gray-500">· pilih rasa</span>
-                            </div>
+                        <div class="shrink-0">
 
-                            <div class="divide-y divide-gray-100 dark:divide-gray-800">
-                                <template x-for="r in (bi.opsi_rasa || [])" :key="kunciPilihanBundling(bi.id, r.id)">
-                                    <div class="p-3 space-y-2">
-                                        <div class="flex items-center justify-between gap-2">
-                                            <div class="min-w-0">
-                                                <p class="text-xs font-bold text-gray-800 dark:text-gray-200 truncate"
-                                                    x-text="'Rasa: ' + r.nama"></p>
-                                                <span class="text-[10px] font-semibold"
-                                                    :class="r.stok > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-amber-600 dark:text-amber-400'"
-                                                    x-text="r.stok > 0 ? ('Stok ' + r.stok) : 'Perlu diproduksi'"></span>
+                            {{-- TANPA varian rasa: baris ringkas --}}
+                            <template x-if="!itemBundlingAdaRasa(bi)">
+                                <div class="divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-3">
+                                    <template x-for="r in (bi.opsi_rasa || [])" :key="kunciPilihanBundling(bi.id, r.id)">
+                                        <div class="py-2.5 space-y-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="flex flex-wrap items-center gap-1.5">
+                                                        <p class="text-xs font-bold text-gray-800 dark:text-gray-200"
+                                                            x-text="namaItemBundling(bi).nama"></p>
+                                                        <template x-if="namaItemBundling(bi).varian">
+                                                            <span class="rounded bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300"
+                                                                x-text="namaItemBundling(bi).varian"></span>
+                                                        </template>
+                                                    </div>
+                                                    <span class="text-[10px] font-semibold"
+                                                        :class="r.stok > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-amber-600 dark:text-amber-400'"
+                                                        x-text="r.stok > 0 ? ('Stok ' + r.stok) : 'Perlu diproduksi'"></span>
+                                                </div>
+                                                <div class="flex items-center gap-2 shrink-0">
+                                                    <button type="button" @click="kurangiVarianModalQty(kunciPilihanBundling(bi.id, r.id))"
+                                                        class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 transition active:scale-90 disabled:opacity-30"
+                                                        :disabled="(varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0) <= 0">-</button>
+                                                    <span class="w-5 text-center text-xs font-bold text-gray-900 dark:text-white"
+                                                        x-text="varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0"></span>
+                                                    <button type="button" @click="tambahVarianModalQty(kunciPilihanBundling(bi.id, r.id))"
+                                                        class="flex h-7 w-7 items-center justify-center rounded-full bg-amber-700 text-white transition active:scale-90 disabled:opacity-30"
+                                                        :disabled="totalVarianModalTerpilih >= targetQtyVarianModal">+</button>
+                                                </div>
                                             </div>
-
-                                            <div class="flex items-center gap-2 shrink-0">
-                                                <button type="button" @click="kurangiVarianModalQty(kunciPilihanBundling(bi.id, r.id))"
-                                                    class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 transition active:scale-90 disabled:opacity-30"
-                                                    :disabled="(varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0) <= 0">-</button>
-                                                <span class="w-5 text-center text-xs font-bold text-gray-900 dark:text-white"
-                                                    x-text="varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0"></span>
-                                                <button type="button" @click="tambahVarianModalQty(kunciPilihanBundling(bi.id, r.id))"
-                                                    class="flex h-7 w-7 items-center justify-center rounded-full bg-amber-700 text-white transition active:scale-90 disabled:opacity-30"
-                                                    :disabled="totalVarianModalTerpilih >= targetQtyVarianModal">+</button>
+                                            <div x-show="(varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0) > 0" x-transition class="mt-1">
+                                                <input type="text" x-model="varianModalCatatan[kunciPilihanBundling(bi.id, r.id)]"
+                                                    :placeholder="'Catatan untuk ' + namaItemBundling(bi).nama + (opsiPunyaRasa(r) ? ' ' + r.nama : '') + ' (opsional)'"
+                                                    maxlength="255"
+                                                    class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-[11px] text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:border-amber-600 focus:outline-none">
                                             </div>
                                         </div>
+                                    </template>
 
-                                        <div x-show="(varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0) > 0" x-transition class="mt-1">
-                                            <input type="text" x-model="varianModalCatatan[kunciPilihanBundling(bi.id, r.id)]"
-                                                :placeholder="'Catatan untuk ' + namaItemBundling(bi).nama + ' ' + r.nama + ' (opsional)'"
-                                                maxlength="255"
-                                                class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-[11px] text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:border-amber-600 focus:outline-none">
-                                        </div>
+                                    <template x-if="!bi.opsi_rasa || bi.opsi_rasa.length === 0">
+                                        <p class="py-2.5 text-[11px] font-medium text-gray-400">
+                                            <span x-text="namaItemBundling(bi).nama"></span>: belum tersedia untuk pilihan ini.
+                                        </p>
+                                    </template>
+                                </div>
+                            </template>
+
+                            {{-- DENGAN varian rasa: header + pilih rasa --}}
+                            <template x-if="itemBundlingAdaRasa(bi)">
+                                <div class="overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+                                    <div class="flex flex-wrap items-center gap-1.5 bg-gray-50 dark:bg-gray-800/60 px-3 py-2">
+                                        <p class="text-xs font-bold text-gray-800 dark:text-gray-200"
+                                            x-text="namaItemBundling(bi).nama"></p>
+                                        <template x-if="namaItemBundling(bi).varian">
+                                            <span class="rounded bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300"
+                                                x-text="namaItemBundling(bi).varian"></span>
+                                        </template>
+                                        <span class="text-[10px] font-semibold text-gray-400 dark:text-gray-500">· pilih rasa</span>
                                     </div>
-                                </template>
 
-                                <template x-if="!bi.opsi_rasa || bi.opsi_rasa.length === 0">
-                                    <p class="p-3 text-[11px] font-medium text-gray-400">Belum ada rasa yang tersedia untuk pilihan ini.</p>
-                                </template>
-                            </div>
+                                    <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                                        <template x-for="r in (bi.opsi_rasa || [])" :key="kunciPilihanBundling(bi.id, r.id)">
+                                            <div class="p-3 space-y-2">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <div class="min-w-0">
+                                                        <p class="text-xs font-bold text-gray-800 dark:text-gray-200 truncate"
+                                                            x-text="opsiPunyaRasa(r) ? ('Rasa: ' + r.nama) : r.nama"></p>
+                                                        <span class="text-[10px] font-semibold"
+                                                            :class="r.stok > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-amber-600 dark:text-amber-400'"
+                                                            x-text="r.stok > 0 ? ('Stok ' + r.stok) : 'Perlu diproduksi'"></span>
+                                                    </div>
+                                                    <div class="flex items-center gap-2 shrink-0">
+                                                        <button type="button" @click="kurangiVarianModalQty(kunciPilihanBundling(bi.id, r.id))"
+                                                            class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 transition active:scale-90 disabled:opacity-30"
+                                                            :disabled="(varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0) <= 0">-</button>
+                                                        <span class="w-5 text-center text-xs font-bold text-gray-900 dark:text-white"
+                                                            x-text="varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0"></span>
+                                                        <button type="button" @click="tambahVarianModalQty(kunciPilihanBundling(bi.id, r.id))"
+                                                            class="flex h-7 w-7 items-center justify-center rounded-full bg-amber-700 text-white transition active:scale-90 disabled:opacity-30"
+                                                            :disabled="totalVarianModalTerpilih >= targetQtyVarianModal">+</button>
+                                                    </div>
+                                                </div>
+                                                <div x-show="(varianModalQty[kunciPilihanBundling(bi.id, r.id)] || 0) > 0" x-transition class="mt-1">
+                                                    <input type="text" x-model="varianModalCatatan[kunciPilihanBundling(bi.id, r.id)]"
+                                                        :placeholder="'Catatan untuk ' + namaItemBundling(bi).nama + (opsiPunyaRasa(r) ? ' ' + r.nama : '') + ' (opsional)'"
+                                                        maxlength="255"
+                                                        class="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-[11px] text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:border-amber-600 focus:outline-none">
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
                         </div>
                     </template>
 
@@ -3116,6 +3166,25 @@
                     return itemId + ':' + detailId;
                 },
 
+                // Opsi dianggap punya "rasa" kalau variasinya terisi (bukan sekadar "Standar" bawaan).
+                opsiPunyaRasa(r) {
+                    return String((r && r.variasi) || '').trim() !== '';
+                },
+
+                // Baris isi punya varian rasa kalau ada minimal satu opsi dengan rasa.
+                itemBundlingAdaRasa(bi) {
+                    return (bi.opsi_rasa || []).some(r => this.opsiPunyaRasa(r));
+                },
+
+                // Ada minimal satu baris isi di bundling yang punya varian rasa.
+                bundlingAdaRasa(bundling) {
+                    return !!bundling && (bundling.items || []).some(bi => this.itemBundlingAdaRasa(bi));
+                },
+
+                get bundlingModalAdaRasa() {
+                    return this.bundlingAdaRasa(this.bundlingUntukVarian);
+                },
+
                 // Cari baris isi + rasa dari kunci pilihan. Hasil: { bi, rasa } atau null.
                 cariPilihanBundling(bundling, itemId, detailId) {
                     const bi = (bundling.items || []).find(x => x.id === itemId);
@@ -3375,7 +3444,7 @@
                     if (!bundling || !bundling.items || bundling.items.length === 0) return '';
                     if (bundling.jenis_produk === 'bebas') {
                         const target = parseInt(bundling.total_qty_khusus) || bundling.items.reduce((s, i) => s + (parseInt(i.qty) || 0), 0);
-                        return 'Pilih rasa sendiri ' + target + ' pcs: ' + bundling.items.map(bi => this.namaItemBundling(bi).lengkap).join(', ');
+                        return (this.bundlingAdaRasa(bundling) ? 'Pilih rasa sendiri ' : 'Pilih isi sendiri ') + target + ' pcs: ' + bundling.items.map(bi => this.namaItemBundling(bi).lengkap).join(', ');
                     }
                     return bundling.items.map(bi => {
                         const p = this.daftarProduk.find(x => x.id === bi.produk_id) || bi.produk;
@@ -4426,7 +4495,9 @@
                         }
                     }
 
-                    window.open(`/transaksi/cetak/${d.kode_transaksi}?jenis=${jenis}&print=true`, '_blank', 'width=400,height=700');
+                    // laci=1: cetak dari alur kasir. Server yang memutuskan laci kebuka atau tidak
+                    // (hanya kalau struk pelanggan, sudah Lunas, dan dibayar Tunai).
+                    window.open(`/transaksi/cetak/${d.kode_transaksi}?jenis=${jenis}&print=true&laci=1`, '_blank', 'width=400,height=700');
                 },
 
                 tutupModalSukses() { this.modalSuksesTerbuka = false; },

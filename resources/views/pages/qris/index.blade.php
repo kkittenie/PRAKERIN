@@ -48,6 +48,7 @@
                 <thead>
                     <tr>
                         <th class="py-3">No</th>
+                        <th class="py-3">Kode</th>
                         <th class="py-3 text-center">Gambar</th>
                         <th class="py-3">Nama</th>
                         <th class="py-3 text-center">Status</th>
@@ -93,6 +94,7 @@
             order: [],
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                { data: 'kode_html', name: 'kode_qris' },
                 { data: 'gambar_html', name: 'gambar', orderable: false, searchable: false, className: 'text-center' },
                 { data: 'nama', name: 'nama' },
                 { data: 'status_html', name: 'status_aktif', className: 'text-center' },

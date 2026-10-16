@@ -21,6 +21,7 @@ class WelcomeSlideController extends Controller
                 $query = WelcomeSlide::query();
 
                 return DataTables::of($query)
+                    ->addColumn('kode_html', fn ($item) => view('pages.welcome-slide.partials.kode', compact('item'))->render())
                     ->addColumn('gambar_html', fn ($item) => view('pages.welcome-slide.partials.gambar', compact('item'))->render())
                     ->editColumn('judul', fn ($item) => view('pages.welcome-slide.partials.judul', compact('item'))->render())
                     ->filterColumn('judul', function ($q, $keyword) {
@@ -28,7 +29,7 @@ class WelcomeSlideController extends Controller
                     })
                     ->addColumn('status_html', fn ($item) => view('pages.welcome-slide.partials.status', compact('item'))->render())
                     ->addColumn('aksi', fn ($item) => view('pages.welcome-slide.partials.aksi', compact('item'))->render())
-                    ->rawColumns(['gambar_html', 'judul', 'status_html', 'aksi'])
+                    ->rawColumns(['kode_html', 'gambar_html', 'judul', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
                 activity('error')
@@ -60,9 +61,17 @@ class WelcomeSlideController extends Controller
     {
         try {
             $data = $request->validate($this->aturan(true));
-            $data['gambar'] = $request->file('gambar')->store(self::FOLDER, 'public');
+            unset($data['gambar']);
 
-            $slide = WelcomeSlide::create($data);
+            // Dibuat dulu supaya dapat id, lalu kode (WLS001, dst) dibentuk dari id
+            // dan dipakai sebagai nama folder gambar: welcome-slide/WLS001/namafile.png
+            $slide = WelcomeSlide::create($data + ['gambar' => '']);
+
+            $kode = 'WLS' . str_pad((string) $slide->id, 3, '0', STR_PAD_LEFT);
+            $slide->update([
+                'kode_slide' => $kode,
+                'gambar' => $request->file('gambar')->store(self::FOLDER . '/' . $kode, 'public'),
+            ]);
 
             activity()->causedBy(auth()->user())->performedOn($slide)
                 ->withProperties(['judul' => $slide->judul])->log('menambahkan slide welcome');
@@ -90,8 +99,10 @@ class WelcomeSlideController extends Controller
             $data = $request->validate($this->aturan(false));
 
             if ($request->hasFile('gambar')) {
+                $kode = $welcomeSlide->kode_slide;
                 $this->hapusFile($welcomeSlide->gambar);
-                $data['gambar'] = $request->file('gambar')->store(self::FOLDER, 'public');
+                $data['kode_slide'] = $kode;
+                $data['gambar'] = $request->file('gambar')->store(self::FOLDER . '/' . $kode, 'public');
             } else {
                 unset($data['gambar']);
             }
@@ -147,10 +158,18 @@ class WelcomeSlideController extends Controller
         ];
     }
 
+    /** Hapus file gambar; kalau folder kodenya jadi kosong, foldernya ikut dihapus. */
     private function hapusFile(?string $path): void
     {
-        if ($path && Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        if (! $path || ! Storage::disk('public')->exists($path)) {
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
+
+        $folder = dirname($path);
+        if ($folder !== self::FOLDER && $folder !== '.' && empty(Storage::disk('public')->allFiles($folder))) {
+            Storage::disk('public')->deleteDirectory($folder);
         }
     }
 }
