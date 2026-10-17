@@ -201,11 +201,14 @@
                     <button @click="cetakStruk('pelanggan')" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-sm transition flex items-center gap-1.5 shadow-sm">
                         <span>Cetak Struk</span>
                     </button>
+                    {{-- Tiket Produksi: di-hide (logikanya tetap ada) --}}
+                    @if (\App\Support\StrukHelper::TAMPILKAN_TIKET_PRODUKSI)
                     <button @click="cetakStruk('dapur')" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-sm transition flex items-center gap-1.5 shadow-sm">
                         <span>Tiket Produksi</span>
                     </button>
+                    @endif
                     <button @click="cetakStruk('etalase')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-sm transition flex items-center gap-1.5 shadow-sm">
-                        <span>Tiket Etalase</span>
+                        <span>Tiket Dapur</span>
                     </button>
                     <button @click="modalDetail = false" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 font-semibold rounded-lg text-sm border border-gray-200 dark:border-gray-700">Tutup</button>
                 </div>

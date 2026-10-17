@@ -304,6 +304,7 @@ class ProdukController extends Controller
             'status_aktif' => 'required|boolean',
             'dijual_satuan' => 'required|boolean',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'mode_stok' => 'nullable|in:global,varian',
 
             'detail_baris' => 'required|array|min:1',
             'detail_baris.*.id' => 'nullable|integer',
@@ -327,7 +328,7 @@ class ProdukController extends Controller
             'detail_baris.*.foto.max' => 'Foto detail produk maksimal 2 MB.',
         ]);
 
-        unset($validated['detail_baris']);
+        unset($validated['detail_baris'], $validated['mode_stok']);
 
         return $validated;
     }
@@ -353,6 +354,16 @@ class ProdukController extends Controller
                 'status_aktif' => filter_var($b['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
                 'file' => $request->file("detail_baris.$kunci.foto"),
             ]);
+        }
+
+        // Mode Global / Polosan: hanya satu baris, tanpa ukuran & variasi (stok satu untuk seluruh produk).
+        if ($request->input('mode_stok') === 'global') {
+            $hasil = $hasil->take(1)->map(function ($b) {
+                $b['ukuran'] = null;
+                $b['variasi'] = null;
+
+                return $b;
+            });
         }
 
         return $hasil->values();

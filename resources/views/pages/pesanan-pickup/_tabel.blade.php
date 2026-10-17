@@ -20,6 +20,7 @@
                 <tr>
                     <th class="py-3">No</th>
                     <th class="py-3">Kode Transaksi</th>
+                    <th class="py-3 text-center">Kode Pesanan</th>
                     <th class="py-3">Pembeli</th>
                     <th class="py-3 text-right">Total</th>
                     <th class="py-3">Waktu Order</th>
@@ -48,7 +49,7 @@
     $(document).ready(function() {
         initSaishoDataTable('pesananPickupTable', {
             serverSide: true,
-            order: [[4, 'desc']],
+            order: [[5, 'desc']],
             ajax: {
                 url: '{{ route('pesanan-pickup.indeks') }}',
                 data: function(d) {
@@ -62,6 +63,7 @@
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'kode_html', name: 'kode_transaksi' },
+                { data: 'kode_pesanan_html', name: 'kode_pickup', className: 'text-center' },
                 { data: 'pembeli_html', name: 'nama_pembeli' },
                 { data: 'total_bayar', name: 'total_bayar', searchable: false, className: 'text-right font-semibold text-gray-800 dark:text-gray-200' },
                 { data: 'created_at', name: 'created_at', searchable: false, className: 'text-xs text-gray-500 dark:text-gray-400' },

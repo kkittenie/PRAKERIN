@@ -140,8 +140,7 @@
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Stok Tersedia</button>
                                 <button @click="filterKetersediaan = 'perlu_diproduksi'; halamanProduk = 1"
                                     :class="filterKetersediaan === 'perlu_diproduksi' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Perlu
-                                    Diproduksi</button>
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Sedang Diproduksi</button>
                                 <button @click="filterKetersediaan = 'promo'; halamanProduk = 1"
                                     :class="filterKetersediaan === 'promo' ? 'bg-rose-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Promo</button>
@@ -158,8 +157,7 @@
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Stok Tersedia</button>
                                 <button @click="filterBundling = 'habis'; halamanProduk = 1"
                                     :class="filterBundling === 'habis' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Perlu
-                                    Diproduksi</button>
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Sedang Diproduksi</button>
                             </div>
 
                             <!-- Filter Status Ketersediaan (mode promo_event) -->
@@ -173,8 +171,7 @@
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Stok Tersedia</button>
                                 <button @click="filterPromoEvent = 'habis'; halamanProduk = 1"
                                     :class="filterPromoEvent === 'habis' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Perlu
-                                    Diproduksi</button>
+                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Sedang Diproduksi</button>
                             </div>
                         </div>
                     </div>
@@ -215,13 +212,12 @@
                                                     </template>
                                                     <template x-if="bundlingPerluDiproduksi(produk)">
                                                         <span
-                                                            class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu
-                                                            Diproduksi</span>
+                                                            class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Sedang Diproduksi</span>
                                                     </template>
                                                 </div>
                                                 <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                                     :class="bundlingPerluDiproduksi(produk) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
-                                                    x-text="bundlingPerluDiproduksi(produk) ? 'Perlu Diproduksi' : ('Stok: ' + stokBundlingTersedia(produk))">
+                                                    x-text="bundlingPerluDiproduksi(produk) ? 'Sedang Diproduksi' : ('Stok: ' + stokBundlingTersedia(produk))">
                                                 </div>
                                             </div>
                                             <div class="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -276,13 +272,12 @@
                                                     </template>
                                                     <template x-if="promoEventPerluDiproduksi(produk)">
                                                         <span
-                                                            class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu
-                                                            Diproduksi</span>
+                                                            class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Sedang Diproduksi</span>
                                                     </template>
                                                 </div>
                                                 <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                                     :class="promoEventPerluDiproduksi(produk) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
-                                                    x-text="promoEventPerluDiproduksi(produk) ? 'Perlu Diproduksi' : ('Stok: ' + stokPromoEventTersedia(produk))">
+                                                    x-text="promoEventPerluDiproduksi(produk) ? 'Sedang Diproduksi' : ('Stok: ' + stokPromoEventTersedia(produk))">
                                                 </div>
                                             </div>
                                             <div class="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -337,13 +332,13 @@
                                                     <template x-if="!tidakAdaUkuranAktif(produk) && butuhProduksi(produk)">
                                                         <span
                                                             class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs"
-                                                            x-text="'Perlu Diproduksi'"></span>
+                                                            x-text="'Sedang Diproduksi'"></span>
                                                     </template>
                                                 </div>
                                                 <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                                     :class="!butuhProduksi(produk) && !tidakAdaUkuranAktif(produk) && produk.stok > 0 && produk.stok <= produk.stok_minimum ? 'bg-red-600/90 text-white font-bold animate-pulse' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'">
                                                     <span
-                                                        x-text="tidakAdaUkuranAktif(produk) ? (produk.punya_varian ? 'Belum ada varian' : 'Belum ada ukuran') : (butuhProduksi(produk) ? 'Perlu Diproduksi' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok))"></span>
+                                                        x-text="tidakAdaUkuranAktif(produk) ? (produk.punya_varian ? 'Belum ada varian' : 'Belum ada ukuran') : (butuhProduksi(produk) ? 'Sedang Diproduksi' : (produk.stok <= produk.stok_minimum && produk.stok > 0 ? '⚠️ Sisa ' + produk.stok : 'Stok: ' + produk.stok))"></span>
                                                 </div>
                                             </div>
                                             <div class="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -446,13 +441,12 @@
                                             </template>
                                             <template x-if="bundlingPerluDiproduksi(bundling)">
                                                 <span
-                                                    class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu
-                                                    Diproduksi</span>
+                                                    class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Sedang Diproduksi</span>
                                             </template>
                                         </div>
                                         <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                             :class="bundlingPerluDiproduksi(bundling) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
-                                            x-text="bundlingPerluDiproduksi(bundling) ? 'Perlu Diproduksi' : ('Stok: ' + stokBundlingTersedia(bundling))">
+                                            x-text="bundlingPerluDiproduksi(bundling) ? 'Sedang Diproduksi' : ('Stok: ' + stokBundlingTersedia(bundling))">
                                         </div>
                                     </div>
                                     <div class="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -517,13 +511,12 @@
                                             </template>
                                             <template x-if="promoEventPerluDiproduksi(promoEvent)">
                                                 <span
-                                                    class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Perlu
-                                                    Diproduksi</span>
+                                                    class="bg-amber-500/90 text-white backdrop-blur-xs font-bold text-[9px] px-2 py-0.5 rounded-full shadow-xxs">Sedang Diproduksi</span>
                                             </template>
                                         </div>
                                         <div class="absolute bottom-2 right-2 text-xs font-semibold px-2 py-0.5 rounded backdrop-blur-xs"
                                             :class="promoEventPerluDiproduksi(promoEvent) ? 'bg-amber-600/90 text-white font-bold' : 'bg-slate-900/75 dark:bg-gray-950/75 text-white'"
-                                            x-text="promoEventPerluDiproduksi(promoEvent) ? 'Perlu Diproduksi' : ('Stok: ' + stokPromoEventTersedia(promoEvent))">
+                                            x-text="promoEventPerluDiproduksi(promoEvent) ? 'Sedang Diproduksi' : ('Stok: ' + stokPromoEventTersedia(promoEvent))">
                                         </div>
                                     </div>
                                     <div class="p-4 flex-1 flex flex-col justify-between gap-3">
@@ -1098,7 +1091,7 @@
                                             <div>
                                                 <span
                                                     class="inline-block text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-500/25">
-                                                    Perlu Diproduksi
+                                                    Sedang Diproduksi
                                                 </span>
                                             </div>
                                         </template>
@@ -1506,6 +1499,8 @@
                                     </svg>
                                     Struk
                                 </button>
+                                {{-- Tiket Produksi: di-hide (logikanya tetap ada), aktifkan lewat StrukHelper::TAMPILKAN_TIKET_PRODUKSI --}}
+                                @if (\App\Support\StrukHelper::TAMPILKAN_TIKET_PRODUKSI)
                                 <button @click="cetakStrukDitahan(pesanan, 'dapur')"
                                     class="px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1514,13 +1509,14 @@
                                     </svg>
                                     Tiket Produksi
                                 </button>
+                                @endif
                                 <button @click="cetakStrukDitahan(pesanan, 'etalase')"
                                     class="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                                     </svg>
-                                    Tiket Etalase
+                                    Tiket Dapur
                                 </button>
                                 <button @click="mulaiLunaskan(pesanan)"
                                     class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-lg transition shadow-xs flex items-center gap-1.5">
@@ -1603,7 +1599,7 @@
                         <div>
                             <h3 class="font-extrabold text-gray-900 dark:text-white text-lg">Pesanan disimpan</h3>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Pesanan tercatat sebagai "Belum
-                                Dibayar". Cetak tiket produksi di bawah.</p>
+                                Dibayar". Cetak struk atau tiket dapur di bawah.</p>
                         </div>
                     </template>
                     <span
@@ -1652,6 +1648,8 @@
                             </svg>
                             <span>Struk Pelanggan</span>
                         </button>
+                        {{-- Tiket Produksi: di-hide (logikanya tetap ada) --}}
+                        @if (\App\Support\StrukHelper::TAMPILKAN_TIKET_PRODUKSI)
                         <button @click="cetakStruk('dapur')"
                             class="py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1660,13 +1658,14 @@
                             </svg>
                             <span>Tiket Produksi</span>
                         </button>
+                        @endif
                         <button @click="cetakStruk('etalase')"
-                            class="col-span-2 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                            class="{{ \App\Support\StrukHelper::TAMPILKAN_TIKET_PRODUKSI ? 'col-span-2 ' : '' }}py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
-                            <span>Tiket Etalase</span>
+                            <span>Tiket Dapur</span>
                         </button>
                     </div>
                 </div>
@@ -1852,7 +1851,7 @@
                                         <span class="flex items-center gap-2 min-w-0">
                                             <span class="font-bold text-sm text-amber-900 dark:text-amber-300 truncate" x-text="opsiUkuran.nama"></span>
                                             <template x-if="opsiUkuran.perlu_produksi">
-                                                <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-200/70 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-full">Perlu Diproduksi</span>
+                                                <span class="shrink-0 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-200/70 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-full">Sedang Diproduksi</span>
                                             </template>
                                             <template x-if="opsiUkuran.sedang_promo">
                                                 <span class="shrink-0 text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-500/15 px-1.5 py-0.5 rounded-full"
@@ -1901,7 +1900,7 @@
                             x-text="teksHargaModalVarian"></p>
                         <p class="text-xs mt-1 font-medium"
                             :class="varianTerpilihModal ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'"
-                            x-text="varianTerpilihModal ? (sisaStokVarian(varianTerpilihModal) > 0 ? ('Stok: ' + sisaStokVarian(varianTerpilihModal)) : 'Stok habis — Perlu Diproduksi') : 'Pilih varian untuk melihat stok'"></p>
+                            x-text="varianTerpilihModal ? (sisaStokVarian(varianTerpilihModal) > 0 ? ('Stok: ' + sisaStokVarian(varianTerpilihModal)) : 'Stok habis — Sedang Diproduksi') : 'Pilih varian untuk melihat stok'"></p>
                     </div>
                     <button type="button" @click="tutupModalVarian()"
                         class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-bold text-2xl leading-none shrink-0">&times;</button>
@@ -1927,7 +1926,7 @@
                                             : 'border-dashed border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600 cursor-not-allowed')"
                                     :style="ukuranTersedia(u) ? '' : 'opacity:.45;background:#f3f4f6;text-decoration:line-through;'">
                                     <span x-text="u"></span>
-                                    <span x-show="ukuranTersedia(u) && ukuranHabis(u)" class="block text-[9px] font-semibold text-amber-600 dark:text-amber-400">Perlu Diproduksi</span>
+                                    <span x-show="ukuranTersedia(u) && ukuranHabis(u)" class="block text-[9px] font-semibold text-amber-600 dark:text-amber-400">Sedang Diproduksi</span>
                                 </button>
                             </template>
                         </div>
@@ -1955,7 +1954,7 @@
                                         <img :src="fotoVariasiModal(v)" class="w-6 h-6 rounded object-cover" alt="">
                                     </template>
                                     <span x-text="v"></span>
-                                    <span x-show="variasiTersedia(v) && variasiHabis(v)" class="text-[9px] font-semibold text-amber-600 dark:text-amber-400">Perlu Diproduksi</span>
+                                    <span x-show="variasiTersedia(v) && variasiHabis(v)" class="text-[9px] font-semibold text-amber-600 dark:text-amber-400">Sedang Diproduksi</span>
                                 </button>
                             </template>
                         </div>
@@ -1963,7 +1962,7 @@
 
                     <!-- Jumlah -->
                     <p x-show="varianTerpilihModal && qtyModalVarian > sisaStokVarian(varianTerpilihModal)" class="text-[11px] font-medium text-amber-700 dark:text-amber-400 -mb-3"
-                        x-text="(qtyModalVarian - sisaStokVarian(varianTerpilihModal)) + ' pcs akan masuk Perlu Diproduksi'"></p>
+                        x-text="(qtyModalVarian - sisaStokVarian(varianTerpilihModal)) + ' pcs akan masuk Sedang Diproduksi'"></p>
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-gray-800 dark:text-gray-200">Jumlah</span>
                         <div class="flex items-center gap-3">
@@ -2045,7 +2044,7 @@
                                                     </div>
                                                     <span class="text-[10px] font-semibold"
                                                         :class="r.stok > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-amber-600 dark:text-amber-400'"
-                                                        x-text="r.stok > 0 ? ('Stok ' + r.stok) : 'Perlu diproduksi'"></span>
+                                                        x-text="r.stok > 0 ? ('Stok ' + r.stok) : 'Sedang diproduksi'"></span>
                                                 </div>
                                                 <div class="flex items-center gap-2 shrink-0">
                                                     <button type="button" @click="kurangiVarianModalQty(kunciPilihanBundling(bi.id, r.id))"
@@ -2097,7 +2096,7 @@
                                                             x-text="opsiPunyaRasa(r) ? ('Rasa: ' + r.nama) : r.nama"></p>
                                                         <span class="text-[10px] font-semibold"
                                                             :class="r.stok > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-amber-600 dark:text-amber-400'"
-                                                            x-text="r.stok > 0 ? ('Stok ' + r.stok) : 'Perlu diproduksi'"></span>
+                                                            x-text="r.stok > 0 ? ('Stok ' + r.stok) : 'Sedang diproduksi'"></span>
                                                     </div>
                                                     <div class="flex items-center gap-2 shrink-0">
                                                         <button type="button" @click="kurangiVarianModalQty(kunciPilihanBundling(bi.id, r.id))"
@@ -2667,7 +2666,7 @@
                 },
 
                 // Chip hanya abu-abu & tidak bisa dipilih kalau kombinasinya NONAKTIF.
-                // Stok habis tetap bisa dipilih (masuk "Perlu Diproduksi").
+                // Stok habis tetap bisa dipilih (masuk "Sedang Diproduksi").
                 ukuranTersedia(u) {
                     return this.daftarVarianProduk(this.modalVarianProduk).some(v =>
                         v.aktif && v.ukuran === u
@@ -2678,7 +2677,7 @@
                         v.aktif && v.variasi === vr
                         && (!this.pilihanUkuranModal || v.ukuran === this.pilihanUkuranModal));
                 },
-                // Semua varian untuk chip ini habis stoknya -> beri label kecil "Perlu Diproduksi".
+                // Semua varian untuk chip ini habis stoknya -> beri label kecil "Sedang Diproduksi".
                 ukuranHabis(u) {
                     return !this.daftarVarianProduk(this.modalVarianProduk).some(v =>
                         v.aktif && v.ukuran === u
@@ -2809,7 +2808,7 @@
                     }
                 },
 
-                // Stok ready dipakai dulu, kelebihannya jadi baris "Perlu Diproduksi" (sama seperti logika lama).
+                // Stok ready dipakai dulu, kelebihannya jadi baris "Sedang Diproduksi" (sama seperti logika lama).
                 tambahVarianKeKeranjang(produk, varian, qty = 1) {
                     if (!varian.aktif) {
                         this.tambahToast('Varian ini sedang nonaktif.', 'error');
@@ -2831,8 +2830,8 @@
 
                     if (produksi > 0) {
                         this.tambahToast(ready > 0
-                            ? 'Stok ready habis, kelebihan masuk ke Perlu Diproduksi.'
-                            : 'Produk ditambahkan (Perlu Diproduksi).', 'info');
+                            ? 'Stok ready habis, kelebihan masuk ke Sedang Diproduksi.'
+                            : 'Produk ditambahkan (Sedang Diproduksi).', 'info');
                     } else {
                         this.tambahToast('Produk ditambahkan.', 'sukses');
                     }
@@ -3094,11 +3093,13 @@
                     }).map(p => ({ ...p, is_bundling: false }));
 
                     let bundlingList = [];
-                    if (this.kategoriTerpilih === 'semua' && this.filterKetersediaan === 'semua') {
+                    // Bundling ikut tampil di "Semua", atau di kategori yang sama dengan kategori bundlingnya.
+                    if (this.filterKetersediaan === 'semua') {
                         bundlingList = this.daftarBundling
                             .filter(b => {
-                                return b.nama_bundling.toLowerCase().includes(this.kataKunciPencarian.toLowerCase())
-                                    || (b.kode_bundling || '').toLowerCase().includes(this.kataKunciPencarian.toLowerCase());
+                                const cocokKategoriBundling = this.kategoriTerpilih === 'semua' || b.kategori_id === this.kategoriTerpilih;
+                                return cocokKategoriBundling && (b.nama_bundling.toLowerCase().includes(this.kataKunciPencarian.toLowerCase())
+                                    || (b.kode_bundling || '').toLowerCase().includes(this.kataKunciPencarian.toLowerCase()));
                             })
                             .map(b => ({ ...b, is_bundling: true }));
                     }
@@ -3153,7 +3154,7 @@
                 // Stok satu komponen bundling. Sumber utama = data dari server
                 // (items.detail_produk / items.produk) karena daftarProduk di kasir
                 // HANYA berisi produk reguler — produk khusus bundling tidak ada di
-                // sana, jadi dulu dianggap stok 0 / "Perlu Diproduksi".
+                // sana, jadi dulu dianggap stok 0 / "Sedang Diproduksi".
                 stokItemBundling(it) {
                     // Baris isi bundling bebas (produk + ukuran): stok = total stok semua rasa aktifnya.
                     if (Array.isArray(it.opsi_rasa)) {
@@ -3965,7 +3966,7 @@
                         } else {
                             this.keranjang.push(this.buatItemKeranjang(produk, 1, true, ukuran, varianRasa));
                         }
-                        this.tambahToast('Produk ditambahkan (Perlu Diproduksi).', 'sukses');
+                        this.tambahToast('Produk ditambahkan (Sedang Diproduksi).', 'sukses');
                         return;
                     }
 
@@ -3989,7 +3990,7 @@
                         } else {
                             this.keranjang.push(this.buatItemKeranjang(produk, 1, true, ukuran, varianRasa));
                         }
-                        this.tambahToast('Stok ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                        this.tambahToast('Stok ready habis, kelebihan masuk ke Sedang Diproduksi.', 'info');
                     }
                 },
 
@@ -4054,7 +4055,7 @@
                         } else {
                             this.keranjang.push(this.buatItemBundlingKeranjang(bundling, 1, true));
                         }
-                        this.tambahToast('Bundling ditambahkan (Perlu Diproduksi).', 'sukses');
+                        this.tambahToast('Bundling ditambahkan (Sedang Diproduksi).', 'sukses');
                         return;
                     }
 
@@ -4078,7 +4079,7 @@
                         } else {
                             this.keranjang.push(this.buatItemBundlingKeranjang(bundling, 1, true));
                         }
-                        this.tambahToast('Stok bundling ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                        this.tambahToast('Stok bundling ready habis, kelebihan masuk ke Sedang Diproduksi.', 'info');
                     }
                 },
 
@@ -4109,7 +4110,7 @@
                         } else {
                             this.keranjang.push(this.buatItemPromoEventKeranjang(promoEvent, 1, true));
                         }
-                        this.tambahToast('Promo event ditambahkan (Perlu Diproduksi).', 'sukses');
+                        this.tambahToast('Promo event ditambahkan (Sedang Diproduksi).', 'sukses');
                         return;
                     }
 
@@ -4133,12 +4134,12 @@
                         } else {
                             this.keranjang.push(this.buatItemPromoEventKeranjang(promoEvent, 1, true));
                         }
-                        this.tambahToast('Stok promo event ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                        this.tambahToast('Stok promo event ready habis, kelebihan masuk ke Sedang Diproduksi.', 'info');
                     }
                 },
 
                 tambahJumlah(item) {
-                    // Item varian: stok ready dipakai dulu, lebihnya masuk "Perlu Diproduksi".
+                    // Item varian: stok ready dipakai dulu, lebihnya masuk "Sedang Diproduksi".
                     if (item.varian_id) {
                         if (item.butuh_produksi) { item.jumlah++; return; }
                         const v = this.cariVarian(item.produk_id, item.varian_id);
@@ -4180,7 +4181,7 @@
                             } else {
                                 this.keranjang.push(this.buatItemBundlingKeranjang(bundling, 1, true));
                             }
-                            this.tambahToast('Stok bundling ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                            this.tambahToast('Stok bundling ready habis, kelebihan masuk ke Sedang Diproduksi.', 'info');
                         }
                         return;
                     }
@@ -4208,7 +4209,7 @@
                             } else {
                                 this.keranjang.push(this.buatItemPromoEventKeranjang(promoEvent, 1, true));
                             }
-                            this.tambahToast('Stok promo event ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                            this.tambahToast('Stok promo event ready habis, kelebihan masuk ke Sedang Diproduksi.', 'info');
                         }
                         return;
                     }
@@ -4233,7 +4234,7 @@
                         } else if (produk) {
                             this.keranjang.push(this.buatItemKeranjang(produk, 1, true, item.ukuran, item.varian_rasa));
                         }
-                        this.tambahToast('Stok ready habis, kelebihan masuk ke Perlu Diproduksi.', 'info');
+                        this.tambahToast('Stok ready habis, kelebihan masuk ke Sedang Diproduksi.', 'info');
                     }
                 },
                 kurangiJumlah(item) { if (item.jumlah > 1) item.jumlah--; else this.hapusItem(item); },

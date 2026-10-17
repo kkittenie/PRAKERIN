@@ -101,6 +101,13 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
 
+            // ===== PESANAN MOBILE TERBARU (5 terakhir, tampil di bawah peringatan stok) =====
+            $pesananMobileTerbaru = Transaksi::with('member')
+                ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP)
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+
             // ===== NOTIFIKASI STOK MENIPIS =====
             $lowStockProduk = \App\Models\Produk::with('detailProduks')
                 ->where('status_aktif', true)
@@ -127,6 +134,7 @@ class DashboardController extends Controller
                 'dataPendapatanHarian' => $dataPendapatanHarian,
                 'produkTerlaris' => $produkTerlaris,
                 'transaksiTerbaru' => $transaksiTerbaru,
+                'pesananMobileTerbaru' => $pesananMobileTerbaru,
                 'lowStockProduk' => $lowStockProduk,
                 'lowStockBahan' => $lowStockBahan,
             ]);

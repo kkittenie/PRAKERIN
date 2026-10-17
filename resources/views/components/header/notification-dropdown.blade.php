@@ -101,12 +101,10 @@
         <!-- Notification Badge -->
         <span
             x-show="notifyingCount > 0"
-            class="absolute right-0 top-0.5 z-1 h-2.5 w-2.5 rounded-full bg-orange-500 flex items-center justify-center"
-        >
-            <span
-                class="absolute inline-flex w-full h-full bg-orange-400 rounded-full opacity-75 -z-1 animate-ping"
-            ></span>
-        </span>
+            x-cloak
+            x-text="notifyingCount > 99 ? '99+' : notifyingCount"
+            class="absolute -right-1 -top-1 z-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-extrabold leading-none text-white animate-pulse"
+        ></span>
 
         <!-- Bell Icon -->
         <svg

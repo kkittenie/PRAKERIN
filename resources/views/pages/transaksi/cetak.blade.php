@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $jenis === 'etalase' ? 'Tiket Etalase' : 'Struk ' . ($jenis === 'pelanggan' ? 'Pelanggan' : 'Dapur') }} - {{ $transaksi->kode_transaksi }}</title>
+    <title>{{ $jenis === 'etalase' ? \App\Support\StrukHelper::LABEL_TIKET_DAPUR : 'Struk ' . ($jenis === 'pelanggan' ? 'Pelanggan' : 'Dapur') }} - {{ $transaksi->kode_transaksi }}</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -282,7 +282,8 @@
                     }
                 }
 
-                // Kode pickup member: hanya terisi setelah kasir memasukkan kode & pesanan selesai.
+                // Kode pesanan 6 digit (struk pelanggan + tiket dapur). Kasir langsung: selalu ada.
+                // Member App: hanya terisi setelah kasir memasukkan kode & pesanan selesai.
                 $kodePickupStruk = \App\Support\StrukHelper::kodePickupTerverifikasi($transaksi);
             @endphp
             @if ($jenis === 'pelanggan')
@@ -342,7 +343,7 @@
                     <div>Tgl: {{ $transaksi->created_at->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</div>
                     <div>Pelanggan: <strong>{{ $transaksi->nama_pembeli ?? 'Pelanggan Umum' }}</strong></div>
                     @if ($kodePickupStruk)
-                        <div>Kode Pickup: <strong style="letter-spacing:1px;">{{ $kodePickupStruk }}</strong></div>
+                        <div>Kode Pesanan: <strong style="letter-spacing:1px;">{{ $kodePickupStruk }}</strong></div>
                     @endif
                     <div style="text-transform: capitalize;">Bayar: {{ $transaksi->metode_pembayaran }}</div>
                 </div>
@@ -550,19 +551,22 @@
                 </div>
             @elseif ($jenis === 'etalase')
                 @php
-                    // Tiket Etalase: semua produk pesanan TANPA harga, buat petugas yang
+                    // Tiket Dapur (jenis 'etalase'): semua produk pesanan TANPA harga, buat petugas yang
                     // mengambil barang dari etalase / menghangatkan / mengiris.
                     $itemsEtalase = \App\Support\StrukHelper::itemsEtalase($transaksi);
                     $catatanPesananEtalase = \App\Support\StrukHelper::catatanPesanan($transaksi);
                 @endphp
                 <div class="text-center border-bottom-dashed" style="padding-bottom:10px; margin-bottom:10px;">
                     <h2 style="margin:0; font-size:16px; font-weight:700;">SAISHO CAKE & BAKERY</h2>
-                    <p style="margin:4px 0 0 0; font-size:12px; font-weight:700; letter-spacing:1px;">TIKET ETALASE</p>
+                    <p style="margin:4px 0 0 0; font-size:12px; font-weight:700; letter-spacing:1px;">TIKET DAPUR</p>
                 </div>
                 <div class="margin-bottom-md" style="font-size:11px;">
                     <div>No: <strong>{{ $transaksi->kode_transaksi }}</strong></div>
                     <div>Tgl: {{ $transaksi->created_at->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</div>
                     <div>Pelanggan: <strong>{{ $transaksi->nama_pembeli ?? 'Pelanggan Umum' }}</strong></div>
+                    @if ($kodePickupStruk)
+                        <div>Kode Pesanan: <strong style="letter-spacing:1px;">{{ $kodePickupStruk }}</strong></div>
+                    @endif
                 </div>
                 <div class="border-top-dashed border-bottom-dashed" style="padding:8px 0;">
                     @forelse ($itemsEtalase as $index => $item)
@@ -733,7 +737,7 @@
             $struk .= "Tgl  : " . $transaksi->created_at->locale('id')->isoFormat('D MMM YYYY, HH:mm') . "\n";
             $struk .= "Pel  : " . ($transaksi->nama_pembeli ?? 'Pelanggan Umum') . "\n";
             if ($kodePickupStruk) {
-                $struk .= "Kode Pickup: " . $kodePickupStruk . "\n";
+                $struk .= "Kode Pesanan: " . $kodePickupStruk . "\n";
             }
             $struk .= "Bayar: " . ucfirst($transaksi->metode_pembayaran) . "\n";
             $struk .= $dividerDashed;
@@ -793,16 +797,19 @@
             $struk .= centerWrapStruk("Sampai ketemu di pesanan berikutnya! ^^");
 
         } elseif ($jenis === 'etalase') {
-            // Tiket Etalase: semua produk TANPA harga (lihat App\Support\StrukHelper).
+            // Tiket Dapur (jenis 'etalase'): semua produk TANPA harga (lihat App\Support\StrukHelper).
             $itemsEtalaseTeks = \App\Support\StrukHelper::itemsEtalase($transaksi);
             $catatanPesananTeks = \App\Support\StrukHelper::catatanPesanan($transaksi);
 
             $struk .= centerLineStruk("SAISHO CAKE & BAKERY");
-            $struk .= centerLineStruk("TIKET ETALASE");
+            $struk .= centerLineStruk("TIKET DAPUR");
             $struk .= $dividerDashed;
             $struk .= "No   : " . $transaksi->kode_transaksi . "\n";
             $struk .= "Tgl  : " . $transaksi->created_at->locale('id')->isoFormat('D MMM YYYY, HH:mm') . "\n";
             $struk .= "Pel  : " . ($transaksi->nama_pembeli ?? 'Pelanggan Umum') . "\n";
+            if ($kodePickupStruk) {
+                $struk .= "Kode Pesanan: " . $kodePickupStruk . "\n";
+            }
             $struk .= $dividerDashed;
 
             $idxEtalase = 1;

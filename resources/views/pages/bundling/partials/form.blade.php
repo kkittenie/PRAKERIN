@@ -49,6 +49,23 @@
         @enderror
     </div>
 
+    {{-- Kategori Bundling: di kasir, bundling muncul saat kategori ini dipilih --}}
+    <div>
+        <label class="{{ $labelClass }}">Kategori Bundling <span class="text-red-500">*</span></label>
+        <select name="kategori_id" class="{{ $inputClass }}">
+            <option value="">Pilih Kategori</option>
+            @foreach (($kategori ?? []) as $kat)
+                <option value="{{ $kat->id }}" {{ (string) old('kategori_id', $editing ? $bundling->kategori_id : '') === (string) $kat->id ? 'selected' : '' }}>
+                    {{ $kat->nama_kategori }}
+                </option>
+            @endforeach
+        </select>
+        <small class="text-gray-400">Bundling tampil di kasir saat kategori ini dipilih.</small>
+        @error('kategori_id')
+            <small class="text-red-500 block">{{ $message }}</small>
+        @enderror
+    </div>
+
     {{-- Jenis Bundling --}}
     <div class="md:col-span-2">
         <label class="{{ $labelClass }}">Jenis Bundling <span class="text-red-500">*</span></label>

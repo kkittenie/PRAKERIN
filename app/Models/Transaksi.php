@@ -74,13 +74,14 @@ class Transaksi extends Model
     }
 
     /**
-     * Kode pickup pendek & unik yang ditunjukkan member ke kasir (mis. "A3F9K2").
-     * Dibuat pendek supaya gampang dibacakan/diketik ulang oleh kasir.
+     * Kode pesanan 6 digit angka & unik (mis. "483920") untuk menyelesaikan pesanan.
+     * Dipakai SEMUA pesanan: dari Member App (online) maupun kasir langsung (offline).
+     * Angka saja supaya gampang dibacakan/diketik ulang oleh kasir.
      */
     public static function buatKodePickupUnik(): string
     {
         do {
-            $kode = strtoupper(Str::random(6));
+            $kode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         } while (self::where('kode_pickup', $kode)->exists());
 
         return $kode;

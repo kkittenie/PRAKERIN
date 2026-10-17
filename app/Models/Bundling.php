@@ -21,6 +21,7 @@ class Bundling extends Model
     protected $fillable = [
         'kode_bundling',
         'nama_bundling',
+        'kategori_id',
         'harga',
         'deskripsi',
         'status_aktif',
@@ -38,6 +39,11 @@ class Bundling extends Model
         'jumlah_produk',
         'perlu_diproduksi',
     ];
+
+    public function kategori()
+    {
+        return $this->belongsTo(KategoriProduk::class, 'kategori_id');
+    }
 
     public function items()
     {

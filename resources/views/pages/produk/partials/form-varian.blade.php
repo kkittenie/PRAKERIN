@@ -1,31 +1,68 @@
 @php
     $detailBaris = $detailBaris ?? [];
+
+    // Mode stok: 'global' (polosan: satu kode, harga, stok) atau 'varian' (per ukuran/variasi).
+    // Produk dengan satu baris tanpa ukuran & variasi (atau produk baru) = global.
+    $modeStok = old('mode_stok');
+    if (! in_array($modeStok, ['global', 'varian'], true)) {
+        $kumpulanBaris = collect($detailBaris);
+        $barisPertama = $kumpulanBaris->first();
+        $modeStok = ($kumpulanBaris->count() <= 1
+            && trim((string) ($barisPertama['ukuran'] ?? '')) === ''
+            && trim((string) ($barisPertama['variasi'] ?? '')) === '')
+            ? 'global' : 'varian';
+    }
     $inputClass = 'h-10 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 text-sm focus:border-brand-500 focus:ring-brand-500';
 @endphp
 
 {{-- Tabel Detail Produk: satu baris per kombinasi ukuran + variasi --}}
 <div id="wrapper-detail" class="md:col-span-2" x-data="formDetail()">
     <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Detail Produk <span class="text-red-500">*</span>
+        Stok Produk <span class="text-red-500">*</span>
     </label>
-    <span class="mb-2 block text-xs text-gray-400 dark:text-gray-500">
-        Satu baris per kombinasi ukuran dan variasi. Kode, harga, dan stok diatur di tiap baris. Produk tanpa ukuran/variasi cukup satu baris dengan Ukuran dan Variasi dikosongkan.
+
+    {{-- Pilihan mode stok --}}
+    <input type="hidden" name="mode_stok" :value="mode">
+    <div class="mb-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="flex items-start gap-3 p-4 rounded-xl border bg-white dark:bg-gray-800 cursor-pointer transition"
+            :class="mode === 'global' ? 'border-brand-500 ring-1 ring-brand-500' : 'border-gray-200 dark:border-gray-700 hover:border-brand-500'">
+            <input type="radio" class="mt-1 w-4 h-4 text-brand-600 focus:ring-brand-500" :checked="mode === 'global'" @change="setMode('global')">
+            <div>
+                <span class="block font-bold text-sm text-gray-900 dark:text-white">Global / Polosan</span>
+                <span class="block text-xs text-gray-500">Satu stok untuk seluruh produk. Tanpa ukuran dan variasi.</span>
+            </div>
+        </label>
+        <label class="flex items-start gap-3 p-4 rounded-xl border bg-white dark:bg-gray-800 cursor-pointer transition"
+            :class="mode === 'varian' ? 'border-brand-500 ring-1 ring-brand-500' : 'border-gray-200 dark:border-gray-700 hover:border-brand-500'">
+            <input type="radio" class="mt-1 w-4 h-4 text-brand-600 focus:ring-brand-500" :checked="mode === 'varian'" @change="setMode('varian')">
+            <div>
+                <span class="block font-bold text-sm text-gray-900 dark:text-white">Varian / Ukuran</span>
+                <span class="block text-xs text-gray-500">Stok, kode, dan harga diatur per kombinasi ukuran dan variasi.</span>
+            </div>
+        </label>
+    </div>
+
+    <span class="mb-2 block text-xs text-gray-400 dark:text-gray-500" x-show="mode === 'varian'">
+        Satu baris per kombinasi ukuran dan variasi. Kode, harga, dan stok diatur di tiap baris.
+    </span>
+    <span class="mb-2 block text-xs text-gray-400 dark:text-gray-500" x-show="mode === 'global'" x-cloak>
+        Isi satu kode, harga, dan stok untuk produk ini.
     </span>
 
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
-        <table class="w-full text-sm min-w-[1150px]">
+        <table class="w-full text-sm" :class="mode === 'varian' ? 'min-w-[1150px]' : 'min-w-[760px]'">
             <thead class="bg-gray-50 dark:bg-gray-800/60">
                 <tr class="text-left text-gray-500 dark:text-gray-400">
                     <th class="py-2 px-3 w-20">Foto</th>
                     <th class="py-2 px-3 w-40">Kode <span class="text-red-500">*</span></th>
-                    <th class="py-2 px-3">Ukuran</th>
-                    <th class="py-2 px-3">Variasi</th>
+                    <th class="py-2 px-3" x-show="mode === 'varian'">Ukuran</th>
+                    <th class="py-2 px-3" x-show="mode === 'varian'">Variasi</th>
                     <th class="py-2 px-3">Harga Modal</th>
                     <th class="py-2 px-3">Harga Jual</th>
                     <th class="py-2 px-3 w-24">Stok</th>
                     <th class="py-2 px-3 w-28">Stok Minimum</th>
                     <th class="py-2 px-3 w-16">Aktif</th>
-                    <th class="py-2 px-3 w-12"></th>
+                    <th class="py-2 px-3 w-12" x-show="mode === 'varian'"></th>
                 </tr>
             </thead>
             <tbody>
@@ -47,10 +84,10 @@
                             <input type="text" maxlength="60" placeholder="Mis. DN-K-COK" x-model="item.kode" :name="'detail_baris[' + index + '][kode]'" :style="pesanKode(index) ? 'border-color:#ef4444' : ''" class="{{ $inputClass }} font-mono">
                             <p x-show="pesanKode(index)" x-text="pesanKode(index)" class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"></p>
                         </td>
-                        <td class="py-2 px-3">
+                        <td class="py-2 px-3" x-show="mode === 'varian'">
                             <input type="text" maxlength="50" placeholder="Mis. Kecil" x-model="item.ukuran" :name="'detail_baris[' + index + '][ukuran]'" :style="pesanKombinasi(index) ? 'border-color:#ef4444' : ''" class="{{ $inputClass }}">
                         </td>
-                        <td class="py-2 px-3">
+                        <td class="py-2 px-3" x-show="mode === 'varian'">
                             <input type="text" maxlength="100" placeholder="Mis. Coklat" x-model="item.variasi" :name="'detail_baris[' + index + '][variasi]'" :style="pesanKombinasi(index) ? 'border-color:#ef4444' : ''" class="{{ $inputClass }}">
                             <p x-show="pesanKombinasi(index)" x-text="pesanKombinasi(index)" class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"></p>
                         </td>
@@ -81,7 +118,7 @@
                             </label>
                             <input type="hidden" :name="'detail_baris[' + index + '][status_aktif]'" :value="item.status_aktif ? 1 : 0">
                         </td>
-                        <td class="py-2 px-3 text-right">
+                        <td class="py-2 px-3 text-right" x-show="mode === 'varian'">
                             <button type="button" @click="bukaModalHapus(index)" :disabled="baris.length <= 1" :class="baris.length <= 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-red-50 dark:hover:bg-red-500/10'" :title="baris.length <= 1 ? 'Minimal 1 detail produk' : 'Hapus'" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-500 dark:text-red-400 transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-[17px] h-[17px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
@@ -92,7 +129,7 @@
         </table>
     </div>
 
-    <div class="mt-3">
+    <div class="mt-3" x-show="mode === 'varian'">
         <button type="button" @click="tambahBaris()" class="h-11 px-5 rounded-lg bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition">+ Tambah Detail</button>
     </div>
 
@@ -139,6 +176,8 @@
     function formDetail() {
         return {
             baris: @json($detailBaris),
+            mode: @json($modeStok),
+            simpanVarian: null,
             uid: 0,
             modalHapus: false,
             indexHapus: null,
@@ -147,6 +186,33 @@
 
             norm(v) {
                 return String(v ?? '').trim().toLowerCase();
+            },
+
+            // Ganti mode stok. Ke Global: sisakan baris pertama tanpa ukuran/variasi (baris lain
+            // disimpan sementara, jadi kalau balik ke Varian isinya kembali). Ke Varian: kembalikan.
+            setMode(m) {
+                if (m === this.mode) return;
+
+                if (m === 'global') {
+                    if (this.baris.length === 0) this.tambahBaris();
+                    const pertama = this.baris[0];
+                    this.simpanVarian = {
+                        ukuran: pertama.ukuran,
+                        variasi: pertama.variasi,
+                        sisa: this.baris.slice(1),
+                    };
+                    pertama.ukuran = '';
+                    pertama.variasi = '';
+                    this.baris = [pertama];
+                } else if (this.simpanVarian) {
+                    const s = this.simpanVarian;
+                    this.baris[0].ukuran = s.ukuran;
+                    this.baris[0].variasi = s.variasi;
+                    s.sisa.forEach(b => this.baris.push(b));
+                    this.simpanVarian = null;
+                }
+
+                this.mode = m;
             },
 
             kosongBaris(b) {

@@ -15,7 +15,21 @@ class StrukHelper
 {
     public const JENIS_PELANGGAN = 'pelanggan';
     public const JENIS_DAPUR = 'dapur';
+    /**
+     * Nilai internal 'etalase' dipertahankan (supaya tidak bentrok dengan jenis 'dapur'
+     * milik Tiket Produksi), tapi namanya di layar/cetakan adalah "Tiket Dapur".
+     */
     public const JENIS_ETALASE = 'etalase';
+
+    /** Nama tiket untuk jenis 'etalase' di layar & cetakan. */
+    public const LABEL_TIKET_DAPUR = 'Tiket Dapur';
+
+    /**
+     * Tiket Produksi (jenis 'dapur') di-HIDE, bukan dihapus: logika cetaknya masih utuh,
+     * tombolnya saja yang disembunyikan di halaman Transaksi, Pesanan, dan Histori.
+     * Ubah ke true kalau tombol Tiket Produksi mau ditampilkan lagi.
+     */
+    public const TAMPILKAN_TIKET_PRODUKSI = false;
 
     /** Jenis cetak yang diizinkan. Nilai lain otomatis jadi struk pelanggan. */
     public const JENIS_VALID = [
@@ -30,7 +44,7 @@ class StrukHelper
     }
 
     /**
-     * Daftar produk untuk Tiket Etalase: SEMUA produk dalam pesanan, tanpa harga,
+     * Daftar produk untuk Tiket Dapur (jenis 'etalase'): SEMUA produk dalam pesanan, tanpa harga,
      * tidak peduli perlu diproduksi atau sudah ada di etalase.
      *
      * - Baris ringkasan paket (bundling/promo event) tidak dicetak, yang dicetak
@@ -157,16 +171,17 @@ class StrukHelper
     }
 
     /**
-     * Kode pickup yang dicetak di struk pelanggan.
+     * Kode pesanan 6 digit yang dicetak di struk pelanggan DAN tiket dapur.
      *
-     * Hanya muncul setelah kasir memasukkan kode itu dan pesanan resmi ditandai
-     * "Sudah Diambil" (kode yang salah tidak pernah mengubah status), jadi kode di
-     * struk selalu kode yang sudah terverifikasi. Pesanan kasir biasa tidak punya
-     * kode pickup, jadi baris ini otomatis tidak muncul.
+     * - Pesanan kasir langsung (offline): kode selalu ada, jadi langsung dicetak.
+     * - Pesanan Member App (online): hanya muncul setelah kasir memasukkan kode itu dan
+     *   pesanan resmi ditandai "Sudah Diambil" (kode yang salah tidak pernah mengubah
+     *   status), jadi kode di cetakan selalu kode yang sudah terverifikasi.
      */
     public static function kodePickupTerverifikasi(Transaksi $transaksi): ?string
     {
-        if ($transaksi->status_pesanan !== Transaksi::STATUS_SUDAH_DIAMBIL) {
+        if ($transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP
+            && $transaksi->status_pesanan !== Transaksi::STATUS_SUDAH_DIAMBIL) {
             return null;
         }
 

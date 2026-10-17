@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bundling;
 use App\Models\BundlingItem;
 use App\Models\DetailProduk;
+use App\Models\KategoriProduk;
 use App\Models\Produk;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
@@ -48,8 +49,9 @@ class BundlingController extends Controller
     {
         try {
             $produkForm = $this->daftarProdukForm();
+            $kategori = KategoriProduk::orderBy('nama_kategori')->get();
 
-            return view('pages.bundling.create', compact('produkForm'));
+            return view('pages.bundling.create', compact('produkForm', 'kategori'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -80,6 +82,7 @@ class BundlingController extends Controller
 
                 $bundling = Bundling::create([
                     'nama_bundling' => $request->nama_bundling,
+                    'kategori_id' => $request->kategori_id,
                     'harga' => $request->harga,
                     'deskripsi' => $request->deskripsi,
                     'status_aktif' => $request->boolean('status_aktif', true),
@@ -203,6 +206,7 @@ class BundlingController extends Controller
     {
         return [
             'nama_bundling' => 'required|string|max:150',
+            'kategori_id' => 'required|exists:kategori_produks,id',
             'harga' => 'required|integer|min:1',
             'deskripsi' => 'nullable|string',
             'status_aktif' => 'nullable|boolean',
@@ -225,6 +229,8 @@ class BundlingController extends Controller
     private function pesanValidasi(): array
     {
         return [
+            'kategori_id.required' => 'Pilih kategori bundling.',
+            'kategori_id.exists' => 'Kategori bundling tidak valid.',
             'produk_id.required' => 'Tambahkan minimal satu produk.',
             'produk_id.*.required' => 'Pilih produk dari hasil pencarian.',
             'varian_isi.required' => 'Pilih varian atau ukuran untuk setiap produk.',
@@ -405,6 +411,7 @@ class BundlingController extends Controller
             $produkBebasTersimpan = $bundling->isBebas() ? $bundling->items->pluck('produk_id')->all() : [];
 
             $produkForm = $this->daftarProdukForm($detailTersimpan, $produkBebasTersimpan);
+            $kategori = KategoriProduk::orderBy('nama_kategori')->get();
 
             // Bundling bebas menyimpan ukuran (rasa dipilih pembeli), bundling tetap menyimpan varian.
             $isiTersimpan = $bundling->items->map(fn (BundlingItem $item) => [
@@ -415,7 +422,7 @@ class BundlingController extends Controller
                 'qty' => $item->qty,
             ])->values()->all();
 
-            return view('pages.bundling.edit', compact('bundling', 'produkForm', 'isiTersimpan'));
+            return view('pages.bundling.edit', compact('bundling', 'produkForm', 'isiTersimpan', 'kategori'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -434,6 +441,7 @@ class BundlingController extends Controller
 
                 $dataUpdate = [
                     'nama_bundling' => $request->nama_bundling,
+                    'kategori_id' => $request->kategori_id,
                     'harga' => $request->harga,
                     'deskripsi' => $request->deskripsi,
                     'jenis_produk' => $request->jenis_produk,

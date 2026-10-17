@@ -770,6 +770,7 @@ class TransaksiKasirController extends Controller
                 'kembalian' => 0,
                 'metode_pembayaran' => 'Belum Bayar',
                 'status_pembayaran' => 'Belum Lunas',
+                'kode_pickup' => Transaksi::buatKodePickupUnik(),
             ]);
 
             $this->prosesRewardStampTransaksi($transaksi, $rewardStampSiap);
@@ -1151,6 +1152,7 @@ class TransaksiKasirController extends Controller
                 'kembalian' => $validated['kembalian'],
                 'metode_pembayaran' => $validated['metode_pembayaran'],
                 'status_pembayaran' => 'Lunas',
+                'kode_pickup' => Transaksi::buatKodePickupUnik(),
             ]);
 
               if ($voucherDipakai) {
@@ -1394,7 +1396,7 @@ class TransaksiKasirController extends Controller
     {
         try {
             $transaksi = Transaksi::with(['detailTransaksi.produk', 'member'])->where('kode_transaksi', $kodeTransaksi)->firstOrFail();
-            // pelanggan | dapur (tiket produksi) | etalase (semua produk tanpa harga).
+            // pelanggan | dapur (tiket produksi, di-hide) | etalase (= Tiket Dapur, semua produk tanpa harga).
             // Nilai di luar daftar itu otomatis jadi struk pelanggan.
             $jenis = \App\Support\StrukHelper::normalisasiJenis($request->get('jenis'));
 

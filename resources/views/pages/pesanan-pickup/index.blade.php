@@ -395,21 +395,24 @@
                         {{-- Footer (sticky) --}}
                         <div class="flex flex-wrap items-center justify-end gap-2 px-6 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 shrink-0">
 
-                            {{-- Cetak Struk & Tiket Produksi: muncul mulai status Lunas --}}
+                            {{-- Cetak Struk & Tiket Dapur: muncul mulai status Lunas --}}
                             <template x-if="detailData.status_pembayaran === 'Lunas'">
                                 <button @click="cetakStruk('pelanggan')" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs transition">
                                     Cetak Struk
                                 </button>
                             </template>
+                            {{-- Tiket Produksi: di-hide (logikanya tetap ada) --}}
+                            @if (\App\Support\StrukHelper::TAMPILKAN_TIKET_PRODUKSI)
                             <template x-if="detailData.status_pembayaran === 'Lunas' && adaItemProduksi()">
                                 <button @click="cetakStruk('dapur')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition">
                                     Tiket Produksi
                                 </button>
                             </template>
-                            {{-- Tiket Etalase: semua produk tanpa harga, buat ambil barang dari etalase --}}
+                            @endif
+                            {{-- Tiket Dapur: semua produk tanpa harga, buat ambil barang dari etalase --}}
                             <template x-if="detailData.status_pembayaran === 'Lunas'">
                                 <button @click="cetakStruk('etalase')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-xs transition">
-                                    Tiket Etalase
+                                    Tiket Dapur
                                 </button>
                             </template>
 
@@ -539,14 +542,14 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                             </svg>
                         </div>
-                        <h3 class="font-extrabold text-gray-900 dark:text-white text-base text-center">Verifikasi Kode Pickup</h3>
+                        <h3 class="font-extrabold text-gray-900 dark:text-white text-base text-center">Verifikasi Kode Pesanan</h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                            Minta pembeli menunjukkan kode pickup dari aplikasi member, lalu masukkan kodenya sebelum menyerahkan pesanan
+                            Minta pembeli menunjukkan kode 6 digit dari aplikasi member, lalu masukkan kodenya sebelum menyerahkan pesanan
                             <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="detailData?.kode_transaksi"></span>.
                         </p>
-                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-4 mb-1">Kode Pickup</label>
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-4 mb-1">Kode Pesanan (6 digit)</label>
                         <input type="text" name="kode_pickup" x-model="kodePickupInput" maxlength="6" required
-                            placeholder="Contoh: A3F9K2" autocomplete="off" x-ref="inputKodePickup"
+                            placeholder="Contoh: 483920" inputmode="numeric" autocomplete="off" x-ref="inputKodePickup"
                             @input="kodePickupInput = kodePickupInput.toUpperCase(); kodePickupError = ''"
                             :class="kodePickupError ? 'border-red-400 dark:border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-green-500'"
                             class="w-full px-3 py-2.5 text-center tracking-[0.3em] font-mono font-bold uppercase bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-lg border focus:outline-none focus:ring-2 focus:border-transparent">
