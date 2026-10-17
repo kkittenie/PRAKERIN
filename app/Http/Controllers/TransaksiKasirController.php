@@ -1394,7 +1394,9 @@ class TransaksiKasirController extends Controller
     {
         try {
             $transaksi = Transaksi::with(['detailTransaksi.produk', 'member'])->where('kode_transaksi', $kodeTransaksi)->firstOrFail();
-            $jenis = $request->get('jenis', 'pelanggan');
+            // pelanggan | dapur (tiket produksi) | etalase (semua produk tanpa harga).
+            // Nilai di luar daftar itu otomatis jadi struk pelanggan.
+            $jenis = \App\Support\StrukHelper::normalisasiJenis($request->get('jenis'));
 
             // Cash drawer cuma boleh kebuka kalau SEMUA terpenuhi:
             // struk pelanggan + transaksi sudah Lunas + dibayar Tunai, dan

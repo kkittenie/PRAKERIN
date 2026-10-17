@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Struk {{ $jenis === 'pelanggan' ? 'Pelanggan' : 'Dapur' }} - {{ $transaksi->kode_transaksi }}</title>
+    <title>{{ $jenis === 'etalase' ? 'Tiket Etalase' : 'Struk ' . ($jenis === 'pelanggan' ? 'Pelanggan' : 'Dapur') }} - {{ $transaksi->kode_transaksi }}</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -281,6 +281,9 @@
                         return str_replace('.', ',', $n);
                     }
                 }
+
+                // Kode pickup member: hanya terisi setelah kasir memasukkan kode & pesanan selesai.
+                $kodePickupStruk = \App\Support\StrukHelper::kodePickupTerverifikasi($transaksi);
             @endphp
             @if ($jenis === 'pelanggan')
                 @php
@@ -338,6 +341,9 @@
                     <div>No: <strong>{{ $transaksi->kode_transaksi }}</strong></div>
                     <div>Tgl: {{ $transaksi->created_at->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</div>
                     <div>Pelanggan: <strong>{{ $transaksi->nama_pembeli ?? 'Pelanggan Umum' }}</strong></div>
+                    @if ($kodePickupStruk)
+                        <div>Kode Pickup: <strong style="letter-spacing:1px;">{{ $kodePickupStruk }}</strong></div>
+                    @endif
                     <div style="text-transform: capitalize;">Bayar: {{ $transaksi->metode_pembayaran }}</div>
                 </div>
                 <div class="border-top-dashed border-bottom-dashed" style="padding:8px 0;">
@@ -542,6 +548,50 @@
                 <div class="text-center" style="padding-top:12px; font-size:11px; color:#666;">
                     <p style="margin:0;">Dicetak: {{ now()->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</p>
                 </div>
+            @elseif ($jenis === 'etalase')
+                @php
+                    // Tiket Etalase: semua produk pesanan TANPA harga, buat petugas yang
+                    // mengambil barang dari etalase / menghangatkan / mengiris.
+                    $itemsEtalase = \App\Support\StrukHelper::itemsEtalase($transaksi);
+                    $catatanPesananEtalase = \App\Support\StrukHelper::catatanPesanan($transaksi);
+                @endphp
+                <div class="text-center border-bottom-dashed" style="padding-bottom:10px; margin-bottom:10px;">
+                    <h2 style="margin:0; font-size:16px; font-weight:700;">SAISHO CAKE & BAKERY</h2>
+                    <p style="margin:4px 0 0 0; font-size:12px; font-weight:700; letter-spacing:1px;">TIKET ETALASE</p>
+                </div>
+                <div class="margin-bottom-md" style="font-size:11px;">
+                    <div>No: <strong>{{ $transaksi->kode_transaksi }}</strong></div>
+                    <div>Tgl: {{ $transaksi->created_at->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</div>
+                    <div>Pelanggan: <strong>{{ $transaksi->nama_pembeli ?? 'Pelanggan Umum' }}</strong></div>
+                </div>
+                <div class="border-top-dashed border-bottom-dashed" style="padding:8px 0;">
+                    @forelse ($itemsEtalase as $index => $item)
+                        <div class="item-row margin-bottom-sm" style="font-size:12px;">
+                            <span class="item-name"><strong>{{ $index + 1 }}. {{ $item->nama_produk }}</strong></span>
+                            <span class="item-qty" style="font-weight:bold;">x{{ $item->jumlah }}</span>
+                        </div>
+                        @if ($item->catatan)
+                            <div style="padding-left:16px; font-style:italic; color:#555; font-size:10px; margin-bottom:4px;">*
+                                Catatan: {{ $item->catatan }}</div>
+                        @endif
+                    @empty
+                        <div class="text-center" style="color:#666; font-style:italic;">Tidak ada item</div>
+                    @endforelse
+                </div>
+                @if ($itemsEtalase->isNotEmpty())
+                    <div class="flex-between border-bottom-dashed" style="padding:6px 0; font-weight:bold;">
+                        <span>Total item</span>
+                        <span>{{ $itemsEtalase->sum('jumlah') }}</span>
+                    </div>
+                @endif
+                @if ($catatanPesananEtalase)
+                    <div style="padding:8px 0; border-bottom:1px dashed #000;">
+                        <strong>📝 Catatan Pesanan:</strong> {{ $catatanPesananEtalase }}
+                    </div>
+                @endif
+                <div class="text-center" style="padding-top:12px; font-size:11px; color:#666;">
+                    <p style="margin:0;">Dicetak: {{ now()->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</p>
+                </div>
             @endif
         </div>
     </div>
@@ -682,6 +732,9 @@
             $struk .= "No   : " . $transaksi->kode_transaksi . "\n";
             $struk .= "Tgl  : " . $transaksi->created_at->locale('id')->isoFormat('D MMM YYYY, HH:mm') . "\n";
             $struk .= "Pel  : " . ($transaksi->nama_pembeli ?? 'Pelanggan Umum') . "\n";
+            if ($kodePickupStruk) {
+                $struk .= "Kode Pickup: " . $kodePickupStruk . "\n";
+            }
             $struk .= "Bayar: " . ucfirst($transaksi->metode_pembayaran) . "\n";
             $struk .= $dividerDashed;
 
@@ -739,6 +792,61 @@
 
             $struk .= centerWrapStruk("Sampai ketemu di pesanan berikutnya! ^^");
 
+        } elseif ($jenis === 'etalase') {
+            // Tiket Etalase: semua produk TANPA harga (lihat App\Support\StrukHelper).
+            $itemsEtalaseTeks = \App\Support\StrukHelper::itemsEtalase($transaksi);
+            $catatanPesananTeks = \App\Support\StrukHelper::catatanPesanan($transaksi);
+
+            $struk .= centerLineStruk("SAISHO CAKE & BAKERY");
+            $struk .= centerLineStruk("TIKET ETALASE");
+            $struk .= $dividerDashed;
+            $struk .= "No   : " . $transaksi->kode_transaksi . "\n";
+            $struk .= "Tgl  : " . $transaksi->created_at->locale('id')->isoFormat('D MMM YYYY, HH:mm') . "\n";
+            $struk .= "Pel  : " . ($transaksi->nama_pembeli ?? 'Pelanggan Umum') . "\n";
+            $struk .= $dividerDashed;
+
+            $idxEtalase = 1;
+            foreach ($itemsEtalaseTeks as $item) {
+                $prefix = $idxEtalase . ". ";
+                $rightQty = "x" . $item->jumlah;
+                $indent = str_repeat(' ', mb_strlen($prefix));
+
+                // Nama dipecah per kata; jumlah (xN) rata kanan di baris terakhir nama.
+                $barisNama = \App\Support\StrukHelper::pecahKata(
+                    $item->nama_produk,
+                    $strukWidth - mb_strlen($prefix) - mb_strlen($rightQty) - 1
+                );
+                foreach ($barisNama as $n => $teksNama) {
+                    $kiri = ($n === 0 ? $prefix : $indent) . $teksNama;
+                    $struk .= ($n === count($barisNama) - 1)
+                        ? padLineStruk($kiri, $rightQty)
+                        : $kiri . "\n";
+                }
+
+                if ($item->catatan) {
+                    foreach (\App\Support\StrukHelper::pecahKata("* Catatan: " . $item->catatan, $strukWidth - 2) as $n => $teksCatatan) {
+                        $struk .= ($n === 0 ? "  " : "    ") . $teksCatatan . "\n";
+                    }
+                }
+                $idxEtalase++;
+            }
+
+            if ($itemsEtalaseTeks->isEmpty()) {
+                $struk .= "Tidak ada item\n";
+            } else {
+                $struk .= $dividerDashed;
+                $struk .= padLineStruk("Total item", (string) $itemsEtalaseTeks->sum('jumlah'));
+            }
+
+            if ($catatanPesananTeks) {
+                $struk .= $dividerDashed;
+                foreach (\App\Support\StrukHelper::pecahKata($catatanPesananTeks, $strukWidth - 9) as $n => $teksCatatan) {
+                    $struk .= ($n === 0 ? "Catatan: " : str_repeat(' ', 9)) . $teksCatatan . "\n";
+                }
+            }
+
+            $struk .= $dividerDashed;
+            $struk .= centerWrapStruk("Dicetak: " . now()->locale('id')->isoFormat('D MMM YYYY, HH:mm')) . "\n\n";
         } else {
             // Baris header paket (bundling/promo event) nyimpen catatan asli
             // dari pembeli — dipetakan per bundling_id/promo_event_id supaya

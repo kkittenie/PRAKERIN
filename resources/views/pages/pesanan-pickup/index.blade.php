@@ -406,6 +406,12 @@
                                     Tiket Produksi
                                 </button>
                             </template>
+                            {{-- Tiket Etalase: semua produk tanpa harga, buat ambil barang dari etalase --}}
+                            <template x-if="detailData.status_pembayaran === 'Lunas'">
+                                <button @click="cetakStruk('etalase')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg text-xs transition">
+                                    Tiket Etalase
+                                </button>
+                            </template>
 
                             {{-- Proses Pesanan --}}
                             <template x-if="detailData.status_pembayaran === 'Lunas' && !detailData.diproses_pada && detailData.status_pesanan === 'diproses'">
