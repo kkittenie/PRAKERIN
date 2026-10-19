@@ -186,7 +186,7 @@ class TransaksiKasirController extends Controller
     public function indeks()
     {
         try {
-            $daftarProduk = Produk::with(['kategori', 'promos.detailProduks', 'detailProduks'])
+            $daftarProduk = Produk::with(['kategori', 'promos.detailProduks', 'detailProduks', 'varianProduks'])
                 ->where('status_aktif', true)
                 ->dijualSatuan()
                 ->get()
@@ -612,7 +612,30 @@ class TransaksiKasirController extends Controller
         }
 
         $produk = Produk::findOrFail($detailProduk->produk_id);
-        $label = $produk->nama_produk . ($detailProduk->nama_lengkap ? " ({$detailProduk->nama_lengkap})" : '');
+
+        // Produk Stok Bersama: varian (topping dsb.) dipilih kasir, stok & harga tetap dari detail produk.
+        $ukuranCatat = $detailProduk->ukuran;
+        $variasiCatat = $detailProduk->variasi;
+        $kodeCatat = $detailProduk->kode_barcode;
+        $namaLengkapCatat = $detailProduk->nama_lengkap;
+
+        if ($produk->jumlahVarianBersama() > 0) {
+            $varianBersama = $produk->varianProduks()
+                ->where('id', (int) ($item['varian_produk_id'] ?? 0))
+                ->where('status_aktif', true)
+                ->first();
+
+            if (!$varianBersama) {
+                throw new \Exception("Varian untuk '{$produk->nama_produk}' belum dipilih atau sudah dinonaktifkan. Muat ulang halaman kasir.");
+            }
+
+            $ukuranCatat = $varianBersama->ukuran;
+            $variasiCatat = $varianBersama->variasi;
+            $kodeCatat = $varianBersama->kode_produk;
+            $namaLengkapCatat = $varianBersama->nama_lengkap;
+        }
+
+        $label = $produk->nama_produk . ($namaLengkapCatat ? " ({$namaLengkapCatat})" : '');
 
         if (isset($item['harga_jual']) && abs((float) $item['harga_jual'] - (float) $detailProduk->harga_jual) > 0.5) {
             throw new \Exception("Harga '{$label}' sudah berubah. Muat ulang halaman kasir lalu coba lagi.");
@@ -641,9 +664,9 @@ class TransaksiKasirController extends Controller
                 'produk_id' => $produk->id,
                 'detail_produk_id' => $detailProduk->id,
                 'nama_produk' => $produk->nama_produk,
-                'ukuran' => $detailProduk->ukuran,
-                'varian_rasa' => $detailProduk->variasi,
-                'kode_barcode' => $detailProduk->kode_barcode,
+                'ukuran' => $ukuranCatat,
+                'varian_rasa' => $variasiCatat,
+                'kode_barcode' => $kodeCatat,
                 'harga_satuan' => $detailProduk->harga_jual,
                 'jumlah' => $qty,
                 'catatan' => $item['catatan'] ?? null,
@@ -1325,7 +1348,7 @@ class TransaksiKasirController extends Controller
             $produk = [];
 
             if ($produkIds->isNotEmpty()) {
-                $produk = Produk::with(['promos', 'detailProduks'])
+                $produk = Produk::with(['promos', 'detailProduks', 'varianProduks'])
                     ->whereIn('id', $produkIds)
                     ->where('status_aktif', true)
                     ->get()

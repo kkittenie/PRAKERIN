@@ -64,6 +64,11 @@
                         return this.varianTerpilih ? this.varianTerpilih.id : null;
                     },
 
+                    // Hanya terisi untuk produk Stok Bersama (varian-nya ada di tabel varian_produks).
+                    get idVarianProdukTerpilih() {
+                        return this.varianTerpilih ? (this.varianTerpilih.varian_produk_id || null) : null;
+                    },
+
                     get fotoTampil() {
                         if (this.punyaVarianBaru && this.varianTerpilih && this.varianTerpilih.foto) {
                             return this.varianTerpilih.foto;
@@ -429,6 +434,7 @@
 
                             <input type="hidden" name="produk_id" value="{{ $produk->id }}">
                             <input type="hidden" name="detail_produk_id" :value="idVarianTerpilih">
+                        <input type="hidden" name="varian_produk_id" :value="idVarianProdukTerpilih">
                             <input type="hidden" name="jumlah" :value="jumlah">
                             <input type="hidden" name="ukuran" :value="ukuran">
                             <input type="hidden" name="varian_rasa" :value="varianRasa">
@@ -481,6 +487,7 @@
                         @csrf
 
                         <input type="hidden" name="detail_produk_id" :value="idVarianTerpilih">
+                        <input type="hidden" name="varian_produk_id" :value="idVarianProdukTerpilih">
 
                         <input type="hidden" name="jumlah" :value="jumlah">
 

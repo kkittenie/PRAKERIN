@@ -52,6 +52,7 @@ class PromoStatusController extends Controller
                 ->map(function ($pe) {
                     return [
                         'id' => $pe->id,
+                        'kategori_id' => $pe->kategori_id,
                         'nama_event' => $pe->nama_event,
                         'harga_event' => (float) $pe->harga_event,
                         'isi_event' => $pe->isi_event,

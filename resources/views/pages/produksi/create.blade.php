@@ -222,11 +222,11 @@ Pengambilan Bahan Baku <span class="text-red-500">*</span>
              bawah ini di-generate otomatis oleh JS sesuai ukuran aktif produk
              yang dipilih (bisa 2 baris, bisa 5, gak lagi cuma Besar/Kecil). --}}
         <div class="md:col-span-2 hidden" id="wrapperRincianUkuranDinamis">
-            <label class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
-                <span id="judulRincianUkuran">Rincian per Detail Produk</span> <span class="text-red-500">*</span>
+            <label id="labelRincianUkuran" class="mb-2 block text-sm font-medium text-gray-750 dark:text-gray-300">
+                <span id="judulRincianUkuran">Rincian per Varian</span> <span class="text-red-500">*</span>
             </label>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Isi "Jumlah Hasil" untuk tiap ukuran/varian yang diproduksi kali ini (boleh kosongkan/0 kalau varian itu gak diproduksi sekarang).
+            <p id="petunjukRincianUkuran" class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Isi "Jumlah Hasil" untuk tiap ukuran/varian yang diproduksi kali ini (boleh kosongkan/0 kalau varian itu tidak diproduksi sekarang).
                 Total semua "Jumlah Hasil" harus sama dengan Jumlah Hasil Produksi di atas.
                 "Pesanan" opsional, kalau sebagian hasil langsung dipakai/dipotong lagi saat itu juga.
             </p>
@@ -236,10 +236,10 @@ Pengambilan Bahan Baku <span class="text-red-500">*</span>
             </div>
 
             <p id="peringatanRincianUkuran" class="hidden text-xs text-red-600 mt-2">
-                Total Jumlah Hasil semua detail harus sama dengan Jumlah Hasil Produksi.
+                Total Jumlah Hasil semua ukuran/varian harus sama dengan Jumlah Hasil Produksi.
             </p>
             <p id="peringatanKebutuhanUkuran" class="hidden text-xs text-red-600 mt-1">
-                Pesanan tidak boleh melebihi Jumlah Hasil pada detail yang sama.
+                Pesanan tidak boleh melebihi Jumlah Hasil pada ukuran/varian yang sama.
             </p>
         </div>
 
@@ -905,8 +905,26 @@ function aktifkanSearch(element) {
 
         terapkanModeUkuran(true, false);
 
+        // Judul rincian menyesuaikan produk:
+        //  - produk global (cuma 1 detail, tanpa ukuran & variasi): judul & petunjuk disembunyikan
+        //  - hanya ukuran      -> "Rincian per Ukuran"
+        //  - hanya variasi     -> "Rincian per Varian"
+        //  - ukuran + variasi  -> "Rincian per Ukuran & Varian"
+        const daftarAktif = Array.isArray(produk.daftar_varian_produksi) ? produk.daftar_varian_produksi : [];
+        const adaUkuran = daftarAktif.some(function (d) { return d.ukuran; });
+        const adaVariasi = daftarAktif.some(function (d) { return d.variasi; });
+        const produkGlobal = !adaUkuran && !adaVariasi;
+
         const judul = document.getElementById('judulRincianUkuran');
-        if (judul) judul.textContent = 'Rincian per Detail Produk';
+        const labelRincian = document.getElementById('labelRincianUkuran');
+        const petunjukRincian = document.getElementById('petunjukRincianUkuran');
+        if (judul) {
+            judul.textContent = adaUkuran && adaVariasi
+                ? 'Rincian per Ukuran & Varian'
+                : (adaUkuran ? 'Rincian per Ukuran' : 'Rincian per Varian');
+        }
+        if (labelRincian) labelRincian.classList.toggle('hidden', produkGlobal);
+        if (petunjukRincian) petunjukRincian.classList.toggle('hidden', produkGlobal);
 
         const wadah = document.getElementById('rincian-ukuran-container');
         if (!wadah) return;

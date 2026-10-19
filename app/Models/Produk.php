@@ -73,6 +73,12 @@ class Produk extends Model
         return $this->hasMany(DetailProduk::class, 'produk_id')->orderBy('urutan')->orderBy('id');
     }
 
+    /** Varian (mis. topping) untuk produk Stok Bersama/global. Harga dan stoknya ikut detail produk utama. */
+    public function varianProduks()
+    {
+        return $this->hasMany(VarianProduk::class, 'produk_id')->orderBy('urutan')->orderBy('id');
+    }
+
     /** Semua detail produk ini (memakai relasi yang sudah di-eager load kalau ada). */
     public function daftarDetail(): Collection
     {
@@ -163,6 +169,19 @@ class Produk extends Model
             : 'perlu_diproduksi';
     }
 
+    /**
+     * Produk Stok Bersama (global): paling banyak satu detail dan tanpa ukuran & variasi.
+     * Varian/topping-nya ada di tabel varian_produks, bukan di detail produk.
+     * Aturannya sama dengan penentuan mode "global" di form produk. Selain itu = Stok Per Varian.
+     */
+    public function getIsGlobalAttribute(): bool
+    {
+        $detail = $this->detailProduks;
+
+        return $detail->count() <= 1
+            && ! $detail->contains(fn ($d) => filled($d->ukuran) || filled($d->variasi));
+    }
+
     public function getPunyaUkuranAttribute(): bool
     {
         return $this->punyaUkuranDetail();
@@ -209,6 +228,13 @@ class Produk extends Model
     {
         $daftar = $this->daftarDetail();
 
+        // Produk Stok Bersama yang punya varian (topping dsb.): satu baris per varian,
+        // tapi harga & stok tetap milik satu detail produk yang sama (stok dipakai bersama).
+        $varianBersama = $this->varianBersamaAktifTersedia();
+        if ($varianBersama->isNotEmpty() && $daftar->count() === 1) {
+            return $this->daftarVarianKasirStokBersama($daftar->first(), $varianBersama);
+        }
+
         return $daftar
             ->map(function (DetailProduk $v) {
                 $hargaAsli = (float) $v->harga_jual;
@@ -241,6 +267,65 @@ class Produk extends Model
                     'foto' => $v->foto_url,
                 ];
             })
+            ->values()
+            ->all();
+    }
+
+    /** Varian (tabel varian_produks) milik produk Stok Bersama, semuanya termasuk yang nonaktif. Kosong kalau bukan produk global. */
+    public function varianBersamaAktifTersedia(): Collection
+    {
+        if (! $this->is_global) {
+            return collect();
+        }
+
+        return $this->relationLoaded('varianProduks')
+            ? $this->getRelation('varianProduks')
+            : $this->varianProduks()->get();
+    }
+
+    /** Jumlah varian untuk produk Stok Bersama (0 kalau bukan produk global atau belum punya varian). */
+    public function jumlahVarianBersama(): int
+    {
+        return $this->varianBersamaAktifTersedia()->count();
+    }
+
+    /**
+     * Baris kasir/mobile untuk produk Stok Bersama: 'id' tetap id detail produk (pemegang stok & harga),
+     * 'varian_produk_id' menunjuk ke varian yang dipilih. Karena 'id'-nya sama, stok otomatis dipakai bersama.
+     */
+    protected function daftarVarianKasirStokBersama(DetailProduk $detail, Collection $varian): array
+    {
+        $hargaAsli = (float) $detail->harga_jual;
+        $promo = $this->promoAktifUntukDetail($detail);
+        $hargaDiskon = $hargaAsli;
+
+        if ($promo) {
+            $diskon = $promo->jenis_potongan === 'nominal'
+                ? (float) $promo->nominal_potongan
+                : (((float) ($promo->persentase ?? 0)) / 100) * $hargaAsli;
+            $hargaDiskon = max(0, $hargaAsli - $diskon);
+        }
+
+        return $varian
+            ->map(fn (VarianProduk $v) => [
+                'id' => $detail->id,
+                'varian_produk_id' => $v->id,
+                'aktif' => (bool) $detail->status_aktif && (bool) $v->status_aktif,
+                'ukuran' => $v->ukuran,
+                'variasi' => $v->variasi,
+                'nama' => $v->nama_lengkap,
+                'kode_produk' => $v->kode_produk,
+                'kode_barcode' => $v->kode_produk,
+                'ukuran_key' => static::kunciUkuran($v->ukuran),
+                'harga' => $hargaAsli,
+                'harga_asli' => $hargaAsli,
+                'harga_diskon' => $hargaDiskon,
+                'sedang_promo' => (bool) $promo,
+                'nama_promo' => $promo?->nama_promo,
+                'stok' => (int) $detail->stok,
+                'stok_minimum' => (int) $detail->stok_minimum,
+                'foto' => $v->foto_url ?: $detail->foto_url,
+            ])
             ->values()
             ->all();
     }

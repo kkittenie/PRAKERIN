@@ -11,6 +11,7 @@ class PromoProdukEvent extends Model
 
     protected $fillable = [
         'produk_id',
+        'kategori_id',
         'nama_event',
         'isi_normal',
         'isi_event',
@@ -37,6 +38,11 @@ class PromoProdukEvent extends Model
     public function produk()
     {
         return $this->belongsTo(Produk::class);
+    }
+
+    public function kategori()
+    {
+        return $this->belongsTo(KategoriProduk::class, 'kategori_id');
     }
 
     public function detailProduks()

@@ -173,6 +173,26 @@
         @enderror
     </div>
 
+    {{-- Kategori: di kasir dan menu mobile, promo muncul saat kategori ini dipilih --}}
+    <div class="md:col-span-2">
+        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Kategori <span class="text-red-500">*</span>
+        </label>
+        <select name="kategori_id"
+            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 focus:border-brand-500 focus:ring-brand-500">
+            <option value="">Pilih Kategori</option>
+            @foreach (($kategori ?? []) as $kat)
+                <option value="{{ $kat->id }}" {{ (string) old('kategori_id', $promoEvent->kategori_id) === (string) $kat->id ? 'selected' : '' }}>
+                    {{ $kat->nama_kategori }}
+                </option>
+            @endforeach
+        </select>
+        <small class="text-gray-400">Promo tampil di kasir dan menu member saat kategori ini dipilih.</small>
+        @error('kategori_id')
+            <small class="text-red-500 block">{{ $message }}</small>
+        @enderror
+    </div>
+
 
 
     {{-- Harga Event --}}

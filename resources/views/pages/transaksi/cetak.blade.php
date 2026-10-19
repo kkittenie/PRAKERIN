@@ -282,7 +282,7 @@
                     }
                 }
 
-                // Kode pesanan 6 digit (struk pelanggan + tiket dapur). Kasir langsung: selalu ada.
+                // Kode pesanan 6 karakter huruf & angka (struk pelanggan + tiket dapur). Kasir langsung: selalu ada.
                 // Member App: hanya terisi setelah kasir memasukkan kode & pesanan selesai.
                 $kodePickupStruk = \App\Support\StrukHelper::kodePickupTerverifikasi($transaksi);
             @endphp

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\KategoriProduk;
 use App\Models\PromoProdukEvent;
 use App\Models\Produk;
 use App\Support\ActivityLogHelper;
@@ -56,7 +57,8 @@ class PromoProdukEventController extends Controller
                 ->where('status_aktif', true)
                 ->orderBy('nama_produk', 'asc')
                 ->get();
-            return view('pages.promo-event.create', compact('produks'));
+            $kategori = KategoriProduk::orderBy('nama_kategori')->get();
+            return view('pages.promo-event.create', compact('produks', 'kategori'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -67,6 +69,7 @@ class PromoProdukEventController extends Controller
         try {
             $validated = $request->validate([
                 'produk_id'       => 'required|exists:produks,id',
+                'kategori_id'     => 'required|exists:kategori_produks,id',
                 'nama_event'      => 'required|string|max:255',
                 'harga_event'     => 'required|numeric|min:0',
                 'mulai_berlaku'   => 'required|date',
@@ -76,6 +79,9 @@ class PromoProdukEventController extends Controller
                 'nama_ukurans.*'  => 'string|max:100',
                 'nama_rasas'      => 'nullable|array',
                 'nama_rasas.*'    => 'string|max:100',
+            ], [
+                'kategori_id.required' => 'Pilih kategori promo produk.',
+                'kategori_id.exists'   => 'Kategori promo produk tidak valid.',
             ]);
 
             $produk    = Produk::with('detailProduks')->findOrFail($validated['produk_id']);
@@ -83,6 +89,7 @@ class PromoProdukEventController extends Controller
 
             $promoEvent = PromoProdukEvent::create([
                 'produk_id'       => $validated['produk_id'],
+                'kategori_id'     => $validated['kategori_id'],
                 'nama_event'      => $validated['nama_event'],
                 'isi_normal'      => 1,
                 'isi_event'       => 1,
@@ -133,8 +140,10 @@ class PromoProdukEventController extends Controller
             $selectedNamaUkurans = $namaUnik('ukuran');
             $selectedNamaRasas   = $namaUnik('variasi');
 
+            $kategori = KategoriProduk::orderBy('nama_kategori')->get();
+
             return view('pages.promo-event.edit', compact(
-                'promoEvent', 'produks', 'selectedNamaUkurans', 'selectedNamaRasas'
+                'promoEvent', 'produks', 'kategori', 'selectedNamaUkurans', 'selectedNamaRasas'
             ));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -148,6 +157,7 @@ class PromoProdukEventController extends Controller
 
             $validated = $request->validate([
                 'produk_id'       => 'required|exists:produks,id',
+                'kategori_id'     => 'required|exists:kategori_produks,id',
                 'nama_event'      => 'required|string|max:255',
                 'harga_event'     => 'required|numeric|min:0',
                 'mulai_berlaku'   => 'required|date',
@@ -157,6 +167,9 @@ class PromoProdukEventController extends Controller
                 'nama_ukurans.*'  => 'string|max:100',
                 'nama_rasas'      => 'nullable|array',
                 'nama_rasas.*'    => 'string|max:100',
+            ], [
+                'kategori_id.required' => 'Pilih kategori promo produk.',
+                'kategori_id.exists'   => 'Kategori promo produk tidak valid.',
             ]);
 
             $produk    = Produk::with('detailProduks')->findOrFail($validated['produk_id']);
@@ -164,6 +177,7 @@ class PromoProdukEventController extends Controller
 
             $promoEvent->update([
                 'produk_id'       => $validated['produk_id'],
+                'kategori_id'     => $validated['kategori_id'],
                 'nama_event'      => $validated['nama_event'],
                 'harga_event'     => $validated['harga_event'],
                 'mulai_berlaku'   => $validated['mulai_berlaku'],

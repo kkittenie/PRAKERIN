@@ -21,6 +21,7 @@ class KeranjangController extends Controller
             $validated = $request->validate([
                 'jumlah' => 'required|integer|min:1|max:50',
                 'detail_produk_id' => 'nullable|integer',
+                'varian_produk_id' => 'nullable|integer',
                 'ukuran' => 'nullable|string|max:50',
                 'varian_rasa' => 'nullable|string|max:100',
                 'catatan' => 'nullable|string|max:255',
@@ -52,6 +53,8 @@ class KeranjangController extends Controller
                 return back()->with('error', 'Varian yang dipilih sedang nonaktif atau tidak tersedia.');
             }
 
+            $varianBersama = null;
+
             if ($produkVarian) {
                 $ukuran = $produkVarian->ukuran;
                 $varianRasa = $produkVarian->variasi;
@@ -70,6 +73,26 @@ class KeranjangController extends Controller
                 $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
                 $foto = $produkVarian->foto ?: $produk->foto;
                 $produkVarianId = $produkVarian->id;
+
+                // Produk Stok Bersama: varian (topping dsb.) dipilih terpisah, stok & harga tetap dari detail produk.
+                if ($produk->jumlahVarianBersama() > 0) {
+                    $varianBersama = $produk->varianProduks()
+                        ->where('id', (int) ($validated['varian_produk_id'] ?? 0))
+                        ->where('status_aktif', true)
+                        ->first();
+
+                    if (!$varianBersama) {
+                        $pesanVarian = 'Pilih varian dulu, atau varian yang dipilih sedang nonaktif.';
+                        if ($request->wantsJson()) {
+                            return response()->json(['success' => false, 'message' => $pesanVarian], 422);
+                        }
+                        return back()->with('error', $pesanVarian);
+                    }
+
+                    $ukuran = $varianBersama->ukuran;
+                    $varianRasa = $varianBersama->variasi;
+                    $foto = $varianBersama->foto ?: $foto;
+                }
             } else {
                 $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;
                 $hargaAsal = $produk->getHarga($ukuran);
@@ -93,6 +116,7 @@ class KeranjangController extends Controller
             MemberCart::tambah([
                 'produk_id' => $produk->id,
                 'detail_produk_id' => $produkVarianId,
+                'varian_produk_id' => $varianBersama?->id,
                 'nama_produk' => $produk->nama_produk,
                 'foto' => $foto,
                 'harga_satuan' => $hargaSatuan,
@@ -257,6 +281,7 @@ class KeranjangController extends Controller
             $validated = $request->validate([
                 'produk_id' => 'required|integer|exists:produks,id',
                 'detail_produk_id' => 'nullable|integer',
+                'varian_produk_id' => 'nullable|integer',
                 'jumlah' => 'required|integer|min:1|max:50',
                 'ukuran' => 'nullable|string|max:50',
                 'varian_rasa' => 'nullable|string|max:100',
@@ -291,6 +316,8 @@ class KeranjangController extends Controller
                 return back()->with('error', 'Varian yang dipilih sedang nonaktif atau tidak tersedia.');
             }
 
+            $varianBersama = null;
+
             if ($produkVarian) {
                 $ukuran = $produkVarian->ukuran;
                 $varianRasa = $produkVarian->variasi;
@@ -309,6 +336,26 @@ class KeranjangController extends Controller
                 $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
                 $foto = $produkVarian->foto ?: $produk->foto;
                 $produkVarianId = $produkVarian->id;
+
+                // Produk Stok Bersama: varian (topping dsb.) dipilih terpisah, stok & harga tetap dari detail produk.
+                if ($produk->jumlahVarianBersama() > 0) {
+                    $varianBersama = $produk->varianProduks()
+                        ->where('id', (int) ($validated['varian_produk_id'] ?? 0))
+                        ->where('status_aktif', true)
+                        ->first();
+
+                    if (!$varianBersama) {
+                        $pesanVarian = 'Pilih varian dulu, atau varian yang dipilih sedang nonaktif.';
+                        if ($request->wantsJson()) {
+                            return response()->json(['success' => false, 'message' => $pesanVarian], 422);
+                        }
+                        return back()->with('error', $pesanVarian);
+                    }
+
+                    $ukuran = $varianBersama->ukuran;
+                    $varianRasa = $varianBersama->variasi;
+                    $foto = $varianBersama->foto ?: $foto;
+                }
             } else {
                 $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;
                 $hargaAsal = $produk->getHarga($ukuran);
@@ -332,6 +379,7 @@ class KeranjangController extends Controller
             MemberCart::perbarui($itemId, [
                 'produk_id' => $produk->id,
                 'detail_produk_id' => $produkVarianId,
+                'varian_produk_id' => $varianBersama?->id,
                 'nama_produk' => $produk->nama_produk,
                 'foto' => $foto,
                 'harga_satuan' => $hargaSatuan,

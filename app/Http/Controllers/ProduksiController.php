@@ -163,6 +163,13 @@ class ProduksiController extends Controller
                             $qu->where('name', 'like', "%{$keyword}%");
                         });
                     })
+                    // Urutan waktu: tanggal, lalu jam produksi, lalu id, supaya batch yang dibuat
+                    // belakangan selalu di atas walau tanggalnya sama dengan batch lain.
+                    ->orderColumn('tanggal', function ($q, $order) {
+                        $q->orderBy('produksis.tanggal', $order)
+                          ->orderBy('produksis.jam_produksi', $order)
+                          ->orderBy('produksis.id', $order);
+                    })
                     ->orderColumn('produk.nama_produk', function ($q, $order) {
                         $q->join('produks', 'produksis.produk_id', '=', 'produks.id')
                           ->orderBy('produks.nama_produk', $order)

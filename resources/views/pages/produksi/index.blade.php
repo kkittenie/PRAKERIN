@@ -187,6 +187,7 @@
                 { data: 'keterangan', name: 'keterangan' },
                 { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
             ],
+            order: [[1, 'desc']], // batch terbaru di paling atas
             emptyText: 'Belum ada data produksi',
             onDraw: function() {
                 perbaruiKadaluwarsaProduksi();

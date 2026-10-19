@@ -78,7 +78,9 @@
                             @php $totalStok = (int) $varians->sum('stok'); $totalMin = (int) $varians->sum('stok_minimum'); @endphp
                             <p class="font-semibold {{ $totalStok <= $totalMin ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
                                 {{ $totalStok }}
-                                <span class="text-gray-400 font-normal text-xs">(Total {{ $varians->count() }} varian)</span>
+                                @unless($produk->is_global)
+                                    <span class="text-gray-400 font-normal text-xs">(Total {{ $varians->count() }} varian)</span>
+                                @endunless
                             </p>
                         @else
                             <p class="text-gray-400 text-sm">Belum ada detail produk</p>

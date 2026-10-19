@@ -13,15 +13,30 @@ class MenuController extends Controller
     public function index()
     {
         try {
+            // Bundling & Promo Event ikut tampil di dalam kategori yang dipilih admin,
+            // jadi diambil lebih dulu supaya kategori yang cuma berisi keduanya tetap muncul.
+            $daftarBundling = Bundling::with(['items.produk.detailProduks', 'items.detailProduk'])
+                ->where('status_aktif', true)
+                ->get();
+
+            $daftarPromoEvent = \App\Models\PromoProdukEvent::with('produk')
+                ->berlaku()
+                ->get();
+
+            $kategoriDenganItem = $daftarBundling->pluck('kategori_id')
+                ->merge($daftarPromoEvent->pluck('kategori_id'))
+                ->filter()
+                ->unique();
+
             $kategoris = KategoriProduk::with(['produk' => function ($query) {
                 $query->where('status_aktif', true)
                     ->dijualSatuan()
-                    ->with(['detailProduks', 'promos'])
+                    ->with(['detailProduks', 'varianProduks', 'promos'])
                     ->orderBy('nama_produk');
             }])
                 ->orderBy('nama_kategori')
                 ->get()
-                ->filter(fn ($kategori) => $kategori->produk->isNotEmpty())
+                ->filter(fn ($kategori) => $kategori->produk->isNotEmpty() || $kategoriDenganItem->contains($kategori->id))
                 ->values();
 
             foreach ($kategoris as $kategori) {
@@ -63,14 +78,6 @@ class MenuController extends Controller
             }
 
             $totalProduk = $kategoris->sum(fn ($kategori) => $kategori->produk->count());
-            $daftarBundling = Bundling::with(['items.produk.detailProduks', 'items.detailProduk'])
-                ->where('status_aktif', true)
-                ->get();
-
-            $daftarPromoEvent = \App\Models\PromoProdukEvent::with('produk')
-                ->berlaku()
-                ->get();
-
             return view('mobile.menu', [
                 'kategoris' => $kategoris,
                 'totalProduk' => $totalProduk,

@@ -1,5 +1,8 @@
 @php
-    $varians = $item->detailProduks;
+    // Produk Stok Bersama: ukuran/variasi diambil dari varian_produks, bukan dari detail produk.
+    $varians = $item->is_global && $item->jumlahVarianBersama() > 0
+        ? $item->varianBersamaAktifTersedia()
+        : $item->detailProduks;
     $daftarUkuran = $varians->pluck('ukuran')->filter()->unique()->values();
     $daftarVariasi = $varians->pluck('variasi')->filter()->unique()->values();
 @endphp

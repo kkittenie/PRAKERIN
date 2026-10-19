@@ -7,10 +7,10 @@
     @php
         $searchIndex = [];
         foreach ($daftarBundling as $bundling) {
-            $searchIndex[] = ['nama' => strtolower($bundling->nama_bundling), 'kategori' => 'bundling'];
+            $searchIndex[] = ['nama' => strtolower($bundling->nama_bundling), 'kategori' => (string) ($bundling->kategori_id ?: 'lainnya')];
         }
         foreach ($daftarPromoEvent as $promoEvent) {
-            $searchIndex[] = ['nama' => strtolower($promoEvent->nama_event), 'kategori' => 'promo_event'];
+            $searchIndex[] = ['nama' => strtolower($promoEvent->nama_event), 'kategori' => (string) ($promoEvent->kategori_id ?: 'lainnya')];
         }
         foreach ($kategoris as $kategori) {
             foreach ($kategori->produk as $produk) {
@@ -44,25 +44,18 @@
                 });
             },
             menuIndex: JSON.parse(document.getElementById('menu-search-index').textContent),
-            // Live: jumlah promo event yang lagi berlaku, disinkronkan berkala lewat
-            // event 'promo-event-count-updated' (lihat script polling di bawah).
-            // Sengaja dipisah dari menuIndex biar promo event yang baru ditambahin
-            // admin bisa langsung nongol tanpa reload, walau tadinya 0.
-            promoEventCountLive: {{ $daftarPromoEvent->count() }},
             cocokKategori(id) {
-                if (id === 'promo_event') return this.promoEventCountLive > 0;
                 return this.menuIndex.some(item => item.kategori === id && item.nama.includes(this.search.toLowerCase()));
             },
             adaProdukTampil() {
                 return this.menuIndex.some(item =>
                     (this.activeKategori === 'semua' || item.kategori === this.activeKategori) &&
                     item.nama.includes(this.search.toLowerCase())
-                ) || (this.promoEventCountLive > 0 && (this.activeKategori === 'semua' || this.activeKategori === 'promo_event'));
+                );
             },
             taglines: ['Freshly Baked Every Day', 'Skip The Line, Order Ahead', 'Your Favorite Cakes &amp; Bakes', 'Order Now, Pick Up Later'],
             taglineIdx: 0,
          }"
-         @promo-event-count-updated.window="promoEventCountLive = $event.detail"
          x-init="
              setInterval(() => taglineIdx = (taglineIdx + 1) % taglines.length, 4500);
              $nextTick(() => {
@@ -221,7 +214,7 @@
             </div>
         </div>
 
-        @if ($kategoris->isNotEmpty() || $daftarBundling->isNotEmpty())
+        @if (count($searchIndex) > 0)
             <div :style="window.innerWidth < 1024 ? `margin-top: ${chipsOffset}px` : ''"
                  class="relative flex items-center gap-2 pb-4 transition-[margin] duration-200 lg:hidden">
 
@@ -264,27 +257,6 @@
                             </svg>
                         </button>
 
-                        @if ($daftarBundling->isNotEmpty())
-                            <button type="button" @click="activeKategori = 'bundling'; kategoriDropdown = false"
-                                    :class="activeKategori === 'bundling' ? 'bg-brand-50 text-brand-800' : 'text-gray-600'"
-                                    class="flex w-full items-center justify-between px-4 py-2.5 text-left text-xs font-bold transition hover:bg-gray-50">
-                                Bundling
-                                <svg x-show="activeKategori === 'bundling'" class="h-3.5 w-3.5 text-brand-800" viewBox="0 0 24 24" fill="none">
-                                    <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </button>
-                        @endif
-
-                        <button type="button" x-show="promoEventCountLive > 0" x-cloak
-                                @click="activeKategori = 'promo_event'; kategoriDropdown = false"
-                                :class="activeKategori === 'promo_event' ? 'bg-brand-50 text-brand-800' : 'text-gray-600'"
-                                class="flex w-full items-center justify-between px-4 py-2.5 text-left text-xs font-bold transition hover:bg-gray-50">
-                            Promo Event
-                            <svg x-show="activeKategori === 'promo_event'" class="h-3.5 w-3.5 text-brand-800" viewBox="0 0 24 24" fill="none">
-                                <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-
                         @foreach ($kategoris as $kategori)
                             <button type="button" @click="activeKategori = '{{ $kategori->id }}'; kategoriDropdown = false"
                                     :class="activeKategori === '{{ $kategori->id }}' ? 'bg-brand-50 text-brand-800' : 'text-gray-600'"
@@ -313,28 +285,12 @@
                     <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500" :class="activeKategori === 'semua' ? 'bg-brand-100 text-brand-700' : ''">{{ count($searchIndex) }}</span>
                 </button>
 
-                @if ($daftarBundling->isNotEmpty())
-                    <button type="button" @click="activeKategori = 'bundling'"
-                            :class="activeKategori === 'bundling' ? 'bg-brand-50 text-brand-800 font-extrabold' : 'text-gray-600 hover:bg-gray-50 font-semibold'"
-                            class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs transition">
-                        <span>Bundling</span>
-                        <span class="rounded-full bg-orange-50 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">{{ $daftarBundling->count() }}</span>
-                    </button>
-                @endif
-
-                <button type="button" x-show="promoEventCountLive > 0" x-cloak @click="activeKategori = 'promo_event'"
-                        :class="activeKategori === 'promo_event' ? 'bg-brand-50 text-brand-800 font-extrabold' : 'text-gray-600 hover:bg-gray-50 font-semibold'"
-                        class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs transition">
-                    <span>Promo Event</span>
-                    <span class="rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600" x-text="promoEventCountLive"></span>
-                </button>
-
                 @foreach ($kategoris as $kategori)
                     <button type="button" @click="activeKategori = '{{ $kategori->id }}'"
                             :class="activeKategori === '{{ $kategori->id }}' ? 'bg-brand-50 text-brand-800 font-extrabold' : 'text-gray-600 hover:bg-gray-50 font-semibold'"
                             class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs transition">
                         <span>{{ $kategori->nama_kategori }}</span>
-                        <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500" :class="activeKategori === '{{ $kategori->id }}' ? 'bg-brand-100 text-brand-700' : ''">{{ $kategori->produk->count() }}</span>
+                        <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500" :class="activeKategori === '{{ $kategori->id }}' ? 'bg-brand-100 text-brand-700' : ''">{{ $kategori->produk->count() + $daftarBundling->where('kategori_id', $kategori->id)->count() + $daftarPromoEvent->where('kategori_id', $kategori->id)->count() }}</span>
                     </button>
                 @endforeach
             </aside>
@@ -359,112 +315,15 @@
              style="-webkit-overflow-scrolling:touch;">
 
         {{-- Menu sections, grouped by category --}}
-        @if ($daftarBundling->isNotEmpty())
-            <div x-show="(activeKategori === 'semua' || activeKategori === 'bundling') && cocokKategori('bundling')" class="mt-6 first:mt-2">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-sm font-bold text-gray-900">Bundling</h2>
-                    <span class="text-[11px] text-gray-400">{{ $daftarBundling->count() }} item</span>
-                </div>
-                <div class="mt-1 border-t border-dashed border-gray-100"></div>
-
-                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4">
-                    @foreach ($daftarBundling as $bundling)
-                        <a href="{{ route('member.bundling.show', $bundling) }}"
-                           onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                           x-show="'{{ addslashes(strtolower($bundling->nama_bundling)) }}'.includes(search.toLowerCase())"
-                           class="block">
-                            <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
-                                @if ($bundling->gambar)
-                                    <img src="{{ asset('storage/' . $bundling->gambar) }}" alt="{{ $bundling->nama_bundling }}"
-                                         class="h-full w-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                @endif
-                                <div class="{{ $bundling->gambar ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
-                                    @include('mobile.components.icon-cup', ['class' => 'h-10 w-10'])
-                                </div>
-                                <span class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">Bundling</span>
-                                @if ($bundling->perlu_diproduksi)
-                                    <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Perlu Diproduksi</span>
-                                @endif
-                            </div>
-
-                            <div class="pt-2">
-                                <p class="text-[10px] font-medium text-gray-400">Bundling</p>
-                                <p class="mt-0.5 text-xs font-bold leading-snug text-gray-900 line-clamp-2">{{ $bundling->nama_bundling }}</p>
-
-                                <div class="mt-2 flex items-center justify-between gap-1">
-                                    <div class="min-w-0">
-                                        <p class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($bundling->harga, 0, ',', '.') }}</p>
-                                    </div>
-
-                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm">
-                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-                                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-
-        <div x-show="(activeKategori === 'semua' || activeKategori === 'promo_event') && promoEventCountLive > 0" x-cloak class="mt-6 first:mt-2" id="promo-event-section">
-            <div class="flex items-center justify-between">
-                <h2 class="text-sm font-bold text-gray-900">Promo Event</h2>
-                <span class="text-[11px] text-gray-400" x-text="promoEventCountLive + ' item'">{{ $daftarPromoEvent->count() }} item</span>
-            </div>
-            <div class="mt-1 border-t border-dashed border-gray-100"></div>
-
-            <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4" id="promo-event-grid">
-                @foreach ($daftarPromoEvent as $promoEvent)
-                    <a href="{{ route('member.promo-event.show', $promoEvent) }}"
-                       onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                       x-show="'{{ addslashes(strtolower($promoEvent->nama_event)) }}'.includes(search.toLowerCase())"
-                       data-promo-event-id="{{ $promoEvent->id }}"
-                       class="block">
-                        <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
-                            @if ($promoEvent->produk && $promoEvent->produk->foto)
-                                <img src="{{ asset('storage/' . $promoEvent->produk->foto) }}" alt="{{ $promoEvent->nama_event }}"
-                                     class="h-full w-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            @endif
-                            <div class="{{ ($promoEvent->produk && $promoEvent->produk->foto) ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
-                                @include('mobile.components.icon-cake', ['class' => 'h-10 w-10'])
-                            </div>
-                            <span class="absolute left-2 top-2 rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">Promo Event</span>
-                            <span data-badge-diproduksi class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white" style="{{ $promoEvent->perlu_diproduksi ? '' : 'display:none' }}">Perlu Diproduksi</span>
-                        </div>
-
-                        <div class="pt-2">
-                            <p class="text-[10px] font-medium text-gray-400">{{ $promoEvent->produk->nama_produk ?? '' }}</p>
-                            <p class="mt-0.5 text-xs font-bold leading-snug text-gray-900 line-clamp-2">{{ $promoEvent->nama_event }}</p>
-
-                            <div class="mt-2 flex items-center justify-between gap-1">
-                                <div class="min-w-0">
-                                    <p data-harga class="truncate text-xs font-extrabold text-gray-900">Rp {{ number_format($promoEvent->harga_event, 0, ',', '.') }}</p>
-                                </div>
-
-                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm">
-                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-                                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                    </svg>
-                                </span>
-                            </div>
-                        </div>
-                    </a>
-                @endforeach
-            </div>
-        </div>
-
-        @forelse ($kategoris as $kategori)
+        @foreach ($kategoris as $kategori)
             <div x-show="(activeKategori === 'semua' || activeKategori === '{{ $kategori->id }}') && cocokKategori('{{ $kategori->id }}')" class="mt-6 first:mt-2">
                 <div class="flex items-center justify-between">
                     <h2 class="text-sm font-bold text-gray-900">{{ $kategori->nama_kategori }}</h2>
-                    <span class="text-[11px] text-gray-400">{{ $kategori->produk->count() }} item</span>
+                    <span class="text-[11px] text-gray-400">{{ $kategori->produk->count() + $daftarBundling->where('kategori_id', $kategori->id)->count() + $daftarPromoEvent->where('kategori_id', $kategori->id)->count() }} item</span>
                 </div>
                 <div class="mt-1 border-t border-dashed border-gray-100"></div>
 
-                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4">
+                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4" data-grid-kategori="{{ $kategori->id }}">
                     @foreach ($kategori->produk as $produk)
                         @php
                             $hargaAsli = $produk->harga_tampil_asli;
@@ -510,18 +369,50 @@
                             </div>
                         </a>
                     @endforeach
+
+                    {{-- Bundling & Promo Event ikut tampil di kategori yang dipilih admin --}}
+                    @foreach ($daftarBundling->where('kategori_id', $kategori->id) as $bundling)
+                        @include('mobile.components.kartu-bundling', ['bundling' => $bundling])
+                    @endforeach
+                    @foreach ($daftarPromoEvent->where('kategori_id', $kategori->id) as $promoEvent)
+                        @include('mobile.components.kartu-promo-event', ['promoEvent' => $promoEvent])
+                    @endforeach
                 </div>
             </div>
-        @empty
-            @if ($daftarBundling->isEmpty())
-                <div class="mt-8 rounded-2xl border border-gray-100 bg-white p-6 text-center text-xs font-medium text-gray-400">
-                    Belum ada menu tersedia saat ini.
+        @endforeach
+
+        {{-- Bundling / Promo Event lama yang belum punya kategori: hanya tampil di "Semua Menu" --}}
+        @php
+            $bundlingTanpaKategori = $daftarBundling->whereNull('kategori_id');
+            $promoEventTanpaKategori = $daftarPromoEvent->whereNull('kategori_id');
+        @endphp
+        @if ($bundlingTanpaKategori->isNotEmpty() || $promoEventTanpaKategori->isNotEmpty())
+            <div x-show="activeKategori === 'semua' && cocokKategori('lainnya')" class="mt-6 first:mt-2">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-gray-900">Menu Lainnya</h2>
+                    <span class="text-[11px] text-gray-400">{{ $bundlingTanpaKategori->count() + $promoEventTanpaKategori->count() }} item</span>
                 </div>
-            @endif
-        @endforelse
+                <div class="mt-1 border-t border-dashed border-gray-100"></div>
+
+                <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4" data-grid-kategori="lainnya">
+                    @foreach ($bundlingTanpaKategori as $bundling)
+                        @include('mobile.components.kartu-bundling', ['bundling' => $bundling])
+                    @endforeach
+                    @foreach ($promoEventTanpaKategori as $promoEvent)
+                        @include('mobile.components.kartu-promo-event', ['promoEvent' => $promoEvent])
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        @if (count($searchIndex) === 0)
+            <div class="mt-8 rounded-2xl border border-gray-100 bg-white p-6 text-center text-xs font-medium text-gray-400">
+                Belum ada menu tersedia saat ini.
+            </div>
+        @endif
 
         {{-- Hasil pencarian/filter kosong --}}
-        @if ($daftarBundling->isNotEmpty() || $kategoris->isNotEmpty())
+        @if (count($searchIndex) > 0)
             <div x-show="! adaProdukTampil()" x-cloak class="mt-8 flex flex-col items-center rounded-2xl border border-gray-100 bg-white px-6 py-10 text-center">
                 <span class="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 text-gray-300">
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none">
@@ -605,22 +496,20 @@
             };
 
             const sinkronPromoEvent = (daftar) => {
-                const grid = document.getElementById('promo-event-grid');
-                if (!grid) return;
-
                 const idAktif = daftar.map(pe => String(pe.id));
 
                 // Hapus kartu yang sudah tidak berlaku (kadaluwarsa/dinonaktifkan)
-                grid.querySelectorAll('[data-promo-event-id]').forEach(el => {
+                document.querySelectorAll('[data-promo-event-id]').forEach(el => {
                     if (!idAktif.includes(el.dataset.promoEventId)) el.remove();
                 });
 
-                // Update kartu yang masih ada, tambahkan yang baru
+                // Update kartu yang masih ada, tambahkan yang baru ke grid kategorinya
                 daftar.forEach(pe => {
-                    let el = grid.querySelector(`[data-promo-event-id="${pe.id}"]`);
+                    let el = document.querySelector(`[data-promo-event-id="${pe.id}"]`);
                     if (!el) {
-                        el = buatKartuPromoEvent(pe);
-                        grid.appendChild(el);
+                        const grid = document.querySelector(`[data-grid-kategori="${pe.kategori_id || 'lainnya'}"]`);
+                        if (!grid) return; // kategorinya belum tampil di halaman ini: muncul setelah halaman dimuat ulang
+                        grid.appendChild(buatKartuPromoEvent(pe));
                         return;
                     }
                     const badge = el.querySelector('[data-badge-diproduksi]');
@@ -628,10 +517,6 @@
                     if (badge) badge.style.display = pe.perlu_diproduksi ? '' : 'none';
                     if (harga) harga.textContent = formatRupiah(pe.harga_event);
                 });
-
-                // Kasih tau Alpine berapa jumlah promo event yang aktif sekarang,
-                // biar section & filter chip-nya otomatis muncul/ilang.
-                window.dispatchEvent(new CustomEvent('promo-event-count-updated', { detail: daftar.length }));
             };
 
             const sinkron = () => {

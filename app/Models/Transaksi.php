@@ -74,15 +74,33 @@ class Transaksi extends Model
     }
 
     /**
-     * Kode pesanan 6 digit angka & unik (mis. "483920") untuk menyelesaikan pesanan.
-     * Dipakai SEMUA pesanan: dari Member App (online) maupun kasir langsung (offline).
-     * Angka saja supaya gampang dibacakan/diketik ulang oleh kasir.
+     * Karakter yang dipakai di kode pesanan. Huruf kapital + angka, tanpa karakter yang
+     * gampang tertukar saat dibacakan/diketik (0/O, 1/I/L) supaya kasir tidak salah input.
+     */
+    public const KARAKTER_KODE_PICKUP = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+    public const PANJANG_KODE_PICKUP = 6;
+
+    /**
+     * Kode pesanan 6 karakter campuran huruf & angka, unik (mis. "A3F9K2"), untuk
+     * menyelesaikan pesanan. Dipakai SEMUA pesanan: dari Member App (online) maupun
+     * kasir langsung (offline). Selalu mengandung minimal 1 huruf dan 1 angka.
      */
     public static function buatKodePickupUnik(): string
     {
+        $karakter = self::KARAKTER_KODE_PICKUP;
+        $maks = strlen($karakter) - 1;
+
         do {
-            $kode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        } while (self::where('kode_pickup', $kode)->exists());
+            $kode = '';
+            for ($i = 0; $i < self::PANJANG_KODE_PICKUP; $i++) {
+                $kode .= $karakter[random_int(0, $maks)];
+            }
+        } while (
+            ! preg_match('/[A-Z]/', $kode)
+            || ! preg_match('/[0-9]/', $kode)
+            || self::where('kode_pickup', $kode)->exists()
+        );
 
         return $kode;
     }

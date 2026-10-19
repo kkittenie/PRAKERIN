@@ -575,7 +575,7 @@ class PesananPickupController extends Controller
             }
 
             $validated = $request->validate([
-                'kode_pickup' => 'required|string|max:6',
+                'kode_pickup' => 'required|alpha_num|max:6',
             ]);
 
             $kodeInput = strtoupper(trim($validated['kode_pickup']));

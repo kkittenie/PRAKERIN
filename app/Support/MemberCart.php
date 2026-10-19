@@ -116,6 +116,7 @@ class MemberCart
             if (
                 ($item['produk_id'] ?? null) === $data['produk_id']
                 && ($item['detail_produk_id'] ?? null) === $data['detail_produk_id']
+                && ($item['varian_produk_id'] ?? null) === ($data['varian_produk_id'] ?? null)
                 && ($item['bundling_id'] ?? null) === $data['bundling_id']
                 && ($item['promo_event_id'] ?? null) === $data['promo_event_id']
                 && ($item['ukuran'] ?? null) === ($data['ukuran'] ?? null)

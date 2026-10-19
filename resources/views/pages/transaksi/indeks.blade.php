@@ -102,16 +102,6 @@
                                     class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap"
                                     x-text="kategori.nama_kategori"></button>
                             </template>
-                            <button @click="modeTampilan = 'bundling'; halamanProduk = 1"
-                                :class="modeTampilan === 'bundling' ? 'bg-amber-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800'"
-                                class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap flex items-center gap-1.5">
-                                <span>Bundling</span>
-                            </button>
-                            <button @click="modeTampilan = 'promo_event'; halamanProduk = 1"
-                                :class="modeTampilan === 'promo_event' ? 'bg-amber-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800'"
-                                class="px-4 py-2 rounded-lg text-sm font-semibold tracking-wide transition whitespace-nowrap flex items-center gap-1.5">
-                                <span>Promo Event</span>
-                            </button>
                         </div>
 
                         <div class="flex flex-wrap items-center gap-3">
@@ -144,34 +134,6 @@
                                 <button @click="filterKetersediaan = 'promo'; halamanProduk = 1"
                                     :class="filterKetersediaan === 'promo' ? 'bg-rose-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
                                     class="px-3 py-1.5 rounded-md text-xs font-bold transition">Promo</button>
-                            </div>
-
-                            <!-- Filter Status Ketersediaan (mode bundling) -->
-                            <div class="flex items-center gap-1 bg-white dark:bg-gray-900 p-1 rounded-lg border border-gray-100 dark:border-gray-800 shrink-0"
-                                x-show="modeTampilan === 'bundling'">
-                                <button @click="filterBundling = 'semua'; halamanProduk = 1"
-                                    :class="filterBundling === 'semua' ? 'bg-slate-900 dark:bg-gray-800 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Semua</button>
-                                <button @click="filterBundling = 'tersedia'; halamanProduk = 1"
-                                    :class="filterBundling === 'tersedia' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Stok Tersedia</button>
-                                <button @click="filterBundling = 'habis'; halamanProduk = 1"
-                                    :class="filterBundling === 'habis' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Sedang Diproduksi</button>
-                            </div>
-
-                            <!-- Filter Status Ketersediaan (mode promo_event) -->
-                            <div class="flex items-center gap-1 bg-white dark:bg-gray-900 p-1 rounded-lg border border-gray-100 dark:border-gray-800 shrink-0"
-                                x-show="modeTampilan === 'promo_event'">
-                                <button @click="filterPromoEvent = 'semua'; halamanProduk = 1"
-                                    :class="filterPromoEvent === 'semua' ? 'bg-slate-900 dark:bg-gray-800 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Semua</button>
-                                <button @click="filterPromoEvent = 'tersedia'; halamanProduk = 1"
-                                    :class="filterPromoEvent === 'tersedia' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Stok Tersedia</button>
-                                <button @click="filterPromoEvent = 'habis'; halamanProduk = 1"
-                                    :class="filterPromoEvent === 'habis' ? 'bg-amber-600 text-white shadow-xs' : 'bg-transparent text-gray-550 dark:text-gray-400 hover:bg-gray-550 dark:hover:bg-gray-850'"
-                                    class="px-3 py-1.5 rounded-md text-xs font-bold transition">Sedang Diproduksi</button>
                             </div>
                         </div>
                     </div>
@@ -2637,9 +2599,12 @@
                     return this.daftarVarianProduk(produk).filter(v => v.aktif);
                 },
 
-                cariVarian(produkId, varianId) {
+                // Produk Stok Bersama: beberapa baris punya id (detail produk) yang sama, jadi varian_produk_id ikut dicocokkan.
+                cariVarian(produkId, varianId, varianProdukId = null) {
                     const p = this.daftarProduk.find(x => x.id === produkId);
-                    return p ? this.daftarVarianProduk(p).find(v => v.id === varianId) || null : null;
+                    if (!p) return null;
+                    return this.daftarVarianProduk(p).find(v => v.id === varianId
+                        && (varianProdukId == null || (v.varian_produk_id || null) === varianProdukId)) || null;
                 },
 
                 // Stok ready varian dikurangi jumlah (ready) yang sudah ada di keranjang.
@@ -2818,12 +2783,12 @@
                     const produksi = qty - ready;
 
                     if (ready > 0) {
-                        const adaReady = this.keranjang.find(i => i.varian_id === varian.id && !i.butuh_produksi);
+                        const adaReady = this.keranjang.find(i => i.varian_id === varian.id && (i.varian_produk_id || null) === (varian.varian_produk_id || null) && !i.butuh_produksi);
                         if (adaReady) adaReady.jumlah += ready;
                         else this.keranjang.push(this.buatItemVarianKeranjang(produk, varian, ready, false));
                     }
                     if (produksi > 0) {
-                        const adaProduksi = this.keranjang.find(i => i.varian_id === varian.id && i.butuh_produksi);
+                        const adaProduksi = this.keranjang.find(i => i.varian_id === varian.id && (i.varian_produk_id || null) === (varian.varian_produk_id || null) && i.butuh_produksi);
                         if (adaProduksi) adaProduksi.jumlah += produksi;
                         else this.keranjang.push(this.buatItemVarianKeranjang(produk, varian, produksi, true));
                     }
@@ -2849,9 +2814,10 @@
                     ).filter(promoBerlaku);
 
                     return {
-                        key: 'varian_' + varian.id + '_' + (perluProduksi ? 'produksi' : 'ready'),
+                        key: 'varian_' + varian.id + (varian.varian_produk_id ? '_vp' + varian.varian_produk_id : '') + '_' + (perluProduksi ? 'produksi' : 'ready'),
                         produk_id: produk.id,
                         varian_id: varian.id,
+                        varian_produk_id: varian.varian_produk_id || null,
                         nama_produk: produk.nama_produk,
                         ukuran: varian.ukuran,
                         varian_rasa: varian.variasi,
@@ -2872,8 +2838,9 @@
 
                 _sesuaikanStokVarianLokal(produk, varianId, delta) {
                     if (!produk) return;
-                    const v = this.daftarVarianProduk(produk).find(x => x.id === varianId);
-                    if (v) v.stok = (parseInt(v.stok) || 0) + delta;
+                    // Stok bersama: semua baris varian dengan id detail yang sama ikut disesuaikan.
+                    this.daftarVarianProduk(produk).filter(x => x.id === varianId)
+                        .forEach(v => { v.stok = (parseInt(v.stok) || 0) + delta; });
                     produk.stok = (parseFloat(produk.stok) || 0) + delta;
                 },
 
@@ -3105,9 +3072,13 @@
                     }
 
                     let promoEventList = [];
-                    if (this.kategoriTerpilih === 'semua' && this.filterKetersediaan === 'semua') {
+                    // Promo Event ikut tampil di "Semua", atau di kategori yang sama dengan kategori promonya.
+                    if (this.filterKetersediaan === 'semua') {
                         promoEventList = this.daftarPromoEvent
-                            .filter(pe => pe.nama_event.toLowerCase().includes(this.kataKunciPencarian.toLowerCase()))
+                            .filter(pe => {
+                                const cocokKategoriPromo = this.kategoriTerpilih === 'semua' || pe.kategori_id === this.kategoriTerpilih;
+                                return cocokKategoriPromo && pe.nama_event.toLowerCase().includes(this.kataKunciPencarian.toLowerCase());
+                            })
                             .map(pe => ({ ...pe, is_bundling: false, is_promo_event: true }));
                     }
 
@@ -4142,7 +4113,7 @@
                     // Item varian: stok ready dipakai dulu, lebihnya masuk "Sedang Diproduksi".
                     if (item.varian_id) {
                         if (item.butuh_produksi) { item.jumlah++; return; }
-                        const v = this.cariVarian(item.produk_id, item.varian_id);
+                        const v = this.cariVarian(item.produk_id, item.varian_id, item.varian_produk_id || null);
                         if (v && this.sisaStokVarian(v) > 0) {
                             item.jumlah++;
                         } else if (v) {

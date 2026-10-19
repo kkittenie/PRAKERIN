@@ -544,12 +544,12 @@
                         </div>
                         <h3 class="font-extrabold text-gray-900 dark:text-white text-base text-center">Verifikasi Kode Pesanan</h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                            Minta pembeli menunjukkan kode 6 digit dari aplikasi member, lalu masukkan kodenya sebelum menyerahkan pesanan
+                            Minta pembeli menunjukkan kode 6 karakter (huruf & angka) dari aplikasi member, lalu masukkan kodenya sebelum menyerahkan pesanan
                             <span class="font-semibold text-gray-700 dark:text-gray-300" x-text="detailData?.kode_transaksi"></span>.
                         </p>
-                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-4 mb-1">Kode Pesanan (6 digit)</label>
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-4 mb-1">Kode Pesanan (6 karakter)</label>
                         <input type="text" name="kode_pickup" x-model="kodePickupInput" maxlength="6" required
-                            placeholder="Contoh: 483920" inputmode="numeric" autocomplete="off" x-ref="inputKodePickup"
+                            placeholder="Contoh: A3F9K2" inputmode="text" autocapitalize="characters" autocomplete="off" spellcheck="false" x-ref="inputKodePickup"
                             @input="kodePickupInput = kodePickupInput.toUpperCase(); kodePickupError = ''"
                             :class="kodePickupError ? 'border-red-400 dark:border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-green-500'"
                             class="w-full px-3 py-2.5 text-center tracking-[0.3em] font-mono font-bold uppercase bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-lg border focus:outline-none focus:ring-2 focus:border-transparent">

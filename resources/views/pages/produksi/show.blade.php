@@ -101,12 +101,17 @@ Kadaluwarsa
 </div>
 
 <div class="md:col-span-2">
-    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Rincian per Detail Produk</p>
-
     @php
         $adaUkuranVarian = $produksi->produksiVarians->contains(fn ($v) => filled($v->ukuran));
         $adaVariasiVarian = $produksi->produksiVarians->contains(fn ($v) => filled($v->variasi));
     @endphp
+
+    {{-- Produk global (tanpa ukuran & variasi) tidak perlu judul rincian --}}
+    @if ($adaUkuranVarian || $adaVariasiVarian)
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            {{ $adaUkuranVarian && $adaVariasiVarian ? 'Rincian per Ukuran & Varian' : ($adaUkuranVarian ? 'Rincian per Ukuran' : 'Rincian per Varian') }}
+        </p>
+    @endif
 
     <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
         <table class="w-full">

@@ -452,6 +452,21 @@ class CheckoutController extends Controller
                     }
 
                     if ($varian) {
+                        // Produk Stok Bersama: ukuran/variasi/kode yang dicatat = varian yang dipilih pembeli.
+                        $ukuranCatat = $varian->ukuran;
+                        $variasiCatat = $varian->variasi;
+                        $kodeCatat = $varian->kode_barcode;
+                        if (!empty($item['varian_produk_id'])) {
+                            $varianBersama = \App\Models\VarianProduk::where('id', $item['varian_produk_id'])
+                                ->where('produk_id', $produk->id)
+                                ->first();
+                            if ($varianBersama) {
+                                $ukuranCatat = $varianBersama->ukuran;
+                                $variasiCatat = $varianBersama->variasi;
+                                $kodeCatat = $varianBersama->kode_produk;
+                            }
+                        }
+
                         $jumlahDibutuhkan = (int) $item['jumlah'];
                         $kunciVarian = 'varian_' . $varian->id;
                         $sudahDipakai = (int) ($stokTerpakai[$kunciVarian] ?? 0);
@@ -473,8 +488,9 @@ class CheckoutController extends Controller
                                 'produk_id' => $produk->id,
                                 'detail_produk_id' => $varian->id,
                                 'nama_produk' => $produk->nama_produk,
-                                'ukuran' => $varian->ukuran,
-                                'varian_rasa' => $varian->variasi,
+                                'ukuran' => $ukuranCatat,
+                                'varian_rasa' => $variasiCatat,
+                                'kode_barcode' => $kodeCatat,
                                 'harga_satuan' => $hargaSatuanDetail,
                                 'jumlah' => $stokReady,
                                 'catatan' => $catatanItem !== '' ? $catatanItem : null,
@@ -489,8 +505,9 @@ class CheckoutController extends Controller
                                 'produk_id' => $produk->id,
                                 'detail_produk_id' => $varian->id,
                                 'nama_produk' => $produk->nama_produk,
-                                'ukuran' => $varian->ukuran,
-                                'varian_rasa' => $varian->variasi,
+                                'ukuran' => $ukuranCatat,
+                                'varian_rasa' => $variasiCatat,
+                                'kode_barcode' => $kodeCatat,
                                 'harga_satuan' => $hargaSatuanDetail,
                                 'jumlah' => $stokProduksi,
                                 'catatan' => $catatanItem !== '' ? $catatanItem : null,

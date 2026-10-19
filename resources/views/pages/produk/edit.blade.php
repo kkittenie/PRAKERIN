@@ -60,7 +60,7 @@
                 </div>
 
                 {{-- Deskripsi --}}
-                <div class="md:col-span-2">
+                <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Deskripsi Produk
                     </label>
@@ -74,32 +74,6 @@
                     @error('deskripsi')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
-                </div>
-
-                {{-- Detail Produk (kode, ukuran, variasi, harga, stok per baris) --}}
-                @include('pages.produk.partials.form-varian', [
-                    'detailBaris' => $detailBaris,
-                ])
-
-                {{-- Status Aktif --}}
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Status Aktif
-                    </label>
-
-                    <select
-                        name="status_aktif"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-
-                        <option value="1" {{ old('status_aktif', $produk->status_aktif)==1 ? 'selected':'' }}>
-                            Aktif
-                        </option>
-
-                        <option value="0" {{ old('status_aktif', $produk->status_aktif)==0 ? 'selected':'' }}>
-                            Tidak Aktif
-                        </option>
-
-                    </select>
                 </div>
 
                 {{-- Dijual Satuan --}}
@@ -122,21 +96,12 @@
                     @enderror
                 </div>
 
-                {{-- Foto --}}
-                <div class="md:col-span-2">
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Foto Produk
-                    </label>
-
-                    <input
-                        type="file"
-                        name="foto"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
-
-                    @error('foto')
-                        <small class="text-red-500">{{ $message }}</small>
-                    @enderror
-                </div>
+                {{-- Detail Produk (kode, ukuran, variasi, harga, stok per baris) --}}
+                @include('pages.produk.partials.form-varian', [
+                    'detailBaris' => $detailBaris,
+                    'varianBaris' => $varianBaris ?? [],
+                    'fotoUtamaUrl' => $fotoUtamaUrl ?? null,
+                ])
 
             </div>
 

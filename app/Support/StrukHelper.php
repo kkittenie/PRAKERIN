@@ -52,6 +52,8 @@ class StrukHelper
      *   paket ternyata tidak punya baris isi, baris paketnya dicetak supaya tidak hilang.
      * - Produk yang sama digabung dan jumlahnya dijumlahkan.
      * - Catatan paket dan catatan per produk digabung (mis. "angetin", "slice").
+     * - Produk Stok Bersama yang punya varian: varian TIDAK dipisah (satu baris nama produk saja),
+     *   dan hanya yang perlu diproduksi yang dicetak. Yang stoknya masih ada tidak masuk tiket.
      *
      * @return Collection<int, object{nama_produk: string, jumlah: int, catatan: string}>
      */
@@ -75,9 +77,25 @@ class StrukHelper
             ->pluck('promo_event_id')
             ->unique();
 
+        // Produk Stok Bersama yang punya varian (diingat per produk supaya tidak query berulang).
+        $cacheStokBersama = [];
+        $stokBersama = function ($item) use (&$cacheStokBersama): bool {
+            if (! $item->produk_id) {
+                return false;
+            }
+
+            return $cacheStokBersama[$item->produk_id]
+                ??= (bool) ($item->produk && $item->produk->jumlahVarianBersama() > 0);
+        };
+
         return $detail
-            ->filter(function ($item) use ($bundlingPunyaIsi, $promoEventPunyaIsi) {
+            ->filter(function ($item) use ($bundlingPunyaIsi, $promoEventPunyaIsi, $stokBersama) {
                 if ((int) $item->jumlah <= 0) {
+                    return false;
+                }
+
+                // Stok Bersama: yang stoknya masih ada (ready) tidak perlu dibuat, jadi tidak masuk tiket.
+                if ($stokBersama($item) && ! $item->butuh_produksi) {
                     return false;
                 }
 
@@ -90,7 +108,7 @@ class StrukHelper
                     ? ! $bundlingPunyaIsi->contains($item->bundling_id)
                     : ! $promoEventPunyaIsi->contains($item->promo_event_id);
             })
-            ->map(function ($item) use ($headerBundling, $headerPromoEvent) {
+            ->map(function ($item) use ($headerBundling, $headerPromoEvent, $stokBersama) {
                 $catatanPaket = null;
                 if ($item->bundling_id && $headerBundling->has($item->bundling_id)) {
                     $catatanPaket = $headerBundling->get($item->bundling_id)->catatan;
@@ -100,7 +118,7 @@ class StrukHelper
 
                 $ukuran = $item->ukuran ?: optional($item->detailProduk)->ukuran;
                 $rasa = $item->varian_rasa ?: optional($item->detailProduk)->variasi;
-                $varian = array_filter([$ukuran, $rasa]);
+                $varian = $stokBersama($item) ? [] : array_filter([$ukuran, $rasa]);
 
                 return (object) [
                     'nama_produk' => $item->nama_produk . (! empty($varian) ? ' (' . implode(' - ', $varian) . ')' : ''),
@@ -171,7 +189,7 @@ class StrukHelper
     }
 
     /**
-     * Kode pesanan 6 digit yang dicetak di struk pelanggan DAN tiket dapur.
+     * Kode pesanan 6 karakter (huruf & angka) yang dicetak di struk pelanggan DAN tiket dapur.
      *
      * - Pesanan kasir langsung (offline): kode selalu ada, jadi langsung dicetak.
      * - Pesanan Member App (online): hanya muncul setelah kasir memasukkan kode itu dan

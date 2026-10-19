@@ -21,6 +21,7 @@ class ProdukController extends Controller
                 'kategori',
                 'promos.detailProduks',
                 'detailProduks' => fn ($q) => $q->orderBy('urutan')->orderBy('id'),
+                'varianProduks',
             ]);
 
             $pengaturan = PengaturanMember::aktifSekarang();
@@ -49,7 +50,10 @@ class ProdukController extends Controller
                     $opsiVariasi = collect($daftarVarian)->pluck('variasi')->filter()->unique()->values()->all();
 
                     $varianEdit = null;
-                    if (!empty($itemEdit['detail_produk_id'])) {
+                    if (!empty($itemEdit['varian_produk_id'])) {
+                        // Produk Stok Bersama: beberapa baris punya detail_produk_id yang sama, jadi cocokkan lewat varian_produk_id.
+                        $varianEdit = collect($daftarVarian)->firstWhere('varian_produk_id', (int) $itemEdit['varian_produk_id']);
+                    } elseif (!empty($itemEdit['detail_produk_id'])) {
                         $varianEdit = collect($daftarVarian)->firstWhere('id', (int) $itemEdit['detail_produk_id']);
                     } elseif (!empty($itemEdit['ukuran']) || !empty($itemEdit['varian_rasa'])) {
                         $varianEdit = collect($daftarVarian)->first(function ($v) use ($itemEdit) {
