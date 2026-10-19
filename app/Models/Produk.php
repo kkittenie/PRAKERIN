@@ -182,14 +182,93 @@ class Produk extends Model
             && ! $detail->contains(fn ($d) => filled($d->ukuran) || filled($d->variasi));
     }
 
+    public function getPunyaVarianAttribute(): bool
+    {
+        if ($this->is_global) {
+            return $this->jumlahVarianBersama() > 0;
+        }
+
+        return $this->punyaUkuranDetail() || $this->punyaVariasiDetail() || $this->daftarDetail()->count() > 1;
+    }
+
     public function getPunyaUkuranAttribute(): bool
     {
+        if ($this->is_global) {
+            return $this->varianBersamaAktifTersedia()->contains(fn ($v) => filled($v->ukuran));
+        }
+
         return $this->punyaUkuranDetail();
     }
 
     public function getPunyaVarianRasaAttribute(): bool
     {
+        if ($this->is_global) {
+            return $this->varianBersamaAktifTersedia()->contains(fn ($v) => filled($v->variasi));
+        }
+
         return $this->punyaVariasiDetail();
+    }
+
+    /**
+     * Daftar varian produk untuk form pilihan (Produksi, Bundling, Stamp, Voucher, Promo, dll).
+     * Jika Stok Bersama dan punya varian: diambil dari varian_produks.
+     * Jika Stok Bersama dan tanpa varian: koleksi kosong (produk tanpa varian).
+     * Jika Stok Per Varian: diambil dari detail_produks jika punya varian.
+     */
+    public function daftarVarianPilihan(): Collection
+    {
+        if ($this->is_global) {
+            if ($this->jumlahVarianBersama() === 0) {
+                return collect();
+            }
+
+            $detailUtama = $this->daftarDetail()->first();
+            $harga = $detailUtama ? (float) $detailUtama->harga_jual : 0.0;
+            $stok = (int) $this->stok;
+
+            return $this->varianBersamaAktifTersedia()
+                ->map(fn (VarianProduk $v) => [
+                    'id' => 'vp_' . $v->id,
+                    'raw_id' => $v->id,
+                    'is_stok_bersama' => true,
+                    'varian_produk_id' => $v->id,
+                    'detail_produk_id' => $detailUtama?->id,
+                    'ukuran' => $v->ukuran,
+                    'variasi' => $v->variasi,
+                    'nama' => $v->nama_lengkap ?: 'Standar',
+                    'kode_barcode' => $v->kode_produk,
+                    'kode_produk' => $v->kode_produk,
+                    'harga' => $harga,
+                    'harga_jual' => $harga,
+                    'stok' => $stok,
+                    'aktif' => (bool) $v->status_aktif,
+                    'perlu_produksi' => $stok <= 0,
+                ]);
+        }
+
+        // Stok Per Varian
+        $details = $this->daftarDetailAktif();
+        if ($details->count() <= 1 && !$this->punyaUkuranDetail() && !$this->punyaVariasiDetail()) {
+            return collect();
+        }
+
+        return $details->map(fn (DetailProduk $d) => [
+            'id' => $d->id,
+            'raw_id' => $d->id,
+            'is_stok_bersama' => false,
+            'varian_produk_id' => null,
+            'detail_produk_id' => $d->id,
+            'ukuran' => $d->ukuran,
+            'variasi' => $d->variasi,
+            'nama' => $d->nama_lengkap ?: 'Standar',
+            'kode_barcode' => $d->kode_barcode,
+            'kode_produk' => $d->kode_produk,
+            'harga' => (float) $d->harga_jual,
+            'harga_jual' => (float) $d->harga_jual,
+            'stok' => (int) $d->stok,
+            'aktif' => (bool) $d->status_aktif,
+            'perlu_produksi' => (int) $d->stok <= 0,
+        ]);
     }
 
     /**
@@ -296,36 +375,39 @@ class Produk extends Model
     protected function daftarVarianKasirStokBersama(DetailProduk $detail, Collection $varian): array
     {
         $hargaAsli = (float) $detail->harga_jual;
-        $promo = $this->promoAktifUntukDetail($detail);
-        $hargaDiskon = $hargaAsli;
-
-        if ($promo) {
-            $diskon = $promo->jenis_potongan === 'nominal'
-                ? (float) $promo->nominal_potongan
-                : (((float) ($promo->persentase ?? 0)) / 100) * $hargaAsli;
-            $hargaDiskon = max(0, $hargaAsli - $diskon);
-        }
 
         return $varian
-            ->map(fn (VarianProduk $v) => [
-                'id' => $detail->id,
-                'varian_produk_id' => $v->id,
-                'aktif' => (bool) $detail->status_aktif && (bool) $v->status_aktif,
-                'ukuran' => $v->ukuran,
-                'variasi' => $v->variasi,
-                'nama' => $v->nama_lengkap,
-                'kode_produk' => $v->kode_produk,
-                'kode_barcode' => $v->kode_produk,
-                'ukuran_key' => static::kunciUkuran($v->ukuran),
-                'harga' => $hargaAsli,
-                'harga_asli' => $hargaAsli,
-                'harga_diskon' => $hargaDiskon,
-                'sedang_promo' => (bool) $promo,
-                'nama_promo' => $promo?->nama_promo,
-                'stok' => (int) $detail->stok,
-                'stok_minimum' => (int) $detail->stok_minimum,
-                'foto' => $v->foto_url ?: $detail->foto_url,
-            ])
+            ->map(function (VarianProduk $v) use ($detail, $hargaAsli) {
+                $promo = $this->promoAktifUntukDetail($detail, $v);
+                $hargaDiskon = $hargaAsli;
+
+                if ($promo) {
+                    $diskon = $promo->jenis_potongan === 'nominal'
+                        ? (float) $promo->nominal_potongan
+                        : (((float) ($promo->persentase ?? 0)) / 100) * $hargaAsli;
+                    $hargaDiskon = max(0, $hargaAsli - $diskon);
+                }
+
+                return [
+                    'id' => $detail->id,
+                    'varian_produk_id' => $v->id,
+                    'aktif' => (bool) $detail->status_aktif && (bool) $v->status_aktif,
+                    'ukuran' => $v->ukuran,
+                    'variasi' => $v->variasi,
+                    'nama' => $v->nama_lengkap,
+                    'kode_produk' => $v->kode_produk,
+                    'kode_barcode' => $v->kode_produk,
+                    'ukuran_key' => static::kunciUkuran($v->ukuran),
+                    'harga' => $hargaAsli,
+                    'harga_asli' => $hargaAsli,
+                    'harga_diskon' => $hargaDiskon,
+                    'sedang_promo' => (bool) $promo,
+                    'nama_promo' => $promo?->nama_promo,
+                    'stok' => (int) $detail->stok,
+                    'stok_minimum' => (int) $detail->stok_minimum,
+                    'foto' => $v->foto_url ?: $detail->foto_url,
+                ];
+            })
             ->values()
             ->all();
     }
@@ -432,17 +514,17 @@ class Produk extends Model
     }
 
     /** Promo aktif terbaik untuk satu detail produk (ukuran + variasi) milik produk ini. */
-    public function promoAktifUntukDetail(?DetailProduk $detail): ?Promo
+    public function promoAktifUntukDetail(?DetailProduk $detail, ?VarianProduk $varianProduk = null): ?Promo
     {
         $now = now();
         $promos = $this->relationLoaded('promos') ? $this->promos : $this->promos()->get();
-        $promos->loadMissing('detailProduks');
+        $promos->loadMissing(['detailProduks', 'varianProduks']);
 
-        return $promos->filter(function ($promo) use ($now, $detail) {
+        return $promos->filter(function ($promo) use ($now, $detail, $varianProduk) {
             if (!$promo->status_aktif) return false;
             if ($promo->mulai_berlaku > $now) return false;
             if ($promo->selesai_berlaku && $promo->selesai_berlaku < $now) return false;
-            return $promo->berlakuUntukDetail($this->id, $detail);
+            return $promo->berlakuUntukDetail($this->id, $detail, $varianProduk);
         })->sortByDesc(function ($p) {
             return $p->jenis_potongan === 'nominal'
                 ? $p->nominal_potongan

@@ -52,10 +52,6 @@
                                 d="M4 6v12M7 6v12M11 6v12M14 6v12M18 6v12M20 6v12" />
                         </svg>
                         <span x-text="modeScan ? 'Scan Aktif' : 'Scan Barcode'"></span>
-                        <span x-show="modeScan" class="absolute -top-1 -right-1 flex h-3 w-3">
-                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
-                            <span class="relative inline-flex h-3 w-3 rounded-full bg-white"></span>
-                        </span>
                     </button>
                     <div class="relative flex-1 sm:w-80">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
@@ -156,13 +152,13 @@
                             class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
                             <template x-for="produk in produkTersaring"
                                 :key="(produk.is_bundling ? 'bd_' : (produk.is_promo_event ? 'pe_' : 'pr_')) + produk.id">
-                                <div class="min-w-0">
+                                <div class="min-w-0 h-full flex flex-col">
                                     <!-- Kartu Bundling (kalau item ini adalah bundling) -->
                                     <template x-if="produk.is_bundling">
                                         <div
-                                            class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
+                                            class="h-full bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
                                             <div @click="tambahBundlingKeKeranjang(produk)"
-                                                title="Klik untuk tambah ke keranjang"
+                                                :title="teksIsiBundling(produk) ? ('Isi: ' + teksIsiBundling(produk)) : 'Klik untuk tambah ke keranjang'"
                                                 class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden cursor-pointer">
                                                 <img :src="getFotoUrl(produk.gambar)" x-on:error="handleFotoError($event)"
                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -192,10 +188,6 @@
                                                     <p class="text-xs text-gray-400 dark:text-gray-500"
                                                         x-text="produk.kode_bundling">
                                                     </p>
-                                                    <template x-if="teksIsiBundling(produk)">
-                                                        <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1 leading-snug"
-                                                            x-text="'Isi: ' + teksIsiBundling(produk)"></p>
-                                                    </template>
                                                 </div>
                                                 <div
                                                     class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
@@ -220,7 +212,7 @@
                                     <!-- Kartu Promo Event (kalau item ini adalah promo event) -->
                                     <template x-if="produk.is_promo_event">
                                         <div
-                                            class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
+                                            class="h-full bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
                                             <div @click="tambahPromoEventKeKeranjang(produk)"
                                                 title="Klik untuk tambah ke keranjang"
                                                 class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden cursor-pointer">
@@ -275,7 +267,7 @@
                                     <!-- Kartu Produk biasa (kalau bukan bundling / promo event) -->
                                     <template x-if="!produk.is_bundling && !produk.is_promo_event">
                                         <div
-                                            class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
+                                            class="h-full bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
                                             <div @click="tambahKeKeranjang(produk)"
                                                 :title="tidakAdaUkuranAktif(produk) ? 'Belum ada ukuran aktif untuk produk ini' : 'Klik untuk tambah ke keranjang'"
                                                 class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden cursor-pointer">
@@ -390,8 +382,8 @@
                             class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
                             <template x-for="bundling in produkTersaring" :key="bundling.id">
                                 <div
-                                    class="min-w-0 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
-                                    <div @click="tambahBundlingKeKeranjang(bundling)" title="Klik untuk tambah ke keranjang"
+                                    class="h-full min-w-0 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group relative">
+                                    <div @click="tambahBundlingKeKeranjang(bundling)" :title="teksIsiBundling(bundling) ? ('Isi: ' + teksIsiBundling(bundling)) : 'Klik untuk tambah ke keranjang'"
                                         class="aspect-square bg-gray-100 dark:bg-gray-850 relative overflow-hidden cursor-pointer">
                                         <img :src="getFotoUrl(bundling.gambar)" x-on:error="handleFotoError($event)"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -420,10 +412,6 @@
                                                 x-text="bundling.nama_bundling"></h3>
                                             <p class="text-xs text-gray-400 dark:text-gray-500"
                                                 x-text="bundling.kode_bundling"></p>
-                                            <template x-if="teksIsiBundling(bundling)">
-                                                <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1 leading-snug"
-                                                    x-text="'Isi: ' + teksIsiBundling(bundling)"></p>
-                                            </template>
                                         </div>
                                         <div
                                             class="flex flex-col mt-auto pt-2 border-t border-gray-50 dark:border-gray-800 gap-1">
@@ -1440,7 +1428,7 @@
                                         x-text="formatTanggal(pesanan.created_at)"></p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Item: <span
                                             class="font-semibold text-gray-700 dark:text-gray-300"
-                                            x-text="pesanan.item_pesanan.map(i => i.nama_produk + ' (' + i.jumlah + ')').join(', ')"></span>
+                                            x-text="formatRingkasanItemPesanan(pesanan.item_pesanan)"></span>
                                     </p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" x-show="pesanan.catatan">
                                         Catatan:
@@ -1923,8 +1911,6 @@
                     </div>
 
                     <!-- Jumlah -->
-                    <p x-show="varianTerpilihModal && qtyModalVarian > sisaStokVarian(varianTerpilihModal)" class="text-[11px] font-medium text-amber-700 dark:text-amber-400 -mb-3"
-                        x-text="(qtyModalVarian - sisaStokVarian(varianTerpilihModal)) + ' pcs akan masuk Sedang Diproduksi'"></p>
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-gray-800 dark:text-gray-200">Jumlah</span>
                         <div class="flex items-center gap-3">
@@ -2966,7 +2952,7 @@
                     // Promo cuma dianggap "tersedia" buat baris ini kalau memang berlaku
                     // buat ukuran ini — promo yang dibatasi ke ukuran lain difilter di sini,
                     // biar badge/diskon di keranjang gak nyasar ke ukuran yang gak dituju.
-                    const detailItem = this.daftarVarianProduk(produk).find(v => (v.ukuran || null) === (ukuran || null) && (v.variasi || null) === (varianRasa || null));
+                    const detailItem = this.daftarVarianProduk(produk).find(v => (v.ukuran || null) === (ukuran || null) && (v.variasi || null) === (varianRasa || null)) || (this.daftarVarianProduk(produk)[0] || null);
                     const promoBerlakuUntukItem = (promo) => {
                         if (!promo) return false;
                         if (!detailItem) return true; // tidak ketemu detail yang pas -> promo produk berlaku penuh
@@ -2985,6 +2971,8 @@
                     return {
                         key: produk.id + '_' + (ukuran || 'std') + '_' + (varianRasa || 'std') + '_' + (perluProduksi ? 'produksi' : 'ready'),
                         produk_id: produk.id,
+                        varian_id: detailItem ? detailItem.id : null,
+                        varian_produk_id: detailItem ? (detailItem.varian_produk_id || null) : null,
                         nama_produk: produk.nama_produk,
                         ukuran: ukuran,
                         varian_rasa: varianRasa,
@@ -3139,6 +3127,37 @@
                     }
                     const p = this.daftarProduk.find(x => x.id === it.produk_id) || it.produk || null;
                     return p ? (parseFloat(this.stokUntukUkuran(p, it.ukuran, it.varian_rasa)) || 0) : 0;
+                },
+
+                // Ringkasan item pesanan di modal daftar belum bayar (gabungkan ready & produksi agar tidak terpisah)
+                formatRingkasanItemPesanan(itemPesanan) {
+                    if (!Array.isArray(itemPesanan)) return '';
+                    const map = {};
+                    itemPesanan.forEach(i => {
+                        const key = [
+                            i.is_bundling ? ('b_' + i.bundling_id) : (i.is_promo_event ? ('pe_' + i.promo_event_id) : ('p_' + i.produk_id)),
+                            i.varian_id || '',
+                            i.varian_produk_id || '',
+                            i.ukuran || '',
+                            i.varian_rasa || '',
+                            i.nama_produk || ''
+                        ].join('|');
+
+                        if (!map[key]) {
+                            let nama = i.nama_produk || 'Produk';
+                            const detail = [i.ukuran, i.varian_rasa].filter(Boolean).join(' - ');
+                            if (detail && !nama.includes(detail)) {
+                                nama += ' (' + detail + ')';
+                            }
+                            map[key] = {
+                                nama: nama,
+                                jumlah: 0,
+                            };
+                        }
+                        map[key].jumlah += (parseInt(i.jumlah) || 1);
+                    });
+
+                    return Object.values(map).map(m => `${m.nama} (${m.jumlah})`).join(', ');
                 },
 
                 // Nama produk + varian (ukuran / variasi) untuk satu baris isi bundling.
@@ -3700,8 +3719,26 @@
                     const produkIds = this.voucherTerpilih.produk_ids || [];
                     if (produkIds.length === 0) return this.subtotalGross;
 
+                    const rewardProduks = this.voucherTerpilih.reward_produks || [];
+
                     return this.keranjang
-                        .filter(i => produkIds.includes(i.produk_id))
+                        .filter(i => {
+                            if (!produkIds.includes(i.produk_id)) return false;
+                            if (rewardProduks.length === 0) return true;
+
+                            const batasan = rewardProduks.filter(rp => rp.produk_id === i.produk_id);
+                            if (batasan.length === 0) return true;
+
+                            const detailIds = batasan.map(b => b.detail_produk_id).filter(Boolean);
+                            const varianIds = batasan.map(b => b.varian_produk_id).filter(Boolean);
+
+                            if (detailIds.length === 0 && varianIds.length === 0) return true;
+
+                            if (i.varian_produk_id && varianIds.includes(parseInt(String(i.varian_produk_id).replace('vp_', '')))) return true;
+                            if (i.varian_id && detailIds.includes(parseInt(i.varian_id))) return true;
+
+                            return false;
+                        })
                         .reduce((s, i) => s + (i.harga_jual_asli * i.jumlah), 0);
                 },
 

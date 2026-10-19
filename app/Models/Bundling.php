@@ -210,11 +210,23 @@ class Bundling extends Model
 
             $salinan = $item->replicate();
             $salinan->id = $item->id;
-            $salinan->detail_produk_id = $detail->id;
-            $salinan->ukuran = $detail->ukuran;
-            $salinan->varian_rasa = $detail->variasi;
-            $salinan->setRelation('produk', $item->produk);
-            $salinan->setRelation('detailProduk', $detail);
+
+            if ($detail instanceof VarianProduk) {
+                $detailProdukUtama = $item->detailProduk ?: $item->produk?->detailProduks()->first();
+                $salinan->detail_produk_id = $detailProdukUtama?->id;
+                $salinan->varian_produk_id = $detail->id;
+                $salinan->ukuran = $detail->ukuran;
+                $salinan->varian_rasa = $detail->variasi;
+                $salinan->setRelation('produk', $item->produk);
+                $salinan->setRelation('detailProduk', $detailProdukUtama);
+                $salinan->setRelation('varianProduk', $detail);
+            } else {
+                $salinan->detail_produk_id = $detail?->id;
+                $salinan->ukuran = $detail?->ukuran;
+                $salinan->varian_rasa = $detail?->variasi;
+                $salinan->setRelation('produk', $item->produk);
+                $salinan->setRelation('detailProduk', $detail);
+            }
 
             $baris[] = [
                 'item' => $salinan,

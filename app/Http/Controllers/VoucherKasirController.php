@@ -16,7 +16,7 @@ class VoucherKasirController extends Controller
     public function daftarAktif(Member $member)
     {
         try {
-            $vouchers = RewardKatalog::with('produks')
+            $vouchers = RewardKatalog::with(['produks', 'rewardProduks'])
                 ->where('jenis', 'voucher')
                 ->where('status_aktif', true)
                 ->where(function ($q) use ($member) {
@@ -72,6 +72,11 @@ class VoucherKasirController extends Controller
             'sisa_penggunaan' => max(0, $batas - $pemakaian),
             'batas_penggunaan' => $batas,
             'produk_ids' => $voucher->produks->pluck('id')->values()->all(),
+            'reward_produks' => $voucher->rewardProduks->map(fn ($rp) => [
+                'produk_id' => $rp->produk_id,
+                'detail_produk_id' => $rp->detail_produk_id,
+                'varian_produk_id' => $rp->varian_produk_id,
+            ])->values()->all(),
         ];
     }
 }

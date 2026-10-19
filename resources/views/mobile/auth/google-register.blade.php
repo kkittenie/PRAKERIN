@@ -282,6 +282,14 @@
             }
         });
 
+        window.addEventListener('pageshow', () => {
+            const card = document.getElementById('app-card');
+            if (card) {
+                card.style.opacity = '';
+                card.style.transform = '';
+            }
+        });
+
         cek();
         if (mulaiDiLangkah2) setLangkah(2);
     </script>

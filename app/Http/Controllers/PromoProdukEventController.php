@@ -53,7 +53,7 @@ class PromoProdukEventController extends Controller
     public function tambah()
     {
         try {
-            $produks = Produk::with(['detailProduks'])
+            $produks = Produk::with(['detailProduks', 'varianProduks'])
                 ->where('status_aktif', true)
                 ->orderBy('nama_produk', 'asc')
                 ->get();
@@ -84,8 +84,8 @@ class PromoProdukEventController extends Controller
                 'kategori_id.exists'   => 'Kategori promo produk tidak valid.',
             ]);
 
-            $produk    = Produk::with('detailProduks')->findOrFail($validated['produk_id']);
-            $detailIds = $this->resolveDetailIds($produk, $request->input('nama_ukurans', []), $request->input('nama_rasas', []));
+            $produk    = Produk::with(['detailProduks', 'varianProduks'])->findOrFail($validated['produk_id']);
+            $targetIds = $this->resolveDetailIds($produk, $request->input('nama_ukurans', []), $request->input('nama_rasas', []));
 
             $promoEvent = PromoProdukEvent::create([
                 'produk_id'       => $validated['produk_id'],
@@ -99,7 +99,8 @@ class PromoProdukEventController extends Controller
                 'status_aktif'    => $request->has('status_aktif') ? (bool) $request->status_aktif : true,
             ]);
 
-            $promoEvent->detailProduks()->sync($detailIds);
+            $promoEvent->detailProduks()->sync($targetIds['detail_ids']);
+            $promoEvent->varianProduks()->sync($targetIds['varian_ids']);
 
             activity()
                 ->causedBy(auth()->user())
@@ -108,7 +109,8 @@ class PromoProdukEventController extends Controller
                     'nama_event'  => $promoEvent->nama_event,
                     'produk_id'   => $promoEvent->produk_id,
                     'harga_event' => $promoEvent->harga_event,
-                    'detail_produk_ids' => $detailIds,
+                    'detail_produk_ids' => $targetIds['detail_ids'],
+                    'varian_produk_ids' => $targetIds['varian_ids'],
                 ])
                 ->log('menambahkan promo produk event');
 
@@ -123,14 +125,19 @@ class PromoProdukEventController extends Controller
     public function ubah($id)
     {
         try {
-            $promoEvent = PromoProdukEvent::with(['detailProduks', 'produk.detailProduks'])->findOrFail($id);
-            $produks    = Produk::with(['detailProduks'])
+            $promoEvent = PromoProdukEvent::with(['detailProduks', 'varianProduks', 'produk.detailProduks', 'produk.varianProduks'])->findOrFail($id);
+            $produks    = Produk::with(['detailProduks', 'varianProduks'])
                 ->where('status_aktif', true)
                 ->orderBy('nama_produk', 'asc')
                 ->get();
 
-            // Kirim nama string ke view: ukuran & variasi dari detail produk yang dipilih event ini.
-            $terpilih = $promoEvent->detailProduks->where('produk_id', $promoEvent->produk_id);
+            // Kirim nama string ke view: ukuran & variasi dari pilihan yang tersimpan
+            if ($promoEvent->produk && $promoEvent->produk->is_global && $promoEvent->produk->jumlahVarianBersama() > 0) {
+                $terpilih = $promoEvent->varianProduks->where('produk_id', $promoEvent->produk_id);
+            } else {
+                $terpilih = $promoEvent->detailProduks->where('produk_id', $promoEvent->produk_id);
+            }
+
             $namaUnik = fn ($kolom) => $terpilih->pluck($kolom)
                 ->map(fn ($n) => trim((string) $n))
                 ->filter()
@@ -172,8 +179,8 @@ class PromoProdukEventController extends Controller
                 'kategori_id.exists'   => 'Kategori promo produk tidak valid.',
             ]);
 
-            $produk    = Produk::with('detailProduks')->findOrFail($validated['produk_id']);
-            $detailIds = $this->resolveDetailIds($produk, $request->input('nama_ukurans', []), $request->input('nama_rasas', []));
+            $produk    = Produk::with(['detailProduks', 'varianProduks'])->findOrFail($validated['produk_id']);
+            $targetIds = $this->resolveDetailIds($produk, $request->input('nama_ukurans', []), $request->input('nama_rasas', []));
 
             $promoEvent->update([
                 'produk_id'       => $validated['produk_id'],
@@ -185,7 +192,8 @@ class PromoProdukEventController extends Controller
                 'status_aktif'    => $request->has('status_aktif') ? (bool) $request->status_aktif : false,
             ]);
 
-            $promoEvent->detailProduks()->sync($detailIds);
+            $promoEvent->detailProduks()->sync($targetIds['detail_ids']);
+            $promoEvent->varianProduks()->sync($targetIds['varian_ids']);
 
             activity()
                 ->causedBy(auth()->user())
@@ -194,7 +202,8 @@ class PromoProdukEventController extends Controller
                     'nama_event'  => $promoEvent->nama_event,
                     'produk_id'   => $promoEvent->produk_id,
                     'harga_event' => $promoEvent->harga_event,
-                    'detail_produk_ids' => $detailIds,
+                    'detail_produk_ids' => $targetIds['detail_ids'],
+                    'varian_produk_ids' => $targetIds['varian_ids'],
                 ])
                 ->log('memperbarui promo produk event');
 
@@ -255,10 +264,8 @@ class PromoProdukEventController extends Controller
     }
 
     /**
-     * Ubah pilihan ukuran & rasa (nama) dari form jadi daftar ID detail produk.
-     * Detail yang dipilih = ukurannya ada di $namaUkurans DAN variasinya ada di
-     * $namaRasas (salah satu kosong = tidak dibatasi di sisi itu). Dua-duanya kosong
-     * = array kosong = event berlaku ke semua detail aktif produk.
+     * Ubah pilihan ukuran & rasa (nama) dari form jadi daftar ID detail produk dan varian produk.
+     * Hasil berupa array: ['detail_ids' => [...], 'varian_ids' => [...]]
      */
     private function resolveDetailIds(Produk $produk, array $namaUkurans, array $namaRasas): array
     {
@@ -267,15 +274,40 @@ class PromoProdukEventController extends Controller
         $r = collect($namaRasas)->map($norm)->filter()->values();
 
         if ($u->isEmpty() && $r->isEmpty()) {
-            return [];
+            return [
+                'detail_ids' => [],
+                'varian_ids' => [],
+            ];
         }
 
-        return $produk->detailProduks
+        // Jika Stok Bersama yang memiliki varian: cocokkan dengan varianProduks
+        if ($produk->is_global && $produk->jumlahVarianBersama() > 0) {
+            $varianIds = $produk->varianProduks
+                ->filter(fn ($v) => ($u->isEmpty() || $u->contains($norm($v->ukuran)))
+                    && ($r->isEmpty() || $r->contains($norm($v->variasi))))
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+
+            return [
+                'detail_ids' => [],
+                'varian_ids' => $varianIds,
+            ];
+        }
+
+        // Stok Per Varian: cocokkan dengan detailProduks
+        $detailIds = $produk->detailProduks
             ->filter(fn ($d) => ($u->isEmpty() || $u->contains($norm($d->ukuran)))
                 && ($r->isEmpty() || $r->contains($norm($d->variasi))))
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->values()
             ->all();
+
+        return [
+            'detail_ids' => $detailIds,
+            'varian_ids' => [],
+        ];
     }
 }

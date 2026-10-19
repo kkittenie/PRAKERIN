@@ -7,6 +7,7 @@ use App\Models\BundlingItem;
 use App\Models\DetailProduk;
 use App\Models\KategoriProduk;
 use App\Models\Produk;
+use App\Models\VarianProduk;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -145,27 +146,88 @@ class BundlingController extends Controller
                         $w->orWhereIn('id', $sertakanDetailId);
                     }
                 });
-            }])
+            }, 'varianProduks'])
             ->orderBy('nama_produk')
             ->get()
             ->filter(fn (Produk $p) => $p->detailProduks->isNotEmpty())
-            ->map(fn (Produk $p) => [
-                'id' => $p->id,
-                'nama_produk' => $p->nama_produk,
-                'dijual_satuan' => (bool) $p->dijual_satuan,
-                'varian' => $p->detailProduks->map(fn (DetailProduk $d) => [
-                    'id' => $d->id,
-                    'ukuran' => $d->ukuran,
-                    'variasi' => $d->variasi,
-                    'nama' => $d->nama_lengkap ?: 'Standar',
-                    'kode' => $d->kode_produk,
-                    'stok' => (int) $d->stok,
-                    'aktif' => (bool) $d->status_aktif,
-                ])->values()->all(),
-                'ukuran' => $this->daftarUkuranProduk($p->detailProduks),
-            ])
+            ->map(function (Produk $p) {
+                if ($p->is_global) {
+                    if ($p->jumlahVarianBersama() > 0) {
+                        $varian = $p->varianBersamaAktifTersedia()->map(fn (VarianProduk $v) => [
+                            'id' => 'vp_' . $v->id,
+                            'raw_id' => $v->id,
+                            'ukuran' => $v->ukuran,
+                            'variasi' => $v->variasi,
+                            'nama' => $v->nama_lengkap ?: 'Standar',
+                            'kode' => $v->kode_produk,
+                            'stok' => (int) $p->stok,
+                            'aktif' => (bool) $v->status_aktif,
+                        ])->values()->all();
+                        $ukuran = $this->daftarUkuranProdukVarianBersama($p);
+                    } else {
+                        $detailUtama = $p->daftarDetail()->first();
+                        $varian = [[
+                            'id' => $detailUtama?->id,
+                            'raw_id' => $detailUtama?->id,
+                            'ukuran' => '',
+                            'variasi' => '',
+                            'nama' => 'Standar',
+                            'kode' => $detailUtama?->kode_produk,
+                            'stok' => (int) $p->stok,
+                            'aktif' => true,
+                        ]];
+                        $ukuran = [['nilai' => '', 'nama' => 'Tanpa ukuran', 'jumlah_rasa' => 1, 'stok' => (int) $p->stok, 'rasa' => ['Standar'], 'opsi' => [['id' => $detailUtama?->id, 'nama' => 'Standar', 'stok' => (int) $p->stok]], 'ada_rasa' => false]];
+                    }
+                } else {
+                    $varian = $p->detailProduks->map(fn (DetailProduk $d) => [
+                        'id' => $d->id,
+                        'raw_id' => $d->id,
+                        'ukuran' => $d->ukuran,
+                        'variasi' => $d->variasi,
+                        'nama' => $d->nama_lengkap ?: 'Standar',
+                        'kode' => $d->kode_produk,
+                        'stok' => (int) $d->stok,
+                        'aktif' => (bool) $d->status_aktif,
+                    ])->values()->all();
+                    $ukuran = $this->daftarUkuranProduk($p->detailProduks);
+                }
+
+                return [
+                    'id' => $p->id,
+                    'nama_produk' => $p->nama_produk,
+                    'dijual_satuan' => (bool) $p->dijual_satuan,
+                    'is_global' => $p->is_global,
+                    'punya_varian' => $p->punya_varian,
+                    'varian' => $varian,
+                    'ukuran' => $ukuran,
+                ];
+            })
             ->values()
             ->all();
+    }
+
+    private function daftarUkuranProdukVarianBersama(Produk $p): array
+    {
+        $hasil = [];
+        $totalStok = (int) $p->stok;
+
+        foreach ($p->varianBersamaAktifTersedia() as $v) {
+            $nilai = trim((string) $v->ukuran);
+            $kunci = mb_strtolower($nilai);
+
+            if (!isset($hasil[$kunci])) {
+                $hasil[$kunci] = ['nilai' => $nilai, 'nama' => $nilai !== '' ? $nilai : 'Tanpa ukuran', 'jumlah_rasa' => 0, 'stok' => $totalStok, 'rasa' => [], 'opsi' => [], 'ada_rasa' => false];
+            }
+
+            $hasil[$kunci]['jumlah_rasa']++;
+            $hasil[$kunci]['rasa'][] = $v->variasi ?: 'Standar';
+            $hasil[$kunci]['opsi'][] = ['id' => 'vp_' . $v->id, 'nama' => $v->variasi ?: 'Standar', 'stok' => $totalStok];
+            if (trim((string) $v->variasi) !== '') {
+                $hasil[$kunci]['ada_rasa'] = true;
+            }
+        }
+
+        return array_values($hasil);
     }
 
     /**
@@ -265,21 +327,29 @@ class BundlingController extends Controller
 
         if ($isBebas) {
             $detailPerProduk = DetailProduk::whereIn('produk_id', $produkIds)->get()->groupBy('produk_id');
+            $varianBersamaPerProduk = VarianProduk::whereIn('produk_id', $produkIds)->get()->groupBy('produk_id');
 
             foreach ($produkIds as $i => $produkId) {
-                $namaProduk = $produkMap->get($produkId)?->nama_produk ?? 'produk ini';
+                $produk = $produkMap->get($produkId);
+                $namaProduk = $produk?->nama_produk ?? 'produk ini';
                 $nilai = (string) ($pilihan[$i] ?? '');
                 $nilai = $nilai === self::TANPA_UKURAN ? '' : trim($nilai);
 
-                $cocok = ($detailPerProduk->get($produkId) ?? collect())
-                    ->first(fn (DetailProduk $d) => $d->status_aktif && BundlingItem::samaUkuran($d->ukuran, $nilai));
+                if ($produk && $produk->is_global && $produk->jumlahVarianBersama() > 0) {
+                    $cocok = ($varianBersamaPerProduk->get($produkId) ?? collect())
+                        ->first(fn (VarianProduk $v) => $v->status_aktif && BundlingItem::samaUkuran($v->ukuran, $nilai));
+                    $ukuran = $cocok ? (trim((string) $cocok->ukuran) === '' ? null : trim((string) $cocok->ukuran)) : null;
+                } else {
+                    $cocok = ($detailPerProduk->get($produkId) ?? collect())
+                        ->first(fn (DetailProduk $d) => $d->status_aktif && BundlingItem::samaUkuran($d->ukuran, $nilai));
+                    $ukuran = $cocok ? (trim((string) $cocok->ukuran) === '' ? null : trim((string) $cocok->ukuran)) : null;
+                }
 
                 if (!$cocok) {
                     $errors["varian_isi.$i"] = "Ukuran yang dipilih untuk \"{$namaProduk}\" tidak valid atau tidak punya rasa aktif.";
                     continue;
                 }
 
-                $ukuran = trim((string) $cocok->ukuran) === '' ? null : trim((string) $cocok->ukuran);
                 $kunci = $produkId . '|' . mb_strtolower((string) $ukuran);
 
                 if (isset($sudahAda[$kunci])) {
@@ -293,36 +363,35 @@ class BundlingController extends Controller
                 $rasaMentah = trim((string) ($request->input('rasa_isi')[$i] ?? ''));
                 if ($rasaMentah !== '') {
                     $ids = json_decode($rasaMentah, true);
-                    $idsAktif = ($detailPerProduk->get($produkId) ?? collect())
-                        ->filter(fn (DetailProduk $d) => $d->status_aktif && BundlingItem::samaUkuran($d->ukuran, $ukuran))
-                        ->pluck('id')->map(fn ($v) => (int) $v)->all();
+                    if ($produk && $produk->is_global && $produk->jumlahVarianBersama() > 0) {
+                        $opsiAktif = ($varianBersamaPerProduk->get($produkId) ?? collect())
+                            ->filter(fn (VarianProduk $v) => $v->status_aktif && BundlingItem::samaUkuran($v->ukuran, $ukuran));
+                        $idsAktif = $opsiAktif->map(fn ($v) => 'vp_' . $v->id)->all();
+                    } else {
+                        $opsiAktif = ($detailPerProduk->get($produkId) ?? collect())
+                            ->filter(fn (DetailProduk $d) => $d->status_aktif && BundlingItem::samaUkuran($d->ukuran, $ukuran));
+                        $idsAktif = $opsiAktif->pluck('id')->map(fn ($v) => (int) $v)->all();
+                    }
 
                     if (!is_array($ids)) {
                         $errors["varian_isi.$i"] = "Pilihan rasa untuk \"{$namaProduk}\" tidak valid.";
                         continue;
                     }
 
-                    $ids = array_values(array_unique(array_map('intval', $ids)));
-
                     if (empty($ids)) {
                         $errors["varian_isi.$i"] = "Pilih minimal satu rasa untuk \"{$namaProduk}\".";
                         continue;
                     }
-                    if (array_diff($ids, $idsAktif)) {
-                        $errors["varian_isi.$i"] = "Ada rasa yang tidak valid untuk \"{$namaProduk}\" ukuran \"" . ($ukuran ?? 'tanpa ukuran') . "\".";
-                        continue;
-                    }
 
-                    // Semua rasa dicentang = tidak dibatasi, jadi rasa baru yang ditambah nanti ikut otomatis.
                     if (count($ids) < count($idsAktif)) {
-                        sort($ids);
-                        $rasaDiizinkan = $ids;
+                        $rasaDiizinkan = array_values(array_unique($ids));
                     }
                 }
 
                 $baris[] = [
                     'produk_id' => (int) $produkId,
                     'detail_produk_id' => null,
+                    'varian_produk_id' => null,
                     'ukuran' => $ukuran,
                     'varian_rasa' => null,
                     'rasa_diizinkan' => $rasaDiizinkan,
@@ -330,38 +399,86 @@ class BundlingController extends Controller
                 ];
             }
         } else {
-            $detailIds = array_map('intval', $pilihan);
+            $vpIds = [];
+            $detailIds = [];
+            foreach ($pilihan as $p) {
+                if (str_starts_with((string) $p, 'vp_')) {
+                    $vpIds[] = (int) substr((string) $p, 3);
+                } else {
+                    $detailIds[] = (int) $p;
+                }
+            }
+
             $detailMap = DetailProduk::whereIn('id', array_filter($detailIds))->get()->keyBy('id');
+            $varianProdukMap = VarianProduk::whereIn('id', array_filter($vpIds))->get()->keyBy('id');
             $detailLama = $bundling ? $bundling->items()->pluck('detail_produk_id')->filter()->all() : [];
+            $vpLama = $bundling ? $bundling->items()->pluck('varian_produk_id')->filter()->all() : [];
 
             foreach ($produkIds as $i => $produkId) {
-                $detail = $detailMap->get($detailIds[$i] ?? 0);
-                $namaProduk = $produkMap->get($produkId)?->nama_produk ?? 'produk ini';
+                $produk = $produkMap->get($produkId);
+                $namaProduk = $produk?->nama_produk ?? 'produk ini';
+                $val = (string) ($pilihan[$i] ?? '');
 
-                if (!$detail || (int) $detail->produk_id !== (int) $produkId) {
-                    $errors["varian_isi.$i"] = "Varian yang dipilih untuk \"{$namaProduk}\" tidak valid.";
-                    continue;
+                if (str_starts_with($val, 'vp_')) {
+                    $vpId = (int) substr($val, 3);
+                    $v = $varianProdukMap->get($vpId);
+                    $detailUtama = $produk?->daftarDetail()->first();
+
+                    if (!$v || (int) $v->produk_id !== (int) $produkId) {
+                        $errors["varian_isi.$i"] = "Varian yang dipilih untuk \"{$namaProduk}\" tidak valid.";
+                        continue;
+                    }
+
+                    if (!$v->status_aktif && !in_array($v->id, $vpLama, true)) {
+                        $errors["varian_isi.$i"] = "Varian \"{$v->nama_lengkap}\" untuk \"{$namaProduk}\" sedang nonaktif.";
+                        continue;
+                    }
+
+                    if (isset($sudahAda[$val])) {
+                        $errors["varian_isi.$i"] = "Produk \"{$namaProduk}\" varian \"" . ($v->nama_lengkap ?: 'Standar') . "\" sudah dipilih di baris lain.";
+                        continue;
+                    }
+                    $sudahAda[$val] = true;
+
+                    $baris[] = [
+                        'produk_id' => (int) $produkId,
+                        'detail_produk_id' => $detailUtama?->id,
+                        'varian_produk_id' => $v->id,
+                        'ukuran' => $v->ukuran,
+                        'varian_rasa' => $v->variasi,
+                        'rasa_diizinkan' => null,
+                        'qty' => max(1, (int) ($request->qty[$i] ?? 1)),
+                    ];
+                } else {
+                    $detailId = (int) $val;
+                    $detail = $detailMap->get($detailId);
+
+                    if (!$detail || (int) $detail->produk_id !== (int) $produkId) {
+                        $errors["varian_isi.$i"] = "Varian yang dipilih untuk \"{$namaProduk}\" tidak valid.";
+                        continue;
+                    }
+
+                    if (!$detail->status_aktif && !in_array($detail->id, $detailLama, true)) {
+                        $errors["varian_isi.$i"] = "Varian \"{$detail->nama_lengkap}\" untuk \"{$namaProduk}\" sedang nonaktif.";
+                        continue;
+                    }
+
+                    if (isset($sudahAda[$detail->id])) {
+                        $errors["varian_isi.$i"] = "Produk \"{$namaProduk}\" varian \"" . ($detail->nama_lengkap ?: 'Standar') . "\" sudah dipilih di baris lain.";
+                        continue;
+                    }
+                    $sudahAda[$detail->id] = true;
+
+                    $baris[] = [
+                        'produk_id' => (int) $produkId,
+                        'detail_produk_id' => (int) $detail->id,
+                        'varian_produk_id' => null,
+                        'ukuran' => $detail->ukuran,
+                        'varian_rasa' => $detail->variasi,
+                        'rasa_diizinkan' => null,
+                        'qty' => max(1, (int) ($request->qty[$i] ?? 1)),
+                    ];
                 }
-
-                if (!$detail->status_aktif && !in_array($detail->id, $detailLama, true)) {
-                    $errors["varian_isi.$i"] = "Varian \"{$detail->nama_lengkap}\" untuk \"{$namaProduk}\" sedang nonaktif.";
-                    continue;
-                }
-
-                if (isset($sudahAda[$detail->id])) {
-                    $errors["varian_isi.$i"] = "Produk \"{$namaProduk}\" varian \"" . ($detail->nama_lengkap ?: 'Standar') . "\" sudah dipilih di baris lain.";
-                    continue;
-                }
-                $sudahAda[$detail->id] = true;
-
-                $baris[] = [
-                    'produk_id' => (int) $produkId,
-                    'detail_produk_id' => (int) $detail->id,
-                    'ukuran' => $detail->ukuran,
-                    'varian_rasa' => $detail->variasi,
-                    'rasa_diizinkan' => null,
-                    'qty' => max(1, (int) ($request->qty[$i] ?? 1)),
-                ];
             }
         }
 
@@ -380,6 +497,7 @@ class BundlingController extends Controller
                 'bundling_id' => $bundling->id,
                 'produk_id' => $b['produk_id'],
                 'detail_produk_id' => $b['detail_produk_id'],
+                'varian_produk_id' => $b['varian_produk_id'] ?? null,
                 'ukuran' => $b['ukuran'],
                 'varian_rasa' => $b['varian_rasa'],
                 'rasa_diizinkan' => $b['rasa_diizinkan'] ?? null,
@@ -393,6 +511,7 @@ class BundlingController extends Controller
         try {
             $bundling->load([
                 'items.detailProduk',
+                'items.varianProduk',
                 'items.produk.detailProduks',
             ]);
 
@@ -405,7 +524,7 @@ class BundlingController extends Controller
     public function edit(Bundling $bundling)
     {
         try {
-            $bundling->load(['items.detailProduk', 'items.produk']);
+            $bundling->load(['items.detailProduk', 'items.varianProduk', 'items.produk']);
 
             $detailTersimpan = $bundling->items->pluck('detail_produk_id')->filter()->all();
             $produkBebasTersimpan = $bundling->isBebas() ? $bundling->items->pluck('produk_id')->all() : [];
@@ -416,7 +535,8 @@ class BundlingController extends Controller
             // Bundling bebas menyimpan ukuran (rasa dipilih pembeli), bundling tetap menyimpan varian.
             $isiTersimpan = $bundling->items->map(fn (BundlingItem $item) => [
                 'produk_id' => $item->produk_id,
-                'detail_produk_id' => $item->detail_produk_id,
+                'detail_produk_id' => $item->varian_produk_id ? ('vp_' . $item->varian_produk_id) : $item->detail_produk_id,
+                'varian_produk_id' => $item->varian_produk_id,
                 'ukuran' => $item->ukuran,
                 'rasa_diizinkan' => $item->rasa_diizinkan,
                 'qty' => $item->qty,

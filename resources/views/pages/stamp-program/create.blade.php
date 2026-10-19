@@ -298,17 +298,9 @@
     });
 
     function cekJumlahMelebihiStok(inputJumlah, peringatan) {
-        const stokMax = parseFloat(inputJumlah.dataset.stokMax || 0);
-        const nilai = parseFloat(inputJumlah.value) || 0;
-
-        if (nilai > stokMax) {
-            peringatan.classList.remove('hidden');
-            inputJumlah.classList.add('border-red-500');
-        } else {
-            peringatan.classList.add('hidden');
-            inputJumlah.classList.remove('border-red-500');
-        }
-
+        // Boleh memasukkan jumlah hadiah lebih banyak dari stok yang tersedia
+        peringatan.classList.add('hidden');
+        inputJumlah.classList.remove('border-red-500');
         perbaruiTombolSubmitStampProgram();
     }
 
@@ -381,7 +373,6 @@
     inputTanggalMulai.addEventListener('change', cekMasaBerlakuVsStatus);
 
     function perbaruiTombolSubmitStampProgram() {
-        const adaErrorStok = containerHadiah.querySelectorAll('.peringatan-stok:not(.hidden)').length > 0;
         const adaErrorDuplikat = containerHadiah.querySelectorAll('.peringatan-duplikat:not(.hidden)').length > 0;
         const adaErrorMasaBerlaku = !peringatanMasaBerlaku.classList.contains('hidden');
         let adaVarianKosong = false;
@@ -396,7 +387,7 @@
         });
         const btn = document.getElementById('btnSubmitStampProgram');
         if (btn) {
-            btn.disabled = adaErrorStok || adaErrorDuplikat || adaErrorMasaBerlaku || adaVarianKosong;
+            btn.disabled = adaErrorDuplikat || adaErrorMasaBerlaku || adaVarianKosong;
         }
     }
 

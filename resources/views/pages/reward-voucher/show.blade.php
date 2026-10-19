@@ -10,13 +10,19 @@
     cariMemberModal: '',
     itemsPerPage: '10',
     halamanProduk: 1,
-    semuaProduk: @js($voucher->produks->map(function ($p) {
+    semuaProduk: @js($voucher->produks->map(function ($p) use ($voucher) {
+        $rps = $voucher->rewardProduks->where('produk_id', $p->id);
+        $ukurans = $rps->map(fn ($r) => $r->detailProduk?->ukuran ?: $r->varianProduk?->ukuran)->filter()->unique()->values();
+        $rasas = $rps->map(fn ($r) => $r->detailProduk?->variasi ?: $r->varianProduk?->variasi)->filter()->unique()->values();
+
         return [
             'id' => $p->id,
             'nama_produk' => $p->nama_produk,
             'kode_produk' => $p->kode_produk,
             'foto' => $p->foto,
             'harga_jual' => $p->harga_jual,
+            'ukurans' => $ukurans,
+            'rasas' => $rasas,
         ];
     })->values()),
     get totalHalamanProduk() {
@@ -220,6 +226,16 @@
                                 <div>
                                     <h4 class="font-bold text-xs text-gray-900 dark:text-white line-clamp-2 leading-tight" x-text="produk.nama_produk"></h4>
                                     <span class="text-xxs text-gray-400 dark:text-gray-500 mt-1 block" x-text="produk.kode_produk"></span>
+                                    <template x-if="(produk.ukurans && produk.ukurans.length > 0) || (produk.rasas && produk.rasas.length > 0)">
+                                        <div class="flex flex-wrap gap-1 mt-1.5">
+                                            <template x-for="u in produk.ukurans" :key="'sh-u-' + produk.id + '-' + u">
+                                                <span class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 px-1.5 py-0.5 rounded-full" x-text="u"></span>
+                                            </template>
+                                            <template x-for="r in produk.rasas" :key="'sh-r-' + produk.id + '-' + r">
+                                                <span class="text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full" x-text="r"></span>
+                                            </template>
+                                        </div>
+                                    </template>
                                 </div>
                                 <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                                     <span class="text-xs font-extrabold text-brand-600 dark:text-brand-400" x-text="'Rp ' + formatNumber(produk.harga_jual)"></span>

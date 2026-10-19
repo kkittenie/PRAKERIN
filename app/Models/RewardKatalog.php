@@ -50,7 +50,64 @@ class RewardKatalog extends Model
 
     public function produks()
     {
-        return $this->belongsToMany(Produk::class, 'reward_katalog_produk', 'reward_katalog_id', 'produk_id')->withTimestamps();
+        return $this->belongsToMany(Produk::class, 'reward_katalog_produk', 'reward_katalog_id', 'produk_id')->withTimestamps()->distinct();
+    }
+
+    public function rewardProduks()
+    {
+        return $this->hasMany(RewardKatalogProduk::class, 'reward_katalog_id');
+    }
+
+    public function detailIdsUntukProduk(int $produkId): \Illuminate\Support\Collection
+    {
+        $rp = $this->relationLoaded('rewardProduks') ? $this->rewardProduks : $this->rewardProduks()->get();
+        return $rp
+            ->where('produk_id', $produkId)
+            ->pluck('detail_produk_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->values();
+    }
+
+    public function varianIdsUntukProduk(int $produkId): \Illuminate\Support\Collection
+    {
+        $rp = $this->relationLoaded('rewardProduks') ? $this->rewardProduks : $this->rewardProduks()->get();
+        return $rp
+            ->where('produk_id', $produkId)
+            ->pluck('varian_produk_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->values();
+    }
+
+    public function berlakuUntukItem(int $produkId, ?int $detailProdukId = null, ?int $varianProdukId = null): bool
+    {
+        $rp = $this->relationLoaded('rewardProduks') ? $this->rewardProduks : $this->rewardProduks()->get();
+        if ($rp->isEmpty()) {
+            return true;
+        }
+
+        $barisProduk = $rp->where('produk_id', $produkId);
+        if ($barisProduk->isEmpty()) {
+            return false;
+        }
+
+        $detailIds = $barisProduk->pluck('detail_produk_id')->filter()->map(fn ($id) => (int) $id);
+        $varianIds = $barisProduk->pluck('varian_produk_id')->filter()->map(fn ($id) => (int) $id);
+
+        if ($detailIds->isEmpty() && $varianIds->isEmpty()) {
+            return true;
+        }
+
+        if ($varianProdukId !== null && $varianIds->contains((int) $varianProdukId)) {
+            return true;
+        }
+
+        if ($detailProdukId !== null && $detailIds->contains((int) $detailProdukId)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function members()

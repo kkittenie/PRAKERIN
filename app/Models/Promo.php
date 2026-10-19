@@ -44,6 +44,11 @@ class Promo extends Model
         return $this->belongsToMany(DetailProduk::class, 'promo_detail_produks', 'promo_id', 'detail_produk_id')->withTimestamps();
     }
 
+    public function varianProduks()
+    {
+        return $this->belongsToMany(VarianProduk::class, 'promo_detail_produks', 'promo_id', 'varian_produk_id')->withTimestamps();
+    }
+
     /**
      * ID detail produk yang dibatasi buat promo ini, KHUSUS produk tertentu.
      * Kosong = gak dibatasi (berlaku ke semua detail produk itu).
@@ -61,15 +66,34 @@ class Promo extends Model
             ->values();
     }
 
-    /** Apakah promo ini berlaku untuk detail produk tersebut (milik produk $produkId). */
-    public function berlakuUntukDetail(int $produkId, ?DetailProduk $detail): bool
+    public function varianIdsUntukProduk(int $produkId): \Illuminate\Support\Collection
     {
-        $daftar = $this->detailIdsUntukProduk($produkId);
-        if ($daftar->isEmpty()) {
+        $varian = $this->relationLoaded('varianProduks')
+            ? $this->varianProduks
+            : $this->varianProduks()->get();
+
+        return $varian
+            ->where('produk_id', $produkId)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+    }
+
+    /** Apakah promo ini berlaku untuk detail produk tersebut (milik produk $produkId). */
+    public function berlakuUntukDetail(int $produkId, ?DetailProduk $detail, ?VarianProduk $varianProduk = null): bool
+    {
+        $daftarDetail = $this->detailIdsUntukProduk($produkId);
+        $daftarVarian = $this->varianIdsUntukProduk($produkId);
+
+        if ($daftarDetail->isEmpty() && $daftarVarian->isEmpty()) {
             return true;
         }
 
-        return $detail !== null && $daftar->contains((int) $detail->id);
+        if ($varianProduk !== null) {
+            return $daftarVarian->isEmpty() || $daftarVarian->contains((int) $varianProduk->id);
+        }
+
+        return $detail !== null && $daftarDetail->contains((int) $detail->id);
     }
 
     public function scopeBerlaku($query)

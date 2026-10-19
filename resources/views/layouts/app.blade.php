@@ -88,6 +88,22 @@
             }
         })();
     </script>
+    <!-- Global Alert Helper (Alpine.js) -->
+    <script>
+        window.appAlert = function(message, title) {
+            window.dispatchEvent(new CustomEvent('app-alert', {
+                detail: {
+                    message: typeof message === 'object' ? JSON.stringify(message) : String(message ?? ''),
+                    title: title || 'Perhatian'
+                }
+            }));
+        };
+        window.tampilkanAlert = window.appAlert;
+        window.alert = function(message) {
+            window.appAlert(message, 'Perhatian');
+        };
+    </script>
+
     <!-- jQuery + DataTables + Responsive Extension -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
@@ -597,6 +613,53 @@
             </div>
         </div>
     @endif
+
+    {{-- Global Alert Modal (Alpine.js) - Pengganti alert() bawaan browser --}}
+    <div x-data="{
+            open: false,
+            title: 'Perhatian',
+            message: '',
+            show(msg, ttl = 'Perhatian') {
+                this.message = msg || '';
+                this.title = ttl || 'Perhatian';
+                this.open = true;
+            },
+            close() {
+                this.open = false;
+            }
+         }"
+         @app-alert.window="show($event.detail?.message || $event.detail, $event.detail?.title || 'Perhatian')"
+         @keydown.escape.window="close()"
+         x-show="open"
+         x-cloak
+         class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+         style="display: none;"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95">
+        <div @click.away="close()"
+             class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800 transition-all text-center">
+            <div class="p-6">
+                <div class="w-14 h-14 bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <h3 class="font-bold text-gray-900 dark:text-white text-base" x-text="title"></h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed" x-text="message"></p>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center">
+                <button type="button"
+                        @click="close()"
+                        class="w-full py-2.5 px-5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm rounded-xl transition shadow-xs cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
+                    Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
 
 </body>
 

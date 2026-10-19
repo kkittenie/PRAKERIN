@@ -10,7 +10,9 @@
 
 <script>
     window.__promoEventProduks = {{ \Illuminate\Support\Js::from($produks->map(function ($p) {
-        $detail = $p->daftarDetail();
+        $detail = ($p->is_global && $p->jumlahVarianBersama() > 0)
+            ? $p->varianBersamaAktifTersedia()
+            : $p->daftarDetail();
         $ukurans = $detail
             ->filter(fn ($v) => !empty($v->ukuran))
             ->map(fn ($v) => ['nama' => $v->ukuran])
@@ -433,9 +435,9 @@
                                 Kosongkan semua supaya event berlaku ke semua ukuran produk ini.
                             </p>
                             <div class="flex flex-wrap gap-2">
-                                <template x-for="ukuran in produkUntukModalUkuran.ukurans" :key="ukuran.id">
+                                <template x-for="ukuran in produkUntukModalUkuran.ukurans" :key="'edit-u-' + ukuran.nama">
                                     <label class="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer select-none text-sm font-medium transition"
-                                        :class="isUkuranTerpilih(ukuran.id) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
+                                        :class="isUkuranTerpilih(ukuran.nama) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
                                         <input type="checkbox"
                                             :checked="isUkuranTerpilih(ukuran.nama)"
                                             @change="toggleUkuranProduk(ukuran.nama)"
@@ -455,9 +457,9 @@
                                 Kosongkan semua supaya event berlaku ke semua rasa produk ini.
                             </p>
                             <div class="flex flex-wrap gap-2">
-                                <template x-for="rasa in produkUntukModalUkuran.rasas" :key="rasa.id">
+                                <template x-for="rasa in produkUntukModalUkuran.rasas" :key="'edit-r-' + rasa.nama">
                                     <label class="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer select-none text-sm font-medium transition"
-                                        :class="isRasaTerpilih(rasa.id) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
+                                        :class="isRasaTerpilih(rasa.nama) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
                                         <input type="checkbox"
                                             :checked="isRasaTerpilih(rasa.nama)"
                                             @change="toggleRasaProduk(rasa.nama)"

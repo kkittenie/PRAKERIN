@@ -696,6 +696,10 @@
         window.appAlert = function (message, title) {
             window.dispatchEvent(new CustomEvent('app-alert', { detail: { message: message, title: title } }));
         };
+        window.tampilkanAlert = window.appAlert;
+        window.alert = function (message) {
+            window.appAlert(message, 'Perhatian');
+        };
 
         let __tkCheckoutUrl = null;
         let __tkMenuUrl = null;
@@ -836,9 +840,38 @@
 
          window.__currentTabIndex = {{ $currentTabIndex }};
 
+        function restoreAppCard(isBack = false) {
+            const card = document.getElementById('app-card');
+            if (!card) return;
+            card.style.opacity = '';
+            card.style.transform = '';
+            card.style.transition = '';
+            if (isBack) {
+                card.classList.remove('app-splash-in', 'page-enter-right');
+                card.classList.remove('page-enter-left');
+                void card.offsetWidth;
+                card.classList.add('page-enter-left');
+            }
+        }
+
+        // Handle BFCache (Back-Forward Cache) when user uses device back button
+        window.addEventListener('pageshow', (event) => {
+            restoreAppCard(event.persisted);
+        });
+
+        // Clear inline opacity before page is frozen/hidden in BFCache
+        window.addEventListener('pagehide', () => {
+            restoreAppCard(false);
+        });
+
+        window.addEventListener('popstate', () => {
+            restoreAppCard(true);
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             const card = document.getElementById('app-card');
             if (card) {
+                restoreAppCard(false);
                 const alreadyOpened = sessionStorage.getItem('saisho_app_opened');
                 if (!alreadyOpened) {
                     card.classList.add('app-splash-in');
@@ -877,6 +910,7 @@
                 sessionStorage.setItem('nav_dir', 'back');
             }
             setTimeout(() => { window.location.href = url; }, 150);
+            setTimeout(() => { restoreAppCard(false); }, 500);
         }
 
         function animateNavigateTab(url, targetIndex) {

@@ -32,6 +32,7 @@
     };
     $riwayatStamp = $riwayatStamp ?? collect();
     $riwayat = $riwayat ?? collect();
+    $adaAturanPoin = \App\Models\PengaturanMember::adaAturanAktif();
 
     // Tab Voucher disembunyikan sementara (kodenya tetap ada). Ubah ke true untuk menampilkannya lagi.
     $tampilTabVoucher = false;
@@ -781,12 +782,12 @@
                     </div>
                 </div>
 
-                <div class="mt-4 grid grid-cols-2 gap-3">
-                    <div class="rounded-2xl border border-gray-100 px-4 py-3">
+                <div class="mt-4 grid {{ $adaAturanPoin ? 'grid-cols-2' : 'grid-cols-1' }} gap-3" id="detail-trx-footer-grid">
+                    <div class="rounded-2xl border border-gray-100 px-4 py-3" id="detail-trx-metode-col">
                         <p class="text-[11px] text-gray-400">Metode Bayar</p>
                         <p class="mt-0.5 text-theme-sm font-bold text-gray-800" id="detail-trx-metode">–</p>
                     </div>
-                    <div class="rounded-2xl border border-gray-100 px-4 py-3">
+                    <div class="rounded-2xl border border-gray-100 px-4 py-3 {{ $adaAturanPoin ? '' : 'hidden' }}" id="detail-trx-poin-col">
                         <p class="text-[11px] text-gray-400">Poin Didapat</p>
                         <p class="mt-0.5 text-theme-sm font-bold text-green-600" id="detail-trx-poin">–</p>
                     </div>
@@ -959,7 +960,26 @@
 
             document.getElementById('detail-trx-total').textContent = fmtRupiah(d.total);
             document.getElementById('detail-trx-metode').textContent = d.metode || '-';
-            document.getElementById('detail-trx-poin').textContent = '+' + Number(d.poin || 0).toLocaleString('id-ID') + ' poin';
+
+            const adaAturanPoin = {{ $adaAturanPoin ? 'true' : 'false' }};
+            const poinCol = document.getElementById('detail-trx-poin-col');
+            const footerGrid = document.getElementById('detail-trx-footer-grid');
+            const poinVal = Number(d.poin || 0);
+
+            if (adaAturanPoin && poinVal > 0) {
+                if (poinCol) poinCol.classList.remove('hidden');
+                if (footerGrid) {
+                    footerGrid.classList.remove('grid-cols-1');
+                    footerGrid.classList.add('grid-cols-2');
+                }
+                document.getElementById('detail-trx-poin').textContent = '+' + poinVal.toLocaleString('id-ID') + ' poin';
+            } else {
+                if (poinCol) poinCol.classList.add('hidden');
+                if (footerGrid) {
+                    footerGrid.classList.remove('grid-cols-2');
+                    footerGrid.classList.add('grid-cols-1');
+                }
+            }
 
             const diskonRow = document.getElementById('detail-trx-diskon-row');
             const diskon = Number(d.diskon || 0);

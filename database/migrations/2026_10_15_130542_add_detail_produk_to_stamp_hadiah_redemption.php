@@ -8,11 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('stamp_program_hadiah', function (Blueprint $table) {
+        $targetTable = Schema::hasTable('detail_produks') ? 'detail_produks' : 'produk_varians';
+
+        Schema::table('stamp_program_hadiah', function (Blueprint $table) use ($targetTable) {
             // Varian/ukuran (baris detail_produks) yang dijadikan hadiah. Null = hadiah lama
             // yang belum memilih varian (stok diambil dari total produk seperti sebelumnya).
             $table->foreignId('detail_produk_id')->nullable()->after('produk_id')
-                ->constrained('detail_produks')->nullOnDelete();
+                ->constrained($targetTable)->nullOnDelete();
 
             // Unique lama (program + produk) menghalangi produk yang sama dipilih dengan varian
             // berbeda. Index biasa dipasang dulu supaya foreign key ke stamp_programs tetap punya index.
@@ -20,9 +22,9 @@ return new class extends Migration
             $table->dropUnique(['stamp_program_id', 'produk_id']);
         });
 
-        Schema::table('stamp_redemptions', function (Blueprint $table) {
+        Schema::table('stamp_redemptions', function (Blueprint $table) use ($targetTable) {
             $table->foreignId('detail_produk_id')->nullable()->after('produk_id')
-                ->constrained('detail_produks')->nullOnDelete();
+                ->constrained($targetTable)->nullOnDelete();
         });
     }
 

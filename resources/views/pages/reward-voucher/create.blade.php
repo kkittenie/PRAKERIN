@@ -132,16 +132,65 @@
                     this.memberTerpilih = status ? this.semuaMember.map(m => m.id) : [];
                 },
                 // Produk data & multi-select
-                semuaProduk: @js($produks->map(function ($p) {
-                    return [
-                        'id' => $p->id,
-                        'nama_produk' => $p->nama_produk,
-                        'kode_produk' => $p->kode_produk,
-                        'foto' => $p->foto,
-                        'harga_jual' => $p->harga_jual,
-                    ];
-                })->values()),
+                semuaProduk: @js($produks),
                 produkTerpilih: @js(old('produk_ids') ? array_map('intval', old('produk_ids')) : []),
+                ukuranTerpilihPerProduk: @js((object) collect(old('ukuran_names', []))->mapWithKeys(fn ($n, $pid) => [(int) $pid => array_values(array_map('strval', (array) $n))])->all()),
+                rasaTerpilihPerProduk: @js((object) collect(old('rasa_names', []))->mapWithKeys(fn ($n, $pid) => [(int) $pid => array_values(array_map('strval', (array) $n))])->all()),
+                punyaPilihanVarian(p) {
+                    return (p.punya_ukuran && p.ukurans.length > 0) || (p.punya_varian_rasa && p.rasas.length > 0);
+                },
+                get produkTerpilihDenganVarian() {
+                    return this.semuaProduk.filter(p => this.produkTerpilih.includes(p.id) && this.punyaPilihanVarian(p));
+                },
+                isUkuranTerpilih(produkId, namaUkuran) {
+                    return (this.ukuranTerpilihPerProduk[produkId] || []).includes(namaUkuran);
+                },
+                toggleUkuranProduk(produkId, namaUkuran) {
+                    if (!this.ukuranTerpilihPerProduk[produkId]) this.ukuranTerpilihPerProduk[produkId] = [];
+                    const list = this.ukuranTerpilihPerProduk[produkId];
+                    const idx = list.indexOf(namaUkuran);
+                    if (idx === -1) list.push(namaUkuran); else list.splice(idx, 1);
+                },
+                jumlahUkuranTerpilih(produkId) {
+                    return (this.ukuranTerpilihPerProduk[produkId] || []).length;
+                },
+                isRasaTerpilih(produkId, namaRasa) {
+                    return (this.rasaTerpilihPerProduk[produkId] || []).includes(namaRasa);
+                },
+                toggleRasaProduk(produkId, namaRasa) {
+                    if (!this.rasaTerpilihPerProduk[produkId]) this.rasaTerpilihPerProduk[produkId] = [];
+                    const list = this.rasaTerpilihPerProduk[produkId];
+                    const idx = list.indexOf(namaRasa);
+                    if (idx === -1) list.push(namaRasa); else list.splice(idx, 1);
+                },
+                jumlahRasaTerpilih(produkId) {
+                    return (this.rasaTerpilihPerProduk[produkId] || []).length;
+                },
+                modalVarianTerbuka: false,
+                modalProdukId: null,
+                modalSnapshotUkuran: [],
+                modalSnapshotRasa: [],
+                bukaModalVarian(produkId) {
+                    this.modalProdukId = produkId;
+                    this.modalSnapshotUkuran = [...(this.ukuranTerpilihPerProduk[produkId] || [])];
+                    this.modalSnapshotRasa = [...(this.rasaTerpilihPerProduk[produkId] || [])];
+                    this.modalVarianTerbuka = true;
+                },
+                batalModalVarian() {
+                    if (this.modalProdukId !== null) {
+                        this.ukuranTerpilihPerProduk[this.modalProdukId] = [...this.modalSnapshotUkuran];
+                        this.rasaTerpilihPerProduk[this.modalProdukId] = [...this.modalSnapshotRasa];
+                    }
+                    this.modalVarianTerbuka = false;
+                    this.modalProdukId = null;
+                },
+                simpanModalVarian() {
+                    this.modalVarianTerbuka = false;
+                    this.modalProdukId = null;
+                },
+                get produkUntukModal() {
+                    return this.semuaProduk.find(p => p.id === this.modalProdukId) || null;
+                },
                 itemsPerPage: '10',
                 halamanProduk: 1,
                 get totalHalamanProduk() {
@@ -165,6 +214,22 @@
                 },
                 pilihSemuaProduk(status) {
                     this.produkTerpilih = status ? this.semuaProduk.map(p => p.id) : [];
+                    if (!status) {
+                        this.ukuranTerpilihPerProduk = {};
+                        this.rasaTerpilihPerProduk = {};
+                    }
+                },
+                toggleProdukTerpilih(produk, checked) {
+                    if (checked) {
+                        if (!this.produkTerpilih.includes(produk.id)) this.produkTerpilih.push(produk.id);
+                        if (this.punyaPilihanVarian(produk)) {
+                            this.bukaModalVarian(produk.id);
+                        }
+                    } else {
+                        this.produkTerpilih = this.produkTerpilih.filter(id => id !== produk.id);
+                        delete this.ukuranTerpilihPerProduk[produk.id];
+                        delete this.rasaTerpilihPerProduk[produk.id];
+                    }
                 }
             }">
             @csrf
@@ -545,12 +610,14 @@
 
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     <template x-for="produk in produkDitampilkan" :key="produk.id">
-                        <label class="relative flex flex-col bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700/80 rounded-xl p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition duration-150 select-none">
+                        <label class="relative flex flex-col bg-gray-50 dark:bg-gray-800/40 border rounded-xl p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition duration-150 select-none"
+                            :class="produkTerpilih.includes(produk.id) ? 'border-brand-500 ring-2 ring-brand-500' : 'border-gray-200 dark:border-gray-700/80'">
                             <input
                                 type="checkbox"
                                 name="produk_ids[]"
                                 :value="produk.id"
-                                x-model.number="produkTerpilih"
+                                :checked="produkTerpilih.includes(produk.id)"
+                                @change="toggleProdukTerpilih(produk, $event.target.checked)"
                                 class="produk-checkbox absolute top-3 right-3 rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500">
 
                             <div class="w-full aspect-square rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-800 mb-3">
@@ -568,6 +635,36 @@
                                     <h4 class="font-bold text-xs text-gray-900 dark:text-white line-clamp-2 leading-tight" x-text="produk.nama_produk"></h4>
                                     <span class="text-xxs text-gray-400 dark:text-gray-500 mt-1 block" x-text="produk.kode_produk"></span>
                                 </div>
+                                <template x-if="produkTerpilih.includes(produk.id) && punyaPilihanVarian(produk)">
+                                    <div class="mt-2 space-y-1">
+                                        <template x-if="produk.punya_ukuran && produk.ukurans.length > 0">
+                                            <div class="flex flex-wrap items-center gap-1">
+                                                <template x-if="jumlahUkuranTerpilih(produk.id) === 0">
+                                                    <span class="text-[9px] font-semibold text-gray-400 dark:text-gray-500 italic">Semua ukuran</span>
+                                                </template>
+                                                <template x-for="namaUkuran in (ukuranTerpilihPerProduk[produk.id] || [])" :key="'badge-u-' + produk.id + '-' + namaUkuran">
+                                                    <span class="text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 px-1.5 py-0.5 rounded-full"
+                                                        x-text="namaUkuran"></span>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <template x-if="produk.punya_varian_rasa && produk.rasas.length > 0">
+                                            <div class="flex flex-wrap items-center gap-1">
+                                                <template x-if="jumlahRasaTerpilih(produk.id) === 0">
+                                                    <span class="text-[9px] font-semibold text-gray-400 dark:text-gray-500 italic">Semua rasa</span>
+                                                </template>
+                                                <template x-for="namaRasa in (rasaTerpilihPerProduk[produk.id] || [])" :key="'badge-r-' + produk.id + '-' + namaRasa">
+                                                    <span class="text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full"
+                                                        x-text="namaRasa"></span>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <button type="button" @click.stop.prevent="bukaModalVarian(produk.id)"
+                                            class="text-[9px] font-bold text-gray-400 dark:text-gray-500 underline hover:text-brand-600 dark:hover:text-brand-400">
+                                            Ubah
+                                        </button>
+                                    </div>
+                                </template>
                                 <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                                     <span class="text-xs font-extrabold text-brand-600 dark:text-brand-400" x-text="'Rp ' + formatNumber(produk.harga_jual)"></span>
                                 </div>
@@ -602,6 +699,81 @@
                 <div x-show="itemsPerPage === 'semua'" class="mt-3 text-xs text-gray-500 dark:text-gray-400">
                     Menampilkan seluruh <span class="font-bold text-gray-800 dark:text-white" x-text="semuaProduk.length"></span> produk
                     (<span x-text="produkTerpilih.length"></span> dipilih)
+                </div>
+            </div>
+
+            {{-- Hidden inputs pilihan ukuran & rasa per produk --}}
+            <template x-for="produk in produkTerpilihDenganVarian" :key="'hidden-group-' + produk.id">
+                <div class="hidden">
+                    <template x-for="namaUkuran in (ukuranTerpilihPerProduk[produk.id] || [])" :key="'hidden-u-' + produk.id + '-' + namaUkuran">
+                        <input type="hidden" :name="'ukuran_names[' + produk.id + '][]'" :value="namaUkuran">
+                    </template>
+                    <template x-for="namaRasa in (rasaTerpilihPerProduk[produk.id] || [])" :key="'hidden-r-' + produk.id + '-' + namaRasa">
+                        <input type="hidden" :name="'rasa_names[' + produk.id + '][]'" :value="namaRasa">
+                    </template>
+                </div>
+            </template>
+
+            {{-- Modal Pilih Ukuran / Rasa --}}
+            <div x-show="modalVarianTerbuka" x-cloak x-transition class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
+                <div @click.away="batalModalVarian()" class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+                    <template x-if="produkUntukModal">
+                        <div>
+                            <div class="p-5 border-b border-gray-100 dark:border-gray-800">
+                                <h3 class="font-extrabold text-gray-900 dark:text-white text-sm"
+                                    x-text="(produkUntukModal.punya_ukuran && produkUntukModal.ukurans.length > 0 ? 'Pilih Ukuran' : '') + (produkUntukModal.punya_ukuran && produkUntukModal.ukurans.length > 0 && produkUntukModal.punya_varian_rasa && produkUntukModal.rasas.length > 0 ? ' & ' : '') + (produkUntukModal.punya_varian_rasa && produkUntukModal.rasas.length > 0 ? 'Rasa' : '')"></h3>
+                                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1" x-text="produkUntukModal.nama_produk"></p>
+                            </div>
+                            <div class="p-5 max-h-72 overflow-y-auto space-y-5">
+                                <template x-if="produkUntukModal.punya_ukuran && produkUntukModal.ukurans.length > 0">
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Berlaku untuk ukuran</p>
+                                        <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">
+                                            Kosongkan semua supaya voucher berlaku ke semua ukuran produk ini.
+                                        </p>
+                                        <div class="flex flex-wrap gap-2">
+                                            <template x-for="ukuran in produkUntukModal.ukurans" :key="'m-u-' + ukuran.nama">
+                                                <label class="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer select-none text-sm font-medium transition"
+                                                    :class="isUkuranTerpilih(produkUntukModal.id, ukuran.nama) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
+                                                    <input type="checkbox"
+                                                        :checked="isUkuranTerpilih(produkUntukModal.id, ukuran.nama)"
+                                                        @change="toggleUkuranProduk(produkUntukModal.id, ukuran.nama)"
+                                                        class="rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500">
+                                                    <span x-text="ukuran.nama"></span>
+                                                </label>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="produkUntukModal.punya_varian_rasa && produkUntukModal.rasas.length > 0">
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Berlaku untuk rasa</p>
+                                        <p class="text-xs text-gray-400 dark:text-gray-500 mb-3">
+                                            Kosongkan semua supaya voucher berlaku ke semua rasa produk ini.
+                                        </p>
+                                        <div class="flex flex-wrap gap-2">
+                                            <template x-for="rasa in produkUntukModal.rasas" :key="'m-r-' + rasa.nama">
+                                                <label class="flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer select-none text-sm font-medium transition"
+                                                    :class="isRasaTerpilih(produkUntukModal.id, rasa.nama) ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'">
+                                                    <input type="checkbox"
+                                                        :checked="isRasaTerpilih(produkUntukModal.id, rasa.nama)"
+                                                        @change="toggleRasaProduk(produkUntukModal.id, rasa.nama)"
+                                                        class="rounded border-gray-300 dark:border-gray-700 text-brand-500 focus:ring-brand-500">
+                                                    <span x-text="rasa.nama"></span>
+                                                </label>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 flex justify-end gap-2">
+                                <button type="button" @click="batalModalVarian()"
+                                    class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">Batal</button>
+                                <button type="button" @click="simpanModalVarian()"
+                                    class="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-xs font-bold text-white transition">Selesai</button>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </div>
 

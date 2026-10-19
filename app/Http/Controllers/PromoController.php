@@ -54,7 +54,7 @@ class PromoController extends Controller
     public function tambah()
     {
         try {
-            $produks = Produk::with(['detailProduks'])
+            $produks = Produk::with(['detailProduks', 'varianProduks'])
                 ->where('status_aktif', true)
                 ->orderBy('nama_produk', 'asc')
                 ->get();
@@ -143,7 +143,11 @@ class PromoController extends Controller
             ->values();
 
         return $produks->map(function ($p) use ($unikNama) {
-            $detail = $p->daftarDetail();
+            if ($p->is_global && $p->jumlahVarianBersama() > 0) {
+                $detail = $p->varianBersamaAktifTersedia();
+            } else {
+                $detail = $p->daftarDetail();
+            }
             $ukurans = $unikNama($detail->pluck('ukuran'));
             $rasas = $unikNama($detail->pluck('variasi'));
 
@@ -162,18 +166,13 @@ class PromoController extends Controller
     }
 
     /**
-     * Ubah pilihan ukuran/rasa (nama) dari form jadi daftar detail produk, per produk.
-     * $ukuranPerProduk / $rasaPerProduk: [produk_id => ['Kecil', ...]]
-     * Hasil: [produk_id => [detail_produk_id, ...]]
-     *
-     * Detail yang dipilih = ukurannya ada di pilihan ukuran DAN variasinya ada di
-     * pilihan rasa (salah satu kosong = tidak dibatasi di sisi itu). Produk yang
-     * dua-duanya kosong tidak masuk hasil = promo berlaku ke semua detailnya.
+     * Ubah pilihan ukuran/rasa (nama) dari form jadi daftar detail & varian produk, per produk.
+     * Hasil: ['detail_ids' => [produk_id => [detail_id, ...]], 'varian_ids' => [produk_id => [varian_id, ...]]]
      */
     private function resolveDetailIdsPerProduk(array $produkIds, array $ukuranPerProduk, array $rasaPerProduk): array
     {
         $produkIds = array_map('intval', $produkIds);
-        $produks = Produk::with('detailProduks')->whereIn('id', $produkIds)->get()->keyBy('id');
+        $produks = Produk::with(['detailProduks', 'varianProduks'])->whereIn('id', $produkIds)->get()->keyBy('id');
 
         $norm = fn ($x) => mb_strtolower(trim((string) $x));
         $daftarNama = fn ($daftar) => collect(is_array($daftar) ? $daftar : [])
@@ -181,7 +180,8 @@ class PromoController extends Controller
             ->filter()
             ->values();
 
-        $hasil = [];
+        $detailHasil = [];
+        $varianHasil = [];
         foreach ($produkIds as $produkId) {
             $produk = $produks->get($produkId);
             if (!$produk) {
@@ -194,53 +194,81 @@ class PromoController extends Controller
                 continue;
             }
 
-            $ids = $produk->detailProduks
-                ->filter(fn ($d) => ($u->isEmpty() || $u->contains($norm($d->ukuran)))
-                    && ($r->isEmpty() || $r->contains($norm($d->variasi))))
-                ->pluck('id')
-                ->map(fn ($id) => (int) $id)
-                ->values()
-                ->all();
+            if ($produk->is_global && $produk->jumlahVarianBersama() > 0) {
+                $vIds = $produk->varianProduks
+                    ->filter(fn ($v) => ($u->isEmpty() || $u->contains($norm($v->ukuran)))
+                        && ($r->isEmpty() || $r->contains($norm($v->variasi))))
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all();
 
-            if (!empty($ids)) {
-                $hasil[$produkId] = $ids;
+                if (!empty($vIds)) {
+                    $varianHasil[$produkId] = $vIds;
+                }
+            } else {
+                $dIds = $produk->detailProduks
+                    ->filter(fn ($d) => ($u->isEmpty() || $u->contains($norm($d->ukuran)))
+                        && ($r->isEmpty() || $r->contains($norm($d->variasi))))
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all();
+
+                if (!empty($dIds)) {
+                    $detailHasil[$produkId] = $dIds;
+                }
             }
         }
 
-        return $hasil;
+        return [
+            'detail_ids' => $detailHasil,
+            'varian_ids' => $varianHasil,
+        ];
     }
 
     /**
-     * Simpan ulang target detail produk buat promo ini. Detail milik produk yang
-     * sudah di-uncheck dari promo otomatis ikut terhapus karena tidak ada di daftar.
+     * Simpan ulang target detail produk dan varian produk buat promo ini.
      */
-    private function simpanTargetDetail(Promo $promo, array $detailIdsPerProduk): void
+    private function simpanTargetDetail(Promo $promo, array $target): void
     {
         $promo->detailProduks()->sync(
-            collect($detailIdsPerProduk)->flatten()->map(fn ($id) => (int) $id)->unique()->values()->all()
+            collect($target['detail_ids'] ?? [])->flatten()->map(fn ($id) => (int) $id)->unique()->values()->all()
+        );
+        $promo->varianProduks()->sync(
+            collect($target['varian_ids'] ?? [])->flatten()->map(fn ($id) => (int) $id)->unique()->values()->all()
         );
     }
 
     public function ubah($id)
     {
         try {
-            $promo = Promo::with(['produks', 'detailProduks'])->findOrFail($id);
-            $produks = Produk::with(['detailProduks'])
+            $promo = Promo::with(['produks', 'detailProduks', 'varianProduks'])->findOrFail($id);
+            $produks = Produk::with(['detailProduks', 'varianProduks'])
                 ->where('status_aktif', true)
                 ->orderBy('nama_produk', 'asc')
                 ->get();
             $produkData = $this->dataProdukUntukForm($produks);
             $selectedProduks = $promo->produks->pluck('id')->toArray();
-            // [produk_id => [nama ukuran, ...]] dan [produk_id => [nama rasa, ...]] — pilihan yang udah
-            // kesimpen per produk, dibaca dari detail produk yang dipilih. Huruf besar/kecilnya disamakan
-            // dengan nama di data produk, karena form ngidentifikasi pilihan lewat nama.
+
             $produkMap = collect($produkData)->keyBy('id');
             $samakanNama = function ($produkId, $nama, $kunci) use ($produkMap) {
                 $daftar = collect(($produkMap->get($produkId) ?? [])[$kunci] ?? []);
                 $cocok = $daftar->first(fn ($x) => strcasecmp($x['nama'], $nama) === 0);
                 return $cocok['nama'] ?? $nama;
             };
-            $namaPerProduk = fn ($kolom, $kunci) => $promo->detailProduks
+
+            $gabunganPilihan = $promo->detailProduks->map(fn ($d) => (object) [
+                'produk_id' => $d->produk_id,
+                'ukuran' => $d->ukuran,
+                'variasi' => $d->variasi,
+            ])->concat($promo->varianProduks->map(fn ($v) => (object) [
+                'produk_id' => $v->produk_id,
+                'ukuran' => $v->ukuran,
+                'variasi' => $v->variasi,
+            ]));
+
+            $namaPerProduk = fn ($kolom, $kunci) => $gabunganPilihan
                 ->groupBy('produk_id')
                 ->map(fn ($rows, $pid) => $rows->pluck($kolom)
                     ->map(fn ($n) => trim((string) $n))

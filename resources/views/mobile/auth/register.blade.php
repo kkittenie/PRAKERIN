@@ -395,19 +395,51 @@
             btn.setAttribute('aria-label', showing ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi');
         }
 
+        function restoreAppCard(isBack = false) {
+            const card = document.getElementById('app-card');
+            if (!card) return;
+            card.style.opacity = '';
+            card.style.transform = '';
+            card.style.transition = '';
+            if (isBack) {
+                card.classList.remove('step-enter-right');
+                card.classList.remove('step-enter-left');
+                void card.offsetWidth;
+                card.classList.add('step-enter-left');
+            }
+        }
+
+        // Handle BFCache (Back-Forward Cache) when user uses device back button
+        window.addEventListener('pageshow', (event) => {
+            restoreAppCard(event.persisted);
+        });
+
+        // Clear inline opacity before page is frozen/hidden in BFCache
+        window.addEventListener('pagehide', () => {
+            restoreAppCard(false);
+        });
+
+        window.addEventListener('popstate', () => {
+            restoreAppCard(true);
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             const card = document.getElementById('app-card');
-            const dir = sessionStorage.getItem('nav_dir');
-            if (dir === 'back') {
-                card.classList.add('step-enter-left');
-            } else {
-                card.classList.add('step-enter-right');
+            if (card) {
+                restoreAppCard(false);
+                const dir = sessionStorage.getItem('nav_dir');
+                if (dir === 'back') {
+                    card.classList.add('step-enter-left');
+                } else {
+                    card.classList.add('step-enter-right');
+                }
+                sessionStorage.removeItem('nav_dir');
             }
-            sessionStorage.removeItem('nav_dir');
         });
 
         function animateNavigate(url, dir) {
             const card = document.getElementById('app-card');
+            if (!card) { window.location.href = url; return; }
             card.style.transition = 'all 0.16s cubic-bezier(0.4, 0, 0.2, 1)';
             card.style.opacity = '0';
             if (dir === 'back') {
@@ -420,6 +452,7 @@
             setTimeout(() => {
                 window.location.href = url;
             }, 150);
+            setTimeout(() => { restoreAppCard(false); }, 500);
         }
 
         // STEP 1: Kirim OTP AJAX

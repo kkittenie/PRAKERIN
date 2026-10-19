@@ -222,14 +222,12 @@ class ProduksiController extends Controller
     public function create()
     {
         try {
-            // Hanya kirim data yang dipakai form: produk + detail produk AKTIF.
-            // Detail nonaktif tidak bisa diproduksi, sama seperti tidak bisa dipilih di kasir.
-            $produk = Produk::with('detailProduks')
+            // Hanya kirim data yang dipakai form: produk + detail produk / varian AKTIF.
+            $produk = Produk::with(['detailProduks', 'varianProduks'])
                 ->orderBy('nama_produk')
                 ->get()
                 ->map(fn (Produk $p) => [
                     'id' => $p->id,
-                    // Kode ada di detail produk: ringkasan untuk tampilan, lengkap untuk pencarian.
                     'kode_detail' => $p->detailProduks->pluck('kode_barcode')->filter()->take(3)->implode(', ')
                         . ($p->detailProduks->pluck('kode_barcode')->filter()->count() > 3
                             ? ' +' . ($p->detailProduks->pluck('kode_barcode')->filter()->count() - 3) . ' lainnya'
@@ -237,20 +235,10 @@ class ProduksiController extends Controller
                     'kode_cari' => $p->detailProduks->pluck('kode_barcode')->filter()->implode(' '),
                     'nama_produk' => $p->nama_produk,
                     'foto' => $p->foto,
-                    'punya_varian_baru' => $p->detailProduks->isNotEmpty(),
-                    'daftar_varian_produksi' => $p->detailProduks
-                        ->where('status_aktif', true)
-                        ->map(fn (DetailProduk $d) => [
-                            'id' => $d->id,
-                            'ukuran' => $d->ukuran,
-                            'variasi' => $d->variasi,
-                            'nama' => $d->nama_lengkap ?: 'Standar',
-                            'kode_barcode' => $d->kode_barcode,
-                            'stok' => (int) $d->stok,
-                            'perlu_produksi' => (int) $d->stok <= 0,
-                        ])
-                        ->values()
-                        ->all(),
+                    'is_global' => $p->is_global,
+                    'punya_varian' => $p->punya_varian,
+                    'punya_varian_baru' => $p->punya_varian,
+                    'daftar_varian_produksi' => $p->daftarVarianPilihan()->values()->all(),
                 ])
                 ->values();
 
@@ -265,16 +253,407 @@ class ProduksiController extends Controller
     public function store(Request $request)
     {
         try {
-            $produk = Produk::with('detailProduks')->find($request->produk_id);
+            if ($request->has('produk_items') && is_array($request->produk_items)) {
+                return $this->simpanProduksiBanyak($request);
+            }
+
+            $produk = Produk::with(['detailProduks', 'varianProduks'])->find($request->produk_id);
 
             if (!$produk) {
                 return back()->withInput()->with('error', 'Pilih produk yang akan diproduksi.');
             }
 
-            return $this->simpanProduksiVarian($request, $produk);
+            if ($produk->punya_varian) {
+                return $this->simpanProduksiVarian($request, $produk);
+            }
+
+            return $this->simpanProduksiTanpaVarian($request, $produk);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
+    }
+
+    /**
+     * Simpan produksi untuk banyak produk sekaligus dalam satu sesi produksi.
+     * Mendukung produk dengan varian (Stok Bersama / Stok Per Varian) maupun produk tanpa varian.
+     */
+    private function simpanProduksiBanyak(Request $request)
+    {
+        $request->validate([
+            'tanggal' => 'required|date',
+            'jam_produksi' => 'required|date_format:H:i',
+            'keterangan' => 'nullable|string',
+
+            'kadaluarsa_tipe' => 'required|in:tanggal,jam',
+            'kadaluarsa_tanggal' => 'required_if:kadaluarsa_tipe,tanggal|nullable|date|after_or_equal:tanggal',
+            'kadaluarsa_jam' => 'required_if:kadaluarsa_tipe,jam|nullable|integer|min:1',
+
+            'bahan_baku_id' => 'required|array|min:1',
+            'bahan_baku_id.*' => ['required', 'distinct', 'exists:bahan_bakus,id'],
+
+            'jumlah_terpakai' => 'required|array|min:1',
+            'jumlah_terpakai.*' => [
+                'required',
+                'numeric',
+                'gt:0',
+                function ($attribute, $value, $fail) use ($request) {
+                    preg_match('/\d+/', $attribute, $match);
+                    $index = $match[0] ?? null;
+                    $bahanId = $request->bahan_baku_id[$index] ?? null;
+
+                    if (!$bahanId) {
+                        return;
+                    }
+
+                    $bahan = BahanBaku::with('satuan')->find($bahanId);
+
+                    if ($bahan && $bahan->satuan?->tipe === 'bulat' && floor($value) != $value) {
+                        $fail("Jumlah dipakai untuk {$bahan->nama_bahan} harus bilangan bulat (satuan {$bahan->satuan->nama}, tidak boleh desimal).");
+                    }
+                },
+            ],
+
+            'produk_items' => 'required|array|min:1',
+            'produk_items.*.produk_id' => 'required|exists:produks,id',
+        ]);
+
+        $adaBahan = false;
+        foreach ($request->jumlah_terpakai as $jumlah) {
+            if ($jumlah > 0) {
+                $adaBahan = true;
+                break;
+            }
+        }
+
+        if (!$adaBahan) {
+            return back()->withInput()->with('error', 'Minimal pilih satu bahan baku yang digunakan.');
+        }
+
+        $items = (array) $request->input('produk_items', []);
+        if (empty($items)) {
+            return back()->withInput()->with('error', 'Tambahkan minimal satu produk yang diproduksi.');
+        }
+
+        $produkIds = [];
+        $parsedProducts = [];
+
+        foreach ($items as $idx => $item) {
+            $produkId = (int) ($item['produk_id'] ?? 0);
+            if (!$produkId) {
+                return back()->withInput()->with('error', 'Ada baris produk yang belum dipilih.');
+            }
+
+            if (in_array($produkId, $produkIds, true)) {
+                $duplikat = Produk::find($produkId);
+                return back()->withInput()->with('error', "Produk '{$duplikat?->nama_produk}' dipilih lebih dari satu kali. Gabungkan jumlahnya dalam satu baris produk.");
+            }
+            $produkIds[] = $produkId;
+
+            $produk = Produk::with(['detailProduks', 'varianProduks'])->find($produkId);
+            if (!$produk) {
+                return back()->withInput()->with('error', 'Produk tidak ditemukan.');
+            }
+
+            if ($produk->punya_varian) {
+                $hasilInput = (array) ($item['varian_hasil'] ?? []);
+                $kebutuhanInput = (array) ($item['varian_kebutuhan'] ?? []);
+                $rincian = [];
+                $totalHasil = 0;
+                $totalKebutuhan = 0;
+
+                if ($produk->is_global) {
+                    $detailUtama = $produk->daftarDetail()->first();
+                    if (!$detailUtama) {
+                        return back()->withInput()->with('error', "Produk Stok Bersama {$produk->nama_produk} belum memiliki detail produk/stok.");
+                    }
+                    $varianMap = $produk->varianProduks()->get()->keyBy('id');
+
+                    foreach ($hasilInput as $key => $hasil) {
+                        $hasil = (int) $hasil;
+                        $kebutuhan = (int) ($kebutuhanInput[$key] ?? 0);
+
+                        if ($hasil <= 0 && $kebutuhan <= 0) {
+                            continue;
+                        }
+
+                        $vpId = str_starts_with((string)$key, 'vp_') ? (int) substr($key, 3) : (int) $key;
+                        $varian = $varianMap->get($vpId);
+
+                        if (!$varian) {
+                            return back()->withInput()->with('error', "Ada varian tidak valid untuk {$produk->nama_produk}.");
+                        }
+
+                        if (!$varian->status_aktif) {
+                            return back()->withInput()->with('error', "Varian {$varian->nama_lengkap} ({$produk->nama_produk}) sedang dinonaktifkan.");
+                        }
+
+                        if ($kebutuhan > $hasil) {
+                            return back()->withInput()->with('error', "Pesanan varian {$varian->nama_lengkap} ({$produk->nama_produk}) tidak boleh melebihi Jumlah Hasil varian.");
+                        }
+
+                        $rincian[] = [
+                            'is_stok_bersama' => true,
+                            'detail_produk_id' => $detailUtama->id,
+                            'varian_produk_id' => $varian->id,
+                            'ukuran' => $varian->ukuran,
+                            'variasi' => $varian->variasi,
+                            'kode_barcode' => $varian->kode_produk,
+                            'harga_jual' => $detailUtama->harga_jual,
+                            'nama_lengkap' => $varian->nama_lengkap,
+                            'hasil' => $hasil,
+                            'kebutuhan' => $kebutuhan,
+                        ];
+                        $totalHasil += $hasil;
+                        $totalKebutuhan += $kebutuhan;
+                    }
+                } else {
+                    // Stok Per Varian
+                    $detailMap = DetailProduk::where('produk_id', $produk->id)->get()->keyBy('id');
+
+                    foreach ($hasilInput as $key => $hasil) {
+                        $detailId = (int) $key;
+                        $hasil = (int) $hasil;
+                        $kebutuhan = (int) ($kebutuhanInput[$key] ?? 0);
+
+                        if ($hasil <= 0 && $kebutuhan <= 0) {
+                            continue;
+                        }
+
+                        $varian = $detailMap->get($detailId);
+
+                        if (!$varian) {
+                            return back()->withInput()->with('error', "Ada varian tidak valid untuk {$produk->nama_produk}.");
+                        }
+
+                        if (!$varian->status_aktif) {
+                            return back()->withInput()->with('error', "Varian {$varian->nama_lengkap} ({$produk->nama_produk}) sedang dinonaktifkan.");
+                        }
+
+                        if ($kebutuhan > $hasil) {
+                            return back()->withInput()->with('error', "Pesanan varian {$varian->nama_lengkap} ({$produk->nama_produk}) tidak boleh melebihi Jumlah Hasil varian.");
+                        }
+
+                        $rincian[] = [
+                            'is_stok_bersama' => false,
+                            'detail_produk_id' => $varian->id,
+                            'varian_produk_id' => null,
+                            'ukuran' => $varian->ukuran,
+                            'variasi' => $varian->variasi,
+                            'kode_barcode' => $varian->kode_barcode,
+                            'harga_jual' => $varian->harga_jual,
+                            'nama_lengkap' => $varian->nama_lengkap,
+                            'hasil' => $hasil,
+                            'kebutuhan' => $kebutuhan,
+                        ];
+                        $totalHasil += $hasil;
+                        $totalKebutuhan += $kebutuhan;
+                    }
+                }
+
+                if ($totalHasil <= 0) {
+                    return back()->withInput()->with('error', "Isi Jumlah Hasil minimal pada satu varian untuk produk {$produk->nama_produk}.");
+                }
+
+                $parsedProducts[] = [
+                    'produk' => $produk,
+                    'punya_varian' => true,
+                    'jumlah_hasil' => $totalHasil,
+                    'total_kebutuhan' => $totalKebutuhan,
+                    'rincian' => $rincian,
+                ];
+            } else {
+                // Produk Tanpa Varian
+                $hasil = (int) ($item['jumlah_hasil'] ?? 0);
+                $kebutuhan = (int) ($item['kebutuhan_produksi'] ?? 0);
+
+                if ($hasil <= 0) {
+                    return back()->withInput()->with('error', "Jumlah Hasil Produksi untuk produk {$produk->nama_produk} minimal 1.");
+                }
+
+                if ($kebutuhan > $hasil) {
+                    return back()->withInput()->with('error', "Pesanan untuk produk {$produk->nama_produk} tidak boleh melebihi Jumlah Hasil Produksi.");
+                }
+
+                $detailUtama = $produk->daftarDetail()->first();
+                if (!$detailUtama) {
+                    return back()->withInput()->with('error', "Produk {$produk->nama_produk} belum memiliki detail produk/stok.");
+                }
+
+                $parsedProducts[] = [
+                    'produk' => $produk,
+                    'punya_varian' => false,
+                    'jumlah_hasil' => $hasil,
+                    'total_kebutuhan' => $kebutuhan,
+                    'detail_utama' => $detailUtama,
+                ];
+            }
+        }
+
+        $totalSemuaHasil = array_sum(array_column($parsedProducts, 'jumlah_hasil'));
+        $totalCount = count($parsedProducts);
+
+        DB::transaction(function () use ($request, $parsedProducts, $totalSemuaHasil, $totalCount) {
+            // 1. Validasi & potong stok Bahan Baku
+            foreach ($request->bahan_baku_id as $i => $id) {
+                $pakai = (float) $request->jumlah_terpakai[$i];
+                if ($pakai <= 0) continue;
+
+                $bahan = BahanBaku::lockForUpdate()->findOrFail($id);
+                if ($bahan->stok < $pakai) {
+                    throw new Exception("Stok {$bahan->nama_bahan} tidak mencukupi.");
+                }
+                $bahan->decrement('stok', $pakai);
+            }
+
+            $allocatedBahan = [];
+
+            // 2. Simpan setiap produk
+            foreach ($parsedProducts as $pIndex => $pData) {
+                $produk = $pData['produk'];
+                $hasil = $pData['jumlah_hasil'];
+                $kebutuhan = $pData['total_kebutuhan'];
+                $isLastProduct = ($pIndex === $totalCount - 1);
+
+                $produksi = Produksi::create([
+                    'tanggal' => $request->tanggal,
+                    'jam_produksi' => $request->jam_produksi,
+                    'produk_id' => $produk->id,
+                    'jumlah_hasil' => $hasil,
+                    'jumlah_besar' => 0,
+                    'jumlah_kecil' => 0,
+                    'kebutuhan_produksi' => $kebutuhan,
+                    'kebutuhan_besar' => 0,
+                    'kebutuhan_kecil' => 0,
+                    'user_id' => Auth::id(),
+                    'keterangan' => $request->keterangan,
+                    'kadaluarsa_tipe' => $request->kadaluarsa_tipe,
+                    'kadaluarsa_tanggal' => $request->kadaluarsa_tipe === 'tanggal' ? $request->kadaluarsa_tanggal : null,
+                    'kadaluarsa_jam' => $request->kadaluarsa_tipe === 'jam' ? $request->kadaluarsa_jam : null,
+                    'status' => 'belum kadaluwarsa',
+                ]);
+
+                // Distribusi bahan baku
+                foreach ($request->bahan_baku_id as $i => $id) {
+                    $totalPakai = (float) $request->jumlah_terpakai[$i];
+                    if ($totalPakai <= 0) continue;
+
+                    if ($isLastProduct) {
+                        $terpakaiItem = max(0, round($totalPakai - ($allocatedBahan[$id] ?? 0), 4));
+                    } else {
+                        $proporsi = $totalSemuaHasil > 0 ? ($hasil / $totalSemuaHasil) : (1 / $totalCount);
+                        $terpakaiItem = round($totalPakai * $proporsi, 4);
+                        $allocatedBahan[$id] = ($allocatedBahan[$id] ?? 0) + $terpakaiItem;
+                    }
+
+                    if ($terpakaiItem > 0) {
+                        ProduksiBahanBaku::create([
+                            'produksi_id' => $produksi->id,
+                            'bahan_baku_id' => $id,
+                            'jumlah_terpakai' => $terpakaiItem,
+                        ]);
+                    }
+                }
+
+                $produkTerkunci = Produk::lockForUpdate()->findOrFail($produk->id);
+
+                if ($pData['punya_varian']) {
+                    $rincian = $pData['rincian'];
+                    if ($produk->is_global) {
+                        $detailUtama = DetailProduk::lockForUpdate()->findOrFail($rincian[0]['detail_produk_id']);
+                        $detailUtama->stok = (int) $detailUtama->stok + $hasil;
+                        if ($kebutuhan > 0) {
+                            if ($detailUtama->stok < $kebutuhan) {
+                                throw new Exception("Stok untuk {$produkTerkunci->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                            }
+                            $detailUtama->stok -= $kebutuhan;
+                        }
+                        $detailUtama->save();
+
+                        foreach ($rincian as $r) {
+                            ProduksiVarian::create([
+                                'produksi_id' => $produksi->id,
+                                'detail_produk_id' => $r['detail_produk_id'],
+                                'varian_produk_id' => $r['varian_produk_id'],
+                                'ukuran' => $r['ukuran'],
+                                'variasi' => $r['variasi'],
+                                'kode_barcode' => $r['kode_barcode'],
+                                'harga_jual' => $r['harga_jual'],
+                                'jumlah_hasil' => $r['hasil'],
+                                'kebutuhan' => $r['kebutuhan'],
+                            ]);
+                        }
+                    } else {
+                        foreach ($rincian as $r) {
+                            $varian = DetailProduk::lockForUpdate()->findOrFail($r['detail_produk_id']);
+                            $varian->stok = (int) $varian->stok + $r['hasil'];
+
+                            if ($r['kebutuhan'] > 0) {
+                                if ($varian->stok < $r['kebutuhan']) {
+                                    throw new Exception("Stok {$varian->nama_lengkap} untuk {$produkTerkunci->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                                }
+                                $varian->stok -= $r['kebutuhan'];
+                            }
+
+                            $varian->save();
+
+                            ProduksiVarian::create([
+                                'produksi_id' => $produksi->id,
+                                'detail_produk_id' => $varian->id,
+                                'varian_produk_id' => null,
+                                'ukuran' => $varian->ukuran,
+                                'variasi' => $varian->variasi,
+                                'kode_barcode' => $varian->kode_barcode,
+                                'harga_jual' => $varian->harga_jual,
+                                'jumlah_hasil' => $r['hasil'],
+                                'kebutuhan' => $r['kebutuhan'],
+                            ]);
+                        }
+                    }
+                } else {
+                    $detail = DetailProduk::lockForUpdate()->findOrFail($pData['detail_utama']->id);
+                    $detail->stok = (int) $detail->stok + $hasil;
+                    if ($kebutuhan > 0) {
+                        if ($detail->stok < $kebutuhan) {
+                            throw new Exception("Stok untuk {$produkTerkunci->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                        }
+                        $detail->stok -= $kebutuhan;
+                    }
+                    $detail->save();
+
+                    ProduksiVarian::create([
+                        'produksi_id' => $produksi->id,
+                        'detail_produk_id' => $detail->id,
+                        'varian_produk_id' => null,
+                        'ukuran' => $detail->ukuran,
+                        'variasi' => $detail->variasi,
+                        'kode_barcode' => $detail->kode_barcode,
+                        'harga_jual' => $detail->harga_jual,
+                        'jumlah_hasil' => $hasil,
+                        'kebutuhan' => $kebutuhan,
+                    ]);
+                }
+
+                $this->sinkronStokProdukDariVarian($produkTerkunci);
+
+                event(new StatusProduksiUpdate($produksi));
+
+                activity()
+                    ->causedBy(auth()->user())
+                    ->performedOn($produksi)
+                    ->withProperties([
+                        'produk_id' => $produk->id,
+                        'jumlah_hasil' => $hasil,
+                        'kebutuhan_produksi' => $kebutuhan,
+                    ])
+                    ->log('menambahkan produksi');
+            }
+        });
+
+        $pesanSukses = $totalCount > 1
+            ? "Produksi berhasil disimpan untuk {$totalCount} produk ({$totalSemuaHasil} pcs)."
+            : "Produksi berhasil disimpan ({$totalSemuaHasil} pcs).";
+
+        return redirect()->route('produksi.index')->with('success', $pesanSukses);
     }
 
     public function show(Produksi $produksi)
@@ -487,6 +866,157 @@ class ProduksiController extends Controller
      * Input: varian_hasil[detail_produk_id] dan varian_kebutuhan[detail_produk_id].
      * Stok varian bertambah sebesar hasil, lalu berkurang sebesar pesanan (kebutuhan).
      */
+    private function simpanProduksiTanpaVarian(Request $request, Produk $produk)
+    {
+        $request->validate([
+            'tanggal' => 'required|date',
+            'jam_produksi' => 'required|date_format:H:i',
+            'produk_id' => 'required|exists:produks,id',
+            'jumlah_hasil' => 'required|integer|min:1',
+            'kebutuhan_produksi' => 'nullable|integer|min:0',
+            'keterangan' => 'nullable|string',
+
+            'kadaluarsa_tipe' => 'required|in:tanggal,jam',
+            'kadaluarsa_tanggal' => 'required_if:kadaluarsa_tipe,tanggal|nullable|date|after_or_equal:tanggal',
+            'kadaluarsa_jam' => 'required_if:kadaluarsa_tipe,jam|nullable|integer|min:1',
+
+            'bahan_baku_id' => 'required|array|min:1',
+            'bahan_baku_id.*' => ['required', 'distinct', 'exists:bahan_bakus,id'],
+
+            'jumlah_terpakai' => 'required|array|min:1',
+            'jumlah_terpakai.*' => [
+                'required',
+                'numeric',
+                'gt:0',
+                function ($attribute, $value, $fail) use ($request) {
+                    preg_match('/\d+/', $attribute, $match);
+                    $index = $match[0] ?? null;
+                    $bahanId = $request->bahan_baku_id[$index] ?? null;
+
+                    if (!$bahanId) {
+                        return;
+                    }
+
+                    $bahan = BahanBaku::with('satuan')->find($bahanId);
+
+                    if ($bahan && $bahan->satuan?->tipe === 'bulat' && floor($value) != $value) {
+                        $fail("Jumlah dipakai untuk {$bahan->nama_bahan} harus bilangan bulat (satuan {$bahan->satuan->nama}, tidak boleh desimal).");
+                    }
+                },
+            ],
+        ]);
+
+        $kebutuhan = (int) $request->input('kebutuhan_produksi', 0);
+        $hasil = (int) $request->jumlah_hasil;
+
+        if ($kebutuhan > $hasil) {
+            return back()->withInput()->with('error', 'Pesanan tidak boleh melebihi Jumlah Hasil Produksi.');
+        }
+
+        $adaBahan = false;
+        foreach ($request->jumlah_terpakai as $jumlah) {
+            if ($jumlah > 0) {
+                $adaBahan = true;
+                break;
+            }
+        }
+
+        if (!$adaBahan) {
+            return back()->withInput()->with('error', 'Minimal pilih satu bahan baku yang digunakan.');
+        }
+
+        $detailUtama = $produk->daftarDetail()->first();
+        if (!$detailUtama) {
+            return back()->withInput()->with('error', 'Produk ini belum memiliki detail produk/stok.');
+        }
+
+        $produksi = null;
+        DB::transaction(function () use ($request, $produk, $detailUtama, $hasil, $kebutuhan, &$produksi) {
+            $produksi = Produksi::create([
+                'tanggal' => $request->tanggal,
+                'jam_produksi' => $request->jam_produksi,
+                'produk_id' => $produk->id,
+                'jumlah_hasil' => $hasil,
+                'jumlah_besar' => 0,
+                'jumlah_kecil' => 0,
+                'kebutuhan_produksi' => $kebutuhan,
+                'kebutuhan_besar' => 0,
+                'kebutuhan_kecil' => 0,
+                'user_id' => Auth::id(),
+                'keterangan' => $request->keterangan,
+                'kadaluarsa_tipe' => $request->kadaluarsa_tipe,
+                'kadaluarsa_tanggal' => $request->kadaluarsa_tipe === 'tanggal' ? $request->kadaluarsa_tanggal : null,
+                'kadaluarsa_jam' => $request->kadaluarsa_tipe === 'jam' ? $request->kadaluarsa_jam : null,
+                'status' => 'belum kadaluwarsa',
+            ]);
+
+            foreach ($request->bahan_baku_id as $i => $id) {
+                $pakai = (float) $request->jumlah_terpakai[$i];
+                if ($pakai <= 0) continue;
+
+                $bahan = BahanBaku::lockForUpdate()->findOrFail($id);
+                if ($bahan->stok < $pakai) {
+                    throw new Exception("Stok {$bahan->nama_bahan} tidak mencukupi.");
+                }
+
+                ProduksiBahanBaku::create([
+                    'produksi_id' => $produksi->id,
+                    'bahan_baku_id' => $id,
+                    'jumlah_terpakai' => $pakai,
+                ]);
+
+                $bahan->decrement('stok', $pakai);
+            }
+
+            $detail = DetailProduk::lockForUpdate()->findOrFail($detailUtama->id);
+            $detail->stok = (int) $detail->stok + $hasil;
+            if ($kebutuhan > 0) {
+                if ($detail->stok < $kebutuhan) {
+                    throw new Exception("Stok untuk {$produk->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                }
+                $detail->stok -= $kebutuhan;
+            }
+            $detail->save();
+
+            ProduksiVarian::create([
+                'produksi_id' => $produksi->id,
+                'detail_produk_id' => $detail->id,
+                'varian_produk_id' => null,
+                'ukuran' => $detail->ukuran,
+                'variasi' => $detail->variasi,
+                'kode_barcode' => $detail->kode_barcode,
+                'harga_jual' => $detail->harga_jual,
+                'jumlah_hasil' => $hasil,
+                'kebutuhan' => $kebutuhan,
+            ]);
+
+            $this->sinkronStokProdukDariVarian(Produk::lockForUpdate()->findOrFail($produk->id));
+        });
+
+        event(new StatusProduksiUpdate($produksi));
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($produksi)
+            ->withProperties([
+                'produk_id' => $produk->id,
+                'jumlah_hasil' => $hasil,
+                'kebutuhan_produksi' => $kebutuhan,
+                'bahan_baku_id' => $request->bahan_baku_id,
+                'jumlah_terpakai' => $request->jumlah_terpakai,
+            ])
+            ->log('menambahkan produksi');
+
+        return redirect()->route('produksi.index')->with(
+            'success',
+            "Produksi berhasil disimpan ({$produksi->jumlah_hasil} pcs)."
+        );
+    }
+
+    /**
+     * Simpan produksi untuk produk yang punya varian.
+     * Mendukung Stok Per Varian (detail_produks) maupun Stok Bersama (varian_produks).
+     */
     private function simpanProduksiVarian(Request $request, Produk $produk)
     {
         $hasilInput = (array) $request->input('varian_hasil', []);
@@ -537,39 +1067,98 @@ class ProduksiController extends Controller
             ],
         ]);
 
-        // Susun rincian per varian: [detail_produk_id => ['hasil' => x, 'kebutuhan' => y]]
-        $varianProduk = DetailProduk::where('produk_id', $produk->id)->get()->keyBy('id');
         $kebutuhanInput = (array) $request->input('varian_kebutuhan', []);
         $rincian = [];
         $totalHasil = 0;
         $totalKebutuhan = 0;
 
-        foreach ($hasilInput as $varianId => $hasil) {
-            $varianId = (int) $varianId;
-            $hasil = (int) $hasil;
-            $kebutuhan = (int) ($kebutuhanInput[$varianId] ?? 0);
-
-            if ($hasil <= 0 && $kebutuhan <= 0) {
-                continue;
+        if ($produk->is_global) {
+            $detailUtama = $produk->daftarDetail()->first();
+            if (!$detailUtama) {
+                return back()->withInput()->with('error', 'Produk Stok Bersama belum memiliki detail produk/stok.');
             }
+            $varianProdukMap = $produk->varianProduks()->get()->keyBy('id');
 
-            $varian = $varianProduk->get($varianId);
+            foreach ($hasilInput as $key => $hasil) {
+                $hasil = (int) $hasil;
+                $kebutuhan = (int) ($kebutuhanInput[$key] ?? 0);
 
-            if (!$varian) {
-                return back()->withInput()->with('error', 'Ada varian yang tidak valid untuk produk ini.');
+                if ($hasil <= 0 && $kebutuhan <= 0) {
+                    continue;
+                }
+
+                $vpId = str_starts_with((string)$key, 'vp_') ? (int) substr($key, 3) : (int) $key;
+                $varian = $varianProdukMap->get($vpId);
+
+                if (!$varian) {
+                    return back()->withInput()->with('error', 'Ada varian yang tidak valid untuk produk ini.');
+                }
+
+                if (!$varian->status_aktif) {
+                    return back()->withInput()->with('error', "Varian {$varian->nama_lengkap} sedang dinonaktifkan, tidak bisa diproduksi.");
+                }
+
+                if ($kebutuhan > $hasil) {
+                    return back()->withInput()->with('error', "Pesanan varian {$varian->nama_lengkap} tidak boleh melebihi Jumlah Hasil varian itu sendiri.");
+                }
+
+                $rincian[] = [
+                    'is_stok_bersama' => true,
+                    'detail_produk_id' => $detailUtama->id,
+                    'varian_produk_id' => $varian->id,
+                    'ukuran' => $varian->ukuran,
+                    'variasi' => $varian->variasi,
+                    'kode_barcode' => $varian->kode_produk,
+                    'harga_jual' => $detailUtama->harga_jual,
+                    'nama_lengkap' => $varian->nama_lengkap,
+                    'hasil' => $hasil,
+                    'kebutuhan' => $kebutuhan,
+                ];
+                $totalHasil += $hasil;
+                $totalKebutuhan += $kebutuhan;
             }
+        } else {
+            // Stok Per Varian
+            $detailProdukMap = DetailProduk::where('produk_id', $produk->id)->get()->keyBy('id');
 
-            if (!$varian->status_aktif) {
-                return back()->withInput()->with('error', "Varian {$varian->nama_lengkap} sedang dinonaktifkan, tidak bisa diproduksi.");
+            foreach ($hasilInput as $key => $hasil) {
+                $detailId = (int) $key;
+                $hasil = (int) $hasil;
+                $kebutuhan = (int) ($kebutuhanInput[$key] ?? 0);
+
+                if ($hasil <= 0 && $kebutuhan <= 0) {
+                    continue;
+                }
+
+                $varian = $detailProdukMap->get($detailId);
+
+                if (!$varian) {
+                    return back()->withInput()->with('error', 'Ada varian yang tidak valid untuk produk ini.');
+                }
+
+                if (!$varian->status_aktif) {
+                    return back()->withInput()->with('error', "Varian {$varian->nama_lengkap} sedang dinonaktifkan, tidak bisa diproduksi.");
+                }
+
+                if ($kebutuhan > $hasil) {
+                    return back()->withInput()->with('error', "Pesanan varian {$varian->nama_lengkap} tidak boleh melebihi Jumlah Hasil varian itu sendiri.");
+                }
+
+                $rincian[] = [
+                    'is_stok_bersama' => false,
+                    'detail_produk_id' => $varian->id,
+                    'varian_produk_id' => null,
+                    'ukuran' => $varian->ukuran,
+                    'variasi' => $varian->variasi,
+                    'kode_barcode' => $varian->kode_barcode,
+                    'harga_jual' => $varian->harga_jual,
+                    'nama_lengkap' => $varian->nama_lengkap,
+                    'hasil' => $hasil,
+                    'kebutuhan' => $kebutuhan,
+                ];
+                $totalHasil += $hasil;
+                $totalKebutuhan += $kebutuhan;
             }
-
-            if ($kebutuhan > $hasil) {
-                return back()->withInput()->with('error', "Pesanan varian {$varian->nama_lengkap} tidak boleh melebihi Jumlah Hasil varian itu sendiri.");
-            }
-
-            $rincian[$varianId] = ['hasil' => $hasil, 'kebutuhan' => $kebutuhan];
-            $totalHasil += $hasil;
-            $totalKebutuhan += $kebutuhan;
         }
 
         if ($totalHasil <= 0) {
@@ -593,7 +1182,7 @@ class ProduksiController extends Controller
         }
 
         $produksi = null;
-        DB::transaction(function () use ($request, $produk, $rincian, $totalKebutuhan, &$produksi) {
+        DB::transaction(function () use ($request, $produk, $rincian, $totalHasil, $totalKebutuhan, &$produksi) {
             $produksi = Produksi::create([
                 'tanggal' => $request->tanggal,
                 'jam_produksi' => $request->jam_produksi,
@@ -636,30 +1225,56 @@ class ProduksiController extends Controller
 
             $produkTerkunci = Produk::lockForUpdate()->findOrFail($produk->id);
 
-            foreach ($rincian as $varianId => $r) {
-                $varian = DetailProduk::lockForUpdate()->findOrFail($varianId);
-
-                $varian->stok = (int) $varian->stok + $r['hasil'];
-
-                if ($r['kebutuhan'] > 0) {
-                    if ($varian->stok < $r['kebutuhan']) {
-                        throw new Exception("Stok {$varian->nama_lengkap} untuk {$produkTerkunci->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+            if ($produk->is_global) {
+                $detailUtama = DetailProduk::lockForUpdate()->findOrFail($rincian[0]['detail_produk_id']);
+                $detailUtama->stok = (int) $detailUtama->stok + $totalHasil;
+                if ($totalKebutuhan > 0) {
+                    if ($detailUtama->stok < $totalKebutuhan) {
+                        throw new Exception("Stok untuk {$produkTerkunci->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
                     }
-                    $varian->stok -= $r['kebutuhan'];
+                    $detailUtama->stok -= $totalKebutuhan;
                 }
+                $detailUtama->save();
 
-                $varian->save();
+                foreach ($rincian as $r) {
+                    ProduksiVarian::create([
+                        'produksi_id' => $produksi->id,
+                        'detail_produk_id' => $r['detail_produk_id'],
+                        'varian_produk_id' => $r['varian_produk_id'],
+                        'ukuran' => $r['ukuran'],
+                        'variasi' => $r['variasi'],
+                        'kode_barcode' => $r['kode_barcode'],
+                        'harga_jual' => $r['harga_jual'],
+                        'jumlah_hasil' => $r['hasil'],
+                        'kebutuhan' => $r['kebutuhan'],
+                    ]);
+                }
+            } else {
+                foreach ($rincian as $r) {
+                    $varian = DetailProduk::lockForUpdate()->findOrFail($r['detail_produk_id']);
+                    $varian->stok = (int) $varian->stok + $r['hasil'];
 
-                ProduksiVarian::create([
-                    'produksi_id' => $produksi->id,
-                    'detail_produk_id' => $varian->id,
-                    'ukuran' => $varian->ukuran,
-                    'variasi' => $varian->variasi,
-                    'kode_barcode' => $varian->kode_barcode,
-                    'harga_jual' => $varian->harga_jual,
-                    'jumlah_hasil' => $r['hasil'],
-                    'kebutuhan' => $r['kebutuhan'],
-                ]);
+                    if ($r['kebutuhan'] > 0) {
+                        if ($varian->stok < $r['kebutuhan']) {
+                            throw new Exception("Stok {$varian->nama_lengkap} untuk {$produkTerkunci->nama_produk} tidak mencukupi untuk kebutuhan produksi.");
+                        }
+                        $varian->stok -= $r['kebutuhan'];
+                    }
+
+                    $varian->save();
+
+                    ProduksiVarian::create([
+                        'produksi_id' => $produksi->id,
+                        'detail_produk_id' => $varian->id,
+                        'varian_produk_id' => null,
+                        'ukuran' => $varian->ukuran,
+                        'variasi' => $varian->variasi,
+                        'kode_barcode' => $varian->kode_barcode,
+                        'harga_jual' => $varian->harga_jual,
+                        'jumlah_hasil' => $r['hasil'],
+                        'kebutuhan' => $r['kebutuhan'],
+                    ]);
+                }
             }
 
             $this->sinkronStokProdukDariVarian($produkTerkunci);

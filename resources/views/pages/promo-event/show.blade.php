@@ -76,7 +76,10 @@
             ->unique(fn ($n) => mb_strtolower($n))
             ->values();
 
-        $semuaDetail = $promoEvent->produk ? $promoEvent->produk->daftarDetail() : collect();
+        $isGlobal = $promoEvent->produk && $promoEvent->produk->is_global && $promoEvent->produk->jumlahVarianBersama() > 0;
+        $semuaDetail = $promoEvent->produk
+            ? ($isGlobal ? $promoEvent->produk->varianBersamaAktifTersedia() : $promoEvent->produk->daftarDetail())
+            : collect();
         $tampilUkuran = $semuaDetail->contains(fn ($d) => filled($d->ukuran));
         $tampilRasa = $semuaDetail->contains(fn ($d) => filled($d->variasi));
         $ukuransDitampilkan = $namaUnik('ukuran');

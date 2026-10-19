@@ -20,7 +20,7 @@
 {{-- Tabel Detail Produk: satu baris per kombinasi ukuran + variasi --}}
 <div id="wrapper-detail" class="md:col-span-2" x-data="formDetail()">
     <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Jenis Stok Produk <span class="text-red-500">*</span>
+        Jenis Produk <span class="text-red-500">*</span>
     </label>
 
     {{-- Pilihan mode stok --}}
@@ -30,16 +30,16 @@
             :class="mode === 'global' ? 'border-brand-500 ring-1 ring-brand-500' : 'border-gray-200 dark:border-gray-700 hover:border-brand-500'">
             <input type="radio" class="mt-1 w-4 h-4 text-brand-600 focus:ring-brand-500" :checked="mode === 'global'" @change="setMode('global')">
             <div>
-                <span class="block font-bold text-sm text-gray-900 dark:text-white">Stok Bersama</span>
-                <span class="block text-xs text-gray-500">Satu harga dan satu stok untuk seluruh produk. Varian (mis. topping) boleh ditambah, tapi harga dan stoknya tetap ikut produk ini.</span>
+                <span class="block font-bold text-sm text-gray-900 dark:text-white">Produk Tunggal</span>
+                <span class="block text-xs text-gray-500">satu harga dan satu stok. Pilihan tambahan (mis. topping) boleh ditambah, tapi harga dan stoknya ikut produk ini.</span>
             </div>
         </label>
         <label class="flex items-start gap-3 p-4 rounded-xl border bg-white dark:bg-gray-800 cursor-pointer transition"
             :class="mode === 'varian' ? 'border-brand-500 ring-1 ring-brand-500' : 'border-gray-200 dark:border-gray-700 hover:border-brand-500'">
             <input type="radio" class="mt-1 w-4 h-4 text-brand-600 focus:ring-brand-500" :checked="mode === 'varian'" @change="setMode('varian')">
             <div>
-                <span class="block font-bold text-sm text-gray-900 dark:text-white">Stok Per Varian</span>
-                <span class="block text-xs text-gray-500">Tiap kombinasi ukuran dan variasi punya kode, harga, dan stok sendiri.</span>
+                <span class="block font-bold text-sm text-gray-900 dark:text-white">Produk Bervarian</span>
+                <span class="block text-xs text-gray-500">tiap kombinasi ukuran dan variasi punya kode, harga, dan stok sendiri.</span>
             </div>
         </label>
     </div>

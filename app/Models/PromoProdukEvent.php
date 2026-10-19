@@ -50,6 +50,11 @@ class PromoProdukEvent extends Model
         return $this->belongsToMany(DetailProduk::class, 'promo_produk_event_detail_produks', 'promo_produk_event_id', 'detail_produk_id')->withTimestamps();
     }
 
+    public function varianProduks()
+    {
+        return $this->belongsToMany(VarianProduk::class, 'promo_produk_event_detail_produks', 'promo_produk_event_id', 'varian_produk_id')->withTimestamps();
+    }
+
     /**
      * ID detail produk yang dibatasi buat event ini. Kosong = gak dibatasi
      * (berlaku ke semua detail aktif produk ini).
@@ -63,6 +68,15 @@ class PromoProdukEvent extends Model
         return $detail->pluck('id')->map(fn ($id) => (int) $id)->values();
     }
 
+    public function varianIdsTerbatas(): \Illuminate\Support\Collection
+    {
+        $varian = $this->relationLoaded('varianProduks')
+            ? $this->varianProduks
+            : $this->varianProduks()->get();
+
+        return $varian->pluck('id')->map(fn ($id) => (int) $id)->values();
+    }
+
     /**
      * Detail produk aktif yang boleh dipakai buat memenuhi event ini, urut sesuai
      * daftar detail produk. Event dibatasi → hanya detail yang dipilih; tidak
@@ -74,6 +88,15 @@ class PromoProdukEvent extends Model
             return collect();
         }
 
+        if ($this->produk->is_global && $this->produk->jumlahVarianBersama() > 0) {
+            $aktif = $this->produk->varianBersamaAktifTersedia();
+            $terbatas = $this->varianIdsTerbatas();
+
+            return $terbatas->isEmpty()
+                ? $aktif->values()
+                : $aktif->filter(fn ($v) => $terbatas->contains((int) $v->id))->values();
+        }
+
         $aktif = $this->produk->daftarDetailAktif();
         $terbatas = $this->detailIdsTerbatas();
 
@@ -82,12 +105,37 @@ class PromoProdukEvent extends Model
             : $aktif->filter(fn ($d) => $terbatas->contains((int) $d->id))->values();
     }
 
+    public function berlakuUntukDetail(?DetailProduk $detail, ?VarianProduk $varianProduk = null): bool
+    {
+        if ($this->produk && $this->produk->is_global && $this->produk->jumlahVarianBersama() > 0) {
+            $terbatas = $this->varianIdsTerbatas();
+            if ($terbatas->isEmpty()) {
+                return true;
+            }
+            return $varianProduk !== null && $terbatas->contains((int) $varianProduk->id);
+        }
+
+        $terbatas = $this->detailIdsTerbatas();
+        if ($terbatas->isEmpty()) {
+            return true;
+        }
+        return $detail !== null && $terbatas->contains((int) $detail->id);
+    }
+
     /** Detail yang dipilih event ini (apa adanya, termasuk yang nonaktif) — buat halaman detail event. */
     public function detailTerpilih(): \Illuminate\Support\Collection
     {
+        if ($this->produk && $this->produk->is_global && $this->produk->jumlahVarianBersama() > 0) {
+            $terbatas = $this->varianIdsTerbatas();
+
+            return $terbatas->isEmpty()
+                ? collect()
+                : $this->produk->varianProduks()->get()->filter(fn ($v) => $terbatas->contains((int) $v->id))->values();
+        }
+
         $terbatas = $this->detailIdsTerbatas();
 
-        return $this->produk
+        return $this->produk && $terbatas->isNotEmpty()
             ? $this->produk->daftarDetail()->filter(fn ($d) => $terbatas->contains((int) $d->id))->values()
             : collect();
     }
@@ -168,7 +216,11 @@ class PromoProdukEvent extends Model
             return 0;
         }
 
-        $stokDasar = (int) $this->detailYangBerlaku()->sum('stok');
+        if ($this->produk->is_global) {
+            $stokDasar = (int) $this->produk->stok;
+        } else {
+            $stokDasar = (int) $this->detailYangBerlaku()->sum('stok');
+        }
 
         return intdiv($stokDasar, (int) $this->isi_event);
     }

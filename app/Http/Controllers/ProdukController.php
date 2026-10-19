@@ -98,7 +98,9 @@ class ProdukController extends Controller
     public function toggleStatus(Produk $produk)
     {
         try {
-            $produk->update(['status_aktif' => !$produk->status_aktif]);
+            $baru = !$produk->status_aktif;
+            $produk->update(['status_aktif' => $baru]);
+            $produk->detailProduks()->update(['status_aktif' => $baru]);
             return redirect()->back()->with('success', 'Status produk berhasil diubah.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -125,7 +127,18 @@ class ProdukController extends Controller
 
             $baris = $this->ambilBarisDetail($request);
             $varian = $this->ambilBarisVarian($request);
-            $validated['status_aktif'] = $this->statusProdukDariBaris($baris);
+            if ($request->has('status_aktif')) {
+                $statusInput = $request->boolean('status_aktif');
+                $validated['status_aktif'] = $statusInput;
+                if (!$statusInput) {
+                    $baris = $baris->map(function ($b) {
+                        $b['status_aktif'] = false;
+                        return $b;
+                    });
+                }
+            } else {
+                $validated['status_aktif'] = $this->statusProdukDariBaris($baris);
+            }
             $this->pastikanBarisValid($baris);
             $this->pastikanVarianValid($varian, $baris);
 
@@ -223,7 +236,18 @@ class ProdukController extends Controller
 
             $baris = $this->ambilBarisDetail($request);
             $varian = $this->ambilBarisVarian($request);
-            $validated['status_aktif'] = $this->statusProdukDariBaris($baris);
+            if ($request->has('status_aktif')) {
+                $statusInput = $request->boolean('status_aktif');
+                $validated['status_aktif'] = $statusInput;
+                if (!$statusInput) {
+                    $baris = $baris->map(function ($b) {
+                        $b['status_aktif'] = false;
+                        return $b;
+                    });
+                }
+            } else {
+                $validated['status_aktif'] = $this->statusProdukDariBaris($baris);
+            }
             $this->pastikanBarisValid($baris, $produk);
             $this->pastikanVarianValid($varian, $baris, $produk);
 
@@ -332,6 +356,7 @@ class ProdukController extends Controller
             'nama_produk' => 'required|max:100',
             'deskripsi' => 'nullable|string|max:1000',
             'dijual_satuan' => 'required|boolean',
+            'status_aktif' => 'nullable|boolean',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'mode_stok' => 'nullable|in:global,varian',
 

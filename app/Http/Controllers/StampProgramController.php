@@ -6,6 +6,7 @@ use App\Models\DetailProduk;
 use App\Models\Produk;
 use App\Models\StampProgram;
 use App\Models\StampProgramHadiah;
+use App\Models\VarianProduk;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -119,13 +120,23 @@ class StampProgramController extends Controller
     {
         try {
             $produks = $this->produkUntukForm();
-            $stampProgram->load('hadiah.produk', 'hadiah.detailProduk');
+            $stampProgram->load('hadiah.produk', 'hadiah.detailProduk', 'hadiah.varianProduk');
+
+            $hadiahTerpilih = $stampProgram->hadiah->map(function ($h) {
+                return [
+                    'id' => $h->id,
+                    'produk_id' => $h->produk_id,
+                    'detail_produk_id' => $h->varian_produk_id ? ('vp_' . $h->varian_produk_id) : $h->detail_produk_id,
+                    'varian_produk_id' => $h->varian_produk_id,
+                    'jumlah' => $h->jumlah,
+                ];
+            });
 
             return view('pages.stamp-program.edit', [
                 'title' => 'Edit Reward Stamp',
                 'program' => $stampProgram,
                 'produks' => $produks,
-                'hadiahTerpilih' => $stampProgram->hadiah,
+                'hadiahTerpilih' => $hadiahTerpilih,
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -257,39 +268,9 @@ class StampProgramController extends Controller
             'produk_hadiah' => 'required|array|min:1',
             'produk_hadiah.*' => 'required|exists:produks,id',
             'detail_produk_hadiah' => 'nullable|array',
-            'detail_produk_hadiah.*' => 'nullable|integer',
+            'detail_produk_hadiah.*' => 'nullable|string',
             'jumlah_hadiah' => 'required|array|min:1',
-            'jumlah_hadiah.*' => [
-                'required',
-                'integer',
-                'min:1',
-                function ($attribute, $value, $fail) use ($request) {
-                    preg_match('/\d+/', $attribute, $match);
-                    $index = $match[0] ?? null;
-                    $produkId = $request->produk_hadiah[$index] ?? null;
-
-                    if (!$produkId) {
-                        return;
-                    }
-
-                    $produk = Produk::find($produkId);
-                    $detailId = $request->detail_produk_hadiah[$index] ?? null;
-
-                    if ($detailId) {
-                        $detail = DetailProduk::where('produk_id', $produkId)->find($detailId);
-
-                        if ($produk && $detail && $value > $detail->stok) {
-                            $fail("Jumlah hadiah untuk \"{$produk->nama_produk} ({$detail->nama_lengkap})\" melebihi stok yang tersedia (stok saat ini: {$detail->stok}).");
-                        }
-
-                        return;
-                    }
-
-                    if ($produk && $value > $produk->stok) {
-                        $fail("Jumlah hadiah untuk \"{$produk->nama_produk}\" melebihi stok yang tersedia (stok saat ini: {$produk->stok}).");
-                    }
-                },
-            ],
+            'jumlah_hadiah.*' => 'required|integer|min:1',
         ], [
             'nama_program.required' => 'Nama program wajib diisi.',
             'minimal_pembelian.required' => 'Minimal pembelian per stamp wajib diisi.',
@@ -306,18 +287,21 @@ class StampProgramController extends Controller
     }
 
     /**
-     * Produk aktif + daftar varian/ukuran-nya (sama seperti form bundling), dipakai
+     * Produk aktif + daftar varian/ukuran-nya, dipakai
      * form tambah/edit supaya hadiah bisa menunjuk satu varian/ukuran tertentu.
      */
     private function produkUntukForm()
     {
         return Produk::where('status_aktif', true)
-            ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id')])
+            ->with([
+                'detailProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('urutan')->orderBy('id'),
+                'varianProduks' => fn ($q) => $q->where('status_aktif', true)->orderBy('id'),
+            ])
             ->orderBy('nama_produk')
             ->get()
             ->each(function (Produk $p) {
-                $p->setAttribute('punya_varian', $p->detailProduks->isNotEmpty());
-                $p->setAttribute('daftar_varian', $p->daftarVarianKasir());
+                $p->setAttribute('punya_varian', $p->punya_varian);
+                $p->setAttribute('daftar_varian', $p->daftarVarianPilihan());
             });
     }
 
@@ -331,7 +315,10 @@ class StampProgramController extends Controller
         $detailIds = $request->input('detail_produk_hadiah', []);
 
         $produkTerpakai = Produk::whereIn('id', $produkIds)
-            ->with(['detailProduks' => fn ($q) => $q->where('status_aktif', true)])
+            ->with([
+                'detailProduks' => fn ($q) => $q->where('status_aktif', true),
+                'varianProduks' => fn ($q) => $q->where('status_aktif', true),
+            ])
             ->get()
             ->keyBy('id');
 
@@ -344,26 +331,35 @@ class StampProgramController extends Controller
                 continue;
             }
 
-            $detailId = !empty($detailIds[$i]) ? (int) $detailIds[$i] : null;
+            $rawVal = !empty($detailIds[$i]) ? (string) $detailIds[$i] : null;
 
-            if ($produk->detailProduks->isNotEmpty()) {
-                if (!$detailId) {
+            if ($produk->punya_varian) {
+                if (!$rawVal) {
                     $errors["detail_produk_hadiah.$i"] = "Pilih varian/ukuran untuk produk \"{$produk->nama_produk}\".";
                     continue;
                 }
 
-                $detail = $produk->detailProduks->firstWhere('id', $detailId);
-                if (!$detail) {
+                if (str_starts_with($rawVal, 'vp_')) {
+                    $vpId = (int) substr($rawVal, 3);
+                    $varian = $produk->varianProduks->firstWhere('id', $vpId);
+                    $namaVarian = $varian?->nama_lengkap ?: 'Standar';
+                } else {
+                    $varian = $produk->detailProduks->firstWhere('id', (int) $rawVal);
+                    $namaVarian = $varian?->nama_lengkap ?: 'Standar';
+                }
+
+                if (!$varian) {
                     $errors["detail_produk_hadiah.$i"] = "Varian yang dipilih untuk \"{$produk->nama_produk}\" tidak valid atau sudah nonaktif.";
                     continue;
                 }
             } else {
-                $detailId = null;
+                $rawVal = null;
+                $namaVarian = null;
             }
 
-            $kunci = $produkId . '|' . ($detailId ?? 0);
+            $kunci = $produkId . '|' . ($rawVal ?? 0);
             if (isset($sudahAda[$kunci])) {
-                $nama = isset($detail) && $detailId ? "{$produk->nama_produk} ({$detail->nama_lengkap})" : $produk->nama_produk;
+                $nama = $namaVarian ? "{$produk->nama_produk} ({$namaVarian})" : $produk->nama_produk;
                 $errors["produk_hadiah.$i"] = "Hadiah \"{$nama}\" sudah dipilih di baris lain.";
             }
             $sudahAda[$kunci] = true;
@@ -380,11 +376,29 @@ class StampProgramController extends Controller
         $detailIds = $request->input('detail_produk_hadiah', []);
         $jumlahHadiah = $request->input('jumlah_hadiah', []);
 
+        $produkTerpakai = Produk::whereIn('id', $produkIds)->with('detailProduks')->get()->keyBy('id');
+
         foreach ($produkIds as $index => $produkId) {
+            $val = !empty($detailIds[$index]) ? (string) $detailIds[$index] : null;
+            $detailProdukId = null;
+            $varianProdukId = null;
+
+            if ($val) {
+                if (str_starts_with($val, 'vp_')) {
+                    $varianProdukId = (int) substr($val, 3);
+                    $detailProdukId = $produkTerpakai->get($produkId)?->daftarDetail()->first()?->id;
+                } else {
+                    $detailProdukId = (int) $val;
+                }
+            } else {
+                $detailProdukId = $produkTerpakai->get($produkId)?->daftarDetail()->first()?->id;
+            }
+
             StampProgramHadiah::create([
                 'stamp_program_id' => $program->id,
                 'produk_id' => $produkId,
-                'detail_produk_id' => !empty($detailIds[$index]) ? (int) $detailIds[$index] : null,
+                'detail_produk_id' => $detailProdukId,
+                'varian_produk_id' => $varianProdukId,
                 'jumlah' => $jumlahHadiah[$index] ?? 1,
             ]);
         }

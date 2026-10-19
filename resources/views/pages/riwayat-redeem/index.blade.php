@@ -33,17 +33,6 @@
                     {{ $ringkasan['total_voucher'] ?? 0 }}
                 </span>
             </a>
-
-            <a href="{{ route('riwayat-redeem.index', ['tipe' => 'produk']) }}"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition {{ ($tipeAktif ?? 'voucher') === 'produk' ? 'bg-amber-600 text-white shadow-xs' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                <span>Penukaran Reward (Poin)</span>
-                <span class="ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold {{ ($tipeAktif ?? 'voucher') === 'produk' ? 'bg-amber-700 text-amber-100' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300' }}">
-                    {{ $ringkasan['total_produk'] ?? 0 }}
-                </span>
-            </a>
         </div>
 
         {{-- Filter Card --}}

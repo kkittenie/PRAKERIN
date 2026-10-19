@@ -34,4 +34,9 @@ class PengaturanMember extends Model
             })
             ->first();
     }
+
+    public static function adaAturanAktif(): bool
+    {
+        return self::aktifSekarang() !== null;
+    }
 }

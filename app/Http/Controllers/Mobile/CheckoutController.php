@@ -45,7 +45,7 @@ class CheckoutController extends Controller
             $diskonProduk = MemberCart::totalDiskonProduk();
             $subtotalNet = MemberCart::subtotal();
 
-            $voucherAktif = RewardKatalog::with('produks')
+            $voucherAktif = RewardKatalog::with(['produks', 'rewardProduks'])
                 ->where('jenis', 'voucher')
                 ->where('status_aktif', true)
                 ->where(function ($q) use ($member) {
@@ -229,7 +229,7 @@ class CheckoutController extends Controller
             }
 
             $member = Auth::guard('member')->user();
-            $voucher = RewardKatalog::with('produks')->find($validated['voucher_id']);
+            $voucher = RewardKatalog::with(['produks', 'rewardProduks'])->find($validated['voucher_id']);
 
             if (! $voucher || ! $voucher->berhakDigunakan($member)) {
                 return back()->with('error', 'Voucher tidak dapat digunakan atau batas penggunaan telah tercapai.');
@@ -290,7 +290,7 @@ class CheckoutController extends Controller
                 }
 
                 if ($voucherId) {
-                    $voucher = RewardKatalog::with('produks')
+                    $voucher = RewardKatalog::with(['produks', 'rewardProduks'])
                         ->where('id', $voucherId)
                         ->where('jenis', 'voucher')
                         ->lockForUpdate()
@@ -461,10 +461,16 @@ class CheckoutController extends Controller
                                 ->where('produk_id', $produk->id)
                                 ->first();
                             if ($varianBersama) {
-                                $ukuranCatat = $varianBersama->ukuran;
-                                $variasiCatat = $varianBersama->variasi;
-                                $kodeCatat = $varianBersama->kode_produk;
+                                $ukuranCatat = $varianBersama->ukuran ?: $ukuranCatat;
+                                $variasiCatat = $varianBersama->variasi ?: $variasiCatat;
+                                $kodeCatat = $varianBersama->kode_produk ?: $kodeCatat;
                             }
+                        }
+                        if (empty($variasiCatat) && !empty($varianRasaItem)) {
+                            $variasiCatat = $varianRasaItem;
+                        }
+                        if (empty($ukuranCatat) && !empty($ukuranItem)) {
+                            $ukuranCatat = $ukuranItem;
                         }
 
                         $jumlahDibutuhkan = (int) $item['jumlah'];
@@ -656,6 +662,19 @@ class CheckoutController extends Controller
 
                 $perluProduksi = $varian->perlu_diproduksi || $stokEfektif <= 0;
 
+                $ukuranCatat = $bundlingItem->ukuran ?: $varian->ukuran;
+                $variasiCatat = $bundlingItem->varian_rasa ?: $varian->variasi;
+                $kodeCatat = $varian->kode_barcode;
+
+                if ($bundlingItem->varian_produk_id) {
+                    $vp = \App\Models\VarianProduk::find($bundlingItem->varian_produk_id);
+                    if ($vp) {
+                        $ukuranCatat = $vp->ukuran ?: $ukuranCatat;
+                        $variasiCatat = $vp->variasi ?: $variasiCatat;
+                        $kodeCatat = $vp->kode_produk ?: $kodeCatat;
+                    }
+                }
+
                 if ($perluProduksi) {
                     // Semua masuk produksi
                     DetailTransaksi::create([
@@ -664,8 +683,9 @@ class CheckoutController extends Controller
                         'detail_produk_id' => $varian->id,
                         'bundling_id' => $bundling->id,
                         'nama_produk' => $produk->nama_produk,
-                        'ukuran' => $varian->ukuran,
-                        'varian_rasa' => $varian->variasi,
+                        'ukuran' => $ukuranCatat,
+                        'varian_rasa' => $variasiCatat,
+                        'kode_barcode' => $kodeCatat,
                         'harga_satuan' => 0,
                         'jumlah' => $totalDibutuhkan,
                         'catatan' => $catatanProduk !== '' ? $catatanProduk : null,
@@ -685,8 +705,9 @@ class CheckoutController extends Controller
                             'detail_produk_id' => $varian->id,
                             'bundling_id' => $bundling->id,
                             'nama_produk' => $produk->nama_produk,
-                            'ukuran' => $varian->ukuran,
-                            'varian_rasa' => $varian->variasi,
+                            'ukuran' => $ukuranCatat,
+                            'varian_rasa' => $variasiCatat,
+                            'kode_barcode' => $kodeCatat,
                             'harga_satuan' => 0,
                             'jumlah' => $stokReady,
                             'catatan' => $catatanProduk !== '' ? $catatanProduk : null,
@@ -702,8 +723,9 @@ class CheckoutController extends Controller
                             'detail_produk_id' => $varian->id,
                             'bundling_id' => $bundling->id,
                             'nama_produk' => $produk->nama_produk,
-                            'ukuran' => $varian->ukuran,
-                            'varian_rasa' => $varian->variasi,
+                            'ukuran' => $ukuranCatat,
+                            'varian_rasa' => $variasiCatat,
+                            'kode_barcode' => $kodeCatat,
                             'harga_satuan' => 0,
                             'jumlah' => $stokProduksi,
                             'catatan' => $catatanProduk !== '' ? $catatanProduk : null,
@@ -920,7 +942,13 @@ class CheckoutController extends Controller
         $produkIds = $voucher->produks->pluck('id')->values()->all();
         if (! empty($produkIds)) {
             $adaProduk = collect($items)
-                ->contains(fn ($item) => in_array($item['produk_id'] ?? null, $produkIds, true));
+                ->contains(function ($item) use ($voucher) {
+                    return $voucher->berlakuUntukItem(
+                        (int) ($item['produk_id'] ?? 0),
+                        !empty($item['detail_produk_id']) ? (int) $item['detail_produk_id'] : null,
+                        !empty($item['varian_produk_id']) ? (int) $item['varian_produk_id'] : null
+                    );
+                });
 
             if (! $adaProduk) {
                 return [
@@ -928,7 +956,7 @@ class CheckoutController extends Controller
                     'alasan' => 'produk_tidak_cocok',
                     'min_pembelian' => $minBelanja,
                     'kurang' => 0,
-                    'pesan' => 'Hanya berlaku untuk produk tertentu (belum ada di keranjang)',
+                    'pesan' => 'Hanya berlaku untuk produk/varian tertentu (belum ada di keranjang)',
                     'diskon' => 0,
                 ];
             }
@@ -966,8 +994,14 @@ class CheckoutController extends Controller
 
         $basis = $subtotal;
         if (! empty($produkIds)) {
-            $basis = collect($items)
-                ->filter(fn ($item) => in_array($item['produk_id'] ?? null, $produkIds, true))
+            $basis = (float) collect($items)
+                ->filter(function ($item) use ($voucher) {
+                    return $voucher->berlakuUntukItem(
+                        (int) ($item['produk_id'] ?? 0),
+                        !empty($item['detail_produk_id']) ? (int) $item['detail_produk_id'] : null,
+                        !empty($item['varian_produk_id']) ? (int) $item['varian_produk_id'] : null
+                    );
+                })
                 ->sum(fn ($item) => $item['harga_satuan'] * $item['jumlah']);
         }
 

@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\Produk;
 use App\Models\RewardKatalog;
+use App\Models\RewardKatalogProduk;
 use App\Models\VoucherUsage;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -51,12 +53,15 @@ class RewardVoucherController extends Controller
     public function create()
     {
         try {
-            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
+            $produks = Produk::with(['detailProduks', 'varianProduks'])
+                ->where('status_aktif', true)
+                ->orderBy('nama_produk', 'asc')
+                ->get();
             $members = Member::orderBy('nama', 'asc')->get();
 
             return view('pages.reward-voucher.create', [
                 'title' => 'Tambah Reward Voucher',
-                'produks' => $produks,
+                'produks' => $this->dataProdukUntukForm($produks),
                 'members' => $members,
             ]);
         } catch (\Throwable $e) {
@@ -69,7 +74,7 @@ class RewardVoucherController extends Controller
         try {
             abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
-            $rewardVoucher->load(['produks.kategori', 'members', 'usages.member', 'usages.transaksi']);
+            $rewardVoucher->load(['produks.kategori', 'rewardProduks.detailProduk', 'rewardProduks.varianProduk', 'members', 'usages.member', 'usages.transaksi']);
 
             return view('pages.reward-voucher.show', [
                 'title' => 'Detail Reward Voucher',
@@ -115,7 +120,9 @@ class RewardVoucherController extends Controller
                 'gambar' => $pathGambar,
             ]);
 
-            $voucher->produks()->sync($validated['produk_ids']);
+            $ukuranNames = $request->input('ukuran_names', []);
+            $rasaNames = $request->input('rasa_names', []);
+            $this->simpanTargetProduk($voucher, $validated['produk_ids'], $ukuranNames, $rasaNames);
 
             if ($validated['target_member'] === 'khusus' && !empty($validated['member_ids'])) {
                 $voucher->members()->sync($validated['member_ids']);
@@ -138,18 +145,48 @@ class RewardVoucherController extends Controller
         try {
             abort_unless($rewardVoucher->jenis === 'voucher', 404);
 
-            $produks = Produk::where('status_aktif', true)->orderBy('nama_produk', 'asc')->get();
+            $rewardVoucher->load(['produks', 'rewardProduks.detailProduk', 'rewardProduks.varianProduk']);
+
+            $produks = Produk::with(['detailProduks', 'varianProduks'])
+                ->where('status_aktif', true)
+                ->orderBy('nama_produk', 'asc')
+                ->get();
             $members = Member::orderBy('nama', 'asc')->get();
-            $selectedProduks = $rewardVoucher->produks->pluck('id')->toArray();
+            $selectedProduks = $rewardVoucher->produks->pluck('id')->unique()->values()->toArray();
             $selectedMembers = $rewardVoucher->members->pluck('id')->toArray();
+
+            $ukuranTerpilihPerProduk = [];
+            $rasaTerpilihPerProduk = [];
+
+            foreach ($rewardVoucher->rewardProduks as $rp) {
+                $pid = $rp->produk_id;
+                $uk = $rp->detailProduk?->ukuran ?: $rp->varianProduk?->ukuran;
+                $rs = $rp->detailProduk?->variasi ?: $rp->varianProduk?->variasi;
+
+                if ($uk) {
+                    $ukuranTerpilihPerProduk[$pid][] = $uk;
+                }
+                if ($rs) {
+                    $rasaTerpilihPerProduk[$pid][] = $rs;
+                }
+            }
+
+            foreach ($ukuranTerpilihPerProduk as $pid => $list) {
+                $ukuranTerpilihPerProduk[$pid] = array_values(array_unique($list));
+            }
+            foreach ($rasaTerpilihPerProduk as $pid => $list) {
+                $rasaTerpilihPerProduk[$pid] = array_values(array_unique($list));
+            }
 
             return view('pages.reward-voucher.edit', [
                 'title' => 'Edit Reward Voucher',
                 'voucher' => $rewardVoucher,
-                'produks' => $produks,
+                'produks' => $this->dataProdukUntukForm($produks),
                 'members' => $members,
                 'selectedProduks' => $selectedProduks,
                 'selectedMembers' => $selectedMembers,
+                'ukuranTerpilihPerProduk' => $ukuranTerpilihPerProduk,
+                'rasaTerpilihPerProduk' => $rasaTerpilihPerProduk,
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -187,7 +224,9 @@ class RewardVoucherController extends Controller
 
             $rewardVoucher->update($dataUpdate);
 
-            $rewardVoucher->produks()->sync($validated['produk_ids']);
+            $ukuranNames = $request->input('ukuran_names', []);
+            $rasaNames = $request->input('rasa_names', []);
+            $this->simpanTargetProduk($rewardVoucher, $validated['produk_ids'], $ukuranNames, $rasaNames);
 
             if ($validated['target_member'] === 'khusus') {
                 $rewardVoucher->members()->sync($validated['member_ids'] ?? []);
@@ -323,5 +362,151 @@ class RewardVoucherController extends Controller
             'persentase.required_if' => 'Persentase potongan wajib diisi untuk voucher jenis persentase.',
             'produk_ids.required' => 'Pilih minimal satu produk yang mendapat reward voucher ini.',
         ]);
+    }
+
+    private function dataProdukUntukForm(Collection $produks): Collection
+    {
+        $unikNama = fn ($c) => $c->filter()->map(fn ($x) => trim((string) $x))->filter()->unique()->values()->map(fn ($nama) => ['nama' => $nama]);
+
+        return $produks->map(function (Produk $p) use ($unikNama) {
+            if ($p->is_global && $p->jumlahVarianBersama() > 0) {
+                $varianBersama = $p->varianBersamaAktifTersedia();
+                $ukurans = $unikNama($varianBersama->pluck('ukuran'));
+                $rasas = $unikNama($varianBersama->pluck('variasi'));
+
+                return [
+                    'id' => $p->id,
+                    'nama_produk' => $p->nama_produk,
+                    'kode_produk' => $p->kode_produk,
+                    'foto' => $p->foto,
+                    'harga_jual' => (float) $p->harga_jual,
+                    'punya_ukuran' => $ukurans->isNotEmpty(),
+                    'ukurans' => $ukurans,
+                    'punya_varian_rasa' => $rasas->isNotEmpty(),
+                    'rasas' => $rasas,
+                ];
+            }
+
+            $detail = $p->detailProduks ?? collect();
+            if ($detail->count() <= 1 && ! $detail->contains(fn ($d) => filled($d->ukuran) || filled($d->variasi))) {
+                $ukurans = collect();
+                $rasas = collect();
+            } else {
+                $ukurans = $unikNama($detail->pluck('ukuran'));
+                $rasas = $unikNama($detail->pluck('variasi'));
+            }
+
+            return [
+                'id' => $p->id,
+                'nama_produk' => $p->nama_produk,
+                'kode_produk' => $p->kode_produk,
+                'foto' => $p->foto,
+                'harga_jual' => (float) $p->harga_jual,
+                'punya_ukuran' => $ukurans->isNotEmpty(),
+                'ukurans' => $ukurans,
+                'punya_varian_rasa' => $rasas->isNotEmpty(),
+                'rasas' => $rasas,
+            ];
+        })->values();
+    }
+
+    private function resolveDetailIdsPerProduk(array $produkIds, array $ukuranPerProduk, array $rasaPerProduk): array
+    {
+        $produkIds = array_map('intval', $produkIds);
+        $produks = Produk::with(['detailProduks', 'varianProduks'])->whereIn('id', $produkIds)->get()->keyBy('id');
+
+        $norm = fn ($x) => mb_strtolower(trim((string) $x));
+        $daftarNama = fn ($daftar) => collect(is_array($daftar) ? $daftar : [])
+            ->map($norm)
+            ->filter()
+            ->values();
+
+        $detailHasil = [];
+        $varianHasil = [];
+        foreach ($produkIds as $produkId) {
+            $produk = $produks->get($produkId);
+            if (!$produk) {
+                continue;
+            }
+
+            $u = $daftarNama($ukuranPerProduk[$produkId] ?? []);
+            $r = $daftarNama($rasaPerProduk[$produkId] ?? []);
+            if ($u->isEmpty() && $r->isEmpty()) {
+                continue;
+            }
+
+            if ($produk->is_global && $produk->jumlahVarianBersama() > 0) {
+                $vIds = $produk->varianProduks
+                    ->filter(fn ($v) => ($u->isEmpty() || $u->contains($norm($v->ukuran)))
+                        && ($r->isEmpty() || $r->contains($norm($v->variasi))))
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all();
+
+                if (!empty($vIds)) {
+                    $varianHasil[$produkId] = $vIds;
+                }
+            } else {
+                $dIds = $produk->detailProduks
+                    ->filter(fn ($d) => ($u->isEmpty() || $u->contains($norm($d->ukuran)))
+                        && ($r->isEmpty() || $r->contains($norm($d->variasi))))
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values()
+                    ->all();
+
+                if (!empty($dIds)) {
+                    $detailHasil[$produkId] = $dIds;
+                }
+            }
+        }
+
+        return [
+            'detail_ids' => $detailHasil,
+            'varian_ids' => $varianHasil,
+        ];
+    }
+
+    private function simpanTargetProduk(RewardKatalog $voucher, array $produkIds, array $ukuranPerProduk, array $rasaPerProduk): void
+    {
+        RewardKatalogProduk::where('reward_katalog_id', $voucher->id)->delete();
+
+        $target = $this->resolveDetailIdsPerProduk($produkIds, $ukuranPerProduk, $rasaPerProduk);
+        $detailMap = $target['detail_ids'];
+        $varianMap = $target['varian_ids'];
+
+        foreach ($produkIds as $pId) {
+            $pId = (int) $pId;
+            $hasDetails = !empty($detailMap[$pId]);
+            $hasVarians = !empty($varianMap[$pId]);
+
+            if ($hasDetails) {
+                foreach ($detailMap[$pId] as $dId) {
+                    RewardKatalogProduk::create([
+                        'reward_katalog_id' => $voucher->id,
+                        'produk_id' => $pId,
+                        'detail_produk_id' => $dId,
+                        'varian_produk_id' => null,
+                    ]);
+                }
+            } elseif ($hasVarians) {
+                foreach ($varianMap[$pId] as $vId) {
+                    RewardKatalogProduk::create([
+                        'reward_katalog_id' => $voucher->id,
+                        'produk_id' => $pId,
+                        'detail_produk_id' => null,
+                        'varian_produk_id' => $vId,
+                    ]);
+                }
+            } else {
+                RewardKatalogProduk::create([
+                    'reward_katalog_id' => $voucher->id,
+                    'produk_id' => $pId,
+                    'detail_produk_id' => null,
+                    'varian_produk_id' => null,
+                ]);
+            }
+        }
     }
 }

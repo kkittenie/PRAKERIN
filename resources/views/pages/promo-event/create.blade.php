@@ -10,7 +10,9 @@
 
 <script>
     window.__promoEventProduks = {{ \Illuminate\Support\Js::from($produks->map(function ($p) {
-        $detail = $p->daftarDetail();
+        $detail = ($p->is_global && $p->jumlahVarianBersama() > 0)
+            ? $p->varianBersamaAktifTersedia()
+            : $p->daftarDetail();
         $ukurans = $detail
             ->filter(fn ($v) => !empty($v->ukuran))
             ->map(fn ($v) => ['nama' => $v->ukuran])

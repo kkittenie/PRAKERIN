@@ -95,6 +95,27 @@
                     @enderror
                 </div>
 
+                {{-- Status Aktif --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Status Produk
+                    </label>
+
+                    <div class="flex items-center gap-3 h-12">
+                        <input type="hidden" name="status_aktif" value="0">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="status_aktif" value="1" class="sr-only peer"
+                                {{ old('status_aktif', '1') == '1' ? 'checked' : '' }}>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-brand-500"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">Aktif</span>
+                        </label>
+                    </div>
+                    <small class="text-gray-500 dark:text-gray-400">Jika dinonaktifkan, produk tidak akan muncul di menu kasir maupun aplikasi member.</small>
+                    @error('status_aktif')
+                        <small class="text-red-500 block">{{ $message }}</small>
+                    @enderror
+                </div>
+
                 {{-- Detail Produk (kode, ukuran, variasi, harga, stok per baris) --}}
                 @include('pages.produk.partials.form-varian', [
                     'detailBaris' => $detailBaris,

@@ -192,7 +192,7 @@ class TransaksiKasirController extends Controller
                 ->get()
                 ->each(function (Produk $produk) {
                     // Detail produk (tabel detail_produks) yang dipakai kasir.
-                    $produk->setAttribute('punya_varian', $produk->detailProduks->isNotEmpty());
+                    $produk->setAttribute('punya_varian', $produk->punya_varian);
                     $produk->setAttribute('daftar_varian', $produk->daftarVarianKasir());
                 });
 
@@ -337,6 +337,19 @@ class TransaksiKasirController extends Controller
                     $stokProduksi = $totalDibutuhkan;
                 }
 
+                $ukuranCatat = $bundlingItem->ukuran ?: $varian->ukuran;
+                $variasiCatat = $bundlingItem->varian_rasa ?: $varian->variasi;
+                $kodeCatat = $varian->kode_barcode;
+
+                if ($bundlingItem->varian_produk_id) {
+                    $vp = \App\Models\VarianProduk::find($bundlingItem->varian_produk_id);
+                    if ($vp) {
+                        $ukuranCatat = $vp->ukuran ?: $ukuranCatat;
+                        $variasiCatat = $vp->variasi ?: $variasiCatat;
+                        $kodeCatat = $vp->kode_produk ?: $kodeCatat;
+                    }
+                }
+
                 // Bagian ready: kurangi stok varian
                 if ($stokReady > 0) {
                     $varian->stok = $stokTersedia - $stokReady;
@@ -351,8 +364,9 @@ class TransaksiKasirController extends Controller
                         'detail_produk_id' => $varian->id,
                         'bundling_id' => $bundling->id,
                         'nama_produk' => $produk->nama_produk,
-                        'ukuran' => $varian->ukuran,
-                        'varian_rasa' => $varian->variasi,
+                        'ukuran' => $ukuranCatat,
+                        'varian_rasa' => $variasiCatat,
+                        'kode_barcode' => $kodeCatat,
                         'harga_satuan' => 0,
                         'jumlah' => $stokReady,
                         'catatan' => $catatanProduk,
@@ -369,8 +383,9 @@ class TransaksiKasirController extends Controller
                         'detail_produk_id' => $varian->id,
                         'bundling_id' => $bundling->id,
                         'nama_produk' => $produk->nama_produk,
-                        'ukuran' => $varian->ukuran,
-                        'varian_rasa' => $varian->variasi,
+                        'ukuran' => $ukuranCatat,
+                        'varian_rasa' => $variasiCatat,
+                        'kode_barcode' => $kodeCatat,
                         'harga_satuan' => 0,
                         'jumlah' => $stokProduksi,
                         'catatan' => $catatanProduk,
@@ -620,8 +635,9 @@ class TransaksiKasirController extends Controller
         $namaLengkapCatat = $detailProduk->nama_lengkap;
 
         if ($produk->jumlahVarianBersama() > 0) {
+            $vpId = (int) str_replace('vp_', '', (string) ($item['varian_produk_id'] ?? 0));
             $varianBersama = $produk->varianProduks()
-                ->where('id', (int) ($item['varian_produk_id'] ?? 0))
+                ->where('id', $vpId)
                 ->where('status_aktif', true)
                 ->first();
 
@@ -819,8 +835,18 @@ class TransaksiKasirController extends Controller
                     continue;
                 }
 
-                if (DetailProduk::where('produk_id', (int) ($item['produk_id'] ?? 0))->exists()) {
-                    throw new \Exception('Pilih ukuran/variasi produk terlebih dahulu.');
+                $produkCek = Produk::with(['detailProduks', 'varianProduks'])->find($item['produk_id'] ?? 0);
+                if ($produkCek) {
+                    if (!$produkCek->punya_varian) {
+                        $detailUtama = $produkCek->daftarDetail()->first();
+                        if ($detailUtama) {
+                            $item['varian_id'] = $detailUtama->id;
+                            $this->prosesItemVarianTransaksi($transaksi, $item);
+                            continue;
+                        }
+                    } else {
+                        throw new \Exception("Pilih ukuran/variasi untuk produk '{$produkCek->nama_produk}' terlebih dahulu.");
+                    }
                 }
 
                  $produk = Produk::with(['detailProduks'])->findOrFail($item['produk_id']);
@@ -1259,8 +1285,18 @@ class TransaksiKasirController extends Controller
                     continue;
                 }
 
-                if (DetailProduk::where('produk_id', (int) ($item['produk_id'] ?? 0))->exists()) {
-                    throw new \Exception('Pilih ukuran/variasi produk terlebih dahulu.');
+                $produkCek = Produk::with(['detailProduks', 'varianProduks'])->find($item['produk_id'] ?? 0);
+                if ($produkCek) {
+                    if (!$produkCek->punya_varian) {
+                        $detailUtama = $produkCek->daftarDetail()->first();
+                        if ($detailUtama) {
+                            $item['varian_id'] = $detailUtama->id;
+                            $this->prosesItemVarianTransaksi($transaksi, $item);
+                            continue;
+                        }
+                    } else {
+                        throw new \Exception("Pilih ukuran/variasi untuk produk '{$produkCek->nama_produk}' terlebih dahulu.");
+                    }
                 }
 
                  $produk = Produk::with(['detailProduks'])->findOrFail($item['produk_id']);

@@ -52,12 +52,16 @@ class StrukHelper
      *   paket ternyata tidak punya baris isi, baris paketnya dicetak supaya tidak hilang.
      * - Produk yang sama digabung dan jumlahnya dijumlahkan.
      * - Catatan paket dan catatan per produk digabung (mis. "angetin", "slice").
-     * - Produk Stok Bersama yang punya varian: varian TIDAK dipisah (satu baris nama produk saja),
-     *   dan hanya yang perlu diproduksi yang dicetak. Yang stoknya masih ada tidak masuk tiket.
+    /**
+     * Data lengkap untuk Tiket Dapur (jenis 'etalase'):
+     * 1. 'produksi': Item yang habis / sedang diproduksi / perlu dibuat oleh dapur (di bagian atas).
+     *    Untuk produk Stok Bersama, yang dibuat adalah produk dasarnya (misal: "Donat Polos").
+     * 2. 'pesanan': Rincian seluruh pesanan yang perlu disiapkan/diberi topping (di bagian bawah),
+     *    lengkap dengan variasi/toppingnya (misal: "Donat Polos (Matcha) x2", "Donat Polos (Tiramisu) x2").
      *
-     * @return Collection<int, object{nama_produk: string, jumlah: int, catatan: string}>
+     * @return array{produksi: Collection<int, object{nama_produk: string, jumlah: int, catatan: string}>, pesanan: Collection<int, object{nama_produk: string, jumlah: int, catatan: string}>}
      */
-    public static function itemsEtalase(Transaksi $transaksi): Collection
+    public static function dataTiketDapur(Transaksi $transaksi): array
     {
         $detail = $transaksi->detailTransaksi;
 
@@ -77,7 +81,7 @@ class StrukHelper
             ->pluck('promo_event_id')
             ->unique();
 
-        // Produk Stok Bersama yang punya varian (diingat per produk supaya tidak query berulang).
+        // Cache pengecekan apakah sebuah produk adalah Stok Bersama yang memiliki varian
         $cacheStokBersama = [];
         $stokBersama = function ($item) use (&$cacheStokBersama): bool {
             if (! $item->produk_id) {
@@ -85,17 +89,50 @@ class StrukHelper
             }
 
             return $cacheStokBersama[$item->produk_id]
-                ??= (bool) ($item->produk && $item->produk->jumlahVarianBersama() > 0);
+                ??= (bool) ($item->produk && $item->produk->is_global && $item->produk->jumlahVarianBersama() > 0);
         };
 
-        return $detail
-            ->filter(function ($item) use ($bundlingPunyaIsi, $promoEventPunyaIsi, $stokBersama) {
-                if ((int) $item->jumlah <= 0) {
-                    return false;
-                }
+        $formatCatatan = function ($item) use ($headerBundling, $headerPromoEvent) {
+            $catatanPaket = null;
+            if ($item->bundling_id && $headerBundling->has($item->bundling_id)) {
+                $catatanPaket = $headerBundling->get($item->bundling_id)->catatan;
+            } elseif ($item->promo_event_id && $headerPromoEvent->has($item->promo_event_id)) {
+                $catatanPaket = $headerPromoEvent->get($item->promo_event_id)->catatan;
+            }
 
-                // Stok Bersama: yang stoknya masih ada (ready) tidak perlu dibuat, jadi tidak masuk tiket.
-                if ($stokBersama($item) && ! $item->butuh_produksi) {
+            return collect([$catatanPaket, $item->catatan])
+                ->filter(fn ($c) => filled($c))
+                ->unique()
+                ->implode(' | ');
+        };
+
+        // Di bagian PERLU DIBUAT: produk stok bersama tidak perlu ada keterangan topping (cuma produk dasarnya).
+        $formatNamaProdukProduksi = function ($item) use ($stokBersama) {
+            if ($stokBersama($item)) {
+                $ukuran = $item->ukuran ?: optional($item->detailProduk)->ukuran;
+                return $item->nama_produk . ($ukuran ? " ({$ukuran})" : '');
+            }
+
+            $ukuran = $item->ukuran ?: optional($item->detailProduk)->ukuran;
+            $rasa = $item->varian_rasa ?: optional($item->detailProduk)->variasi;
+            $varian = array_filter([$ukuran, $rasa]);
+
+            return $item->nama_produk . (! empty($varian) ? ' (' . implode(' - ', $varian) . ')' : '');
+        };
+
+        // Di bagian RINCIAN PESANAN / TOPPING: seluruh varian / topping dicantumkan lengkap & dipisah per topping berbeda.
+        $formatNamaProdukPesanan = function ($item) {
+            $ukuran = $item->ukuran ?: optional($item->detailProduk)->ukuran;
+            $rasa = $item->varian_rasa ?: optional($item->detailProduk)->variasi;
+            $varian = array_filter([$ukuran, $rasa]);
+
+            return $item->nama_produk . (! empty($varian) ? ' (' . implode(' - ', $varian) . ')' : '');
+        };
+
+        // 1. BAGIAN ATAS: PRODUKSI (Item yang butuh diproduksi / perlu dibuat)
+        $produksi = $detail
+            ->filter(function ($item) use ($bundlingPunyaIsi, $promoEventPunyaIsi) {
+                if ((int) $item->jumlah <= 0 || ! $item->butuh_produksi) {
                     return false;
                 }
 
@@ -108,25 +145,11 @@ class StrukHelper
                     ? ! $bundlingPunyaIsi->contains($item->bundling_id)
                     : ! $promoEventPunyaIsi->contains($item->promo_event_id);
             })
-            ->map(function ($item) use ($headerBundling, $headerPromoEvent, $stokBersama) {
-                $catatanPaket = null;
-                if ($item->bundling_id && $headerBundling->has($item->bundling_id)) {
-                    $catatanPaket = $headerBundling->get($item->bundling_id)->catatan;
-                } elseif ($item->promo_event_id && $headerPromoEvent->has($item->promo_event_id)) {
-                    $catatanPaket = $headerPromoEvent->get($item->promo_event_id)->catatan;
-                }
-
-                $ukuran = $item->ukuran ?: optional($item->detailProduk)->ukuran;
-                $rasa = $item->varian_rasa ?: optional($item->detailProduk)->variasi;
-                $varian = $stokBersama($item) ? [] : array_filter([$ukuran, $rasa]);
-
+            ->map(function ($item) use ($formatCatatan, $formatNamaProdukProduksi) {
                 return (object) [
-                    'nama_produk' => $item->nama_produk . (! empty($varian) ? ' (' . implode(' - ', $varian) . ')' : ''),
+                    'nama_produk' => $formatNamaProdukProduksi($item),
                     'jumlah' => (int) $item->jumlah,
-                    'catatan' => collect([$catatanPaket, $item->catatan])
-                        ->filter(fn ($c) => filled($c))
-                        ->unique()
-                        ->implode(' | '),
+                    'catatan' => $formatCatatan($item),
                 ];
             })
             ->groupBy('nama_produk')
@@ -136,6 +159,52 @@ class StrukHelper
                 'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
             ])
             ->values();
+
+        // 2. BAGIAN BAWAH: RINCIAN PESANAN (Seluruh item pesanan dengan varian/topping lengkap dipisah)
+        $pesanan = $detail
+            ->filter(function ($item) use ($bundlingPunyaIsi, $promoEventPunyaIsi) {
+                if ((int) $item->jumlah <= 0) {
+                    return false;
+                }
+
+                $barisPaket = ($item->bundling_id || $item->promo_event_id) && is_null($item->produk_id);
+                if (! $barisPaket) {
+                    return true;
+                }
+
+                return $item->bundling_id
+                    ? ! $bundlingPunyaIsi->contains($item->bundling_id)
+                    : ! $promoEventPunyaIsi->contains($item->promo_event_id);
+            })
+            ->map(function ($item) use ($formatCatatan, $formatNamaProdukPesanan) {
+                return (object) [
+                    'nama_produk' => $formatNamaProdukPesanan($item),
+                    'jumlah' => (int) $item->jumlah,
+                    'catatan' => $formatCatatan($item),
+                ];
+            })
+            ->groupBy('nama_produk')
+            ->map(fn ($group, $nama) => (object) [
+                'nama_produk' => $nama,
+                'jumlah' => (int) $group->sum('jumlah'),
+                'catatan' => $group->pluck('catatan')->filter()->unique()->implode('; '),
+            ])
+            ->values();
+
+        return [
+            'produksi' => $produksi,
+            'pesanan' => $pesanan,
+        ];
+    }
+
+    /**
+     * Daftar seluruh produk pesanan untuk Tiket Dapur (kompatibilitas backwards).
+     *
+     * @return Collection<int, object{nama_produk: string, jumlah: int, catatan: string}>
+     */
+    public static function itemsEtalase(Transaksi $transaksi): Collection
+    {
+        return self::dataTiketDapur($transaksi)['pesanan'];
     }
 
     /**
