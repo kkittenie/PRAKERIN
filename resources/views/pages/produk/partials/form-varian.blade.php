@@ -63,7 +63,7 @@
             </template>
             <input type="file" name="foto" accept="image/png,image/jpeg" class="hidden" @change="pilihFotoUtama($event)">
         </label>
-        <span class="mt-1 block text-xs text-gray-400 dark:text-gray-500" x-show="fotoUtama">Klik foto untuk menggantinya. Kalau tidak memilih file baru, foto ini tetap dipakai.</span>
+        <span class="mt-1 block text-xs text-gray-400 dark:text-gray-500" x-show="fotoUtama">Klik foto untuk menggantinya.</span>
         @error('foto')
             <small class="text-red-500">{{ $message }}</small>
         @enderror
@@ -83,7 +83,7 @@
                         <th class="py-2 px-3">Harga Jual</th>
                         <th class="py-2 px-3 w-24">Stok</th>
                         <th class="py-2 px-3 w-28">Stok Minimum</th>
-                        <th class="py-2 px-3 w-16">Aktif</th>
+                        <th class="py-2 px-3 w-16">Status</th>
                         <th class="py-2 px-3 w-12" x-show="mode === 'varian'"></th>
                     </tr>
                 </thead>
@@ -166,16 +166,6 @@
                     </div>
 
                     <div>
-                        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                        <label class="relative inline-flex items-center cursor-pointer mt-2" title="Aktifkan/nonaktifkan produk ini">
-                            <input type="checkbox" class="sr-only peer" :checked="item.status_aktif" @change="item.status_aktif = $event.target.checked">
-                            <div class="w-9 h-5 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-4"></div>
-                            <span class="ml-3 text-sm text-gray-600 dark:text-gray-400" x-text="item.status_aktif ? 'Aktif' : 'Nonaktif'"></span>
-                        </label>
-                        <input type="hidden" :name="'detail_baris[' + index + '][status_aktif]'" :value="item.status_aktif ? 1 : 0">
-                    </div>
-
-                    <div>
                         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Harga Modal <span class="text-red-500">*</span></label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-xs">Rp</span>
@@ -212,7 +202,7 @@
         <div class="mt-4">
             <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Varian Produk (opsional)</label>
             <span class="mb-2 block text-xs text-gray-400 dark:text-gray-500">
-                Tambahkan pilihan seperti topping. Semua varian memakai harga dan stok produk di atas, jadi stok berkurang dari produk ini, bukan per varian.
+                Tambahkan pilihan seperti topping. Semua varian memakai harga dan stok produk di atas. Stok berkurang per stok produk ini, bukan per varian.
             </span>
 
             <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
@@ -223,7 +213,7 @@
                             <th class="py-2 px-3 w-48">Kode</th>
                             <th class="py-2 px-3">Varian</th>
                             <th class="py-2 px-3">Ukuran</th>
-                            <th class="py-2 px-3 w-16">Aktif</th>
+                            <th class="py-2 px-3 w-16">Status</th>
                             <th class="py-2 px-3 w-12"></th>
                         </tr>
                     </thead>

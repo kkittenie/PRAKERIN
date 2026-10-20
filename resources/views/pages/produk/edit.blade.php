@@ -68,7 +68,7 @@
                     <textarea
                         name="deskripsi"
                         rows="3"
-                        placeholder="Deskripsi singkat produk, tampil di Detail Produk Member App"
+                        placeholder="Deskripsi singkat produk"
                         class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">{{ old('deskripsi', $produk->deskripsi) }}</textarea>
 
                     @error('deskripsi')
