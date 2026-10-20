@@ -2,6 +2,67 @@
 
 @section('content')
 
+{{-- Cropper.js CDN --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+<script>
+    function profilFotoCrop() {
+        return {
+            fotoPreview: null,
+            showCropModal: false,
+            cropperInstance: null,
+
+            pilihFoto(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.showCropModal = true;
+                    this.$nextTick(() => {
+                        const img = this.$refs.cropImage;
+                        img.src = e.target.result;
+                        setTimeout(() => {
+                            if (this.cropperInstance) this.cropperInstance.destroy();
+                            this.cropperInstance = new Cropper(img, {
+                                aspectRatio: 1,
+                                viewMode: 1,
+                                autoCropArea: 1,
+                                responsive: true,
+                                background: false,
+                            });
+                        }, 150);
+                    });
+                };
+                reader.readAsDataURL(file);
+            },
+
+            terapkanCrop() {
+                if (!this.cropperInstance) return;
+                this.cropperInstance.getCroppedCanvas({ maxWidth: 800, maxHeight: 800 }).toBlob((blob) => {
+                    if (!blob) return;
+                    const file = new File([blob], 'foto-profil.jpg', { type: 'image/jpeg' });
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    this.$refs.fotoInput.files = dt.files;
+                    this.fotoPreview = URL.createObjectURL(blob);
+                    this.showCropModal = false;
+                    this.cropperInstance.destroy();
+                    this.cropperInstance = null;
+                }, 'image/jpeg', 0.92);
+            },
+
+            batalCrop() {
+                if (this.cropperInstance) {
+                    this.cropperInstance.destroy();
+                    this.cropperInstance = null;
+                }
+                this.$refs.fotoTrigger.value = '';
+                this.showCropModal = false;
+            }
+        };
+    }
+</script>
+
     {{-- ========================================== --}}
     {{-- MOBILE VIEW (< 1024px) - 100% UNTOUCHED ORIGINAL --}}
     {{-- ========================================== --}}
@@ -24,7 +85,7 @@
         @enderror
 
         <form method="POST" action="{{ route('member.profil.update') }}" enctype="multipart/form-data"
-            class="mt-5 flex flex-1 flex-col overflow-hidden" x-data="{ uploadingFoto: false }">
+            class="mt-5 flex flex-1 flex-col overflow-hidden" x-data="profilFotoCrop()">
             @csrf
 
             <div class="flex-none">
@@ -38,34 +99,35 @@
                     <div class="absolute left-1/2 top-full h-24 w-24 -translate-x-1/2 -translate-y-1/2">
                         <div class="relative h-full w-full">
                             <span class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-gray-200 ring-4 ring-white">
-                                @if ($member->foto)
-                                    <img src="{{ asset('storage/' . $member->foto) }}" alt="{{ $member->nama }}"
-                                        class="h-full w-full object-cover">
-                                @else
-                                    <svg viewBox="0 0 24 24" fill="none" class="h-10 w-10 text-gray-400">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                @endif
-
-                                <span x-show="uploadingFoto" x-cloak
-                                    class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
-                                    <svg class="h-6 w-6 animate-spin text-white" viewBox="0 0 24 24" fill="none">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
-                                        <path class="opacity-90" d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
-                                    </svg>
+                                {{-- Preview foto hasil crop --}}
+                                <img x-show="fotoPreview" x-cloak :src="fotoPreview" alt="Preview"
+                                    class="h-full w-full object-cover">
+                                {{-- Foto asli / placeholder --}}
+                                <span x-show="!fotoPreview" class="flex h-full w-full items-center justify-center">
+                                    @if ($member->foto)
+                                        <img src="{{ asset('storage/' . $member->foto) }}" alt="{{ $member->nama }}"
+                                            class="h-full w-full object-cover">
+                                    @else
+                                        <svg viewBox="0 0 24 24" fill="none" class="h-10 w-10 text-gray-400">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    @endif
                                 </span>
                             </span>
-                            <label for="foto-mob"
+                            <label for="foto-trigger-mob"
                                 class="absolute -bottom-1 left-1/2 flex h-9 w-9 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border-2 border-brand-800 bg-white text-brand-800 active:scale-95">
                                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 pointer-events-none">
                                     <path d="m16.5 3.5 4 4L8 20l-4.5 1L4.5 16.5 16.5 3.5Z" stroke="currentColor"
                                         stroke-width="1.8" stroke-linejoin="round" />
                                 </svg>
-                                <input type="file" name="foto" id="foto-mob" accept="image/*"
+                                <input type="file" id="foto-trigger-mob" accept="image/*"
                                     class="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                                    @change="if ($event.target.files.length) { uploadingFoto = true; $event.target.form.submit(); }">
+                                    x-ref="fotoTrigger"
+                                    @change="pilihFoto($event)">
                             </label>
+                            {{-- Hidden file input untuk menyimpan hasil crop --}}
+                            <input type="file" name="foto" x-ref="fotoInput" class="hidden">
                         </div>
                     </div>
                 </div>
@@ -146,6 +208,34 @@
                     Save
                 </button>
             </div>
+
+            {{-- Crop Modal (teleport ke body supaya tidak terpotong overflow-hidden) --}}
+            <template x-teleport="body">
+                <div x-show="showCropModal" x-cloak
+                    class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                    x-transition.opacity.duration.200ms>
+                    <div @click.away="batalCrop()"
+                        class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+                        <div class="p-4 border-b border-gray-100">
+                            <h3 class="font-extrabold text-gray-900 text-sm">Crop Foto Profil</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Atur area foto yang ingin ditampilkan</p>
+                        </div>
+                        <div class="bg-gray-100" style="max-height: 50vh; overflow: hidden;">
+                            <img x-ref="cropImage" src="" alt="Crop" style="display: block; max-width: 100%; max-height: 50vh;">
+                        </div>
+                        <div class="p-4 border-t border-gray-100 flex justify-end gap-3">
+                            <button type="button" @click="batalCrop()"
+                                class="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-xl transition text-gray-700">
+                                Batal
+                            </button>
+                            <button type="button" @click="terapkanCrop()"
+                                class="px-4 py-2.5 bg-brand-800 hover:bg-brand-900 text-white font-bold text-xs rounded-xl transition shadow-sm">
+                                Terapkan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
         </form>
 
         <div x-show="modalHapusAkunTerbuka" x-cloak x-transition
@@ -201,7 +291,7 @@
         @enderror
 
         <form method="POST" action="{{ route('member.profil.update') }}" enctype="multipart/form-data"
-            class="flex flex-col" x-data="{ uploadingFoto: false }">
+            class="flex flex-col" x-data="profilFotoCrop()">
             @csrf
 
             @php $kelengkapan = $member->kelengkapan_profil; @endphp
@@ -210,35 +300,36 @@
             <div class="flex items-center gap-6 px-8 py-6 bg-gradient-to-b from-brand-50/60 to-transparent border-b border-gray-100">
                 <div class="relative shrink-0">
                     <span class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-gray-200 ring-4 ring-white shadow-md">
-                        @if ($member->foto)
-                            <img src="{{ asset('storage/' . $member->foto) }}" alt="{{ $member->nama }}"
-                                class="h-full w-full object-cover">
-                        @else
-                            <svg viewBox="0 0 24 24" fill="none" class="h-10 w-10 text-gray-400">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        @endif
-
-                        <span x-show="uploadingFoto" x-cloak
-                            class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
-                            <svg class="h-6 w-6 animate-spin text-white" viewBox="0 0 24 24" fill="none">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
-                                <path class="opacity-90" d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
-                            </svg>
+                        {{-- Preview foto hasil crop --}}
+                        <img x-show="fotoPreview" x-cloak :src="fotoPreview" alt="Preview"
+                            class="h-full w-full object-cover">
+                        {{-- Foto asli / placeholder --}}
+                        <span x-show="!fotoPreview" class="flex h-full w-full items-center justify-center">
+                            @if ($member->foto)
+                                <img src="{{ asset('storage/' . $member->foto) }}" alt="{{ $member->nama }}"
+                                    class="h-full w-full object-cover">
+                            @else
+                                <svg viewBox="0 0 24 24" fill="none" class="h-10 w-10 text-gray-400">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            @endif
                         </span>
                     </span>
-                    <label for="foto-desk"
+                    <label for="foto-trigger-desk"
                         class="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-brand-800 bg-white text-brand-800 hover:bg-brand-50 transition active:scale-95 shadow-sm"
                         title="Ubah Foto Profil">
                         <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5 pointer-events-none">
                             <path d="m16.5 3.5 4 4L8 20l-4.5 1L4.5 16.5 16.5 3.5Z" stroke="currentColor"
                                 stroke-width="2" stroke-linejoin="round" />
                         </svg>
-                        <input type="file" name="foto" id="foto-desk" accept="image/*"
+                        <input type="file" id="foto-trigger-desk" accept="image/*"
                             class="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                            @change="if ($event.target.files.length) { uploadingFoto = true; $event.target.form.submit(); }">
+                            x-ref="fotoTrigger"
+                            @change="pilihFoto($event)">
                     </label>
+                    {{-- Hidden file input untuk menyimpan hasil crop --}}
+                    <input type="file" name="foto" x-ref="fotoInput" class="hidden">
                 </div>
 
                 <div class="flex-1 space-y-1.5">
@@ -324,6 +415,34 @@
                     Simpan Perubahan
                 </button>
             </div>
+
+            {{-- Crop Modal (teleport ke body supaya tidak terpotong overflow-hidden) --}}
+            <template x-teleport="body">
+                <div x-show="showCropModal" x-cloak
+                    class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                    x-transition.opacity.duration.200ms>
+                    <div @click.away="batalCrop()"
+                        class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div class="p-5 border-b border-gray-100">
+                            <h3 class="font-extrabold text-gray-900 text-sm">Crop Foto Profil</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Atur area foto yang ingin ditampilkan</p>
+                        </div>
+                        <div class="bg-gray-100" style="max-height: 50vh; overflow: hidden;">
+                            <img x-ref="cropImage" src="" alt="Crop" style="display: block; max-width: 100%; max-height: 50vh;">
+                        </div>
+                        <div class="p-5 border-t border-gray-100 flex justify-end gap-3">
+                            <button type="button" @click="batalCrop()"
+                                class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-xl transition text-gray-700">
+                                Batal
+                            </button>
+                            <button type="button" @click="terapkanCrop()"
+                                class="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white font-bold text-xs rounded-xl transition shadow-sm">
+                                Terapkan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
         </form>
 
         <div x-show="modalHapusAkunTerbuka" x-cloak x-transition
