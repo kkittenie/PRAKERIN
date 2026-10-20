@@ -44,14 +44,15 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
     Route::middleware(['auth'])->group(function () {
 
     // Notifikasi Real-time
-    Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::middleware('permission:lihat_notifikasi|tambah_notifikasi|edit_notifikasi|hapus_notifikasi')->group(function () {
+        Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifikasi/baca-semua', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+        Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    });
     Route::get('/notifikasi/unread-json', [NotificationController::class, 'unreadJson'])->name('notifications.unread-json');
-    Route::post('/notifikasi/baca-semua', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
 
     // Dashboard Utama (Beranda)
     Route::get('/admin', [DashboardController::class, 'index'])
-        ->middleware('permission:lihat_dashboard')
         ->name('dashboard');
 
     // Transaksi Kasir (POS)
@@ -155,9 +156,11 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
     });
 
     // Konten Statis
-    Route::get('/konten-statis', [KontenStatisController::class, 'index'])->name('konten-statis.index');
-    Route::get('/konten-statis/{slug}/edit', [KontenStatisController::class, 'edit'])->name('konten-statis.edit');
-    Route::put('/konten-statis/{slug}', [KontenStatisController::class, 'update'])->name('konten-statis.update');
+    Route::middleware('permission:lihat_konten_statis|tambah_konten_statis|edit_konten_statis|hapus_konten_statis')->group(function () {
+        Route::get('/konten-statis', [KontenStatisController::class, 'index'])->name('konten-statis.index');
+        Route::get('/konten-statis/{slug}/edit', [KontenStatisController::class, 'edit'])->name('konten-statis.edit');
+        Route::put('/konten-statis/{slug}', [KontenStatisController::class, 'update'])->name('konten-statis.update');
+    });
 
     Route::patch('/produk/{produk}/toggle-status', [ProdukController::class, 'toggleStatus'])->name('produk.toggle-status');
 

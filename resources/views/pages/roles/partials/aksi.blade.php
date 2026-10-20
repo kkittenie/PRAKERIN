@@ -1,8 +1,15 @@
 <div class="inline-flex items-center gap-0.5 justify-end">
     @can('edit_role')
-        <a href="{{ route('roles.edit', $item->id) }}" title="Edit" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition">
+        <button type="button"
+            title="Edit Role & Hak Akses"
+            class="btn-edit-role inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition cursor-pointer"
+            data-id="{{ $item->id }}"
+            data-name="{{ $item->name }}"
+            data-bawaan="{{ in_array($item->name, ['Admin', 'Kasir', 'Pegawai']) ? '1' : '0' }}"
+            data-permissions="{{ json_encode($item->permissions->pluck('name')->toArray()) }}"
+            data-action="{{ route('roles.update', $item->id) }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-[19px] h-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-        </a>
+        </button>
     @endcan
     @can('hapus_role')
         <form action="{{ route('roles.destroy', $item->id) }}" method="POST" class="inline">

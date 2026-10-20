@@ -11,42 +11,42 @@ class MenuHelper
                 'name' => 'Dashboard',
                 'icon' => 'dashboard',
                 'subItems' => [
-                    ['name' => 'Penjualan', 'path' => '/admin', 'permission' => 'lihat_dashboard'],
+                    ['name' => 'Penjualan', 'path' => '/admin', 'permission' => ['lihat_dashboard']],
                 ],
             ],
             [
                 'name' => 'Manajemen Akses',
                 'icon' => 'manajemen-akses',
                 'subItems' => [
-                    ['name' => 'Kelola Role', 'path' => '/roles', 'permission' => 'lihat_role'],
-                    ['name' => 'Kelola Pengguna', 'path' => '/users', 'permission' => 'lihat_user'],
-                    ['name' => 'Kelola Pegawai', 'path' => '/pegawai', 'permission' => 'lihat_pegawai'],
+                    ['name' => 'Kelola Role', 'path' => '/roles', 'permission' => ['lihat_role', 'tambah_role', 'edit_role', 'hapus_role']],
+                    ['name' => 'Kelola Pengguna', 'path' => '/users', 'permission' => ['lihat_user', 'tambah_user', 'edit_user', 'hapus_user']],
+                    ['name' => 'Kelola Pegawai', 'path' => '/pegawai', 'permission' => ['lihat_pegawai', 'tambah_pegawai', 'edit_pegawai', 'hapus_pegawai']],
                 ],
             ],
             [
                 'name' => 'Data Master',
                 'icon' => 'data-master',
                 'subItems' => [
-                    ['name' => 'Kategori Produk', 'path' => '/kategori-produk', 'permission' => 'lihat_kategori_produk'],
-                    ['name' => 'Produk', 'path' => '/produk', 'permission' => 'lihat_produk'],
-                    ['name' => 'Bundling', 'path' => '/bundling', 'permission' => 'lihat_bundling'],
-                    ['name' => 'Satuan', 'path' => '/satuan', 'permission' => 'lihat_satuan'],
-                    ['name' => 'Bahan Baku', 'path' => '/bahan-baku', 'permission' => 'lihat_stok'],
-                    ['name' => 'Banner', 'path' => '/banner', 'permission' => 'lihat_banner'],
-                    ['name' => 'Slide Welcome', 'path' => '/welcome-slide', 'permission' => 'lihat_welcome_slide'],
-                    ['name' => 'QRIS Pembayaran', 'path' => '/qris', 'permission' => 'lihat_qris'],
-                    ['name' => 'Pengaturan Pajak', 'path' => '/pengaturan-pajak', 'permission' => 'lihat_pajak'],
-                    ['name' => 'Konten Statis', 'path' => '/konten-statis'],
+                    ['name' => 'Kategori Produk', 'path' => '/kategori-produk', 'permission' => ['lihat_kategori_produk', 'tambah_kategori_produk', 'edit_kategori_produk', 'hapus_kategori_produk']],
+                    ['name' => 'Produk', 'path' => '/produk', 'permission' => ['lihat_produk', 'tambah_produk', 'edit_produk', 'hapus_produk']],
+                    ['name' => 'Bundling', 'path' => '/bundling', 'permission' => ['lihat_bundling', 'tambah_bundling', 'edit_bundling', 'hapus_bundling']],
+                    ['name' => 'Satuan', 'path' => '/satuan', 'permission' => ['lihat_satuan', 'tambah_satuan', 'edit_satuan', 'hapus_satuan']],
+                    ['name' => 'Bahan Baku', 'path' => '/bahan-baku', 'permission' => ['lihat_stok', 'tambah_stok', 'edit_stok', 'hapus_stok']],
+                    ['name' => 'Banner', 'path' => '/banner', 'permission' => ['lihat_banner', 'tambah_banner', 'edit_banner', 'hapus_banner']],
+                    ['name' => 'Slide Welcome', 'path' => '/welcome-slide', 'permission' => ['lihat_welcome_slide', 'tambah_welcome_slide', 'edit_welcome_slide', 'hapus_welcome_slide']],
+                    ['name' => 'QRIS Pembayaran', 'path' => '/qris', 'permission' => ['lihat_qris', 'tambah_qris', 'edit_qris', 'hapus_qris']],
+                    ['name' => 'Pengaturan Pajak', 'path' => '/pengaturan-pajak', 'permission' => ['lihat_pajak', 'tambah_pajak', 'edit_pajak', 'hapus_pajak']],
+                    ['name' => 'Konten Statis', 'path' => '/konten-statis', 'permission' => ['lihat_konten_statis', 'tambah_konten_statis', 'edit_konten_statis', 'hapus_konten_statis']],
                 ]
             ],
             [
                 'name' => 'Manajemen Produk',
                 'icon' => 'box',
                 'subItems' => [
-                    ['name' => 'Transaksi Bahan Baku', 'path' => '/transaksi-bahan-baku', 'permission' => 'lihat_stok'],
-                    ['name' => 'Produksi', 'path' => '/produksi', 'permission' => 'lihat_produksi'],
-                    ['name' => 'Potongan Harga', 'path' => '/promo', 'permission' => 'lihat_promo'],
-                    ['name' => 'Promo Produk', 'path' => '/promo-event', 'permission' => 'lihat_promo_event'],
+                    ['name' => 'Transaksi Bahan Baku', 'path' => '/transaksi-bahan-baku', 'permission' => ['lihat_stok', 'tambah_stok', 'edit_stok', 'hapus_stok']],
+                    ['name' => 'Produksi', 'path' => '/produksi', 'permission' => ['lihat_produksi', 'tambah_produksi', 'edit_produksi', 'hapus_produksi']],
+                    ['name' => 'Potongan Harga', 'path' => '/promo', 'permission' => ['lihat_promo', 'tambah_promo', 'edit_promo', 'hapus_promo']],
+                    ['name' => 'Promo Produk', 'path' => '/promo-event', 'permission' => ['lihat_promo_event', 'tambah_promo_event', 'edit_promo_event', 'hapus_promo_event']],
                 ],
             ],
 
@@ -54,18 +54,18 @@ class MenuHelper
                 'name' => 'Kelola Member',
                 'icon' => 'member',
                 'subItems' => [
-                    ['name' => 'Member', 'path' => '/member', 'permission' => 'lihat_member'],
-                    ['name' => 'Pengaturan Member', 'path' => '/pengaturan-member', 'permission' => 'lihat_member'],
-                    ['name' => 'Badge', 'path' => '/member-level', 'permission' => 'lihat_member'],
+                    ['name' => 'Member', 'path' => '/member', 'permission' => ['lihat_member', 'tambah_member', 'edit_member', 'hapus_member']],
+                    ['name' => 'Pengaturan Member', 'path' => '/pengaturan-member', 'permission' => ['lihat_member', 'tambah_member', 'edit_member', 'hapus_member']],
+                    ['name' => 'Badge', 'path' => '/member-level', 'permission' => ['lihat_member', 'tambah_member', 'edit_member', 'hapus_member']],
                 ],
             ],
             [
                 'name' => 'Reward',
                 'icon' => 'reward',
                 'subItems' => [
-                    ['name' => 'Reward Stamp', 'path' => '/stamp-program', 'permission' => 'lihat_reward'],
-                    ['name' => 'Reward Voucher', 'path' => '/reward-voucher', 'permission' => 'lihat_reward'],
-                    ['name' => 'Riwayat Penggunaan Voucher', 'path' => '/riwayat-redeem', 'permission' => 'lihat_reward'],
+                    ['name' => 'Reward Stamp', 'path' => '/stamp-program', 'permission' => ['lihat_reward', 'tambah_reward', 'edit_reward', 'hapus_reward']],
+                    ['name' => 'Reward Voucher', 'path' => '/reward-voucher', 'permission' => ['lihat_reward', 'tambah_reward', 'edit_reward', 'hapus_reward']],
+                    ['name' => 'Riwayat Penggunaan Voucher', 'path' => '/riwayat-redeem', 'permission' => ['lihat_reward', 'tambah_reward', 'edit_reward', 'hapus_reward']],
                 ],
             ],
 
@@ -73,18 +73,18 @@ class MenuHelper
                 'icon' => 'ecommerce',
                 'name' => 'Transaksi',
                 'subItems' => [
-                    ['name' => 'Kasir', 'path' => '/transaksi', 'permission' => 'lihat_transaksi'],
-                    ['name' => 'Pesanan', 'path' => '/pesanan-pickup', 'permission' => 'lihat_pesanan_pickup'],
+                    ['name' => 'Kasir', 'path' => '/transaksi', 'permission' => ['lihat_transaksi', 'tambah_transaksi', 'edit_transaksi', 'hapus_transaksi']],
+                    ['name' => 'Pesanan', 'path' => '/pesanan-pickup', 'permission' => ['lihat_pesanan_pickup', 'edit_pesanan_pickup', 'tambah_pesanan_pickup', 'hapus_pesanan_pickup']],
                 ],
             ],
             [
                 'name' => 'Laporan',
                 'icon' => 'laporan',
                 'subItems' => [
-                    ['name' => 'Histori Transaksi', 'path' => '/histori-transaksi', 'permission' => 'lihat_laporan'],
-                    ['name' => 'Notifikasi', 'path' => '/notifikasi'],
-                    ['name' => 'Laporan Penjualan', 'path' => '/laporan-penjualan', 'permission' => 'lihat_laporan'],
-                    ['name' => 'Activity Log', 'path' => '/activity-Log', 'permission' => 'lihat_activity_log'],
+                    ['name' => 'Histori Transaksi', 'path' => '/histori-transaksi', 'permission' => ['lihat_laporan', 'tambah_laporan', 'edit_laporan', 'hapus_laporan']],
+                    ['name' => 'Notifikasi', 'path' => '/notifikasi', 'permission' => ['lihat_notifikasi', 'tambah_notifikasi', 'edit_notifikasi', 'hapus_notifikasi']],
+                    ['name' => 'Laporan Penjualan', 'path' => '/laporan-penjualan', 'permission' => ['lihat_laporan', 'tambah_laporan', 'edit_laporan', 'hapus_laporan']],
+                    ['name' => 'Activity Log', 'path' => '/activity-Log', 'permission' => ['lihat_activity_log', 'hapus_activity_log']],
                 ],
             ],
         ];
@@ -97,17 +97,34 @@ class MenuHelper
 
     /**
      * Filter menu berdasarkan permission user yang sedang login.
-     * Sub-item tanpa key 'permission' dianggap boleh diakses semua orang yang login.
+     * Jika permission berupa array, user cukup memiliki salah satu permission untuk melihat sub-menu.
+     * Jika semua permission pada fitur/modul tersebut tidak dimiliki, sub-menu otomatis disembunyikan.
      */
     protected static function filterByPermission(array $items)
     {
         $user = auth()->user();
+        if (!$user) {
+            return [];
+        }
 
         return collect($items)
             ->map(function ($item) use ($user) {
                 if (isset($item['subItems'])) {
                     $item['subItems'] = collect($item['subItems'])
-                        ->filter(fn($sub) => !isset($sub['permission']) || $user->can($sub['permission']))
+                        ->filter(function ($sub) use ($user) {
+                            if (!isset($sub['permission'])) {
+                                return true;
+                            }
+
+                            $perms = (array) $sub['permission'];
+                            foreach ($perms as $p) {
+                                if ($user->can($p)) {
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        })
                         ->values()
                         ->all();
                 }

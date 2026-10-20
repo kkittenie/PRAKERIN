@@ -15,7 +15,7 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $modules = [
-            'dashboard', 'user', 'role', 'kategori_produk', 'produk', 'stok', 'satuan', 'produksi', 'bundling', 'pegawai', 'member', 'promo', 'promo_event', 'transaksi', 'laporan', 'activity_log', 'banner', 'pajak', 'reward', 'welcome_slide', 'qris',
+            'dashboard', 'user', 'role', 'kategori_produk', 'produk', 'stok', 'satuan', 'produksi', 'bundling', 'pegawai', 'member', 'promo', 'promo_event', 'transaksi', 'pesanan_pickup', 'laporan', 'activity_log', 'banner', 'pajak', 'reward', 'welcome_slide', 'qris', 'konten_statis', 'notifikasi',
         ];
         $actions = ['lihat', 'tambah', 'edit', 'hapus'];
 
@@ -26,11 +26,6 @@ class PermissionSeeder extends Seeder
                     'guard_name' => 'web',
                 ]);
             }
-        }
-
-        // Permission untuk menu "Pesanan Pick Up" (pesanan dari Member App).
-        foreach (['lihat_pesanan_pickup', 'edit_pesanan_pickup'] as $nama) {
-            Permission::firstOrCreate(['name' => $nama, 'guard_name' => 'web']);
         }
 
         $admin = Role::firstOrCreate(['name' => 'Admin']);

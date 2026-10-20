@@ -14,6 +14,21 @@ class DashboardController extends Controller
     public function index()
     {
         try {
+            $user = auth()->user();
+            if ($user && !$user->can('lihat_dashboard')) {
+                foreach (\App\Helpers\MenuHelper::getMainNavItems() as $group) {
+                    foreach ($group['subItems'] as $sub) {
+                        $perms = (array) ($sub['permission'] ?? []);
+                        foreach ($perms as $p) {
+                            if ($user->can($p)) {
+                                return redirect($sub['path']);
+                            }
+                        }
+                    }
+                }
+                abort(403, 'Akun Anda tidak memiliki hak akses ke halaman dashboard.');
+            }
+
             $hariIni = Carbon::today();
             $bulanIni = $hariIni->month;
             $tahunIni = $hariIni->year;
