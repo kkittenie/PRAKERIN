@@ -118,7 +118,7 @@
             <div x-show="habis" x-cloak class="flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800 border border-amber-100">
                 @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
                 <p class="text-[11px] font-semibold leading-relaxed">
-                    Waktu tunggu bisa lebih lama dari biasanya.
+                    Produk ini stoknya sedang kurang/habis, pesanan harus dibuat dulu — waktu tunggu bisa lebih lama dari biasanya.
                 </p>
             </div>
 
