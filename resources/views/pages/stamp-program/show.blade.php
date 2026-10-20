@@ -40,7 +40,7 @@
 
             <div class="md:col-span-2">
                 <p class="text-sm text-gray-500 dark:text-gray-400">Deskripsi</p>
-                <p class="font-semibold text-gray-800 dark:text-white">
+                <p class="font-semibold text-gray-800 dark:text-white whitespace-pre-line">
                     {{ $program->deskripsi ?: '-' }}
                 </p>
             </div>

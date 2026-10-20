@@ -162,24 +162,24 @@
                 </div>
             </div>
 
-            @if ($habis)
-                <div class="mt-3 flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">
-                    @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
-                    <p class="text-[11px] font-semibold leading-relaxed">
-                        Salah satu isi paket stoknya sedang kurang/habis, pesanan harus dibuat dulu — waktu tunggu bisa lebih lama dari biasanya.
-                    </p>
-                </div>
-            @endif
         </div>
 
         {{-- Right column: deskripsi, varian/isi paket & order form --}}
-        <div class="mt-5 lg:col-span-7 lg:mt-0 space-y-4">
+        <div class="mt-2 lg:col-span-7 lg:mt-0 space-y-4">
 
             @if ($bundling->deskripsi)
                 <div class="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-gray-50/50 lg:p-4">
                     <h3 class="hidden lg:block text-xs font-bold text-gray-900 mb-1">Deskripsi Paket</h3>
-                    <p class="text-xs leading-relaxed text-gray-500 lg:text-gray-600">
+                    <p class="text-xs leading-relaxed text-gray-500 lg:text-gray-600 whitespace-pre-line">
                         {{ $bundling->deskripsi }}
+                    </p>
+                </div>
+            @endif
+
+            @if ($habis)
+                <div class="flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">
+                    @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
+                    <p class="text-[11px] font-semibold leading-relaxed">Salah satu produk pada bundling sedang dibuat — waktu tunggu bisa lebih lama dari biasanya.
                     </p>
                 </div>
             @endif

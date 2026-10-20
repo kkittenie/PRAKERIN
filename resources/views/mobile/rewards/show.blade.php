@@ -74,7 +74,7 @@
                         </span>
                     @endif
                 </div>
-                <p class="mt-2 text-theme-sm leading-relaxed text-gray-500">
+                <p class="mt-2 text-theme-sm leading-relaxed text-gray-500 whitespace-pre-line">
                     {{ $voucher->deskripsi ?: 'Gunakan voucher diskon ini saat checkout atau di kasir outlet.' }}
                 </p>
             </div>
@@ -191,7 +191,7 @@
             <div class="col-span-7 space-y-6">
                 <div>
                     <h2 class="text-2xl font-black text-gray-900 tracking-tight">{{ $voucher->nama }}</h2>
-                    <p class="mt-2 text-xs leading-relaxed text-gray-500">{{ $voucher->deskripsi ?: 'Gunakan voucher diskon ini saat checkout pesanan online atau transaksi offline di kasir.' }}</p>
+                    <p class="mt-2 text-xs leading-relaxed text-gray-500 whitespace-pre-line">{{ $voucher->deskripsi ?: 'Gunakan voucher diskon ini saat checkout pesanan online atau transaksi offline di kasir.' }}</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">

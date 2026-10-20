@@ -165,7 +165,7 @@
 
                 <div id="slide-text" class="w-full px-6 pt-2 pb-1 text-center">
                     <h2 id="slide-title" class="text-xl font-extrabold tracking-tight text-[#5a3c27]">{{ $daftarSlide[0]['judul'] }}</h2>
-                    <p id="slide-desc" class="mt-1 mb-4 text-xs leading-relaxed text-gray-500 max-w-xs mx-auto">{{ $daftarSlide[0]['deskripsi'] }}</p>
+                    <p id="slide-desc" class="mt-1 mb-4 text-xs leading-relaxed text-gray-500 max-w-xs mx-auto whitespace-pre-line">{{ $daftarSlide[0]['deskripsi'] }}</p>
                 </div>
             </div>
 

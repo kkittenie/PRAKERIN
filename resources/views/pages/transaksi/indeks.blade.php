@@ -723,9 +723,6 @@
                         <div class="flex items-center justify-between mb-2">
                             <label
                                 class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider">Voucher</label>
-                            <span x-show="!memberIdTerpilih" x-cloak
-                                class="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">Non
-                                Member</span>
                         </div>
 
                         <!-- Voucher belum dipilih -->
@@ -939,7 +936,7 @@
                             <div class="bg-rose-700 dark:bg-rose-900 text-white p-4 flex items-center justify-between shrink-0">
                                 <div>
                                     <h3 class="font-extrabold text-sm">Gunakan Voucher</h3>
-                                    <p class="text-white/80 text-xs mt-0.5" x-text="memberTerpilih ? memberTerpilih.nama : 'Pembeli Umum (Non Member)'"></p>
+                                    <p class="text-white/80 text-xs mt-0.5" x-text="memberTerpilih ? memberTerpilih.nama : 'Pembeli Umum'"></p>
                                 </div>
                                 <button @click="tutupModalVoucher()"
                                     class="text-white hover:text-gray-200 font-bold text-lg leading-none">&times;</button>

@@ -165,7 +165,8 @@
                             {{-- Alasan pembatalan --}}
                             <template x-if="detailData.status_pesanan === 'dibatalkan' && detailData.alasan_pembatalan">
                                 <div class="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 rounded-xl p-3">
-                                    <span class="font-bold">Alasan dibatalkan:</span> <span x-text="detailData.alasan_pembatalan"></span>
+                                    <span class="font-bold">Alasan dibatalkan:</span>
+                                    <div class="whitespace-pre-line mt-1" x-text="detailData.alasan_pembatalan"></div>
                                 </div>
                             </template>
 
@@ -195,9 +196,11 @@
                                 <div class="border border-gray-100 dark:border-gray-800 rounded-xl p-3 space-y-2">
                                     <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Bukti Pembayaran QRIS</h4>
                                     <template x-if="detailData.catatan_penolakan && !detailData.bukti_pembayaran">
-                                        <p class="text-xs text-red-500 bg-red-50 dark:bg-red-500/10 rounded-lg p-2">
-                                            Ditolak sebelumnya: <span x-text="detailData.catatan_penolakan"></span> — menunggu member upload ulang.
-                                        </p>
+                                        <div class="text-xs text-red-500 bg-red-50 dark:bg-red-500/10 rounded-lg p-2.5">
+                                            <span class="font-semibold">Ditolak sebelumnya:</span>
+                                            <div class="whitespace-pre-line mt-0.5" x-text="detailData.catatan_penolakan"></div>
+                                            <span class="block mt-1 text-[11px] text-red-400">— menunggu member upload ulang.</span>
+                                        </div>
                                     </template>
                                     <template x-if="!detailData.bukti_pembayaran">
                                         <p class="text-xs text-gray-400">Member belum mengupload bukti pembayaran.</p>

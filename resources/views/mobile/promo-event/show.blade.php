@@ -105,7 +105,7 @@
         </div>
 
         {{-- Right column: catatan & order form --}}
-        <div class="mt-5 lg:col-span-7 lg:mt-0 space-y-4">
+        <div class="mt-2 lg:col-span-7 lg:mt-0 space-y-4">
 
             {{-- Banner: promo event berakhir selagi dibuka --}}
             <div x-show="berakhir" x-cloak class="flex items-start gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-rose-800 border border-rose-100">
@@ -115,10 +115,19 @@
                 </p>
             </div>
 
+            @if ($promoEvent->produk && $promoEvent->produk->deskripsi)
+                <div class="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-gray-50/50 lg:p-4">
+                    <h3 class="hidden lg:block text-xs font-bold text-gray-900 mb-1">Deskripsi Produk</h3>
+                    <p class="text-xs leading-relaxed text-gray-500 lg:text-gray-600 whitespace-pre-line">
+                        {{ $promoEvent->produk->deskripsi }}
+                    </p>
+                </div>
+            @endif
+
             <div x-show="habis" x-cloak class="flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800 border border-amber-100">
                 @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
                 <p class="text-[11px] font-semibold leading-relaxed">
-                    Produk ini stoknya sedang kurang/habis, pesanan harus dibuat dulu — waktu tunggu bisa lebih lama dari biasanya.
+                    Produk sedang dibuat — waktu tunggu bisa lebih lama dari biasanya.
                 </p>
             </div>
 

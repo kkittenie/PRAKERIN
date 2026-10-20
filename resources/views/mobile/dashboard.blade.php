@@ -198,7 +198,7 @@
                                 @include('mobile.components.icon-gift', ['class' => 'h-5 w-5'])
                             </span>
                             <span class="min-w-0">
-                                <span class="block truncate text-xs font-bold text-gray-900">Tukar Poin</span>
+                                <span class="block truncate text-xs font-bold text-gray-900">Voucher</span>
                                 <span class="block truncate text-[11px] text-gray-400">Lihat katalog</span>
                             </span>
                         </a>
@@ -208,7 +208,7 @@
                             </span>
                             <span class="min-w-0">
                                 <span class="block truncate text-xs font-bold text-gray-900">Riwayat</span>
-                                <span class="block truncate text-[11px] text-gray-400">Poin & redeem</span>
+                                <span class="block truncate text-[11px] text-gray-400">Order & Stamp</span>
                             </span>
                         </a>
                     </div>

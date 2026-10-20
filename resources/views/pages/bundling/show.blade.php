@@ -104,7 +104,7 @@
                         <p class="text-sm text-gray-500 dark:text-gray-400">
                             Deskripsi
                         </p>
-                        <p class="text-gray-800 dark:text-gray-200">
+                        <p class="text-gray-800 dark:text-gray-200 whitespace-pre-line">
                             {{ $bundling->deskripsi ?: '-' }}
                         </p>
                     </div>

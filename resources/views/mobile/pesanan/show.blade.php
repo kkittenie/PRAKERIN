@@ -109,7 +109,7 @@
                         <p class="text-xs font-bold text-red-600">Pesanan Dibatalkan</p>
                         <p class="mt-1 text-[11px] text-red-400">{{ $transaksi->kode_transaksi }}</p>
                         @if ($transaksi->alasan_pembatalan)
-                            <p class="mt-3 text-[11px] text-red-600">
+                            <p class="mt-3 text-[11px] text-red-600 whitespace-pre-line">
                                 <span class="font-bold">Alasan:</span> {{ $transaksi->alasan_pembatalan }}
                             </p>
                         @endif
@@ -308,10 +308,11 @@
                 @if ($transaksi->catatan_penolakan && ! $transaksi->bukti_pembayaran)
                     <div class="mt-2 flex items-start gap-2 rounded-2xl border border-red-100 bg-red-50 p-3">
                         <svg viewBox="0 0 24 24" fill="none" class="mt-1 h-4 w-4 shrink-0 text-red-500"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L14.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <p class="text-[11px] text-red-600">
+                        <div class="text-[11px] text-red-600">
                             <span class="font-bold">Bukti pembayaran ditolak:</span>
-                            {{ $transaksi->catatan_penolakan }} Silakan upload ulang bukti pembayaran yang benar.
-                        </p>
+                            <div class="whitespace-pre-line mt-0.5">{{ $transaksi->catatan_penolakan }}</div>
+                            <div class="mt-1 font-medium">Silakan upload ulang bukti pembayaran yang benar.</div>
+                        </div>
                     </div>
                 @endif
 

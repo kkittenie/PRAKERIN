@@ -13,9 +13,9 @@
 
     <div class="md:col-span-2">
         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Deskripsi</label>
-        <input type="text" name="deskripsi" value="{{ old('deskripsi', $slide?->deskripsi) }}" maxlength="255"
+        <textarea name="deskripsi" rows="3" maxlength="255"
             placeholder="Kalimat singkat di bawah judul"
-            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">{{ old('deskripsi', $slide?->deskripsi) }}</textarea>
         @error('deskripsi') <small class="text-red-500">{{ $message }}</small> @enderror
     </div>
 

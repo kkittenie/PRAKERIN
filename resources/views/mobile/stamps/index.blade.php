@@ -63,7 +63,7 @@
                     <p class="text-[11px] font-semibold uppercase tracking-wide text-white/60">Program Stamp</p>
                     <p class="mt-0.5 truncate text-base font-extrabold">{{ $program->nama_program }}</p>
                     @if ($program->deskripsi)
-                        <p class="mt-1 text-xs leading-relaxed text-white/75">{{ $program->deskripsi }}</p>
+                        <p class="mt-1 text-xs leading-relaxed text-white/75 whitespace-pre-line">{{ $program->deskripsi }}</p>
                     @endif
                 </div>
                 <span class="stamp-badge-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 p-2">
