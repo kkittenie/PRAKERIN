@@ -554,12 +554,8 @@
                 </div>
             @elseif ($jenis === 'etalase')
                 @php
-                    // Tiket Dapur (jenis 'etalase'):
-                    // Bagian Atas: Produk habis / sedang diproduksi / perlu dibuat (produk dasar stok bersama)
-                    // Bagian Bawah: Rincian pesanan lengkap dengan topping / variasi
-                    $dataTiket = \App\Support\StrukHelper::dataTiketDapur($transaksi);
-                    $itemsProduksi = $dataTiket['produksi'];
-                    $itemsPesanan = $dataTiket['pesanan'];
+                    // Tiket Dapur (jenis 'etalase'): semua produk pesanan TANPA harga
+                    $itemsEtalase = \App\Support\StrukHelper::itemsEtalase($transaksi);
                     $catatanPesananEtalase = \App\Support\StrukHelper::catatanPesanan($transaksi);
                 @endphp
                 <div class="text-center border-bottom-dashed" style="padding-bottom:10px; margin-bottom:10px;">
@@ -575,31 +571,8 @@
                     @endif
                 </div>
 
-                {{-- 1. BAGIAN ATAS: PRODUKSI / PERLU DIBUAT --}}
-                @if ($itemsProduksi->isNotEmpty())
-                    <div style="padding:6px 0 4px 0; border-top:1px dashed #000; border-bottom:1px dashed #000; margin-bottom:8px; font-weight:bold; font-size:11px; letter-spacing:0.5px; background:#f9f9f9;" class="text-center">
-                        [ PERLU DIBUAT ]
-                    </div>
-                    <div class="margin-bottom-sm">
-                        @foreach ($itemsProduksi as $idx => $prod)
-                            <div class="item-row margin-bottom-xs" style="font-size:12px;">
-                                <span class="item-name"><strong>{{ $idx + 1 }}. {{ $prod->nama_produk }}</strong></span>
-                                <span class="item-qty" style="font-weight:bold;">x{{ $prod->jumlah }}</span>
-                            </div>
-                            @if ($prod->catatan)
-                                <div style="padding-left:16px; font-style:italic; color:#555; font-size:10px; margin-bottom:4px;">*
-                                    Catatan: {{ $prod->catatan }}</div>
-                            @endif
-                        @endforeach
-                    </div>
-                @endif
-
-                {{-- 2. BAGIAN BAWAH: RINCIAN PESANAN / PENYAJIAN / TOPPING --}}
-                <div style="padding:6px 0 4px 0; border-top:1px dashed #000; border-bottom:1px dashed #000; margin-bottom:8px; font-weight:bold; font-size:11px; letter-spacing:0.5px; background:#f9f9f9;" class="text-center">
-                    [ RINCIAN PESANAN / TOPPING ]
-                </div>
-                <div class="margin-bottom-sm">
-                    @forelse ($itemsPesanan as $index => $item)
+                <div class="border-top-dashed border-bottom-dashed" style="padding:8px 0;">
+                    @forelse ($itemsEtalase as $index => $item)
                         <div class="item-row margin-bottom-sm" style="font-size:12px;">
                             <span class="item-name"><strong>{{ $index + 1 }}. {{ $item->nama_produk }}</strong></span>
                             <span class="item-qty" style="font-weight:bold;">x{{ $item->jumlah }}</span>
@@ -613,10 +586,10 @@
                     @endforelse
                 </div>
 
-                @if ($itemsPesanan->isNotEmpty())
-                    <div class="flex-between border-top-dashed border-bottom-dashed" style="padding:6px 0; font-weight:bold;">
+                @if ($itemsEtalase->isNotEmpty())
+                    <div class="flex-between border-bottom-dashed" style="padding:6px 0; font-weight:bold;">
                         <span>Total item</span>
-                        <span>{{ $itemsPesanan->sum('jumlah') }}</span>
+                        <span>{{ $itemsEtalase->sum('jumlah') }}</span>
                     </div>
                 @endif
                 @if ($catatanPesananEtalase)
@@ -830,12 +803,8 @@
             $struk .= centerWrapStruk("Sampai ketemu di pesanan berikutnya! ^^");
 
         } elseif ($jenis === 'etalase') {
-            // Tiket Dapur (jenis 'etalase'):
-            // Bagian Atas: Produk habis / sedang diproduksi / perlu dibuat (produk dasar stok bersama)
-            // Bagian Bawah: Rincian pesanan lengkap dengan topping / variasi
-            $dataTiket = \App\Support\StrukHelper::dataTiketDapur($transaksi);
-            $itemsProduksiTeks = $dataTiket['produksi'];
-            $itemsPesananTeks = $dataTiket['pesanan'];
+            // Tiket Dapur (jenis 'etalase'): semua produk TANPA harga (lihat App\Support\StrukHelper).
+            $itemsEtalaseTeks = \App\Support\StrukHelper::itemsEtalase($transaksi);
             $catatanPesananTeks = \App\Support\StrukHelper::catatanPesanan($transaksi);
 
             $struk .= centerLineStruk("SAISHO CAKE & BAKERY");
@@ -849,43 +818,8 @@
             }
             $struk .= $dividerDashed;
 
-            // 1. BAGIAN ATAS: PRODUKSI / PERLU DIBUAT
-            if ($itemsProduksiTeks->isNotEmpty()) {
-                $struk .= centerLineStruk("[ PERLU DIBUAT ]");
-                $struk .= $dividerDashed;
-                $idxProd = 1;
-                foreach ($itemsProduksiTeks as $pItem) {
-                    $prefix = $idxProd . ". ";
-                    $rightQty = "x" . $pItem->jumlah;
-                    $indent = str_repeat(' ', mb_strlen($prefix));
-
-                    $barisNama = \App\Support\StrukHelper::pecahKata(
-                        $pItem->nama_produk,
-                        $strukWidth - mb_strlen($prefix) - mb_strlen($rightQty) - 1
-                    );
-                    foreach ($barisNama as $n => $teksNama) {
-                        $kiri = ($n === 0 ? $prefix : $indent) . $teksNama;
-                        $struk .= ($n === count($barisNama) - 1)
-                            ? padLineStruk($kiri, $rightQty)
-                            : $kiri . "\n";
-                    }
-
-                    if ($pItem->catatan) {
-                        foreach (\App\Support\StrukHelper::pecahKata("* Catatan: " . $pItem->catatan, $strukWidth - 2) as $n => $teksCatatan) {
-                            $struk .= ($n === 0 ? "  " : "    ") . $teksCatatan . "\n";
-                        }
-                    }
-                    $idxProd++;
-                }
-                $struk .= $dividerDashed;
-            }
-
-            // 2. BAGIAN BAWAH: RINCIAN PESANAN / TOPPING
-            $struk .= centerLineStruk("[ RINCIAN PESANAN / TOPPING ]");
-            $struk .= $dividerDashed;
-
             $idxEtalase = 1;
-            foreach ($itemsPesananTeks as $item) {
+            foreach ($itemsEtalaseTeks as $item) {
                 $prefix = $idxEtalase . ". ";
                 $rightQty = "x" . $item->jumlah;
                 $indent = str_repeat(' ', mb_strlen($prefix));
@@ -910,11 +844,11 @@
                 $idxEtalase++;
             }
 
-            if ($itemsPesananTeks->isEmpty()) {
+            if ($itemsEtalaseTeks->isEmpty()) {
                 $struk .= "Tidak ada item\n";
             } else {
                 $struk .= $dividerDashed;
-                $struk .= padLineStruk("Total item", (string) $itemsPesananTeks->sum('jumlah'));
+                $struk .= padLineStruk("Total item", (string) $itemsEtalaseTeks->sum('jumlah'));
             }
 
             if ($catatanPesananTeks) {

@@ -44,19 +44,10 @@ class StrukHelper
     }
 
     /**
-     * Daftar produk untuk Tiket Dapur (jenis 'etalase'): SEMUA produk dalam pesanan, tanpa harga,
-     * tidak peduli perlu diproduksi atau sudah ada di etalase.
-     *
-     * - Baris ringkasan paket (bundling/promo event) tidak dicetak, yang dicetak
-     *   adalah produk penyusunnya karena itulah yang diambil petugas. Kalau sebuah
-     *   paket ternyata tidak punya baris isi, baris paketnya dicetak supaya tidak hilang.
-     * - Produk yang sama digabung dan jumlahnya dijumlahkan.
-     * - Catatan paket dan catatan per produk digabung (mis. "angetin", "slice").
-    /**
      * Data lengkap untuk Tiket Dapur (jenis 'etalase'):
-     * 1. 'produksi': Item yang habis / sedang diproduksi / perlu dibuat oleh dapur (di bagian atas).
+     * 1. 'produksi': Item yang habis / sedang diproduksi / perlu dibuat oleh dapur.
      *    Untuk produk Stok Bersama, yang dibuat adalah produk dasarnya (misal: "Donat Polos").
-     * 2. 'pesanan': Rincian seluruh pesanan yang perlu disiapkan/diberi topping (di bagian bawah),
+     * 2. 'pesanan': Rincian seluruh pesanan yang perlu disiapkan/diberi topping,
      *    lengkap dengan variasi/toppingnya (misal: "Donat Polos (Matcha) x2", "Donat Polos (Tiramisu) x2").
      *
      * @return array{produksi: Collection<int, object{nama_produk: string, jumlah: int, catatan: string}>, pesanan: Collection<int, object{nama_produk: string, jumlah: int, catatan: string}>}
@@ -120,7 +111,6 @@ class StrukHelper
             return $item->nama_produk . (! empty($varian) ? ' (' . implode(' - ', $varian) . ')' : '');
         };
 
-        // Di bagian RINCIAN PESANAN / TOPPING: seluruh varian / topping dicantumkan lengkap & dipisah per topping berbeda.
         $formatNamaProdukPesanan = function ($item) {
             $ukuran = $item->ukuran ?: optional($item->detailProduk)->ukuran;
             $rasa = $item->varian_rasa ?: optional($item->detailProduk)->variasi;
