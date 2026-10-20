@@ -529,6 +529,9 @@
                 <!-- Kanan: Keranjang -->
                 <div
                     class="col-span-12 lg:col-span-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col lg:h-full lg:overflow-hidden min-h-0">
+                    <!-- Area scroll: info pembeli, member, voucher, stamp & daftar belanja.
+                         Footer (pajak, total, tombol bayar) tetap menempel di bawah. -->
+                    <div class="flex-1 min-h-0 overflow-y-auto flex flex-col custom-scrollbar">
                     <!-- Info Pembeli -->
                     <div
                         class="p-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 rounded-t-xl shrink-0">
@@ -715,11 +718,15 @@
                         </template>
                     </div>
 
-                    <!-- Voucher Member: hanya tampil kalau member sudah dipilih -->
-                    <div class="p-3 border-b border-gray-100 dark:border-gray-800 shrink-0" x-show="memberIdTerpilih"
-                        x-cloak>
-                        <label
-                            class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider block mb-2">Voucher</label>
+                    <!-- Voucher: tampil untuk member maupun pembeli non member (Reward Stamp tetap khusus member) -->
+                    <div class="p-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                        <div class="flex items-center justify-between mb-2">
+                            <label
+                                class="text-xs font-bold uppercase text-gray-400 dark:text-gray-500 tracking-wider">Voucher</label>
+                            <span x-show="!memberIdTerpilih" x-cloak
+                                class="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">Non
+                                Member</span>
+                        </div>
 
                         <!-- Voucher belum dipilih -->
                         <template x-if="!voucherTerpilih">
@@ -932,7 +939,7 @@
                             <div class="bg-rose-700 dark:bg-rose-900 text-white p-4 flex items-center justify-between shrink-0">
                                 <div>
                                     <h3 class="font-extrabold text-sm">Gunakan Voucher</h3>
-                                    <p class="text-white/80 text-xs mt-0.5" x-text="memberTerpilih ? memberTerpilih.nama : ''"></p>
+                                    <p class="text-white/80 text-xs mt-0.5" x-text="memberTerpilih ? memberTerpilih.nama : 'Pembeli Umum (Non Member)'"></p>
                                 </div>
                                 <button @click="tutupModalVoucher()"
                                     class="text-white hover:text-gray-200 font-bold text-lg leading-none">&times;</button>
@@ -948,7 +955,8 @@
                                     <template x-if="!voucherDaftarLoading && daftarVoucherAktif.length === 0">
                                         <div class="py-8 text-center text-gray-400">
                                             <p class="text-xs font-semibold">Tidak ada voucher yang dapat digunakan</p>
-                                            <p class="text-[10px] text-gray-400 mt-1">Member ini belum memiliki voucher aktif atau kuota penggunaan telah tercapai.</p>
+                                            <p class="text-[10px] text-gray-400 mt-1"
+                                                x-text="memberIdTerpilih ? 'Member ini belum memiliki voucher aktif atau kuota penggunaan telah tercapai.' : 'Belum ada voucher non member yang aktif, atau kuotanya sudah habis.'"></p>
                                         </div>
                                     </template>
 
@@ -982,7 +990,7 @@
                                                                 x-text="voucher.berlaku_sampai"></strong></span>
                                                     </template>
                                                     <template x-if="voucher.sisa_penggunaan !== undefined">
-                                                        <span class="text-rose-600 dark:text-rose-400 font-medium">· Sisa: <strong x-text="voucher.sisa_penggunaan"></strong>x</span>
+                                                        <span class="text-rose-600 dark:text-rose-400 font-medium">· <span x-text="voucher.target_member === 'non_member' ? 'Sisa kuota:' : 'Sisa:'"></span> <strong x-text="voucher.sisa_penggunaan"></strong>x</span>
                                                     </template>
                                                 </div>
                                             </div>
@@ -995,7 +1003,7 @@
 
                     <!-- Daftar Keranjang -->
                     <div
-                        class="p-3 border-b border-gray-100 dark:border-gray-800 overflow-y-auto flex-1 flex flex-col gap-2 min-h-0 custom-scrollbar">
+                        class="p-3 border-b border-gray-100 dark:border-gray-800 flex-1 flex flex-col gap-2 min-h-[12rem]">
                         <div x-show="keranjang.length === 0"
                             class="flex-1 flex flex-col items-center justify-center py-8 text-center">
                             <svg class="w-12 h-12 text-gray-300 dark:text-gray-700 mb-2" fill="none" stroke="currentColor"
@@ -1133,6 +1141,7 @@
                                 </div>
                             </div>
                         </template>
+                    </div>
                     </div>
 
                     <!-- Pajak -->
@@ -2392,7 +2401,6 @@
 
                 // Voucher member
                 bukaModalVoucher() {
-                    if (!this.memberIdTerpilih) return;
                     this.voucherModalError = '';
                     this.kodeVoucherManual = '';
                     this.modalVoucherTerbuka = true;
@@ -2404,10 +2412,13 @@
                 },
 
                 ambilDaftarVoucherAktif() {
-                    if (!this.memberIdTerpilih) { this.daftarVoucherAktif = []; return; }
+                    // Member dipilih -> voucher member; tanpa member -> voucher khusus non member.
+                    const urlDaftar = this.memberIdTerpilih
+                        ? `/transaksi/voucher/member/${this.memberIdTerpilih}`
+                        : "{{ route('transaksi.voucher.non-member') }}";
                     this.daftarVoucherAktif = [];
                     this.voucherDaftarLoading = true;
-                    fetch(`/transaksi/voucher/member/${this.memberIdTerpilih}`)
+                    fetch(urlDaftar)
                         .then(r => r.json())
                         .then(r => { this.daftarVoucherAktif = (r.status === 'success') ? r.data : []; })
                         .catch(() => { this.daftarVoucherAktif = []; })

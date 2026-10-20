@@ -33,13 +33,13 @@ class TransaksiKasirController extends Controller
             return null;
         }
 
-        if (!$memberId) {
-            throw new \Exception('Voucher hanya bisa dipakai jika member sudah dipilih.');
-        }
-
-        $member = Member::find($memberId);
-        if (!$member) {
-            throw new \Exception('Member tidak ditemukan.');
+        // Tanpa member -> pembeli non member (hanya boleh voucher bertarget non_member).
+        $member = null;
+        if ($memberId) {
+            $member = Member::find($memberId);
+            if (!$member) {
+                throw new \Exception('Member tidak ditemukan.');
+            }
         }
 
         $voucher = RewardKatalog::with('produks')
@@ -62,6 +62,22 @@ class TransaksiKasirController extends Controller
 
         if ($voucher->statusKedaluwarsa()) {
             throw new \Exception('Voucher ini sudah kedaluwarsa.');
+        }
+
+        if ($member === null) {
+            if (!$voucher->untukNonMember()) {
+                throw new \Exception('Voucher ini khusus member. Pilih member terlebih dahulu atau gunakan voucher untuk non member.');
+            }
+
+            if (!$voucher->berhakDigunakanNonMember()) {
+                throw new \Exception('Kuota penggunaan voucher non member ini sudah habis.');
+            }
+
+            return $voucher;
+        }
+
+        if ($voucher->untukNonMember()) {
+            throw new \Exception('Voucher ini khusus pembeli non member dan tidak bisa dipakai oleh member.');
         }
 
         if (!$voucher->berhakDigunakan($member)) {

@@ -41,6 +41,32 @@ class VoucherKasirController extends Controller
     }
 
     /**
+     * Daftar voucher aktif untuk pembeli non member (kasir tanpa memilih member).
+     * Hanya voucher bertarget "non_member" yang masih berlaku dan kuotanya belum habis.
+     */
+    public function daftarNonMember()
+    {
+        try {
+            $vouchers = RewardKatalog::with(['produks', 'rewardProduks'])
+                ->where('jenis', 'voucher')
+                ->where('status_aktif', true)
+                ->where('target_member', RewardKatalog::TARGET_NON_MEMBER)
+                ->berlakuTanggal()
+                ->get()
+                ->filter(fn (RewardKatalog $v) => $v->berhakDigunakanNonMember())
+                ->values()
+                ->map(fn (RewardKatalog $voucher) => $this->formatVoucher($voucher));
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $vouchers,
+            ]);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    /**
      * Validasi kode manual dinonaktifkan sesuai alur voucher baru
      */
     public function validasiKode(Request $request)
@@ -53,8 +79,15 @@ class VoucherKasirController extends Controller
 
     private function formatVoucher(RewardKatalog $voucher, ?Member $member = null): array
     {
-        $pemakaian = $member ? $voucher->jumlahPemakaianMember($member->id) : 0;
+        $nonMember = $voucher->untukNonMember();
         $batas = $voucher->batas_penggunaan_per_member ?: 1;
+
+        if ($nonMember) {
+            // Pembeli non member tidak terdata -> batas dihitung sebagai kuota total.
+            $pemakaian = $voucher->jumlahPemakaianNonMember();
+        } else {
+            $pemakaian = $member ? $voucher->jumlahPemakaianMember($member->id) : 0;
+        }
 
         return [
             'id' => $voucher->id,
@@ -62,6 +95,7 @@ class VoucherKasirController extends Controller
             'kode_reward' => $voucher->kode_reward,
             'kode_redeem' => $voucher->kode_reward,
             'deskripsi' => $voucher->deskripsi,
+            'target_member' => $voucher->target_member,
             'jenis_potongan' => $voucher->jenis_potongan ?? 'nominal',
             'nominal_potongan' => (float) ($voucher->nominal_potongan ?? 0),
             'persentase' => (float) ($voucher->persentase ?? 0),

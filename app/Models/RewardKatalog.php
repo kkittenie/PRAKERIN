@@ -8,6 +8,10 @@ class RewardKatalog extends Model
 {
     protected $table = 'reward_katalog';
 
+    public const TARGET_SEMUA = 'semua';
+    public const TARGET_KHUSUS = 'khusus';
+    public const TARGET_NON_MEMBER = 'non_member';
+
     protected $fillable = [
         'kode_reward',
         'nama',
@@ -169,9 +173,57 @@ class RewardKatalog extends Model
         return $this->jumlahPemakaianMember($memberId) >= $batas;
     }
 
+    /**
+     * Voucher ini khusus untuk pembeli non member (dipakai di kasir tanpa memilih member).
+     */
+    public function untukNonMember(): bool
+    {
+        return $this->target_member === self::TARGET_NON_MEMBER;
+    }
+
+    public function labelTarget(): string
+    {
+        return match ($this->target_member) {
+            self::TARGET_KHUSUS => 'Member Tertentu',
+            self::TARGET_NON_MEMBER => 'Non Member',
+            default => 'Semua Member',
+        };
+    }
+
+    /**
+     * Pembeli non member tidak terdata, jadi pemakaiannya dihitung total
+     * (baris voucher_usages dengan member_id NULL).
+     */
+    public function jumlahPemakaianNonMember(): int
+    {
+        return $this->usages()->whereNull('member_id')->count();
+    }
+
+    public function kuotaNonMember(): int
+    {
+        return (int) ($this->batas_penggunaan_per_member ?: 1);
+    }
+
+    public function sisaKuotaNonMember(): int
+    {
+        return max(0, $this->kuotaNonMember() - $this->jumlahPemakaianNonMember());
+    }
+
+    public function berhakDigunakanNonMember(): bool
+    {
+        return $this->status_aktif
+            && $this->untukNonMember()
+            && $this->sisaKuotaNonMember() > 0;
+    }
+
     public function berhakDigunakan(Member $member): bool
     {
         if (!$this->status_aktif) {
+            return false;
+        }
+
+        // Voucher non member tidak berlaku untuk member.
+        if ($this->untukNonMember()) {
             return false;
         }
 
@@ -198,6 +250,10 @@ class RewardKatalog extends Model
             return ['tersedia' => false, 'alasan' => 'Voucher tidak aktif'];
         }
 
+        if ($this->untukNonMember()) {
+            return ['tersedia' => false, 'alasan' => 'Khusus pembeli non member'];
+        }
+
         if ($this->target_member === 'khusus') {
             $terdaftar = $this->members()->where('members.id', $member->id)->exists();
             if (!$terdaftar) {
@@ -213,4 +269,3 @@ class RewardKatalog extends Model
         return ['tersedia' => true, 'alasan' => null];
     }
 }
-

@@ -91,6 +91,10 @@
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
                             Khusus Member Terpilih ({{ $voucher->members->count() }} Member)
                         </span>
+                    @elseif($voucher->untukNonMember())
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                            Non Member (Tanpa Member)
+                        </span>
                     @else
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                             Umum (Semua Member)
@@ -100,9 +104,14 @@
             </div>
 
             <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Batas Penggunaan Per Member</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ $voucher->untukNonMember() ? 'Kuota Penggunaan Total' : 'Batas Penggunaan Per Member' }}
+                </p>
                 <p class="font-semibold text-gray-800 dark:text-white">
                     {{ $voucher->batas_penggunaan_per_member ?: 1 }} kali pemakaian
+                    @if($voucher->untukNonMember())
+                        <span class="text-xs font-medium text-gray-400 dark:text-gray-500">(sisa {{ $voucher->sisaKuotaNonMember() }}x)</span>
+                    @endif
                 </p>
             </div>
 
@@ -352,7 +361,16 @@
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                 <td class="p-3 text-gray-600 dark:text-gray-400">{{ $usage->used_at ? $usage->used_at->translatedFormat('d M Y, H:i') : '-' }}</td>
                                 <td class="p-3 font-mono font-bold text-amber-700 dark:text-amber-400">{{ $usage->member?->kode_member ?: '-' }}</td>
-                                <td class="p-3 font-semibold text-gray-900 dark:text-white">{{ $usage->member?->nama ?: 'Pelanggan' }}</td>
+                                <td class="p-3 font-semibold text-gray-900 dark:text-white">
+                                    @if($usage->member)
+                                        {{ $usage->member->nama }}
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Non Member</span>
+                                        @if($usage->transaksi?->nama_pembeli && $usage->transaksi->nama_pembeli !== 'Pelanggan Umum')
+                                            <span class="block text-[11px] font-normal text-gray-500 dark:text-gray-400 mt-0.5">{{ $usage->transaksi->nama_pembeli }}</span>
+                                        @endif
+                                    @endif
+                                </td>
                                 <td class="p-3 font-mono font-bold text-brand-600 dark:text-brand-400">
                                     {{ $usage->transaksi?->kode_transaksi ?: '-' }}
                                 </td>

@@ -61,6 +61,7 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
         Route::get('/transaksi/daftar-ditahan', [TransaksiKasirController::class, 'ambilDitahan'])->name('transaksi.daftar-ditahan');
         Route::get('/transaksi/cetak/{kode_transaksi}', [TransaksiKasirController::class, 'cetak'])->name('transaksi.cetak');
         Route::get('/transaksi/voucher/member/{member}', [VoucherKasirController::class, 'daftarAktif'])->name('transaksi.voucher.member');
+        Route::get('/transaksi/voucher/non-member', [VoucherKasirController::class, 'daftarNonMember'])->name('transaksi.voucher.non-member');
         Route::post('/transaksi/voucher/validasi', [VoucherKasirController::class, 'validasiKode'])->name('transaksi.voucher.validasi');
         Route::get('/transaksi/reward-stamp/member/{member}', [StampRedemptionKasirController::class, 'daftarAktif'])->name('transaksi.reward-stamp.member');
         Route::post('/transaksi/reward-stamp/validasi', [StampRedemptionKasirController::class, 'validasiKode'])->name('transaksi.reward-stamp.validasi');

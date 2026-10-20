@@ -266,7 +266,7 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Target Member <span class="text-red-500">*</span>
                     </label>
-                    <div class="flex gap-6 items-center">
+                    <div class="flex flex-wrap gap-x-6 gap-y-2 items-center">
                         <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 font-medium">
                             <input type="radio" name="target_member" value="semua" x-model="targetMember" class="text-brand-500 focus:ring-brand-500">
                             <span>Umum (Semua Member)</span>
@@ -275,8 +275,12 @@
                             <input type="radio" name="target_member" value="khusus" x-model="targetMember" class="text-brand-500 focus:ring-brand-500">
                             <span>Member Tertentu (Khusus)</span>
                         </label>
+                        <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 font-medium">
+                            <input type="radio" name="target_member" value="non_member" x-model="targetMember" class="text-brand-500 focus:ring-brand-500">
+                            <span>Non Member (Tanpa Member)</span>
+                        </label>
                     </div>
-                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Voucher umum otomatis tersedia untuk semua member, voucher khusus hanya tersedia untuk member yang dipilih.</span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Voucher umum otomatis tersedia untuk semua member, voucher khusus hanya untuk member yang dipilih, dan voucher non member dipakai kasir untuk pembeli yang tidak memakai member.</span>
                     @error('target_member')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
@@ -405,7 +409,7 @@
                 {{-- Batas Penggunaan Per Member --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Batas Penggunaan Per Member <span class="text-red-500">*</span>
+                        <span x-text="targetMember === 'non_member' ? 'Kuota Penggunaan Total' : 'Batas Penggunaan Per Member'">Batas Penggunaan Per Member</span> <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
                         <input type="number" name="batas_penggunaan_per_member" min="1" value="{{ old('batas_penggunaan_per_member', $voucher->batas_penggunaan_per_member ?? 1) }}"
@@ -414,6 +418,7 @@
                             required>
                         <span class="absolute right-4 top-3 text-gray-500 font-bold text-sm">kali</span>
                     </div>
+                    <span x-show="targetMember === 'non_member'" x-cloak class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Pembeli non member tidak terdata, jadi angka ini dihitung sebagai total pemakaian voucher oleh semua pembeli.</span>
                     @error('batas_penggunaan_per_member')
                         <small class="text-red-500">{{ $message }}</small>
                     @enderror
