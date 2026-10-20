@@ -502,7 +502,7 @@
             return;
         }
         info.innerHTML = 'Stok tersedia' + (produkTanpaVarian(produk) ? '' : ' (' + esc(v.nama) + ')') + ': <strong>' + v.stok + '</strong>'
-            + (v.stok <= 0 ? ' <span class="text-amber-600">— perlu diproduksi</span>' : '')
+            + (v.stok <= 0 ? ' <span class="text-amber-600">— sedang diproduksi</span>' : '')
             + (v.aktif ? '' : ' <span class="text-red-600">— varian nonaktif</span>');
     }
 

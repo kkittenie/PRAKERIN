@@ -379,8 +379,12 @@
                     </div>
 
                     <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 4);" class="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-bold text-gray-800 hover:border-brand-300 hover:text-brand-800 transition">
-                        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-50 text-brand-800">
-                            <svg viewBox="0 0 24 24" fill="{{ $activeAccount ? 'currentColor' : 'none' }}" class="h-3.5 w-3.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 text-brand-800">
+                            @if ($authMember->foto)
+                                <img src="{{ asset('storage/' . $authMember->foto) }}" alt="{{ $authMember->nama }}" class="h-full w-full object-cover">
+                            @else
+                                <svg viewBox="0 0 24 24" fill="{{ $activeAccount ? 'currentColor' : 'none' }}" class="h-3.5 w-3.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            @endif
                         </span>
                         <span>{{ explode(' ', $authMember->nama)[0] }}</span>
                     </a>
@@ -476,8 +480,12 @@
 
                 {{-- Account / Akun --}}
                 <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 4);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeAccount ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
-                    <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeAccount ? 'bg-brand-50 text-brand-800' : '' }}">
-                        <svg viewBox="0 0 24 24" fill="{{ $activeAccount ? 'currentColor' : 'none' }}" class="h-5 w-5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full {{ $activeAccount ? 'bg-brand-50 text-brand-800' : '' }}">
+                        @if (auth('member')->check() && auth('member')->user()->foto)
+                            <img src="{{ asset('storage/' . auth('member')->user()->foto) }}" alt="{{ auth('member')->user()->nama }}" class="h-full w-full object-cover">
+                        @else
+                            <svg viewBox="0 0 24 24" fill="{{ $activeAccount ? 'currentColor' : 'none' }}" class="h-5 w-5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        @endif
                     </span>
                     Account
                 </a>

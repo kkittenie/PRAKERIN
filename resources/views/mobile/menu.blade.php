@@ -346,7 +346,7 @@
                                 </div>
                                 <span data-promo-badge class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm" style="{{ $adaPromo ? '' : 'display:none' }}">Promo</span>
                                 @if ($habis)
-                                    <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Perlu Diproduksi</span>
+                                    <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Sedang Diproduksi</span>
                                 @endif
                             </div>
 
@@ -475,7 +475,7 @@
                     <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
                         ${fotoHtml}
                         <span class="absolute left-2 top-2 rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm">Promo Event</span>
-                        <span data-badge-diproduksi class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white" style="${pe.perlu_diproduksi ? '' : 'display:none'}">Perlu Diproduksi</span>
+                        <span data-badge-diproduksi class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white" style="${pe.perlu_diproduksi ? '' : 'display:none'}">Sedang Diproduksi</span>
                     </div>
                     <div class="pt-2">
                         <p class="text-[10px] font-medium text-gray-400">${pe.produk_nama}</p>

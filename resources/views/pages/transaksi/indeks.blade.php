@@ -539,9 +539,15 @@
                         <div class="flex items-center gap-3">
                             <template x-if="namaPembeli.trim() !== ''">
                                 <div class="flex items-center gap-3 w-full">
-                                    <div class="w-10 h-10 bg-amber-100 text-amber-700 font-bold flex items-center justify-center rounded-full shrink-0"
-                                        x-text="namaPembeli.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()">
-                                    </div>
+                                    <template x-if="$data.memberTerpilih && ($data.memberTerpilih.foto_url || $data.memberTerpilih.foto)">
+                                        <img :src="$data.memberTerpilih.foto_url || ('/storage/' + $data.memberTerpilih.foto)" :alt="namaPembeli"
+                                            class="w-10 h-10 object-cover rounded-full shrink-0 border border-amber-200 dark:border-amber-500/30">
+                                    </template>
+                                    <template x-if="!$data.memberTerpilih || !($data.memberTerpilih.foto_url || $data.memberTerpilih.foto)">
+                                        <div class="w-10 h-10 bg-amber-100 text-amber-700 font-bold flex items-center justify-center rounded-full shrink-0"
+                                            x-text="namaPembeli.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()">
+                                        </div>
+                                    </template>
                                     <h4 class="font-bold text-gray-900 dark:text-white text-sm truncate flex-1"
                                         x-text="namaPembeli">
                                     </h4>
@@ -610,9 +616,15 @@
                         <template x-if="$data.memberTerpilih">
                             <div
                                 class="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 rounded-lg">
-                                <div class="w-7 h-7 bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full shrink-0"
-                                    x-text="$data.memberTerpilih.nama.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()">
-                                </div>
+                                <template x-if="$data.memberTerpilih.foto_url || $data.memberTerpilih.foto">
+                                    <img :src="$data.memberTerpilih.foto_url || ('/storage/' + $data.memberTerpilih.foto)" :alt="$data.memberTerpilih.nama"
+                                        class="w-7 h-7 object-cover rounded-full shrink-0 border border-amber-300 dark:border-amber-500/30">
+                                </template>
+                                <template x-if="!($data.memberTerpilih.foto_url || $data.memberTerpilih.foto)">
+                                    <div class="w-7 h-7 bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full shrink-0"
+                                        x-text="$data.memberTerpilih.nama.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()">
+                                    </div>
+                                </template>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-xs font-bold text-gray-900 dark:text-white truncate"
                                         x-text="$data.memberTerpilih.nama"></p>
@@ -671,9 +683,15 @@
                                     <template x-for="member in memberTersaring" :key="member.id">
                                         <button @click="pilihMemberItem(member)"
                                             class="w-full px-3 py-2 text-left hover:bg-amber-50 dark:hover:bg-amber-500/10 transition flex items-center gap-2.5">
-                                            <div class="w-7 h-7 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] font-bold flex items-center justify-center rounded-full shrink-0"
-                                                x-text="member.nama.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()">
-                                            </div>
+                                            <template x-if="member.foto_url || member.foto">
+                                                <img :src="member.foto_url || ('/storage/' + member.foto)" :alt="member.nama"
+                                                    class="w-7 h-7 object-cover rounded-full shrink-0 border border-gray-200 dark:border-gray-700">
+                                            </template>
+                                            <template x-if="!(member.foto_url || member.foto)">
+                                                <div class="w-7 h-7 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[10px] font-bold flex items-center justify-center rounded-full shrink-0"
+                                                    x-text="member.nama.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()">
+                                                </div>
+                                            </template>
                                             <div class="flex-1 min-w-0">
                                                 <p class="text-xs font-semibold text-gray-800 dark:text-white truncate"
                                                     x-text="member.nama"></p>

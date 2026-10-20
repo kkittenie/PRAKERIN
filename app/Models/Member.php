@@ -15,7 +15,12 @@ class Member extends Authenticatable
 
     protected $hidden = ['password', 'remember_token'];
 
-    protected $appends = ['level', 'warna_badge_level'];
+    protected $appends = ['level', 'warna_badge_level', 'foto_url'];
+
+    public function getFotoUrlAttribute(): ?string
+    {
+        return $this->foto ? asset('storage/' . $this->foto) : null;
+    }
 
     public static function generateKodeMember(int $id): string
     {

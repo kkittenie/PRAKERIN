@@ -78,7 +78,7 @@
                 </span>
 
                 <span x-show="habis" x-cloak class="absolute left-4 bottom-4 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
-                    Perlu Diproduksi
+                    Sedang Diproduksi
                 </span>
 
             </div>

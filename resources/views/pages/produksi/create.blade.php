@@ -721,7 +721,7 @@ function pilihProduk(produk, div, oldValues = null) {
                 <div>
                     <span class="block text-sm font-medium text-gray-800 dark:text-gray-200">
                         ${esc(opsi.nama)}
-                        ${opsi.perlu_produksi ? '<span class="ml-1.5 rounded-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 text-[10px] font-semibold px-2 py-0.5">Perlu Diproduksi</span>' : ''}
+                        ${opsi.perlu_produksi ? '<span class="ml-1.5 rounded-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 text-[10px] font-semibold px-2 py-0.5">Sedang Diproduksi</span>' : ''}
                     </span>
                     <span class="block text-xs text-gray-400">Stok saat ini: ${opsi.stok} pcs</span>
                 </div>

@@ -310,7 +310,7 @@
                         </div>
                         <span data-promo-badge class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm" style="{{ $adaPromo ? '' : 'display:none' }}">Promo</span>
                         @if ($habis)
-                            <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Perlu Diproduksi</span>
+                            <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Sedang Diproduksi</span>
                         @endif
                     </div>
 
@@ -488,8 +488,12 @@
                             {{-- Compact member greeting --}}
                             <div class="relative overflow-hidden rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-5 text-white">
                                 <div class="flex items-center gap-3">
-                                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-brand-300 border border-white/10">
-                                        <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/15 text-brand-300 border border-white/10">
+                                        @if ($member->foto)
+                                            <img src="{{ asset('storage/' . $member->foto) }}" alt="{{ $member->nama }}" class="h-full w-full object-cover">
+                                        @else
+                                            <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        @endif
                                     </div>
                                     <div>
                                         <p class="text-sm font-extrabold">Hi, {{ explode(' ', $member->nama)[0] }}! 👋</p>
@@ -592,7 +596,7 @@
                                     </div>
                                     <span data-promo-badge class="absolute left-2.5 top-2.5 rounded-full bg-orange-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm" style="{{ $adaPromo ? '' : 'display:none' }}">Promo</span>
                                     @if ($habis)
-                                        <span class="absolute left-2.5 bottom-2.5 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Perlu Diproduksi</span>
+                                        <span class="absolute left-2.5 bottom-2.5 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Sedang Diproduksi</span>
                                     @endif
                                 </div>
                                 <div class="p-4">

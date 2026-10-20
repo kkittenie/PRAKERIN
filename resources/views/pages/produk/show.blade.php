@@ -108,7 +108,7 @@
                             @if($varians->isNotEmpty())
                                 @php $jumlahHabis = $varians->filter(fn ($v) => $v->perlu_diproduksi)->count(); @endphp
                                 @if($jumlahHabis === $varians->count())
-                                    <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">⚠ Perlu Diproduksi</span>
+                                    <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">⚠ Sedang Diproduksi</span>
                                 @elseif($jumlahHabis > 0)
                                     <span class="inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">{{ $jumlahHabis }} varian habis</span>
                                 @else

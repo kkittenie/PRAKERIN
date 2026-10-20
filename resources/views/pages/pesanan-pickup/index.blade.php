@@ -270,7 +270,7 @@
                                                                 <span class="ml-1 text-[11px] font-extrabold text-purple-700 dark:text-purple-400" x-text="'Rasa: ' + item.varian_rasa"></span>
                                                             </template>
                                                             <template x-if="item.butuh_produksi">
-                                                                <span class="ml-1.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
+                                                                <span class="ml-1.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Sedang Diproduksi</span>
                                                             </template>
                                                             <div x-show="item.isi_label" class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
                                                                 <div class="mb-0.5">Isi:</div>
@@ -280,7 +280,7 @@
                                                                         <div x-show="k.catatan" class="text-amber-600 dark:text-amber-400 font-medium italic" x-text="'Catatan: ' + k.catatan"></div>
                                                                     </div>
                                                                 </template>
-                                                                <span x-show="item.komponen_perlu_produksi" class="mt-0.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
+                                                                <span x-show="item.komponen_perlu_produksi" class="mt-0.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Sedang Diproduksi</span>
                                                             </div>
                                                             <div x-show="item.catatan" class="text-[11px] text-amber-600 dark:text-amber-400 font-medium italic mt-0.5" x-text="'Catatan: ' + item.catatan"></div>
                                                         </td>
@@ -307,7 +307,7 @@
                                                             <span class="ml-1 text-[11px] font-extrabold text-purple-700 dark:text-purple-400" x-text="'Rasa: ' + item.varian_rasa"></span>
                                                         </template>
                                                         <template x-if="item.butuh_produksi">
-                                                            <span class="ml-1.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[9px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
+                                                            <span class="ml-1.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[9px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Sedang Diproduksi</span>
                                                         </template>
                                                     </div>
                                                     <span class="font-bold text-amber-700 dark:text-amber-400 text-xs shrink-0" x-text="'Rp ' + Number(item.subtotal).toLocaleString('id-ID')"></span>
@@ -323,7 +323,7 @@
                                                             <div x-show="k.catatan" class="text-amber-600 dark:text-amber-400 font-medium italic" x-text="'Catatan: ' + k.catatan"></div>
                                                         </div>
                                                     </template>
-                                                    <span x-show="item.komponen_perlu_produksi" class="mt-0.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[9px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Perlu Diproduksi</span>
+                                                    <span x-show="item.komponen_perlu_produksi" class="mt-0.5 inline-flex rounded-full bg-orange-100 dark:bg-orange-500/10 px-2 py-0.5 text-[9px] font-semibold text-orange-700 dark:text-orange-400 align-middle">Sedang Diproduksi</span>
                                                 </div>
                                                 <div x-show="item.catatan" class="text-[11px] text-amber-600 dark:text-amber-400 font-medium italic" x-text="'Catatan: ' + item.catatan"></div>
                                             </div>
