@@ -7,6 +7,7 @@
     $initialSelected = json_encode(old('permissions', []));
     $allPermListJson = json_encode($allPermissions->pluck('name')->toArray());
     $modulesJson = json_encode($modules);
+    $totalModulePerms = collect($modules)->sum(fn($m) => count($m['permissions']));
 @endphp
 
 <div x-data="roleFormHandler({{ $initialSelected }}, {{ $allPermListJson }}, {{ $modulesJson }})" class="space-y-6">
@@ -37,9 +38,6 @@
                         </svg>
                         <span>Hak Akses (Permissions)</span>
                     </h4>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        <span class="font-bold text-gray-800 dark:text-gray-200" x-text="selectedPerms.length"></span> dari {{ $allPermissions->count() }} permission terpilih untuk role ini.
-                    </p>
                 </div>
 
                 <button type="button" @click="bukaModal()"
@@ -62,7 +60,7 @@
                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                             <span x-text="info.nama"></span>
                             <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400"
-                                x-text="'(' + countModuleSelected(getModulePerms(key)) + '/4)'"></span>
+                                x-text="'(' + countModuleSelected(getModulePerms(key)) + '/' + ((modules[key] && modules[key].permissions) ? modules[key].permissions.length : 4) + ')'"></span>
                         </div>
                     </template>
                     <div x-show="selectedPerms.length === 0" class="text-xs italic text-gray-400">
@@ -129,12 +127,9 @@ function roleFormHandler(initialPermissions, allPermsList, modulesData) {
             }
         },
         getModulePerms(moduleKey) {
-            return [
-                'lihat_' + moduleKey,
-                'tambah_' + moduleKey,
-                'edit_' + moduleKey,
-                'hapus_' + moduleKey,
-            ];
+            const mod = this.modules[moduleKey];
+            const perms = (mod && mod.permissions) ? mod.permissions : ['lihat', 'tambah', 'edit', 'hapus'];
+            return perms.map(aksi => aksi + '_' + moduleKey);
         },
         countModuleSelected(permNames) {
             return permNames.filter(p => this.selectedPerms.includes(p)).length;
