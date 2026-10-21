@@ -324,13 +324,7 @@
                                     "
                                     :style="variasiTersedia(v) ? '' : 'text-decoration:line-through;'"
                                     class="flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition relative">
-                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
-                                        :class="variasiTersedia(v) ? 'bg-brand-50 text-brand-800' : 'bg-gray-200 text-gray-400'">
-                                        <span x-text="(v || '').charAt(0).toUpperCase()"></span>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <span class="block text-xs font-bold truncate" x-text="v"></span>
-                                    </div>
+                                    <span class="block text-xs font-bold truncate" x-text="v"></span>
                                 </button>
                             </template>
                         </div>
@@ -392,11 +386,6 @@
                                             " class="flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition active:scale-[0.99]">
                                     <template x-if="rasa.gambar">
                                         <img :src="rasa.gambar" :alt="rasa.nama" class="h-8 w-8 rounded-full object-cover shrink-0 border border-gray-100">
-                                    </template>
-                                    <template x-if="!rasa.gambar">
-                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800 text-[10px] font-bold">
-                                            <span x-text="(rasa.nama || '').charAt(0).toUpperCase()"></span>
-                                        </div>
                                     </template>
                                     <span class="block text-xs font-bold truncate" x-text="rasa.nama"></span>
                                 </button>
