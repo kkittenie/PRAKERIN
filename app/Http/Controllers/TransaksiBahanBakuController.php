@@ -17,6 +17,18 @@ class TransaksiBahanBakuController extends Controller
             try {
                 $query = TransaksiBahanBaku::with('bahanBaku.satuan');
 
+                // Filter rentang tanggal (opsional). Kalau salah satu kosong,
+                // filter berlaku satu sisi saja (dari / sampai tanggal itu).
+                $dari = $this->parseTanggal($request->input('tanggal_dari'));
+                $sampai = $this->parseTanggal($request->input('tanggal_sampai'));
+
+                if ($dari && $sampai && $dari->gt($sampai)) {
+                    [$dari, $sampai] = [$sampai, $dari];
+                }
+
+                $query->when($dari, fn($q) => $q->whereDate('tanggal', '>=', $dari->toDateString()))
+                    ->when($sampai, fn($q) => $q->whereDate('tanggal', '<=', $sampai->toDateString()));
+
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
                     ->editColumn('tanggal', fn($item) => \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y'))
@@ -38,20 +50,17 @@ class TransaksiBahanBakuController extends Controller
                             ->select('transaksi_bahan_bakus.*');
                     })
                     ->filter(function ($query) use ($request) {
-                        // Override pencarian global supaya tetap bisa cari lewat
-                        // supplier, nomor nota, dan nama bahan baku (seperti sebelumnya).
-                        $search = $request->input('search.value');
+                        // Pencarian hanya berdasarkan nama bahan baku.
+                        // Parameter kedua = false supaya pencarian global bawaan
+                        // DataTables (yang bikin hasil kosong / error) tidak ikut jalan.
+                        $search = trim((string) $request->input('search.value'));
 
-                        if ($search) {
-                            $query->where(function ($q) use ($search) {
-                                $q->where('supplier', 'like', "%{$search}%")
-                                    ->orWhere('nomor_nota', 'like', "%{$search}%")
-                                    ->orWhereHas('bahanBaku', function ($qb) use ($search) {
-                                        $qb->where('nama_bahan', 'like', "%{$search}%");
-                                    });
+                        if ($search !== '') {
+                            $query->whereHas('bahanBaku', function ($qb) use ($search) {
+                                $qb->where('nama_bahan', 'like', "%{$search}%");
                             });
                         }
-                    }, true)
+                    }, false)
                     ->rawColumns(['bahan_baku_html', 'jumlah_html', 'total_harga_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -65,6 +74,19 @@ class TransaksiBahanBakuController extends Controller
         }
 
         return view('pages.transaksi-bahan-baku.index');
+    }
+
+    private function parseTanggal($value): ?\Carbon\Carbon
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        try {
+            return \Carbon\Carbon::createFromFormat('Y-m-d', $value)->startOfDay();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     public function create()

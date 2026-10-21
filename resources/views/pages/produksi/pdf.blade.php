@@ -146,6 +146,12 @@
             @else
                 Periode: Per Bulan &mdash; {{ $tanggalRef->translatedFormat('F Y') }}
             @endif
+            @php
+                $statusLabel = ['kadaluarsa' => 'Kadaluwarsa', 'aktif' => 'Belum Kadaluwarsa'][request('status')] ?? null;
+                $kataKunci = is_array(request('search')) ? (request('search')['value'] ?? null) : request('search');
+            @endphp
+            @if($statusLabel) | Status: {{ $statusLabel }} @endif
+            @if($kataKunci) | Pencarian: "{{ $kataKunci }}" @endif
         </div>
         <div class="right">
             Dicetak: {{ now()->translatedFormat('d F Y, H:i') }}

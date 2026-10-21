@@ -73,8 +73,8 @@
 
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <div class="flex gap-2">
-                    <a href="{{ route('produksi.pdf', ['periode' => $periode, 'status' => $status, 'search' => request('search'), 'tanggal_ref' => $periode == 'harian' ? $tanggalRef->toDateString() : ($periode == 'mingguan' ? $tanggalRef->format('o-\WW') : ($periode == 'bulanan' ? $tanggalRef->format('Y-m') : null))]) }}" class="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition">Cetak PDF</a>
-                    <a href="{{ route('produksi.excel', ['periode' => $periode, 'status' => $status, 'search' => request('search'), 'tanggal_ref' => $periode === 'semua' ? null : (request('tanggal_ref') ?? $tanggalRef->toDateString())]) }}" class="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition">Export Excel</a>
+                    <a href="{{ route('produksi.pdf') }}" id="btnCetakPdf" target="_blank" class="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition">Cetak PDF</a>
+                    <a href="{{ route('produksi.excel') }}" id="btnExportExcel" class="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition">Export Excel</a>
                 </div>
                 <a href="{{ route('produksi.create') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white px-5 py-2.5 font-semibold text-sm transition shadow-xs">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -167,7 +167,38 @@
         }
     };
 
+    // Kumpulkan filter yang sedang aktif (status, periode, tanggal, dan kata kunci pencarian)
+    function ambilFilterProduksi() {
+        const params = {
+            status: $('#filter_status_produksi').val() || 'semua',
+            periode: $('#filter_periode_produksi').val() || 'semua',
+            search: ($('#produksiTable').closest('.sdt-card').find('.sdt-search-input').val() || '').trim()
+        };
+
+        if (params.periode !== 'semua') {
+            const tgl = $('input[name="tanggal_ref"]:not(:disabled)').val();
+            if (tgl) params.tanggal_ref = tgl;
+        }
+
+        if (!params.search) delete params.search;
+        return params;
+    }
+
+    // Pasang filter aktif ke link Cetak PDF & Export Excel
+    function perbaruiLinkCetakProduksi() {
+        const query = $.param(ambilFilterProduksi());
+        ['btnCetakPdf', 'btnExportExcel'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const base = el.href.split('?')[0];
+            el.href = base + (query ? '?' + query : '');
+        });
+    }
+
     $(document).ready(function() {
+        // Pastikan link selalu terbaru tepat saat diklik
+        $('#btnCetakPdf, #btnExportExcel').on('click', perbaruiLinkCetakProduksi);
+
         initSaishoDataTable('produksiTable', {
             serverSide: true,
             ajax: {
@@ -191,6 +222,7 @@
             emptyText: 'Belum ada data produksi',
             onDraw: function() {
                 perbaruiKadaluwarsaProduksi();
+                perbaruiLinkCetakProduksi();
             }
         });
 

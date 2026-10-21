@@ -90,7 +90,10 @@ class ProduksiController extends Controller
         return Produksi::with(['produk.detailProduks', 'user', 'detailBahan.bahanBaku.satuan', 'produksiVarians'])
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('produk', function ($q) use ($search) {
-                    $q->where('nama_produk', 'like', "%{$search}%");
+                    $q->where('nama_produk', 'like', "%{$search}%")
+                      ->orWhereHas('detailProduks', function ($qd) use ($search) {
+                          $qd->where('kode_produk', 'like', "%{$search}%");
+                      });
                 });
             })
             ->when($status === 'kadaluarsa', function ($query) use ($kadaluarsaExpr, $now) {
@@ -749,37 +752,33 @@ class ProduksiController extends Controller
 
             $row = 2;
             foreach ($produksi as $item) {
+                // Satu produksi = satu baris. Kalau bahan bakunya lebih dari satu,
+                // nama bahan dan jumlahnya digabung dalam satu sel (satu bahan per baris teks).
                 if ($item->detailBahan->isEmpty()) {
-                    $sheet->fromArray([
-                        $item->tanggal,
-                        $item->jam_produksi,
-                        $item->kadaluarsa_label,
-                        $item->produk->nama_produk,
-                        $item->jumlah_hasil,
-                        $item->punya_rincian_rasa ? $item->rincian_rasa : $item->rincian_ukuran,
-                        $item->user->name,
-                        $item->keterangan,
-                        '-',
-                        '-',
-                    ], null, "A{$row}");
-                    $row++;
+                    $namaBahan = '-';
+                    $jumlahDipakai = '-';
                 } else {
-                    foreach ($item->detailBahan as $detail) {
-                        $sheet->fromArray([
-                            $item->tanggal,
-                            $item->jam_produksi,
-                            $item->kadaluarsa_label,
-                            $item->produk->nama_produk,
-                            $item->jumlah_hasil,
-                            $item->punya_rincian_rasa ? $item->rincian_rasa : $item->rincian_ukuran,
-                            $item->user->name,
-                            $item->keterangan,
-                            $detail->bahanBaku->nama_bahan,
-                            $detail->jumlah_terpakai . ' ' . ($detail->bahanBaku->satuan->nama ?? ''),
-                        ], null, "A{$row}");
-                        $row++;
-                    }
+                    $namaBahan = $item->detailBahan
+                        ->map(fn ($d) => $d->bahanBaku->nama_bahan)
+                        ->implode("\n");
+                    $jumlahDipakai = $item->detailBahan
+                        ->map(fn ($d) => $d->jumlah_terpakai . ' ' . ($d->bahanBaku->satuan->nama ?? ''))
+                        ->implode("\n");
                 }
+
+                $sheet->fromArray([
+                    $item->tanggal,
+                    $item->jam_produksi,
+                    $item->kadaluarsa_label,
+                    $item->produk->nama_produk,
+                    $item->jumlah_hasil,
+                    $item->punya_rincian_rasa ? $item->rincian_rasa : $item->rincian_ukuran,
+                    $item->user->name,
+                    $item->keterangan,
+                    $namaBahan,
+                    $jumlahDipakai,
+                ], null, "A{$row}");
+                $row++;
             }
 
             $lastRow = $row - 1;
@@ -802,6 +801,9 @@ class ProduksiController extends Controller
             $sheet->getStyle("I2:I{$lastRow}")
                 ->getAlignment()
                 ->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+            // Nama bahan & jumlah dipakai bisa berisi beberapa baris teks, jadi wajib wrap text
+            $sheet->getStyle("I2:J{$lastRow}")->getAlignment()->setWrapText(true);
 
             // Border tipis di semua sel tabel biar rapi
             $sheet->getStyle("A1:{$lastCol}{$lastRow}")
