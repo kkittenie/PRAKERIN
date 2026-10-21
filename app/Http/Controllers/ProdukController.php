@@ -146,11 +146,13 @@ class ProdukController extends Controller
                 $validated['foto'] = $request->file('foto')->store('produk', 'public');
             }
 
-            $produk = DB::transaction(function () use ($validated, $baris, $varian) {
+            $global = $request->input('mode_stok') === 'global';
+
+            $produk = DB::transaction(function () use ($validated, $baris, $varian, $global) {
                 $produk = Produk::create($validated);
                 $this->simpanBarisDetail($produk, $baris);
                 $this->simpanVarianGlobal($produk, $varian);
-                $this->sinkronFotoUtama($produk, null, $request->input('mode_stok') === 'global');
+                $this->sinkronFotoUtama($produk, null, $global);
                 return $produk;
             });
 
