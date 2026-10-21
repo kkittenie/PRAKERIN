@@ -18,7 +18,7 @@
                             <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Hari Ini</p>
                         </div>
                     </div>
-                    <p class="text-lg lg:text-xl font-bold text-gray-900 dark:text-white mb-0.5">Rp {{ number_format($totalHariIni, 0, ',', '.') }}</p>
+                    <p class="text-lg lg:text-xl font-bold {{ $totalHariIni < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }} mb-0.5">{{ $totalHariIni < 0 ? '-Rp ' . number_format(abs($totalHariIni), 0, ',', '.') : 'Rp ' . number_format($totalHariIni, 0, ',', '.') }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">{{ $jumlahTransaksiHariIni }} transaksi</p>
                 </div>
             </div>
@@ -35,7 +35,7 @@
                             <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Bulan Ini</p>
                         </div>
                     </div>
-                    <p class="text-lg lg:text-xl font-bold text-gray-900 dark:text-white mb-0.5">Rp {{ number_format($totalBulanIni, 0, ',', '.') }}</p>
+                    <p class="text-lg lg:text-xl font-bold {{ $totalBulanIni < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }} mb-0.5">{{ $totalBulanIni < 0 ? '-Rp ' . number_format(abs($totalBulanIni), 0, ',', '.') : 'Rp ' . number_format($totalBulanIni, 0, ',', '.') }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">{{ $jumlahTransaksiBulanIni }} transaksi</p>
                 </div>
             </div>
@@ -52,7 +52,7 @@
                             <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Tahun Ini</p>
                         </div>
                     </div>
-                    <p class="text-lg lg:text-xl font-bold text-gray-900 dark:text-white mb-0.5">Rp {{ number_format($totalTahunIni, 0, ',', '.') }}</p>
+                    <p class="text-lg lg:text-xl font-bold {{ $totalTahunIni < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }} mb-0.5">{{ $totalTahunIni < 0 ? '-Rp ' . number_format(abs($totalTahunIni), 0, ',', '.') : 'Rp ' . number_format($totalTahunIni, 0, ',', '.') }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">{{ $jumlahTransaksiTahunIni }} transaksi</p>
                 </div>
             </div>
@@ -62,8 +62,8 @@
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-6 w-full overflow-hidden">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-800 dark:text-white">Grafik Penjualan</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Tren penjualan berdasarkan periode yang dipilih</p>
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white">Grafik Laba Bersih</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Tren laba bersih (setelah dikurangi harga modal) berdasarkan periode yang dipilih</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
                     <div class="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -98,7 +98,7 @@
         <div class="sdt-card rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden space-y-4">
             <div class="px-6 pt-5">
                 <h3 class="text-lg font-bold text-gray-800 dark:text-white">🏆 Produk Terlaris</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">10 produk dengan penjualan tertinggi sepanjang waktu</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">10 produk dengan penjualan tertinggi sepanjang waktu — laba bersih setelah dikurangi harga modal</p>
             </div>
 
             <div class="sdt-toolbar">
@@ -119,7 +119,7 @@
                             <th class="py-3 w-12">#</th>
                             <th class="py-3">Nama Produk</th>
                             <th class="py-3 text-right">Total Terjual</th>
-                            <th class="py-3 text-right">Total Pendapatan</th>
+                            <th class="py-3 text-right">Laba Bersih</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -213,9 +213,11 @@ document.addEventListener('DOMContentLoaded', function () {
             yaxis: {
                 labels: {
                     formatter: function (val) {
-                        if (val >= 1000000) return 'Rp ' + (val / 1000000).toFixed(1) + ' jt';
-                        if (val >= 1000) return 'Rp ' + (val / 1000).toFixed(0) + ' rb';
-                        return 'Rp ' + val;
+                        const prefix = val < 0 ? '-Rp ' : 'Rp ';
+                        const abs = Math.abs(val);
+                        if (abs >= 1000000) return prefix + (abs / 1000000).toFixed(1) + ' jt';
+                        if (abs >= 1000) return prefix + (abs / 1000).toFixed(0) + ' rb';
+                        return prefix + abs;
                     },
                     style: {
                         colors: '#9ca3af',
@@ -226,7 +228,8 @@ document.addEventListener('DOMContentLoaded', function () {
             tooltip: {
                 y: {
                     formatter: function (val) {
-                        return 'Rp ' + val.toLocaleString('id-ID');
+                        const prefix = val < 0 ? '-Rp ' : 'Rp ';
+                        return prefix + Math.abs(val).toLocaleString('id-ID');
                     }
                 }
             },

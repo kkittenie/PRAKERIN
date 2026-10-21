@@ -67,7 +67,7 @@ class PengaturanMemberController extends Controller
                     ->withProperties(['error_message' => $e->getMessage(), 'exception' => get_class($e), 'file' => $e->getFile(), 'line' => $e->getLine()])
                     ->log('Error: ' . $e->getMessage());
 
-                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data pengaturan member.'], 500);
+                return response()->json(['draw' => intval($request->input('draw')), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Gagal memuat data pengaturan poin.'], 500);
             }
         }
 
@@ -119,11 +119,11 @@ class PengaturanMemberController extends Controller
                 ->causedBy(auth()->user())
                 ->performedOn($pengaturanMember)
                 ->withProperties($pengaturanMember->toArray())
-                ->log('Menambahkan pengaturan member baru: ' . $pengaturanMember->nama_aturan);
+                ->log('Menambahkan pengaturan poin baru: ' . $pengaturanMember->nama_aturan);
 
             return redirect()
                 ->route('pengaturan-member.index')
-                ->with('success', 'Pengaturan member berhasil ditambahkan.');
+                ->with('success', 'Pengaturan poin berhasil ditambahkan.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -180,11 +180,11 @@ class PengaturanMemberController extends Controller
                 ->causedBy(auth()->user())
                 ->performedOn($pengaturanMember)
                 ->withProperties($pengaturanMember->toArray())
-                ->log('Memperbarui pengaturan member: ' . $pengaturanMember->nama_aturan);
+                ->log('Memperbarui pengaturan poin: ' . $pengaturanMember->nama_aturan);
 
             return redirect()
                 ->route('pengaturan-member.index')
-                ->with('success', 'Pengaturan member berhasil diperbarui.');
+                ->with('success', 'Pengaturan poin berhasil diperbarui.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -202,9 +202,9 @@ class PengaturanMemberController extends Controller
                 ->causedBy(auth()->user())
                 ->performedOn($pengaturanMember)
                 ->withProperties($pengaturanMember->toArray())
-                ->log('Menghapus pengaturan member: ' . $pengaturanMember->nama_aturan);
+                ->log('Menghapus pengaturan poin: ' . $pengaturanMember->nama_aturan);
 
-            return back()->with('success', 'Pengaturan member berhasil dihapus.');
+            return back()->with('success', 'Pengaturan poin berhasil dihapus.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -240,13 +240,13 @@ class PengaturanMemberController extends Controller
                     'status_aktif' => $pengaturanMember->status_aktif,
                 ])
                 ->log(
-                    'Mengubah status pengaturan member: ' .
+                    'Mengubah status pengaturan poin: ' .
                     $pengaturanMember->nama_aturan .
                     ' menjadi ' .
                     ($pengaturanMember->status_aktif ? 'Aktif' : 'Nonaktif')
                 );
 
-            return back()->with('success', 'Status pengaturan member berhasil diubah.');
+            return back()->with('success', 'Status pengaturan poin berhasil diubah.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

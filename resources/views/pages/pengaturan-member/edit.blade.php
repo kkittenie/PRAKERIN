@@ -2,7 +2,7 @@
 
 @section('content')
 
-<x-common.page-breadcrumb pageTitle="Edit Aturan Member" parentTitle="Pengaturan Member" :parentUrl="route('pengaturan-member.index')" />
+<x-common.page-breadcrumb pageTitle="Edit Aturan Member" parentTitle="Pengaturan Poin" :parentUrl="route('pengaturan-member.index')" />
 
 <div class="space-y-6">
 

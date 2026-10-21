@@ -125,7 +125,7 @@ class RoleController extends Controller
             ],
             'member' => [
                 'nama' => 'Kelola Member',
-                'deskripsi' => 'Data member, poin loyalitas, level badge & pengaturan member',
+                'deskripsi' => 'Data member, poin loyalitas, level badge & pengaturan poin',
                 'grup' => 'Member & Reward',
             ],
             'reward' => [

@@ -55,7 +55,7 @@ class MenuHelper
                 'icon' => 'member',
                 'subItems' => [
                     ['name' => 'Member', 'path' => '/member', 'permission' => ['lihat_member', 'tambah_member', 'edit_member', 'hapus_member']],
-                    ['name' => 'Pengaturan Member', 'path' => '/pengaturan-member', 'permission' => ['lihat_member', 'tambah_member', 'edit_member', 'hapus_member']],
+                    ['name' => 'Pengaturan Poin', 'path' => '/pengaturan-member', 'permission' => ['lihat_member', 'tambah_member', 'edit_member', 'hapus_member']],
                     ['name' => 'Badge', 'path' => '/member-level', 'permission' => ['lihat_member', 'tambah_member', 'edit_member', 'hapus_member']],
                 ],
             ],

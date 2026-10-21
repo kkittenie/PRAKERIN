@@ -220,6 +220,30 @@
         @enderror
     </div>
 
+    {{-- Jumlah PCS (isi_event) --}}
+    <div>
+        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Jumlah PCS <span class="text-red-500">*</span>
+        </label>
+        <div class="relative flex items-center">
+            <input
+                type="number"
+                name="isi_event"
+                value="{{ old('isi_event', 1) }}"
+                min="1"
+                step="1"
+                placeholder="1"
+                class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 pr-16 py-3 focus:border-brand-500 focus:ring-brand-500"
+                required>
+            <span class="absolute right-4 top-3 text-gray-500 font-bold text-sm">pcs</span>
+        </div>
+        <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Jumlah pcs produk yang dikurangi dari stok per 1 event</span>
+        @error('isi_event')
+            <small class="text-red-500">{{ $message }}</small>
+        @enderror
+    </div>
+
+
     {{-- Mulai Berlaku --}}
     <div>
         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">

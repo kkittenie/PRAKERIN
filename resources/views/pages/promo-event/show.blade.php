@@ -59,9 +59,18 @@
     </div>
 
     <div>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Jumlah PCS</p>
+        <p class="font-bold text-gray-800 dark:text-white">
+            {{ $promoEvent->isi_event }}
+            <span class="text-sm font-normal text-gray-500 dark:text-gray-400">pcs</span>
+        </p>
+    </div>
+
+    <div>
         <p class="text-sm text-gray-500 dark:text-gray-400">Mulai Berlaku</p>
         <p class="font-semibold text-gray-800 dark:text-white">{{ $promoEvent->mulai_berlaku->format('d M Y H:i') }}</p>
     </div>
+
 
     <div>
         <p class="text-sm text-gray-500 dark:text-gray-400">Selesai Berlaku</p>
