@@ -66,7 +66,14 @@
     {{-- ========================================== --}}
     {{-- MOBILE VIEW (< 1024px) - 100% UNTOUCHED ORIGINAL --}}
     {{-- ========================================== --}}
-    <div x-data="{ modalHapusAkunTerbuka: false, menghapusAkun: false }" class="flex h-screen max-h-screen flex-col overflow-hidden lg:hidden">
+    <div x-data="{
+        modalHapusAkunTerbuka: {{ isset($errors) && $errors->has('password') ? 'true' : 'false' }},
+        menghapusAkun: false,
+        passwordHapus: '',
+        errorPassword: '{{ isset($errors) && $errors->has('password') ? $errors->first('password') : '' }}',
+        lihatPassword: false,
+        punyaPassword: {{ auth('member')->user() && empty(auth('member')->user()->google_id) && !is_null(auth('member')->user()->password) ? 'true' : 'false' }}
+    }" class="flex h-screen max-h-screen flex-col overflow-hidden lg:hidden">
 
         <div class="-mt-6 flex flex-none items-center justify-between px-5 pt-6">
             <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
@@ -240,40 +247,66 @@
 
         <div x-show="modalHapusAkunTerbuka" x-cloak x-transition
             class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
-            <div @click.away="if (!menghapusAkun) modalHapusAkunTerbuka = false"
+            <div @click.away="if (!menghapusAkun) { modalHapusAkunTerbuka = false; passwordHapus = ''; errorPassword = ''; }"
                 class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100">
-                <div class="p-6 text-center">
-                    <div class="w-14 h-14 bg-red-100 text-red-600 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
-                        ⚠
+                <form method="POST" action="{{ route('member.profil.hapus-akun') }}"
+                    @submit="if (punyaPassword && passwordHapus.trim() === '') { errorPassword = 'Masukkan password kamu untuk konfirmasi.'; $event.preventDefault(); return; } menghapusAkun = true;">
+                    @csrf
+                    @method('DELETE')
+                    <div class="p-6 text-center">
+                        <div class="w-14 h-14 bg-red-100 text-red-600 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
+                            ⚠
+                        </div>
+                        <h3 class="font-extrabold text-gray-900 text-base">Hapus Akun?</h3>
+                        <p class="text-xs text-gray-500 mt-2">
+                            Yakin ingin menghapus akun kamu? Tindakan ini tidak bisa dibatalkan.
+                        </p>
+                        <template x-if="punyaPassword">
+                            <div class="mt-4 text-left">
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Konfirmasi Password</label>
+                                <div class="relative">
+                                    <input x-model="passwordHapus"
+                                        name="password"
+                                        :type="lihatPassword ? 'text' : 'password'"
+                                        placeholder="Masukkan password kamu"
+                                        :class="errorPassword ? 'border-red-400 focus:ring-red-400/20' : 'border-gray-200 focus:ring-brand-800/10'"
+                                        class="w-full rounded-xl border bg-gray-50 px-4 py-2.5 pr-10 text-sm text-gray-800 outline-none transition focus:border-brand-800 focus:ring-2">
+                                    <button type="button" @click="lihatPassword = !lihatPassword"
+                                        class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 transition">
+                                        <svg x-show="!lihatPassword" viewBox="0 0 24 24" fill="none" class="h-4 w-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        <svg x-show="lihatPassword" x-cloak viewBox="0 0 24 24" fill="none" class="h-4 w-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                    </button>
+                                </div>
+                                <p x-show="errorPassword" x-text="errorPassword" class="mt-1 text-xs text-red-600 font-semibold"></p>
+                            </div>
+                        </template>
                     </div>
-                    <h3 class="font-extrabold text-gray-900 text-base">Hapus Akun?</h3>
-                    <p class="text-xs text-gray-500 mt-2">
-                        Yakin ingin menghapus akun kamu? Tindakan ini tidak bisa dibatalkan.
-                    </p>
-                </div>
-                <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-center gap-3">
-                    <button type="button" @click="modalHapusAkunTerbuka = false" :disabled="menghapusAkun"
-                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-lg transition text-gray-700 disabled:opacity-50">Batal</button>
-                    <button type="button" @click="menghapusAkun = true; $refs.formHapusAkunMob.submit()" :disabled="menghapusAkun"
-                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs disabled:opacity-50">
-                        <span x-show="!menghapusAkun">Hapus</span>
-                        <span x-show="menghapusAkun" x-cloak>Menghapus...</span>
-                    </button>
-                </div>
+                    <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-center gap-3">
+                        <button type="button" @click="modalHapusAkunTerbuka = false; passwordHapus = ''; errorPassword = '';" :disabled="menghapusAkun"
+                            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-lg transition text-gray-700 disabled:opacity-50">Batal</button>
+                        <button type="submit" :disabled="menghapusAkun"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs disabled:opacity-50">
+                            <span x-show="!menghapusAkun">Hapus</span>
+                            <span x-show="menghapusAkun" x-cloak>Menghapus...</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-
-        <form method="POST" action="{{ route('member.profil.hapus-akun') }}" x-ref="formHapusAkunMob" class="hidden">
-            @csrf
-            @method('DELETE')
-        </form>
     </div>
 
 
     {{-- ========================================== --}}
     {{-- DESKTOP VIEW (>= 1024px) - REDESIGNED CARD --}}
     {{-- ========================================== --}}
-    <div x-data="{ modalHapusAkunTerbuka: false, menghapusAkun: false }"
+    <div x-data="{
+        modalHapusAkunTerbuka: {{ isset($errors) && $errors->has('password') ? 'true' : 'false' }},
+        menghapusAkun: false,
+        passwordHapus: '',
+        errorPassword: '{{ isset($errors) && $errors->has('password') ? $errors->first('password') : '' }}',
+        lihatPassword: false,
+        punyaPassword: {{ auth('member')->user() && empty(auth('member')->user()->google_id) && !is_null(auth('member')->user()->password) ? 'true' : 'false' }}
+    }"
         class="hidden lg:block lg:max-w-3xl lg:mx-auto lg:my-6 lg:bg-white lg:rounded-3xl lg:border lg:border-gray-200/80 lg:shadow-xl lg:overflow-hidden">
 
         {{-- Desktop-Only Card Header --}}
@@ -447,33 +480,52 @@
 
         <div x-show="modalHapusAkunTerbuka" x-cloak x-transition
             class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
-            <div @click.away="if (!menghapusAkun) modalHapusAkunTerbuka = false"
+            <div @click.away="if (!menghapusAkun) { modalHapusAkunTerbuka = false; passwordHapus = ''; errorPassword = ''; }"
                 class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100">
-                <div class="p-6 text-center">
-                    <div class="w-14 h-14 bg-red-100 text-red-600 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
-                        ⚠
+                <form method="POST" action="{{ route('member.profil.hapus-akun') }}"
+                    @submit="if (punyaPassword && passwordHapus.trim() === '') { errorPassword = 'Masukkan password kamu untuk konfirmasi.'; $event.preventDefault(); return; } menghapusAkun = true;">
+                    @csrf
+                    @method('DELETE')
+                    <div class="p-6 text-center">
+                        <div class="w-14 h-14 bg-red-100 text-red-600 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
+                            ⚠
+                        </div>
+                        <h3 class="font-extrabold text-gray-900 text-base">Hapus Akun?</h3>
+                        <p class="text-xs text-gray-500 mt-2 leading-relaxed">
+                            Yakin ingin menghapus akun kamu? Tindakan ini bersifat permanen dan tidak bisa dibatalkan.
+                        </p>
+                        <template x-if="punyaPassword">
+                            <div class="mt-4 text-left">
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Konfirmasi Password</label>
+                                <div class="relative">
+                                    <input x-model="passwordHapus"
+                                        name="password"
+                                        :type="lihatPassword ? 'text' : 'password'"
+                                        placeholder="Masukkan password kamu"
+                                        :class="errorPassword ? 'border-red-400 focus:ring-red-400/20' : 'border-gray-200 focus:ring-brand-800/10'"
+                                        class="w-full rounded-xl border bg-gray-50 px-4 py-2.5 pr-10 text-sm text-gray-800 outline-none transition focus:border-brand-800 focus:ring-2">
+                                    <button type="button" @click="lihatPassword = !lihatPassword"
+                                        class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 transition">
+                                        <svg x-show="!lihatPassword" viewBox="0 0 24 24" fill="none" class="h-4 w-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        <svg x-show="lihatPassword" x-cloak viewBox="0 0 24 24" fill="none" class="h-4 w-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                    </button>
+                                </div>
+                                <p x-show="errorPassword" x-text="errorPassword" class="mt-1 text-xs text-red-600 font-semibold"></p>
+                            </div>
+                        </template>
                     </div>
-                    <h3 class="font-extrabold text-gray-900 text-base">Hapus Akun?</h3>
-                    <p class="text-xs text-gray-500 mt-2 leading-relaxed">
-                        Yakin ingin menghapus akun kamu? Tindakan ini bersifat permanen dan tidak bisa dibatalkan.
-                    </p>
-                </div>
-                <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-center gap-3">
-                    <button type="button" @click="modalHapusAkunTerbuka = false" :disabled="menghapusAkun"
-                        class="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-xl transition text-gray-700 disabled:opacity-50">Batal</button>
-                    <button type="button" @click="menghapusAkun = true; $refs.formHapusAkunDesk.submit()" :disabled="menghapusAkun"
-                        class="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition shadow-xs disabled:opacity-50">
-                        <span x-show="!menghapusAkun">Ya, Hapus Akun</span>
-                        <span x-show="menghapusAkun" x-cloak>Menghapus...</span>
-                    </button>
-                </div>
+                    <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-center gap-3">
+                        <button type="button" @click="modalHapusAkunTerbuka = false; passwordHapus = ''; errorPassword = '';" :disabled="menghapusAkun"
+                            class="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-xl transition text-gray-700 disabled:opacity-50">Batal</button>
+                        <button type="submit" :disabled="menghapusAkun"
+                            class="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition shadow-xs disabled:opacity-50">
+                            <span x-show="!menghapusAkun">Ya, Hapus Akun</span>
+                            <span x-show="menghapusAkun" x-cloak>Menghapus...</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-
-        <form method="POST" action="{{ route('member.profil.hapus-akun') }}" x-ref="formHapusAkunDesk" class="hidden">
-            @csrf
-            @method('DELETE')
-        </form>
     </div>
 
 @endsection
