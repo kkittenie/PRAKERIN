@@ -189,12 +189,18 @@ class Produk extends Model
     }
 
     /** Semua harga jual yang berlaku untuk tampilan rentang harga (per varian untuk Produk Tunggal bervarian). */
-    public function daftarHargaJualTampil(): Collection
+    public function daftarHargaJualTampil(bool $hanyaAktif = false): Collection
     {
         if ($this->is_global && $this->jumlahVarianBersama() > 0) {
             $utama = $this->daftarDetail()->first();
+            $varian = $this->varianBersamaAktifTersedia();
 
-            return $this->varianBersamaAktifTersedia()
+            if ($hanyaAktif) {
+                $aktif = $varian->filter(fn (VarianProduk $v) => (bool) $v->status_aktif);
+                $varian = $aktif->isNotEmpty() ? $aktif : $varian;
+            }
+
+            return $varian
                 ->map(fn (VarianProduk $v) => $v->hargaJualEfektif($utama))
                 ->values();
         }
@@ -697,6 +703,12 @@ class Produk extends Model
 
     public function getHarga(?string $ukuran = null): float
     {
+        // Produk Tunggal bervarian: harga dasar = varian aktif termurah, sama dengan harga_jual,
+        // supaya harga diskon/promo tidak bergantung pada harga produk utama yang tersembunyi.
+        if ($ukuran === null && ($hargaVarian = $this->hargaVarianBersamaTermurah())) {
+            return $hargaVarian['jual'];
+        }
+
         $aktif = $this->daftarDetailAktif();
 
         if ($ukuran !== null) {
