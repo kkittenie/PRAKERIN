@@ -7,6 +7,8 @@ use App\Models\Member;
 use App\Models\OtpVerification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -45,15 +47,52 @@ class GoogleAuthController extends Controller
                 ->withErrors(['identifier' => 'Login dengan Google gagal. Coba lagi.']);
         }
 
+        return $this->lanjutkanDenganAkunGoogle(
+            $request,
+            (string) $g->getId(),
+            $g->getEmail(),
+            $g->getName(),
+            (bool) ($g->user['email_verified'] ?? true)
+        );
+    }
+
+    /**
+     * Login Google native dari aplikasi Android. Aplikasi mengirim ID token (Credential Manager),
+     * di sini diverifikasi ke Google lalu alurnya sama persis dengan callback OAuth biasa.
+     */
+    public function loginDenganToken(Request $request)
+    {
+        $request->session()->forget(self::SESSION_KEY);
+
+        $request->validate(['id_token' => ['required', 'string', 'max:4096']]);
+
+        Log::info('[google-native] token diterima dari aplikasi', [
+            'panjang_token' => strlen((string) $request->input('id_token')),
+            'host'          => $request->getHost(),
+        ]);
+
+        $g = $this->verifikasiIdToken((string) $request->input('id_token'));
+
+        if (! $g) {
+            return redirect()->route('member.login')
+                ->withErrors(['identifier' => 'Login dengan Google gagal. Coba lagi.']);
+        }
+
+        return $this->lanjutkanDenganAkunGoogle($request, $g['id'], $g['email'], $g['nama'], $g['email_terverifikasi']);
+    }
+
+    /** Alur bersama callback OAuth & login native: login / tautkan / arahkan ke pendaftaran. */
+    private function lanjutkanDenganAkunGoogle(Request $request, string $googleId, ?string $email, ?string $nama, bool $emailTerverifikasi)
+    {
         // 1) cari by google_id
-        $member = Member::where('google_id', $g->getId())->first();
+        $member = Member::where('google_id', $googleId)->first();
 
         // 2) belum tertaut: tautkan ke akun dengan email yang sama (hanya jika email terverifikasi Google)
-        if (! $member && $g->getEmail() && ($g->user['email_verified'] ?? true)) {
-            $member = Member::where('email', $g->getEmail())->first();
+        if (! $member && $email && $emailTerverifikasi) {
+            $member = Member::where('email', $email)->first();
 
             if ($member) {
-                $member->update(['google_id' => $g->getId()]);
+                $member->update(['google_id' => $googleId]);
             }
         }
 
@@ -62,13 +101,61 @@ class GoogleAuthController extends Controller
         }
 
         // 3) belum punya akun -> ke halaman daftar dengan data Google terisi
+        Log::info('[google-native] akun belum terdaftar, diarahkan ke form daftar', ['email' => $email]);
+
         $request->session()->put(self::SESSION_KEY, [
-            'google_id' => $g->getId(),
-            'nama'      => $g->getName() ?: Str::before((string) $g->getEmail(), '@'),
-            'email'     => $g->getEmail(),
+            'google_id' => $googleId,
+            'nama'      => $nama ?: Str::before((string) $email, '@'),
+            'email'     => $email,
         ]);
 
         return redirect()->route('member.google.register');
+    }
+
+    /** Verifikasi ID token ke Google (tokeninfo): tanda tangan, masa berlaku, penerbit, dan audience. */
+    private function verifikasiIdToken(string $idToken): ?array
+    {
+        try {
+            $res = Http::timeout(10)->acceptJson()
+                ->get('https://oauth2.googleapis.com/tokeninfo', ['id_token' => $idToken]);
+        } catch (\Throwable $e) {
+            Log::warning('[google-native] gagal menghubungi Google (tokeninfo): ' . $e->getMessage());
+
+            return null;
+        }
+
+        if (! $res->ok()) {
+            Log::warning('[google-native] tokeninfo ditolak Google', [
+                'status' => $res->status(),
+                'body'   => mb_substr($res->body(), 0, 300),
+            ]);
+
+            return null;
+        }
+
+        $d = $res->json();
+        $clientId = (string) config('services.google.client_id');
+        $issuerValid = in_array($d['iss'] ?? '', ['accounts.google.com', 'https://accounts.google.com'], true);
+
+        if ($clientId === '' || ($d['aud'] ?? null) !== $clientId || ! $issuerValid
+            || empty($d['sub']) || (int) ($d['exp'] ?? 0) < time()) {
+            Log::warning('[google-native] token tidak lolos pemeriksaan', [
+                'aud_token'       => $d['aud'] ?? null,
+                'client_id_laravel' => $clientId,
+                'iss_valid'       => $issuerValid,
+                'exp'             => $d['exp'] ?? null,
+                'sekarang'        => time(),
+            ]);
+
+            return null;
+        }
+
+        return [
+            'id'                  => (string) $d['sub'],
+            'email'               => $d['email'] ?? null,
+            'nama'                => $d['name'] ?? null,
+            'email_terverifikasi' => filter_var($d['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN),
+        ];
     }
 
     public function tampilkanRegister(Request $request)

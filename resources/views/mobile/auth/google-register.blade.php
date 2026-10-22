@@ -72,7 +72,7 @@
                         <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Email</label>
                         <input type="email" value="{{ $google['email'] }}" readonly disabled
                             class="w-full rounded-2xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm text-gray-500 cursor-not-allowed">
-                        <a href="{{ route('member.google.redirect', ['pilih_akun' => 1]) }}"
+                        <a href="{{ route('member.google.redirect', ['pilih_akun' => 1]) }}" data-google-native
                             class="mt-1 inline-block text-xs font-semibold text-brand-800 hover:underline">
                             Gunakan akun Google lain
                         </a>
@@ -293,6 +293,7 @@
         cek();
         if (mulaiDiLangkah2) setLangkah(2);
     </script>
+@include('mobile.auth._google-native')
 </body>
 
 </html>

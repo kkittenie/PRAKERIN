@@ -3,7 +3,7 @@
     <div class="h-px flex-1 bg-gray-200"></div> atau <div class="h-px flex-1 bg-gray-200"></div>
 </div>
 
-<a href="{{ route('member.google.redirect') }}"
+<a href="{{ route('member.google.redirect') }}" data-google-native
     class="flex w-full items-center justify-center gap-3 rounded-2xl border border-gray-300 bg-white py-3.5 text-base font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-[0.99]">
     <svg class="h-5 w-5" viewBox="0 0 48 48">
         <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" />
@@ -13,3 +13,4 @@
     </svg>
     Lanjutkan dengan Google
 </a>
+@include('mobile.auth._google-native')
