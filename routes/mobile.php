@@ -37,6 +37,9 @@ use Illuminate\Support\Facades\Route;
             Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
             Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
 
+            // Login Google native dari aplikasi Android (ID token dari Credential Manager)
+            Route::post('/auth/google/token', [GoogleAuthController::class, 'loginDenganToken'])->name('google.token');
+
             // Akun Google belum terdaftar -> lengkapi data dulu (alur ala GitHub)
             Route::get('/auth/google/daftar', [GoogleAuthController::class, 'tampilkanRegister'])->name('google.register');
             Route::post('/auth/google/daftar', [GoogleAuthController::class, 'register'])->name('google.register.store');
