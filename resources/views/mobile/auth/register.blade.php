@@ -109,7 +109,7 @@
                         Bergabung Sekarang!
                     </h2>
                     <p class="text-sm text-white/90 max-w-md leading-relaxed drop-shadow">
-                        Nikmati pengalaman berbelanja roti & kue lebih hemat dengan mengumpulkan poin reward dan stamp spesial member Saisho.
+                        Nikmati pengalaman berbelanja roti & donat lebih hemat dengan menggunakan voucher dan stamp spesial member Saisho Bakery.
                     </p>
                 </div>
             </div>
@@ -148,7 +148,7 @@
                 <div class="mb-6">
                     <h2 class="text-xl font-bold text-brand-800">Bergabung Bersama Saisho</h2>
                     <p class="text-xs text-gray-500 mt-1 leading-relaxed">
-                        Daftar dengan akun Google kamu untuk mulai mengumpulkan poin reward dan menikmati berbagai promo spesial member.
+                        Daftar dengan akun Google kamu untuk mulai {{ \App\Models\PengaturanMember::adaAturanAktif() ? 'mengumpulkan poin reward dan ' : '' }}menikmati berbagai promo spesial member.
                     </p>
                 </div>
 

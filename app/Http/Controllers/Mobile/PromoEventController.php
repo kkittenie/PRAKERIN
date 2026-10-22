@@ -29,6 +29,9 @@ class PromoEventController extends Controller
                 'promoEvent' => $promoEvent,
                 'habis' => $promoEvent->perlu_diproduksi,
                 'itemEdit' => $itemEdit,
+                'stokTersedia' => (int) $promoEvent->stok_tersedia,
+                // Paket event ini yang sudah ada di keranjang (tanpa item yang sedang diubah).
+                'terpakaiDiKeranjang' => MemberCart::jumlahPromoEventDiKeranjang($promoEvent->id, $itemEdit['id'] ?? null),
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

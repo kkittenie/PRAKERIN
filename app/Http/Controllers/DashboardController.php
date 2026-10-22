@@ -34,18 +34,18 @@ class DashboardController extends Controller
             $tahunIni = $hariIni->year;
 
             // ===== METRICS CARDS =====
-            $pendapatanHariIni = (int) Transaksi::whereDate('created_at', $hariIni)->sum('total_bayar');
-            $transaksiHariIni = Transaksi::whereDate('created_at', $hariIni)->count();
+            $pendapatanHariIni = (int) Transaksi::penjualanSah()->whereDate('created_at', $hariIni)->sum(DB::raw('total_bayar - COALESCE(pajak, 0)'));
+            $transaksiHariIni = Transaksi::penjualanSah()->whereDate('created_at', $hariIni)->count();
 
-            $pendapatanBulanIni = (int) Transaksi::whereMonth('created_at', $bulanIni)
+            $pendapatanBulanIni = (int) Transaksi::penjualanSah()->whereMonth('created_at', $bulanIni)
                 ->whereYear('created_at', $tahunIni)
-                ->sum('total_bayar');
-            $transaksiBulanIni = Transaksi::whereMonth('created_at', $bulanIni)
+                ->sum(DB::raw('total_bayar - COALESCE(pajak, 0)'));
+            $transaksiBulanIni = Transaksi::penjualanSah()->whereMonth('created_at', $bulanIni)
                 ->whereYear('created_at', $tahunIni)
                 ->count();
 
             // Pelanggan unik bulan ini (berdasarkan nama_pembeli)
-            $pelangganBulanIni = Transaksi::whereMonth('created_at', $bulanIni)
+            $pelangganBulanIni = Transaksi::penjualanSah()->whereMonth('created_at', $bulanIni)
                 ->whereYear('created_at', $tahunIni)
                 ->distinct('nama_pembeli')
                 ->count('nama_pembeli');
@@ -57,10 +57,10 @@ class DashboardController extends Controller
 
             // Perbandingan dengan bulan lalu
             $bulanLalu = Carbon::today()->subMonth();
-            $pendapatanBulanLalu = (int) Transaksi::whereMonth('created_at', $bulanLalu->month)
+            $pendapatanBulanLalu = (int) Transaksi::penjualanSah()->whereMonth('created_at', $bulanLalu->month)
                 ->whereYear('created_at', $bulanLalu->year)
-                ->sum('total_bayar');
-            $transaksiBulanLalu = Transaksi::whereMonth('created_at', $bulanLalu->month)
+                ->sum(DB::raw('total_bayar - COALESCE(pajak, 0)'));
+            $transaksiBulanLalu = Transaksi::penjualanSah()->whereMonth('created_at', $bulanLalu->month)
                 ->whereYear('created_at', $bulanLalu->year)
                 ->count();
 
@@ -77,9 +77,9 @@ class DashboardController extends Controller
             // ===== GRAFIK PENJUALAN BULANAN (Bar Chart) =====
             $penjualanBulanan = [];
             for ($i = 1; $i <= 12; $i++) {
-                $penjualanBulanan[] = (int) Transaksi::whereMonth('created_at', $i)
+                $penjualanBulanan[] = (int) Transaksi::penjualanSah()->whereMonth('created_at', $i)
                     ->whereYear('created_at', $tahunIni)
-                    ->sum('total_bayar');
+                    ->sum(DB::raw('total_bayar - COALESCE(pajak, 0)'));
             }
 
             // ===== TARGET BULANAN (Gauge) =====
@@ -95,8 +95,8 @@ class DashboardController extends Controller
             for ($i = 6; $i >= 0; $i--) {
                 $tanggal = Carbon::today()->subDays($i);
                 $labelHarian[] = $tanggal->translatedFormat('D, d M');
-                $dataTransaksiHarian[] = Transaksi::whereDate('created_at', $tanggal)->count();
-                $dataPendapatanHarian[] = (int) Transaksi::whereDate('created_at', $tanggal)->sum('total_bayar');
+                $dataTransaksiHarian[] = Transaksi::penjualanSah()->whereDate('created_at', $tanggal)->count();
+                $dataPendapatanHarian[] = (int) Transaksi::penjualanSah()->whereDate('created_at', $tanggal)->sum(DB::raw('total_bayar - COALESCE(pajak, 0)'));
             }
 
             // ===== PRODUK TERLARIS (Top 5) =====

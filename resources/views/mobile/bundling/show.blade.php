@@ -62,6 +62,33 @@
                     catatan: @js($itemEdit['catatan'] ?? ''),
                     hargaSatuan: {{ (float) $bundling->harga }},
                     habis: {{ $habis ? 'true' : 'false' }},
+                    maksPaket: {{ $maksPaket === null ? -1 : (int) $maksPaket }},
+                    terpakai: {{ (int) $terpakaiDiKeranjang }},
+
+                    get stokTidakCukup() {
+                        return !this.habis && this.maksPaket >= 0 && (this.jumlah + this.terpakai) > this.maksPaket;
+                    },
+
+                    get pesanStokTidakCukup() {
+                        if (!this.stokTidakCukup) return '';
+                        let pesan = 'Stok tidak mencukupi. Sisa stok ' + this.maksPaket + ' paket';
+                        if (this.terpakai >= this.maksPaket) {
+                            return pesan + ' dan semuanya sudah ada di keranjang kamu.';
+                        }
+                        return this.terpakai > 0
+                            ? pesan + ', ' + this.terpakai + ' paket sudah ada di keranjang kamu.'
+                            : pesan + '.';
+                    },
+
+                    get tidakBisaPesan() {
+                        return this.habis || this.stokTidakCukup;
+                    },
+
+                    get labelTidakBisa() {
+                        if (this.habis) return 'Stok Habis';
+                        if (this.stokTidakCukup) return 'Stok Tidak Cukup';
+                        return '';
+                    },
                     isKhusus: {{ $isKhusus ? 'true' : 'false' }},
                     targetQtyKhusus: {{ $targetQtyKhusus }},
                     varianQty: @js($initialVarian),
@@ -139,7 +166,7 @@
 
                 @if ($habis)
                     <span class="absolute left-4 bottom-4 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
-                        Sedang Diproduksi
+                        Stok Habis
                     </span>
                 @endif
 
@@ -179,7 +206,7 @@
             @if ($habis)
                 <div class="flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">
                     @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
-                    <p class="text-[11px] font-semibold leading-relaxed">Salah satu produk pada bundling sedang dibuat — waktu tunggu bisa lebih lama dari biasanya.
+                    <p class="text-[11px] font-semibold leading-relaxed">Produk sedang diproduksi
                     </p>
                 </div>
             @endif
@@ -380,9 +407,14 @@
             </div>
 
             {{-- Spacer pas di bawah kolom catatan agar scroll pas sampai batas kolom catatan --}}
-            <div class="h-16 lg:hidden" aria-hidden="true"></div>
+            <div class="h-24 lg:hidden" aria-hidden="true"></div>
 
             <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 lg:static lg:w-full lg:border-t-0 lg:px-0 lg:pt-4 lg:shadow-none">
+
+            {{-- Pesan kalau jumlah paket yang diminta melebihi sisa stok --}}
+            <template x-if="stokTidakCukup">
+                <p class="mb-2 text-[11px] font-semibold leading-snug text-red-600" x-text="pesanStokTidakCukup"></p>
+            </template>
 
             @if (Auth::guard('member')->check())
 
@@ -430,9 +462,9 @@
                             </div>
 
                             <button type="submit"
-                                :disabled="!bisaSimpan"
+                                :disabled="tidakBisaPesan || !bisaSimpan"
                                 class="flex min-w-0 flex-1 items-center justify-center rounded-full bg-brand-800 px-6 py-4 text-sm font-bold text-white shadow-sm transition active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
-                                x-text="bisaSimpan ? ('Update – Rp ' + total.toLocaleString('id-ID')) : 'Lengkapi Pilihan Dulu'">
+                                x-text="tidakBisaPesan ? labelTidakBisa : (bisaSimpan ? ('Update – Rp ' + total.toLocaleString('id-ID')) : 'Lengkapi Pilihan Dulu')">
                             </button>
 
                         </div>
@@ -482,10 +514,10 @@
                         </div>
 
                         <button type="submit"
-                            :disabled="!bisaSimpan"
+                            :disabled="tidakBisaPesan || !bisaSimpan"
                             class="flex min-w-0 flex-1 lg:max-w-[260px] items-center justify-between rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed">
-                            <span x-text="bisaSimpan ? 'Add' : 'Lengkapi Pilihan Dulu'"></span>
-                            <span x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
+                            <span x-text="tidakBisaPesan ? labelTidakBisa : (bisaSimpan ? 'Add' : 'Lengkapi Pilihan Dulu')"></span>
+                            <span x-show="!tidakBisaPesan" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                         </button>
 
                     </div>

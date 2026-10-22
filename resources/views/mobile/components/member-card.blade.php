@@ -15,6 +15,7 @@
         default => 'text-white/80',
     };
     $tierAktif = \App\Models\MemberLevel::adaYangAktif();
+    $poinAktif = \App\Models\PengaturanMember::adaAturanAktif();
     $progres = $tierAktif ? $member->progres_tier : null;
     $nomorSamar = str_repeat('•', max(0, strlen($member->no_hp) - 4)).substr($member->no_hp, -4);
 @endphp
@@ -44,11 +45,13 @@
     </div>
 
     <div class="relative mt-6 flex items-end justify-between">
-        <div>
-            <p class="text-title-sm font-bold leading-none tabular-nums">{{ number_format($member->poin, 0, ',', '.') }}</p>
-            <p class="mt-1 text-theme-xs text-white/60">poin tersedia</p>
-        </div>
-        <p class="font-mono text-theme-sm tracking-[0.2em] text-white/70">{{ $nomorSamar }}</p>
+        @if ($poinAktif)
+            <div>
+                <p class="text-title-sm font-bold leading-none tabular-nums">{{ number_format($member->poin, 0, ',', '.') }}</p>
+                <p class="mt-1 text-theme-xs text-white/60">poin tersedia</p>
+            </div>
+        @endif
+        <p class="ml-auto font-mono text-theme-sm tracking-[0.2em] text-white/70">{{ $nomorSamar }}</p>
     </div>
 
     @if (! $tierAktif)

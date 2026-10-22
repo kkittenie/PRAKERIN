@@ -115,19 +115,108 @@ class LaporanController extends Controller
     }
 
     /**
+     * Hitung laba bersih (pendapatan - harga modal) untuk transaksi lunas
+     * dalam rentang waktu tertentu.
+     *
+     * @param  \Closure  $filterCallback  Callback untuk filter query (tanggal, dll)
+     * @return array  ['pendapatan' => int, 'modal' => int, 'laba' => int, 'jumlah_transaksi' => int]
+     */
+    private function hitungLabaBersih(\Closure $filterCallback): array
+    {
+        // Hitung total pendapatan dan jumlah transaksi
+        $queryTransaksi = Transaksi::penjualanSah();
+        $filterCallback($queryTransaksi);
+
+        // Pendapatan bersih: total_bayar sudah termasuk pajak (titipan), jadi pajak dikeluarkan
+        $pendapatan = (int) (clone $queryTransaksi)->sum(DB::raw('total_bayar - COALESCE(pajak, 0)'));
+        $jumlahTransaksi = (clone $queryTransaksi)->count();
+
+        // Hitung total harga modal dari detail transaksi
+        // LEFT JOIN ke detail_produks untuk mendapatkan harga_modal
+        $queryModal = DB::table('detail_transaksi as dt')
+            ->join('transaksi as t', 'dt.transaksi_id', '=', 't.id')
+            ->leftJoin('detail_produks as dp', 'dt.detail_produk_id', '=', 'dp.id')
+            ->where('t.status_pembayaran', 'Lunas')
+            ->where(function ($q) {
+                $q->whereNull('t.status_pesanan')
+                  ->orWhere('t.status_pesanan', '!=', Transaksi::STATUS_DIBATALKAN);
+            });
+
+        $filterCallback($queryModal, 't');
+
+        $totalModal = (int) $queryModal->sum(DB::raw('COALESCE(dp.harga_modal, 0) * dt.jumlah'));
+
+        return [
+            'pendapatan'       => $pendapatan,
+            'modal'            => $totalModal,
+            'laba'             => $pendapatan - $totalModal,
+            'jumlah_transaksi' => $jumlahTransaksi,
+        ];
+    }
+
+    /**
      * Laporan Penjualan - ringkasan penjualan per minggu, bulan, tahun
      */
     public function laporanPenjualan(Request $request)
     {
         if ($request->ajax()) {
             try {
-                // Produk terlaris (top 10 sepanjang waktu) - hasil agregasi GROUP BY.
-                // Diambil sebagai collection dulu (bukan query builder) supaya urutan
-                // "top 10 by total_terjual" ini tetap jadi seleksi datanya, dan sort
-                // dari DataTables (klik header kolom lain) beneran menggantikan
-                // urutan tampil tanpa terbentur ->orderByDesc() bawaan di atas.
-                $produkTerlaris = DetailTransaksi::select('nama_produk', DB::raw('SUM(jumlah) as total_terjual'), DB::raw('SUM(subtotal) as total_pendapatan'))
-                    ->groupBy('nama_produk')
+                // Produk terlaris (top 10 sepanjang waktu) dengan laba bersih.
+                //
+                // Baris isi bundling / promo event dicatat dengan subtotal 0 (uangnya ada di baris paket),
+                // jadi kalau dihitung sebagai produk sendiri labanya jadi minus dan jumlah terjualnya
+                // menggelembung. Karena itu: baris isi TIDAK tampil sendiri, tapi modalnya digabung ke
+                // baris paketnya. Total modal tetap sama dengan kartu ringkasan.
+                $barisIsiPaket = '(dt.produk_id IS NOT NULL AND (dt.bundling_id IS NOT NULL OR dt.promo_event_id IS NOT NULL))';
+
+                // 1) Baris yang tampil: produk biasa + baris paket (bukan isi paket)
+                $barisTampil = DB::table('detail_transaksi as dt')
+                    ->join('transaksi as t', 'dt.transaksi_id', '=', 't.id')
+                    ->leftJoin('detail_produks as dp', 'dt.detail_produk_id', '=', 'dp.id')
+                    ->where('t.status_pembayaran', 'Lunas')
+                    ->where(function ($q) {
+                        $q->whereNull('t.status_pesanan')
+                          ->orWhere('t.status_pesanan', '!=', Transaksi::STATUS_DIBATALKAN);
+                    })
+                    ->whereRaw("NOT {$barisIsiPaket}")
+                    ->selectRaw('dt.nama_produk as label')
+                    ->selectRaw('dt.jumlah as jumlah')
+                    ->selectRaw('dt.subtotal as pendapatan')
+                    ->selectRaw('COALESCE(dp.harga_modal, 0) * dt.jumlah as modal');
+
+                // 2) Modal isi paket: dilabeli dengan nama baris paket di transaksi yang sama
+                $modalIsiPaket = DB::table('detail_transaksi as dt')
+                    ->join('transaksi as t', 'dt.transaksi_id', '=', 't.id')
+                    ->leftJoin('detail_produks as dp', 'dt.detail_produk_id', '=', 'dp.id')
+                    ->where('t.status_pembayaran', 'Lunas')
+                    ->where(function ($q) {
+                        $q->whereNull('t.status_pesanan')
+                          ->orWhere('t.status_pesanan', '!=', Transaksi::STATUS_DIBATALKAN);
+                    })
+                    ->whereRaw($barisIsiPaket)
+                    ->selectRaw("COALESCE(
+                            (SELECT MIN(h.nama_produk) FROM detail_transaksi h
+                              WHERE h.transaksi_id = dt.transaksi_id AND h.produk_id IS NULL
+                                AND h.bundling_id IS NOT NULL AND h.bundling_id = dt.bundling_id),
+                            (SELECT MIN(h.nama_produk) FROM detail_transaksi h
+                              WHERE h.transaksi_id = dt.transaksi_id AND h.produk_id IS NULL
+                                AND h.promo_event_id IS NOT NULL AND h.promo_event_id = dt.promo_event_id),
+                            dt.nama_produk
+                        ) as label")
+                    ->selectRaw('0 as jumlah')
+                    ->selectRaw('0 as pendapatan')
+                    ->selectRaw('COALESCE(dp.harga_modal, 0) * dt.jumlah as modal');
+
+                $produkTerlaris = DB::query()
+                    ->fromSub($barisTampil->unionAll($modalIsiPaket), 'x')
+                    ->select(
+                        'label as nama_produk',
+                        DB::raw('SUM(jumlah) as total_terjual'),
+                        DB::raw('SUM(pendapatan) as total_pendapatan'),
+                        DB::raw('SUM(modal) as total_modal'),
+                        DB::raw('SUM(pendapatan) - SUM(modal) as laba_bersih')
+                    )
+                    ->groupBy('label')
                     ->orderByDesc('total_terjual')
                     ->limit(10)
                     ->get();
@@ -136,7 +225,8 @@ class LaporanController extends Controller
                     ->addIndexColumn()
                     ->addColumn('total_terjual_html', fn($item) => view('pages.laporan.partials.total-terjual', compact('item'))->render())
                     ->addColumn('total_pendapatan_html', fn($item) => view('pages.laporan.partials.total-pendapatan', compact('item'))->render())
-                    ->rawColumns(['total_terjual_html', 'total_pendapatan_html'])
+                    ->addColumn('laba_bersih_html', fn($item) => view('pages.laporan.partials.laba-bersih', compact('item'))->render())
+                    ->rawColumns(['total_terjual_html', 'total_pendapatan_html', 'laba_bersih_html'])
                     ->make(true);
             } catch (\Throwable $e) {
                 activity('error')
@@ -152,29 +242,33 @@ class LaporanController extends Controller
             $periode = $request->get('periode', 'bulan'); // minggu, bulan, tahun
             $tahun = (int) $request->get('tahun', date('Y'));
 
-            // Statistik ringkasan
+            // Statistik ringkasan — laba bersih (pendapatan - modal)
             $hariIni = Carbon::today();
-            $totalHariIni = Transaksi::where('status_pembayaran', 'Lunas')->whereDate('created_at', $hariIni)->sum('total_bayar');
-            $jumlahTransaksiHariIni = Transaksi::where('status_pembayaran', 'Lunas')->whereDate('created_at', $hariIni)->count();
 
-            $totalBulanIni = Transaksi::where('status_pembayaran', 'Lunas')->whereMonth('created_at', $hariIni->month)
-                ->whereYear('created_at', $hariIni->year)
-                ->sum('total_bayar');
-            $jumlahTransaksiBulanIni = Transaksi::where('status_pembayaran', 'Lunas')->whereMonth('created_at', $hariIni->month)
-                ->whereYear('created_at', $hariIni->year)
-                ->count();
+            $statHariIni = $this->hitungLabaBersih(function ($query, $alias = null) use ($hariIni) {
+                $col = $alias ? "{$alias}.created_at" : 'created_at';
+                $query->whereDate($col, $hariIni);
+            });
 
-            $totalTahunIni = Transaksi::where('status_pembayaran', 'Lunas')->whereYear('created_at', $hariIni->year)->sum('total_bayar');
-            $jumlahTransaksiTahunIni = Transaksi::where('status_pembayaran', 'Lunas')->whereYear('created_at', $hariIni->year)->count();
+            $statBulanIni = $this->hitungLabaBersih(function ($query, $alias = null) use ($hariIni) {
+                $col = $alias ? "{$alias}.created_at" : 'created_at';
+                $query->whereMonth($col, $hariIni->month)
+                      ->whereYear($col, $hariIni->year);
+            });
+
+            $statTahunIni = $this->hitungLabaBersih(function ($query, $alias = null) use ($hariIni) {
+                $col = $alias ? "{$alias}.created_at" : 'created_at';
+                $query->whereYear($col, $hariIni->year);
+            });
 
             // Data grafik berdasarkan periode
-            $dataGrafik = [];
+            $dataGrafikPendapatan = [];
+            $dataGrafikLaba = [];
             $labelGrafik = [];
 
             if ($periode === 'minggu') {
-                // 7 hari terakhir berdasarkan tahun terpilih (tanggal dan bulan saat ini, tahun disesuaikan)
+                // 7 hari terakhir berdasarkan tahun terpilih
                 $tanggalAcuan = Carbon::now()->year($tahun);
-                // Jika tahun terpilih adalah tahun saat ini, gunakan waktu sekarang asli
                 if ($tahun == date('Y')) {
                     $tanggalAcuan = Carbon::now();
                 }
@@ -182,23 +276,41 @@ class LaporanController extends Controller
                 for ($i = 6; $i >= 0; $i--) {
                     $tanggal = (clone $tanggalAcuan)->subDays($i);
                     $labelGrafik[] = $tanggal->translatedFormat('D, d M');
-                    $dataGrafik[] = (int) Transaksi::where('status_pembayaran', 'Lunas')->whereDate('created_at', $tanggal)->sum('total_bayar');
+
+                    $stat = $this->hitungLabaBersih(function ($query, $alias = null) use ($tanggal) {
+                        $col = $alias ? "{$alias}.created_at" : 'created_at';
+                        $query->whereDate($col, $tanggal);
+                    });
+                    $dataGrafikPendapatan[] = $stat['pendapatan'];
+                    $dataGrafikLaba[] = $stat['laba'];
                 }
             } elseif ($periode === 'bulan') {
                 // 12 bulan di tahun yang dipilih
                 $namaBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
                 for ($i = 1; $i <= 12; $i++) {
                     $labelGrafik[] = $namaBulan[$i - 1];
-                    $dataGrafik[] = (int) Transaksi::where('status_pembayaran', 'Lunas')->whereMonth('created_at', $i)
-                        ->whereYear('created_at', $tahun)
-                        ->sum('total_bayar');
+
+                    $bulan = $i;
+                    $stat = $this->hitungLabaBersih(function ($query, $alias = null) use ($bulan, $tahun) {
+                        $col = $alias ? "{$alias}.created_at" : 'created_at';
+                        $query->whereMonth($col, $bulan)
+                              ->whereYear($col, $tahun);
+                    });
+                    $dataGrafikPendapatan[] = $stat['pendapatan'];
+                    $dataGrafikLaba[] = $stat['laba'];
                 }
             } elseif ($periode === 'tahun') {
                 // 5 tahun terakhir sampai tahun terpilih
                 for ($i = 4; $i >= 0; $i--) {
                     $thn = (int) $tahun - $i;
                     $labelGrafik[] = (string) $thn;
-                    $dataGrafik[] = (int) Transaksi::where('status_pembayaran', 'Lunas')->whereYear('created_at', $thn)->sum('total_bayar');
+
+                    $stat = $this->hitungLabaBersih(function ($query, $alias = null) use ($thn) {
+                        $col = $alias ? "{$alias}.created_at" : 'created_at';
+                        $query->whereYear($col, $thn);
+                    });
+                    $dataGrafikPendapatan[] = $stat['pendapatan'];
+                    $dataGrafikLaba[] = $stat['laba'];
                 }
             }
 
@@ -216,18 +328,27 @@ class LaporanController extends Controller
             $title = 'Laporan Penjualan';
 
             return view('pages.laporan.laporan-penjualan', [
-                'title' => $title,
-                'periode' => $periode,
-                'tahun' => $tahun,
-                'totalHariIni' => $totalHariIni,
-                'jumlahTransaksiHariIni' => $jumlahTransaksiHariIni,
-                'totalBulanIni' => $totalBulanIni,
-                'jumlahTransaksiBulanIni' => $jumlahTransaksiBulanIni,
-                'totalTahunIni' => $totalTahunIni,
-                'jumlahTransaksiTahunIni' => $jumlahTransaksiTahunIni,
-                'dataGrafik' => $dataGrafik,
-                'labelGrafik' => $labelGrafik,
-                'daftarTahun' => $daftarTahun,
+                'title'          => $title,
+                'periode'        => $periode,
+                'tahun'          => $tahun,
+                // Stat cards — laba bersih
+                'labaHariIni'              => $statHariIni['laba'],
+                'pendapatanHariIni'        => $statHariIni['pendapatan'],
+                'modalHariIni'             => $statHariIni['modal'],
+                'jumlahTransaksiHariIni'   => $statHariIni['jumlah_transaksi'],
+                'labaBulanIni'             => $statBulanIni['laba'],
+                'pendapatanBulanIni'       => $statBulanIni['pendapatan'],
+                'modalBulanIni'            => $statBulanIni['modal'],
+                'jumlahTransaksiBulanIni'  => $statBulanIni['jumlah_transaksi'],
+                'labaTahunIni'             => $statTahunIni['laba'],
+                'pendapatanTahunIni'       => $statTahunIni['pendapatan'],
+                'modalTahunIni'            => $statTahunIni['modal'],
+                'jumlahTransaksiTahunIni'  => $statTahunIni['jumlah_transaksi'],
+                // Grafik
+                'dataGrafikPendapatan' => $dataGrafikPendapatan,
+                'dataGrafikLaba'       => $dataGrafikLaba,
+                'labelGrafik'          => $labelGrafik,
+                'daftarTahun'          => $daftarTahun,
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

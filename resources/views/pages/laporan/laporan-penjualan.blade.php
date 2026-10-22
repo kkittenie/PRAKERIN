@@ -4,7 +4,7 @@
     <x-common.page-breadcrumb pageTitle="Laporan Penjualan" />
 
     <div class="space-y-6">
-        {{-- Kartu Statistik Ringkasan --}}
+        {{-- Kartu Statistik Ringkasan — Laba Bersih --}}
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {{-- Hari Ini --}}
             <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-4 sm:p-5 relative overflow-hidden group hover:shadow-md transition-shadow">
@@ -15,11 +15,19 @@
                             <svg class="w-4.5 h-4.5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
                         <div>
-                            <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Hari Ini</p>
+                            <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Laba Hari Ini</p>
                         </div>
                     </div>
-                    <p class="text-lg lg:text-xl font-bold {{ $totalHariIni < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }} mb-0.5">{{ $totalHariIni < 0 ? '-Rp ' . number_format(abs($totalHariIni), 0, ',', '.') : 'Rp ' . number_format($totalHariIni, 0, ',', '.') }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $jumlahTransaksiHariIni }} transaksi</p>
+                    <p class="text-lg lg:text-xl font-bold {{ $labaHariIni < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }} mb-1">
+                        {{ $labaHariIni < 0 ? '-Rp ' . number_format(abs($labaHariIni), 0, ',', '.') : 'Rp ' . number_format($labaHariIni, 0, ',', '.') }}
+                    </p>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span>{{ $jumlahTransaksiHariIni }} transaksi</span>
+                        <span class="text-gray-300 dark:text-gray-700">|</span>
+                        <span class="text-gray-400 dark:text-gray-500">
+                            Pendapatan Rp {{ number_format($pendapatanHariIni, 0, ',', '.') }} − Modal Rp {{ number_format($modalHariIni, 0, ',', '.') }}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -32,11 +40,19 @@
                             <svg class="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         </div>
                         <div>
-                            <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Bulan Ini</p>
+                            <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Laba Bulan Ini</p>
                         </div>
                     </div>
-                    <p class="text-lg lg:text-xl font-bold {{ $totalBulanIni < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }} mb-0.5">{{ $totalBulanIni < 0 ? '-Rp ' . number_format(abs($totalBulanIni), 0, ',', '.') : 'Rp ' . number_format($totalBulanIni, 0, ',', '.') }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $jumlahTransaksiBulanIni }} transaksi</p>
+                    <p class="text-lg lg:text-xl font-bold {{ $labaBulanIni < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }} mb-1">
+                        {{ $labaBulanIni < 0 ? '-Rp ' . number_format(abs($labaBulanIni), 0, ',', '.') : 'Rp ' . number_format($labaBulanIni, 0, ',', '.') }}
+                    </p>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span>{{ $jumlahTransaksiBulanIni }} transaksi</span>
+                        <span class="text-gray-300 dark:text-gray-700">|</span>
+                        <span class="text-gray-400 dark:text-gray-500">
+                            Pendapatan Rp {{ number_format($pendapatanBulanIni, 0, ',', '.') }} − Modal Rp {{ number_format($modalBulanIni, 0, ',', '.') }}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -49,11 +65,19 @@
                             <svg class="w-4.5 h-4.5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
                         </div>
                         <div>
-                            <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Tahun Ini</p>
+                            <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Laba Tahun Ini</p>
                         </div>
                     </div>
-                    <p class="text-lg lg:text-xl font-bold {{ $totalTahunIni < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }} mb-0.5">{{ $totalTahunIni < 0 ? '-Rp ' . number_format(abs($totalTahunIni), 0, ',', '.') : 'Rp ' . number_format($totalTahunIni, 0, ',', '.') }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $jumlahTransaksiTahunIni }} transaksi</p>
+                    <p class="text-lg lg:text-xl font-bold {{ $labaTahunIni < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }} mb-1">
+                        {{ $labaTahunIni < 0 ? '-Rp ' . number_format(abs($labaTahunIni), 0, ',', '.') : 'Rp ' . number_format($labaTahunIni, 0, ',', '.') }}
+                    </p>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span>{{ $jumlahTransaksiTahunIni }} transaksi</span>
+                        <span class="text-gray-300 dark:text-gray-700">|</span>
+                        <span class="text-gray-400 dark:text-gray-500">
+                            Pendapatan Rp {{ number_format($pendapatanTahunIni, 0, ',', '.') }} − Modal Rp {{ number_format($modalTahunIni, 0, ',', '.') }}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -63,7 +87,7 @@
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                 <div>
                     <h3 class="text-lg font-bold text-gray-800 dark:text-white">Grafik Laba Bersih</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Tren laba bersih (setelah dikurangi harga modal) berdasarkan periode yang dipilih</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Tren pendapatan vs laba bersih (setelah dikurangi harga modal) berdasarkan periode yang dipilih</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
                     <div class="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -98,7 +122,7 @@
         <div class="sdt-card rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden space-y-4">
             <div class="px-6 pt-5">
                 <h3 class="text-lg font-bold text-gray-800 dark:text-white">🏆 Produk Terlaris</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">10 produk dengan penjualan tertinggi sepanjang waktu — laba bersih setelah dikurangi harga modal</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">10 produk dengan penjualan tertinggi — pendapatan dan laba bersih setelah dikurangi harga modal</p>
             </div>
 
             <div class="sdt-toolbar">
@@ -119,6 +143,7 @@
                             <th class="py-3 w-12">#</th>
                             <th class="py-3">Nama Produk</th>
                             <th class="py-3 text-right">Total Terjual</th>
+                            <th class="py-3 text-right">Pendapatan</th>
                             <th class="py-3 text-right">Laba Bersih</th>
                         </tr>
                     </thead>
@@ -145,7 +170,8 @@ $(document).ready(function() {
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'w-12' },
             { data: 'nama_produk', name: 'nama_produk', className: 'font-medium text-gray-800 dark:text-gray-200' },
             { data: 'total_terjual_html', name: 'total_terjual', className: 'text-right' },
-            { data: 'total_pendapatan_html', name: 'total_pendapatan', className: 'text-right font-bold text-gray-900 dark:text-white' }
+            { data: 'total_pendapatan_html', name: 'total_pendapatan', className: 'text-right text-gray-700 dark:text-gray-300' },
+            { data: 'laba_bersih_html', name: 'laba_bersih', className: 'text-right font-bold' }
         ],
         emptyText: 'Belum ada data penjualan',
         dtOptions: {
@@ -168,15 +194,22 @@ $(document).ready(function() {
 
 document.addEventListener('DOMContentLoaded', function () {
     const labels = @json($labelGrafik);
-    const data = @json($dataGrafik);
+    const dataPendapatan = @json($dataGrafikPendapatan);
+    const dataLaba = @json($dataGrafikLaba);
     const isDark = document.documentElement.classList.contains('dark');
 
     if (typeof ApexCharts !== 'undefined' && document.querySelector('#chartPenjualan')) {
         const options = {
-            series: [{
-                name: 'Penjualan',
-                data: data,
-            }],
+            series: [
+                {
+                    name: 'Pendapatan',
+                    data: dataPendapatan,
+                },
+                {
+                    name: 'Laba Bersih',
+                    data: dataLaba,
+                }
+            ],
             chart: {
                 type: 'area',
                 height: 350,
@@ -184,21 +217,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 toolbar: { show: false },
                 zoom: { enabled: false },
             },
-            colors: ['#6366f1'],
+            colors: ['#94a3b8', '#10b981'],
             fill: {
                 type: 'gradient',
                 gradient: {
                     shadeIntensity: 1,
-                    opacityFrom: 0.45,
+                    opacityFrom: 0.35,
                     opacityTo: 0.05,
                     stops: [0, 100],
                 },
             },
             stroke: {
                 curve: 'smooth',
-                width: 3,
+                width: [2, 3],
             },
             dataLabels: { enabled: false },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'right',
+                fontSize: '13px',
+                fontWeight: 600,
+                labels: {
+                    colors: isDark ? '#d1d5db' : '#374151',
+                },
+                markers: {
+                    radius: 3,
+                },
+            },
             xaxis: {
                 categories: labels,
                 axisBorder: { show: false },
@@ -238,8 +283,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 strokeDashArray: 4,
             },
             markers: {
-                size: 5,
-                colors: ['#6366f1'],
+                size: 4,
                 strokeColors: isDark ? '#0f172a' : '#fff',
                 strokeWidth: 2,
                 hover: { sizeOffset: 3 },

@@ -248,6 +248,50 @@ class Bundling extends Model
         );
     }
 
+    /**
+     * Berapa paket yang masih bisa dipenuhi dari stok saat ini (null = tidak terbatas / belum bisa dihitung).
+     * Tiap isi dihitung dari stok detail produknya dibagi qty per paket; isi yang memakai detail produk
+     * yang sama digabung supaya stok bersama tidak dihitung ganda. Bundling bebas dihitung dari pilihan
+     * rasa pembeli ($pilihan), tanpa pilihan hasilnya null.
+     */
+    public function maksPaketTersedia(array $pilihan = []): ?int
+    {
+        if ($this->isBebas() && empty($pilihan)) {
+            return null;
+        }
+
+        $kebutuhan = [];
+        foreach ($this->barisIsi($pilihan) as $baris) {
+            $item = $baris['item'];
+            $perPaket = (int) $baris['qty'];
+            if ($perPaket <= 0) {
+                continue;
+            }
+
+            if ($item->detail_produk_id) {
+                $detail = $item->detailProduk;
+                $kunci = 'd' . $item->detail_produk_id;
+                $stok = ($detail && $detail->status_aktif) ? max(0, (int) $detail->stok) : 0;
+            } else {
+                $produk = $item->produk;
+                if (!$produk) {
+                    continue;
+                }
+                $kunci = 'p' . $produk->id . '|' . mb_strtolower((string) $item->ukuran) . '|' . mb_strtolower((string) $item->varian_rasa);
+                $stok = max(0, (int) $produk->stokUntukUkuranRasa($item->ukuran, $item->varian_rasa));
+            }
+
+            $kebutuhan[$kunci]['stok'] = $stok;
+            $kebutuhan[$kunci]['perPaket'] = ($kebutuhan[$kunci]['perPaket'] ?? 0) + $perPaket;
+        }
+
+        if (empty($kebutuhan)) {
+            return null;
+        }
+
+        return (int) min(array_map(fn ($k) => intdiv($k['stok'], $k['perPaket']), $kebutuhan));
+    }
+
     public function getJumlahProdukAttribute(): int
     {
         if ($this->isBebas()) {

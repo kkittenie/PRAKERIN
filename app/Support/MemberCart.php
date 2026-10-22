@@ -159,6 +159,42 @@ class MemberCart
         Session::put(self::SESSION_KEY, array_values($items));
     }
 
+    /**
+     * Jumlah produk biasa (bukan bundling / promo event / hadiah stamp) di keranjang yang
+     * memakai stok yang sama. Stok dibaca dari detail produk, jadi kuncinya detail_produk_id
+     * (produk Stok Bersama dengan banyak varian otomatis berbagi stok yang sama).
+     * $kecualiItemId = item yang sedang diubah, supaya tidak terhitung dua kali.
+     */
+    public static function jumlahProdukDiKeranjang(?int $produkId, ?int $detailProdukId, ?string $kecualiItemId = null): int
+    {
+        return (int) collect(self::items())
+            ->filter(fn ($item) => empty($item['bundling_id'])
+                && empty($item['promo_event_id'])
+                && empty($item['is_reward_stamp'])
+                && ($item['produk_id'] ?? null) === $produkId
+                && ($item['detail_produk_id'] ?? null) === $detailProdukId
+                && ($kecualiItemId === null || $item['id'] !== $kecualiItemId))
+            ->sum('jumlah');
+    }
+
+    /** Jumlah paket bundling tertentu yang sudah ada di keranjang. */
+    public static function jumlahBundlingDiKeranjang(int $bundlingId, ?string $kecualiItemId = null): int
+    {
+        return (int) collect(self::items())
+            ->filter(fn ($item) => ($item['bundling_id'] ?? null) === $bundlingId
+                && ($kecualiItemId === null || $item['id'] !== $kecualiItemId))
+            ->sum('jumlah');
+    }
+
+    /** Jumlah paket promo event tertentu yang sudah ada di keranjang. */
+    public static function jumlahPromoEventDiKeranjang(int $promoEventId, ?string $kecualiItemId = null): int
+    {
+        return (int) collect(self::items())
+            ->filter(fn ($item) => ($item['promo_event_id'] ?? null) === $promoEventId
+                && ($kecualiItemId === null || $item['id'] !== $kecualiItemId))
+            ->sum('jumlah');
+    }
+
     public static function cariItem(string $itemId): ?array
     {
         foreach (self::items() as $item) {

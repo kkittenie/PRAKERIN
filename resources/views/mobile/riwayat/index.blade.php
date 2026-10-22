@@ -323,7 +323,7 @@
                                                 <p class="text-[11px] text-gray-400">Kode redeem</p>
                                                 <p class="font-mono text-sm font-bold tracking-widest text-gray-800">{{ $item->kode_redeem }}</p>
                                             </div>
-                                            <p class="text-sm font-bold text-red-500">-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin</p>
+                                            @if ($adaAturanPoin)<p class="text-sm font-bold text-red-500">-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin</p>@endif
                                         </div>
                                     </div>
                                 </div>
@@ -671,7 +671,7 @@
                                                 <p class="text-[10px] uppercase font-bold text-gray-400">Kode Redeem</p>
                                                 <p class="font-mono text-sm font-extrabold tracking-widest text-brand-800">{{ $item->kode_redeem }}</p>
                                             </div>
-                                            <p class="text-sm font-black text-red-500">-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin</p>
+                                            @if ($adaAturanPoin)<p class="text-sm font-black text-red-500">-{{ number_format($item->poin_terpakai, 0, ',', '.') }} poin</p>@endif
                                         </div>
                                     </div>
                                 </div>

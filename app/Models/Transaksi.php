@@ -55,6 +55,18 @@ class Transaksi extends Model
     ];
 
     /**
+     * Transaksi yang sah dihitung sebagai penjualan: sudah Lunas dan tidak dibatalkan.
+     */
+    public function scopePenjualanSah($query)
+    {
+        return $query->where('status_pembayaran', 'Lunas')
+            ->where(function ($q) {
+                $q->whereNull('status_pesanan')
+                  ->orWhere('status_pesanan', '!=', self::STATUS_DIBATALKAN);
+            });
+    }
+
+    /**
      * Label yang dipakai di UI (Member App maupun POS) untuk tiap status_pesanan.
      */
     public static function labelStatusPesanan(?string $status): string

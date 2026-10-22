@@ -89,10 +89,10 @@
                 </div>
                 <div class="space-y-2">
                     <h2 class="text-3xl font-extrabold text-white tracking-tight drop-shadow-md">
-                        Selamat Datang Kembali!
+                        Sweet Treats, Sweeter Deals!
                     </h2>
                     <p class="text-sm text-white/90 max-w-md leading-relaxed drop-shadow">
-                        Masuk untuk mengakses poin reward, promo eksklusif member, dan penawaran menarik dari Saisho.
+                        Manjakan dirimu dengan aneka roti dan donat lembut khas Saisho Bakery, ditambah promo spesial yang sayang untuk dilewatkan. Yuk, login sekarang dan nikmati berbagai penawaran menarik untuk setiap gigitan.
                     </p>
                 </div>
             </div>

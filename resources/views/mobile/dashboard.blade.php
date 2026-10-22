@@ -28,6 +28,10 @@
     // Semua level dinonaktifkan di POS = fitur tier mati, jadi info tier
     // disembunyikan total dari Member App.
     $tierAktif = \App\Models\MemberLevel::adaYangAktif();
+
+    // Semua aturan poin dinonaktifkan = fitur poin mati, jadi semua info poin
+    // disembunyikan dari Member App (sama seperti tier).
+    $poinAktif = \App\Models\PengaturanMember::adaAturanAktif();
     $progresTier = $tierAktif ? $member?->progres_tier : null;
 @endphp
 
@@ -171,7 +175,9 @@
                         <p class="text-lg font-extrabold text-gray-900">Hi {{ explode(' ', $member->nama)[0] }}!</p>
                         <p class="mt-0.5 text-xs text-gray-400">Terima kasih sudah jadi pelanggan setia Saisho.</p>
 
+                        @if ($poinAktif || $tierAktif)
                         <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-dashed border-gray-100 pt-4">
+                            @if ($poinAktif)
                             <button type="button" onclick="openSheet('sheet-info-poin')"
                                     class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 py-1.5 pl-1.5 pr-3 text-xs font-bold text-gray-800 transition active:scale-95">
                                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-50 p-1 text-brand-700">
@@ -179,6 +185,7 @@
                                 </span>
                                 {{ number_format($member->poin, 0, ',', '.') }} Poin
                             </button>
+                            @endif
                             @if ($tierAktif)
                                 <button type="button" onclick="openSheet('sheet-info-tier')"
                                         class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 py-1.5 pl-1.5 pr-3 text-xs font-bold text-gray-800 transition active:scale-95">
@@ -189,6 +196,7 @@
                                 </button>
                             @endif
                         </div>
+                        @endif
                     </div>
 
                     {{-- Aksi cepat member: tukar poin & riwayat --}}
@@ -263,7 +271,7 @@
                     {{-- Guest Welcome Card --}}
                     <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#5a3c27] via-[#704b30] to-[#8b5e3c] p-6 text-white shadow-lg">
                         <h2 class="mt-2 text-xl font-extrabold tracking-tight">Selamat Datang di Saisho!</h2>
-                        <p class="mt-1 text-xs text-brand-100 leading-relaxed">Nikmati aneka kue, roti & minuman segar spesial. Login sekarang untuk kumpulkan poin & voucher gratis.</p>
+                        <p class="mt-1 text-xs text-brand-100 leading-relaxed">Nikmati aneka kue, roti & minuman segar spesial. Login sekarang untuk {{ $poinAktif ? 'kumpulkan poin & voucher gratis' : 'dapatkan voucher gratis' }}.</p>
                         <div class="mt-5 flex items-center gap-3">
                             <a href="{{ route('member.login') }}" class="rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-brand-800 shadow-sm hover:bg-brand-50">
                                 Masuk ke Akun
@@ -310,7 +318,7 @@
                         </div>
                         <span data-promo-badge class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm" style="{{ $adaPromo ? '' : 'display:none' }}">Promo</span>
                         @if ($habis)
-                            <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Sedang Diproduksi</span>
+                            <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Stok Habis</span>
                         @endif
                     </div>
 
@@ -408,7 +416,7 @@
                         </h1>
 
                         <p class="text-base text-stone-300 leading-relaxed max-w-lg font-medium">
-                            Nikmati kelezatan donat, kue spesial, dan pastry berkualitas tinggi yang dibuat segar setiap hari. Kumpulkan poin & stamp di setiap transaksi!
+                            Nikmati kelezatan donat, kue spesial, dan pastry berkualitas tinggi yang dibuat segar setiap hari.
                         </p>
 
                         <div class="flex items-center gap-4 pt-2">
@@ -429,7 +437,7 @@
                         <div class="flex items-center gap-6 pt-4 border-t border-white/10">
                             <div class="flex items-center gap-2 text-stone-400">
                                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-brand-400"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <span class="text-xs font-bold">Buka 08.00 – 18.00</span>
+                                <span class="text-xs font-bold">Buka 06:00 – 20:00</span>
                             </div>
                             <div class="flex items-center gap-2 text-stone-400">
                                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-brand-400"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -500,13 +508,16 @@
                                         <p class="text-[11px] text-white/60">Selamat datang kembali di Saisho</p>
                                     </div>
                                 </div>
+                                @if ($poinAktif || $tierAktif)
                                 <div class="mt-3 flex items-center gap-2 border-t border-white/10 pt-3">
+                                    @if ($poinAktif)
                                     <button type="button" onclick="openSheet('sheet-info-poin')" class="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/10 py-1.5 pl-1.5 pr-3 text-[11px] font-bold transition hover:bg-white/20">
                                         <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-400/30 p-0.5">
                                             <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
                                         </span>
                                         {{ number_format($member->poin, 0, ',', '.') }} Poin
                                     </button>
+                                    @endif
                                     @if ($tierAktif)
                                         <button type="button" onclick="openSheet('sheet-info-tier')" class="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/10 py-1.5 pl-1.5 pr-3 text-[11px] font-bold transition hover:bg-white/20">
                                             <span class="flex h-5 w-5 items-center justify-center rounded-full {{ $warnaBadgeTier }} text-white">
@@ -516,6 +527,7 @@
                                         </button>
                                     @endif
                                 </div>
+                                @endif
                             </div>
                         @endauth
                     </div>
@@ -557,7 +569,7 @@
                             <svg viewBox="0 0 24 24" fill="none" class="h-7 w-7"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6M12 2v10M12 2l4 4M12 2L8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
                         <h3 class="mt-5 text-base font-extrabold text-gray-900">Loyalty Rewards</h3>
-                        <p class="mt-2 text-xs leading-relaxed text-gray-500">Kumpulkan poin & stamp dari setiap transaksi, tukarkan dengan voucher diskon dan produk gratis pilihan kamu.</p>
+                        <p class="mt-2 text-xs leading-relaxed text-gray-500">Kumpulkan {{ $poinAktif ? 'poin & ' : '' }}stamp dari setiap transaksi, tukarkan dengan voucher diskon dan produk gratis pilihan kamu.</p>
                     </div>
                 </div>
             </div>
@@ -596,7 +608,7 @@
                                     </div>
                                     <span data-promo-badge class="absolute left-2.5 top-2.5 rounded-full bg-orange-500 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm" style="{{ $adaPromo ? '' : 'display:none' }}">Promo</span>
                                     @if ($habis)
-                                        <span class="absolute left-2.5 bottom-2.5 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Sedang Diproduksi</span>
+                                        <span class="absolute left-2.5 bottom-2.5 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Stok Habis</span>
                                     @endif
                                 </div>
                                 <div class="p-4">
@@ -659,7 +671,7 @@
                             <div class="grid grid-cols-3 gap-6">
                                 <div class="flex flex-col items-center gap-3 rounded-2xl bg-white/80 p-5 shadow-sm border border-brand-100/40">
                                     <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-800">
-                                        <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/></svg>
+                                        @include('mobile.components.icon-bread', ['class' => 'h-6 w-6'])
                                     </span>
                                     <span class="text-[10px] font-bold text-brand-800 text-center">Roti Artisan</span>
                                 </div>
@@ -671,9 +683,9 @@
                                 </div>
                                 <div class="flex flex-col items-center gap-3 rounded-2xl bg-white/80 p-5 shadow-sm border border-emerald-100/40">
                                     <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                                        @include('mobile.components.icon-cup', ['class' => 'h-6 w-6'])
+                                        @include('mobile.components.icon-donut', ['class' => 'h-6 w-6'])
                                     </span>
-                                    <span class="text-[10px] font-bold text-emerald-800 text-center">Minuman</span>
+                                    <span class="text-[10px] font-bold text-emerald-800 text-center">Donat</span>
                                 </div>
                             </div>
                             {{-- Decorative circles --}}
@@ -684,7 +696,7 @@
 
                     {{-- Right: About text --}}
                     <div class="col-span-7 space-y-6">
-                        <h2 class="text-3xl font-black text-gray-900 tracking-tight leading-snug">Saisho Cake & Bakery</h2>
+                        <h2 class="text-3xl font-black text-gray-900 tracking-tight leading-snug">Saisho Bakery</h2>
                         <p class="text-sm leading-relaxed text-gray-600">
                             Saisho hadir sebagai bakery pilihan yang mengutamakan kelezatan dan kualitas di setiap produknya. Dengan passion mendalam terhadap seni membuat roti dan kue, kami menyajikan berbagai varian produk artisan yang dibuat segar setiap hari menggunakan bahan-bahan terbaik.
                         </p>
@@ -694,7 +706,7 @@
 
                         <div class="grid grid-cols-3 gap-5 pt-4 border-t border-gray-100">
                             <div class="text-center rounded-2xl bg-gray-50 p-4 border border-gray-100">
-                                <p class="text-2xl font-black text-brand-800">08:00 – 18:00</p>
+                                <p class="text-2xl font-black text-brand-800">06:00 – 20:00</p>
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">Jam Operasional</p>
                             </div>
                             <div class="text-center rounded-2xl bg-gray-50 p-4 border border-gray-100">
@@ -725,8 +737,13 @@
                     <p class="mt-2 text-sm text-stone-400 max-w-xl mx-auto">Daftar jadi member Saisho dan nikmati berbagai keuntungan eksklusif dari setiap transaksi kamu.</p>
                 </div>
 
-                <div class="grid {{ $tierAktif ? 'grid-cols-3' : 'grid-cols-2' }} gap-6">
+                @php
+                    $jumlahKartuMember = 1 + ($poinAktif ? 1 : 0) + ($tierAktif ? 1 : 0);
+                    $kolomKartuMember = [1 => 'grid-cols-1 max-w-md mx-auto', 2 => 'grid-cols-2', 3 => 'grid-cols-3'][$jumlahKartuMember];
+                @endphp
+                <div class="grid {{ $kolomKartuMember }} gap-6">
                     {{-- Points --}}
+                    @if ($poinAktif)
                     <div class="rounded-3xl bg-white/5 border border-white/10 p-7 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
                         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-400/20 text-brand-300 border border-brand-400/20">
                             <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-7 w-7 object-contain">
@@ -739,6 +756,7 @@
                             </div>
                         @endauth
                     </div>
+                    @endif
 
                     {{-- Stamp --}}
                     <div class="rounded-3xl bg-white/5 border border-white/10 p-7 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
@@ -791,7 +809,7 @@
                 <div class="text-center mb-10 max-w-2xl mx-auto">
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 border border-brand-100 px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-brand-800 mb-3">Rewards & Vouchers</span>
                     <h2 class="text-3xl xl:text-4xl font-black text-gray-900 tracking-tight">Spesial Katalog Reward</h2>
-                    <p class="mt-2 text-sm text-gray-500">Tukarkan poin member kamu dengan berbagai penawaran menarik</p>
+                    <p class="mt-2 text-sm text-gray-500">{{ $poinAktif ? 'Tukarkan poin member kamu dengan berbagai penawaran menarik' : 'Nikmati berbagai voucher dan penawaran menarik untuk member kamu' }}</p>
                 </div>
 
                 <div class="flex flex-wrap justify-center gap-6">
@@ -829,6 +847,7 @@
     @include('mobile.components.floating-cart')
 
     {{-- Bottom sheet: Info Poin --}}
+    @if ($poinAktif)
     <dialog id="sheet-info-poin" class="sheet fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-md sm:max-w-xl md:max-w-2xl mx-auto max-h-[82vh] rounded-t-3xl border-0 p-0">
         <div class="flex max-h-[82vh] flex-col">
             <div class="flex shrink-0 justify-center pb-1 pt-3">
@@ -861,6 +880,7 @@
             </div>
         </div>
     </dialog>
+    @endif
 
     {{-- Bottom sheet: Info Tier --}}
     @if ($tierAktif)

@@ -507,27 +507,21 @@
                             </div>
                             <div class="flex flex-col">
                                 <span class="text-xl font-black text-white tracking-tight">Saisho</span>
-                                <span class="text-[10px] font-bold uppercase tracking-widest text-brand-400">Cake & Bakery</span>
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-brand-400">Bakery</span>
                             </div>
                         </a>
                         <p class="text-xs leading-relaxed text-stone-400 max-w-sm">
                             Menyajikan kelezatan roti, kue artisan, dan kopi berkualitas tinggi segar setiap hari untuk menemani setiap momen istimewa Anda.
                         </p>
                         
-                        <div class="pt-2 space-y-2">
-                            <div class="flex items-center gap-2.5 text-xs text-stone-300">
-                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/5 text-brand-400 border border-white/5">
-                                    <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                </span>
-                                <span>Buka Setiap Hari: <strong class="text-white">08.00 - 18.00 WIB</strong></span>
-                            </div>
+                        <!-- <div class="pt-2 space-y-2">
                             <div class="flex items-center gap-2.5 text-xs text-stone-300">
                                 <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/5 text-brand-400 border border-white/5">
                                     <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 </span>
                                 <span>halo@saishobakery.com</span>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
 
                     {{-- Column 2: Quick Links (2 cols) --}}

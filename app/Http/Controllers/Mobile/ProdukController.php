@@ -129,6 +129,28 @@ class ProdukController extends Controller
                 $varianRasaDipilihAwal = $itemEdit['varian_rasa'] ?? ($daftarVarianRasa[0]['nama'] ?? null);
             }
 
+            // Jumlah produk ini yang sudah ada di keranjang per detail produk (tanpa item yang sedang diubah),
+            // dipakai halaman untuk menghitung sisa stok yang masih bisa dipesan.
+            $terpakaiPerDetail = collect(MemberCart::items())
+                ->filter(fn ($item) => empty($item['bundling_id'])
+                    && empty($item['promo_event_id'])
+                    && empty($item['is_reward_stamp'])
+                    && ($item['produk_id'] ?? null) === $produk->id
+                    && !empty($item['detail_produk_id'])
+                    && ($itemEdit === null || $item['id'] !== $itemEdit['id']))
+                ->groupBy('detail_produk_id')
+                ->map(fn ($baris) => (int) $baris->sum('jumlah'))
+                ->all();
+
+            $terpakaiTanpaDetail = (int) collect(MemberCart::items())
+                ->filter(fn ($item) => empty($item['bundling_id'])
+                    && empty($item['promo_event_id'])
+                    && empty($item['is_reward_stamp'])
+                    && ($item['produk_id'] ?? null) === $produk->id
+                    && empty($item['detail_produk_id'])
+                    && ($itemEdit === null || $item['id'] !== $itemEdit['id']))
+                ->sum('jumlah');
+
             return view('mobile.produk.show', [
                 'produk' => $produk,
                 'habis' => $habis,
@@ -148,6 +170,9 @@ class ProdukController extends Controller
                 'hargaAsli' => $hargaAsli,
                 'hargaFinal' => $hargaFinal,
                 'adaPromo' => $adaPromo,
+                'stokTanpaDetail' => max(0, (int) $produk->stok),
+                'terpakaiPerDetail' => $terpakaiPerDetail,
+                'terpakaiTanpaDetail' => $terpakaiTanpaDetail,
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

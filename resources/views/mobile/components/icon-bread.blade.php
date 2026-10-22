@@ -1,0 +1,3 @@
+@props(['class' => 'h-5 w-5'])
+{{-- Roti utuh (loaf) dengan goresan di atasnya --}}
+<svg viewBox="0 0 24 24" fill="none" class="{{ $class }}"><path d="M4 15c0-3.9 3.6-7 8-7s8 3.1 8 7v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 11.6l1.3 2.7M12 10.8v3.2M15.5 11.6l-1.3 2.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>

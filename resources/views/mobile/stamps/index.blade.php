@@ -4,10 +4,12 @@
 
     <h1 class="text-center text-lg font-extrabold text-gray-900">Vouchers</h1>
 
-    <div class="mt-3 flex items-center justify-center gap-1.5 rounded-2xl border border-gray-100 bg-brand-25 py-2.5 text-xs text-gray-500">
-        Poin kamu saat ini:
-        <span class="font-bold text-brand-800">{{ number_format($member->poin, 0, ',', '.') }}</span>
-    </div>
+    @if (\App\Models\PengaturanMember::adaAturanAktif())
+        <div class="mt-3 flex items-center justify-center gap-1.5 rounded-2xl border border-gray-100 bg-brand-25 py-2.5 text-xs text-gray-500">
+            Poin kamu saat ini:
+            <span class="font-bold text-brand-800">{{ number_format($member->poin, 0, ',', '.') }}</span>
+        </div>
+    @endif
 
     {{-- Same tab bar as the voucher catalog, so Stamp reads as a tab, not a separate page --}}
     <div class="mt-5 grid grid-cols-3 border-b border-gray-100">

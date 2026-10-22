@@ -29,6 +29,12 @@ class BundlingController extends Controller
                 'bundling' => $bundling,
                 'habis' => $bundling->perlu_diproduksi,
                 'itemEdit' => $itemEdit,
+                // Berapa paket yang masih bisa dipenuhi stok (null untuk bundling bebas: dicek di server
+                // setelah pembeli memilih rasa) dan paket sama yang sudah ada di keranjang.
+                'maksPaket' => $bundling->maksPaketTersedia([]),
+                'terpakaiDiKeranjang' => $bundling->isBebas()
+                    ? 0
+                    : MemberCart::jumlahBundlingDiKeranjang($bundling->id, $itemEdit['id'] ?? null),
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

@@ -143,7 +143,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <span class="text-base font-bold block">Masuk ke Akun Member</span>
-                                <span class="text-xs text-white/80">Nikmati promo eksklusif & kumpulkan poin</span>
+                                <span class="text-xs text-white/80">Nikmati promo eksklusif{{ \App\Models\PengaturanMember::adaAturanAktif() ? ' & kumpulkan poin' : '' }}</span>
                             </div>
                             <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>

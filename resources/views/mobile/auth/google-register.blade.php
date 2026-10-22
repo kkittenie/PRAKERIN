@@ -38,7 +38,7 @@
                     <h2 class="text-3xl font-extrabold tracking-tight drop-shadow-md">Satu langkah lagi!</h2>
                     <p class="text-sm text-white/90 max-w-md leading-relaxed drop-shadow">
                         Akun Google kamu belum terhubung ke member Saisho. Lengkapi data singkat ini untuk mulai
-                        mengumpulkan poin reward dan stamp spesial.
+                        mengumpulkan {{ \App\Models\PengaturanMember::adaAturanAktif() ? 'poin reward dan ' : '' }}stamp spesial.
                     </p>
                 </div>
             </div>

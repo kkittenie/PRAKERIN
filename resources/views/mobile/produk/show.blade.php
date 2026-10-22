@@ -25,6 +25,9 @@
                     hargaDasar: {{ (float) $hargaFinal }},
                     hargaAsliDasar: {{ (float) $hargaAsli }},
                     fotoProdukUtama: @js($produk->foto ? asset('storage/' . $produk->foto) : null),
+                    stokTanpaDetail: {{ (int) $stokTanpaDetail }},
+                    terpakaiPerDetail: @js($terpakaiPerDetail),
+                    terpakaiTanpaDetail: {{ (int) $terpakaiTanpaDetail }},
 
                     init() {
                         if (this.punyaVarianBaru && !this.varianTerpilih) {
@@ -117,6 +120,51 @@
                         return {{ $habis ? 'true' : 'false' }};
                     },
 
+                    // Stok varian yang sedang dipilih (produk tanpa varian: total stok produk).
+                    get stokTersedia() {
+                        if (this.punyaVarianBaru) {
+                            return this.varianTerpilih ? (parseInt(this.varianTerpilih.stok) || 0) : 0;
+                        }
+                        return this.stokTanpaDetail;
+                    },
+
+                    // Jumlah yang sudah ada di keranjang untuk stok yang sama (tanpa item yang sedang diubah).
+                    get sudahDiKeranjang() {
+                        if (!this.punyaVarianBaru) return this.terpakaiTanpaDetail;
+                        if (!this.varianTerpilih) return 0;
+                        return this.terpakaiPerDetail[this.varianTerpilih.id] || 0;
+                    },
+
+                    get tampilBadgeHabis() {
+                        return this.isHabis && (!this.punyaVarianBaru || !!this.varianTerpilih);
+                    },
+
+                    get stokTidakCukup() {
+                        return !this.isHabis && (this.jumlah + this.sudahDiKeranjang) > this.stokTersedia;
+                    },
+
+                    get pesanStokTidakCukup() {
+                        if (!this.stokTidakCukup) return '';
+                        let pesan = 'Stok tidak mencukupi. Sisa stok ' + this.stokTersedia + ' pcs';
+                        if (this.sudahDiKeranjang >= this.stokTersedia) {
+                            return pesan + ' dan semuanya sudah ada di keranjang kamu.';
+                        }
+                        return this.sudahDiKeranjang > 0
+                            ? pesan + ', ' + this.sudahDiKeranjang + ' pcs sudah ada di keranjang kamu.'
+                            : pesan + '.';
+                    },
+
+                    get tidakBisaPesan() {
+                        return (this.punyaVarianBaru && !this.varianTerpilih) || this.isHabis || this.stokTidakCukup;
+                    },
+
+                    get labelTidakBisa() {
+                        if (this.punyaVarianBaru && !this.varianTerpilih) return 'Varian Nonaktif';
+                        if (this.isHabis) return 'Stok Habis';
+                        if (this.stokTidakCukup) return 'Stok Tidak Cukup';
+                        return '';
+                    },
+
                     pilihUkuran(u) {
                         if (!this.ukuranTersedia(u)) return;
                         this.ukuran = u;
@@ -202,6 +250,12 @@
                     </span>
                 </template>
 
+                {{-- Badge stok habis (sama seperti di bundling) --}}
+                <span x-show="tampilBadgeHabis" x-cloak
+                    class="absolute left-4 bottom-4 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
+                    Stok Habis
+                </span>
+
             </div>
 
             {{-- Nama, kategori, harga --}}
@@ -271,7 +325,7 @@
                 <div class="flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">
                     @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
                     <p class="text-[11px] font-semibold leading-relaxed">
-                        Produk sedang dibuat — waktu tunggu bisa lebih lama dari biasanya.
+                        Produk sedang diproduksi.
                     </p>
                 </div>
             </template>
@@ -409,9 +463,14 @@
             </div>
 
             {{-- Spacer pas di bawah kolom catatan agar scroll pas sampai batas kolom catatan --}}
-            <div class="h-16 lg:hidden" aria-hidden="true"></div>
+            <div class="h-24 lg:hidden" aria-hidden="true"></div>
 
             <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 lg:static lg:w-full lg:border-t-0 lg:px-0 lg:pt-4 lg:shadow-none">
+
+            {{-- Pesan kalau jumlah yang diminta melebihi sisa stok --}}
+            <template x-if="stokTidakCukup">
+                <p class="mb-2 text-[11px] font-semibold leading-snug text-red-600" x-text="pesanStokTidakCukup"></p>
+            </template>
 
             @if (Auth::guard('member')->check())
 
@@ -459,10 +518,10 @@
 
                                 {{-- Tombol Update --}}
                                 <button type="submit"
-                                    :disabled="punyaVarianBaru && !varianTerpilih"
-                                    :class="(punyaVarianBaru && !varianTerpilih) ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-brand-800 active:scale-[0.99]'"
+                                    :disabled="tidakBisaPesan"
+                                    :class="tidakBisaPesan ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-brand-800 active:scale-[0.99]'"
                                     class="flex min-w-0 flex-1 items-center justify-center rounded-full px-6 py-4 text-sm font-bold text-white shadow-sm transition"
-                                    x-text="(punyaVarianBaru && !varianTerpilih) ? 'Varian Nonaktif' : ('Update – Rp ' + total.toLocaleString('id-ID'))">
+                                    x-text="tidakBisaPesan ? labelTidakBisa : ('Update – Rp ' + total.toLocaleString('id-ID'))">
                                 </button>
 
                             </div>
@@ -521,12 +580,12 @@
 
                             {{-- Tombol Add --}}
                             <button type="submit"
-                                :disabled="punyaVarianBaru && !varianTerpilih"
-                                :class="(punyaVarianBaru && !varianTerpilih) ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-brand-800 active:scale-[0.99]'"
+                                :disabled="tidakBisaPesan"
+                                :class="tidakBisaPesan ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-brand-800 active:scale-[0.99]'"
                                 class="flex min-w-0 flex-1 lg:max-w-[260px] items-center justify-between rounded-full px-6 py-3.5 text-sm font-bold text-white shadow-sm transition">
-                                <span x-text="(punyaVarianBaru && !varianTerpilih) ? 'Varian Nonaktif' : 'Add'"></span>
+                                <span x-text="tidakBisaPesan ? labelTidakBisa : 'Add'"></span>
 
-                                <span x-show="!punyaVarianBaru || varianTerpilih" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
+                                <span x-show="!tidakBisaPesan" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                             </button>
 
                         </div>

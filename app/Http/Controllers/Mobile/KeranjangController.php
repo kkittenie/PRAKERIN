@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mobile;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bundling;
+use App\Models\DetailProduk;
 use App\Models\PromoProdukEvent;
 use App\Models\Produk;
 use App\Support\MemberCart;
@@ -113,6 +114,14 @@ class KeranjangController extends Controller
                 $produkVarianId = null;
             }
 
+            $pesanStok = $this->pesanStokProduk($produk, $produkVarian, (int) $validated['jumlah']);
+            if ($pesanStok) {
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $pesanStok], 422);
+                }
+                return back()->with('error', $pesanStok);
+            }
+
             MemberCart::tambah([
                 'produk_id' => $produk->id,
                 'detail_produk_id' => $produkVarianId,
@@ -182,6 +191,14 @@ class KeranjangController extends Controller
             // dari pilihan yang ditentukan admin. Bundling tetap: pilihan diabaikan.
             $pilihanKhusus = $bundling->validasiPilihanBebas($validated['pilihan_khusus'] ?? []);
 
+            $pesanStok = $this->pesanStokBundling($bundling, (int) $validated['jumlah'], $pilihanKhusus);
+            if ($pesanStok) {
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $pesanStok], 422);
+                }
+                return back()->with('error', $pesanStok);
+            }
+
             $rincianBundling = $this->susunRincianBundling($bundling, $pilihanKhusus);
 
             MemberCart::tambah([
@@ -231,6 +248,14 @@ class KeranjangController extends Controller
                 'jumlah' => 'required|integer|min:1|max:50',
                 'catatan' => 'nullable|string|max:255',
             ]);
+
+            $pesanStok = $this->pesanStokPromoEvent($promoEvent, (int) $validated['jumlah']);
+            if ($pesanStok) {
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $pesanStok], 422);
+                }
+                return back()->with('error', $pesanStok);
+            }
 
             MemberCart::tambah([
                 'promo_event_id' => $promoEvent->id,
@@ -376,6 +401,11 @@ class KeranjangController extends Controller
                 $produkVarianId = null;
             }
 
+            $pesanStok = $this->pesanStokProduk($produk, $produkVarian, (int) $validated['jumlah'], $itemId);
+            if ($pesanStok) {
+                return back()->with('error', $pesanStok);
+            }
+
             MemberCart::perbarui($itemId, [
                 'produk_id' => $produk->id,
                 'detail_produk_id' => $produkVarianId,
@@ -436,6 +466,11 @@ class KeranjangController extends Controller
             // dari pilihan yang ditentukan admin. Bundling tetap: pilihan diabaikan.
             $pilihanKhusus = $bundling->validasiPilihanBebas($validated['pilihan_khusus'] ?? []);
 
+            $pesanStok = $this->pesanStokBundling($bundling, (int) $validated['jumlah'], $pilihanKhusus, $itemId);
+            if ($pesanStok) {
+                return back()->with('error', $pesanStok);
+            }
+
             $rincianBundling = $this->susunRincianBundling($bundling, $pilihanKhusus);
 
             MemberCart::perbarui($itemId, [
@@ -473,6 +508,11 @@ class KeranjangController extends Controller
             if (! MemberCart::cariItem($itemId)) {
                 return redirect()->route('member.promo-event.show', $promoEvent)
                     ->with('error', 'Item keranjang tidak ditemukan, mungkin sudah dihapus.');
+            }
+
+            $pesanStok = $this->pesanStokPromoEvent($promoEvent, (int) $validated['jumlah'], $itemId);
+            if ($pesanStok) {
+                return back()->with('error', $pesanStok);
             }
 
             MemberCart::perbarui($itemId, [
@@ -513,6 +553,36 @@ class KeranjangController extends Controller
                 return back();
             }
 
+            // Menambah jumlah dari halaman keranjang juga tidak boleh melebihi stok.
+            $jumlahBaru = (int) $validated['jumlah'];
+            if ($item && $jumlahBaru > (int) ($item['jumlah'] ?? 0)) {
+                $pesanStok = null;
+
+                if (!empty($item['promo_event_id'])) {
+                    $promoEvent = PromoProdukEvent::with('produk')->find($item['promo_event_id']);
+                    if ($promoEvent) {
+                        $pesanStok = $this->pesanStokPromoEvent($promoEvent, $jumlahBaru, $itemId);
+                    }
+                } elseif (!empty($item['bundling_id'])) {
+                    $bundlingItem = Bundling::find($item['bundling_id']);
+                    if ($bundlingItem) {
+                        $pesanStok = $this->pesanStokBundling($bundlingItem, $jumlahBaru, $item['pilihan_khusus'] ?? [], $itemId);
+                    }
+                } elseif (!empty($item['produk_id'])) {
+                    $produkItem = Produk::find($item['produk_id']);
+                    if ($produkItem) {
+                        $detailItem = !empty($item['detail_produk_id'])
+                            ? $produkItem->detailProduks()->where('id', $item['detail_produk_id'])->first()
+                            : null;
+                        $pesanStok = $this->pesanStokProduk($produkItem, $detailItem, $jumlahBaru, $itemId);
+                    }
+                }
+
+                if ($pesanStok) {
+                    return back()->with('error', $pesanStok);
+                }
+            }
+
             MemberCart::ubahJumlah($itemId, $validated['jumlah']);
 
             if (MemberCart::isEmpty()) {
@@ -543,6 +613,67 @@ class KeranjangController extends Controller
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
+    }
+
+    /**
+     * Cek stok produk (per detail produk / varian). Return pesan error kalau stok habis atau
+     * tidak mencukupi (memperhitungkan jumlah yang sudah ada di keranjang), null kalau aman.
+     */
+    private function pesanStokProduk(Produk $produk, ?DetailProduk $detail, int $jumlah, ?string $kecualiItemId = null): ?string
+    {
+        $stok = $detail ? (int) $detail->stok : (int) $produk->stok;
+        $sudahDiKeranjang = MemberCart::jumlahProdukDiKeranjang($produk->id, $detail?->id, $kecualiItemId);
+
+        return $this->susunPesanStok($produk->nama_produk, $stok, $sudahDiKeranjang, $jumlah, 'pcs');
+    }
+
+    /**
+     * Cek stok bundling per paket. Bundling tetap memperhitungkan paket yang sama di keranjang;
+     * bundling bebas hanya mengecek pilihan rasa pada item ini.
+     */
+    private function pesanStokBundling(Bundling $bundling, int $jumlah, array $pilihanKhusus, ?string $kecualiItemId = null): ?string
+    {
+        $maks = $bundling->maksPaketTersedia($pilihanKhusus);
+        if ($maks === null) {
+            return null;
+        }
+
+        $sudahDiKeranjang = $bundling->isBebas()
+            ? 0
+            : MemberCart::jumlahBundlingDiKeranjang($bundling->id, $kecualiItemId);
+
+        return $this->susunPesanStok($bundling->nama_bundling, $maks, $sudahDiKeranjang, $jumlah, 'paket');
+    }
+
+    /** Sama seperti pesanStokProduk, tapi untuk promo event (stok dihitung dalam paket). */
+    private function pesanStokPromoEvent(PromoProdukEvent $promoEvent, int $jumlah, ?string $kecualiItemId = null): ?string
+    {
+        $sudahDiKeranjang = MemberCart::jumlahPromoEventDiKeranjang($promoEvent->id, $kecualiItemId);
+
+        return $this->susunPesanStok($promoEvent->nama_event, (int) $promoEvent->stok_tersedia, $sudahDiKeranjang, $jumlah, 'paket');
+    }
+
+    private function susunPesanStok(string $nama, int $stok, int $sudahDiKeranjang, int $jumlah, string $satuan): ?string
+    {
+        $stok = max(0, $stok);
+
+        if ($stok <= 0) {
+            return "Stok {$nama} sedang habis.";
+        }
+
+        if ($sudahDiKeranjang + $jumlah <= $stok) {
+            return null;
+        }
+
+        if ($sudahDiKeranjang >= $stok) {
+            return "Stok tidak mencukupi. Sisa stok {$stok} {$satuan} dan semuanya sudah ada di keranjang kamu.";
+        }
+
+        $pesan = "Stok tidak mencukupi. Sisa stok {$stok} {$satuan}";
+
+        return $sudahDiKeranjang > 0
+            ? "{$pesan}, {$sudahDiKeranjang} {$satuan} sudah ada di keranjang kamu."
+            : "{$pesan}.";
     }
 
     private function ringkasanKeranjang(): array
