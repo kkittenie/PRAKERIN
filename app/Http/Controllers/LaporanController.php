@@ -136,6 +136,10 @@ class LaporanController extends Controller
         $queryModal = DB::table('detail_transaksi as dt')
             ->join('transaksi as t', 'dt.transaksi_id', '=', 't.id')
             ->leftJoin('detail_produks as dp', 'dt.detail_produk_id', '=', 'dp.id')
+            // Produk Tunggal bervarian: modal diambil dari varian yang terjual (dicocokkan lewat kode di detail transaksi).
+            ->leftJoin('varian_produks as vp', function ($join) {
+                $join->on('vp.produk_id', '=', 'dt.produk_id')->on('vp.kode_produk', '=', 'dt.kode_barcode');
+            })
             ->where('t.status_pembayaran', 'Lunas')
             ->where(function ($q) {
                 $q->whereNull('t.status_pesanan')
@@ -144,7 +148,7 @@ class LaporanController extends Controller
 
         $filterCallback($queryModal, 't');
 
-        $totalModal = (int) $queryModal->sum(DB::raw('COALESCE(dp.harga_modal, 0) * dt.jumlah'));
+        $totalModal = (int) $queryModal->sum(DB::raw('COALESCE(vp.harga_modal, dp.harga_modal, 0) * dt.jumlah'));
 
         return [
             'pendapatan'       => $pendapatan,
@@ -173,6 +177,10 @@ class LaporanController extends Controller
                 $barisTampil = DB::table('detail_transaksi as dt')
                     ->join('transaksi as t', 'dt.transaksi_id', '=', 't.id')
                     ->leftJoin('detail_produks as dp', 'dt.detail_produk_id', '=', 'dp.id')
+                    // Produk Tunggal bervarian: modal diambil dari varian yang terjual (dicocokkan lewat kode di detail transaksi).
+                    ->leftJoin('varian_produks as vp', function ($join) {
+                        $join->on('vp.produk_id', '=', 'dt.produk_id')->on('vp.kode_produk', '=', 'dt.kode_barcode');
+                    })
                     ->where('t.status_pembayaran', 'Lunas')
                     ->where(function ($q) {
                         $q->whereNull('t.status_pesanan')
@@ -182,12 +190,16 @@ class LaporanController extends Controller
                     ->selectRaw('dt.nama_produk as label')
                     ->selectRaw('dt.jumlah as jumlah')
                     ->selectRaw('dt.subtotal as pendapatan')
-                    ->selectRaw('COALESCE(dp.harga_modal, 0) * dt.jumlah as modal');
+                    ->selectRaw('COALESCE(vp.harga_modal, dp.harga_modal, 0) * dt.jumlah as modal');
 
                 // 2) Modal isi paket: dilabeli dengan nama baris paket di transaksi yang sama
                 $modalIsiPaket = DB::table('detail_transaksi as dt')
                     ->join('transaksi as t', 'dt.transaksi_id', '=', 't.id')
                     ->leftJoin('detail_produks as dp', 'dt.detail_produk_id', '=', 'dp.id')
+                    // Produk Tunggal bervarian: modal diambil dari varian yang terjual (dicocokkan lewat kode di detail transaksi).
+                    ->leftJoin('varian_produks as vp', function ($join) {
+                        $join->on('vp.produk_id', '=', 'dt.produk_id')->on('vp.kode_produk', '=', 'dt.kode_barcode');
+                    })
                     ->where('t.status_pembayaran', 'Lunas')
                     ->where(function ($q) {
                         $q->whereNull('t.status_pesanan')
@@ -205,7 +217,7 @@ class LaporanController extends Controller
                         ) as label")
                     ->selectRaw('0 as jumlah')
                     ->selectRaw('0 as pendapatan')
-                    ->selectRaw('COALESCE(dp.harga_modal, 0) * dt.jumlah as modal');
+                    ->selectRaw('COALESCE(vp.harga_modal, dp.harga_modal, 0) * dt.jumlah as modal');
 
                 $produkTerlaris = DB::query()
                     ->fromSub($barisTampil->unionAll($modalIsiPaket), 'x')

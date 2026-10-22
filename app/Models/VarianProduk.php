@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Varian milik produk "Stok Bersama" (global), mis. topping donat.
- * Hanya label: harga dan stok tidak disimpan di sini, tapi ikut detail produk utama.
+ * Stok tidak disimpan di sini (ikut detail produk utama, dipakai bersama). Harga jual & modal
+ * boleh berbeda per varian; kalau kosong, memakai harga detail produk utama.
  */
 class VarianProduk extends Model
 {
@@ -18,6 +19,8 @@ class VarianProduk extends Model
         'ukuran',
         'variasi',
         'foto',
+        'harga_modal',
+        'harga_jual',
         'status_aktif',
         'urutan',
     ];
@@ -25,6 +28,8 @@ class VarianProduk extends Model
     protected $casts = [
         'status_aktif' => 'boolean',
         'urutan' => 'integer',
+        'harga_modal' => 'float',
+        'harga_jual' => 'float',
     ];
 
     public function produk()
@@ -35,6 +40,29 @@ class VarianProduk extends Model
     public function scopeAktif($query)
     {
         return $query->where('status_aktif', true);
+    }
+
+    /** Harga jual varian ini; kalau belum diisi memakai harga detail produk utama. */
+    public function hargaJualEfektif(?DetailProduk $utama = null): float
+    {
+        if ($this->harga_jual !== null) {
+            return (float) $this->harga_jual;
+        }
+
+        $utama ??= $this->produk?->daftarDetail()->first();
+
+        return (float) ($utama?->harga_jual ?? 0);
+    }
+
+    public function hargaModalEfektif(?DetailProduk $utama = null): float
+    {
+        if ($this->harga_modal !== null) {
+            return (float) $this->harga_modal;
+        }
+
+        $utama ??= $this->produk?->daftarDetail()->first();
+
+        return (float) ($utama?->harga_modal ?? 0);
     }
 
     public function getNamaLengkapAttribute(): string

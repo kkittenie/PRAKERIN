@@ -46,10 +46,11 @@
                         <p class="text-sm text-gray-500 dark:text-gray-400">Harga Jual</p>
                         <p class="font-semibold text-green-600 dark:text-green-400">
                             @if($varians->isNotEmpty())
-                                @if($varians->min('harga_jual') == $varians->max('harga_jual'))
-                                    Rp {{ number_format($varians->min('harga_jual'), 0, ',', '.') }}
+                                @php $hargaJualTampil = $produk->daftarHargaJualTampil(); @endphp
+                                @if($hargaJualTampil->min() == $hargaJualTampil->max())
+                                    Rp {{ number_format($hargaJualTampil->min(), 0, ',', '.') }}
                                 @else
-                                    Rp {{ number_format($varians->min('harga_jual'), 0, ',', '.') }} &ndash; Rp {{ number_format($varians->max('harga_jual'), 0, ',', '.') }}
+                                    Rp {{ number_format($hargaJualTampil->min(), 0, ',', '.') }} &ndash; Rp {{ number_format($hargaJualTampil->max(), 0, ',', '.') }}
                                 @endif
                             @else
                                 <span class="text-gray-400 text-sm">Belum ada detail produk</span>
@@ -61,10 +62,11 @@
                         <p class="text-sm text-gray-500 dark:text-gray-400">Harga Modal</p>
                         <p class="font-semibold text-gray-800 dark:text-white">
                             @if($varians->isNotEmpty())
-                                @if($varians->min('harga_modal') == $varians->max('harga_modal'))
-                                    Rp {{ number_format($varians->min('harga_modal'), 0, ',', '.') }}
+                                @php $hargaModalTampil = $produk->daftarHargaModalTampil(); @endphp
+                                @if($hargaModalTampil->min() == $hargaModalTampil->max())
+                                    Rp {{ number_format($hargaModalTampil->min(), 0, ',', '.') }}
                                 @else
-                                    Rp {{ number_format($varians->min('harga_modal'), 0, ',', '.') }} &ndash; Rp {{ number_format($varians->max('harga_modal'), 0, ',', '.') }}
+                                    Rp {{ number_format($hargaModalTampil->min(), 0, ',', '.') }} &ndash; Rp {{ number_format($hargaModalTampil->max(), 0, ',', '.') }}
                                 @endif
                             @else
                                 <span class="text-gray-400 text-sm">Belum ada detail produk</span>
@@ -120,7 +122,38 @@
                         </div>
                     </div>
 
-                    @if($varians->isNotEmpty())
+                    @if($produk->is_global && $produk->jumlahVarianBersama() > 0)
+                    <div class="sm:col-span-2">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Daftar Varian <span class="text-xs">(stok bersama: {{ (int) $produk->stok }})</span></p>
+                        <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-50 dark:bg-gray-800/60">
+                                    <tr class="text-left text-gray-500 dark:text-gray-400">
+                                        <th class="py-2 px-3">Ukuran</th>
+                                        <th class="py-2 px-3">Variasi</th>
+                                        <th class="py-2 px-3">Kode</th>
+                                        <th class="py-2 px-3">Harga Modal</th>
+                                        <th class="py-2 px-3">Harga Jual</th>
+                                        <th class="py-2 px-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php $detailUtama = $varians->first(); @endphp
+                                    @foreach($produk->varianBersamaAktifTersedia() as $vb)
+                                        <tr class="border-t border-gray-100 dark:border-gray-800 {{ $vb->status_aktif ? '' : 'opacity-50' }}">
+                                            <td class="py-2 px-3 font-semibold text-gray-800 dark:text-gray-200">{{ $vb->ukuran ?? '-' }}</td>
+                                            <td class="py-2 px-3 font-semibold text-gray-800 dark:text-gray-200">{{ $vb->variasi ?? '-' }}</td>
+                                            <td class="py-2 px-3 font-mono text-xs text-gray-500">{{ $vb->kode_produk }}</td>
+                                            <td class="py-2 px-3">Rp {{ number_format($vb->hargaModalEfektif($detailUtama), 0, ',', '.') }}</td>
+                                            <td class="py-2 px-3 font-semibold text-green-600 dark:text-green-400">Rp {{ number_format($vb->hargaJualEfektif($detailUtama), 0, ',', '.') }}</td>
+                                            <td class="py-2 px-3">{{ $vb->status_aktif ? 'Aktif' : 'Nonaktif' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    @elseif($varians->isNotEmpty())
                     <div class="sm:col-span-2">
                         <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Daftar Varian</p>
                         <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">

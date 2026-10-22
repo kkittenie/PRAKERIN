@@ -136,6 +136,12 @@ class Produk extends Model
     /** Harga jual termurah di antara detail aktif (atau semua detail kalau tidak ada yang aktif). */
     public function getHargaJualAttribute(): float
     {
+        // Produk Tunggal dengan varian: harga termurah di antara varian aktif.
+        $hargaVarian = $this->hargaVarianBersamaTermurah();
+        if ($hargaVarian) {
+            return $hargaVarian['jual'];
+        }
+
         $aktif = $this->daftarDetailAktif();
         $d = ($aktif->isNotEmpty() ? $aktif : $this->daftarDetail())->sortBy('harga_jual')->first();
 
@@ -144,10 +150,69 @@ class Produk extends Model
 
     public function getHargaModalAttribute(): float
     {
+        $hargaVarian = $this->hargaVarianBersamaTermurah();
+        if ($hargaVarian) {
+            return $hargaVarian['modal'];
+        }
+
         $aktif = $this->daftarDetailAktif();
         $d = ($aktif->isNotEmpty() ? $aktif : $this->daftarDetail())->sortBy('harga_jual')->first();
 
         return $d ? (float) $d->harga_modal : 0.0;
+    }
+
+    /**
+     * Produk Tunggal yang punya varian: harga jual & modal varian aktif termurah
+     * (atau semua varian kalau tidak ada yang aktif). Null kalau bukan produk seperti itu.
+     */
+    public function hargaVarianBersamaTermurah(): ?array
+    {
+        if (! $this->is_global) {
+            return null;
+        }
+
+        $varian = $this->varianBersamaAktifTersedia();
+        if ($varian->isEmpty()) {
+            return null;
+        }
+
+        $utama = $this->daftarDetail()->first();
+        $pakai = $varian->filter(fn ($v) => (bool) $v->status_aktif);
+        $termurah = ($pakai->isNotEmpty() ? $pakai : $varian)
+            ->sortBy(fn (VarianProduk $v) => $v->hargaJualEfektif($utama))
+            ->first();
+
+        return [
+            'jual' => $termurah->hargaJualEfektif($utama),
+            'modal' => $termurah->hargaModalEfektif($utama),
+        ];
+    }
+
+    /** Semua harga jual yang berlaku untuk tampilan rentang harga (per varian untuk Produk Tunggal bervarian). */
+    public function daftarHargaJualTampil(): Collection
+    {
+        if ($this->is_global && $this->jumlahVarianBersama() > 0) {
+            $utama = $this->daftarDetail()->first();
+
+            return $this->varianBersamaAktifTersedia()
+                ->map(fn (VarianProduk $v) => $v->hargaJualEfektif($utama))
+                ->values();
+        }
+
+        return $this->daftarDetail()->map(fn ($d) => (float) $d->harga_jual)->values();
+    }
+
+    public function daftarHargaModalTampil(): Collection
+    {
+        if ($this->is_global && $this->jumlahVarianBersama() > 0) {
+            $utama = $this->daftarDetail()->first();
+
+            return $this->varianBersamaAktifTersedia()
+                ->map(fn (VarianProduk $v) => $v->hargaModalEfektif($utama))
+                ->values();
+        }
+
+        return $this->daftarDetail()->map(fn ($d) => (float) $d->harga_modal)->values();
     }
 
     /** Total stok semua detail. */
@@ -223,11 +288,13 @@ class Produk extends Model
             }
 
             $detailUtama = $this->daftarDetail()->first();
-            $harga = $detailUtama ? (float) $detailUtama->harga_jual : 0.0;
             $stok = (int) $this->stok;
 
             return $this->varianBersamaAktifTersedia()
-                ->map(fn (VarianProduk $v) => [
+                ->map(function (VarianProduk $v) use ($detailUtama, $stok) {
+                    $harga = $v->hargaJualEfektif($detailUtama);
+
+                    return [
                     'id' => 'vp_' . $v->id,
                     'raw_id' => $v->id,
                     'is_stok_bersama' => true,
@@ -243,7 +310,8 @@ class Produk extends Model
                     'stok' => $stok,
                     'aktif' => (bool) $v->status_aktif,
                     'perlu_produksi' => $stok <= 0,
-                ]);
+                    ];
+                });
         }
 
         // Stok Per Varian
@@ -374,10 +442,10 @@ class Produk extends Model
      */
     protected function daftarVarianKasirStokBersama(DetailProduk $detail, Collection $varian): array
     {
-        $hargaAsli = (float) $detail->harga_jual;
-
         return $varian
-            ->map(function (VarianProduk $v) use ($detail, $hargaAsli) {
+            ->map(function (VarianProduk $v) use ($detail) {
+                // Harga per varian (stok tetap satu di detail produk utama).
+                $hargaAsli = $v->hargaJualEfektif($detail);
                 $promo = $this->promoAktifUntukDetail($detail, $v);
                 $hargaDiskon = $hargaAsli;
 

@@ -379,6 +379,8 @@ class ProdukController extends Controller
             'varian_baris.*.kode' => 'nullable|string|max:60',
             'varian_baris.*.ukuran' => 'nullable|string|max:50',
             'varian_baris.*.variasi' => 'nullable|string|max:100',
+            'varian_baris.*.harga_modal' => 'nullable|numeric|min:0',
+            'varian_baris.*.harga_jual' => 'nullable|numeric|min:0',
             'varian_baris.*.status_aktif' => 'nullable|boolean',
             'varian_baris.*.foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
@@ -391,6 +393,8 @@ class ProdukController extends Controller
             'detail_baris.*.foto.image' => 'Foto detail produk harus berupa gambar.',
             'detail_baris.*.foto.max' => 'Foto detail produk maksimal 2 MB.',
             'varian_baris.*.kode.max' => 'Kode varian maksimal 60 karakter.',
+            'varian_baris.*.harga_jual.numeric' => 'Harga jual varian harus berupa angka.',
+            'varian_baris.*.harga_modal.numeric' => 'Harga modal varian harus berupa angka.',
             'varian_baris.*.foto.image' => 'Foto varian harus berupa gambar.',
             'varian_baris.*.foto.max' => 'Foto varian maksimal 2 MB.',
         ]);
@@ -585,6 +589,9 @@ class ProdukController extends Controller
                 'kode' => $kode,
                 'ukuran' => $ukuran !== '' ? $ukuran : null,
                 'variasi' => $variasi !== '' ? $variasi : null,
+                // Kosong = memakai harga detail produk utama.
+                'harga_modal' => isset($b['harga_modal']) && $b['harga_modal'] !== '' ? (float) $b['harga_modal'] : null,
+                'harga_jual' => isset($b['harga_jual']) && $b['harga_jual'] !== '' ? (float) $b['harga_jual'] : null,
                 'status_aktif' => filter_var($b['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
                 'file' => $file,
             ]);
@@ -685,6 +692,8 @@ class ProdukController extends Controller
                 'kode_produk' => $kode,
                 'ukuran' => $v['ukuran'],
                 'variasi' => $v['variasi'],
+                'harga_modal' => $v['harga_modal'],
+                'harga_jual' => $v['harga_jual'],
                 'status_aktif' => $v['status_aktif'],
                 'foto' => $foto,
                 'urutan' => $urutan,
@@ -716,6 +725,8 @@ class ProdukController extends Controller
             'kode' => (string) $v->kode_produk,
             'ukuran' => $v->ukuran ?? '',
             'variasi' => $v->variasi ?? '',
+            'harga_modal' => $v->harga_modal !== null ? (string) (int) round($v->harga_modal) : '',
+            'harga_jual' => $v->harga_jual !== null ? (string) (int) round($v->harga_jual) : '',
             'status_aktif' => (bool) $v->status_aktif,
             'foto_url' => $v->foto_url,
         ];
@@ -734,6 +745,8 @@ class ProdukController extends Controller
                 'kode' => $b['kode'] ?? '',
                 'ukuran' => $b['ukuran'] ?? '',
                 'variasi' => $b['variasi'] ?? '',
+                'harga_modal' => $b['harga_modal'] ?? '',
+                'harga_jual' => $b['harga_jual'] ?? '',
                 'status_aktif' => filter_var($b['status_aktif'] ?? true, FILTER_VALIDATE_BOOLEAN),
                 'foto_url' => $id !== '' ? optional($lama->get($id))->foto_url : null,
             ];

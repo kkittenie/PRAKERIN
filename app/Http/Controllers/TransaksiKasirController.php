@@ -649,6 +649,8 @@ class TransaksiKasirController extends Controller
         $variasiCatat = $detailProduk->variasi;
         $kodeCatat = $detailProduk->kode_barcode;
         $namaLengkapCatat = $detailProduk->nama_lengkap;
+        // Harga satuan: harga detail produk, atau harga varian kalau Produk Tunggal bervarian.
+        $hargaCatat = (float) $detailProduk->harga_jual;
 
         if ($produk->jumlahVarianBersama() > 0) {
             $vpId = (int) str_replace('vp_', '', (string) ($item['varian_produk_id'] ?? 0));
@@ -665,11 +667,12 @@ class TransaksiKasirController extends Controller
             $variasiCatat = $varianBersama->variasi;
             $kodeCatat = $varianBersama->kode_produk;
             $namaLengkapCatat = $varianBersama->nama_lengkap;
+            $hargaCatat = $varianBersama->hargaJualEfektif($detailProduk);
         }
 
         $label = $produk->nama_produk . ($namaLengkapCatat ? " ({$namaLengkapCatat})" : '');
 
-        if (isset($item['harga_jual']) && abs((float) $item['harga_jual'] - (float) $detailProduk->harga_jual) > 0.5) {
+        if (isset($item['harga_jual']) && abs((float) $item['harga_jual'] - $hargaCatat) > 0.5) {
             throw new \Exception("Harga '{$label}' sudah berubah. Muat ulang halaman kasir lalu coba lagi.");
         }
 
@@ -699,10 +702,10 @@ class TransaksiKasirController extends Controller
                 'ukuran' => $ukuranCatat,
                 'varian_rasa' => $variasiCatat,
                 'kode_barcode' => $kodeCatat,
-                'harga_satuan' => $detailProduk->harga_jual,
+                'harga_satuan' => $hargaCatat,
                 'jumlah' => $qty,
                 'catatan' => $item['catatan'] ?? null,
-                'subtotal' => $detailProduk->harga_jual * $qty,
+                'subtotal' => $hargaCatat * $qty,
                 'butuh_produksi' => $perluProduksi,
             ]);
         }

@@ -93,6 +93,17 @@ class KeranjangController extends Controller
                     $ukuran = $varianBersama->ukuran;
                     $varianRasa = $varianBersama->variasi;
                     $foto = $varianBersama->foto ?: $foto;
+
+                    // Harga per varian (stok tetap satu di detail produk utama): hitung ulang harga & promo.
+                    $hargaAsal = $varianBersama->hargaJualEfektif($produkVarian);
+                    $promoBerlaku = $produk->promoAktifUntukDetail($produkVarian, $varianBersama);
+                    $diskonSatuan = 0;
+                    if ($promoBerlaku) {
+                        $diskonSatuan = $promoBerlaku->jenis_potongan === 'nominal'
+                            ? (float) $promoBerlaku->nominal_potongan
+                            : ((float) ($promoBerlaku->persentase ?? 0) / 100) * $hargaAsal;
+                    }
+                    $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
                 }
             } else {
                 $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;
@@ -380,6 +391,17 @@ class KeranjangController extends Controller
                     $ukuran = $varianBersama->ukuran;
                     $varianRasa = $varianBersama->variasi;
                     $foto = $varianBersama->foto ?: $foto;
+
+                    // Harga per varian (stok tetap satu di detail produk utama): hitung ulang harga & promo.
+                    $hargaAsal = $varianBersama->hargaJualEfektif($produkVarian);
+                    $promoBerlaku = $produk->promoAktifUntukDetail($produkVarian, $varianBersama);
+                    $diskonSatuan = 0;
+                    if ($promoBerlaku) {
+                        $diskonSatuan = $promoBerlaku->jenis_potongan === 'nominal'
+                            ? (float) $promoBerlaku->nominal_potongan
+                            : ((float) ($promoBerlaku->persentase ?? 0) / 100) * $hargaAsal;
+                    }
+                    $hargaSatuan = max(0, $hargaAsal - $diskonSatuan);
                 }
             } else {
                 $ukuran = $produk->punya_ukuran ? ($validated['ukuran'] ?? $produk->ukuranDefault()) : null;

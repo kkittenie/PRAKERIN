@@ -31,7 +31,7 @@
             <input type="radio" class="mt-1 w-4 h-4 text-brand-600 focus:ring-brand-500" :checked="mode === 'global'" @change="setMode('global')">
             <div>
                 <span class="block font-bold text-sm text-gray-900 dark:text-white">Produk Tunggal</span>
-                <span class="block text-xs text-gray-500">satu harga dan satu stok. Pilihan tambahan (mis. topping) boleh ditambah, tapi harga dan stoknya ikut produk ini.</span>
+                <span class="block text-xs text-gray-500">satu stok bersama. Pilihan tambahan (mis. topping) boleh ditambah, harganya diatur per varian dan stoknya ikut produk ini.</span>
             </div>
         </label>
         <label class="flex items-start gap-3 p-4 rounded-xl border bg-white dark:bg-gray-800 cursor-pointer transition"
@@ -48,7 +48,7 @@
         Satu baris per kombinasi ukuran dan variasi. Kode, harga, dan stok diatur di tiap baris.
     </span>
     <span class="mb-2 block text-xs text-gray-400 dark:text-gray-500" x-show="mode === 'global'" x-cloak>
-        Isi satu kode, harga, dan stok untuk produk ini. Varian di bagian bawah hanya pilihan tambahan (mis. topping), harga dan stoknya mengikuti produk ini.
+        Isi kode dan stok untuk produk ini. Kalau produk punya varian (mis. topping), harga modal dan harga jual diisi per varian di bagian bawah, sedangkan stoknya tetap satu. Kalau tidak punya varian, isi harganya di sini.
     </span>
 
     {{-- Foto utama produk (dipakai di daftar produk, kasir, dan menu mobile). Selalu tampil di kedua mode. --}}
@@ -165,7 +165,11 @@
                         <p x-show="pesanKode(index)" x-text="pesanKode(index)" class="mt-1 text-xs font-medium text-red-600 dark:text-red-400"></p>
                     </div>
 
-                    <div>
+                    <p x-show="varianBaris.length > 0" x-cloak class="md:col-span-2 text-xs text-gray-500 dark:text-gray-400">
+                        Harga modal dan harga jual diatur per varian di tabel Varian Produk di bawah.
+                    </p>
+
+                    <div x-show="varianBaris.length === 0">
                         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Harga Modal <span class="text-red-500">*</span></label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-xs">Rp</span>
@@ -174,7 +178,7 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div x-show="varianBaris.length === 0">
                         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Harga Jual <span class="text-red-500">*</span></label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-xs">Rp</span>
@@ -202,17 +206,19 @@
         <div class="mt-4">
             <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Varian Produk (opsional)</label>
             <span class="mb-2 block text-xs text-gray-400 dark:text-gray-500">
-                Tambahkan pilihan seperti topping. Semua varian memakai harga dan stok produk di atas. Stok berkurang per stok produk ini, bukan per varian.
+                Tambahkan pilihan seperti topping. Harga jual dan harga modal diatur per varian. Stok tetap satu: berkurang dari stok produk di atas, bukan per varian.
             </span>
 
             <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
-                <table class="w-full text-sm min-w-[760px]">
+                <table class="w-full text-sm min-w-[1100px]">
                     <thead class="bg-gray-50 dark:bg-gray-800/60">
                         <tr class="text-left text-gray-500 dark:text-gray-400">
                             <th class="py-2 px-3 w-20">Foto</th>
                             <th class="py-2 px-3 w-48">Kode</th>
                             <th class="py-2 px-3">Varian</th>
                             <th class="py-2 px-3">Ukuran</th>
+                            <th class="py-2 px-3">Harga Modal <span class="text-red-500">*</span></th>
+                            <th class="py-2 px-3">Harga Jual <span class="text-red-500">*</span></th>
                             <th class="py-2 px-3 w-16">Status</th>
                             <th class="py-2 px-3 w-12"></th>
                         </tr>
@@ -220,7 +226,7 @@
                     <tbody>
                         <template x-if="varianBaris.length === 0">
                             <tr>
-                                <td colspan="6" class="py-4 px-3 text-center text-xs text-gray-400">Belum ada varian. Klik "+ Tambah Varian" kalau produk ini punya pilihan (mis. topping).</td>
+                                <td colspan="8" class="py-4 px-3 text-center text-xs text-gray-400">Belum ada varian. Klik "+ Tambah Varian" kalau produk ini punya pilihan (mis. topping).</td>
                             </tr>
                         </template>
                         <template x-for="(v, i) in varianBaris" :key="v.uid">
@@ -247,6 +253,20 @@
                                 </td>
                                 <td class="py-2 px-3">
                                     <input type="text" maxlength="50" placeholder="Mis. Kecil" x-model="v.ukuran" :name="'varian_baris[' + i + '][ukuran]'" :style="pesanVarian(i) ? 'border-color:#ef4444' : ''" class="{{ $inputClass }}">
+                                </td>
+                                <td class="py-2 px-3">
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-xs">Rp</span>
+                                        <input type="text" inputmode="numeric" placeholder="8.000" :style="kosongAngkaVarian(v, v.harga_modal) ? 'border-color:#ef4444' : ''" :value="fmt(v.harga_modal)" @input="v.harga_modal = digits($event.target.value); $event.target.value = fmt(v.harga_modal)" class="{{ $inputClass }} pl-8">
+                                        <input type="hidden" :name="'varian_baris[' + i + '][harga_modal]'" :value="v.harga_modal">
+                                    </div>
+                                </td>
+                                <td class="py-2 px-3">
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 dark:text-gray-400 font-semibold text-xs">Rp</span>
+                                        <input type="text" inputmode="numeric" placeholder="10.000" :style="kosongAngkaVarian(v, v.harga_jual) ? 'border-color:#ef4444' : ''" :value="fmt(v.harga_jual)" @input="v.harga_jual = digits($event.target.value); $event.target.value = fmt(v.harga_jual)" class="{{ $inputClass }} pl-8">
+                                        <input type="hidden" :name="'varian_baris[' + i + '][harga_jual]'" :value="v.harga_jual">
+                                    </div>
                                 </td>
                                 <td class="py-2 px-3">
                                     <label class="relative inline-flex items-center cursor-pointer mt-2" title="Aktifkan/nonaktifkan varian ini">
@@ -409,7 +429,7 @@
                     if (paksa) {
                         if (!this.norm(b.kode)) out.push(nomor + 'kode wajib diisi.');
                         if (this.baris.length > 1 && this.kosongBaris(b)) out.push(nomor + 'isi minimal Ukuran atau Variasi.');
-                        if (b.harga_modal === '' || b.harga_jual === '') out.push(nomor + 'Harga Modal dan Harga Jual wajib diisi.');
+                        if (!this.pakaiHargaVarian() && (b.harga_modal === '' || b.harga_jual === '')) out.push(nomor + 'Harga Modal dan Harga Jual wajib diisi.');
                     }
                 });
 
@@ -420,6 +440,7 @@
                         if (this.kodeVarianDobel(i)) out.push(nomor + 'kode \"' + String(v.kode).trim() + '\" sudah dipakai di baris lain.');
                         if (this.varianDobel(i)) out.push(nomor + 'kombinasi ukuran & varian ini sudah ada di baris lain.');
                         if (paksa && !this.norm(v.ukuran) && !this.norm(v.variasi)) out.push(nomor + 'isi minimal Ukuran atau Varian.');
+                        if (paksa && (v.harga_modal === '' || v.harga_modal === null || v.harga_jual === '' || v.harga_jual === null)) out.push(nomor + 'Harga Modal dan Harga Jual wajib diisi.');
                     });
                 }
 
@@ -458,8 +479,31 @@
                 return '';
             },
 
+            // Produk Tunggal bervarian: harga produk utama (tidak ditampilkan) mengikuti varian termurah,
+            // supaya data detail produk tetap terisi dan lolos validasi.
+            sinkronHargaUtama() {
+                if (this.mode !== 'global' || this.varianBaris.length === 0 || this.baris.length === 0) return;
+
+                const terisi = this.varianBaris.filter(v => v.harga_jual !== '' && v.harga_jual !== null && v.harga_jual !== undefined);
+                if (terisi.length === 0) return;
+
+                const termurah = terisi.reduce((a, b) => Number(b.harga_jual) < Number(a.harga_jual) ? b : a);
+                this.baris[0].harga_jual = termurah.harga_jual;
+                this.baris[0].harga_modal = (termurah.harga_modal !== '' && termurah.harga_modal !== null) ? termurah.harga_modal : this.baris[0].harga_modal;
+            },
+
+            pakaiHargaVarian() {
+                return this.mode === 'global' && this.varianBaris.length > 0;
+            },
+
+            kosongAngkaVarian(v, nilai) {
+                return this.tampilkanGalat && !this.varianKosong(v) && (nilai === '' || nilai === null || nilai === undefined);
+            },
+
             tambahVarian() {
-                this.varianBaris.push({ uid: ++this.uid, id: '', kode: '', ukuran: '', variasi: '', status_aktif: true, foto_url: null });
+                // Harga awal varian baru = harga produk utama; tinggal diubah per varian.
+                const utama = this.baris[0] || {};
+                this.varianBaris.push({ uid: ++this.uid, id: '', kode: '', ukuran: '', variasi: '', harga_modal: utama.harga_modal ?? '', harga_jual: utama.harga_jual ?? '', status_aktif: true, foto_url: null });
             },
 
             hapusVarian(index) {
@@ -481,10 +525,13 @@
                 this.varianBaris = this.varianBaris.map(v => ({ ...v, uid: ++this.uid }));
                 if (this.baris.length === 0) this.tambahBaris();
 
+                this.$watch('varianBaris', () => this.sinkronHargaUtama());
+
                 // Klik simpan: munculkan semua peringatan; kalau masih ada yang salah, simpan dibatalkan.
                 const form = this.$root.closest('form');
                 if (form) {
                     form.addEventListener('submit', (e) => {
+                        this.sinkronHargaUtama();
                         this.tampilkanGalat = true;
                         if (this.hitungGalat(true).length > 0) {
                             e.preventDefault();

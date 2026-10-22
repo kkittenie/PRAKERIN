@@ -1,8 +1,10 @@
 @php $varians = $item->detailProduks; @endphp
 @if($varians->isNotEmpty())
     @php
-        $hargaMin = $varians->min('harga_jual');
-        $hargaMax = $varians->max('harga_jual');
+        // Produk Tunggal bervarian: rentang harga diambil dari harga tiap varian.
+        $daftarHarga = $item->daftarHargaJualTampil();
+        $hargaMin = $daftarHarga->min();
+        $hargaMax = $daftarHarga->max();
     @endphp
     @if($hargaMin == $hargaMax)
         Rp {{ number_format($hargaMin, 0, ',', '.') }}
