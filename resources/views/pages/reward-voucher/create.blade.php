@@ -613,13 +613,17 @@
                     <div class="mb-4"><small class="text-red-500">{{ $message }}</small></div>
                 @enderror
 
+                {{-- Hidden input semua produk terpilih (di luar pagination, supaya produk di halaman lain tetap ikut ter-submit) --}}
+                <template x-for="id in produkTerpilih" :key="'input_prd_' + id">
+                    <input type="hidden" name="produk_ids[]" :value="id">
+                </template>
+
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     <template x-for="produk in produkDitampilkan" :key="produk.id">
                         <label class="relative flex flex-col bg-gray-50 dark:bg-gray-800/40 border rounded-xl p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition duration-150 select-none"
                             :class="produkTerpilih.includes(produk.id) ? 'border-brand-500 ring-2 ring-brand-500' : 'border-gray-200 dark:border-gray-700/80'">
                             <input
                                 type="checkbox"
-                                name="produk_ids[]"
                                 :value="produk.id"
                                 :checked="produkTerpilih.includes(produk.id)"
                                 @change="toggleProdukTerpilih(produk, $event.target.checked)"

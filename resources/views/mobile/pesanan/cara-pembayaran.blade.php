@@ -143,31 +143,8 @@
                             return;
                         }
 
-                        // Di HP (Android & terutama iOS Safari), klik anchor blob
-                        // seringkali nggak beneran nge-trigger "Save"-nya, cuma
-                        // buka gambarnya doang. Kalau device-nya support Web
-                        // Share API buat file (hampir semua browser HP modern),
-                        // itu dipakai duluan biar user langsung dapet opsi
-                        // "Simpan ke Foto/File" dari native share sheet HP-nya
-                        // — ini yang paling deket sama "langsung kedownload"
-                        // di HP tanpa perlu instruksi tekan-lama manual.
-                        const file = new File([blob], filename, { type: 'image/png' });
-                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            try {
-                                await navigator.share({ files: [file] });
-                                this.showToast('QR berhasil didownload!', 'success');
-                            } catch (shareErr) {
-                                // User batal di share sheet bukan error beneran,
-                                // jadi nggak perlu munculin toast gagal.
-                                if (shareErr && shareErr.name !== 'AbortError') {
-                                    this.showToast('Gagal download QR, coba lagi.', 'error');
-                                }
-                            }
-                            return;
-                        }
-
-                        // Fallback (desktop / browser yang nggak support Web Share
-                        // dengan file): download langsung lewat blob URL.
+                        // Download langsung lewat blob URL (tanpa share sheet),
+                        // file langsung masuk ke folder Download browser.
                         const blobUrl = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = blobUrl;

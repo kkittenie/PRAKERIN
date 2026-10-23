@@ -200,7 +200,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
                 {{-- Nama Promo --}}
-                <div>
+                <div class="md:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Nama Promo <span class="text-red-500">*</span>
                     </label>
@@ -219,7 +219,7 @@
                 {{-- Jenis Potongan --}}
                 <div>
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Jenis Potongan Diskon <span class="text-red-500">*</span>
+                        Jenis Potongan <span class="text-red-500">*</span>
                     </label>
                     <div class="flex gap-4 items-center h-12">
                         <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300 font-medium">
@@ -236,51 +236,49 @@
                     @enderror
                 </div>
 
-                {{-- Nilai Potongan Diskon --}}
-                <div>
-                    <div x-show="jenisPotongan === 'persentase'">
-                        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Persentase Diskon (%) <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <input
-                                type="text"
-                                inputmode="decimal"
-                                autocomplete="off"
-                                x-model="persentaseDisplay"
-                                @input="handlePersentaseInput($event)"
-                                placeholder="Contoh: 15,5"
-                                class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-4 pr-10 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
-                                :required="jenisPotongan === 'persentase'">
-                            <span class="absolute right-4 top-3 text-gray-500 font-bold text-sm">%</span>
-                            <input type="hidden" name="persentase" :value="getPersentaseRaw()">
-                        </div>
-                        @error('persentase')
-                            <small class="text-red-500">{{ $message }}</small>
-                        @enderror
+                {{-- Nilai Potongan --}}
+                <div x-show="jenisPotongan === 'nominal'" x-cloak>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Nominal Potongan (Rp) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3 text-gray-500 font-bold text-sm">Rp</span>
+                        <input
+                            type="text"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            x-model="nominalDisplay"
+                            @input="handleRupiahInput($event, 'nominalDisplay')"
+                            placeholder="10.000"
+                            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-12 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 font-semibold"
+                            :required="jenisPotongan === 'nominal'">
+                        <input type="hidden" name="nominal_potongan" :value="getRawNumber(nominalDisplay)">
                     </div>
+                    @error('nominal_potongan')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
+                </div>
 
-                    <div x-show="jenisPotongan === 'nominal'" x-cloak>
-                        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Nominal Diskon (Rp) <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-3 text-gray-500 font-bold text-sm">Rp</span>
-                            <input
-                                type="text"
-                                inputmode="numeric"
-                                autocomplete="off"
-                                x-model="nominalDisplay"
-                                @input="handleRupiahInput($event, 'nominalDisplay')"
-                                placeholder="5.000"
-                                class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-12 pr-4 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400 font-semibold"
-                                :required="jenisPotongan === 'nominal'">
-                            <input type="hidden" name="nominal_potongan" :value="getRawNumber(nominalDisplay)">
-                        </div>
-                        @error('nominal_potongan')
-                            <small class="text-red-500">{{ $message }}</small>
-                        @enderror
+                <div x-show="jenisPotongan === 'persentase'" x-cloak>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Persentase Potongan (%) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input
+                            type="text"
+                            inputmode="decimal"
+                            autocomplete="off"
+                            x-model="persentaseDisplay"
+                            @input="handlePersentaseInput($event)"
+                            placeholder="Contoh: 10"
+                            class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white pl-4 pr-10 py-3 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400"
+                            :required="jenisPotongan === 'persentase'">
+                        <span class="absolute right-4 top-3 text-gray-500 font-bold text-sm">%</span>
+                        <input type="hidden" name="persentase" :value="getPersentaseRaw()">
                     </div>
+                    @error('persentase')
+                        <small class="text-red-500">{{ $message }}</small>
+                    @enderror
                 </div>
 
                 {{-- Minimum Pembelian --}}
@@ -390,13 +388,17 @@
                     <div class="mb-4"><small class="text-red-500">{{ $message }}</small></div>
                 @enderror
 
+                {{-- Hidden input semua produk terpilih (di luar pagination, supaya produk di halaman lain tetap ikut ter-submit) --}}
+                <template x-for="id in produkTerpilih" :key="'input_prd_' + id">
+                    <input type="hidden" name="produk_ids[]" :value="id">
+                </template>
+
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     <template x-for="produk in produkDitampilkan" :key="produk.id">
                         <label class="relative flex flex-col bg-gray-50 dark:bg-gray-800/40 border rounded-xl p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition duration-150 select-none"
                             :class="produkTerpilih.includes(produk.id) ? 'border-brand-500 ring-2 ring-brand-500' : 'border-gray-200 dark:border-gray-700/80'">
                             <input
                                 type="checkbox"
-                                name="produk_ids[]"
                                 :value="produk.id"
                                 :checked="produkTerpilih.includes(produk.id)"
                                 @change="toggleProdukTerpilih(produk, $event.target.checked)"
