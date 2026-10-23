@@ -190,7 +190,8 @@ class Produksi extends Model
 
     /**
      * Label kadaluarsa untuk dicetak di label barcode: selalu waktu pasti
-     * (bukan "X jam setelah produksi"). Contoh: produksi 10:00 + 2 jam -> "15-08-2026 12:00".
+     * (bukan "X jam setelah produksi"). Format tanggal ddmmyy.
+     * Contoh: tanggal -> "091126"; produksi 10:00 + 2 jam -> "150826 12:00".
      */
     public function getKadaluarsaLabelCetakAttribute(): string
     {
@@ -201,7 +202,7 @@ class Produksi extends Model
         }
 
         return $this->kadaluarsa_tipe === 'jam'
-            ? $waktu->format('d-m-Y H:i')
-            : $waktu->format('d-m-Y');
+            ? $waktu->format('dmy H:i')
+            : $waktu->format('dmy');
     }
 }
