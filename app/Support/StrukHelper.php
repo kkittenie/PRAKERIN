@@ -250,18 +250,13 @@ class StrukHelper
     /**
      * Kode pesanan 6 karakter (huruf & angka) yang dicetak di struk pelanggan DAN tiket dapur.
      *
-     * - Pesanan kasir langsung (offline): kode selalu ada, jadi langsung dicetak.
-     * - Pesanan Member App (online): hanya muncul setelah kasir memasukkan kode itu dan
-     *   pesanan resmi ditandai "Sudah Diambil" (kode yang salah tidak pernah mengubah
-     *   status), jadi kode di cetakan selalu kode yang sudah terverifikasi.
+     * Kode sudah dibuat sejak pesanan dibuat (kasir maupun Member App), jadi langsung dicetak
+     * begitu struk / tiket dapur dicetak, tanpa menunggu pesanan diambil. Verifikasi kode saat
+     * pengambilan tetap dilakukan di halaman Pesanan Pickup (kode yang salah tidak mengubah status).
+     * (Nama method dibiarkan supaya tidak perlu mengubah view cetak.)
      */
     public static function kodePickupTerverifikasi(Transaksi $transaksi): ?string
     {
-        if ($transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP
-            && $transaksi->status_pesanan !== Transaksi::STATUS_SUDAH_DIAMBIL) {
-            return null;
-        }
-
         return filled($transaksi->kode_pickup) ? strtoupper(trim((string) $transaksi->kode_pickup)) : null;
     }
 }
