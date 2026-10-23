@@ -387,11 +387,13 @@ class CheckoutController extends Controller
                 }
 
                 $stokTerpakai = [];
+                // Baris hadiah stamp: stoknya sudah dipotong saat hadiah ditukar, jangan dipotong lagi di checkout.
+                $detailHadiahStamp = [];
 
                 foreach ($items as $item) {
                     if (! empty($item['is_reward_stamp'])) {
                         $produk = Produk::lockForUpdate()->findOrFail($item['produk_id']);
-                        DetailTransaksi::create([
+                        $detailHadiahStamp[] = DetailTransaksi::create([
                             'transaksi_id' => $transaksi->id,
                             'produk_id' => $produk->id,
                             'detail_produk_id' => $item['detail_produk_id'] ?? null,
@@ -542,7 +544,7 @@ class CheckoutController extends Controller
                 }
 
                 if ($stampRedemption && $stampRedemption->produk) {
-                    DetailTransaksi::create([
+                    $detailHadiahStamp[] = DetailTransaksi::create([
                         'transaksi_id' => $transaksi->id,
                         'produk_id' => $stampRedemption->produk->id,
                         'detail_produk_id' => $stampRedemption->detail_produk_id,
@@ -565,6 +567,13 @@ class CheckoutController extends Controller
 
                     Session::forget(self::SESSION_STAMP_REDEMPTION_KEY);
                 }
+
+                // Stok baris yang berstatus ready dikurangi SEKARANG (saat checkout), bukan nanti saat
+                // kasir memproses pesanan, supaya stok yang sudah dipesan tidak bisa dibeli orang lain.
+                $this->kurangiStokPesanan(
+                    $transaksi,
+                    array_map(fn ($d) => $d->id, $detailHadiahStamp)
+                );
 
                 DB::commit();
 
@@ -606,6 +615,66 @@ class CheckoutController extends Controller
             return ActivityLogHelper::handleException($e);
         }
     }
+    /**
+     * Kurangi stok untuk semua baris detail pesanan yang berstatus ready (butuh_produksi = false).
+     * Baris yang butuh produksi tidak menyentuh stok. Baris hadiah stamp dilewati karena stoknya
+     * sudah dipotong saat hadiah ditukar. Dipanggil di dalam transaksi DB checkout, jadi kalau ada
+     * yang gagal seluruh pesanan ikut dibatalkan (rollback).
+     *
+     * @param array<int,int> $kecualiDetailIds id DetailTransaksi yang tidak boleh dipotong stoknya
+     */
+    private function kurangiStokPesanan(Transaksi $transaksi, array $kecualiDetailIds = []): void
+    {
+        $details = DetailTransaksi::where('transaksi_id', $transaksi->id)->get();
+
+        foreach ($details as $detail) {
+            if (! $detail->produk_id || $detail->butuh_produksi || in_array($detail->id, $kecualiDetailIds, true)) {
+                continue;
+            }
+
+            $jumlah = (int) $detail->jumlah;
+            if ($jumlah <= 0) {
+                continue;
+            }
+
+            if ($detail->detail_produk_id) {
+                $varian = \App\Models\DetailProduk::lockForUpdate()->find($detail->detail_produk_id);
+                if ($varian) {
+                    $varian->stok = max(0, (int) $varian->stok - $jumlah);
+                    $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+                    $varian->save();
+
+                    $pInduk = Produk::find($varian->produk_id);
+                    $pInduk?->segarkanStok();
+                }
+                continue;
+            }
+
+            $produk = Produk::lockForUpdate()->find($detail->produk_id);
+            if (! $produk) {
+                continue;
+            }
+
+            try {
+                if ($detail->varian_rasa && $produk->punya_varian_rasa) {
+                    $produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, -$jumlah);
+                } else {
+                    $produk->decrementStokUkuran($detail->ukuran, $jumlah);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Gagal mengurangi stok saat checkout member app', [
+                    'transaksi_id' => $transaksi->id,
+                    'detail_id' => $detail->id,
+                    'produk_id' => $produk->id,
+                    'error' => $e->getMessage(),
+                ]);
+                throw $e;
+            }
+        }
+
+        $transaksi->update(['stok_dikurangi_pada' => now()]);
+    }
+
     private function prosesItemBundlingCheckout(Transaksi $transaksi, array $item, array &$stokTerpakai): void
     {
         $bundling = Bundling::with('items.produk', 'items.detailProduk')->findOrFail($item['bundling_id']);
@@ -896,7 +965,7 @@ class CheckoutController extends Controller
      * item bundling / produk biasa, beberapa untuk promo event). Tiap bagian
      * mengembalikan rasa yang dipakai supaya bisa dicatat di detail transaksi.
      *
-     * Stok BELUM dikurangi di sini (baru dikurangi saat pesanan diproses),
+     * Stok BELUM dikurangi di sini (dikurangi sekali di akhir checkout lewat kurangiStokPesanan),
      * makanya $stokTerpakai dipakai buat menghitung pemakaian dalam satu checkout.
      */
     private function pecahJumlahProduksiRasa(Produk $produk, int $jumlah, ?string $ukuran, array $kandidatRasa, array &$stokTerpakai): array

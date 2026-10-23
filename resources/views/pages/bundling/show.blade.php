@@ -151,8 +151,10 @@
                                 } elseif ($v) {
                                     $stokUkuran = (int) $v->stok;
                                     $stokHabis = !$v->status_aktif || $v->perlu_diproduksi || $stokUkuran <= 0;
-                                    $ukuranTampil = $v->ukuran ?? '-';
-                                    $rasaTampil = $v->variasi;
+                                    // Produk Stok Bersama: rasa/topping yang dipilih tersimpan di varian_produk_id
+                                    // (detail produknya sendiri tidak punya variasi), jadi varian itu yang diutamakan.
+                                    $ukuranTampil = $item->varianProduk?->ukuran ?? $v->ukuran ?? '-';
+                                    $rasaTampil = $item->varianProduk?->variasi ?: ($item->varian_rasa ?: $v->variasi);
                                 } else {
                                     $stokUkuran = $p ? $p->stokUntukUkuranRasa($item->ukuran, $item->varian_rasa) : 0;
                                     $stokHabis = !$p || $p->status_ketersediaan === 'perlu_diproduksi' || $stokUkuran <= 0;
@@ -213,8 +215,8 @@
                         } elseif ($v) {
                             $stokUkuran = (int) $v->stok;
                             $stokHabis = !$v->status_aktif || $v->perlu_diproduksi || $stokUkuran <= 0;
-                            $ukuranTampil = $v->ukuran;
-                            $rasaTampil = $v->variasi;
+                            $ukuranTampil = $item->varianProduk?->ukuran ?? $v->ukuran;
+                            $rasaTampil = $item->varianProduk?->variasi ?: ($item->varian_rasa ?: $v->variasi);
                         } else {
                             $stokUkuran = $p ? $p->stokUntukUkuranRasa($item->ukuran, $item->varian_rasa) : 0;
                             $stokHabis = !$p || $p->status_ketersediaan === 'perlu_diproduksi' || $stokUkuran <= 0;

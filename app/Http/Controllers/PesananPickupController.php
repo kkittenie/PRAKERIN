@@ -197,186 +197,11 @@ class PesananPickupController extends Controller
             try {
                 $transaksi->load('detailTransaksi');
 
-                foreach ($transaksi->detailTransaksi as $detail) {
-                    if (! $detail->produk_id) {
-                        continue;
-                    }
-
-                    // Lewati baris komponen bundling/promo (harga 0) — stoknya sudah
-                    // diurus lewat pecahan saat checkout; di sini kita hanya perlu
-                    // meng-update butuh_produksi + kurangi stok untuk baris reguler.
-                    $isBundlingKomponen = $detail->bundling_id && $detail->harga_satuan == 0;
-                    $isPromoKomponen = $detail->promo_event_id && $detail->harga_satuan == 0;
-                    if ($isBundlingKomponen || $isPromoKomponen) {
-                        // Komponen: stok sudah dihitung via pecahJumlahProduksi
-                        // saat checkout, butuh_produksi sudah diset.
-                        // Kurangi stok untuk yang tidak butuh_produksi.
-                        if (! $detail->butuh_produksi) {
-                            if ($detail->detail_produk_id) {
-                                $varian = \App\Models\DetailProduk::lockForUpdate()->find($detail->detail_produk_id);
-                                if ($varian) {
-                                    $varian->stok = max(0, (int) $varian->stok - (int) $detail->jumlah);
-                                    $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
-                                    $varian->save();
-                                    $pInduk = \App\Models\Produk::find($varian->produk_id);
-                                    if ($pInduk) {
-                                        $this->sinkronStokProduk($pInduk);
-                                    }
-                                }
-                                continue;
-                            }
-
-                            $produk = \App\Models\Produk::lockForUpdate()->find($detail->produk_id);
-                            if ($produk) {
-                                try {
-                                    if ($detail->varian_rasa && $produk->punya_varian_rasa) {
-                                        $produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, -$detail->jumlah);
-                                    } else {
-                                        $produk->decrementStokUkuran($detail->ukuran, $detail->jumlah);
-                                    }
-                                } catch (\Throwable $e) {
-                                    Log::error('Gagal mengurangi stok komponen saat proses pesanan pickup', [
-                                        'detail_id' => $detail->id,
-                                        'produk_id' => $produk->id,
-                                        'error' => $e->getMessage(),
-                                    ]);
-                                    throw $e;
-                                }
-                            }
-                        }
-                        continue;
-                    }
-
-                    $produk = \App\Models\Produk::lockForUpdate()->find($detail->produk_id);
-                    if (! $produk) {
-                        continue;
-                    }
-
-                    // Tentukan apakah perlu diproduksi untuk varian baru
-                    if ($detail->detail_produk_id) {
-                        $varian = \App\Models\DetailProduk::lockForUpdate()->find($detail->detail_produk_id);
-                        if ($varian) {
-                            $stokTersedia = max(0, (int) $varian->stok);
-                            if ($varian->perlu_diproduksi || $stokTersedia <= 0) {
-                                $detail->butuh_produksi = true;
-                                $detail->save();
-                            } elseif ($stokTersedia >= $detail->jumlah) {
-                                $detail->butuh_produksi = false;
-                                $detail->save();
-                                $varian->stok = $stokTersedia - $detail->jumlah;
-                                $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
-                                $varian->save();
-                                $this->sinkronStokProduk($produk);
-                            } else {
-                                $sisaProduksi = $detail->jumlah - $stokTersedia;
-                                $detail->jumlah = $stokTersedia;
-                                $detail->subtotal = $detail->harga_satuan * $stokTersedia;
-                                $detail->butuh_produksi = false;
-                                $detail->save();
-
-                                \App\Models\DetailTransaksi::create([
-                                    'transaksi_id' => $transaksi->id,
-                                    'produk_id' => $produk->id,
-                                    'detail_produk_id' => $varian->id,
-                                    'nama_produk' => $detail->nama_produk,
-                                    'ukuran' => $varian->ukuran,
-                                    'varian_rasa' => $varian->variasi,
-                                    'harga_satuan' => $detail->harga_satuan,
-                                    'jumlah' => $sisaProduksi,
-                                    'catatan' => $detail->catatan,
-                                    'subtotal' => $detail->harga_satuan * $sisaProduksi,
-                                    'butuh_produksi' => true,
-                                ]);
-
-                                $varian->stok = 0;
-                                $varian->status_ketersediaan = 'perlu_diproduksi';
-                                $varian->save();
-                                $this->sinkronStokProduk($produk);
-                            }
-                            continue;
-                        }
-                    }
-
-                    // Tentukan apakah perlu diproduksi (sama seperti kasir)
-                    if ($produk->status_ketersediaan === 'perlu_diproduksi') {
-                        $detail->butuh_produksi = true;
-                        $detail->save();
-                        continue;
-                    }
-
-                    // Stok dibaca FRESH dari DB (produk di-find ulang per baris, dan
-                    // stok sudah dikurangi oleh baris sebelumnya). Jangan dikurangi
-                    // lagi dengan "stok terpakai" — itu bikin stok dihitung dobel
-                    // dan baris yang sebenarnya masih ready malah jadi perlu produksi.
-                    $stokTersedia = max(0, (int) floor((float) $produk->stokUntukUkuranRasa($detail->ukuran, $detail->varian_rasa)));
-
-                    if ($stokTersedia >= $detail->jumlah) {
-                        // Stok cukup: kurangi stok, tidak perlu produksi
-                        $detail->butuh_produksi = false;
-                        $detail->save();
-
-                        try {
-                            if ($detail->varian_rasa && $produk->punya_varian_rasa) {
-                                $produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, -$detail->jumlah);
-                            } else {
-                                $produk->decrementStokUkuran($detail->ukuran, $detail->jumlah);
-                            }
-                        } catch (\Throwable $e) {
-                            Log::error('Gagal mengurangi stok saat proses pesanan pickup', [
-                                'produk_id' => $produk->id,
-                                'ukuran' => $detail->ukuran,
-                                'varian_rasa' => $detail->varian_rasa,
-                                'jumlah' => $detail->jumlah,
-                                'error' => $e->getMessage(),
-                            ]);
-                            throw $e;
-                        }
-                    } elseif ($stokTersedia <= 0) {
-                        // Stok habis: semua perlu diproduksi
-                        $detail->butuh_produksi = true;
-                        $detail->save();
-                    } else {
-                        // Stok sebagian: pecah jadi 2 baris (ready + produksi)
-                        $sisaProduksi = $detail->jumlah - $stokTersedia;
-
-                        // Update baris ini jadi porsi ready
-                        $detail->jumlah = $stokTersedia;
-                        $detail->subtotal = $detail->harga_satuan * $stokTersedia;
-                        $detail->butuh_produksi = false;
-                        $detail->save();
-
-                        // Buat baris baru untuk porsi produksi
-                        \App\Models\DetailTransaksi::create([
-                            'transaksi_id' => $transaksi->id,
-                            'produk_id' => $produk->id,
-                            'nama_produk' => $detail->nama_produk,
-                            'ukuran' => $detail->ukuran,
-                            'varian_rasa' => $detail->varian_rasa,
-                            'harga_satuan' => $detail->harga_satuan,
-                            'jumlah' => $sisaProduksi,
-                            'catatan' => $detail->catatan,
-                            'subtotal' => $detail->harga_satuan * $sisaProduksi,
-                            'butuh_produksi' => true,
-                        ]);
-
-
-                        try {
-                            if ($detail->varian_rasa && $produk->punya_varian_rasa) {
-                                $produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, -$stokTersedia);
-                            } else {
-                                $produk->decrementStokUkuran($detail->ukuran, $stokTersedia);
-                            }
-                        } catch (\Throwable $e) {
-                            Log::error('Gagal mengurangi stok (pecahan) saat proses pesanan pickup', [
-                                'produk_id' => $produk->id,
-                                'ukuran' => $detail->ukuran,
-                                'varian_rasa' => $detail->varian_rasa,
-                                'jumlah_ready' => $stokTersedia,
-                                'error' => $e->getMessage(),
-                            ]);
-                            throw $e;
-                        }
-                    }
+                // Pesanan baru: stok sudah dikurangi saat checkout (stok_dikurangi_pada terisi),
+                // jadi di sini tidak ada lagi pengurangan stok. Pesanan lama yang dibuat sebelum
+                // perubahan ini masih memakai alur lama (stok dikurangi saat diproses).
+                if (! $transaksi->stok_dikurangi_pada) {
+                    $this->kurangiStokPesananLama($transaksi);
                 }
 
                 $transaksi->update(['diproses_pada' => now()]);
@@ -384,7 +209,7 @@ class PesananPickupController extends Controller
                 DB::commit();
 
                 activity()->causedBy(auth()->user())->performedOn($transaksi)
-                    ->log('memproses pesanan pick up (stok dikurangi)');
+                    ->log('memproses pesanan pick up');
 
                 \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'diproses')));
 
@@ -446,12 +271,14 @@ class PesananPickupController extends Controller
 
             DB::beginTransaction();
             try {
-                // Stok dikurangi saat prosesPesanan, jadi kembalikan kalau
-                // pesanan sudah diproses (siap_diambil ATAU diproses).
+                // Stok pesanan baru sudah dikurangi sejak checkout (stok_dikurangi_pada terisi).
+                // Pesanan lama baru dikurangi saat prosesPesanan (diproses_pada terisi).
+                // Dua-duanya harus dikembalikan; pesanan lama yang belum diproses belum
+                // memotong stok, jadi tidak ada yang perlu dikembalikan.
                 $perluKembalikanStok = in_array($transaksi->status_pesanan, [
                     Transaksi::STATUS_SIAP_DIAMBIL,
                     Transaksi::STATUS_DIPROSES,
-                ], true) && $transaksi->diproses_pada;
+                ], true) && ($transaksi->stok_dikurangi_pada || $transaksi->diproses_pada);
 
                 if ($perluKembalikanStok) {
                     foreach ($transaksi->detailTransaksi as $detail) {
@@ -666,6 +493,196 @@ class PesananPickupController extends Controller
                     'stamp_sebelum' => $stampSebelum,
                     'stamp_didapat' => $stampBaru - $stampSebelum,
                 ]);
+            }
+        }
+    }
+
+    /**
+     * Alur lama (sebelum stok dikurangi saat checkout): menentukan butuh_produksi dari stok terbaru
+     * dan mengurangi stok saat pesanan diproses. Hanya dipakai untuk pesanan lama yang belum
+     * punya penanda stok_dikurangi_pada.
+     */
+    private function kurangiStokPesananLama(Transaksi $transaksi): void
+    {
+        foreach ($transaksi->detailTransaksi as $detail) {
+            if (! $detail->produk_id) {
+                continue;
+            }
+
+            // Lewati baris komponen bundling/promo (harga 0) — stoknya sudah
+            // diurus lewat pecahan saat checkout; di sini kita hanya perlu
+            // meng-update butuh_produksi + kurangi stok untuk baris reguler.
+            $isBundlingKomponen = $detail->bundling_id && $detail->harga_satuan == 0;
+            $isPromoKomponen = $detail->promo_event_id && $detail->harga_satuan == 0;
+            if ($isBundlingKomponen || $isPromoKomponen) {
+                // Komponen: stok sudah dihitung via pecahJumlahProduksi
+                // saat checkout, butuh_produksi sudah diset.
+                // Kurangi stok untuk yang tidak butuh_produksi.
+                if (! $detail->butuh_produksi) {
+                    if ($detail->detail_produk_id) {
+                        $varian = \App\Models\DetailProduk::lockForUpdate()->find($detail->detail_produk_id);
+                        if ($varian) {
+                            $varian->stok = max(0, (int) $varian->stok - (int) $detail->jumlah);
+                            $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+                            $varian->save();
+                            $pInduk = \App\Models\Produk::find($varian->produk_id);
+                            if ($pInduk) {
+                                $this->sinkronStokProduk($pInduk);
+                            }
+                        }
+                        continue;
+                    }
+
+                    $produk = \App\Models\Produk::lockForUpdate()->find($detail->produk_id);
+                    if ($produk) {
+                        try {
+                            if ($detail->varian_rasa && $produk->punya_varian_rasa) {
+                                $produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, -$detail->jumlah);
+                            } else {
+                                $produk->decrementStokUkuran($detail->ukuran, $detail->jumlah);
+                            }
+                        } catch (\Throwable $e) {
+                            Log::error('Gagal mengurangi stok komponen saat proses pesanan pickup', [
+                                'detail_id' => $detail->id,
+                                'produk_id' => $produk->id,
+                                'error' => $e->getMessage(),
+                            ]);
+                            throw $e;
+                        }
+                    }
+                }
+                continue;
+            }
+
+            $produk = \App\Models\Produk::lockForUpdate()->find($detail->produk_id);
+            if (! $produk) {
+                continue;
+            }
+
+            // Tentukan apakah perlu diproduksi untuk varian baru
+            if ($detail->detail_produk_id) {
+                $varian = \App\Models\DetailProduk::lockForUpdate()->find($detail->detail_produk_id);
+                if ($varian) {
+                    $stokTersedia = max(0, (int) $varian->stok);
+                    if ($varian->perlu_diproduksi || $stokTersedia <= 0) {
+                        $detail->butuh_produksi = true;
+                        $detail->save();
+                    } elseif ($stokTersedia >= $detail->jumlah) {
+                        $detail->butuh_produksi = false;
+                        $detail->save();
+                        $varian->stok = $stokTersedia - $detail->jumlah;
+                        $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
+                        $varian->save();
+                        $this->sinkronStokProduk($produk);
+                    } else {
+                        $sisaProduksi = $detail->jumlah - $stokTersedia;
+                        $detail->jumlah = $stokTersedia;
+                        $detail->subtotal = $detail->harga_satuan * $stokTersedia;
+                        $detail->butuh_produksi = false;
+                        $detail->save();
+
+                        \App\Models\DetailTransaksi::create([
+                            'transaksi_id' => $transaksi->id,
+                            'produk_id' => $produk->id,
+                            'detail_produk_id' => $varian->id,
+                            'nama_produk' => $detail->nama_produk,
+                            'ukuran' => $varian->ukuran,
+                            'varian_rasa' => $varian->variasi,
+                            'harga_satuan' => $detail->harga_satuan,
+                            'jumlah' => $sisaProduksi,
+                            'catatan' => $detail->catatan,
+                            'subtotal' => $detail->harga_satuan * $sisaProduksi,
+                            'butuh_produksi' => true,
+                        ]);
+
+                        $varian->stok = 0;
+                        $varian->status_ketersediaan = 'perlu_diproduksi';
+                        $varian->save();
+                        $this->sinkronStokProduk($produk);
+                    }
+                    continue;
+                }
+            }
+
+            // Tentukan apakah perlu diproduksi (sama seperti kasir)
+            if ($produk->status_ketersediaan === 'perlu_diproduksi') {
+                $detail->butuh_produksi = true;
+                $detail->save();
+                continue;
+            }
+
+            // Stok dibaca FRESH dari DB (produk di-find ulang per baris, dan
+            // stok sudah dikurangi oleh baris sebelumnya). Jangan dikurangi
+            // lagi dengan "stok terpakai" — itu bikin stok dihitung dobel
+            // dan baris yang sebenarnya masih ready malah jadi perlu produksi.
+            $stokTersedia = max(0, (int) floor((float) $produk->stokUntukUkuranRasa($detail->ukuran, $detail->varian_rasa)));
+
+            if ($stokTersedia >= $detail->jumlah) {
+                // Stok cukup: kurangi stok, tidak perlu produksi
+                $detail->butuh_produksi = false;
+                $detail->save();
+
+                try {
+                    if ($detail->varian_rasa && $produk->punya_varian_rasa) {
+                        $produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, -$detail->jumlah);
+                    } else {
+                        $produk->decrementStokUkuran($detail->ukuran, $detail->jumlah);
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('Gagal mengurangi stok saat proses pesanan pickup', [
+                        'produk_id' => $produk->id,
+                        'ukuran' => $detail->ukuran,
+                        'varian_rasa' => $detail->varian_rasa,
+                        'jumlah' => $detail->jumlah,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
+                }
+            } elseif ($stokTersedia <= 0) {
+                // Stok habis: semua perlu diproduksi
+                $detail->butuh_produksi = true;
+                $detail->save();
+            } else {
+                // Stok sebagian: pecah jadi 2 baris (ready + produksi)
+                $sisaProduksi = $detail->jumlah - $stokTersedia;
+
+                // Update baris ini jadi porsi ready
+                $detail->jumlah = $stokTersedia;
+                $detail->subtotal = $detail->harga_satuan * $stokTersedia;
+                $detail->butuh_produksi = false;
+                $detail->save();
+
+                // Buat baris baru untuk porsi produksi
+                \App\Models\DetailTransaksi::create([
+                    'transaksi_id' => $transaksi->id,
+                    'produk_id' => $produk->id,
+                    'nama_produk' => $detail->nama_produk,
+                    'ukuran' => $detail->ukuran,
+                    'varian_rasa' => $detail->varian_rasa,
+                    'harga_satuan' => $detail->harga_satuan,
+                    'jumlah' => $sisaProduksi,
+                    'catatan' => $detail->catatan,
+                    'subtotal' => $detail->harga_satuan * $sisaProduksi,
+                    'butuh_produksi' => true,
+                ]);
+
+
+                try {
+                    if ($detail->varian_rasa && $produk->punya_varian_rasa) {
+                        $produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, -$stokTersedia);
+                    } else {
+                        $produk->decrementStokUkuran($detail->ukuran, $stokTersedia);
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('Gagal mengurangi stok (pecahan) saat proses pesanan pickup', [
+                        'produk_id' => $produk->id,
+                        'ukuran' => $detail->ukuran,
+                        'varian_rasa' => $detail->varian_rasa,
+                        'jumlah_ready' => $stokTersedia,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e;
+                }
             }
         }
     }

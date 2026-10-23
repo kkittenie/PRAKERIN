@@ -43,6 +43,7 @@ class Transaksi extends Model
         'siap_pada',
         'diambil_pada',
         'diproses_pada',
+        'stok_dikurangi_pada',
         'catatan_penolakan',
         'alasan_pembatalan',
     ];
@@ -52,6 +53,7 @@ class Transaksi extends Model
         'diambil_pada' => 'datetime',
         'bukti_dikonfirmasi_pada' => 'datetime',
         'diproses_pada' => 'datetime',
+        'stok_dikurangi_pada' => 'datetime',
     ];
 
     /**
