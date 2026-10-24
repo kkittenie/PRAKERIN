@@ -22,10 +22,10 @@
                     <th class="py-3">Kode Transaksi</th>
                     <th class="py-3 text-center">Kode Pesanan</th>
                     <th class="py-3">Pembeli</th>
-                    <th class="py-3 text-right">Total</th>
-                    <th class="py-3">Waktu Order</th>
                     <th class="py-3 text-center">Status Pesanan</th>
                     <th class="py-3 text-center">Status Pembayaran</th>
+                    <th class="py-3 text-right">Total</th>
+                    <th class="py-3">Waktu Order</th>
                     <th class="py-3 text-right">Aksi</th>
                 </tr>
             </thead>
@@ -49,7 +49,7 @@
     $(document).ready(function() {
         initSaishoDataTable('pesananPickupTable', {
             serverSide: true,
-            order: [[5, 'desc']],
+            order: [[7, 'desc']],
             ajax: {
                 url: '{{ route('pesanan-pickup.indeks') }}',
                 data: function(d) {
@@ -65,10 +65,10 @@
                 { data: 'kode_html', name: 'kode_transaksi' },
                 { data: 'kode_pesanan_html', name: 'kode_pickup', className: 'text-center' },
                 { data: 'pembeli_html', name: 'nama_pembeli' },
-                { data: 'total_bayar', name: 'total_bayar', searchable: false, className: 'text-right font-semibold text-gray-800 dark:text-gray-200' },
-                { data: 'created_at', name: 'created_at', searchable: false, className: 'text-xs text-gray-500 dark:text-gray-400' },
                 { data: 'status_pesanan_html', name: 'status_pesanan', searchable: false, className: 'text-center' },
                 { data: 'status_pembayaran_html', name: 'status_pembayaran', searchable: false, className: 'text-center' },
+                { data: 'total_bayar', name: 'total_bayar', searchable: false, className: 'text-right font-semibold text-gray-800 dark:text-gray-200' },
+                { data: 'created_at', name: 'created_at', searchable: false, className: 'text-xs text-gray-500 dark:text-gray-400' },
                 { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
             ],
             emptyText: 'Belum ada pesanan'

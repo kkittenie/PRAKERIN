@@ -41,7 +41,7 @@
             <div class="flex items-start justify-between gap-3 mb-4">
                 <div>
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Pesanan Mobile Terbaru</h3>
-                    <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">{{ $pesananMobileTerbaru->count() }} pesanan terakhir dari aplikasi member</p>
+                    <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">{{ $pesananMobileTerbaru->count() }} pesanan yang masih diproses dari aplikasi member</p>
                 </div>
                 <a href="{{ route('pesanan-pickup.indeks') }}" class="shrink-0 text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition">Lihat Semua</a>
             </div>
@@ -52,10 +52,10 @@
                             <th class="py-3 pr-4 font-medium">Kode Transaksi</th>
                             <th class="py-3 pr-4 font-medium text-center">Kode Pesanan</th>
                             <th class="py-3 pr-4 font-medium">Pembeli</th>
-                            <th class="py-3 pr-4 font-medium text-right">Total</th>
-                            <th class="py-3 pr-4 font-medium">Waktu Order</th>
                             <th class="py-3 pr-4 font-medium text-center">Status Pesanan</th>
-                            <th class="py-3 font-medium text-center">Pembayaran</th>
+                            <th class="py-3 pr-4 font-medium text-center">Status Pembayaran</th>
+                            <th class="py-3 pr-4 font-medium text-right">Total</th>
+                            <th class="py-3 font-medium">Waktu Order</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
@@ -67,14 +67,14 @@
                                     <span class="block font-semibold text-gray-800 dark:text-white text-sm">{{ $item->nama_pembeli ?: 'Pelanggan' }}</span>
                                     <span class="block text-xs text-gray-400">{{ $item->member->no_hp ?? '-' }}</span>
                                 </td>
-                                <td class="py-3 pr-4 whitespace-nowrap text-right font-semibold text-gray-800 dark:text-gray-200">Rp {{ number_format($item->total_bayar, 0, ',', '.') }}</td>
-                                <td class="py-3 pr-4 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</td>
                                 <td class="py-3 pr-4 whitespace-nowrap text-center">@include('pages.pesanan-pickup.partials.status-pesanan', ['item' => $item])</td>
-                                <td class="py-3 whitespace-nowrap text-center">@include('pages.pesanan-pickup.partials.status-pembayaran', ['item' => $item])</td>
+                                <td class="py-3 pr-4 whitespace-nowrap text-center">@include('pages.pesanan-pickup.partials.status-pembayaran', ['item' => $item])</td>
+                                <td class="py-3 pr-4 whitespace-nowrap text-right font-semibold text-gray-800 dark:text-gray-200">Rp {{ number_format($item->total_bayar, 0, ',', '.') }}</td>
+                                <td class="py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="py-8 text-center text-gray-400 dark:text-gray-500">Belum ada pesanan dari aplikasi mobile.</td>
+                                <td colspan="7" class="py-8 text-center text-gray-400 dark:text-gray-500">Tidak ada pesanan yang sedang diproses.</td>
                             </tr>
                         @endforelse
                     </tbody>

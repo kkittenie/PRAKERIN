@@ -116,9 +116,13 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
 
-            // ===== PESANAN MOBILE TERBARU (5 terakhir, tampil di bawah peringatan stok) =====
+            // ===== PESANAN MOBILE TERBARU (5 terakhir yang masih diproses & belum lunas, tampil di bawah peringatan stok) =====
             $pesananMobileTerbaru = Transaksi::with('member')
                 ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP)
+                // Dashboard hanya menampilkan pesanan yang masih diproses dan belum lunas;
+                // yang dibatalkan, sudah diambil, atau sudah lunas tidak ditampilkan.
+                ->where('status_pesanan', Transaksi::STATUS_DIPROSES)
+                ->where('status_pembayaran', '!=', 'Lunas')
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Mobile;
 
+use App\Support\JamOperasional;
+
 use App\Http\Controllers\Controller;
 use App\Models\Bundling;
 use App\Models\DetailProduk;
@@ -17,6 +19,14 @@ class KeranjangController extends Controller
     public function tambah(Request $request, Produk $produk)
     {
         try {
+            if (! JamOperasional::sedangBuka()) {
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => JamOperasional::pesanTutup()], 422);
+                }
+
+                return back()->with('error', JamOperasional::pesanTutup());
+            }
+
             abort_unless($produk->status_aktif, 404);
 
             $validated = $request->validate([
@@ -182,6 +192,14 @@ class KeranjangController extends Controller
     public function tambahBundling(Request $request, Bundling $bundling)
     {
         try {
+            if (! JamOperasional::sedangBuka()) {
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => JamOperasional::pesanTutup()], 422);
+                }
+
+                return back()->with('error', JamOperasional::pesanTutup());
+            }
+
             abort_unless($bundling->status_aktif, 404);
 
             $validated = $request->validate([
@@ -253,6 +271,14 @@ class KeranjangController extends Controller
     public function tambahPromoEvent(Request $request, PromoProdukEvent $promoEvent)
     {
         try {
+            if (! JamOperasional::sedangBuka()) {
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => JamOperasional::pesanTutup()], 422);
+                }
+
+                return back()->with('error', JamOperasional::pesanTutup());
+            }
+
             abort_unless($promoEvent->sedang_berlangsung, 404);
 
             $validated = $request->validate([

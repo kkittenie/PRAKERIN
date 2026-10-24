@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Mobile;
 
 use App\Http\Controllers\Controller;
+use App\Support\JamOperasional;
 use App\Models\Bundling;
 use App\Models\PromoProdukEvent;
 use App\Models\DetailTransaksi;
@@ -34,6 +35,10 @@ class CheckoutController extends Controller
     {
         try {
             $member = Auth::guard('member')->user();
+
+            if (! JamOperasional::sedangBuka()) {
+                return redirect()->route('member.menu')->with('error', JamOperasional::pesanTutup());
+            }
 
             if (MemberCart::isEmpty()) {
                 return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
@@ -260,6 +265,10 @@ class CheckoutController extends Controller
     {
         try {
             $member = Auth::guard('member')->user();
+
+            if (! JamOperasional::sedangBuka()) {
+                return redirect()->route('member.menu')->with('error', JamOperasional::pesanTutup());
+            }
 
             if (MemberCart::isEmpty()) {
                 return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
