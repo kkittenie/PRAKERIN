@@ -10,6 +10,7 @@ use App\Models\StampRedemption;
 use App\Models\Transaksi;
 use App\Support\ActivityLogHelper;
 use App\Support\NotificationHelper;
+use App\Support\PembatalanPesananPickup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -168,6 +169,11 @@ class PesananPickupController extends Controller
                 'bukti_pembayaran' => null,
                 'bukti_dikonfirmasi_pada' => null,
                 'catatan_penolakan' => trim($validated['alasan']),
+                // Member diminta upload ulang: kasih waktu baru supaya tidak langsung
+                // dibatalkan otomatis kalau batas waktu awalnya sudah lewat.
+                'batas_bayar_pada' => $transaksi->batas_bayar_pada
+                    ? now()->addMinutes(Transaksi::BATAS_BAYAR_MENIT)
+                    : null,
             ]);
 
             activity()->causedBy(auth()->user())->performedOn($transaksi)
@@ -269,104 +275,10 @@ class PesananPickupController extends Controller
                 return back()->with('error', 'Pesanan ini sudah tidak bisa dibatalkan.');
             }
 
-            DB::beginTransaction();
             try {
-                // Stok pesanan baru sudah dikurangi sejak checkout (stok_dikurangi_pada terisi).
-                // Pesanan lama baru dikurangi saat prosesPesanan (diproses_pada terisi).
-                // Dua-duanya harus dikembalikan; pesanan lama yang belum diproses belum
-                // memotong stok, jadi tidak ada yang perlu dikembalikan.
-                $perluKembalikanStok = in_array($transaksi->status_pesanan, [
-                    Transaksi::STATUS_SIAP_DIAMBIL,
-                    Transaksi::STATUS_DIPROSES,
-                ], true) && ($transaksi->stok_dikurangi_pada || $transaksi->diproses_pada);
-
-                if ($perluKembalikanStok) {
-                    foreach ($transaksi->detailTransaksi as $detail) {
-                        // Jangan kembalikan stok untuk item hadiah stamp karena hadiahnya tetap aktif berstatus menunggu diambil
-                        if (str_contains($detail->catatan ?? '', 'Hadiah Stamp') || ((float) $detail->harga_satuan == 0 && str_contains($detail->nama_produk ?? '', 'Hadiah'))) {
-                            continue;
-                        }
-
-                        if (! $detail->butuh_produksi && $detail->produk_id) {
-                            if ($detail->detail_produk_id) {
-                                $varian = \App\Models\DetailProduk::lockForUpdate()->find($detail->detail_produk_id);
-                                if ($varian) {
-                                    $varian->stok = (int) $varian->stok + (int) $detail->jumlah;
-                                    $varian->status_ketersediaan = $varian->stok > 0 ? 'stok_ada' : 'perlu_diproduksi';
-                                    $varian->save();
-                                    if ($detail->produk) {
-                                        $this->sinkronStokProduk($detail->produk);
-                                    }
-                                }
-                                continue;
-                            }
-
-                            try {
-                                if ($detail->varian_rasa && $detail->produk?->punya_varian_rasa) {
-                                    $detail->produk->ubahStokRasa($detail->ukuran, $detail->varian_rasa, $detail->jumlah);
-                                } else {
-                                    $detail->produk?->incrementStokUkuran($detail->ukuran, $detail->jumlah);
-                                }
-                            } catch (\Throwable $e) {
-                                Log::error('Gagal mengembalikan stok saat membatalkan pesanan pickup', [
-                                    'produk_id' => $detail->produk_id,
-                                    'ukuran' => $detail->ukuran,
-                                    'varian_rasa' => $detail->varian_rasa,
-                                    'jumlah' => $detail->jumlah,
-                                    'error' => $e->getMessage(),
-                                ]);
-                                throw $e;
-                            }
-                        }
-                    }
-                }
-
-                // Kembalikan jatah penggunaan voucher member
-                \App\Models\VoucherUsage::where('transaksi_id', $transaksi->id)->delete();
-
-                if ($transaksi->voucher_id && $transaksi->voucher) {
-                    if ($transaksi->voucher instanceof \App\Models\PenukaranPoin) {
-                        $transaksi->voucher->update(['status' => 'menunggu_diambil', 'diambil_pada' => null, 'transaksi_id' => null]);
-                    }
-                }
-
-                // Kembalikan reward stamp ke status menunggu_diambil (bukan dalam bentuk stamp poin),
-                // sehingga kartu hadiah siap diambil kembali via aplikasi (pickup) atau kasir offline.
-                $stampRedemptions = StampRedemption::with(['stampProgram', 'produk', 'detailProduk'])
-                    ->where(function ($q) use ($transaksi) {
-                        $q->where('transaksi_id', $transaksi->id);
-                        if (preg_match('/STP-[A-Z0-9]+/', $transaksi->catatan_pesanan ?? '', $matches)) {
-                            $q->orWhere('kode_redeem', $matches[0]);
-                        }
-                    })
-                    ->get();
-
-                $jumlahRewardDikembalikan = 0;
-                foreach ($stampRedemptions as $redemption) {
-                    $redemption->update([
-                        'status' => 'menunggu_diambil',
-                        'diambil_pada' => null,
-                        'transaksi_id' => null,
-                    ]);
-
-                    $jumlahRewardDikembalikan++;
-
-                    NotificationHelper::untukMember(
-                        $transaksi->member_id,
-                        'Pesanan Dibatalkan - Hadiah Stamp Siap Diambil',
-                        'Pesanan #' . $transaksi->kode_transaksi . ' dibatalkan oleh toko. Hadiah ' . ($redemption->produk ? $redemption->nama_tampil : 'stamp') . ' (Kode: ' . $redemption->kode_redeem . ') siap diambil kembali via aplikasi atau kasir.',
-                        'stamps',
-                        route('member.stamps.index'),
-                        'info'
-                    );
-                }
-
-                $transaksi->update([
-                    'status_pesanan' => Transaksi::STATUS_DIBATALKAN,
-                    'alasan_pembatalan' => trim($validated['alasan']),
-                ]);
-
-                DB::commit();
+                // Stok, voucher & hadiah stamp dikembalikan di PembatalanPesananPickup
+                // (logika yang sama dipakai saat sistem membatalkan otomatis karena telat bayar).
+                $jumlahRewardDikembalikan = PembatalanPesananPickup::batalkan($transaksi, $validated['alasan']);
 
                 activity()->causedBy(auth()->user())->performedOn($transaksi)
                     ->log('membatalkan pesanan pick up dari member app (alasan: ' . trim($validated['alasan']) . ')' . ($jumlahRewardDikembalikan > 0 ? " ($jumlahRewardDikembalikan hadiah stamp dikembalikan ke status menunggu diambil)" : ''));
@@ -380,7 +292,6 @@ class PesananPickupController extends Controller
 
                 return back()->with('success', $pesanSukses);
             } catch (\Exception $e) {
-                DB::rollBack();
                 Log::error('Error batalkan pesanan pickup: ' . $e->getMessage());
                 return back()->with('error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
             }

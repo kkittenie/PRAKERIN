@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mobile;
 use App\Http\Controllers\Controller;
 use App\Models\Transaksi;
 use App\Support\ActivityLogHelper;
+use App\Support\PembatalanPesananPickup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,10 @@ class PesananController extends Controller
                 $transaksi->member_id === $member->id && $transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP,
                 404
             );
+
+            // Telat bayar -> batalkan dulu supaya yang tampil selalu status terbaru
+            // (command terjadwal jalan tiap menit, ini jaring pengaman).
+            PembatalanPesananPickup::batalkanJikaKedaluwarsa($transaksi);
 
             return view('mobile.pesanan.show', [
                 'transaksi' => $transaksi->load('detailTransaksi'),
@@ -50,6 +55,12 @@ class PesananController extends Controller
 
             abort_if($transaksi->status_pembayaran === 'Lunas', 404);
 
+            PembatalanPesananPickup::batalkanJikaKedaluwarsa($transaksi);
+
+            if ($transaksi->status_pesanan === Transaksi::STATUS_DIBATALKAN) {
+                return redirect()->route('member.pesanan.show', $transaksi);
+            }
+
             return view('mobile.pesanan.cara-pembayaran', [
                 'transaksi' => $transaksi,
                 // Gambar QRIS aktif yang diatur admin (fallback ke placeholder kalau belum ada).
@@ -73,6 +84,9 @@ class PesananController extends Controller
                 $transaksi->member_id === $member->id && $transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP,
                 404
             );
+
+            // Dipanggil juga oleh timer di halaman pesanan saat hitung mundur habis.
+            PembatalanPesananPickup::batalkanJikaKedaluwarsa($transaksi);
 
             return response()->json([
                 'status_pesanan' => $transaksi->status_pesanan,
@@ -112,6 +126,14 @@ class PesananController extends Controller
                 $transaksi->member_id === $member->id && $transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP,
                 404
             );
+
+            if (PembatalanPesananPickup::batalkanJikaKedaluwarsa($transaksi)) {
+                return back()->with('error', 'Batas waktu pembayaran sudah habis, pesanan dibatalkan otomatis.');
+            }
+
+            if ($transaksi->status_pesanan === Transaksi::STATUS_DIBATALKAN) {
+                return back()->with('error', 'Pesanan ini sudah dibatalkan, tidak bisa upload bukti pembayaran.');
+            }
 
             if ($transaksi->bukti_dikonfirmasi_pada) {
                 return back()->with('error', 'Bukti pembayaran sudah dikonfirmasi, tidak bisa diubah lagi.');
@@ -168,6 +190,15 @@ class PesananController extends Controller
                 $transaksi->member_id === $member->id && $transaksi->asal_pesanan === Transaksi::ASAL_MEMBER_APP,
                 404
             );
+
+            // Waktu bayar sudah habis sebelum member sempat konfirmasi -> batalkan.
+            if (PembatalanPesananPickup::batalkanJikaKedaluwarsa($transaksi)) {
+                return back()->with('error', 'Batas waktu pembayaran sudah habis, pesanan dibatalkan otomatis.');
+            }
+
+            if ($transaksi->status_pesanan === Transaksi::STATUS_DIBATALKAN) {
+                return back()->with('error', 'Pesanan ini sudah dibatalkan.');
+            }
 
             if (! $transaksi->bukti_pembayaran) {
                 return back()->with('error', 'Upload bukti pembayaran dulu sebelum konfirmasi.');

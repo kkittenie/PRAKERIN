@@ -18,4 +18,10 @@ Schedule::command('notifikasi:push-admin')
     ->everyFiveMinutes()
     ->withoutOverlapping();
 
+// Batalkan otomatis pesanan pickup member yang tidak upload bukti pembayaran
+// dalam batas waktunya (10 menit); stok & voucher ikut dikembalikan.
+Schedule::command('pesanan-pickup:batalkan-kedaluwarsa')
+    ->everyMinute()
+    ->withoutOverlapping();
+
 Schedule::command(NonaktfikanPromoKadaluwarsa::class)->dailyAt('00:05');

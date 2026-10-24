@@ -254,7 +254,7 @@
         {{-- Bukti Pembayaran: pembayaran dilakukan member sendiri di luar
              aplikasi (transfer/QRIS manual), foto ini yang jadi bukti buat
              diverifikasi kasir sebelum status ditandai Lunas. --}}
-        @if ($transaksi->status_pembayaran !== 'Lunas')
+        @if (! $dibatalkan && $transaksi->status_pembayaran !== 'Lunas')
             @php $terkonfirmasi = ! is_null($transaksi->bukti_dikonfirmasi_pada); @endphp
             <div class="mt-4" x-data="{ mengupload: false, tampilSukses: {{ session('success') ? 'true' : 'false' }} }">
                 {{-- Cara Pembayaran: pindah ke halaman terpisah (bukan modal
@@ -262,6 +262,26 @@
                      halaman lain (animateNavigate). Otomatis ilang begitu
                      status_pembayaran jadi Lunas (dikonfirmasi/di-acc kasir)
                      — lihat @if pembungkus blok ini. --}}
+                {{-- Timer batas waktu pembayaran (berhenti setelah member konfirmasi pembayaran, bukan saat upload bukti). Waktu habis -> server
+                     membatalkan pesanan otomatis (stok & voucher dikembalikan). --}}
+                @if ($transaksi->menungguBuktiBayar())
+                    <div x-data="timerBatasBayar({{ $transaksi->sisaDetikBayar() }}, '{{ route('member.pesanan.status', $transaksi) }}')"
+                         class="mb-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3.5">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-amber-600 shadow-xs">
+                            @include('mobile.components.icon-clock', ['class' => 'h-5 w-5'])
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-amber-700">Batas Waktu Pembayaran</p>
+                            <p class="text-[11px] leading-snug text-amber-800">
+                                Upload bukti lalu tekan &quot;Konfirmasi Pembayaran&quot; sebelum waktu habis, kalau tidak pesanan dibatalkan otomatis.
+                            </p>
+                        </div>
+                        <span class="shrink-0 rounded-full bg-white px-3 py-1.5 text-sm font-extrabold tabular-nums"
+                              :class="sisa <= 60 ? 'text-red-600' : 'text-amber-700'"
+                              x-text="tampil">{{ gmdate('i:s', $transaksi->sisaDetikBayar()) }}</span>
+                    </div>
+                @endif
+
                 <h2 class="text-sm font-bold text-gray-900">Cara Pembayaran</h2>
                 <a href="{{ route('member.pesanan.cara-pembayaran', $transaksi) }}"
                    onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
@@ -499,6 +519,41 @@
         // Bandingin index step sekarang vs terakhir kali halaman ini dibuka
         // (disimpan di localStorage per transaksi) supaya cuma step yang
         // baru maju yang dianimasikan — bukan seluruh timeline tiap reload.
+        // Hitung mundur batas waktu upload bukti pembayaran. Dihitung dari sisa
+        // detik versi SERVER (bukan jam HP) supaya tidak terpengaruh jam HP yang
+        // salah. Saat habis, panggil endpoint status (server membatalkan otomatis
+        // pesanan yang kedaluwarsa) lalu muat ulang halaman.
+        function timerBatasBayar(sisaAwal, statusUrl) {
+            return {
+                sisa: sisaAwal,
+                akhir: Date.now() + sisaAwal * 1000,
+                timer: null,
+                selesai: false,
+                get tampil() {
+                    const m = Math.floor(this.sisa / 60);
+                    const s = this.sisa % 60;
+                    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                },
+                init() {
+                    this.hitung();
+                    this.timer = setInterval(() => this.hitung(), 1000);
+                },
+                destroy() {
+                    clearInterval(this.timer);
+                },
+                hitung() {
+                    this.sisa = Math.max(0, Math.ceil((this.akhir - Date.now()) / 1000));
+                    if (this.sisa <= 0 && ! this.selesai) {
+                        this.selesai = true;
+                        clearInterval(this.timer);
+                        fetch(statusUrl, { headers: { 'Accept': 'application/json' } })
+                            .catch(() => {})
+                            .finally(() => window.location.reload());
+                    }
+                },
+            };
+        }
+
         function pesananTimeline(currentIndex, transaksiId) {
             return {
                 currentIndex,

@@ -76,6 +76,22 @@
                     </div>
                 </div>
 
+                {{-- Peringatan stok: stok bisa habis di antara saat item dimasukkan ke
+                     keranjang dan saat checkout, jadi dicek ulang tiap halaman ini dibuka. --}}
+                @if (! empty($peringatanStok))
+                    <div class="rounded-2xl border border-red-200 bg-red-50 p-3.5">
+                        <p class="text-xs font-bold text-red-700">Stok ada yang berubah</p>
+                        <ul class="mt-1.5 list-disc space-y-0.5 pl-4 text-[11px] text-red-700">
+                            @foreach ($peringatanStok as $pesanStok)
+                                <li>{{ $pesanStok }}</li>
+                            @endforeach
+                        </ul>
+                        <p class="mt-1.5 text-[11px] text-red-600">
+                            Ubah jumlah atau hapus item tersebut dari keranjang, lalu checkout lagi.
+                        </p>
+                    </div>
+                @endif
+
                 {{-- ========================================================= --}}
                 {{-- ORDER DETAILS --}}
                 {{-- ========================================================= --}}
@@ -1063,15 +1079,15 @@
                 </p>
 
                 <p class="mt-1 text-[11px] leading-relaxed text-gray-400">
-                    Pesanan tidak bisa dibatalkan atau diubah lagi setelah dibuat. Datang ke
-                    kasir sesuai kode pickup untuk mengambil pesanan kamu.
+                    Pesanan tidak bisa dibatalkan atau diubah lagi setelah dibuat. Upload bukti dan konfirmasi pembayaran maksimal {{ \App\Models\Transaksi::BATAS_BAYAR_MENIT }} menit setelah pesanan dibuat, kalau tidak pesanan dibatalkan otomatis dan stok dikembalikan. Datang ke kasir sesuai kode pickup untuk mengambil pesanan kamu.
                 </p>
 
             </div>
 
             <div class="mt-6 hidden lg:block">
                 <button type="submit" form="form-checkout"
-                    class="flex w-full items-center justify-center rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900 active:scale-[0.99]">
+                    @disabled(! empty($peringatanStok))
+                    class="flex w-full items-center justify-center rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50">
                     Order Now
                 </button>
             </div>
@@ -1135,7 +1151,8 @@
                        lg:hidden">
 
         <button type="submit" form="form-checkout"
-            class="flex w-full items-center justify-center rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
+            @disabled(! empty($peringatanStok))
+            class="flex w-full items-center justify-center rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50">
             Order Now
         </button>
 

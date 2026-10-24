@@ -332,6 +332,11 @@ class NotificationHelper
                 "Pesanan {$kode} dibatalkan oleh toko. Alasan: " . ($transaksi->alasan_pembatalan ?: '-') . ". Hubungi customer service untuk pengembalian dana.",
                 'error',
             ],
+            'batal_otomatis' => [
+                'Pesanan dibatalkan otomatis',
+                "Pesanan {$kode} dibatalkan otomatis karena belum ada konfirmasi pembayaran dalam " . Transaksi::BATAS_BAYAR_MENIT . " menit. Stok & voucher sudah dikembalikan, kamu bisa memesan lagi kapan saja.",
+                'error',
+            ],
             'selesai' => [
                 'Pesanan selesai',
                 "Pesanan {$kode} sudah kamu ambil. Terima kasih sudah belanja di Saisho!",

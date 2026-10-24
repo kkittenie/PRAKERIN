@@ -12,6 +12,7 @@ use App\Models\RewardKatalog;
 use App\Models\StampRedemption;
 use App\Models\Transaksi;
 use App\Models\VoucherUsage;
+use App\Support\KetersediaanKeranjang;
 use App\Support\MemberCart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -152,6 +153,9 @@ class CheckoutController extends Controller
                 'storeNama' => self::NAMA_TOKO,
                 'storeAlamat' => self::ALAMAT_TOKO,
                 'poinPotensial' => $this->estimasiPoin($member, $totalBayar),
+                // Stok dicek ulang tiap halaman ini dibuka: kalau ada yang habis, tombol
+                // Order Now dinonaktifkan dan member diminta menyesuaikan keranjang.
+                'peringatanStok' => KetersediaanKeranjang::periksa($items),
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -374,6 +378,9 @@ class CheckoutController extends Controller
                     'kode_pickup' => Transaksi::buatKodePickupUnik(),
                     'catatan_pesanan' => $request->input('catatan'),
                     'diproses_pada' => ($isGratis && $isHanyaRewardStamp) ? now() : null,
+                    // Pesanan yang harus dibayar wajib upload bukti dalam batas waktu ini,
+                    // kalau tidak dibatalkan otomatis oleh sistem (lihat BatalkanPesananKedaluwarsa).
+                    'batas_bayar_pada' => $isGratis ? null : now()->addMinutes(Transaksi::BATAS_BAYAR_MENIT),
                 ]);
 
                 if ($voucher) {
@@ -568,6 +575,28 @@ class CheckoutController extends Controller
                     Session::forget(self::SESSION_STAMP_REDEMPTION_KEY);
                 }
 
+                // Cek ulang ketersediaan stok: bisa jadi stok sudah habis / berkurang sejak item
+                // dimasukkan ke keranjang. Baris yang terpaksa jadi "butuh produksi" berarti
+                // stoknya tidak cukup, jadi checkout ditolak (transaksi di-rollback). Baris hadiah
+                // stamp dikecualikan karena stoknya sudah dipotong saat hadiah ditukar.
+                $barisStokKurang = DetailTransaksi::where('transaksi_id', $transaksi->id)
+                    ->where('butuh_produksi', true)
+                    ->whereNotIn('id', array_map(fn ($d) => $d->id, $detailHadiahStamp))
+                    ->get();
+
+                if ($barisStokKurang->isNotEmpty()) {
+                    $namaKurang = $barisStokKurang->map(function ($d) {
+                        $varian = trim(implode(', ', array_filter([$d->ukuran, $d->varian_rasa])));
+
+                        return $varian !== '' ? "{$d->nama_produk} ({$varian})" : $d->nama_produk;
+                    })->unique()->values()->all();
+
+                    throw new \DomainException(
+                        'Stok ' . implode(', ', $namaKurang) . ' sudah habis, tidak mencukupi, atau sudah tidak tersedia. '
+                        . 'Silakan sesuaikan keranjangmu dulu, lalu checkout lagi.'
+                    );
+                }
+
                 // Stok baris yang berstatus ready dikurangi SEKARANG (saat checkout), bukan nanti saat
                 // kasir memproses pesanan, supaya stok yang sudah dipesan tidak bisa dibeli orang lain.
                 $this->kurangiStokPesanan(
@@ -605,6 +634,20 @@ class CheckoutController extends Controller
                 return redirect()
                     ->route('member.pesanan.show', $transaksi)
                     ->with('success', 'Pesanan berhasil dibuat! Kami akan proses pesananmu segera.');
+            } catch (\DomainException $e) {
+                DB::rollBack();
+
+                // Pilihan voucher / hadiah stamp ikut hilang dari session saat proses tadi
+                // (rollback tidak mengembalikan session), jadi pulihkan supaya member
+                // tidak perlu memilih ulang.
+                if ($voucherId) {
+                    Session::put(self::SESSION_VOUCHER_KEY, $voucherId);
+                }
+                if ($stampRedemptionId) {
+                    Session::put(self::SESSION_STAMP_REDEMPTION_KEY, $stampRedemptionId);
+                }
+
+                return redirect()->route('member.checkout.index')->with('error', $e->getMessage());
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('Error checkout member app: ' . $e->getMessage());

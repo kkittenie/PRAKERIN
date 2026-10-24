@@ -17,6 +17,12 @@ class Transaksi extends Model
     public const STATUS_SUDAH_DIAMBIL = 'sudah_diambil';
     public const STATUS_DIBATALKAN = 'dibatalkan';
 
+    /**
+     * Batas waktu (menit) bagi member untuk upload bukti pembayaran setelah checkout.
+     * Lewat dari ini dan belum ada bukti -> pesanan dibatalkan otomatis oleh sistem.
+     */
+    public const BATAS_BAYAR_MENIT = 10;
+
     protected $fillable = [
         'kode_transaksi',
         'nama_pembeli',
@@ -36,6 +42,7 @@ class Transaksi extends Model
         'status_pembayaran',
         'bukti_pembayaran',
         'bukti_dikonfirmasi_pada',
+        'batas_bayar_pada',
         'asal_pesanan',
         'status_pesanan',
         'kode_pickup',
@@ -52,6 +59,7 @@ class Transaksi extends Model
         'siap_pada' => 'datetime',
         'diambil_pada' => 'datetime',
         'bukti_dikonfirmasi_pada' => 'datetime',
+        'batas_bayar_pada' => 'datetime',
         'diproses_pada' => 'datetime',
         'stok_dikurangi_pada' => 'datetime',
     ];
@@ -66,6 +74,54 @@ class Transaksi extends Model
                 $q->whereNull('status_pesanan')
                   ->orWhere('status_pesanan', '!=', self::STATUS_DIBATALKAN);
             });
+    }
+
+    /**
+     * Pesanan member yang belum dikonfirmasi pembayarannya oleh member dan punya batas
+     * waktu bayar. Timer baru berhenti setelah member menekan "Konfirmasi Pembayaran"
+     * (bukti_dikonfirmasi_pada terisi), bukan saat bukti baru diupload.
+     * Pesanan lama (batas_bayar_pada NULL) tidak pernah kedaluwarsa otomatis.
+     */
+    public function menungguBuktiBayar(): bool
+    {
+        return $this->asal_pesanan === self::ASAL_MEMBER_APP
+            && $this->status_pesanan === self::STATUS_DIPROSES
+            && $this->status_pembayaran !== 'Lunas'
+            && empty($this->bukti_dikonfirmasi_pada)
+            && $this->batas_bayar_pada !== null;
+    }
+
+    /** Sudah lewat batas waktu bayar dan member belum menekan konfirmasi pembayaran. */
+    public function kedaluwarsaBayar(): bool
+    {
+        return $this->menungguBuktiBayar() && $this->batas_bayar_pada->lte(now());
+    }
+
+    /** Sisa waktu (detik) untuk upload + konfirmasi pembayaran; 0 kalau sudah habis / tidak berlaku. */
+    public function sisaDetikBayar(): int
+    {
+        if (! $this->menungguBuktiBayar()) {
+            return 0;
+        }
+
+        return max(0, $this->batas_bayar_pada->getTimestamp() - now()->getTimestamp());
+    }
+
+    /** Alasan pembatalan yang dicatat saat pesanan dibatalkan otomatis karena telat bayar. */
+    public static function alasanKedaluwarsaBayar(): string
+    {
+        return 'Melebihi batas waktu pembayaran (' . self::BATAS_BAYAR_MENIT . ' menit), dibatalkan otomatis oleh sistem.';
+    }
+
+    /** Pesanan member yang sudah lewat batas waktu bayar tanpa bukti pembayaran. */
+    public function scopeTelatBayar($query)
+    {
+        return $query->where('asal_pesanan', self::ASAL_MEMBER_APP)
+            ->where('status_pesanan', self::STATUS_DIPROSES)
+            ->where('status_pembayaran', '!=', 'Lunas')
+            ->whereNull('bukti_dikonfirmasi_pada')
+            ->whereNotNull('batas_bayar_pada')
+            ->where('batas_bayar_pada', '<=', now());
     }
 
     /**

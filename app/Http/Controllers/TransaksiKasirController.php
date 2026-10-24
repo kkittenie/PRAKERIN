@@ -676,10 +676,17 @@ class TransaksiKasirController extends Controller
             throw new \Exception("Harga '{$label}' sudah berubah. Muat ulang halaman kasir lalu coba lagi.");
         }
 
-        $jumlahReady = !empty($item['butuh_produksi'])
-            ? 0
-            : min($jumlah, max(0, (int) $detailProduk->stok));
-        $jumlahProduksi = $jumlah - $jumlahReady;
+        // Kasir tidak boleh menjual melebihi stok. Dicek ulang di sini (baris sudah
+        // dikunci) sebagai pengaman kalau stok berubah / frontend dilewati.
+        $stokSaatIni = max(0, (int) $detailProduk->stok);
+        if ($jumlah > $stokSaatIni) {
+            throw new \Exception($stokSaatIni > 0
+                ? "Stok tidak mencukupi untuk '{$label}'. Stok tersisa {$stokSaatIni}, diminta {$jumlah}."
+                : "Stok tidak mencukupi untuk '{$label}'. Stok sudah habis.");
+        }
+
+        $jumlahReady = $jumlah;
+        $jumlahProduksi = 0;
 
         if ($jumlahReady > 0) {
             // Status ketersediaan ikut dihitung otomatis dari stok oleh model DetailProduk.
