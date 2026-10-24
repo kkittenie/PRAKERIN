@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AppNotification;
+use App\Models\MemberDeviceToken;
+use App\Models\UserDeviceToken;
 use App\Support\ActivityLogHelper;
 use App\Support\NotificationHelper;
 use Illuminate\Http\Request;
@@ -75,6 +77,42 @@ class NotificationController extends Controller
                 return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
             }
             return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    /**
+     * Daftarkan token FCM device ini ke user yang sedang login, supaya HP-nya
+     * ikut dapat push notification (pesanan masuk, stok menipis, dsb).
+     */
+    public function daftarkanToken(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'token' => 'required|string|max:255',
+                'platform' => 'nullable|string|max:20',
+            ]);
+
+            // Satu device cuma boleh jadi milik satu akun. Kalau HP ini
+            // sebelumnya dipakai login sebagai member (atau user lain),
+            // lepas dulu supaya push-nya tidak nyasar ke akun yang salah.
+            MemberDeviceToken::where('token', $validated['token'])->delete();
+
+            UserDeviceToken::updateOrCreate(
+                ['token' => $validated['token']],
+                [
+                    'user_id' => $request->user()->id,
+                    'platform' => $validated['platform'] ?? 'android',
+                    'last_used_at' => now(),
+                ]
+            );
+
+            // Disimpan di session supaya waktu logout token device ini bisa
+            // dihapus (lihat AuthenticatedSessionController::destroy).
+            session()->put('fcm_token', $validated['token']);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
 

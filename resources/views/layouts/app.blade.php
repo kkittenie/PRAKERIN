@@ -661,6 +661,8 @@
         </div>
     </div>
 
+    @include('layouts.fcm-admin-register')
+
 </body>
 
 @stack('scripts')

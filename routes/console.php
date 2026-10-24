@@ -12,4 +12,10 @@ Artisan::command('inspire', function () {
 Schedule::command('produksi:update-status')
     ->everyMinute();
 
+// Push notification ke admin buat alert sistem yang baru muncul
+// (stok produk/bahan menipis, produk kadaluarsa).
+Schedule::command('notifikasi:push-admin')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
 Schedule::command(NonaktfikanPromoKadaluwarsa::class)->dailyAt('00:05');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\UserDeviceToken;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +25,12 @@ class AuthenticatedSessionController extends Controller
                     'email' => $user->email,
                 ])
                 ->log('Logout dari sistem');
+
+            // Hapus token push notification device ini, supaya setelah logout
+            // HP-nya tidak lagi menerima notif pesanan/alert milik akun ini.
+            if ($request->session()->has('fcm_token')) {
+                UserDeviceToken::where('token', $request->session()->get('fcm_token'))->delete();
+            }
 
             Auth::guard('web')->logout();
 

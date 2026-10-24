@@ -10,6 +10,9 @@ use App\Models\Produk;
 use App\Models\Produksi;
 use App\Models\Satuan;
 use App\Models\Transaksi;
+use App\Models\User;
+use App\Models\UserDeviceToken;
+use Illuminate\Support\Facades\Log;
 
 class NotificationHelper
 {
@@ -154,9 +157,13 @@ class NotificationHelper
         return array_slice($notifications, 0, $limit);
     }
 
+    /**
+     * Bikin notifikasi dashboard admin (tampil di dropdown lonceng) + kirim
+     * push notification (FCM) ke HP admin/kasir yang punya akses notifikasi.
+     */
     public static function create(string $title, string $desc, string $type = 'sistem', ?string $url = null, string $iconType = 'info'): AppNotification
     {
-        return AppNotification::create([
+        $notif = AppNotification::create([
             'title' => $title,
             'desc' => $desc,
             'type' => $type,
@@ -164,6 +171,47 @@ class NotificationHelper
             'icon_type' => $iconType,
             'is_read' => false,
         ]);
+
+        static::pushKeAdmin($title, $desc, $url, $type, 'lihat_notifikasi');
+
+        return $notif;
+    }
+
+    /**
+     * Kirim push notification (FCM) ke semua device admin/kasir yang punya
+     * permission tertentu. Cuma push, TIDAK bikin baris di app_notifications
+     * (jadi aman dipakai buat event yang sudah punya notif di dropdown,
+     * mis. pesanan pickup baru, tanpa jadi dobel).
+     *
+     * Nggak pernah melempar error: gagal kirim push cuma dicatat ke log
+     * supaya proses utama (checkout, dsb) tidak ikut gagal.
+     */
+    public static function pushKeAdmin(string $title, string $body, ?string $url = null, string $type = 'sistem', string $permission = 'lihat_notifikasi'): void
+    {
+        try {
+            $userIds = User::permission($permission)->get()->pluck('id')->all();
+
+            if (empty($userIds)) {
+                return;
+            }
+
+            $tokens = UserDeviceToken::whereIn('user_id', $userIds)->pluck('token')->all();
+
+            if (empty($tokens)) {
+                return;
+            }
+
+            $tokensGagal = (new FcmService())->kirimKeTokens($tokens, $title, $body, [
+                'url' => $url ?? '',
+                'type' => $type,
+            ]);
+
+            if (! empty($tokensGagal)) {
+                UserDeviceToken::whereIn('token', $tokensGagal)->delete();
+            }
+        } catch (\Throwable $e) {
+            Log::error('Gagal kirim push notifikasi ke admin: ' . $e->getMessage());
+        }
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mobile;
 use App\Http\Controllers\Controller;
 use App\Models\AppNotification;
 use App\Models\MemberDeviceToken;
+use App\Models\UserDeviceToken;
 use App\Support\ActivityLogHelper;
 use App\Support\NotificationHelper;
 use Illuminate\Http\Request;
@@ -63,6 +64,11 @@ class NotificationController extends Controller
             'token' => 'required|string|max:255',
             'platform' => 'nullable|string|max:20',
         ]);
+
+        // Satu device cuma boleh jadi milik satu akun: kalau HP ini tadinya
+        // dipakai login admin/kasir, lepas dulu supaya notif pesanan masuk
+        // (khusus admin) tidak ikut muncul di HP member ini.
+        UserDeviceToken::where('token', $validated['token'])->delete();
 
         MemberDeviceToken::updateOrCreate(
             ['token' => $validated['token']],
