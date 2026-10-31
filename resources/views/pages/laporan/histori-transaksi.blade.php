@@ -222,7 +222,7 @@
         $(document).ready(function() {
             initSaishoDataTable('historiTransaksiTable', {
                 serverSide: true,
-                ajax: '{{ route('histori-transaksi', request()->query()) }}',
+                ajax: @json(route('histori-transaksi', request()->query())),
                 order: [[2, 'desc']],
                 columns: [
                     { data: 'kode_transaksi_html', name: 'kode_transaksi' },
