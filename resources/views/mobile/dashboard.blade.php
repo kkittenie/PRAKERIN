@@ -437,7 +437,7 @@
                         <div class="flex items-center gap-6 pt-4 border-t border-white/10">
                             <div class="flex items-center gap-2 text-stone-400">
                                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-brand-400"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <span class="text-xs font-bold">Buka 06:00 – 20:00</span>
+                                <span class="text-xs font-bold">Buka {{ \App\Support\JamOperasional::buka() }} – {{ \App\Support\JamOperasional::tutup() }}</span>
                             </div>
                             <div class="flex items-center gap-2 text-stone-400">
                                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 text-brand-400"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -706,7 +706,7 @@
 
                         <div class="grid grid-cols-3 gap-5 pt-4 border-t border-gray-100">
                             <div class="text-center rounded-2xl bg-gray-50 p-4 border border-gray-100">
-                                <p class="text-2xl font-black text-brand-800">06:00 – 20:00</p>
+                                <p class="text-2xl font-black text-brand-800">{{ \App\Support\JamOperasional::buka() }} – {{ \App\Support\JamOperasional::tutup() }}</p>
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1">Jam Operasional</p>
                             </div>
                             <div class="text-center rounded-2xl bg-gray-50 p-4 border border-gray-100">

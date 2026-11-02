@@ -17,6 +17,7 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\TransaksiBahanBakuController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\PengaturanJamOperasionalController;
 use App\Http\Controllers\PengaturanMemberController;
 use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\StampProgramController;
@@ -155,6 +156,14 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
     });
     Route::middleware('permission:hapus_pajak')->group(function () {
         Route::delete('/pengaturan-pajak/{id}', [PengaturanPajakController::class, 'destroy'])->name('pengaturan-pajak.destroy');
+    });
+
+    // Pengaturan Jam Operasional (pemesanan Member App)
+    Route::middleware('permission:lihat_pajak')->group(function () {
+        Route::get('/pengaturan-jam-operasional', [PengaturanJamOperasionalController::class, 'index'])->name('pengaturan-jam-operasional.index');
+    });
+    Route::middleware('permission:edit_pajak')->group(function () {
+        Route::put('/pengaturan-jam-operasional', [PengaturanJamOperasionalController::class, 'update'])->name('pengaturan-jam-operasional.update');
     });
 
     // Konten Statis
