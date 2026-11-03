@@ -13,10 +13,11 @@ class RoleController extends Controller
     {
         if ($request->ajax()) {
             try {
+                $totalPermissions = Permission::count();
                 $query = Role::with('permissions')->withCount('permissions');
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
-                    ->addColumn('permission_html', fn ($item) => view('pages.roles.partials.permission', compact('item'))->render())
+                    ->addColumn('permission_html', fn ($item) => view('pages.roles.partials.permission', ['item' => $item, 'totalPermissions' => $totalPermissions])->render())
                     ->addColumn('aksi', fn ($item) => view('pages.roles.partials.aksi', compact('item'))->render())
                     ->rawColumns(['permission_html', 'aksi'])
                     ->make(true);
@@ -114,6 +115,12 @@ class RoleController extends Controller
                 'deskripsi' => 'Persentase pajak transaksi (PB1 / PPN restoran)',
                 'grup' => 'Data Master',
                 'permissions' => ['lihat', 'tambah', 'edit', 'hapus'],
+            ],
+            'jam_operasional' => [
+                'nama' => 'Jam Operasional Toko',
+                'deskripsi' => 'Pengaturan jadwal buka/tutup toko dan pemesanan online',
+                'grup' => 'Data Master',
+                'permissions' => ['lihat', 'edit'],
             ],
             'konten_statis' => [
                 'nama' => 'Konten Statis',

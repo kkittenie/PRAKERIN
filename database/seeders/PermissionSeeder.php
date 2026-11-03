@@ -28,6 +28,14 @@ class PermissionSeeder extends Seeder
             }
         }
 
+        // Jam operasional hanya memiliki aksi yang tersedia (lihat & edit)
+        foreach (['lihat', 'edit'] as $action) {
+            Permission::firstOrCreate([
+                'name' => "{$action}_jam_operasional",
+                'guard_name' => 'web',
+            ]);
+        }
+
         $admin = Role::firstOrCreate(['name' => 'Admin']);
         $kasir = Role::firstOrCreate(['name' => 'Kasir']);
         $pegawai = Role::firstOrCreate(['name' => 'Pegawai']);

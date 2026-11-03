@@ -159,10 +159,10 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
     });
 
     // Pengaturan Jam Operasional (pemesanan Member App)
-    Route::middleware('permission:lihat_pajak')->group(function () {
+    Route::middleware('permission:lihat_jam_operasional')->group(function () {
         Route::get('/pengaturan-jam-operasional', [PengaturanJamOperasionalController::class, 'index'])->name('pengaturan-jam-operasional.index');
     });
-    Route::middleware('permission:edit_pajak')->group(function () {
+    Route::middleware('permission:edit_jam_operasional')->group(function () {
         Route::put('/pengaturan-jam-operasional', [PengaturanJamOperasionalController::class, 'update'])->name('pengaturan-jam-operasional.update');
     });
 

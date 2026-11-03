@@ -27,7 +27,8 @@
                         type="time"
                         name="jam_buka"
                         value="{{ old('jam_buka', substr($pengaturan->jam_buka, 0, 5)) }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 disabled:bg-gray-100 disabled:cursor-not-allowed dark:disabled:bg-gray-800/50"
+                        @cannot('edit_jam_operasional') disabled @endcannot
                         required>
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Termasuk jam ini (WIB)</span>
                     @error('jam_buka')
@@ -44,7 +45,8 @@
                         type="time"
                         name="jam_tutup"
                         value="{{ old('jam_tutup', substr($pengaturan->jam_tutup, 0, 5)) }}"
-                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
+                        class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500 disabled:bg-gray-100 disabled:cursor-not-allowed dark:disabled:bg-gray-800/50"
+                        @cannot('edit_jam_operasional') disabled @endcannot
                         required>
                     <span class="text-xs text-gray-400 dark:text-gray-500 mt-1 block">Pesanan ditolak mulai jam ini (WIB)</span>
                     @error('jam_tutup')
@@ -54,12 +56,16 @@
 
             </div>
 
-            @can('edit_pajak')
+            @can('edit_jam_operasional')
                 <div class="flex justify-end gap-3">
                     <button type="submit"
                         class="rounded-lg bg-brand-500 px-5 py-2 text-white hover:bg-brand-600">
                         Simpan
                     </button>
+                </div>
+            @else
+                <div class="rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-800/40 p-4 text-xs text-amber-800 dark:text-amber-300">
+                    Akun Anda hanya memiliki hak akses untuk melihat pengaturan jam operasional (view-only).
                 </div>
             @endcan
 

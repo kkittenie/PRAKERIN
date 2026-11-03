@@ -36,7 +36,7 @@ class MenuHelper
                     ['name' => 'Slide Welcome', 'path' => '/welcome-slide', 'permission' => ['lihat_welcome_slide', 'tambah_welcome_slide', 'edit_welcome_slide', 'hapus_welcome_slide']],
                     ['name' => 'QRIS Pembayaran', 'path' => '/qris', 'permission' => ['lihat_qris', 'tambah_qris', 'edit_qris', 'hapus_qris']],
                     ['name' => 'Pengaturan Pajak', 'path' => '/pengaturan-pajak', 'permission' => ['lihat_pajak', 'tambah_pajak', 'edit_pajak', 'hapus_pajak']],
-                    ['name' => 'Jam Operasional', 'path' => '/pengaturan-jam-operasional', 'permission' => ['lihat_pajak', 'edit_pajak']],
+                    ['name' => 'Jam Operasional', 'path' => '/pengaturan-jam-operasional', 'permission' => ['lihat_jam_operasional']],
                     ['name' => 'Konten Statis', 'path' => '/konten-statis', 'permission' => ['lihat_konten_statis', 'tambah_konten_statis', 'edit_konten_statis', 'hapus_konten_statis']],
                 ]
             ],

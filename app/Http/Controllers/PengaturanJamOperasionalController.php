@@ -11,6 +11,10 @@ class PengaturanJamOperasionalController extends Controller
     public function index()
     {
         try {
+            if (!auth()->user()->can('lihat_jam_operasional')) {
+                abort(403, 'Anda tidak memiliki hak akses untuk melihat pengaturan jam operasional.');
+            }
+
             $pengaturan = PengaturanJamOperasional::ambil();
 
             return view('pages.pengaturan-jam-operasional.index', compact('pengaturan'));
@@ -22,6 +26,10 @@ class PengaturanJamOperasionalController extends Controller
     public function update(Request $request)
     {
         try {
+            if (!auth()->user()->can('edit_jam_operasional')) {
+                abort(403, 'Anda tidak memiliki hak akses untuk mengubah pengaturan jam operasional.');
+            }
+
             $validated = $request->validate([
                 'jam_buka' => 'required|date_format:H:i',
                 'jam_tutup' => 'required|date_format:H:i|after:jam_buka',
