@@ -1667,6 +1667,16 @@
             </div>
         </div>
 
+        <!-- ========== OVERLAY: HALAMAN CETAK STRUK (mobile / WebView) ==========
+             z-index harus di atas header/sidebar layout (z-99999) dan modal global (z-[999999]),
+             kalau tidak bagian atas halaman cetak (tombol Cetak/Unduh) tertutup header. -->
+        <div x-show="cetakFrameTerbuka" x-cloak
+            x-effect="laporScrollNative(cetakFrameTerbuka)"
+            @message.window="if ($event.origin === window.location.origin && $event.data === 'tutup-cetak') tutupCetakFrame()"
+            class="fixed inset-0 bg-white" style="z-index: 1000001;">
+            <iframe :src="cetakFrameUrl" class="w-full h-full border-0" title="Cetak Struk"></iframe>
+        </div>
+
         <!-- ========== MODAL: KONFIRMASI HAPUS PESANAN DITAHAN ========== -->
         <div x-show="modalKonfirmasiHapusTerbuka"
             class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4"
@@ -2202,6 +2212,9 @@
                 modalDitahanTerbuka: false,
                 modalPembeliTerbuka: false,
                 modalSuksesTerbuka: false,
+                // Overlay cetak (iframe) untuk mobile/WebView, supaya halaman kasir & modal tidak ter-navigasi
+                cetakFrameTerbuka: false,
+                cetakFrameUrl: '',
                 modalKonfirmasiHapusTerbuka: false,
                 modalPilihPromoTerbuka: false,
                 modalPilihUkuranTerbuka: false,
@@ -4531,7 +4544,34 @@
 
                     // laci=1: cetak dari alur kasir. Server yang memutuskan laci kebuka atau tidak
                     // (hanya kalau struk pelanggan, sudah Lunas, dan dibayar Tunai).
-                    window.open(`/transaksi/cetak/${d.kode_transaksi}?jenis=${jenis}&print=true&laci=1`, '_blank', 'width=400,height=700');
+                    const urlCetak = `/transaksi/cetak/${d.kode_transaksi}?jenis=${jenis}&print=true&laci=1`;
+
+                    // Di mobile / WebView Android, window.open() membuka halaman cetak di WebView yang sama,
+                    // lalu tombol "Tutup Halaman" me-reload halaman kasir sehingga modal sukses hilang.
+                    // Jadi di sana halaman cetak dibuka sebagai overlay (iframe) di atas halaman kasir.
+                    const modeMobile = !!window.Android || window.matchMedia('(max-width: 767px)').matches;
+                    if (modeMobile) {
+                        this.cetakFrameUrl = urlCetak;
+                        this.cetakFrameTerbuka = true;
+                        return;
+                    }
+
+                    window.open(urlCetak, '_blank', 'width=400,height=700');
+                },
+
+                // Scroll di dalam iframe tidak terbaca oleh WebView native, jadi SwipeRefreshLayout
+                // mengira halaman selalu di paling atas dan memicu pull-to-refresh saat di-scroll.
+                // Selama overlay cetak terbuka, laporkan "konten belum di paling atas" (true) supaya
+                // pull-to-refresh nonaktif; saat overlay tutup (atau halaman kasir dimuat) kembalikan ke false.
+                laporScrollNative(kontenDalamBelumDiAtas) {
+                    if (window.Android && typeof window.Android.laporkanStatusScroll === 'function') {
+                        window.Android.laporkanStatusScroll(!!kontenDalamBelumDiAtas);
+                    }
+                },
+
+                tutupCetakFrame() {
+                    this.cetakFrameTerbuka = false;
+                    this.cetakFrameUrl = '';
                 },
 
                 tutupModalSukses() { this.modalSuksesTerbuka = false; },

@@ -265,7 +265,7 @@
                 <span>Unduh PDF</span>
             </button>
         </div>
-        <button class="btn btn-close" onclick="window.close(); setTimeout(() => history.back(), 100);">Tutup
+        <button class="btn btn-close" onclick="tutupHalamanCetak()">Tutup
             Halaman</button>
     </div>
 
@@ -1082,6 +1082,27 @@
                 console.error('Gagal membuka cash drawer:', e);
                 showToast("Gagal membuka cash drawer.", "error");
             }
+        }
+
+        // Kalau halaman ini dibuka sebagai overlay (iframe) dari halaman kasir,
+        // pakai jembatan Android milik halaman induk bila di sini belum tersedia.
+        if (!window.Android) {
+            try {
+                if (window.parent !== window && window.parent.Android) {
+                    window.Android = window.parent.Android;
+                }
+            } catch (e) { /* beda origin: abaikan */ }
+        }
+
+        function tutupHalamanCetak() {
+            // Dibuka sebagai overlay di halaman kasir: cukup minta induk menutup overlay,
+            // halaman kasir (beserta modalnya) tidak di-reload.
+            if (window.parent !== window) {
+                window.parent.postMessage('tutup-cetak', window.location.origin);
+                return;
+            }
+            window.close();
+            setTimeout(() => history.back(), 100);
         }
 
         function printStruk() {
