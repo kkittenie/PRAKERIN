@@ -751,6 +751,13 @@ class TransaksiKasirController extends Controller
                 continue;
             }
 
+            // Baris reward stamp: stoknya sudah dipotong saat member klaim di aplikasi
+            // (bukan saat transaksi ini dibuat), jadi jangan dikembalikan di sini.
+            // Statusnya sendiri dibalikin ke 'menunggu_diambil' lewat kembalikanRewardStampDariTransaksi().
+            if ($detail->catatan === 'Reward Stamp') {
+                continue;
+            }
+
             // Detail dari varian baru: kembalikan ke baris varian yang sama.
             if ($detail->detail_produk_id) {
                 if (!$detail->butuh_produksi) {
@@ -783,6 +790,31 @@ class TransaksiKasirController extends Controller
         }
     }
 
+    /** Total harus cocok dengan rincian & dengan jumlah subtotal baris detail yang benar-benar tersimpan. */
+    private function validasiAngkaTransaksi(Transaksi $transaksi, float $subtotal, float $diskon, float $pajak, float $total): void
+    {
+        $totalSeharusnya = max(0, $subtotal - $diskon + $pajak);
+        if (abs($total - $totalSeharusnya) > 1) {
+            throw new \Exception('Total transaksi tidak sesuai dengan rinciannya. Muat ulang halaman kasir lalu coba lagi.');
+        }
+
+        $subtotalDetail = (float) DetailTransaksi::where('transaksi_id', $transaksi->id)->sum('subtotal');
+        if (abs($subtotalDetail - $subtotal) > 1) {
+            throw new \Exception('Harga item sudah berubah. Muat ulang halaman kasir lalu coba lagi.');
+        }
+    }
+
+    private function validasiUangDiterima(float $total, float $diterima, float $kembalian): void
+    {
+        if ($diterima + 0.5 < $total) {
+            throw new \Exception('Uang yang diterima kurang dari total tagihan.');
+        }
+
+        if (abs($kembalian - ($diterima - $total)) > 1) {
+            throw new \Exception('Nominal kembalian tidak sesuai. Muat ulang halaman kasir lalu coba lagi.');
+        }
+    }
+
     public function simpanDitahan(Request $request)
     {
         DB::beginTransaction();
@@ -792,13 +824,14 @@ class TransaksiKasirController extends Controller
                 'member_id' => 'nullable|exists:members,id',
                 'voucher_id' => 'nullable|integer|exists:reward_katalog,id',
                 'stamp_redemption_id' => 'nullable|integer|exists:stamp_redemptions,id',
-                'item_pesanan' => 'required|array',
-                'subtotal' => 'required|numeric',
-                'pajak' => 'required|numeric',
-                'diskon' => 'required|numeric',
-                'diskon_persen' => 'nullable|numeric',
+                'item_pesanan' => 'required|array|min:1',
+                'item_pesanan.*.jumlah' => 'required|numeric|min:1',
+                'subtotal' => 'required|numeric|min:0',
+                'pajak' => 'required|numeric|min:0',
+                'diskon' => 'required|numeric|min:0',
+                'diskon_persen' => 'nullable|numeric|min:0|max:100',
                 'diskon_label' => 'nullable|string|max:255',
-                'total' => 'required|numeric',
+                'total' => 'required|numeric|min:0',
                 'catatan' => 'nullable|string',
             ]);
 
@@ -924,6 +957,14 @@ class TransaksiKasirController extends Controller
                 $detail->butuh_produksi = $perluProduksi;
                 $detail->save();
             }
+
+            $this->validasiAngkaTransaksi(
+                $transaksi,
+                (float) $validated['subtotal'],
+                (float) $validated['diskon'],
+                (float) $validated['pajak'],
+                (float) $validated['total']
+            );
 
              $pesanan = PesananDitahan::create([
                 'nama_pembeli' => $namaPembeli,
@@ -1072,9 +1113,37 @@ class TransaksiKasirController extends Controller
                 'member_id' => 'nullable|exists:members,id',
                 'voucher_id' => 'nullable|integer|exists:reward_katalog,id',
                 'diskon_label' => 'nullable|string|max:255',
+                'subtotal' => 'nullable|numeric|min:0',
+                'pajak' => 'nullable|numeric|min:0',
+                'diskon' => 'nullable|numeric|min:0',
+                'diskon_persen' => 'nullable|numeric|min:0|max:100',
+                'total_bayar' => 'nullable|numeric|min:0',
             ]);
 
-            $transaksi = $pesanan->transaksi;
+            $transaksi = Transaksi::lockForUpdate()->findOrFail($pesanan->transaksi->id);
+
+            if ($transaksi->status_pembayaran === 'Lunas') {
+                throw new \Exception('Pesanan ini sudah dilunasi.');
+            }
+
+            // Kasir bisa mengganti voucher/member saat melunasi, jadi total terbaru ikut disimpan.
+            if (isset($validated['total_bayar'])) {
+                $subtotalBaru = (float) ($validated['subtotal'] ?? $transaksi->subtotal);
+                $diskonBaru = (float) ($validated['diskon'] ?? $transaksi->diskon);
+                $pajakBaru = (float) ($validated['pajak'] ?? $transaksi->pajak);
+
+                $this->validasiAngkaTransaksi($transaksi, $subtotalBaru, $diskonBaru, $pajakBaru, (float) $validated['total_bayar']);
+
+                $transaksi->update([
+                    'subtotal' => $subtotalBaru,
+                    'diskon' => $diskonBaru,
+                    'pajak' => $pajakBaru,
+                    'diskon_persen' => $validated['diskon_persen'] ?? $transaksi->diskon_persen,
+                    'total_bayar' => $validated['total_bayar'],
+                ]);
+            }
+
+            $this->validasiUangDiterima((float) $transaksi->total_bayar, (float) $validated['jumlah_diterima'], (float) $validated['kembalian']);
             $memberIdEfektif = $validated['member_id'] ?? $transaksi->member_id;
 
                $voucherDipakai = $this->validasiVoucherUntukTransaksi(
@@ -1183,14 +1252,15 @@ class TransaksiKasirController extends Controller
                 'member_id' => 'nullable|exists:members,id',
                 'voucher_id' => 'nullable|integer|exists:reward_katalog,id',
                 'stamp_redemption_id' => 'nullable|integer|exists:stamp_redemptions,id',
-                'item_pesanan' => 'required|array',
-                'subtotal' => 'required|numeric',
-                'pajak' => 'required|numeric',
-                'diskon' => 'required|numeric',
-                'diskon_persen' => 'nullable|numeric',
+                'item_pesanan' => 'required|array|min:1',
+                'item_pesanan.*.jumlah' => 'required|numeric|min:1',
+                'subtotal' => 'required|numeric|min:0',
+                'pajak' => 'required|numeric|min:0',
+                'diskon' => 'required|numeric|min:0',
+                'diskon_persen' => 'nullable|numeric|min:0|max:100',
                 'diskon_label' => 'nullable|string|max:255',
-                'total_bayar' => 'required|numeric',
-                'jumlah_diterima' => 'required|numeric',
+                'total_bayar' => 'required|numeric|min:0',
+                'jumlah_diterima' => 'required|numeric|min:0',
                 'kembalian' => 'required|numeric',
                 'metode_pembayaran' => 'required|string',
             ]);
@@ -1199,6 +1269,12 @@ class TransaksiKasirController extends Controller
             if (!$pengaturanPajak->status_aktif) {
                 $validated['pajak'] = 0;
             }
+
+            $this->validasiUangDiterima(
+                (float) $validated['total_bayar'],
+                (float) $validated['jumlah_diterima'],
+                (float) $validated['kembalian']
+            );
 
              $voucherDipakai = $this->validasiVoucherUntukTransaksi(
                 $validated['voucher_id'] ?? null,
@@ -1374,6 +1450,14 @@ class TransaksiKasirController extends Controller
                 $detail->butuh_produksi = $perluProduksi;
                 $detail->save();
             }
+
+            $this->validasiAngkaTransaksi(
+                $transaksi,
+                (float) $validated['subtotal'],
+                (float) $validated['diskon'],
+                (float) $validated['pajak'],
+                (float) $validated['total_bayar']
+            );
 
             DB::commit();
 

@@ -80,10 +80,10 @@
             </div>
 
             <!-- Layout Utama -->
-            <div class="grid grid-cols-12 gap-4 items-stretch flex-1 min-h-0 lg:overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,28%)] gap-4 items-stretch flex-1 min-h-0 lg:overflow-hidden">
 
                 <!-- Kiri: Filter + Produk -->
-                <div class="col-span-12 lg:col-span-8 flex flex-col gap-4 lg:h-full lg:overflow-hidden min-h-0">
+                <div class="min-w-0 flex flex-col gap-4 lg:h-full lg:overflow-hidden min-h-0">
 
                     <!-- Bar Kategori & Filter -->
                     <div class="flex flex-wrap items-center justify-between gap-4 shrink-0">
@@ -546,7 +546,7 @@
 
                 <!-- Kanan: Keranjang -->
                 <div
-                    class="col-span-12 lg:col-span-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col lg:h-full lg:overflow-hidden min-h-0">
+                    class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col lg:h-full lg:overflow-hidden min-h-0">
                     <!-- Area scroll: info pembeli, member, voucher, stamp & daftar belanja.
                          Footer (pajak, total, tombol bayar) tetap menempel di bawah. -->
                     <div class="flex-1 min-h-0 overflow-y-auto flex flex-col custom-scrollbar">
@@ -1203,7 +1203,7 @@
 
                     <!-- Tombol Aksi -->
                     <div class="px-3 pb-3 pt-0 grid grid-cols-3 gap-2 shrink-0">
-                        <button @click="tahanOrderan()" :disabled="keranjang.length === 0"
+                        <button @click="tahanOrderan()" :disabled="keranjang.length === 0 || sedangMemproses"
                             class="col-span-1 py-3 px-2 bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-bold rounded-xl transition text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
@@ -1415,7 +1415,7 @@
                                 x-text="formatRupiah(totalTagihan)"></span>
                         </div>
                     </div>
-                    <button @click="selesaikanPembayaran()" :disabled="kembalianNum < 0"
+                    <button @click="selesaikanPembayaran()" :disabled="kembalianNum < 0 || sedangMemproses"
                         class="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition shadow-md hover:shadow-lg text-sm flex items-center justify-center gap-2 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600 disabled:shadow-none disabled:cursor-not-allowed">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
@@ -2170,6 +2170,7 @@
                 halamanProduk: 1,
 
                 // Keranjang
+                sedangMemproses: false,
                 keranjang: [],
                 namaPembeli: '',
                 memberIdTerpilih: '',
@@ -4318,6 +4319,8 @@
                 tahanOrderan() {
                     if (this.keranjang.length === 0) return;
                     if (this.namaPembeli.trim() === '') { this.tambahToast('Nama pembeli harus diisi terlebih dahulu!', 'error'); this.bukaModalPembeli(); return; }
+                    if (this.sedangMemproses) return;
+                    this.sedangMemproses = true;
 
                     const dataStruk = {
                         nama_pembeli: this.namaPembeli,
@@ -4367,7 +4370,8 @@
                             }
                             else this.tambahToast(r.pesan, 'error');
                         })
-                        .catch(() => this.tambahToast('Gagal menahan pesanan.', 'error'));
+                        .catch(() => this.tambahToast('Gagal menahan pesanan.', 'error'))
+                        .finally(() => { this.sedangMemproses = false; });
                 },
 
                 bukaModalDaftarDitahan() { this.ambilDaftarDitahanDariServer(); this.modalDitahanTerbuka = true; },
@@ -4377,7 +4381,9 @@
                 },
 
                 pulihkanPesanan(id) {
-                    fetch(`/transaksi/pulihkan/${id}`, { method: 'POST', headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" } })
+                    if (this.sedangMemproses) return;
+                    this.sedangMemproses = true;
+                    fetch(`/transaksi/pulihkan/${id}`, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': "{{ csrf_token() }}" } })
                         .then(r => r.json())
                         .then(r => {
                             if (r.status === 'success') {
@@ -4406,7 +4412,12 @@
                                 this.ambilDaftarDitahanDariServer();
                                 this.halamanAktif = 'beranda';
                             } else this.tambahToast(r.pesan, 'error');
-                        });
+                        })
+                        .catch(() => {
+                            this.tambahToast('Koneksi bermasalah saat melanjutkan pesanan. Cek daftar pesanan tahan untuk melihat statusnya.', 'error');
+                            this.ambilDaftarDitahanDariServer();
+                        })
+                        .finally(() => { this.sedangMemproses = false; });
                 },
 
                 hapusPesananDitahan(id) {
@@ -4415,10 +4426,11 @@
                 },
 
                 eksekusiHapusPesananDitahan() {
-                    if (!this.idPesananAkanDihapus) return;
+                    if (!this.idPesananAkanDihapus || this.sedangMemproses) return;
+                    this.sedangMemproses = true;
                     const id = this.idPesananAkanDihapus;
                     const pesanan = this.daftarDitahan.find(p => p.id === id);
-                    fetch(`/transaksi/hapus-ditahan/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': "{{ csrf_token() }}" } })
+                    fetch(`/transaksi/hapus-ditahan/${id}`, { method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': "{{ csrf_token() }}" } })
                         .then(r => r.json())
                         .then(r => {
                             if (r.status === 'success') {
@@ -4430,6 +4442,13 @@
                             } else {
                                 this.tambahToast(r.pesan, 'error');
                             }
+                        })
+                        .catch(() => {
+                            this.tambahToast('Gagal menghapus pesanan. Cek koneksi lalu coba lagi.', 'error');
+                            this.ambilDaftarDitahanDariServer();
+                        })
+                        .finally(() => {
+                            this.sedangMemproses = false;
                             this.modalKonfirmasiHapusTerbuka = false;
                             this.modalDitahanTerbuka = true;
                             this.idPesananAkanDihapus = null;
@@ -4446,7 +4465,9 @@
 
                 // Pembayaran Final
                 selesaikanPembayaran() {
+                    if (this.sedangMemproses) return;
                     if (this.kembalianNum < 0) { this.tambahToast('Uang yang diterima kurang!', 'error'); return; }
+                    this.sedangMemproses = true;
 
                     const dataStruk = {
                         nama_pembeli: this.namaPembeli,
@@ -4476,7 +4497,12 @@
                                 metode_pembayaran: this.metodePembayaran,
                                 member_id: this.memberIdTerpilih || null,
                                 voucher_id: this.voucherTerpilih ? this.voucherTerpilih.id : null,
-                                diskon_label: this.diskonLabel
+                                diskon_label: this.diskonLabel,
+                                subtotal: this.subtotal,
+                                pajak: this.pajak,
+                                diskon: this.nilaiDiskon,
+                                diskon_persen: this.diskonPersen || 0,
+                                total_bayar: this.totalTagihan
                             })
                         })
                             .then(r => r.json())
@@ -4490,7 +4516,8 @@
                                     this.ambilDaftarDitahanDariServer();
                                 } else this.tambahToast(r.pesan, 'error');
                             })
-                            .catch(() => this.tambahToast('Gagal melunaskan transaksi!', 'error'));
+                            .catch(() => this.tambahToast('Gagal melunaskan transaksi!', 'error'))
+                            .finally(() => { this.sedangMemproses = false; });
                     } else {
                         fetch("{{ route('transaksi.bayar') }}", {
                             method: "POST",
@@ -4522,7 +4549,8 @@
                                     this.halamanAktif = 'beranda';
                                 } else this.tambahToast(r.pesan, 'error');
                             })
-                            .catch(() => this.tambahToast('Gagal memproses transaksi!', 'error'));
+                            .catch(() => this.tambahToast('Gagal memproses transaksi!', 'error'))
+                            .finally(() => { this.sedangMemproses = false; });
                     }
                 },
 
@@ -4581,7 +4609,10 @@
                     this.keranjang = this.normalisasiItemKeranjang(JSON.parse(JSON.stringify(pesanan.item_pesanan)));
                     this.namaPembeli = pesanan.nama_pembeli;
                     this.diskonPersen = pesanan.diskon_persen || '';
-                    this.pajakPersen = pesanan.pajak && pesanan.subtotal && (parseFloat(pesanan.subtotal) > parseFloat(pesanan.diskon || 0)) ? String(Math.round((parseFloat(pesanan.pajak) / (parseFloat(pesanan.subtotal) - parseFloat(pesanan.diskon || 0))) * 100)) : '5';
+                    const dasarPajak = parseFloat(pesanan.subtotal || 0) - parseFloat(pesanan.diskon || 0);
+                    this.pajakPersen = (parseFloat(pesanan.pajak) > 0 && dasarPajak > 0)
+                        ? String(Math.round((parseFloat(pesanan.pajak) / dasarPajak) * 10000) / 100)
+                        : this.pajakPersenDefault;
                     this.catatan = pesanan.catatan || '';
                     if (pesanan.transaksi && pesanan.transaksi.member_id) {
                         this.memberIdTerpilih = pesanan.transaksi.member_id;
