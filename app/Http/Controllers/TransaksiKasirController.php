@@ -965,7 +965,7 @@ class TransaksiKasirController extends Controller
 
             $this->prosesRewardStampTransaksi($transaksi, $rewardStampSiap);
 
-            foreach ($validated['item_pesanan'] as $item) {
+            foreach ($request->input('item_pesanan') as $item) {
 
                 if (!empty($item['is_reward_stamp'])) {
                     continue;
@@ -1068,7 +1068,7 @@ class TransaksiKasirController extends Controller
 
              $pesanan = PesananDitahan::create([
                 'nama_pembeli' => $namaPembeli,
-                'item_pesanan' => $validated['item_pesanan'],
+                'item_pesanan' => $request->input('item_pesanan'),
                 'subtotal' => $validated['subtotal'],
                 'pajak' => $validated['pajak'],
                 'diskon' => $validated['diskon'],
@@ -1477,7 +1477,7 @@ class TransaksiKasirController extends Controller
                 }
             }
 
-            foreach ($validated['item_pesanan'] as $item) {
+            foreach ($request->input('item_pesanan') as $item) {
 
                  if (!empty($item['is_reward_stamp'])) {
                     continue;

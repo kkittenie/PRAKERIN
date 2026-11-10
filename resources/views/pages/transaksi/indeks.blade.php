@@ -1225,7 +1225,7 @@
         </div>
 
         <!-- ========== HALAMAN 2: LAYAR PEMBAYARAN ========== -->
-        <div x-show="halamanAktif === 'pembayaran'" class="flex flex-col gap-6" x-transition>
+        <div x-show="halamanAktif === 'pembayaran'" class="flex flex-col gap-6 flex-1 min-h-0 overflow-y-auto" x-transition>
             <div
                 class="flex items-center justify-between bg-white dark:bg-gray-900 p-4 rounded-xl shadow-xs border border-gray-100 dark:border-gray-800">
                 <button @click="kembaliKeKasir()"
