@@ -16,6 +16,7 @@ use App\Models\PengaturanMember;
 use App\Models\Member;
 use App\Models\Bundling;
 use App\Models\PromoProdukEvent;
+use App\Models\Promo;
 use App\Models\StampProgram;
 use App\Models\MemberStamp;
 use App\Models\StampRedemption;
@@ -804,6 +805,97 @@ class TransaksiKasirController extends Controller
         }
     }
 
+    /**
+     * Batas atas total diskon yang masuk akal, dihitung dari data di database
+     * (bukan dari angka kiriman browser). Ini hanya penjaga: cara browser menghitung
+     * diskon tidak berubah, server cuma menolak angka yang jelas melebihi batas.
+     *
+     * Batas = diskon persen manual + diskon voucher + diskon promo (masing-masing batas atas),
+     * dan tidak pernah boleh melebihi subtotal. Toleransi Rp1 untuk pembulatan.
+     */
+    private function validasiBatasDiskon(Transaksi $transaksi, float $subtotal, float $diskon, float $diskonPersen, ?RewardKatalog $voucher): void
+    {
+        if ($diskon - $subtotal > 1) {
+            throw new \Exception('Diskon tidak boleh lebih besar dari subtotal. Muat ulang halaman kasir lalu coba lagi.');
+        }
+
+        if ($diskon <= 0) {
+            return;
+        }
+
+        $batasManual = round($subtotal * max(0, min(100, $diskonPersen)) / 100);
+
+        $batasVoucher = 0.0;
+        if ($voucher) {
+            if ($voucher->jenis_potongan === 'nominal') {
+                $nilaiVoucher = (float) $voucher->nominal_potongan;
+            } else {
+                $nilaiVoucher = ((float) $voucher->persentase / 100) * $subtotal;
+                $maksimal = (float) $voucher->maksimal_potongan;
+                if ($maksimal > 0) {
+                    $nilaiVoucher = min($nilaiVoucher, $maksimal);
+                }
+            }
+            $batasVoucher = min($nilaiVoucher, $subtotal);
+        }
+
+        $batasPromo = $this->hitungBatasDiskonPromo($transaksi);
+
+        $batasTotal = min($subtotal, $batasManual + $batasVoucher + $batasPromo);
+        if ($diskon - $batasTotal > 1) {
+            throw new \Exception('Nominal diskon melebihi batas yang diizinkan. Muat ulang halaman kasir lalu coba lagi.');
+        }
+    }
+
+    /**
+     * Batas atas diskon promo untuk transaksi ini: untuk tiap produk di detail yang tersimpan,
+     * jumlahkan semua promo aktif yang terpasang ke produk itu (nominal, atau persen x subtotal produk),
+     * dibatasi subtotal produknya. Syarat minimal belanja dan pilihan varian sengaja tidak dihitung
+     * supaya batasnya longgar dan tidak salah menolak transaksi yang sah.
+     */
+    private function hitungBatasDiskonPromo(Transaksi $transaksi): float
+    {
+        $subtotalPerProduk = DetailTransaksi::where('transaksi_id', $transaksi->id)
+            ->whereNotNull('produk_id')
+            ->where(function ($q) {
+                $q->whereNull('catatan')->orWhere('catatan', '!=', 'Reward Stamp');
+            })
+            ->select('produk_id', DB::raw('SUM(subtotal) as total'))
+            ->groupBy('produk_id')
+            ->pluck('total', 'produk_id');
+
+        if ($subtotalPerProduk->isEmpty()) {
+            return 0.0;
+        }
+
+        $produkIds = $subtotalPerProduk->keys()->map(fn ($id) => (int) $id)->all();
+
+        $promos = Promo::where('status_aktif', true)
+            ->whereHas('produks', fn ($q) => $q->whereIn('produks.id', $produkIds))
+            ->with(['produks' => fn ($q) => $q->whereIn('produks.id', $produkIds)])
+            ->get();
+
+        $batas = 0.0;
+        foreach ($subtotalPerProduk as $produkId => $subtotalProduk) {
+            $subtotalProduk = (float) $subtotalProduk;
+            $potongan = 0.0;
+
+            foreach ($promos as $promo) {
+                if (!$promo->produks->contains('id', (int) $produkId)) {
+                    continue;
+                }
+
+                $potongan += $promo->jenis_potongan === 'nominal'
+                    ? (float) $promo->nominal_potongan
+                    : ((float) $promo->persentase / 100) * $subtotalProduk;
+            }
+
+            $batas += min($subtotalProduk, $potongan);
+        }
+
+        return $batas;
+    }
+
     private function validasiUangDiterima(float $total, float $diterima, float $kembalian): void
     {
         if ($diterima + 0.5 < $total) {
@@ -964,6 +1056,14 @@ class TransaksiKasirController extends Controller
                 (float) $validated['diskon'],
                 (float) $validated['pajak'],
                 (float) $validated['total']
+            );
+
+            $this->validasiBatasDiskon(
+                $transaksi,
+                (float) $validated['subtotal'],
+                (float) $validated['diskon'],
+                (float) ($validated['diskon_persen'] ?? 0),
+                $voucher
             );
 
              $pesanan = PesananDitahan::create([
@@ -1150,6 +1250,17 @@ class TransaksiKasirController extends Controller
                 $request->has('voucher_id') ? ($validated['voucher_id'] ?? null) : $transaksi->voucher_id,
                 $memberIdEfektif
             );
+
+            // Hanya dicek kalau browser mengirim angka terbaru (voucher/member bisa diganti saat melunasi).
+            if (isset($validated['total_bayar'])) {
+                $this->validasiBatasDiskon(
+                    $transaksi,
+                    (float) $transaksi->subtotal,
+                    (float) $transaksi->diskon,
+                    (float) $transaksi->diskon_persen,
+                    $voucherDipakai
+                );
+            }
 
              $transaksi->update([
                 'jumlah_diterima' => $validated['jumlah_diterima'],
@@ -1457,6 +1568,14 @@ class TransaksiKasirController extends Controller
                 (float) $validated['diskon'],
                 (float) $validated['pajak'],
                 (float) $validated['total_bayar']
+            );
+
+            $this->validasiBatasDiskon(
+                $transaksi,
+                (float) $validated['subtotal'],
+                (float) $validated['diskon'],
+                (float) ($validated['diskon_persen'] ?? 0),
+                $voucherDipakai
             );
 
             DB::commit();

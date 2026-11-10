@@ -80,7 +80,7 @@
             </div>
 
             <!-- Layout Utama -->
-            <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,28%)] gap-4 items-stretch flex-1 min-h-0 lg:overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,26%)] gap-4 items-stretch flex-1 min-h-0 lg:overflow-hidden">
 
                 <!-- Kiri: Filter + Produk -->
                 <div class="min-w-0 flex flex-col gap-4 lg:h-full lg:overflow-hidden min-h-0">
@@ -1038,7 +1038,7 @@
                                             class="w-full h-full object-cover">
                                     </div>
                                     <div class="flex-1 min-w-0 flex flex-col gap-1">
-                                        <h5 class="font-bold text-gray-900 dark:text-white text-xs truncate"
+                                        <h5 class="font-bold text-gray-900 dark:text-white text-xs break-words leading-snug"
                                             x-text="item.nama_produk"></h5>
                                         <div class="flex items-center gap-1 flex-wrap">
                                             <template x-if="item.ukuran">
