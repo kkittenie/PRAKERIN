@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Transaksi;
 use App\Models\DetailTransaksi;
 use App\Support\ActivityLogHelper;
+use App\Support\JamOperasional;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -251,15 +252,26 @@ class LaporanController extends Controller
         }
 
         try {
-            $periode = $request->get('periode', 'bulan'); // minggu, bulan, tahun
+            $periode = $request->get('periode', 'bulan'); // hari, minggu, bulan, tahun
+            if (!in_array($periode, ['hari', 'minggu', 'bulan', 'tahun'], true)) {
+                $periode = 'bulan';
+            }
             $tahun = (int) $request->get('tahun', date('Y'));
 
             // Statistik ringkasan — laba bersih (pendapatan - modal)
             $hariIni = Carbon::today();
 
-            $statHariIni = $this->hitungLabaBersih(function ($query, $alias = null) use ($hariIni) {
+            // Filter "Hari": tanggal yang dipilih (default hari ini). Kartu pertama ikut tanggal ini.
+            try {
+                $tanggalDipilih = Carbon::createFromFormat('Y-m-d', (string) $request->get('tanggal', $hariIni->toDateString()))->startOfDay();
+            } catch (\Throwable $e) {
+                $tanggalDipilih = $hariIni->copy();
+            }
+            $tanggalStat = $periode === 'hari' ? $tanggalDipilih : $hariIni;
+
+            $statHariIni = $this->hitungLabaBersih(function ($query, $alias = null) use ($tanggalStat) {
                 $col = $alias ? "{$alias}.created_at" : 'created_at';
-                $query->whereDate($col, $hariIni);
+                $query->whereDate($col, $tanggalStat);
             });
 
             $statBulanIni = $this->hitungLabaBersih(function ($query, $alias = null) use ($hariIni) {
@@ -278,7 +290,43 @@ class LaporanController extends Controller
             $dataGrafikLaba = [];
             $labelGrafik = [];
 
-            if ($periode === 'minggu') {
+            if ($periode === 'hari') {
+                // Dipecah per jam mengikuti jam operasional toko (Pengaturan Jam Operasional).
+                // Contoh buka 06:00 & tutup 20:00 -> kolom 06:00 sampai 19:00.
+                $jamMulai = (int) explode(':', JamOperasional::buka())[0];
+                [$jamTutup, $menitTutup] = array_map('intval', explode(':', JamOperasional::tutup()));
+                $jamAkhir = $menitTutup > 0 ? $jamTutup : $jamTutup - 1;
+
+                // Jam operasional lewat tengah malam / tidak masuk akal: tampilkan sehari penuh
+                if ($jamAkhir < $jamMulai) {
+                    $jamMulai = 0;
+                    $jamAkhir = 23;
+                }
+
+                // Kalau ada transaksi di luar jam operasional (mis. penjualan langsung), jamnya tetap ditampilkan
+                $rentangJam = Transaksi::penjualanSah()
+                    ->whereDate('created_at', $tanggalDipilih)
+                    ->selectRaw('MIN(HOUR(created_at)) as jam_min, MAX(HOUR(created_at)) as jam_max')
+                    ->first();
+                if ($rentangJam && $rentangJam->jam_min !== null) {
+                    $jamMulai = min($jamMulai, (int) $rentangJam->jam_min);
+                    $jamAkhir = max($jamAkhir, (int) $rentangJam->jam_max);
+                }
+                $jamMulai = max(0, $jamMulai);
+                $jamAkhir = min(23, $jamAkhir);
+
+                for ($jam = $jamMulai; $jam <= $jamAkhir; $jam++) {
+                    $labelGrafik[] = sprintf('%02d:00', $jam);
+
+                    $stat = $this->hitungLabaBersih(function ($query, $alias = null) use ($tanggalDipilih, $jam) {
+                        $col = $alias ? "{$alias}.created_at" : 'created_at';
+                        $query->whereDate($col, $tanggalDipilih)
+                              ->whereRaw("HOUR({$col}) = ?", [$jam]);
+                    });
+                    $dataGrafikPendapatan[] = $stat['pendapatan'];
+                    $dataGrafikLaba[] = $stat['laba'];
+                }
+            } elseif ($periode === 'minggu') {
                 // 7 hari terakhir berdasarkan tahun terpilih
                 $tanggalAcuan = Carbon::now()->year($tahun);
                 if ($tahun == date('Y')) {
@@ -343,6 +391,8 @@ class LaporanController extends Controller
                 'title'          => $title,
                 'periode'        => $periode,
                 'tahun'          => $tahun,
+                'tanggal'        => $tanggalDipilih->toDateString(),
+                'labelTanggal'   => $tanggalDipilih->translatedFormat('d M Y'),
                 // Stat cards — laba bersih
                 'labaHariIni'              => $statHariIni['laba'],
                 'pendapatanHariIni'        => $statHariIni['pendapatan'],

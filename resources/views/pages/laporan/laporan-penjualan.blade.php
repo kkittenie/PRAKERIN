@@ -15,7 +15,7 @@
                             <svg class="w-4.5 h-4.5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
                         <div>
-                            <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Laba Hari Ini</p>
+                            <p class="text-xxs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ $periode === 'hari' ? 'Laba ' . $labelTanggal : 'Laba Hari Ini' }}</p>
                         </div>
                     </div>
                     <p class="text-lg lg:text-xl font-bold {{ $labaHariIni < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white' }} mb-1">
@@ -91,6 +91,10 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
                     <div class="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <a href="{{ route('laporan-penjualan', ['periode' => 'hari', 'tanggal' => $tanggal]) }}"
+                           class="px-4 py-2 text-sm font-semibold transition border-r border-gray-200 dark:border-gray-700 {{ $periode === 'hari' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
+                            Hari
+                        </a>
                         <a href="{{ route('laporan-penjualan', ['periode' => 'minggu']) }}"
                            class="px-4 py-2 text-sm font-semibold transition {{ $periode === 'minggu' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
                             Minggu
@@ -104,6 +108,13 @@
                             Tahun
                         </a>
                     </div>
+                    @if($periode === 'hari')
+                    <form method="GET" action="{{ route('laporan-penjualan') }}">
+                        <input type="hidden" name="periode" value="hari">
+                        <input type="date" name="tanggal" value="{{ $tanggal }}" max="{{ now()->toDateString() }}" onchange="this.form.submit()"
+                               class="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-gray-50 dark:bg-gray-800 text-gray-850 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent cursor-pointer">
+                    </form>
+                    @else
                     <form method="GET" action="{{ route('laporan-penjualan') }}">
                         <input type="hidden" name="periode" value="{{ $periode }}">
                         <select name="tahun" onchange="this.form.submit()"
@@ -113,6 +124,7 @@
                             @endforeach
                         </select>
                     </form>
+                    @endif
                 </div>
             </div>
             <div id="chartPenjualan" class="min-h-[350px] w-full"></div>

@@ -663,6 +663,46 @@
 
     @include('layouts.fcm-admin-register')
 
+    {{-- Pulihkan halaman terakhir setelah layar diputar (khusus aplikasi Android / WebView).
+         Saat layar dimiringkan, WebView dibuat ulang dan memuat URL awal (dashboard). Selama halaman aktif,
+         URL-nya dicatat berkala; kalau dashboard dibuka tanpa referrer (bukan hasil klik) tepat setelah
+         halaman lain masih aktif, user dikembalikan ke halaman tadi. --}}
+    <script>
+        (function () {
+            if (!window.Android) return;
+            const KUNCI = 'pos_halaman_terakhir';
+            const KUNCI_PULIH = 'pos_halaman_dipulihkan';
+            const jalurDashboard = @json(parse_url(route('dashboard'), PHP_URL_PATH));
+            const sekarang = Date.now();
+
+            try {
+                if (location.pathname === jalurDashboard) {
+                    const simpanan = JSON.parse(localStorage.getItem(KUNCI) || 'null');
+                    const terakhirPulih = parseInt(sessionStorage.getItem(KUNCI_PULIH) || '0', 10);
+                    const dibukaTanpaKlik = document.referrer === '';
+                    const barusanAktif = simpanan && (sekarang - simpanan.t) < 15000;
+                    const sehost = simpanan && simpanan.u && new URL(simpanan.u).origin === location.origin;
+
+                    if (dibukaTanpaKlik && barusanAktif && sehost && simpanan.u !== location.href && (sekarang - terakhirPulih) > 10000) {
+                        sessionStorage.setItem(KUNCI_PULIH, String(sekarang));
+                        location.replace(simpanan.u);
+                        return;
+                    }
+                    localStorage.removeItem(KUNCI);
+                    return;
+                }
+            } catch (e) {}
+
+            // Catat halaman yang sedang aktif (bukan dashboard) sebagai tujuan pemulihan
+            const catat = () => {
+                try { localStorage.setItem(KUNCI, JSON.stringify({ u: location.href, t: Date.now() })); } catch (e) {}
+            };
+            catat();
+            setInterval(catat, 3000);
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) catat(); });
+        })();
+    </script>
+
 </body>
 
 @stack('scripts')

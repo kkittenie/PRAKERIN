@@ -135,7 +135,7 @@
                     </div>
 
                     <!-- Scrollable grid wrapper -->
-                    <div class="flex-1 lg:overflow-y-auto pr-1 min-h-0 custom-scrollbar">
+                    <div class="flex-1 lg:overflow-y-auto pr-1 min-h-0 custom-scrollbar overscroll-contain">
 
                         <!-- ===== MODE PRODUK ===== -->
                         <div x-show="modeTampilan === 'produk' && produkTersaring.length === 0"
@@ -549,7 +549,7 @@
                     class="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col lg:h-full lg:overflow-hidden min-h-0">
                     <!-- Area scroll: info pembeli, member, voucher, stamp & daftar belanja.
                          Footer (pajak, total, tombol bayar) tetap menempel di bawah. -->
-                    <div class="flex-1 min-h-0 overflow-y-auto flex flex-col custom-scrollbar">
+                    <div class="flex-1 min-h-0 overflow-y-auto flex flex-col custom-scrollbar overscroll-contain">
                     <!-- Info Pembeli -->
                     <div
                         class="p-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 rounded-t-xl shrink-0">
@@ -2283,9 +2283,41 @@
                     this._waktuKarakterTerakhir = 0;
                     this._handlerScanGlobal = (e) => this.tanganiKeydownScan(e);
                     document.addEventListener('keydown', this._handlerScanGlobal, true);
+
+                    // Pull-to-refresh di WebView Android (SwipeRefreshLayout) tidak bisa melihat scroll di dalam
+                    // elemen (daftar produk, keranjang, modal). Akibatnya, setelah scroll ke bawah lalu mau
+                    // scroll balik ke atas, yang terjadi malah halaman ke-refresh. Jadi selama ada elemen yang
+                    // belum di posisi paling atas, laporkan true ke native supaya pull-to-refresh dimatikan.
+                    const elemenTergulir = new Set();
+                    const sinkronScrollNative = () => {
+                        elemenTergulir.forEach(el => {
+                            if (!el.isConnected || el.scrollTop <= 0 || el.getClientRects().length === 0) elemenTergulir.delete(el);
+                        });
+                        this.laporScrollNative(this.cetakFrameTerbuka || elemenTergulir.size > 0);
+                    };
+                    this._pendengarScrollNative = (e) => {
+                        const el = e.target;
+                        if (!(el instanceof HTMLElement)) return;
+                        if (el.scrollTop > 0) elemenTergulir.add(el); else elemenTergulir.delete(el);
+                        sinkronScrollNative();
+                    };
+                    this._akarScrollNative = this.$root || document;
+                    // scroll tidak bubble, jadi pakai capture supaya scroll elemen di dalam kasir tetap tertangkap
+                    this._akarScrollNative.addEventListener('scroll', this._pendengarScrollNative, true);
+                    // Bersihkan status kalau elemen yang tergulir keburu disembunyikan (modal ditutup, pindah halaman)
+                    this._intervalScrollNative = setInterval(() => {
+                        if (elemenTergulir.size > 0) sinkronScrollNative();
+                    }, 1000);
                 },
 
                 destroy() {
+                    if (this._akarScrollNative && this._pendengarScrollNative) {
+                        this._akarScrollNative.removeEventListener('scroll', this._pendengarScrollNative, true);
+                    }
+                    if (this._intervalScrollNative) {
+                        clearInterval(this._intervalScrollNative);
+                    }
+                    this.laporScrollNative(false);
                     if (this._handlerScanGlobal) {
                         document.removeEventListener('keydown', this._handlerScanGlobal, true);
                     }
