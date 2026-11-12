@@ -1,6 +1,38 @@
 @extends('layouts.app')
 
 @section('content')
+    <style>
+        /* Default (Desktop lebar / tabel tidak collapsed): sembunyikan badge metode di dalam kolom status */
+        .badge-metode-responsive {
+            display: none;
+        }
+
+        /* Saat tabel collapsed (mode responsif tab/mobile saat tombol + detail muncul) */
+        #historiTransaksiTable.collapsed .badge-metode-responsive {
+            display: inline-flex !important;
+        }
+
+        /* Di layar tab & mobile (< 1024px) */
+        @media (max-width: 1023px) {
+            .badge-metode-responsive {
+                display: inline-flex !important;
+            }
+        }
+
+        /* Di layar desktop (>= 1024px): pastikan sembunyi jika semua kolom tampil (tidak collapsed) */
+        @media (min-width: 1024px) {
+            #historiTransaksiTable:not(.collapsed) .badge-metode-responsive {
+                display: none !important;
+            }
+        }
+
+        /* Keluarkan / sembunyikan item Metode dari child row detail (+) */
+        #historiTransaksiTable tbody tr.child ul.dtr-details > li[data-dtr-index="7"],
+        #historiTransaksiTable tbody tr.child ul.dtr-details > li[data-dt-column="7"] {
+            display: none !important;
+        }
+    </style>
+
     <x-common.page-breadcrumb pageTitle="Histori Transaksi" />
 
     <div x-data="historiTransaksi()" class="space-y-6">
@@ -87,7 +119,7 @@
                             <th class="py-3 text-right">Subtotal</th>
                             <th class="py-3 text-right">Diskon</th>
                             <th class="py-3 text-right">Total Bayar</th>
-                            <th class="py-3 text-center">Metode</th>
+                            <th class="py-3 text-center desktop">Metode</th>
                             <th class="py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
@@ -224,6 +256,10 @@
                 serverSide: true,
                 ajax: @json(route('histori-transaksi', request()->query())),
                 order: [[2, 'desc']],
+                columnDefs: [
+                    { responsivePriority: 2, targets: 3 }, // Status tetap prioritas tinggi di tabel saat mode responsif
+                    { className: 'desktop', targets: 7 }   // Metode hanya tampil terpisah sebagai kolom di desktop
+                ],
                 columns: [
                     { data: 'kode_transaksi_html', name: 'kode_transaksi' },
                     { data: 'nama_pembeli', name: 'nama_pembeli', className: 'font-medium text-gray-800 dark:text-gray-200' },
@@ -236,7 +272,26 @@
                     { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
                 ],
                 emptyText: 'Belum ada histori transaksi',
-                dtOptions: { pageLength: 15 }
+                dtOptions: {
+                    pageLength: 15,
+                    responsive: {
+                        details: {
+                            renderer: function(api, rowIdx, columns) {
+                                // Keluarkan kolom Metode (index 7) dari child row / detail (+)
+                                var filtered = $.grep(columns, function(col) {
+                                    return col.columnIndex !== 7;
+                                });
+                                var hasHidden = $.grep(filtered, function(col) {
+                                    return col.hidden;
+                                }).length > 0;
+
+                                if (!hasHidden) return false;
+
+                                return $.fn.dataTable.Responsive.renderer.listHidden()(api, rowIdx, filtered);
+                            }
+                        }
+                    }
+                }
             });
         });
 
