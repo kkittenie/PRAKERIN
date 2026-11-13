@@ -53,7 +53,7 @@
                     <div class="flex gap-2 justify-end mt-2 md:mt-0">
                         <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">Filter</button>
                         <a href="{{ route('rekap-shift.index') }}" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-600 dark:text-gray-300 font-semibold rounded-lg text-sm transition border border-gray-200 dark:border-gray-700">Reset</a>
-                        <a href="{{ route('rekap-shift.export', $queryExport) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">Ekspor CSV</a>
+                        <a href="{{ route('rekap-shift.export', $queryExport) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">Ekspor Excel</a>
                     </div>
                 </form>
             </div>
@@ -100,7 +100,6 @@
                             <th class="px-4 py-3 font-semibold text-right">Tunai</th>
                             <th class="px-4 py-3 font-semibold text-right">QRIS</th>
                             <th class="px-4 py-3 font-semibold text-right">Debit</th>
-                            <th class="px-4 py-3 font-semibold text-right">Lainnya</th>
                             <th class="px-4 py-3 font-semibold text-right">Seharusnya</th>
                             <th class="px-4 py-3 font-semibold text-right">Laci Akhir</th>
                             <th class="px-4 py-3 font-semibold">Selisih</th>
@@ -125,7 +124,6 @@
                                 <td class="px-4 py-3 text-right"><p class="font-semibold">{{ $rp($r['tunai']['nominal']) }}</p><p class="text-xs text-gray-400">{{ $r['tunai']['jumlah'] }}x</p></td>
                                 <td class="px-4 py-3 text-right"><p class="font-semibold">{{ $rp($r['qris']['nominal']) }}</p><p class="text-xs text-gray-400">{{ $r['qris']['jumlah'] }}x</p></td>
                                 <td class="px-4 py-3 text-right"><p class="font-semibold">{{ $rp($r['debit']['nominal']) }}</p><p class="text-xs text-gray-400">{{ $r['debit']['jumlah'] }}x</p></td>
-                                <td class="px-4 py-3 text-right"><p class="font-semibold">{{ $rp($r['lainnya']['nominal']) }}</p><p class="text-xs text-gray-400">{{ $r['lainnya']['jumlah'] }}x</p></td>
                                 <td class="px-4 py-3 text-right">{{ $rp($r['uang_diharapkan']) }}</td>
                                 <td class="px-4 py-3 text-right">{{ $s->uang_akhir !== null ? $rp($s->uang_akhir) : '-' }}</td>
                                 <td class="px-4 py-3">@include('pages.shift-kasir.partials.badge-selisih', ['shift' => $s])</td>

@@ -91,9 +91,6 @@
                         <tr><td class="px-6 py-3">Tunai</td><td class="px-6 py-3 text-right">{{ $ringkasan['tunai']['jumlah'] }}</td><td class="px-6 py-3 text-right font-semibold">{{ $rp($ringkasan['tunai']['nominal']) }}</td></tr>
                         <tr><td class="px-6 py-3">QRIS</td><td class="px-6 py-3 text-right">{{ $ringkasan['qris']['jumlah'] }}</td><td class="px-6 py-3 text-right font-semibold">{{ $rp($ringkasan['qris']['nominal']) }}</td></tr>
                         <tr><td class="px-6 py-3">Debit</td><td class="px-6 py-3 text-right">{{ $ringkasan['debit']['jumlah'] }}</td><td class="px-6 py-3 text-right font-semibold">{{ $rp($ringkasan['debit']['nominal']) }}</td></tr>
-                        @foreach ($ringkasan['lainnya']['rincian'] as $b)
-                            <tr><td class="px-6 py-3">{{ $b['metode'] }}</td><td class="px-6 py-3 text-right">{{ $b['jumlah'] }}</td><td class="px-6 py-3 text-right font-semibold">{{ $rp($b['nominal']) }}</td></tr>
-                        @endforeach
                     </tbody>
                     <tfoot class="bg-gray-50 dark:bg-gray-800/50 text-gray-800 dark:text-white">
                         <tr><td class="px-6 py-3 font-semibold">Total penjualan</td><td class="px-6 py-3 text-right font-semibold">{{ $ringkasan['jumlah_transaksi'] }}</td><td class="px-6 py-3 text-right font-bold">{{ $rp($ringkasan['total_penjualan']) }}</td></tr>
