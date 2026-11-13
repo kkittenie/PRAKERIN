@@ -9,6 +9,7 @@
         $queryExport = request()->query();
         $queryExport['tanggal_mulai'] = $tanggalMulai;
         $queryExport['tanggal_selesai'] = $tanggalSelesai;
+        $kasirOpsi = $kasirList->map(fn ($k) => ['id' => $k->user_id, 'nama' => $k->nama_kasir])->values();
     @endphp
 
     <div class="space-y-6">
@@ -34,13 +35,64 @@
                                class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
                     </div>
                     <div class="flex-1 md:flex-initial">
-                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Kasir</label>
-                        <select name="kasir" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
-                            <option value="">Semua Kasir</option>
-                            @foreach ($kasirList as $k)
-                                <option value="{{ $k->user_id }}" {{ (string) request('kasir') === (string) $k->user_id ? 'selected' : '' }}>{{ $k->nama_kasir }}</option>
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Role</label>
+                        {{-- Ganti role: kosongkan pilihan kasir lalu muat ulang, supaya daftar kasir menyesuaikan --}}
+                        <select name="role" @change="$root.elements['kasir'].value = ''; $root.submit()"
+                                class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">
+                            <option value="">Semua Role</option>
+                            @foreach ($roleList as $namaRole)
+                                <option value="{{ $namaRole }}" {{ request('role') === $namaRole ? 'selected' : '' }}>{{ ucfirst($namaRole) }}</option>
                             @endforeach
                         </select>
+                    </div>
+                    {{-- Kasir: dropdown yang bisa dicari (ketik sebagian nama) --}}
+                    <div class="flex-1 md:flex-initial relative md:w-56"
+                         x-data="{
+                             buka: false,
+                             cari: '',
+                             pilih: @js((string) request('kasir')),
+                             daftar: @js($kasirOpsi),
+                             get hasil() {
+                                 const q = this.cari.toLowerCase().trim();
+                                 return q ? this.daftar.filter(k => k.nama.toLowerCase().includes(q)) : this.daftar;
+                             },
+                             get label() {
+                                 const k = this.daftar.find(k => String(k.id) === this.pilih);
+                                 return k ? k.nama : 'Semua Kasir';
+                             },
+                             ambil(id) { this.pilih = id; this.buka = false; this.cari = ''; }
+                         }"
+                         @click.outside="buka = false" @keydown.escape="buka = false">
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Kasir</label>
+                        <input type="hidden" name="kasir" :value="pilih">
+                        <button type="button" @click="buka = !buka; if (buka) $nextTick(() => $refs.cari.focus())"
+                                class="w-full flex items-center justify-between gap-2 px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm text-left">
+                            <span class="truncate" x-text="label"></span>
+                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="buka" x-cloak x-transition.opacity
+                             class="absolute z-20 mt-1 w-full min-w-[12rem] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+                            <div class="p-2">
+                                <input x-ref="cari" x-model="cari" type="text" placeholder="Cari kasir..."
+                                       @keydown.enter.prevent="if (hasil.length) ambil(String(hasil[0].id))"
+                                       class="w-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-md text-sm">
+                            </div>
+                            <ul class="max-h-56 overflow-y-auto pb-1 text-sm text-gray-700 dark:text-gray-300">
+                                <li x-show="!cari">
+                                    <button type="button" @click="ambil('')"
+                                            :class="pilih === '' ? 'font-semibold text-amber-600' : ''"
+                                            class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800">Semua Kasir</button>
+                                </li>
+                                <template x-for="k in hasil" :key="k.id">
+                                    <li>
+                                        <button type="button" @click="ambil(String(k.id))" x-text="k.nama"
+                                                :class="String(k.id) === pilih ? 'font-semibold text-amber-600' : ''"
+                                                class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"></button>
+                                    </li>
+                                </template>
+                                <li x-show="cari && hasil.length === 0" class="px-3 py-2 text-gray-400">Tidak ada yang cocok</li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>

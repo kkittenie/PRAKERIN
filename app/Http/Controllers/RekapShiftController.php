@@ -6,6 +6,7 @@ use App\Models\ShiftKasir;
 use App\Models\Transaksi;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -16,7 +17,18 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class RekapShiftController extends Controller
 {
+    /** Pilihan filter role: hanya role yang bisa membuka shift (Pegawai tidak termasuk). */
+    private const ROLE_FILTER = ['Admin', 'Kasir'];
+
     /** Query dasar + filter (dipakai halaman rekap dan ekspor Excel). */
+    /** Role yang dipilih di filter (null kalau kosong atau tidak dikenal). */
+    private function roleDipilih(Request $request): ?Role
+    {
+        $nama = $request->input('role');
+
+        return in_array($nama, self::ROLE_FILTER, true) ? Role::where('name', $nama)->first() : null;
+    }
+
     private function buatQuery(Request $request)
     {
         $mulai = $request->input('tanggal_mulai', now()->startOfMonth()->toDateString());
@@ -29,6 +41,11 @@ class RekapShiftController extends Controller
         $query = ShiftKasir::query()
             ->whereDate('tanggal', '>=', $mulai)
             ->whereDate('tanggal', '<=', $selesai);
+
+        if ($role = $this->roleDipilih($request)) {
+            // Role dibaca dari akun saat ini (role tidak disimpan di data shift).
+            $query->whereHas('user', fn ($q) => $q->role($role));
+        }
 
         if ($request->filled('kasir')) {
             $query->where('user_id', $request->input('kasir'));
@@ -65,8 +82,11 @@ class RekapShiftController extends Controller
                 ->paginate(15)
                 ->withQueryString();
 
+            $roleDipilih = $this->roleDipilih($request);
+
             $kasirList = ShiftKasir::query()
                 ->whereNotNull('user_id')
+                ->when($roleDipilih, fn ($q) => $q->whereHas('user', fn ($u) => $u->role($roleDipilih)))
                 ->select('user_id', 'nama_kasir')
                 ->distinct()
                 ->orderBy('nama_kasir')
@@ -77,6 +97,7 @@ class RekapShiftController extends Controller
                 'daftar' => $daftar,
                 'total' => $total,
                 'kasirList' => $kasirList,
+                'roleList' => self::ROLE_FILTER,
                 'tanggalMulai' => $mulai,
                 'tanggalSelesai' => $selesai,
             ]);
