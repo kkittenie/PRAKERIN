@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\ShiftKasir;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -68,6 +69,11 @@ class AdminLoginController extends Controller
                         'email' => $user->email,
                     ])
                     ->log('Login ke sistem');
+
+                // Kasir yang wajib shift: isi uang di laci dulu sebelum mulai bekerja.
+                if ($user->can('tambah_shift_kasir') && ! ShiftKasir::aktifUntuk($user->id)) {
+                    return redirect()->route('shift.index');
+                }
 
                 return redirect()->intended(route('dashboard'));
             }

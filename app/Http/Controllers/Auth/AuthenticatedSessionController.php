@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\ShiftKasir;
 use App\Models\UserDeviceToken;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
@@ -11,9 +12,30 @@ use Illuminate\Support\Facades\Auth;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Destroy an authenticated session.
+     * Logout. Kalau kasir masih punya shift berjalan, diarahkan dulu ke halaman
+     * selesai shift untuk mengisi sisa uang di laci.
      */
     public function destroy(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            if ($user && ShiftKasir::aktifUntuk($user->id)) {
+                return redirect()->route('shift.tutup')
+                    ->with('error', 'Selesaikan shift dulu (isi sisa uang di laci) sebelum keluar.');
+            }
+
+            return $this->keluarkan($request);
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    /**
+     * Proses logout sebenarnya (hapus token push, akhiri sesi). Dipakai juga oleh
+     * halaman selesai shift saat kasir memilih "Selesai Shift & Keluar".
+     */
+    public function keluarkan(Request $request)
     {
         try {
             $user = Auth::user();

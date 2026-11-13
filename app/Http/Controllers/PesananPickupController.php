@@ -130,6 +130,8 @@ class PesananPickupController extends Controller
                 'status_pembayaran' => 'Lunas',
                 'jumlah_diterima' => $transaksi->total_bayar,
                 'kembalian' => 0,
+                // Pembayaran online yang dikonfirmasi kasir ikut tercatat di rekap shift-nya.
+                'shift_kasir_id' => \App\Models\ShiftKasir::idAktifSaatIni(),
             ]);
 
             activity()->causedBy(auth()->user())->performedOn($transaksi)

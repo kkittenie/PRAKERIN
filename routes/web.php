@@ -5,6 +5,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TransaksiKasirController;
+use App\Http\Controllers\ShiftKasirController;
+use App\Http\Controllers\RekapShiftController;
 use App\Http\Controllers\KategoriProdukController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\BahanBakuController;
@@ -73,8 +75,27 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
         Route::post('/transaksi/tahan', [TransaksiKasirController::class, 'simpanDitahan'])->name('transaksi.tahan');
         Route::post('/transaksi/pulihkan/{id}', [TransaksiKasirController::class, 'pulihkanDitahan'])->name('transaksi.pulihkan');
         Route::delete('/transaksi/hapus-ditahan/{id}', [TransaksiKasirController::class, 'hapusDitahan'])->name('transaksi.hapus-ditahan');
-        Route::post('/transaksi/bayar', [TransaksiKasirController::class, 'bayar'])->name('transaksi.bayar');
-        Route::post('/transaksi/lunaskan/{id}', [TransaksiKasirController::class, 'lunaskanDitahan'])->name('transaksi.lunaskan');
+        // Pembayaran hanya bisa diproses kalau kasir sudah membuka shift (uang laci awal terisi)
+        Route::post('/transaksi/bayar', [TransaksiKasirController::class, 'bayar'])->middleware('shift.kasir')->name('transaksi.bayar');
+        Route::post('/transaksi/lunaskan/{id}', [TransaksiKasirController::class, 'lunaskanDitahan'])->middleware('shift.kasir')->name('transaksi.lunaskan');
+    });
+
+    // Shift Kasir (uang laci awal & akhir, ringkasan pembayaran shift berjalan)
+    Route::middleware('permission:lihat_shift_kasir|tambah_shift_kasir')->group(function () {
+        Route::get('/shift-kasir', [ShiftKasirController::class, 'index'])->name('shift.index');
+        Route::get('/shift-kasir/ringkasan', [ShiftKasirController::class, 'ringkasan'])->name('shift.ringkasan');
+    });
+    Route::middleware('permission:tambah_shift_kasir')->group(function () {
+        Route::post('/shift-kasir/mulai', [ShiftKasirController::class, 'mulai'])->name('shift.mulai');
+        Route::get('/shift-kasir/tutup', [ShiftKasirController::class, 'formTutup'])->name('shift.tutup');
+        Route::post('/shift-kasir/tutup', [ShiftKasirController::class, 'tutup'])->name('shift.tutup.simpan');
+    });
+
+    // Rekap Shift (semua shift semua kasir)
+    Route::middleware('permission:lihat_rekap_shift')->group(function () {
+        Route::get('/rekap-shift/export', [RekapShiftController::class, 'export'])->name('rekap-shift.export');
+        Route::get('/rekap-shift', [RekapShiftController::class, 'index'])->name('rekap-shift.index');
+        Route::get('/rekap-shift/{shift}', [RekapShiftController::class, 'show'])->name('rekap-shift.show');
     });
 
     // Pesanan (pesanan masuk dari Member App)

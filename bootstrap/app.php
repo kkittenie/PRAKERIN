@@ -29,6 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
 
+        $middleware->alias([
+            'shift.kasir' => \App\Http\Middleware\PastikanShiftKasirAktif::class,
+        ]);
+
         // Belum login: area /mobile -> login pelanggan, selain itu (panel admin) -> login admin
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('mobile', 'mobile/*')
             ? route('member.login')

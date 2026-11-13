@@ -7,6 +7,7 @@ use App\Models\Produk;
 use App\Models\DetailProduk;
 use App\Models\PesananDitahan;
 use App\Models\Transaksi;
+use App\Models\ShiftKasir;
 use App\Models\DetailTransaksi;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
@@ -203,6 +204,13 @@ class TransaksiKasirController extends Controller
     public function indeks()
     {
         try {
+            // Kasir yang wajib shift harus membuka shift (input uang laci awal) dulu.
+            $penggunaKasir = auth()->user();
+            if ($penggunaKasir->can('tambah_shift_kasir') && ! ShiftKasir::aktifUntuk($penggunaKasir->id)) {
+                return redirect()->route('shift.index')
+                    ->with('error', 'Buka shift dulu (isi uang di laci) sebelum menggunakan kasir.');
+            }
+
             $daftarProduk = Produk::with(['kategori', 'promos.detailProduks', 'detailProduks', 'varianProduks'])
                 ->where('status_aktif', true)
                 ->dijualSatuan()
@@ -1266,6 +1274,7 @@ class TransaksiKasirController extends Controller
                 'jumlah_diterima' => $validated['jumlah_diterima'],
                 'kembalian' => $validated['kembalian'],
                 'metode_pembayaran' => $validated['metode_pembayaran'],
+                'shift_kasir_id' => ShiftKasir::idAktifSaatIni(),
                 'member_id' => $memberIdEfektif,
                 'voucher_id' => $voucherDipakai?->id,
                 'status_pembayaran' => 'Lunas',
@@ -1413,6 +1422,7 @@ class TransaksiKasirController extends Controller
                 'jumlah_diterima' => $validated['jumlah_diterima'],
                 'kembalian' => $validated['kembalian'],
                 'metode_pembayaran' => $validated['metode_pembayaran'],
+                'shift_kasir_id' => ShiftKasir::idAktifSaatIni(),
                 'status_pembayaran' => 'Lunas',
                 'kode_pickup' => Transaksi::buatKodePickupUnik(),
             ]);

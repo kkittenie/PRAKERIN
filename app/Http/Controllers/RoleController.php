@@ -62,6 +62,12 @@ class RoleController extends Controller
                 'grup' => 'Transaksi',
                 'permissions' => ['lihat', 'edit'],
             ],
+            'shift_kasir' => [
+                'nama' => 'Shift Kasir (Uang Laci)',
+                'deskripsi' => 'Input uang laci awal & akhir shift. Hak "tambah" = wajib buka shift sebelum memproses pembayaran',
+                'grup' => 'Transaksi',
+                'permissions' => ['lihat', 'tambah'],
+            ],
             'produk' => [
                 'nama' => 'Produk & Varian',
                 'deskripsi' => 'Daftar produk, harga jual, ukuran, dan varian rasa',
@@ -161,6 +167,12 @@ class RoleController extends Controller
             'laporan' => [
                 'nama' => 'Laporan & Histori',
                 'deskripsi' => 'Laporan penjualan, omset, ekspor data & histori transaksi',
+                'grup' => 'Laporan',
+                'permissions' => ['lihat'],
+            ],
+            'rekap_shift' => [
+                'nama' => 'Rekap Shift Kasir',
+                'deskripsi' => 'Rekap seluruh shift: uang laci, tunai, QRIS, debit, selisih & ekspor CSV',
                 'grup' => 'Laporan',
                 'permissions' => ['lihat'],
             ],

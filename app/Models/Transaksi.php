@@ -39,6 +39,7 @@ class Transaksi extends Model
         'jumlah_diterima',
         'kembalian',
         'metode_pembayaran',
+        'shift_kasir_id',
         'status_pembayaran',
         'bukti_pembayaran',
         'bukti_dikonfirmasi_pada',
@@ -63,6 +64,12 @@ class Transaksi extends Model
         'diproses_pada' => 'datetime',
         'stok_dikurangi_pada' => 'datetime',
     ];
+
+    /** Shift kasir tempat transaksi ini dibayar. */
+    public function shiftKasir()
+    {
+        return $this->belongsTo(ShiftKasir::class, 'shift_kasir_id');
+    }
 
     /**
      * Transaksi yang sah dihitung sebagai penjualan: sudah Lunas dan tidak dibatalkan.

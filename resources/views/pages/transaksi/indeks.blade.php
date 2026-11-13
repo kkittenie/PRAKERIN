@@ -4325,9 +4325,29 @@
 
                 // Input Pembayaran
                 handleInputJumlahDiterima(e) {
-                    const rawDigits = e.target.value.replace(/\D/g, '').replace(/^0+/, '');
-                    this.jumlahDiterima = rawDigits;
-                    e.target.value = this.jumlahDiterimaTampilan;
+                    const el = e.target;
+                    const posisi = el.selectionStart ?? el.value.length;
+
+                    // Digit di kiri kursor (nol di depan tidak dihitung karena akan dibuang),
+                    // dipakai untuk mengembalikan kursor ke tempat yang sama setelah diformat ulang.
+                    const semuaDigit = el.value.replace(/\D/g, '');
+                    const nolDepan = semuaDigit.length - semuaDigit.replace(/^0+/, '').length;
+                    const digitSebelum = Math.max(0, el.value.slice(0, posisi).replace(/\D/g, '').length - nolDepan);
+
+                    this.jumlahDiterima = semuaDigit.replace(/^0+/, '').slice(0, 12);
+                    const tampilan = this.jumlahDiterimaTampilan;
+                    el.value = tampilan;
+
+                    let pos = 0, hitung = 0;
+                    if (digitSebelum > 0) {
+                        for (let i = 0; i < tampilan.length; i++) {
+                            if (/\d/.test(tampilan[i]) && ++hitung === digitSebelum) { pos = i + 1; break; }
+                        }
+                        if (hitung < digitSebelum) pos = tampilan.length;
+                    }
+                    const taruh = () => { try { el.setSelectionRange(pos, pos); } catch (err) {} };
+                    taruh();
+                    this.$nextTick(taruh);
                 },
                 setJumlahDiterimaCepat(n) {
                     this.jumlahDiterima = Math.round(n).toString();

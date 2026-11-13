@@ -76,6 +76,7 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'Kasir', 'path' => '/transaksi', 'permission' => ['lihat_transaksi', 'tambah_transaksi', 'edit_transaksi', 'hapus_transaksi']],
                     ['name' => 'Pesanan', 'path' => '/pesanan-pickup', 'permission' => ['lihat_pesanan_pickup', 'edit_pesanan_pickup', 'tambah_pesanan_pickup', 'hapus_pesanan_pickup']],
+                    ['name' => 'Shift Kasir', 'path' => '/shift-kasir', 'permission' => ['lihat_shift_kasir', 'tambah_shift_kasir']],
                 ],
             ],
             [
@@ -85,6 +86,7 @@ class MenuHelper
                     ['name' => 'Histori Transaksi', 'path' => '/histori-transaksi', 'permission' => ['lihat_laporan', 'tambah_laporan', 'edit_laporan', 'hapus_laporan']],
                     ['name' => 'Notifikasi', 'path' => '/notifikasi', 'permission' => ['lihat_notifikasi', 'tambah_notifikasi', 'edit_notifikasi', 'hapus_notifikasi']],
                     ['name' => 'Laporan Penjualan', 'path' => '/laporan-penjualan', 'permission' => ['lihat_laporan', 'tambah_laporan', 'edit_laporan', 'hapus_laporan']],
+                    ['name' => 'Rekap Shift', 'path' => '/rekap-shift', 'permission' => ['lihat_rekap_shift']],
                     ['name' => 'Activity Log', 'path' => '/activity-Log', 'permission' => ['lihat_activity_log', 'hapus_activity_log']],
                 ],
             ],
