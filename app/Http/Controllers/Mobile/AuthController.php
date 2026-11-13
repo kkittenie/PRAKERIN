@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mobile;
 
 use App\Http\Controllers\Controller;
 use App\Models\Member;
+use App\Models\MemberDeviceToken;
 use App\Models\OtpVerification;
 use App\Support\ActivityLogHelper;
 use Illuminate\Http\Request;
@@ -294,12 +295,28 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         try {
+            $member = Auth::guard('member')->user();
+
+            $fcmToken = $request->input('fcm_token')
+                ?: $request->cookie('fcm_token')
+                ?: ($request->session()->has('fcm_token') ? $request->session()->get('fcm_token') : null);
+
+            if (!empty($fcmToken)) {
+                MemberDeviceToken::where('token', $fcmToken)->delete();
+            }
+
+            if ($member) {
+                MemberDeviceToken::where('member_id', $member->id)->delete();
+            }
+
             Auth::guard('member')->logout();
 
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('member.welcome');
+            return redirect()->route('member.welcome')
+                ->withoutCookie('fcm_token')
+                ->withoutCookie('fcm_device_token');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

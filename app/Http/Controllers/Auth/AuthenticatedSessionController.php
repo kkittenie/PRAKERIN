@@ -17,19 +17,31 @@ class AuthenticatedSessionController extends Controller
     {
         try {
             $user = Auth::user();
-            activity()
-                ->causedBy($user)
-                ->performedOn($user)
-                ->withProperties([
-                    'user' => $user->name,
-                    'email' => $user->email,
-                ])
-                ->log('Logout dari sistem');
 
-            // Hapus token push notification device ini, supaya setelah logout
-            // HP-nya tidak lagi menerima notif pesanan/alert milik akun ini.
-            if ($request->session()->has('fcm_token')) {
-                UserDeviceToken::where('token', $request->session()->get('fcm_token'))->delete();
+            if ($user) {
+                activity()
+                    ->causedBy($user)
+                    ->performedOn($user)
+                    ->withProperties([
+                        'user' => $user->name,
+                        'email' => $user->email,
+                    ])
+                    ->log('Logout dari sistem');
+
+                // Dapatkan FCM token device ini dari request input, cookie, atau session
+                $token = $request->input('fcm_token')
+                    ?: $request->cookie('fcm_token')
+                    ?: $request->cookie('fcm_device_token')
+                    ?: ($request->session()->has('fcm_token') ? $request->session()->get('fcm_token') : null);
+
+                if (!empty($token)) {
+                    UserDeviceToken::where('token', $token)->delete();
+                }
+
+                // Pengaman utama: Hapus semua token push notification milik akun admin ini saat logout,
+                // sehingga HP/tab tidak lagi menerima push notifikasi pesanan/alert admin.
+                // Saat user login kembali, device akan otomatis mendaftarkan tokennya lagi.
+                UserDeviceToken::where('user_id', $user->id)->delete();
             }
 
             Auth::guard('web')->logout();
@@ -38,7 +50,9 @@ class AuthenticatedSessionController extends Controller
 
             $request->session()->regenerateToken();
 
-            return redirect()->route('admin.login');
+            return redirect()->route('admin.login')
+                ->withoutCookie('fcm_token')
+                ->withoutCookie('fcm_device_token');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
