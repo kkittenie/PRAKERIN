@@ -54,6 +54,7 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
     });
     Route::get('/notifikasi/unread-json', [NotificationController::class, 'unreadJson'])->name('notifications.unread-json');
     Route::post('/notifikasi/token', [NotificationController::class, 'daftarkanToken'])->name('notifications.token');
+    Route::post('/notifikasi/hapus-token', [NotificationController::class, 'hapusToken'])->name('notifications.hapus-token');
 
     // Dashboard Utama (Beranda)
     Route::get('/admin', [DashboardController::class, 'index'])

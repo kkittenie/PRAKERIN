@@ -117,6 +117,37 @@ class NotificationController extends Controller
     }
 
     /**
+     * Hapus token FCM device ini (dipanggil saat logout / lepas device).
+     */
+    public function hapusToken(Request $request)
+    {
+        try {
+            $token = $request->input('token')
+                ?: $request->input('fcm_token')
+                ?: $request->cookie('fcm_token')
+                ?: $request->cookie('fcm_device_token')
+                ?: ($request->session()->has('fcm_token') ? $request->session()->get('fcm_token') : null);
+
+            if (!empty($token)) {
+                UserDeviceToken::where('token', $token)->delete();
+                MemberDeviceToken::where('token', $token)->delete();
+            }
+
+            if ($request->user()) {
+                UserDeviceToken::where('user_id', $request->user()->id)->delete();
+            }
+
+            $request->session()->forget('fcm_token');
+
+            return response()->json(['status' => 'success'])
+                ->withoutCookie('fcm_token')
+                ->withoutCookie('fcm_device_token');
+        } catch (\Throwable $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Tandai semua notifikasi sebagai sudah dibaca.
      */
     public function markAllAsRead(Request $request)
