@@ -36,6 +36,10 @@ class PermissionSeeder extends Seeder
             ]);
         }
 
+        // Rekap produk (laporan rekap per produk)
+        Permission::firstOrCreate(['name' => 'lihat_rekap_produk', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'lihat_laporan_produk', 'guard_name' => 'web']);
+
         $admin = Role::firstOrCreate(['name' => 'Admin']);
         $kasir = Role::firstOrCreate(['name' => 'Kasir']);
         $pegawai = Role::firstOrCreate(['name' => 'Pegawai']);

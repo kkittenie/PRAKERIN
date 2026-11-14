@@ -84,6 +84,7 @@ class MenuHelper
                 'icon' => 'laporan',
                 'subItems' => [
                     ['name' => 'Histori Transaksi', 'path' => '/histori-transaksi', 'permission' => ['lihat_laporan', 'tambah_laporan', 'edit_laporan', 'hapus_laporan']],
+                    ['name' => 'Rekap Produk', 'path' => '/rekap-produk', 'permission' => ['lihat_rekap_produk']],
                     ['name' => 'Notifikasi', 'path' => '/notifikasi', 'permission' => ['lihat_notifikasi', 'tambah_notifikasi', 'edit_notifikasi', 'hapus_notifikasi']],
                     ['name' => 'Laporan Penjualan', 'path' => '/laporan-penjualan', 'permission' => ['lihat_laporan', 'tambah_laporan', 'edit_laporan', 'hapus_laporan']],
                     ['name' => 'Rekap Shift', 'path' => '/rekap-shift', 'permission' => ['lihat_rekap_shift']],

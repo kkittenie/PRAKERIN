@@ -176,6 +176,12 @@ class RoleController extends Controller
                 'grup' => 'Laporan',
                 'permissions' => ['lihat'],
             ],
+            'rekap_produk' => [
+                'nama' => 'Rekap Produk',
+                'deskripsi' => 'Rekapitulasi harian jumlah produksi dan penjualan per produk',
+                'grup' => 'Laporan',
+                'permissions' => ['lihat'],
+            ],
             'notifikasi' => [
                 'nama' => 'Notifikasi Sistem',
                 'deskripsi' => 'Peringatan pesanan masuk, stok menipis & aktivitas penting',

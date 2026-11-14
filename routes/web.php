@@ -37,6 +37,7 @@ use App\Http\Controllers\PengaturanPajakController;
 use App\Http\Controllers\KontenStatisController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PromoProdukEventController;
+use App\Http\Controllers\RekapProdukController;
 use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
 
     require __DIR__ . '/mobile.php';
@@ -118,6 +119,12 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
         Route::get('/histori-transaksi', [LaporanController::class, 'historiTransaksi'])->name('histori-transaksi');
         Route::get('/histori-transaksi/{id}/detail', [LaporanController::class, 'detailTransaksi'])->name('histori-transaksi.detail');
         Route::get('/laporan-penjualan', [LaporanController::class, 'laporanPenjualan'])->name('laporan-penjualan');
+    });
+
+    // Rekap Produk
+    Route::middleware('permission:lihat_rekap_produk')->group(function () {
+        Route::get('/rekap-produk', [RekapProdukController::class, 'index'])->name('rekap-produk');
+        Route::get('/rekap-produk/{id}/varian', [RekapProdukController::class, 'detailVarian'])->name('rekap-produk.varian');
     });
 
     Route::resource('roles', RoleController::class)

@@ -40,16 +40,21 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (Throwable $e) {
-            activity()
-                ->withProperties([
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'url' => request()->fullUrl(),
-                    'method' => request()->method(),
-                    'user' => auth()->id(),
-                ])
-                ->log('problem pada bagian ' . request()->path());
+            try {
+                activity()
+                    ->withProperties([
+                        'message' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'url' => request()->fullUrl(),
+                        'method' => request()->method(),
+                        'user' => auth()->id(),
+                    ])
+                    ->log('problem pada bagian ' . request()->path());
+            } catch (\Throwable $logError) {
+                // Jangan sampai kegagalan catat activity_log (mis. database offline)
+                // memicu recursive error loop.
+            }
         });
 
         $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
