@@ -99,6 +99,10 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
         Route::get('/rekap-shift', [RekapShiftController::class, 'index'])->name('rekap-shift.index');
         Route::get('/rekap-shift/{shift}', [RekapShiftController::class, 'show'])->name('rekap-shift.show');
     });
+    // Tutup paksa shift orang lain yang masih berjalan (admin)
+    Route::middleware('permission:edit_rekap_shift')->group(function () {
+        Route::post('/rekap-shift/{shift}/tutup-paksa', [ShiftKasirController::class, 'tutupPaksa'])->name('rekap-shift.tutup-paksa');
+    });
 
     // Pesanan (pesanan masuk dari Member App)
     Route::middleware('permission:lihat_pesanan_pickup')->group(function () {

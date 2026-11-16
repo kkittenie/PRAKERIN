@@ -19,11 +19,17 @@ class PastikanShiftKasirAktif
         $user = $request->user();
 
         if ($user && $user->can('tambah_shift_kasir') && ! ShiftKasir::aktifUntuk($user->id)) {
+            // Hanya satu shift yang boleh berjalan: kalau laci sedang dipegang orang lain, jelaskan.
+            $lain = ShiftKasir::berjalanMilikLain($user->id);
+            $pesan = $lain
+                ? $lain->labelShift() . ' milik ' . $lain->nama_kasir . ' masih berjalan. Tunggu sampai shift itu ditutup, lalu buka shift Anda di menu Shift Kasir.'
+                : 'Shift kasir belum dibuka. Buka shift dulu di menu Shift Kasir.';
+
             return response()->json([
                 'status' => 'error',
                 'success' => false,
-                'pesan' => 'Shift kasir belum dibuka. Buka shift dulu di menu Shift Kasir.',
-                'message' => 'Shift kasir belum dibuka. Buka shift dulu di menu Shift Kasir.',
+                'pesan' => $pesan,
+                'message' => $pesan,
                 'redirect' => route('shift.index'),
             ], 423);
         }

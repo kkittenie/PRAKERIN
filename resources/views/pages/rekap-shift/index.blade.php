@@ -112,7 +112,7 @@
         </div>
 
         {{-- Ringkasan periode (shift selesai) --}}
-        <div class="grid grid-cols-2 xl:grid-cols-5 gap-4">
+        <div class="grid grid-cols-2 xl:grid-cols-6 gap-4">
             <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-5">
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Shift Selesai</p>
                 <p class="mt-2 text-2xl font-bold text-gray-800 dark:text-white">{{ number_format($total->jumlah_shift, 0, ',', '.') }}</p>
@@ -129,6 +129,10 @@
             <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-5">
                 <p class="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">Total Debit</p>
                 <p class="mt-2 text-xl font-bold text-gray-800 dark:text-white">{{ $rp($total->debit) }}</p>
+            </div>
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-5">
+                <p class="text-xs font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-400">Total Member App</p>
+                <p class="mt-2 text-xl font-bold text-gray-800 dark:text-white">{{ $rp($total->member_app) }}</p>
             </div>
             <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-5 col-span-2 xl:col-span-1">
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Total Selisih Laci</p>
@@ -152,6 +156,7 @@
                             <th class="px-4 py-3 font-semibold text-right">Tunai</th>
                             <th class="px-4 py-3 font-semibold text-right">QRIS</th>
                             <th class="px-4 py-3 font-semibold text-right">Debit</th>
+                            <th class="px-4 py-3 font-semibold text-right">Member App</th>
                             <th class="px-4 py-3 font-semibold text-right">Seharusnya</th>
                             <th class="px-4 py-3 font-semibold text-right">Laci Akhir</th>
                             <th class="px-4 py-3 font-semibold">Selisih</th>
@@ -176,6 +181,7 @@
                                 <td class="px-4 py-3 text-right"><p class="font-semibold">{{ $rp($r['tunai']['nominal']) }}</p><p class="text-xs text-gray-400">{{ $r['tunai']['jumlah'] }}x</p></td>
                                 <td class="px-4 py-3 text-right"><p class="font-semibold">{{ $rp($r['qris']['nominal']) }}</p><p class="text-xs text-gray-400">{{ $r['qris']['jumlah'] }}x</p></td>
                                 <td class="px-4 py-3 text-right"><p class="font-semibold">{{ $rp($r['debit']['nominal']) }}</p><p class="text-xs text-gray-400">{{ $r['debit']['jumlah'] }}x</p></td>
+                                <td class="px-4 py-3 text-right"><p class="font-semibold">{{ $rp($r['member_app']['nominal']) }}</p><p class="text-xs text-gray-400">{{ $r['member_app']['jumlah'] }}x</p></td>
                                 <td class="px-4 py-3 text-right">{{ $rp($r['uang_diharapkan']) }}</td>
                                 <td class="px-4 py-3 text-right">{{ $s->uang_akhir !== null ? $rp($s->uang_akhir) : '-' }}</td>
                                 <td class="px-4 py-3">@include('pages.shift-kasir.partials.badge-selisih', ['shift' => $s])</td>
@@ -194,7 +200,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="13" class="px-4 py-12 text-center text-gray-400 dark:text-gray-500">Belum ada shift pada rentang tanggal ini.</td>
+                                <td colspan="14" class="px-4 py-12 text-center text-gray-400 dark:text-gray-500">Belum ada shift pada rentang tanggal ini.</td>
                             </tr>
                         @endforelse
                     </tbody>

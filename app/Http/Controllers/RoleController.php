@@ -172,9 +172,9 @@ class RoleController extends Controller
             ],
             'rekap_shift' => [
                 'nama' => 'Rekap Shift Kasir',
-                'deskripsi' => 'Rekap seluruh shift: uang laci, tunai, QRIS, debit, selisih & ekspor CSV',
+                'deskripsi' => 'Rekap seluruh shift: uang laci, tunai, QRIS, debit, selisih & ekspor CSV. Hak "edit" = boleh menutup paksa shift yang masih berjalan',
                 'grup' => 'Laporan',
-                'permissions' => ['lihat'],
+                'permissions' => ['lihat', 'edit'],
             ],
             'rekap_produk' => [
                 'nama' => 'Rekap Produk',

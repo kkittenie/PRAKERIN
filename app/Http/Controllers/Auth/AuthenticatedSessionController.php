@@ -12,8 +12,10 @@ use Illuminate\Support\Facades\Auth;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Logout. Kalau kasir masih punya shift berjalan, diarahkan dulu ke halaman
-     * selesai shift untuk mengisi sisa uang di laci.
+     * Logout. Kalau kasir masih punya shift berjalan, wajib menutup shift dulu: diarahkan ke
+     * halaman selesai shift untuk mengisi sisa uang di laci, lalu keluar dari sana.
+     * Tidak ada jalan keluar tanpa menutup shift. Kalau kasirnya tidak bisa menutup (lupa,
+     * listrik mati, sesi habis), admin yang menutup paksa lewat Rekap Shift.
      */
     public function destroy(Request $request)
     {
@@ -22,25 +24,12 @@ class AuthenticatedSessionController extends Controller
 
             $shiftBerjalan = $user ? ShiftKasir::aktifUntuk($user->id) : null;
 
-            if ($shiftBerjalan) {
-                // Keluar tanpa menutup shift (pilihan di halaman Selesai Shift): shift tetap berjalan
-                // dan dilanjutkan saat login berikutnya, jadi kasir tidak pernah terjebak.
-                if ($request->boolean('tanpa_tutup')) {
-                    activity()
-                        ->causedBy($user)
-                        ->performedOn($shiftBerjalan)
-                        ->withProperties(['shift' => $shiftBerjalan->labelShift()])
-                        ->log('keluar tanpa menutup shift kasir');
-
-                    return $this->keluarkan($request)
-                        ->with('success', 'Anda sudah keluar. ' . $shiftBerjalan->labelShift() . ' masih berjalan, tutup saat login berikutnya.');
-                }
-
-                // Hanya akun yang berhak menutup shift yang dialihkan ke halaman selesai shift.
-                if ($user->can('tambah_shift_kasir')) {
-                    return redirect()->route('shift.tutup')
-                        ->with('error', 'Selesaikan shift dulu (isi sisa uang di laci) sebelum keluar.');
-                }
+            // Hanya akun yang berhak menutup shift yang dialihkan ke halaman selesai shift.
+            // Akun tanpa izin itu (izinnya dicabut saat shift berjalan) tidak bisa menutup shift,
+            // jadi dibiarkan keluar supaya tidak terjebak di halaman terlarang.
+            if ($shiftBerjalan && $user->can('tambah_shift_kasir')) {
+                return redirect()->route('shift.tutup')
+                    ->with('error', 'Selesaikan shift dulu (isi sisa uang di laci) sebelum keluar.');
             }
 
             return $this->keluarkan($request);

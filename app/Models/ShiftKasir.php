@@ -9,7 +9,10 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Satu shift kerja kasir: modal uang laci awal, uang laci akhir, dan ringkasan
- * pembayaran (tunai / QRIS / debit / lainnya) selama shift berlangsung.
+ * pembayaran (tunai / QRIS / debit / Member App) selama shift berlangsung.
+ *
+ * Catatan: pembayaran Member App disimpan di kolom lama *_lainnya (nama kolom dibiarkan supaya
+ * tidak perlu migrasi dan data shift lama tetap terbaca), tapi di kode & tampilan namanya Member App.
  */
 class ShiftKasir extends Model
 {
@@ -66,6 +69,15 @@ class ShiftKasir extends Model
         'debit' => ['debit', 'kartu', 'kartu debit', 'edc'],
     ];
 
+    /** Metode pembayaran pesanan Member App -> label yang mudah dibaca di rekap. */
+    private const LABEL_METODE_MEMBER_APP = [
+        'transfer/qris' => 'QRIS',
+        'transfer' => 'QRIS',
+        'qris' => 'QRIS',
+        'voucher' => 'Voucher (gratis)',
+        'reward stamp' => 'Reward Stamp (gratis)',
+    ];
+
     // ------------------------------------------------------------------ relasi
 
     public function user(): BelongsTo
@@ -112,6 +124,27 @@ class ShiftKasir extends Model
         return self::berjalan()->where('user_id', $userId)->latest('mulai_pada')->first();
     }
 
+    /** Shift yang sedang berjalan milik orang LAIN (bukan user ini), null kalau tidak ada. */
+    public static function berjalanMilikLain(?int $userId): ?self
+    {
+        return self::berjalan()
+            ->when($userId, fn ($q) => $q->where('user_id', '!=', $userId))
+            ->latest('mulai_pada')
+            ->first();
+    }
+
+    /** Shift berjalan siapa pun pemiliknya. Karena hanya boleh satu, ini "shift laci" saat ini. */
+    public static function berjalanSaatIni(): ?self
+    {
+        return self::berjalan()->latest('mulai_pada')->first();
+    }
+
+    /** ID shift yang sedang berjalan (siapa pun pemiliknya), untuk pembayaran online yang dikonfirmasi. */
+    public static function idBerjalanSaatIni(): ?int
+    {
+        return self::berjalanSaatIni()?->id;
+    }
+
     /** ID shift berjalan milik user yang sedang login, dipakai untuk menandai transaksi. */
     public static function idAktifSaatIni(): ?int
     {
@@ -126,17 +159,30 @@ class ShiftKasir extends Model
 
     /**
      * Buka shift baru. Nomor shift = urutan shift pada tanggal itu (Shift 1, Shift 2, ...).
-     * Dikunci di dalam transaksi supaya dua kasir yang buka bersamaan tidak dapat nomor sama
-     * dan satu kasir tidak bisa punya dua shift berjalan.
+     * Hanya SATU shift yang boleh berjalan pada satu waktu (satu laci): kalau masih ada shift
+     * berjalan milik siapa pun, shift baru ditolak sampai shift itu ditutup.
+     * Dikunci di dalam transaksi supaya dua orang yang buka bersamaan tidak sama-sama lolos
+     * dan tidak dapat nomor shift yang sama.
      */
     public static function mulai(User $user, float $modalAwal, ?string $catatan = null): self
     {
         return DB::transaction(function () use ($user, $modalAwal, $catatan) {
-            // Kunci baris user untuk menyerialkan permintaan buka shift dari kasir yang sama.
-            User::whereKey($user->id)->lockForUpdate()->first();
+            // Kunci satu baris yang sama untuk semua pemanggil, jadi buka shift diproses satu per satu.
+            User::query()->orderBy('id')->lockForUpdate()->first();
 
-            if (self::aktifUntuk($user->id)) {
-                throw new \RuntimeException('Anda masih punya shift yang berjalan. Tutup dulu sebelum membuka shift baru.');
+            $berjalan = self::berjalanSaatIni();
+
+            if ($berjalan) {
+                if ((int) $berjalan->user_id === (int) $user->id) {
+                    throw new \RuntimeException('Anda masih punya shift yang berjalan. Tutup dulu sebelum membuka shift baru.');
+                }
+
+                throw new \RuntimeException(
+                    $berjalan->labelShift() . ' milik ' . $berjalan->nama_kasir . ' (mulai '
+                    . $berjalan->mulai_pada->translatedFormat('d M H:i') . ') masih berjalan. '
+                    . 'Hanya satu shift yang boleh berjalan. Minta ' . $berjalan->nama_kasir
+                    . ' menutupnya dulu, atau admin bisa menutup paksa lewat Rekap Shift.'
+                );
             }
 
             $tanggal = now()->toDateString();
@@ -164,41 +210,78 @@ class ShiftKasir extends Model
     {
         $baris = Transaksi::penjualanSah()
             ->where('shift_kasir_id', $this->id)
-            ->selectRaw('LOWER(TRIM(metode_pembayaran)) as metode, COUNT(*) as jumlah, COALESCE(SUM(total_bayar), 0) as nominal')
-            ->groupByRaw('LOWER(TRIM(metode_pembayaran))')
+            ->selectRaw('LOWER(TRIM(metode_pembayaran)) as metode, asal_pesanan, COUNT(*) as jumlah, COALESCE(SUM(total_bayar), 0) as nominal')
+            ->groupByRaw('LOWER(TRIM(metode_pembayaran)), asal_pesanan')
             ->get();
 
         $ringkasan = [
             'tunai' => ['jumlah' => 0, 'nominal' => 0.0],
             'qris' => ['jumlah' => 0, 'nominal' => 0.0],
             'debit' => ['jumlah' => 0, 'nominal' => 0.0],
-            'lainnya' => ['jumlah' => 0, 'nominal' => 0.0, 'rincian' => []],
+            'member_app' => ['jumlah' => 0, 'nominal' => 0.0, 'rincian' => []],
         ];
 
         foreach ($baris as $b) {
             $metode = (string) $b->metode;
-            $kategori = 'lainnya';
+            $dariMemberApp = $b->asal_pesanan === Transaksi::ASAL_MEMBER_APP;
+            $kategori = 'member_app';
 
-            foreach (self::KELOMPOK_METODE as $nama => $varian) {
-                if (in_array($metode, $varian, true)) {
-                    $kategori = $nama;
-                    break;
+            // Pesanan Member App selalu masuk kolom Member App, apa pun metode yang tertulis.
+            // Transaksi kasir dikelompokkan menurut metodenya.
+            if (! $dariMemberApp) {
+                foreach (self::KELOMPOK_METODE as $nama => $varian) {
+                    if (in_array($metode, $varian, true)) {
+                        $kategori = $nama;
+                        break;
+                    }
                 }
             }
 
             $ringkasan[$kategori]['jumlah'] += (int) $b->jumlah;
             $ringkasan[$kategori]['nominal'] += (float) $b->nominal;
 
-            if ($kategori === 'lainnya') {
-                $ringkasan['lainnya']['rincian'][] = [
-                    'metode' => $metode !== '' ? ucwords($metode) : 'Lainnya',
+            if ($kategori === 'member_app') {
+                $ringkasan['member_app']['rincian'][] = [
+                    'metode' => self::labelMetode($metode),
                     'jumlah' => (int) $b->jumlah,
                     'nominal' => (float) $b->nominal,
                 ];
             }
         }
 
+        $ringkasan['member_app']['rincian'] = self::gabungRincian($ringkasan['member_app']['rincian']);
+
         return $this->lengkapiRingkasan($ringkasan);
+    }
+
+    /** Label metode untuk rincian Member App (QRIS, Voucher (gratis), Reward Stamp (gratis), ...). */
+    private static function labelMetode(string $metode): string
+    {
+        $kunci = strtolower(trim($metode));
+
+        if ($kunci === '') {
+            return 'Lainnya';
+        }
+
+        return self::LABEL_METODE_MEMBER_APP[$kunci] ?? ucwords($kunci);
+    }
+
+    /** Gabungkan baris rincian berlabel sama dan urutkan dari nominal terbesar. */
+    private static function gabungRincian(array $rincian): array
+    {
+        $hasil = [];
+
+        foreach ($rincian as $r) {
+            $label = self::labelMetode((string) ($r['metode'] ?? ''));
+            $hasil[$label] ??= ['metode' => $label, 'jumlah' => 0, 'nominal' => 0.0];
+            $hasil[$label]['jumlah'] += (int) ($r['jumlah'] ?? 0);
+            $hasil[$label]['nominal'] += (float) ($r['nominal'] ?? 0);
+        }
+
+        $hasil = array_values($hasil);
+        usort($hasil, fn ($a, $b) => $b['nominal'] <=> $a['nominal']);
+
+        return $hasil;
     }
 
     /**
@@ -215,10 +298,10 @@ class ShiftKasir extends Model
             'tunai' => ['jumlah' => (int) $this->jumlah_tunai, 'nominal' => (float) $this->total_tunai],
             'qris' => ['jumlah' => (int) $this->jumlah_qris, 'nominal' => (float) $this->total_qris],
             'debit' => ['jumlah' => (int) $this->jumlah_debit, 'nominal' => (float) $this->total_debit],
-            'lainnya' => [
+            'member_app' => [
                 'jumlah' => (int) $this->jumlah_lainnya,
                 'nominal' => (float) $this->total_lainnya,
-                'rincian' => $this->rincian_lainnya ?? [],
+                'rincian' => self::gabungRincian($this->rincian_lainnya ?? []),
             ],
         ]);
     }
@@ -226,11 +309,11 @@ class ShiftKasir extends Model
     private function lengkapiRingkasan(array $ringkasan): array
     {
         $ringkasan['jumlah_transaksi'] = $ringkasan['tunai']['jumlah'] + $ringkasan['qris']['jumlah']
-            + $ringkasan['debit']['jumlah'] + $ringkasan['lainnya']['jumlah'];
+            + $ringkasan['debit']['jumlah'] + $ringkasan['member_app']['jumlah'];
         $ringkasan['total_penjualan'] = $ringkasan['tunai']['nominal'] + $ringkasan['qris']['nominal']
-            + $ringkasan['debit']['nominal'] + $ringkasan['lainnya']['nominal'];
+            + $ringkasan['debit']['nominal'] + $ringkasan['member_app']['nominal'];
         $ringkasan['modal_awal'] = (float) $this->modal_awal;
-        // Uang yang seharusnya ada di laci = modal awal + penjualan tunai.
+        // Uang yang seharusnya ada di laci = modal awal + penjualan tunai (QRIS, debit, Member App tidak masuk laci).
         $ringkasan['uang_diharapkan'] = $ringkasan['modal_awal'] + $ringkasan['tunai']['nominal'];
 
         return $ringkasan;
@@ -241,6 +324,23 @@ class ShiftKasir extends Model
      */
     public function tutup(float $uangAkhir, ?string $catatan = null): self
     {
+        return $this->selesaikan($uangAkhir, $catatan);
+    }
+
+    /**
+     * Tutup paksa oleh admin (kasirnya lupa/tidak bisa menutup). Uang laci akhir boleh dikosongkan
+     * kalau tidak ada yang menghitungnya; selisih jadi tidak diketahui (null). Alasan wajib dan
+     * ikut tersimpan di catatan akhir shift supaya terlihat di rekap.
+     */
+    public function tutupPaksa(User $oleh, ?float $uangAkhir, string $alasan): self
+    {
+        $catatan = 'Ditutup paksa oleh ' . $oleh->name . ': ' . trim($alasan);
+
+        return $this->selesaikan($uangAkhir, $catatan);
+    }
+
+    private function selesaikan(?float $uangAkhir, ?string $catatan): self
+    {
         $r = $this->hitungRingkasan();
 
         $this->update([
@@ -248,17 +348,17 @@ class ShiftKasir extends Model
             'selesai_pada' => now(),
             'uang_akhir' => $uangAkhir,
             'uang_diharapkan' => $r['uang_diharapkan'],
-            'selisih' => round($uangAkhir - $r['uang_diharapkan'], 2),
+            'selisih' => $uangAkhir === null ? null : round($uangAkhir - $r['uang_diharapkan'], 2),
             'total_tunai' => $r['tunai']['nominal'],
             'total_qris' => $r['qris']['nominal'],
             'total_debit' => $r['debit']['nominal'],
-            'total_lainnya' => $r['lainnya']['nominal'],
+            'total_lainnya' => $r['member_app']['nominal'],
             'jumlah_tunai' => $r['tunai']['jumlah'],
             'jumlah_qris' => $r['qris']['jumlah'],
             'jumlah_debit' => $r['debit']['jumlah'],
-            'jumlah_lainnya' => $r['lainnya']['jumlah'],
+            'jumlah_lainnya' => $r['member_app']['jumlah'],
             'jumlah_transaksi' => $r['jumlah_transaksi'],
-            'rincian_lainnya' => $r['lainnya']['rincian'] ?: null,
+            'rincian_lainnya' => $r['member_app']['rincian'] ?: null,
             'catatan_tutup' => $catatan,
         ]);
 

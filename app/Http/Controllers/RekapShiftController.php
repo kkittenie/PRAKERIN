@@ -70,6 +70,7 @@ class RekapShiftController extends Controller
                 COALESCE(SUM(total_tunai), 0) as tunai,
                 COALESCE(SUM(total_qris), 0) as qris,
                 COALESCE(SUM(total_debit), 0) as debit,
+                COALESCE(SUM(total_lainnya), 0) as member_app,
                 COALESCE(SUM(jumlah_transaksi), 0) as transaksi,
                 COALESCE(SUM(selisih), 0) as selisih
             ')->first();
@@ -138,7 +139,7 @@ class RekapShiftController extends Controller
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->setTitle('Rekap Shift');
 
-            $lastCol = 'U';
+            $lastCol = 'W';
             $uang = '#,##0';
             $waktu = 'dd/mm/yyyy hh:mm';
 
@@ -158,19 +159,20 @@ class RekapShiftController extends Controller
                 'H' => 'Jumlah', 'I' => 'Nominal',
                 'J' => 'Jumlah', 'K' => 'Nominal',
                 'L' => 'Jumlah', 'M' => 'Nominal',
-                'N' => 'Total Transaksi', 'O' => 'Total Penjualan',
-                'P' => 'Uang Seharusnya di Laci', 'Q' => 'Uang Laci Akhir', 'R' => 'Selisih', 'S' => 'Keterangan Selisih',
-                'T' => 'Catatan Mulai', 'U' => 'Catatan Selesai',
+                'N' => 'Jumlah', 'O' => 'Nominal',
+                'P' => 'Total Transaksi', 'Q' => 'Total Penjualan',
+                'R' => 'Uang Seharusnya di Laci', 'S' => 'Uang Laci Akhir', 'T' => 'Selisih', 'U' => 'Keterangan Selisih',
+                'V' => 'Catatan Mulai', 'W' => 'Catatan Selesai',
             ];
             foreach ($kolom as $huruf => $judul) {
                 $sheet->setCellValue("{$huruf}{$headerBawah}", $judul);
             }
             // Kolom tanpa kelompok: gabung baris 4-5 supaya judulnya satu sel
-            foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U'] as $huruf) {
+            foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W'] as $huruf) {
                 $sheet->setCellValue("{$huruf}{$headerAtas}", $kolom[$huruf]);
                 $sheet->mergeCells("{$huruf}{$headerAtas}:{$huruf}{$headerBawah}");
             }
-            foreach (['H' => 'Tunai', 'J' => 'QRIS', 'L' => 'Debit'] as $huruf => $judul) {
+            foreach (['H' => 'Tunai', 'J' => 'QRIS', 'L' => 'Debit', 'N' => 'Member App'] as $huruf => $judul) {
                 $sheet->setCellValue("{$huruf}{$headerAtas}", $judul);
                 $sheet->mergeCells("{$huruf}{$headerAtas}:" . chr(ord($huruf) + 1) . $headerAtas);
             }
@@ -210,24 +212,26 @@ class RekapShiftController extends Controller
                         $sheet->setCellValue("K{$baris}", round($r['qris']['nominal']));
                         $sheet->setCellValue("L{$baris}", $r['debit']['jumlah']);
                         $sheet->setCellValue("M{$baris}", round($r['debit']['nominal']));
-                        $sheet->setCellValue("N{$baris}", $r['jumlah_transaksi']);
-                        $sheet->setCellValue("O{$baris}", round($r['total_penjualan']));
-                        $sheet->setCellValue("P{$baris}", round($r['uang_diharapkan']));
+                        $sheet->setCellValue("N{$baris}", $r['member_app']['jumlah']);
+                        $sheet->setCellValue("O{$baris}", round($r['member_app']['nominal']));
+                        $sheet->setCellValue("P{$baris}", $r['jumlah_transaksi']);
+                        $sheet->setCellValue("Q{$baris}", round($r['total_penjualan']));
+                        $sheet->setCellValue("R{$baris}", round($r['uang_diharapkan']));
                         if ($s->uang_akhir !== null) {
-                            $sheet->setCellValue("Q{$baris}", round($s->uang_akhir));
+                            $sheet->setCellValue("S{$baris}", round($s->uang_akhir));
                         }
                         if ($s->selisih !== null) {
-                            $sheet->setCellValue("R{$baris}", round($s->selisih));
+                            $sheet->setCellValue("T{$baris}", round($s->selisih));
                         }
                         $label = $s->labelSelisih();
-                        $sheet->setCellValue("S{$baris}", $label ?? '-');
+                        $sheet->setCellValue("U{$baris}", $label ?? '-');
                         if ($label === 'Kurang') {
-                            $sheet->getStyle("R{$baris}:S{$baris}")->getFont()->getColor()->setRGB('DC2626');
+                            $sheet->getStyle("T{$baris}:U{$baris}")->getFont()->getColor()->setRGB('DC2626');
                         } elseif ($label === 'Lebih') {
-                            $sheet->getStyle("R{$baris}:S{$baris}")->getFont()->getColor()->setRGB('B45309');
+                            $sheet->getStyle("T{$baris}:U{$baris}")->getFont()->getColor()->setRGB('B45309');
                         }
-                        $sheet->setCellValue("T{$baris}", $s->catatan_mulai);
-                        $sheet->setCellValue("U{$baris}", $s->catatan_tutup);
+                        $sheet->setCellValue("V{$baris}", $s->catatan_mulai);
+                        $sheet->setCellValue("W{$baris}", $s->catatan_tutup);
 
                         $baris++;
                     }
@@ -248,8 +252,8 @@ class RekapShiftController extends Controller
                 $sheet->setCellValue("A{$baris}", 'TOTAL (shift selesai)');
                 $sheet->mergeCells("A{$baris}:F{$baris}");
                 // Uang laci awal/seharusnya/akhir TIDAK dijumlahkan: itu saldo yang terbawa
-                // dari shift ke shift, jadi kolom G, P, Q dikosongkan di baris total.
-                foreach (['H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'R'] as $huruf) {
+                // dari shift ke shift, jadi kolom G, R, S dikosongkan di baris total.
+                foreach (['H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'T'] as $huruf) {
                     $sheet->setCellValue(
                         "{$huruf}{$baris}",
                         "=SUMIF(\$F\${$awalData}:\$F\${$akhirData},\"Selesai\",{$huruf}{$awalData}:{$huruf}{$akhirData})"
@@ -266,16 +270,16 @@ class RekapShiftController extends Controller
             // Format angka & tanggal
             $sheet->getStyle("A{$awalData}:A{$akhirData}")->getNumberFormat()->setFormatCode('dd/mm/yyyy');
             $sheet->getStyle("D{$awalData}:E{$akhirData}")->getNumberFormat()->setFormatCode($waktu);
-            $sheet->getStyle("G{$awalData}:R{$akhirTabel}")->getNumberFormat()->setFormatCode($uang);
+            $sheet->getStyle("G{$awalData}:T{$akhirTabel}")->getNumberFormat()->setFormatCode($uang);
 
             // Perataan: teks rata kiri, angka rata kanan, sisanya di tengah
             $sheet->getStyle("A{$awalData}:{$lastCol}{$akhirTabel}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
             $sheet->getStyle("A{$awalData}:B{$akhirData}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle("D{$awalData}:F{$akhirData}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("S{$awalData}:S{$akhirData}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("G{$awalData}:R{$akhirTabel}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("U{$awalData}:U{$akhirData}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("G{$awalData}:T{$akhirTabel}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet->getStyle("C{$awalData}:C{$akhirData}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
-            $sheet->getStyle("T{$awalData}:U{$akhirData}")->getAlignment()
+            $sheet->getStyle("V{$awalData}:W{$akhirData}")->getAlignment()
                 ->setHorizontal(Alignment::HORIZONTAL_LEFT)->setWrapText(true);
 
             // Border tipis seluruh tabel
@@ -286,7 +290,7 @@ class RekapShiftController extends Controller
             $lebar = [
                 'A' => 12, 'B' => 8, 'C' => 20, 'D' => 17, 'E' => 17, 'F' => 11, 'G' => 15,
                 'H' => 8, 'I' => 14, 'J' => 8, 'K' => 14, 'L' => 8, 'M' => 14,
-                'N' => 12, 'O' => 16, 'P' => 18, 'Q' => 16, 'R' => 13, 'S' => 14, 'T' => 30, 'U' => 30,
+                'N' => 8, 'O' => 14, 'P' => 12, 'Q' => 16, 'R' => 18, 'S' => 16, 'T' => 13, 'U' => 14, 'V' => 30, 'W' => 30,
             ];
             foreach ($lebar as $huruf => $w) {
                 $sheet->getColumnDimension($huruf)->setWidth($w);

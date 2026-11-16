@@ -32,6 +32,8 @@ class ShiftKasirController extends Controller
                 'shift' => $shift,
                 'ringkasan' => $shift?->ringkasan(),
                 'saranModal' => $shift ? null : ShiftKasir::terakhirSelesai(),
+                // Shift milik orang lain yang masih berjalan: selama ada, shift baru tidak bisa dibuka.
+                'shiftLain' => $shift ? null : ShiftKasir::berjalanMilikLain($user->id),
                 'riwayat' => $riwayat,
                 'lewatHari' => $shift && $shift->tanggal->lt(now()->startOfDay()),
             ]);
@@ -171,6 +173,62 @@ class ShiftKasirController extends Controller
             return redirect()->route('shift.index')->with('success', $pesan);
         } catch (\RuntimeException $e) {
             return redirect()->route('shift.index')->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
+    }
+
+    /**
+     * Tutup paksa shift yang sedang berjalan milik orang lain (untuk admin). Dipakai kalau kasirnya
+     * lupa menutup shift atau tidak bisa login. Wajib mengisi alasan; uang laci akhir opsional.
+     */
+    public function tutupPaksa(Request $request, ShiftKasir $shift)
+    {
+        try {
+            $request->merge(['uang_akhir' => $this->bersihkanNominal($request->input('uang_akhir'))]);
+
+            $data = $request->validate([
+                'uang_akhir' => 'nullable|numeric|min:0|max:999999999999',
+                'alasan' => 'required|string|min:3|max:200',
+            ], [
+                'uang_akhir.numeric' => 'Sisa uang di laci harus berupa angka.',
+                'uang_akhir.min' => 'Sisa uang di laci tidak boleh negatif.',
+                'uang_akhir.max' => 'Sisa uang di laci terlalu besar.',
+                'alasan.required' => 'Alasan tutup paksa wajib diisi.',
+                'alasan.min' => 'Alasan tutup paksa terlalu pendek.',
+                'alasan.max' => 'Alasan tutup paksa maksimal 200 karakter.',
+            ]);
+
+            $ditutup = DB::transaction(function () use ($shift, $data) {
+                // Kunci baris shift supaya klik ganda, atau kasirnya menutup di saat yang sama, tidak menutup dua kali.
+                $baris = ShiftKasir::berjalan()->whereKey($shift->id)->lockForUpdate()->first();
+
+                if (! $baris) {
+                    throw new \RuntimeException('Shift ini sudah tidak berjalan (sudah ditutup).');
+                }
+
+                $uangAkhir = ($data['uang_akhir'] ?? '') === '' ? null : (float) $data['uang_akhir'];
+
+                return $baris->tutupPaksa(auth()->user(), $uangAkhir, $data['alasan']);
+            });
+
+            activity()
+                ->causedBy(auth()->user())
+                ->performedOn($ditutup)
+                ->withProperties([
+                    'shift' => $ditutup->labelShift(),
+                    'kasir' => $ditutup->nama_kasir,
+                    'uang_akhir' => $ditutup->uang_akhir,
+                    'uang_diharapkan' => $ditutup->uang_diharapkan,
+                    'selisih' => $ditutup->selisih,
+                    'alasan' => $data['alasan'],
+                ])
+                ->log('menutup paksa shift kasir');
+
+            return redirect()->route('rekap-shift.show', $ditutup)
+                ->with('success', $ditutup->labelShift() . ' milik ' . $ditutup->nama_kasir . ' ditutup paksa.');
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

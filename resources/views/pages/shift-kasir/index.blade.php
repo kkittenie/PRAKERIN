@@ -136,11 +136,18 @@
                                 <td class="px-6 py-3 text-right" x-text="data.debit.jumlah"></td>
                                 <td class="px-6 py-3 text-right font-semibold" x-text="rupiah(data.debit.nominal)"></td>
                             </tr>
-                            <template x-for="b in data.lainnya.rincian" :key="b.metode">
+                            <template x-if="data.member_app.jumlah > 0">
                                 <tr>
-                                    <td class="px-6 py-3" x-text="b.metode"></td>
-                                    <td class="px-6 py-3 text-right" x-text="b.jumlah"></td>
-                                    <td class="px-6 py-3 text-right font-semibold" x-text="rupiah(b.nominal)"></td>
+                                    <td class="px-6 py-3">Member App</td>
+                                    <td class="px-6 py-3 text-right" x-text="data.member_app.jumlah"></td>
+                                    <td class="px-6 py-3 text-right font-semibold" x-text="rupiah(data.member_app.nominal)"></td>
+                                </tr>
+                            </template>
+                            <template x-for="b in (data.member_app.jumlah > 0 ? data.member_app.rincian : [])" :key="b.metode">
+                                <tr class="text-xs text-gray-500 dark:text-gray-400">
+                                    <td class="px-6 py-2 pl-10" x-text="b.metode"></td>
+                                    <td class="px-6 py-2 text-right" x-text="b.jumlah"></td>
+                                    <td class="px-6 py-2 text-right" x-text="rupiah(b.nominal)"></td>
                                 </tr>
                             </template>
                         </tbody>
@@ -153,7 +160,7 @@
                             <tr class="border-t border-gray-200 dark:border-gray-700">
                                 <td class="px-6 py-4 font-bold" colspan="2">
                                     Uang yang seharusnya ada di laci
-                                    <span class="block text-xs font-normal text-gray-400 dark:text-gray-500">Uang laci awal + penjualan tunai. QRIS dan debit tidak masuk laci.</span>
+                                    <span class="block text-xs font-normal text-gray-400 dark:text-gray-500">Uang laci awal + penjualan tunai. QRIS, debit, dan Member App tidak masuk laci.</span>
                                 </td>
                                 <td class="px-6 py-4 text-right text-lg font-extrabold text-amber-700 dark:text-amber-400" x-text="rupiah(data.uang_diharapkan)"></td>
                             </tr>
@@ -176,6 +183,21 @@
                     </div>
                 </div>
 
+                @if ($shiftLain)
+                    {{-- Hanya satu shift boleh berjalan: laci sedang dipegang orang lain --}}
+                    <div class="mt-6 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-800/40 p-4 text-sm text-amber-800 dark:text-amber-300">
+                        <p class="font-semibold">{{ $shiftLain->labelShift() }} milik {{ $shiftLain->nama_kasir }} masih berjalan.</p>
+                        <p class="mt-1 text-xs">
+                            Dimulai {{ $shiftLain->mulai_pada->translatedFormat('l, d M Y H:i') }}.
+                            Hanya satu shift yang boleh berjalan pada satu waktu, jadi shift baru bisa dibuka setelah shift itu ditutup.
+                        </p>
+                        @can('lihat_rekap_shift')
+                            <a href="{{ route('rekap-shift.show', $shiftLain) }}" class="mt-3 inline-block text-xs font-semibold underline underline-offset-2">
+                                Lihat detail shift{{ auth()->user()->can('edit_rekap_shift') ? ' / tutup paksa' : '' }}
+                            </a>
+                        @endcan
+                    </div>
+                @else
                 @can('tambah_shift_kasir')
                     <form method="POST" action="{{ route('shift.mulai') }}" x-data="{ ...inputRupiah(@js(old('modal_awal', ''))), kirim: false }"
                           @submit="if (!mentah) { $event.preventDefault(); return; } kirim = true" class="mt-6 space-y-5">
@@ -234,6 +256,7 @@
                         Akun Anda hanya memiliki hak akses untuk melihat shift kasir (tidak bisa membuka shift).
                     </div>
                 @endcan
+                @endif
             </div>
 
             {{-- Riwayat shift terakhir user ini --}}
