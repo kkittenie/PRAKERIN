@@ -142,11 +142,24 @@
                             class="w-full px-5 py-3 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg text-sm transition shadow-sm">
                         Selesai Shift (tetap login)
                     </button>
+                    <p x-show="!mentah" class="text-center text-xs text-amber-600 dark:text-amber-400">
+                        Isi sisa uang di laci dulu supaya tombol di atas aktif.
+                    </p>
                     <a href="{{ route('shift.index') }}"
                        class="w-full px-5 py-3 text-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 font-semibold rounded-lg text-sm transition border border-gray-200 dark:border-gray-700">
                         Batal, kembali ke shift
                     </a>
                 </div>
+            </form>
+
+            {{-- Jalan keluar: logout tanpa menutup shift (shift tetap berjalan sampai ditutup) --}}
+            <form method="POST" action="{{ route('logout') }}" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 text-center"
+                  onsubmit="return confirm('Keluar tanpa menutup shift? Shift tetap berjalan dan harus ditutup saat login berikutnya.');">
+                @csrf
+                <input type="hidden" name="tanpa_tutup" value="1">
+                <button type="submit" class="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 underline underline-offset-2 transition">
+                    Keluar tanpa menutup shift
+                </button>
             </form>
         </div>
 

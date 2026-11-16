@@ -20,9 +20,27 @@ class AuthenticatedSessionController extends Controller
         try {
             $user = Auth::user();
 
-            if ($user && ShiftKasir::aktifUntuk($user->id)) {
-                return redirect()->route('shift.tutup')
-                    ->with('error', 'Selesaikan shift dulu (isi sisa uang di laci) sebelum keluar.');
+            $shiftBerjalan = $user ? ShiftKasir::aktifUntuk($user->id) : null;
+
+            if ($shiftBerjalan) {
+                // Keluar tanpa menutup shift (pilihan di halaman Selesai Shift): shift tetap berjalan
+                // dan dilanjutkan saat login berikutnya, jadi kasir tidak pernah terjebak.
+                if ($request->boolean('tanpa_tutup')) {
+                    activity()
+                        ->causedBy($user)
+                        ->performedOn($shiftBerjalan)
+                        ->withProperties(['shift' => $shiftBerjalan->labelShift()])
+                        ->log('keluar tanpa menutup shift kasir');
+
+                    return $this->keluarkan($request)
+                        ->with('success', 'Anda sudah keluar. ' . $shiftBerjalan->labelShift() . ' masih berjalan, tutup saat login berikutnya.');
+                }
+
+                // Hanya akun yang berhak menutup shift yang dialihkan ke halaman selesai shift.
+                if ($user->can('tambah_shift_kasir')) {
+                    return redirect()->route('shift.tutup')
+                        ->with('error', 'Selesaikan shift dulu (isi sisa uang di laci) sebelum keluar.');
+                }
             }
 
             return $this->keluarkan($request);
