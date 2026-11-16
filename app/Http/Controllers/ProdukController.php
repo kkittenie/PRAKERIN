@@ -97,6 +97,8 @@ class ProdukController extends Controller
 
     public function toggleStatus(Produk $produk)
     {
+        abort_unless(auth()->user()->can('edit_produk'), 403);
+
         try {
             $baru = !$produk->status_aktif;
             $produk->update(['status_aktif' => $baru]);
@@ -109,6 +111,8 @@ class ProdukController extends Controller
 
     public function create()
     {
+        abort_unless(auth()->user()->can('tambah_produk'), 403);
+
         try {
             $kategori = KategoriProduk::orderBy('nama_kategori')->get();
             $detailBaris = $this->barisDariOld(old('detail_baris', []));
@@ -122,6 +126,8 @@ class ProdukController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless(auth()->user()->can('tambah_produk'), 403);
+
         try {
             $validated = $this->validasiProduk($request);
 
@@ -179,6 +185,8 @@ class ProdukController extends Controller
 
     public function show(Produk $produk)
     {
+        abort_unless(auth()->user()->can('lihat_produk'), 403);
+
         try {
             $produk->load(['kategori', 'detailProduks', 'varianProduks']);
 
@@ -190,6 +198,8 @@ class ProdukController extends Controller
 
     public function edit(Produk $produk)
     {
+        abort_unless(auth()->user()->can('edit_produk'), 403);
+
         try {
             $kategori = KategoriProduk::orderBy('nama_kategori')->get();
             $produk->load(['detailProduks', 'varianProduks']);
@@ -233,6 +243,8 @@ class ProdukController extends Controller
 
     public function update(Request $request, Produk $produk)
     {
+        abort_unless(auth()->user()->can('edit_produk'), 403);
+
         try {
             $validated = $this->validasiProduk($request);
 
@@ -296,6 +308,8 @@ class ProdukController extends Controller
 
     public function destroy(Produk $produk)
     {
+        abort_unless(auth()->user()->can('hapus_produk'), 403);
+
         try {
             // Produk yang sudah pernah dicatat di Riwayat Produksi gak boleh
             // dihapus (FK produksis.produk_id di-restrict, sengaja biar

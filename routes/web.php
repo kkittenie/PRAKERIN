@@ -202,10 +202,27 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
         Route::put('/konten-statis/{slug}', [KontenStatisController::class, 'update'])->name('konten-statis.update');
     });
 
-    Route::patch('/produk/{produk}/toggle-status', [ProdukController::class, 'toggleStatus'])->name('produk.toggle-status');
+    // Produk
+    Route::middleware('permission:lihat_produk')->group(function () {
+        Route::get('/produk', [ProdukController::class, 'index'])->name('produk.index');
+        Route::get('/produk/{produk}', [ProdukController::class, 'show'])->name('produk.show');
+    });
 
-    Route::resource('produk', ProdukController::class)
-        ->middleware('permission:lihat_produk|tambah_produk|edit_produk|hapus_produk');
+    Route::middleware('permission:tambah_produk')->group(function () {
+        Route::get('/produk/create', [ProdukController::class, 'create'])->name('produk.create');
+        Route::post('/produk', [ProdukController::class, 'store'])->name('produk.store');
+    });
+
+    Route::middleware('permission:edit_produk')->group(function () {
+        Route::get('/produk/{produk}/edit', [ProdukController::class, 'edit'])->name('produk.edit');
+        Route::put('/produk/{produk}', [ProdukController::class, 'update'])->name('produk.update');
+        Route::patch('/produk/{produk}', [ProdukController::class, 'update']);
+        Route::patch('/produk/{produk}/toggle-status', [ProdukController::class, 'toggleStatus'])->name('produk.toggle-status');
+    });
+
+    Route::middleware('permission:hapus_produk')->group(function () {
+        Route::delete('/produk/{produk}', [ProdukController::class, 'destroy'])->name('produk.destroy');
+    });
 
     Route::resource('bahan-baku', BahanBakuController::class)
         ->middleware('permission:lihat_stok|tambah_stok|edit_stok|hapus_stok');

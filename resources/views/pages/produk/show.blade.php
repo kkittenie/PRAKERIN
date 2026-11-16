@@ -223,10 +223,12 @@
                     Kembali
                 </a>
 
+                @can('edit_produk')
                 <a href="{{ route('produk.edit', $produk->id) }}"
                     class="rounded-lg bg-brand-500 px-5 py-2 text-white hover:bg-brand-600">
                     Edit Produk
                 </a>
+                @endcan
             </div>
 
         </x-common.component-card>
