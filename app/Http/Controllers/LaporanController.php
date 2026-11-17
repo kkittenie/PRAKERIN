@@ -166,13 +166,40 @@ class LaporanController extends Controller
     {
         if ($request->ajax()) {
             try {
-                // Produk terlaris (top 10 sepanjang waktu) dengan laba bersih.
-                //
+                // Produk terlaris (top 10) dengan laba bersih.
+                // Mendukung filter periode/tipe: 'hari', 'bulan', 'tahun' (default: 'hari').
+                $tipeTerlaris = $request->input('tipe_terlaris', 'hari');
+
                 // Baris isi bundling / promo event dicatat dengan subtotal 0 (uangnya ada di baris paket),
                 // jadi kalau dihitung sebagai produk sendiri labanya jadi minus dan jumlah terjualnya
                 // menggelembung. Karena itu: baris isi TIDAK tampil sendiri, tapi modalnya digabung ke
                 // baris paketnya. Total modal tetap sama dengan kartu ringkasan.
                 $barisIsiPaket = '(dt.produk_id IS NOT NULL AND (dt.bundling_id IS NOT NULL OR dt.promo_event_id IS NOT NULL))';
+
+                // Helper closure untuk filter waktu pada subquery
+                $terapkanFilterWaktu = function ($query) use ($request, $tipeTerlaris) {
+                    if ($tipeTerlaris === 'bulan') {
+                        $bulanInput = (string) $request->input('bulan_terlaris', date('Y-m'));
+                        try {
+                            $c = Carbon::createFromFormat('Y-m', $bulanInput);
+                        } catch (\Throwable $e) {
+                            $c = Carbon::today();
+                        }
+                        $query->whereMonth('t.created_at', $c->month)
+                              ->whereYear('t.created_at', $c->year);
+                    } elseif ($tipeTerlaris === 'tahun') {
+                        $tahunInput = (int) $request->input('tahun_terlaris', date('Y'));
+                        $query->whereYear('t.created_at', $tahunInput);
+                    } else { // default 'hari'
+                        $tanggalInput = (string) $request->input('tanggal_terlaris', $request->input('tanggal', date('Y-m-d')));
+                        try {
+                            $c = Carbon::parse($tanggalInput);
+                        } catch (\Throwable $e) {
+                            $c = Carbon::today();
+                        }
+                        $query->whereDate('t.created_at', $c->toDateString());
+                    }
+                };
 
                 // 1) Baris yang tampil: produk biasa + baris paket (bukan isi paket)
                 $barisTampil = DB::table('detail_transaksi as dt')
@@ -192,6 +219,7 @@ class LaporanController extends Controller
                     ->selectRaw('dt.jumlah as jumlah')
                     ->selectRaw('dt.subtotal as pendapatan')
                     ->selectRaw('COALESCE(vp.harga_modal, dp.harga_modal, 0) * dt.jumlah as modal');
+                $terapkanFilterWaktu($barisTampil);
 
                 // 2) Modal isi paket: dilabeli dengan nama baris paket di transaksi yang sama
                 $modalIsiPaket = DB::table('detail_transaksi as dt')
@@ -219,6 +247,7 @@ class LaporanController extends Controller
                     ->selectRaw('0 as jumlah')
                     ->selectRaw('0 as pendapatan')
                     ->selectRaw('COALESCE(vp.harga_modal, dp.harga_modal, 0) * dt.jumlah as modal');
+                $terapkanFilterWaktu($modalIsiPaket);
 
                 $produkTerlaris = DB::query()
                     ->fromSub($barisTampil->unionAll($modalIsiPaket), 'x')
@@ -230,6 +259,7 @@ class LaporanController extends Controller
                         DB::raw('SUM(pendapatan) - SUM(modal) as laba_bersih')
                     )
                     ->groupBy('label')
+                    ->havingRaw('SUM(jumlah) > 0')
                     ->orderByDesc('total_terjual')
                     ->limit(10)
                     ->get();
@@ -269,20 +299,30 @@ class LaporanController extends Controller
             }
             $tanggalStat = $periode === 'hari' ? $tanggalDipilih : $hariIni;
 
+            // Filter "Bulan": bulan yang dipilih (default bulan ini). Kartu kedua ikut bulan ini jika mode 'bulan'.
+            $bulanInput = (string) $request->get('bulan', $hariIni->format('Y-m'));
+            try {
+                $carbonBulan = Carbon::createFromFormat('Y-m', $bulanInput)->startOfMonth();
+            } catch (\Throwable $e) {
+                $carbonBulan = $hariIni->copy()->startOfMonth();
+            }
+            $bulanStat = $periode === 'bulan' ? $carbonBulan : $hariIni;
+
             $statHariIni = $this->hitungLabaBersih(function ($query, $alias = null) use ($tanggalStat) {
                 $col = $alias ? "{$alias}.created_at" : 'created_at';
                 $query->whereDate($col, $tanggalStat);
             });
 
-            $statBulanIni = $this->hitungLabaBersih(function ($query, $alias = null) use ($hariIni) {
+            $statBulanIni = $this->hitungLabaBersih(function ($query, $alias = null) use ($bulanStat) {
                 $col = $alias ? "{$alias}.created_at" : 'created_at';
-                $query->whereMonth($col, $hariIni->month)
-                      ->whereYear($col, $hariIni->year);
+                $query->whereMonth($col, $bulanStat->month)
+                      ->whereYear($col, $bulanStat->year);
             });
 
-            $statTahunIni = $this->hitungLabaBersih(function ($query, $alias = null) use ($hariIni) {
+            $tahunStat = $periode === 'tahun' ? $tahun : $hariIni->year;
+            $statTahunIni = $this->hitungLabaBersih(function ($query, $alias = null) use ($tahunStat) {
                 $col = $alias ? "{$alias}.created_at" : 'created_at';
-                $query->whereYear($col, $hariIni->year);
+                $query->whereYear($col, $tahunStat);
             });
 
             // Data grafik berdasarkan periode
@@ -345,6 +385,20 @@ class LaporanController extends Controller
                     $dataGrafikLaba[] = $stat['laba'];
                 }
             } elseif ($periode === 'bulan') {
+                // Hari-hari dalam bulan yang dipilih (tanggal 1 s/d akhir bulan)
+                $jumlahHari = $carbonBulan->daysInMonth;
+                for ($hari = 1; $hari <= $jumlahHari; $hari++) {
+                    $tanggalHari = (clone $carbonBulan)->day($hari);
+                    $labelGrafik[] = sprintf('%02d', $hari);
+
+                    $stat = $this->hitungLabaBersih(function ($query, $alias = null) use ($tanggalHari) {
+                        $col = $alias ? "{$alias}.created_at" : 'created_at';
+                        $query->whereDate($col, $tanggalHari->toDateString());
+                    });
+                    $dataGrafikPendapatan[] = $stat['pendapatan'];
+                    $dataGrafikLaba[] = $stat['laba'];
+                }
+            } elseif ($periode === 'tahun') {
                 // 12 bulan di tahun yang dipilih
                 $namaBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
                 for ($i = 1; $i <= 12; $i++) {
@@ -355,19 +409,6 @@ class LaporanController extends Controller
                         $col = $alias ? "{$alias}.created_at" : 'created_at';
                         $query->whereMonth($col, $bulan)
                               ->whereYear($col, $tahun);
-                    });
-                    $dataGrafikPendapatan[] = $stat['pendapatan'];
-                    $dataGrafikLaba[] = $stat['laba'];
-                }
-            } elseif ($periode === 'tahun') {
-                // 5 tahun terakhir sampai tahun terpilih
-                for ($i = 4; $i >= 0; $i--) {
-                    $thn = (int) $tahun - $i;
-                    $labelGrafik[] = (string) $thn;
-
-                    $stat = $this->hitungLabaBersih(function ($query, $alias = null) use ($thn) {
-                        $col = $alias ? "{$alias}.created_at" : 'created_at';
-                        $query->whereYear($col, $thn);
                     });
                     $dataGrafikPendapatan[] = $stat['pendapatan'];
                     $dataGrafikLaba[] = $stat['laba'];
@@ -393,6 +434,8 @@ class LaporanController extends Controller
                 'tahun'          => $tahun,
                 'tanggal'        => $tanggalDipilih->toDateString(),
                 'labelTanggal'   => $tanggalDipilih->translatedFormat('d M Y'),
+                'bulan'          => $carbonBulan->format('Y-m'),
+                'labelBulan'     => $carbonBulan->translatedFormat('F Y'),
                 // Stat cards — laba bersih
                 'labaHariIni'              => $statHariIni['laba'],
                 'pendapatanHariIni'        => $statHariIni['pendapatan'],
