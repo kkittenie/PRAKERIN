@@ -43,6 +43,10 @@ class ShiftKasir extends Model
         'jumlah_lainnya',
         'jumlah_transaksi',
         'rincian_lainnya',
+        'input_tunai',
+        'input_qris',
+        'input_debit',
+        'input_member_app',
         'catatan_mulai',
         'catatan_tutup',
     ];
@@ -59,6 +63,10 @@ class ShiftKasir extends Model
         'total_qris' => 'float',
         'total_debit' => 'float',
         'total_lainnya' => 'float',
+        'input_tunai' => 'float',
+        'input_qris' => 'float',
+        'input_debit' => 'float',
+        'input_member_app' => 'float',
         'rincian_lainnya' => 'array',
     ];
 
@@ -321,10 +329,13 @@ class ShiftKasir extends Model
 
     /**
      * Tutup shift: simpan uang laci akhir, hitung selisih dan bekukan ringkasan pembayaran.
+     *
+     * $inputKasir = total yang diinput kasir sendiri ['tunai', 'qris', 'debit', 'member_app'],
+     * disimpan sebagai arsip. Rekap tetap memakai total sebenarnya dari sistem.
      */
-    public function tutup(float $uangAkhir, ?string $catatan = null): self
+    public function tutup(float $uangAkhir, ?string $catatan = null, ?array $inputKasir = null): self
     {
-        return $this->selesaikan($uangAkhir, $catatan);
+        return $this->selesaikan($uangAkhir, $catatan, $inputKasir);
     }
 
     /**
@@ -339,7 +350,7 @@ class ShiftKasir extends Model
         return $this->selesaikan($uangAkhir, $catatan);
     }
 
-    private function selesaikan(?float $uangAkhir, ?string $catatan): self
+    private function selesaikan(?float $uangAkhir, ?string $catatan, ?array $inputKasir = null): self
     {
         $r = $this->hitungRingkasan();
 
@@ -359,6 +370,10 @@ class ShiftKasir extends Model
             'jumlah_lainnya' => $r['member_app']['jumlah'],
             'jumlah_transaksi' => $r['jumlah_transaksi'],
             'rincian_lainnya' => $r['member_app']['rincian'] ?: null,
+            'input_tunai' => $inputKasir['tunai'] ?? null,
+            'input_qris' => $inputKasir['qris'] ?? null,
+            'input_debit' => $inputKasir['debit'] ?? null,
+            'input_member_app' => $inputKasir['member_app'] ?? null,
             'catatan_tutup' => $catatan,
         ]);
 

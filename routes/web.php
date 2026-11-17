@@ -85,7 +85,6 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
     // Shift Kasir (uang laci awal & akhir, ringkasan pembayaran shift berjalan)
     Route::middleware('permission:lihat_shift_kasir|tambah_shift_kasir')->group(function () {
         Route::get('/shift-kasir', [ShiftKasirController::class, 'index'])->name('shift.index');
-        Route::get('/shift-kasir/ringkasan', [ShiftKasirController::class, 'ringkasan'])->name('shift.ringkasan');
     });
     Route::middleware('permission:tambah_shift_kasir')->group(function () {
         Route::post('/shift-kasir/mulai', [ShiftKasirController::class, 'mulai'])->name('shift.mulai');

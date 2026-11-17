@@ -13,7 +13,8 @@ class ShiftKasirController extends Controller
     /**
      * Halaman Shift Kasir.
      *  - Belum ada shift berjalan : form buka shift (input uang laci awal)
-     *  - Shift sedang berjalan    : ringkasan pembayaran (laci, tunai, QRIS, debit) yang update otomatis
+     *  - Shift sedang berjalan    : status shift + uang laci awal (laci akhir '?' sampai shift diselesaikan).
+     *                               Total penjualan sengaja tidak ditampilkan ke kasir.
      */
     public function index()
     {
@@ -30,7 +31,6 @@ class ShiftKasirController extends Controller
             return view('pages.shift-kasir.index', [
                 'title' => 'Shift Kasir',
                 'shift' => $shift,
-                'ringkasan' => $shift?->ringkasan(),
                 'saranModal' => $shift ? null : ShiftKasir::terakhirSelesai(),
                 // Shift milik orang lain yang masih berjalan: selama ada, shift baru tidak bisa dibuka.
                 'shiftLain' => $shift ? null : ShiftKasir::berjalanMilikLain($user->id),
@@ -39,26 +39,6 @@ class ShiftKasirController extends Controller
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
-        }
-    }
-
-    /** JSON ringkasan shift berjalan (dipanggil berkala oleh halaman Shift Kasir). */
-    public function ringkasan()
-    {
-        try {
-            $shift = ShiftKasir::aktifUntuk(auth()->id());
-
-            if (! $shift) {
-                return response()->json(['status' => 'tidak_aktif'], 200);
-            }
-
-            return response()->json([
-                'status' => 'success',
-                'ringkasan' => $shift->ringkasan(),
-                'diperbarui' => now()->format('H:i:s'),
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json(['status' => 'error'], 500);
         }
     }
 
@@ -100,7 +80,7 @@ class ShiftKasirController extends Controller
         }
     }
 
-    /** Halaman selesai shift: input uang laci akhir. */
+    /** Halaman selesai shift: input uang laci akhir + total penjualan hitungan kasir sendiri. */
     public function formTutup()
     {
         try {
@@ -113,7 +93,6 @@ class ShiftKasirController extends Controller
             return view('pages.shift-kasir.tutup', [
                 'title' => 'Selesai Shift',
                 'shift' => $shift,
-                'ringkasan' => $shift->ringkasan(),
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -124,20 +103,39 @@ class ShiftKasirController extends Controller
     public function tutup(Request $request)
     {
         try {
-            $request->merge(['uang_akhir' => $this->bersihkanNominal($request->input('uang_akhir'))]);
+            $kolomNominal = ['uang_akhir', 'total_tunai', 'total_qris', 'total_debit', 'total_member_app'];
+            $request->merge(collect($kolomNominal)
+                ->mapWithKeys(fn ($k) => [$k => $this->bersihkanNominal($request->input($k))])
+                ->all());
 
-            $data = $request->validate([
-                'uang_akhir' => 'required|numeric|min:0|max:999999999999',
-                'catatan' => 'nullable|string|max:255',
-            ], [
-                'uang_akhir.required' => 'Sisa uang di laci wajib diisi.',
-                'uang_akhir.numeric' => 'Sisa uang di laci harus berupa angka.',
-                'uang_akhir.min' => 'Sisa uang di laci tidak boleh negatif.',
-                'uang_akhir.max' => 'Sisa uang di laci terlalu besar.',
-                'catatan.max' => 'Catatan maksimal 255 karakter.',
-            ]);
+            $aturan = ['catatan' => 'nullable|string|max:255'];
+            $pesanValidasi = ['catatan.max' => 'Catatan maksimal 255 karakter.'];
+            $namaKolom = [
+                'uang_akhir' => 'Sisa uang di laci',
+                'total_tunai' => 'Total tunai',
+                'total_qris' => 'Total QRIS',
+                'total_debit' => 'Total debit',
+                'total_member_app' => 'Total Member App',
+            ];
 
-            $shift = DB::transaction(function () use ($data) {
+            foreach ($namaKolom as $k => $label) {
+                $aturan[$k] = 'required|numeric|min:0|max:999999999999';
+                $pesanValidasi["{$k}.required"] = "{$label} wajib diisi (isi 0 kalau tidak ada).";
+                $pesanValidasi["{$k}.numeric"] = "{$label} harus berupa angka.";
+                $pesanValidasi["{$k}.min"] = "{$label} tidak boleh negatif.";
+                $pesanValidasi["{$k}.max"] = "{$label} terlalu besar.";
+            }
+
+            $data = $request->validate($aturan, $pesanValidasi);
+
+            $inputKasir = [
+                'tunai' => (float) $data['total_tunai'],
+                'qris' => (float) $data['total_qris'],
+                'debit' => (float) $data['total_debit'],
+                'member_app' => (float) $data['total_member_app'],
+            ];
+
+            $shift = DB::transaction(function () use ($data, $inputKasir) {
                 // Kunci baris shift supaya klik ganda tidak menutup dua kali.
                 $shift = ShiftKasir::berjalan()
                     ->where('user_id', auth()->id())
@@ -149,7 +147,7 @@ class ShiftKasirController extends Controller
                     throw new \RuntimeException('Tidak ada shift yang sedang berjalan.');
                 }
 
-                return $shift->tutup((float) $data['uang_akhir'], $data['catatan'] ?? null);
+                return $shift->tutup((float) $data['uang_akhir'], $data['catatan'] ?? null, $inputKasir);
             });
 
             activity()
@@ -161,10 +159,12 @@ class ShiftKasirController extends Controller
                     'uang_akhir' => $shift->uang_akhir,
                     'uang_diharapkan' => $shift->uang_diharapkan,
                     'selisih' => $shift->selisih,
+                    'input_kasir' => $inputKasir,
                 ])
                 ->log('menutup shift kasir');
 
-            $pesan = $shift->labelShift() . ' selesai. Selisih laci: ' . $this->formatSelisih($shift->selisih) . '.';
+            // Selisih sengaja tidak ditampilkan ke kasir (hanya terlihat di Rekap Shift).
+            $pesan = $shift->labelShift() . ' selesai. Terima kasih.';
 
             if ($request->boolean('keluar')) {
                 return app(AuthenticatedSessionController::class)->keluarkan($request)->with('success', $pesan);
@@ -238,16 +238,5 @@ class ShiftKasirController extends Controller
     private function bersihkanNominal($nilai): string
     {
         return preg_replace('/[^\d]/', '', (string) $nilai) ?? '';
-    }
-
-    private function formatSelisih(?float $selisih): string
-    {
-        $selisih = (float) $selisih;
-
-        if (abs($selisih) < 0.5) {
-            return 'sesuai (Rp 0)';
-        }
-
-        return ($selisih > 0 ? 'lebih Rp ' : 'kurang Rp ') . number_format(abs($selisih), 0, ',', '.');
     }
 }

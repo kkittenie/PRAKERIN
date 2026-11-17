@@ -9,7 +9,7 @@
 
     @if ($shift)
         {{-- ======================= SHIFT SEDANG BERJALAN ======================= --}}
-        <div x-data="shiftBerjalan(@js($ringkasan), @js(route('shift.ringkasan')), @js($shift->mulai_pada->toIso8601String()))"
+        <div x-data="shiftBerjalan(@js($shift->mulai_pada->toIso8601String()))"
              x-init="mulai()" class="space-y-6">
 
             @if ($lewatHari)
@@ -69,103 +69,17 @@
                 </div>
             </div>
 
-            {{-- Kartu nominal --}}
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {{-- Kartu uang laci: laci akhir baru diketahui saat shift diselesaikan --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-5">
                     <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Uang Laci Awal</p>
-                    <p class="mt-2 text-2xl font-bold text-gray-800 dark:text-white" x-text="rupiah(data.modal_awal)"></p>
+                    <p class="mt-2 text-2xl font-bold text-gray-800 dark:text-white">{{ $rp($shift->modal_awal) }}</p>
                     <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Dihitung saat shift dibuka</p>
                 </div>
                 <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-5">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-green-600 dark:text-green-400">Tunai</p>
-                    <p class="mt-2 text-2xl font-bold text-gray-800 dark:text-white" x-text="rupiah(data.tunai.nominal)"></p>
-                    <p class="mt-1 text-xs text-gray-400 dark:text-gray-500"><span x-text="data.tunai.jumlah"></span> transaksi</p>
-                </div>
-                <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-5">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">QRIS</p>
-                    <p class="mt-2 text-2xl font-bold text-gray-800 dark:text-white" x-text="rupiah(data.qris.nominal)"></p>
-                    <p class="mt-1 text-xs text-gray-400 dark:text-gray-500"><span x-text="data.qris.jumlah"></span> transaksi</p>
-                </div>
-                <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-5">
-                    <p class="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">Debit</p>
-                    <p class="mt-2 text-2xl font-bold text-gray-800 dark:text-white" x-text="rupiah(data.debit.nominal)"></p>
-                    <p class="mt-1 text-xs text-gray-400 dark:text-gray-500"><span x-text="data.debit.jumlah"></span> transaksi</p>
-                </div>
-            </div>
-
-            {{-- Rincian --}}
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between gap-3 flex-wrap">
-                    <h3 class="text-base font-bold text-gray-800 dark:text-white">Rincian Pembayaran Shift Ini</h3>
-                    <div class="flex items-center gap-3">
-                        <p class="text-xs text-gray-400 dark:text-gray-500">Update otomatis · terakhir <span x-text="diperbarui"></span></p>
-                        <button type="button" @click="perbarui()" :disabled="memuat"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-60 text-gray-600 dark:text-gray-300 font-semibold rounded-lg text-xs transition border border-gray-200 dark:border-gray-700">
-                            <svg class="w-3.5 h-3.5" :class="memuat && 'animate-spin'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                            Perbarui
-                        </button>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="text-left text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/50">
-                                <th class="px-6 py-3 font-semibold">Keterangan</th>
-                                <th class="px-6 py-3 font-semibold text-right">Jumlah Transaksi</th>
-                                <th class="px-6 py-3 font-semibold text-right">Nominal</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-gray-700 dark:text-gray-300">
-                            <tr>
-                                <td class="px-6 py-3">Uang laci awal</td>
-                                <td class="px-6 py-3 text-right text-gray-400">-</td>
-                                <td class="px-6 py-3 text-right font-semibold" x-text="rupiah(data.modal_awal)"></td>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-3">Tunai</td>
-                                <td class="px-6 py-3 text-right" x-text="data.tunai.jumlah"></td>
-                                <td class="px-6 py-3 text-right font-semibold" x-text="rupiah(data.tunai.nominal)"></td>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-3">QRIS</td>
-                                <td class="px-6 py-3 text-right" x-text="data.qris.jumlah"></td>
-                                <td class="px-6 py-3 text-right font-semibold" x-text="rupiah(data.qris.nominal)"></td>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-3">Debit</td>
-                                <td class="px-6 py-3 text-right" x-text="data.debit.jumlah"></td>
-                                <td class="px-6 py-3 text-right font-semibold" x-text="rupiah(data.debit.nominal)"></td>
-                            </tr>
-                            <template x-if="data.member_app.jumlah > 0">
-                                <tr>
-                                    <td class="px-6 py-3">Member App</td>
-                                    <td class="px-6 py-3 text-right" x-text="data.member_app.jumlah"></td>
-                                    <td class="px-6 py-3 text-right font-semibold" x-text="rupiah(data.member_app.nominal)"></td>
-                                </tr>
-                            </template>
-                            <template x-for="b in (data.member_app.jumlah > 0 ? data.member_app.rincian : [])" :key="b.metode">
-                                <tr class="text-xs text-gray-500 dark:text-gray-400">
-                                    <td class="px-6 py-2 pl-10" x-text="b.metode"></td>
-                                    <td class="px-6 py-2 text-right" x-text="b.jumlah"></td>
-                                    <td class="px-6 py-2 text-right" x-text="rupiah(b.nominal)"></td>
-                                </tr>
-                            </template>
-                        </tbody>
-                        <tfoot class="bg-gray-50 dark:bg-gray-800/50 text-gray-800 dark:text-white">
-                            <tr>
-                                <td class="px-6 py-3 font-semibold">Total penjualan</td>
-                                <td class="px-6 py-3 text-right font-semibold" x-text="data.jumlah_transaksi"></td>
-                                <td class="px-6 py-3 text-right font-bold" x-text="rupiah(data.total_penjualan)"></td>
-                            </tr>
-                            <tr class="border-t border-gray-200 dark:border-gray-700">
-                                <td class="px-6 py-4 font-bold" colspan="2">
-                                    Uang yang seharusnya ada di laci
-                                    <span class="block text-xs font-normal text-gray-400 dark:text-gray-500">Uang laci awal + penjualan tunai. QRIS, debit, dan Member App tidak masuk laci.</span>
-                                </td>
-                                <td class="px-6 py-4 text-right text-lg font-extrabold text-amber-700 dark:text-amber-400" x-text="rupiah(data.uang_diharapkan)"></td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Uang Laci Akhir</p>
+                    <p class="mt-2 text-2xl font-bold text-gray-800 dark:text-white">?</p>
+                    <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Diisi saat shift diselesaikan</p>
                 </div>
             </div>
         </div>
@@ -273,7 +187,6 @@
                                     <th class="px-6 py-3 font-semibold">Shift</th>
                                     <th class="px-6 py-3 font-semibold text-right">Laci Awal</th>
                                     <th class="px-6 py-3 font-semibold text-right">Laci Akhir</th>
-                                    <th class="px-6 py-3 font-semibold text-right">Selisih</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 dark:divide-gray-800 text-gray-700 dark:text-gray-300">
@@ -282,8 +195,7 @@
                                         <td class="px-6 py-3">{{ $r->tanggal->translatedFormat('d M Y') }}</td>
                                         <td class="px-6 py-3">{{ $r->labelShift() }} <span class="text-xs text-gray-400">({{ $r->mulai_pada->format('H:i') }}–{{ optional($r->selesai_pada)->format('H:i') }})</span></td>
                                         <td class="px-6 py-3 text-right">{{ $rp($r->modal_awal) }}</td>
-                                        <td class="px-6 py-3 text-right">{{ $rp($r->uang_akhir) }}</td>
-                                        <td class="px-6 py-3 text-right">@include('pages.shift-kasir.partials.badge-selisih', ['shift' => $r])</td>
+                                        <td class="px-6 py-3 text-right">{{ $r->uang_akhir !== null ? $rp($r->uang_akhir) : '-' }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -325,45 +237,19 @@
             };
         }
 
-        // Ringkasan shift berjalan: diperbarui otomatis dari server.
-        function shiftBerjalan(awal, urlRingkasan, mulaiIso) {
+        // Shift berjalan: hanya menampilkan durasi (total penjualan tidak ditampilkan ke kasir).
+        function shiftBerjalan(mulaiIso) {
             return {
-                data: awal,
                 durasi: '-',
-                diperbarui: new Date().toLocaleTimeString('id-ID'),
-                memuat: false,
-                rupiah(n) {
-                    return 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
-                },
                 hitungDurasi() {
                     const selisih = Math.max(0, Math.floor((Date.now() - new Date(mulaiIso).getTime()) / 60000));
                     const jam = Math.floor(selisih / 60);
                     const menit = selisih % 60;
                     this.durasi = jam > 0 ? `${jam} jam ${menit} menit` : `${menit} menit`;
                 },
-                async perbarui() {
-                    if (this.memuat) return;
-                    this.memuat = true;
-                    try {
-                        const res = await fetch(urlRingkasan, { headers: { 'Accept': 'application/json' } });
-                        if (!res.ok) return;
-                        const json = await res.json();
-                        if (json.status === 'success') {
-                            this.data = json.ringkasan;
-                            this.diperbarui = json.diperbarui;
-                        } else if (json.status === 'tidak_aktif') {
-                            window.location.reload();
-                        }
-                    } catch (e) { /* abaikan, coba lagi di putaran berikutnya */ }
-                    finally { this.memuat = false; }
-                },
                 mulai() {
                     this.hitungDurasi();
                     setInterval(() => this.hitungDurasi(), 30000);
-                    // Cek ulang tiap 5 detik, dan langsung saat tab kembali dibuka / jendela difokuskan
-                    setInterval(() => { if (!document.hidden) this.perbarui(); }, 5000);
-                    document.addEventListener('visibilitychange', () => { if (!document.hidden) this.perbarui(); });
-                    window.addEventListener('focus', () => this.perbarui());
                 },
             };
         }

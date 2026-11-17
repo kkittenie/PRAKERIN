@@ -16,14 +16,15 @@
 
         {{-- Filter --}}
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-6">
-            <div class="flex flex-col xl:flex-row xl:items-end gap-4">
-                <div class="flex-1">
+            <div class="flex flex-col gap-5">
+                {{-- Judul di baris sendiri (selebar kartu), filter di bawahnya melebar ke kanan --}}
+                <div>
                     <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-1">Rekap Shift Kasir</h2>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Uang laci awal &amp; akhir, serta total pembayaran tunai, QRIS, dan debit di setiap shift.</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Uang laci awal &amp; akhir, serta total pembayaran tunai, QRIS, debit, dan Member App di setiap shift.</p>
                 </div>
                 <form method="GET" action="{{ route('rekap-shift.index') }}"
                       x-data="{ mulai: @js($tanggalMulai), selesai: @js($tanggalSelesai) }"
-                      class="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full xl:w-auto flex-wrap">
+                      class="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full flex-wrap">
                     <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Dari Tanggal</label>
                         <input type="date" name="tanggal_mulai" x-model="mulai" @change="if (selesai < mulai) selesai = mulai"
@@ -102,7 +103,7 @@
                             <option value="selesai" {{ request('status') === 'selesai' ? 'selected' : '' }}>Selesai</option>
                         </select>
                     </div>
-                    <div class="flex gap-2 justify-end mt-2 md:mt-0">
+                    <div class="flex gap-2 justify-end mt-2 md:mt-0 md:ml-auto">
                         <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">Filter</button>
                         <a href="{{ route('rekap-shift.index') }}" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-600 dark:text-gray-300 font-semibold rounded-lg text-sm transition border border-gray-200 dark:border-gray-700">Reset</a>
                         <a href="{{ route('rekap-shift.export', $queryExport) }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg text-sm transition shadow-sm">Ekspor Excel</a>
