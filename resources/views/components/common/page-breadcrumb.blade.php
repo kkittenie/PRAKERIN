@@ -2,6 +2,7 @@
     'pageTitle' => 'Page',
     'parentTitle' => null,
     'parentUrl' => null,
+    'homeUrl' => null,
 ])
 
 <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -13,7 +14,7 @@
             <li>
                 <a
                     class="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-brand-500 transition"
-                    href="{{ url('/') }}"
+                    href="{{ $homeUrl ?? route('dashboard') }}"
                 >
                     Home
                     <svg
