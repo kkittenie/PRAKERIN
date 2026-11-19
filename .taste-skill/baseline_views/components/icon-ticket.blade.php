@@ -1,0 +1,2 @@
+@props(['class' => 'h-5 w-5'])
+<svg viewBox="0 0 24 24" fill="none" class="{{ $class }}"><path d="M4 9.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v.75a1.5 1.5 0 0 0 0 3v.75a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-.75a1.5 1.5 0 0 0 0-3V9.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 8v9" stroke="currentColor" stroke-width="1.7" stroke-dasharray="1.6 2" stroke-linecap="round"/></svg>

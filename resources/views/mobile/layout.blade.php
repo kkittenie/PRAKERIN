@@ -182,11 +182,13 @@
                 max-height: 85vh !important;
                 width: calc(100% - 2rem) !important;
                 height: fit-content !important;
-                border-radius: 2rem !important;
+                border-radius: 1rem !important;
                 transform: scale(0.94) !important;
                 opacity: 0;
                 transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+                box-shadow: 0 4px 16px -2px rgba(35, 24, 21, 0.12), 0 2px 4px -1px rgba(35, 24, 21, 0.06) !important;
+                border: 1px solid rgba(74, 46, 39, 0.12) !important;
+                background-color: var(--color-surface-card, #fefdf6) !important;
                 overflow: hidden !important;
             }
             dialog.sheet[data-open="true"] {
@@ -207,9 +209,9 @@
         }
     </style>
 </head>
-<body class="h-full overflow-x-hidden bg-gray-50 font-outfit text-gray-800 antialiased flex flex-col">
+<body class="h-full overflow-x-hidden bg-gray-50 font-outfit text-gray-800 antialiased flex flex-col lg:bg-surface-base lg:text-text-primary lg:font-ui">
 
-    <div id="app-card" class="mx-auto flex flex-1 w-full max-w-none 2xl:max-w-6xl flex-col bg-white sm:border-x sm:border-gray-200/80 lg:max-w-none lg:border-x-0">
+    <div id="app-card" class="mx-auto flex flex-1 w-full max-w-none 2xl:max-w-6xl flex-col bg-white sm:border-x sm:border-gray-200/80 lg:max-w-none lg:border-x-0 2xl:max-w-none lg:bg-surface-base">
 
         @php
             $activeHome = request()->routeIs('member.beranda');
@@ -228,47 +230,60 @@
         @endphp
 
         {{-- Desktop Navigation Header (Active only on lg: screens >= 1024px) --}}
-        <header class="hidden lg:flex relative sticky top-0 z-40 w-full items-center justify-between border-b border-gray-200/80 bg-white/95 px-8 lg:px-12 py-3.5 backdrop-blur-md">
-            <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-3 shrink-0">
-                <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Saisho Logo" class="h-8 w-auto">
-                <span class="text-lg font-extrabold text-brand-800 tracking-tight">Saisho</span>
-            </a>
+        <header class="hidden lg:flex relative sticky top-0 z-40 w-full items-center justify-between border-b border-[rgba(74,46,39,0.08)] bg-[#FAF5E8]/95 px-8 lg:px-12 py-3 backdrop-blur-md">
+            {{-- Left column placeholder --}}
+            <div class="w-12 h-6"></div>
 
-            {{-- Centered Navbar Menu Links --}}
-            <nav class="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
-                <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 0);" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition {{ $activeHome ? 'bg-brand-50 text-brand-800' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
-                    <svg viewBox="0 0 24 24" fill="{{ $activeHome ? 'currentColor' : 'none' }}" class="h-4 w-4"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-9.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Beranda
+            {{-- Perfectly Absolute Centered Navbar Menu: HOME, MENU, [LOGO BEBEK DI TENGAH], VOUCHERS, ACTIVITY --}}
+            <nav class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-7 lg:gap-9 xl:gap-11 pointer-events-auto z-10">
+                {{-- 1. Home --}}
+                <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 0);"
+                   class="font-ui text-xs lg:text-[13px] font-bold tracking-[0.14em] uppercase transition hover:text-[#8E1E26] {{ $activeHome ? 'text-[#8E1E26]' : 'text-[#3A221B]' }}">
+                    Home
                 </a>
+
+                {{-- 2. Menu --}}
+                <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);"
+                   class="font-ui text-xs lg:text-[13px] font-bold tracking-[0.14em] uppercase transition hover:text-[#8E1E26] {{ $activeMenu ? 'text-[#8E1E26]' : 'text-[#3A221B]' }}">
+                    Menu
+                </a>
+
+                {{-- 3. Center Mascot Duck Logo (Truly Centered at 50% Screen Width) --}}
+                <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                   class="flex items-center justify-center shrink-0 mx-2 transition-transform duration-200 hover:scale-110 active:scale-95"
+                   title="{{ config('app.name', 'Daisy Bakery') }}">
+                    <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="{{ config('app.name', 'Daisy Bakery') }}" class="h-10 lg:h-11 w-auto object-contain">
+                </a>
+
+                {{-- 4. Vouchers --}}
                 @auth('member')
-                    <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 1);" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition {{ $activeVoucher ? 'bg-brand-50 text-brand-800' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M15 5v14M9 5v14M4 10a2 2 0 0 0 0 4M20 10a2 2 0 0 1 0 4M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 1);"
+                       class="font-ui text-xs lg:text-[13px] font-bold tracking-[0.14em] uppercase transition hover:text-[#8E1E26] {{ $activeVoucher ? 'text-[#8E1E26]' : 'text-[#3A221B]' }}">
                         Vouchers
                     </a>
                 @else
-                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition text-gray-600 hover:bg-gray-100 hover:text-gray-900">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M15 5v14M9 5v14M4 10a2 2 0 0 0 0 4M20 10a2 2 0 0 1 0 4M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                       class="font-ui text-xs lg:text-[13px] font-bold tracking-[0.14em] uppercase transition hover:text-[#8E1E26] text-[#3A221B]">
                         Vouchers
                     </a>
                 @endauth
-                <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition {{ $activeMenu ? 'bg-brand-50 text-brand-800' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
-                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 10a4 4 0 0 1-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Pesan
-                </a>
+
+                {{-- 5. Activity --}}
                 @auth('member')
-                    <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 3);" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition {{ $activeOrder ? 'bg-brand-50 text-brand-800' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 3);"
+                       class="font-ui text-xs lg:text-[13px] font-bold tracking-[0.14em] uppercase transition hover:text-[#8E1E26] {{ $activeOrder ? 'text-[#8E1E26]' : 'text-[#3A221B]' }}">
                         Activity
                     </a>
                 @else
-                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition text-gray-600 hover:bg-gray-100 hover:text-gray-900">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                       class="font-ui text-xs lg:text-[13px] font-bold tracking-[0.14em] uppercase transition hover:text-[#8E1E26] text-[#3A221B]">
                         Activity
                     </a>
                 @endauth
             </nav>
 
-            <div class="flex items-center gap-3">
+            {{-- Right Controls: Cart, Notifications, Member Profile --}}
+            <div class="relative z-20 flex items-center justify-end gap-3 pointer-events-auto">
                 @php
                     $headerCartItems = \App\Support\MemberCart::items();
                     $headerCartJumlah = collect($headerCartItems)->sum('jumlah');
@@ -277,16 +292,16 @@
 
                 @if ($headerCartJumlah > 0 && !request()->routeIs('member.checkout*'))
                     <a href="{{ route('member.checkout.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                       class="flex items-center gap-2.5 rounded-2xl bg-brand-800 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-brand-900 transition active:scale-95">
-                        <span class="relative flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
+                       class="flex items-center gap-2.5 rounded-2xl bg-brand-800 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-brand-900 transition active:scale-95 lg:rounded-lg lg:bg-burgundy-500 lg:hover:bg-burgundy-600 lg:text-cream-50 lg:shadow-contact-xs">
+                        <span class="relative flex h-6 w-6 items-center justify-center rounded-full bg-white/20 lg:bg-cream-50/20">
                             <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
                                 <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 8H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
-                            <span class="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] font-extrabold text-white">
+                            <span class="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] font-extrabold text-white lg:bg-burgundy-700 lg:text-cream-50 lg:lining-nums lg:tabular-nums">
                                 {{ $headerCartJumlah }}
                             </span>
                         </span>
-                        <span>Rp {{ number_format($headerCartTotal, 0, ',', '.') }}</span>
+                        <span class="lg:lining-nums lg:tabular-nums">Rp {{ number_format($headerCartTotal, 0, ',', '.') }}</span>
                     </a>
                 @endif
 
@@ -300,10 +315,10 @@
                     {{-- Notification Bell Dropdown Button --}}
                     <div class="relative" x-data="{ open: false }">
                         <button type="button" @click="open = !open" @click.outside="open = false"
-                                class="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-800 transition shadow-sm">
+                                class="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-800 transition shadow-sm lg:rounded-lg lg:border-cocoa-200/50 lg:bg-cream-100 lg:text-cocoa-700 lg:hover:border-burgundy-300 lg:hover:text-burgundy-600 lg:shadow-contact-xs">
                             <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             @if ($unreadNotifCount > 0)
-                                <span id="navbar-notif-badge" class="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-extrabold text-white animate-pulse">
+                                <span id="navbar-notif-badge" class="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-extrabold text-white animate-pulse lg:bg-burgundy-500 lg:text-cream-50 lg:lining-nums lg:tabular-nums">
                                     {{ $unreadNotifCount }}
                                 </span>
                             @endif
@@ -317,18 +332,18 @@
                              x-transition:leave="transition ease-in duration-100"
                              x-transition:leave-start="opacity-100 scale-100"
                              x-transition:leave-end="opacity-0 scale-95"
-                             class="absolute right-0 mt-2.5 w-80 sm:w-96 rounded-3xl border border-gray-100 bg-white p-4 shadow-xl z-50 text-left"
+                             class="absolute right-0 mt-2.5 w-80 sm:w-96 rounded-3xl border border-gray-100 bg-white p-4 shadow-xl z-50 text-left lg:rounded-lg lg:border-cocoa-200/50 lg:bg-cream-50 lg:shadow-contact-md"
                              style="display: none;">
-                            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                            <div class="flex items-center justify-between border-b border-gray-100 pb-3 lg:border-cocoa-100">
                                 <div class="flex items-center gap-2">
-                                    <span class="text-xs font-extrabold text-gray-900">Notifikasi</span>
+                                    <span class="text-xs font-extrabold text-gray-900 lg:font-display lg:text-sm lg:font-semibold lg:text-java-900">Notifications</span>
                                     @if($unreadNotifCount > 0)
-                                        <span id="navbar-notif-count-text" class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-800">{{ $unreadNotifCount }} Baru</span>
+                                        <span id="navbar-notif-count-text" class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-800 lg:bg-burgundy-50 lg:text-burgundy-600 lg:lining-nums lg:tabular-nums">{{ $unreadNotifCount }} New</span>
                                     @endif
                                 </div>
                                 @if($unreadNotifCount > 0)
-                                    <button type="button" onclick="tandaiSemuaDibacaNavbar()" class="text-[11px] font-bold text-brand-800 hover:underline">
-                                        Tandai dibaca
+                                    <button type="button" onclick="tandaiSemuaDibacaNavbar()" class="text-[11px] font-bold text-brand-800 hover:underline lg:text-burgundy-600">
+                                        Mark all as read
                                     </button>
                                 @endif
                             </div>
@@ -340,8 +355,8 @@
                                     @endphp
                                     <a href="{{ $targetUrl }}"
                                        onclick="event.preventDefault(); tandaiNotifDibacaNavbar({{ $notif->id }}, '{{ $targetUrl }}');"
-                                       class="flex items-start gap-3 rounded-2xl p-3 transition {{ ! $notif->is_read ? 'bg-brand-50/60 hover:bg-brand-50 border border-brand-100' : 'bg-gray-50/60 hover:bg-gray-100' }}">
-                                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full {{ $notif->icon_type === 'success' ? 'bg-emerald-100 text-emerald-700' : ($notif->type === 'stamp' ? 'bg-brand-100 text-brand-800' : ($notif->type === 'pesanan' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700')) }}">
+                                       class="flex items-start gap-3 rounded-2xl p-3 transition {{ ! $notif->is_read ? 'bg-brand-50/60 hover:bg-brand-50 border border-brand-100 lg:bg-cream-100/90 lg:hover:bg-cream-200/60 lg:border-burgundy-200/50' : 'bg-gray-50/60 hover:bg-gray-100 lg:bg-cream-100/40 lg:hover:bg-cream-100/80' }} lg:rounded-lg">
+                                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full {{ $notif->icon_type === 'success' ? 'bg-emerald-100 text-emerald-700' : ($notif->type === 'stamp' ? 'bg-brand-100 text-brand-800 lg:bg-burgundy-100 lg:text-burgundy-700' : ($notif->type === 'pesanan' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700 lg:bg-cerulean-100 lg:text-cerulean-700')) }}">
                                             @if ($notif->type === 'stamp')
                                                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                             @elseif ($notif->type === 'pesanan')
@@ -352,34 +367,34 @@
                                         </span>
                                         <div class="min-w-0 flex-1">
                                             <div class="flex items-center justify-between gap-1">
-                                                <p class="truncate text-xs font-bold text-gray-900">{{ $notif->title }}</p>
+                                                <p class="truncate text-xs font-bold text-gray-900 lg:text-java-900">{{ $notif->title }}</p>
                                                 @unless($notif->is_read)
-                                                    <span class="h-2 w-2 shrink-0 rounded-full bg-brand-800"></span>
+                                                    <span class="h-2 w-2 shrink-0 rounded-full bg-brand-800 lg:bg-burgundy-500"></span>
                                                 @endunless
                                             </div>
-                                            <p class="mt-0.5 text-[11px] leading-snug text-gray-600 line-clamp-2">{{ $notif->desc }}</p>
-                                            <span class="mt-1 block text-[10px] text-gray-400 font-medium">{{ $notif->created_at->diffForHumans() }}</span>
+                                            <p class="mt-0.5 text-[11px] leading-snug text-gray-600 line-clamp-2 lg:text-cocoa-700">{{ $notif->desc }}</p>
+                                            <span class="mt-1 block text-[10px] text-gray-400 font-medium lg:text-cocoa-400">{{ $notif->created_at->diffForHumans() }}</span>
                                         </div>
                                     </a>
                                 @empty
                                     <div class="py-6 text-center">
-                                        <p class="text-xs font-semibold text-gray-500">Belum ada notifikasi</p>
-                                        <p class="mt-1 text-[11px] text-gray-400">Pembaruan pesanan & promo akan muncul di sini.</p>
+                                        <p class="text-xs font-semibold text-gray-500 lg:text-cocoa-500">No notifications yet</p>
+                                        <p class="mt-1 text-[11px] text-gray-400 lg:text-cocoa-400">Order updates & special offers will appear here.</p>
                                     </div>
                                 @endforelse
                             </div>
 
-                            <div class="mt-3 border-t border-gray-100 pt-2.5 text-center">
+                            <div class="mt-3 border-t border-gray-100 pt-2.5 text-center lg:border-cocoa-100">
                                 <a href="{{ route('member.notifikasi.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                                   class="text-xs font-bold text-brand-800 hover:text-brand-900 transition">
-                                    Lihat Semua Notifikasi &rarr;
+                                   class="text-xs font-bold text-brand-800 hover:text-brand-900 transition lg:text-burgundy-600 lg:hover:text-burgundy-700">
+                                    View All Notifications &rarr;
                                 </a>
                             </div>
                         </div>
                     </div>
 
-                    <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 4);" class="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-bold text-gray-800 hover:border-brand-300 hover:text-brand-800 transition">
-                        <span class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 text-brand-800">
+                    <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 4);" class="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-bold text-gray-800 hover:border-brand-300 hover:text-brand-800 transition lg:rounded-lg lg:border-cocoa-200/50 lg:bg-cream-100 lg:text-java-900 lg:hover:border-burgundy-300 lg:hover:bg-cream-50 lg:shadow-warm-xs">
+                        <span class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 text-brand-800 lg:bg-cream-200 lg:text-cocoa-700">
                             @if ($authMember->foto)
                                 <img src="{{ asset('storage/' . $authMember->foto) }}" alt="{{ $authMember->nama }}" class="h-full w-full object-cover">
                             @else
@@ -389,8 +404,8 @@
                         <span>{{ explode(' ', $authMember->nama)[0] }}</span>
                     </a>
                 @else
-                    <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="rounded-xl bg-brand-800 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-900 transition">
-                        Masuk / Daftar
+                    <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="rounded-xl bg-brand-800 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-900 transition lg:rounded-lg lg:bg-burgundy-500 lg:hover:bg-burgundy-600 lg:text-cream-50 lg:shadow-warm-xs">
+                        Log In / Sign Up
                     </a>
                 @endauth
             </div>
@@ -495,58 +510,43 @@
         @endunless
 
         {{-- Desktop Footer (Visible ONLY on lg: screens >= 1024px) --}}
-        <footer class="hidden lg:block border-t border-stone-800/80 bg-[#1c130d] text-stone-300 mt-auto w-full">
+        <footer class="hidden lg:block border-t border-stone-800/80 bg-[#1c130d] text-stone-300 mt-auto w-full lg:border-cocoa-800/80 lg:bg-cocoa-500 lg:text-cream-200/80">
             <div class="mx-auto max-w-7xl px-8 lg:px-12 py-12">
                 <div class="grid grid-cols-12 gap-8 lg:gap-12">
                     
                     {{-- Column 1: Brand & Contact Info (5 cols) --}}
                     <div class="col-span-12 lg:col-span-5 space-y-4">
-                        <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="inline-flex items-center gap-3">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 p-2 backdrop-blur-sm border border-white/10">
-                                <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Saisho Logo" class="h-6 w-auto">
-                            </div>
-                            <div class="flex flex-col">
-                                <span class="text-xl font-black text-white tracking-tight">Saisho</span>
-                                <span class="text-[10px] font-bold uppercase tracking-widest text-brand-400">Bakery</span>
-                            </div>
+                        <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="inline-block">
+                            <img src="{{ asset('images/logo/logo-horizontal-light.svg') }}" alt="{{ config('app.name', 'Daisy Bakery') }}" class="h-16 lg:h-20 w-auto object-contain">
                         </a>
-                        <p class="text-xs leading-relaxed text-stone-400 max-w-sm">
-                            Menyajikan kelezatan roti, kue artisan, dan kopi berkualitas tinggi segar setiap hari untuk menemani setiap momen istimewa Anda.
+                        <p class="text-xs leading-relaxed text-stone-400 max-w-sm lg:text-cream-300/70">
+                            Serving artisan breads, specialty cakes, and high-quality coffee baked fresh every day to accompany your special moments.
                         </p>
-                        
-                        <!-- <div class="pt-2 space-y-2">
-                            <div class="flex items-center gap-2.5 text-xs text-stone-300">
-                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/5 text-brand-400 border border-white/5">
-                                    <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5"><path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                </span>
-                                <span>halo@saishobakery.com</span>
-                            </div>
-                        </div> -->
                     </div>
 
                     {{-- Column 2: Quick Links (2 cols) --}}
                     <div class="col-span-12 sm:col-span-4 lg:col-span-2 space-y-3">
-                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-white">Jelajahi</h4>
+                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-white lg:text-cream-100 lg:font-ui">Explore</h4>
                         <ul class="space-y-2 text-xs">
                             <li>
-                                <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 0);" class="hover:text-brand-400 transition">Beranda</a>
+                                <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 0);" class="hover:text-brand-400 transition lg:text-cream-300/70 lg:hover:text-cream-100">Home</a>
                             </li>
                             <li>
-                                <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);" class="hover:text-brand-400 transition">Menu & Order</a>
+                                <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);" class="hover:text-brand-400 transition lg:text-cream-300/70 lg:hover:text-cream-100">Menu & Order</a>
                             </li>
                             @auth('member')
                                 <li>
-                                    <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 1);" class="hover:text-brand-400 transition">Voucher & Rewards</a>
+                                    <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 1);" class="hover:text-brand-400 transition lg:text-cream-300/70 lg:hover:text-cream-100">Vouchers & Rewards</a>
                                 </li>
                                 <li>
-                                    <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 3);" class="hover:text-brand-400 transition">Aktivitas Pesanan</a>
+                                    <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 3);" class="hover:text-brand-400 transition lg:text-cream-300/70 lg:hover:text-cream-100">Order Activity</a>
                                 </li>
                             @else
                                 <li>
-                                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition">Voucher & Rewards</a>
+                                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition lg:text-cream-300/70 lg:hover:text-cream-100">Vouchers & Rewards</a>
                                 </li>
                                 <li>
-                                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition">Aktivitas Pesanan</a>
+                                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition lg:text-cream-300/70 lg:hover:text-cream-100">Order Activity</a>
                                 </li>
                             @endauth
                         </ul>
@@ -554,13 +554,13 @@
 
                     {{-- Column 3: Information & Static Content (2 cols) --}}
                     <div class="col-span-12 sm:col-span-4 lg:col-span-2 space-y-3">
-                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-white">Informasi</h4>
+                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-white lg:text-cream-100 lg:font-ui">Information</h4>
                         <ul class="space-y-2 text-xs">
                             <li>
-                                <a href="{{ route('member.konten.show', 'terms-conditions') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition">Syarat & Ketentuan</a>
+                                <a href="{{ route('member.konten.show', 'terms-conditions') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition lg:text-cream-300/70 lg:hover:text-cream-100">Terms & Conditions</a>
                             </li>
                             <li>
-                                <a href="{{ route('member.konten.show', 'privacy-policy') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition">Kebijakan Privasi</a>
+                                <a href="{{ route('member.konten.show', 'privacy-policy') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="hover:text-brand-400 transition lg:text-cream-300/70 lg:hover:text-cream-100">Privacy Policy</a>
                             </li>
                         </ul>
                     </div>
@@ -568,9 +568,9 @@
                     {{-- Column 4: Perks & Socials (3 cols) --}}
                     <div class="col-span-12 sm:col-span-4 lg:col-span-3 space-y-4">
                         <div>
-                            <h4 class="text-[11px] font-extrabold uppercase tracking-wider text-stone-400 mb-2">Ikuti Kami</h4>
+                            <h4 class="text-[11px] font-extrabold uppercase tracking-wider text-stone-400 mb-2 lg:text-cream-300/60 lg:font-ui">Follow Us</h4>
                             <div class="flex items-center gap-2">
-                                <a href="https://www.instagram.com/saishobakery?igsh=bTcyMDNibmNleGIz" class="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-stone-300 hover:bg-brand-400 hover:text-stone-900 transition border border-white/5">
+                                <a href="https://www.instagram.com/saishobakery?igsh=bTcyMDNibmNleGIz" class="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-stone-300 hover:bg-brand-400 hover:text-stone-900 transition border border-white/5 lg:rounded-lg lg:border-cocoa-700/60 lg:bg-cocoa-800/50 lg:text-cream-200 lg:hover:bg-burgundy-600 lg:hover:text-cream-50 lg:hover:border-burgundy-500">
                                     <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                                 </a>
                             </div>
@@ -580,26 +580,26 @@
                 </div>
 
                 {{-- Bottom Bar --}}
-                <div class="mt-12 border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-stone-400">
-                    <p>&copy; {{ date('Y') }} Saisho Cake & Bakery. All rights reserved.</p>
-                    <p class="text-stone-400/80">Freshly baked & brewed daily with passion.</p>
+                <div class="mt-12 border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-stone-400 lg:border-cocoa-800/80 lg:text-cream-400/60 font-ui">
+                    <p>&copy; {{ date('Y') }} {{ config('app.name', 'Daisy Bakery') }}. All rights reserved.</p>
+                    <p class="text-stone-400/80 lg:text-cream-400/50">Freshly baked & brewed daily with passion.</p>
                 </div>
             </div>
         </footer>
 
         {{-- Login Required Dialog Modal for Guests --}}
-        <dialog id="modal-login-required" class="modal-center fixed inset-0 m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 shadow-2xl border-0 sm:max-w-md md:max-w-lg">
+        <dialog id="modal-login-required" class="modal-center fixed inset-0 m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 shadow-2xl border-0 sm:max-w-md md:max-w-lg lg:rounded-lg lg:border lg:border-[rgba(74,46,39,0.12)] lg:bg-cream-50 lg:shadow-contact-md">
             <div class="p-6 text-center">
-                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-800">
+                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-800 lg:rounded-xl lg:bg-burgundy-50 lg:text-burgundy-600">
                     <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 15v2m0 4h.01M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Zm2 0V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
-                <h3 class="mt-4 text-base font-bold text-gray-900">Login Diperlukan</h3>
-                <p id="login-required-msg" class="mt-2 text-xs leading-relaxed text-gray-500">Silakan masuk atau daftar akun Saisho untuk mengakses fitur ini.</p>
+                <h3 class="mt-4 text-base font-bold text-gray-900 lg:font-display lg:text-xl lg:font-semibold lg:text-java-900">Login Diperlukan</h3>
+                <p id="login-required-msg" class="mt-2 text-xs leading-relaxed text-gray-500 lg:text-cocoa-700">Silakan masuk atau daftar akun Saisho untuk mengakses fitur ini.</p>
                 <div class="mt-6 flex flex-col gap-2">
-                    <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="w-full rounded-2xl bg-brand-800 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-900">
+                    <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="w-full rounded-2xl bg-brand-800 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-900 lg:rounded-lg lg:bg-burgundy-500 lg:hover:bg-burgundy-600 lg:text-cream-50 lg:shadow-warm-xs">
                         Login Sekarang
                     </a>
-                    <button type="button" onclick="closeSheet('modal-login-required')" class="py-2 text-xs font-semibold text-gray-500 hover:text-gray-700">
+                    <button type="button" onclick="closeSheet('modal-login-required')" class="py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 lg:text-cocoa-600 lg:hover:text-java-900">
                         Nanti Saja
                     </button>
                 </div>
@@ -608,7 +608,7 @@
 
         {{-- Sheet konfirmasi "Ditambahkan ke Keranjang" (fore-app style) --}}
         <dialog id="sheet-tambah-keranjang"
-            class="sheet fixed inset-x-0 bottom-0 top-auto m-0 mx-auto max-h-[88vh] w-full max-w-md rounded-t-3xl border-0 p-0 shadow-2xl sm:max-w-xl md:max-w-2xl">
+            class="sheet fixed inset-x-0 bottom-0 top-auto m-0 mx-auto max-h-[88vh] w-full max-w-md rounded-t-3xl border-0 p-0 shadow-2xl sm:max-w-xl md:max-w-2xl lg:rounded-lg lg:border lg:border-[rgba(74,46,39,0.12)] lg:bg-cream-50 lg:shadow-contact-md">
 
             <div class="flex max-h-[88vh] flex-col">
 
@@ -619,13 +619,13 @@
 
                 <div class="overflow-y-auto px-5 pb-2 pt-2">
 
-                    <h3 class="text-center text-sm font-extrabold text-brand-700">
+                    <h3 class="text-center text-sm font-extrabold text-brand-700 lg:font-display lg:text-lg lg:font-semibold lg:text-java-900">
                         Pilihan Menarik Lainnya
                     </h3>
 
                     {{-- Kartu item yang baru ditambahkan --}}
-                    <div class="mt-4 flex items-center gap-3 rounded-2xl border border-gray-100 p-3">
-                        <div class="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-50">
+                    <div class="mt-4 flex items-center gap-3 rounded-2xl border border-gray-100 p-3 lg:rounded-xl lg:border-cocoa-200/50 lg:bg-cream-100">
+                        <div class="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-50 lg:bg-cream-200/50">
                             <img id="tk-item-foto" src="" alt="" class="hidden h-full w-full object-cover">
                             <div id="tk-item-foto-fallback"
                                 class="flex h-full w-full items-center justify-center text-brand-200">
@@ -634,12 +634,12 @@
                         </div>
                         <div class="min-w-0 flex-1">
                             <div class="flex items-start justify-between gap-2">
-                                <p id="tk-item-nama" class="truncate text-sm font-bold text-gray-900"></p>
+                                <p id="tk-item-nama" class="truncate text-sm font-bold text-gray-900 lg:text-java-900"></p>
                                 <span id="tk-item-jumlah"
-                                    class="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full border border-gray-200 px-1.5 text-[11px] font-bold text-gray-600"></span>
+                                    class="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full border border-gray-200 px-1.5 text-[11px] font-bold text-gray-600 lg:border-cocoa-300 lg:text-cocoa-700 lg:lining-nums lg:tabular-nums"></span>
                             </div>
-                            <p id="tk-item-varian" class="mt-0.5 text-xs text-gray-400"></p>
-                            <p class="mt-1 flex items-center gap-1 text-xs font-bold text-brand-700">
+                            <p id="tk-item-varian" class="mt-0.5 text-xs text-gray-400 lg:text-cocoa-500"></p>
+                            <p class="mt-1 flex items-center gap-1 text-xs font-bold text-brand-700 lg:text-status-success">
                                 <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5">
                                     <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="3"
                                         stroke-linecap="round" stroke-linejoin="round" />
@@ -654,14 +654,14 @@
                 </div>
 
                 {{-- Aksi --}}
-                <div class="shrink-0 border-t border-gray-100 px-5 pb-5 pt-3"
+                <div class="shrink-0 border-t border-gray-100 px-5 pb-5 pt-3 lg:border-cocoa-100"
                     style="padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));">
                     <button type="button" id="tk-btn-lihat-keranjang" onclick="lihatKeranjangDariSheet()"
-                        class="w-full rounded-2xl bg-brand-800 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
+                        class="w-full rounded-2xl bg-brand-800 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99] lg:rounded-lg lg:bg-burgundy-500 lg:hover:bg-burgundy-600 lg:text-cream-50 lg:shadow-contact-xs">
                         Lihat Keranjang
                     </button>
                     <button type="button" onclick="tambahItemLainDariSheet()"
-                        class="mt-2 w-full rounded-2xl border border-brand-800 py-3 text-sm font-bold text-brand-800 transition active:scale-[0.99]">
+                        class="mt-2 w-full rounded-2xl border border-brand-800 py-3 text-sm font-bold text-brand-800 transition active:scale-[0.99] lg:rounded-lg lg:border-cocoa-300 lg:text-cocoa-700 lg:hover:bg-cream-100">
                         Tambah Item Lain
                     </button>
                 </div>
@@ -680,15 +680,15 @@
             x-ref="dlg"
             x-on:app-alert.window="judul = $event.detail.title || 'Perhatian'; pesan = $event.detail.message || ''; if (! $refs.dlg.open) $refs.dlg.showModal()"
             x-on:click.self="$refs.dlg.close()"
-            class="m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl border-0 bg-white p-0 shadow-2xl backdrop:bg-black/40">
+            class="m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl border-0 bg-white p-0 shadow-2xl backdrop:bg-black/40 lg:rounded-lg lg:border lg:border-[rgba(74,46,39,0.12)] lg:bg-cream-50 lg:shadow-contact-md">
         <div class="p-6 text-center">
-            <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-800">
+            <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-800 lg:bg-burgundy-50 lg:text-burgundy-600">
                 <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </span>
-            <h3 class="mt-3 text-base font-bold text-gray-900" x-text="judul"></h3>
-            <p class="mt-1.5 text-sm leading-relaxed text-gray-500" x-text="pesan"></p>
+            <h3 class="mt-3 text-base font-bold text-gray-900 lg:font-display lg:text-xl lg:font-semibold lg:text-java-900" x-text="judul"></h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-gray-500 lg:text-cocoa-700" x-text="pesan"></p>
             <button type="button" x-on:click="$refs.dlg.close()"
-                    class="mt-5 w-full rounded-2xl bg-[#5a3c27] py-3 text-xs font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] cursor-pointer">
+                    class="mt-5 w-full rounded-2xl bg-[#5a3c27] py-3 text-xs font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] cursor-pointer lg:rounded-lg lg:bg-burgundy-500 lg:hover:bg-burgundy-600 lg:text-cream-50 lg:shadow-contact-xs">
                 OK
             </button>
         </div>

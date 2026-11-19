@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap') layer(base);
+@import url('https://fonts.googleapis.com/css2?family=Cookie&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,100..900,100,1;1,9..144,100..900,100,1&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&display=swap') layer(base);
 @import 'prismjs/themes/prism.min.css';
 @import 'tailwindcss';
 
@@ -174,6 +175,114 @@
   --z-index-9999: 9999;
   --z-index-99999: 99999;
   --z-index-999999: 999999;
+
+  /* ═══ REBRAND DESKTOP THEME TOKENS ═══ */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-accent: "Cookie", cursive;
+  --font-ui: "DM Sans", var(--font-outfit), sans-serif;
+
+  /* Daisy Bakery Brand Tokens */
+  --color-daisy-gold: #EACE80;
+  --color-daisy-brown: #745B3F;
+
+  /* cream scale (Pantone #F5EFC6 Transparent Yellow) */
+  --color-cream-50: #fefdf9;
+  --color-cream-100: #fefdf6;
+  --color-cream-200: #fcfbf1;
+  --color-cream-300: #f8f4d7;
+  --color-cream-400: #f7f2d1;
+  --color-cream-500: #F5EFC6; /* EXACT Pantone */
+  --color-cream-600: #d3cba4;
+  --color-cream-700: #b4ab85;
+  --color-cream-800: #978d67;
+  --color-cream-900: #7a6f4a;
+  --color-cream-950: #645834;
+
+  /* burgundy scale (Pantone #4D0E12 Sceptre Red) */
+  --color-burgundy-50: #fdf5f4;
+  --color-burgundy-100: #f9e8e5;
+  --color-burgundy-200: #f0cdc8;
+  --color-burgundy-300: #e3a9a0;
+  --color-burgundy-400: #cd706a;
+  --color-burgundy-500: #8e1e26; /* CTA primary */
+  --color-burgundy-600: #741a21; /* CTA hover */
+  --color-burgundy-700: #5e1419;
+  --color-burgundy-800: #4D0E12; /* EXACT Pantone base */
+  --color-burgundy-900: #3a0a0d;
+  --color-burgundy-950: #260708;
+
+  /* cerulean scale (Pantone #A5BCD6 Cerulean Blue) */
+  --color-cerulean-50: #f5f8fa;
+  --color-cerulean-100: #f0f4f8;
+  --color-cerulean-200: #e6ecf4;
+  --color-cerulean-300: #d7e1ed;
+  --color-cerulean-400: #c2d2e3;
+  --color-cerulean-500: #A5BCD6; /* EXACT Pantone */
+  --color-cerulean-600: #8699af;
+  --color-cerulean-700: #697a8c;
+  --color-cerulean-800: #4f5c6b;
+  --color-cerulean-900: #343f4a;
+  --color-cerulean-950: #202831;
+
+  /* cocoa scale (Pantone #4A2E27 Potting Soil) */
+  --color-cocoa-50: #f7f4ef;
+  --color-cocoa-100: #ece7e2;
+  --color-cocoa-200: #d6cfc9;
+  --color-cocoa-300: #b6aaa4;
+  --color-cocoa-400: #897670;
+  --color-cocoa-500: #4A2E27; /* EXACT Pantone */
+  --color-cocoa-600: #3d2620;
+  --color-cocoa-700: #321f1a;
+  --color-cocoa-800: #271814;
+  --color-cocoa-900: #1c110e;
+  --color-cocoa-950: #140c09;
+
+  /* java scale (Pantone #231815 Java Brown) */
+  --color-java-50: #f5f3ee;
+  --color-java-100: #e8e5e0;
+  --color-java-200: #cecac5;
+  --color-java-300: #a6a19d;
+  --color-java-400: #706864;
+  --color-java-500: #231815; /* EXACT Pantone */
+  --color-java-600: #1e1412;
+  --color-java-700: #1a110f;
+  --color-java-800: #150e0c;
+  --color-java-900: #110b09;
+  --color-java-950: #0e0907;
+
+  /* Semantic tokens */
+  /* Option 1 (Default): warm custard surface-base #f7f2d1 vs card #fefdf6 (CR 1.109:1 >= 1.08) */
+  --color-surface-base: #f8f4d7;
+  --color-surface-card: #fefdf9;
+  --color-surface-elevated: #ffffff;
+  --color-surface-dark: #4A2E27; /* Cocoa asli */
+  --color-surface-darkest: #231815; /* Java asli */
+
+  --color-border-subtle: #cecac5;
+  --color-border-medium: #b6aaa4;
+  --color-border-hairline: rgba(74, 46, 39, 0.12);
+
+  --color-text-primary: #231815; /* Java asli */
+  --color-text-secondary: #4A2E27; /* Cocoa asli */
+  --color-text-muted: #706864;
+
+  --color-action-primary: #8e1e26;
+  --color-action-primary-hover: #741a21;
+  --color-action-on-primary: #fefdf6;
+
+  --color-accent: #A5BCD6; /* Cerulean asli */
+  --color-accent-subtle: #e6ecf4;
+  --color-ring: #A5BCD6;
+
+  --color-status-success: #2C5835;
+  --color-status-warning: #88540E;
+  --color-status-error: #78161D;
+  --color-status-info: #2B506B;
+
+  /* Desktop contact shadows (subtle, no large diffuse glow) */
+  --shadow-contact-xs: 0px 1px 2px 0px rgba(35, 24, 21, 0.05);
+  --shadow-contact-sm: 0px 2px 4px -1px rgba(35, 24, 21, 0.06), 0px 1px 2px -1px rgba(35, 24, 21, 0.04);
+  --shadow-contact-md: 0px 4px 12px -2px rgba(35, 24, 21, 0.08), 0px 1px 3px 0 rgba(35, 24, 21, 0.04);
 }
 
 /*
@@ -884,5 +993,155 @@ pre[class*='language-'] {
 @media screen and (max-width: 525px) {
   .flatpickr-calendar.static {
     margin-right: -60px !important;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   REBRAND DESKTOP UTILITIES (Member Portal)
+   ═════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+  .font-display,
+  .desktop-display-hero,
+  .desktop-display-title {
+    font-family: var(--font-display);
+    font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;
+  }
+
+  .font-accent {
+    font-family: var(--font-accent);
+  }
+
+  .desktop-display-hero {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.04;
+  }
+
+  .desktop-display-title {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+  }
+
+  .desktop-card {
+    background-color: var(--color-surface-card);
+    border: 1px solid var(--color-border-hairline);
+    border-radius: 12px;
+  }
+
+  .desktop-hero-dot {
+    height: 4px !important;
+    border-radius: 4px !important;
+    transition: all 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .desktop-hero-dot.w-1\.5 {
+    width: 12px !important;
+  }
+  .desktop-hero-dot.w-2\.5 {
+    width: 24px !important;
+  }
+
+  /* Desktop Reward Card overrides (preserving inline styles for mobile) */
+  .lg\:desktop-reward-card {
+    border-radius: 14px !important;
+    border: 1px solid var(--color-border-hairline) !important;
+    box-shadow: var(--shadow-contact-xs) !important;
+    background-color: var(--color-surface-base) !important;
+    overflow: hidden !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  }
+  .lg\:desktop-reward-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-contact-sm) !important;
+  }
+  .lg\:desktop-reward-top {
+    border-radius: 14px 14px 0 0 !important;
+    background: var(--color-surface-base) !important;
+    padding: 18px 18px 14px !important;
+  }
+  .lg\:desktop-reward-watermark {
+    display: none !important;
+  }
+  .lg\:desktop-reward-icon {
+    background-color: var(--color-cocoa-500) !important;
+    color: var(--color-cream-100) !important;
+    border-radius: 8px !important;
+    height: 38px !important;
+    width: 38px !important;
+  }
+  .lg\:desktop-reward-title {
+    font-family: var(--font-ui) !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: var(--color-java-500) !important;
+    line-height: 1.35 !important;
+  }
+  .lg\:desktop-reward-discount {
+    font-family: var(--font-ui) !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: var(--color-burgundy-500) !important;
+    margin-top: 4px !important;
+  }
+  .lg\:desktop-reward-min {
+    font-family: var(--font-ui) !important;
+    font-size: 12px !important;
+    color: var(--color-cocoa-500) !important;
+    margin-top: 3px !important;
+  }
+  .lg\:desktop-reward-seam {
+    border-top: 1px dashed var(--color-border-hairline) !important;
+  }
+  .lg\:desktop-reward-scallop {
+    background-color: var(--color-surface-card) !important;
+    border: 1px solid var(--color-border-hairline) !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .lg\:desktop-reward-bottom {
+    border-radius: 0 0 14px 14px !important;
+    background: var(--color-surface-base) !important;
+    padding: 12px 18px 16px !important;
+    border-top: none !important;
+  }
+  .lg\:desktop-reward-batas-label {
+    font-family: var(--font-ui) !important;
+    font-size: 12px !important;
+    color: var(--color-cocoa-500) !important;
+  }
+  .lg\:desktop-reward-batas-val {
+    font-family: var(--font-ui) !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: var(--color-java-500) !important;
+  }
+  .lg\:desktop-reward-badge {
+    font-family: var(--font-ui) !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+    padding: 5px 12px !important;
+    background-color: #fef3c7 !important;
+    color: #451a03 !important;
+  }
+  .lg\:desktop-reward-badge-disabled {
+    background-color: #fee2e2 !important;
+    color: #7f1d1d !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-fade-up,
+  .desktop-zoom-in,
+  .scroll-fade-up,
+  .scroll-zoom-in,
+  .app-splash-in,
+  .page-enter-right,
+  .page-enter-left {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

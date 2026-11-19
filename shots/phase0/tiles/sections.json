@@ -1,0 +1,62 @@
+{
+ "url": "http://127.0.0.1:8000/mobile/beranda",
+ "views": {
+  "desktop": {
+   "width": 1440,
+   "height": 900,
+   "navH": 0,
+   "scrollHeight": 3804,
+   "screens": 4.23,
+   "sections": [
+    {
+     "n": 1,
+     "tag": "div",
+     "id": "",
+     "cls": "hidden lg:block w-full",
+     "top": 61,
+     "h": 3441,
+     "hScreens": 3.82,
+     "offGrid": 741,
+     "tiles": [
+      {
+       "file": "desktop-sec-01-a.jpg",
+       "scrollY": 61
+      },
+      {
+       "file": "desktop-sec-01-b.jpg",
+       "scrollY": 961
+      },
+      {
+       "file": "desktop-sec-01-c.jpg",
+       "scrollY": 1861
+      },
+      {
+       "file": "desktop-sec-01-d.jpg",
+       "scrollY": 2602
+      }
+     ]
+    },
+    {
+     "n": 2,
+     "tag": "footer",
+     "id": "",
+     "cls": "hidden lg:block border-t border-stone-800/80 bg-[#1c130d] te",
+     "top": 3502,
+     "h": 303,
+     "hScreens": 0.34,
+     "offGrid": 303,
+     "tiles": [
+      {
+       "file": "desktop-sec-02-a.jpg",
+       "scrollY": 2904,
+       "cutTop": 598,
+       "height": 302
+      }
+     ]
+    }
+   ],
+   "consoleErrors": []
+  }
+ },
+ "at": "2026-11-18T07:15:16.424Z"
+}
