@@ -116,8 +116,8 @@
             @if ($slug === 'help-center')
                 {{-- 1. HELP CENTER FAQ & CONCIERGE --}}
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    {{-- Left Column: Store Concierge Card --}}
-                    <div class="lg:col-span-4 space-y-6">
+                    {{-- Left Column: Store Concierge Card (Sticky) --}}
+                    <div class="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
                         <div class="rounded-[28px] bg-[#F5ECE3] p-6 border border-[#3C2415]/15 shadow-sm space-y-5">
                             <div class="flex items-center gap-3.5">
                                 <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white border border-[#3C2415]/15 shadow-xs">

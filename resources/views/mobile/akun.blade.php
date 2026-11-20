@@ -104,158 +104,27 @@
 
 
     {{-- ========================================== --}}
-    {{-- DESKTOP VIEW (>= 1024px) - BESPOKE FRENCH BAKERY MEMBER HUB --}}
-    {{-- Full-bleed Deep Cocoa Melting Hero Canopy, 2D floating strawberries, --}}
+    {{-- DESKTOP VIEW (>= 1024px) - BESPOKE FRENCH BAKERY MEMBER HUB (NO HERO SECTION) --}}
     {{-- VIP Member Card, Loyalty Overview, and Bento Navigation. --}}
     {{-- ========================================== --}}
     <div id="account-desktop-root" class="hidden lg:block w-full bg-[#FAF5E8] min-h-screen text-[#3C2415]">
 
-        {{-- 1. DEEP COCOA MELTING HERO CANOPY WITH CAKE --}}
-        <section id="account-desktop-hero" class="relative w-full text-[#FAF5E8] overflow-visible">
-            {{-- Top Dark Cocoa Banner (Narrative) --}}
-            <div class="relative w-full bg-[#3C2415] pt-10 pb-8 sm:pb-9 lg:pb-10 xl:pb-12 text-center overflow-hidden">
-                {{-- Background Line Art Bakery Doodles (Celebration Cake on Left, Croissant on Right) --}}
-                <div class="pointer-events-none absolute inset-0 opacity-18 select-none overflow-hidden">
-                    {{-- Left Tiered Celebration Cake Line Art Doodle --}}
-                    <svg class="absolute -left-6 lg:left-2 2xl:left-8 top-6 w-72 lg:w-80 h-72 lg:h-80 text-white" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M 40 160 Q 100 172 160 160 Q 100 178 40 160 Z"/>
-                        <path d="M 85 167 L 76 186 L 124 186 L 115 167"/>
-                        <path d="M 70 186 Q 100 190 130 186"/>
-                        <path d="M 46 124 L 46 154 Q 100 168 154 154 L 154 124"/>
-                        <path d="M 46 124 Q 100 138 154 124 Q 100 110 46 124 Z"/>
-                        <path d="M 46 154 Q 55 160 64 156 Q 73 162 82 158 Q 91 163 100 163 Q 109 163 118 158 Q 127 162 136 156 Q 145 160 154 154"/>
-                        <path d="M 68 84 L 68 116 Q 100 128 132 116 L 132 84"/>
-                        <path d="M 68 84 Q 100 96 132 84 Q 100 72 68 84 Z"/>
-                        <path d="M 68 88 Q 75 100 82 92 Q 89 103 96 94 Q 104 105 111 94 Q 118 102 125 92 Q 129 98 132 88"/>
-                        <path d="M 98 62 L 98 78 L 102 78 L 102 62 Z"/>
-                        <path d="M 100 52 Q 95 58 100 62 Q 105 58 100 52 Z"/>
-                        <circle cx="82" cy="74" r="7"/>
-                        <path d="M 82 67 Q 87 56 93 58"/>
-                        <circle cx="118" cy="74" r="7"/>
-                        <path d="M 118 67 Q 123 56 129 58"/>
-                        <path d="M 32 65 L 34 73 L 42 75 L 34 77 L 32 85 L 30 77 L 22 75 L 30 73 Z"/>
-                        <path d="M 168 62 L 170 68 L 176 70 L 170 72 L 168 78 L 166 72 L 160 70 L 166 68 Z"/>
-                    </svg>
-
-                    {{-- Right Authentic Curved Crescent Croissant Line Art Doodle --}}
-                    <svg class="absolute -right-6 lg:right-2 2xl:right-8 top-6 w-72 lg:w-80 h-72 lg:h-80 text-white" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M 32 132 C 22 96 46 54 96 46 C 146 38 178 76 170 126 C 156 112 140 102 120 98 C 96 94 70 102 48 120 C 38 125 34 130 32 132 Z"/>
-                        <path d="M 76 50 C 85 74 87 102 76 128 C 92 120 108 120 122 126 C 130 102 128 74 118 48"/>
-                        <path d="M 58 60 C 66 82 68 105 58 126"/>
-                        <path d="M 98 47 C 104 70 105 95 98 122"/>
-                        <path d="M 138 60 C 144 82 142 105 134 124"/>
-                        <path d="M 32 132 C 28 138 30 144 36 142 C 42 140 46 134 48 126"/>
-                        <path d="M 170 126 C 174 133 172 139 166 139 C 160 139 155 133 151 125"/>
-                        <path d="M 86 68 Q 92 84 86 98"/>
-                        <path d="M 108 66 Q 114 84 108 97"/>
-                        <path d="M 85 32 Q 91 22 85 12"/>
-                        <path d="M 105 28 Q 111 18 105 8"/>
-                        <path d="M 125 34 Q 131 24 125 14"/>
-                    </svg>
-                </div>
-
-                {{-- Centered Title & Narrative --}}
-                <div class="relative z-10 max-w-4xl mx-auto px-6 text-center">
-                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FAF5E8]/10 border border-[#FAF5E8]/20 text-[#FAF5E8] text-xs font-bold uppercase tracking-widest backdrop-blur-xs mb-3">
-                        <span>DAISY MEMBER CLUB</span>
-                    </div>
-
-                    <h1 class="font-display font-black text-5xl lg:text-6xl xl:text-7xl uppercase tracking-tight text-[#FAF5E8] flex items-center justify-center gap-3.5 drop-shadow-md">
-                        <span>YOUR</span>
-                        <span class="text-[#8E1E26]">ACCOUNT & PROFILE</span>
-                    </h1>
-
-                    <p class="mt-4 font-ui text-sm sm:text-base text-[#FAF5E8]/75 max-w-xl mx-auto leading-relaxed">
-                        Manage your artisanal membership privileges, track loyalty bakes, review active reward vouchers, and explore sweet community perks.
-                    </p>
-                </div>
+        {{-- Clean Desktop Account Hub Header (NO HERO SECTION) --}}
+        <div class="max-w-5xl 2xl:max-w-6xl mx-auto px-6 pt-10 pb-4 space-y-2">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3C2415]/5 border border-[#3C2415]/10 text-xs font-bold uppercase tracking-wider text-[#8E1E26]">
+                DAISY MEMBER CLUB
             </div>
+            <h1 class="font-display font-black text-3xl sm:text-4xl uppercase tracking-tight text-[#3C2415]">
+                Account & Profile
+            </h1>
+            <p class="text-sm text-[#3C2415]/75 max-w-2xl leading-relaxed">
+                Manage your artisanal membership privileges, track loyalty bakes, review active reward vouchers, and explore sweet community perks.
+            </p>
+        </div>
 
-            {{-- Organic Melting Canopy Bottom SVG on Cream Background with Big Cake & Stamp Nested Inside --}}
-            <div class="relative w-full bg-[#FAF5E8] overflow-visible select-none z-20 -mt-1">
-                <svg viewBox="0 0 1440 360" fill="none" class="w-full h-64 sm:h-72 lg:h-[350px] xl:h-[380px] block pointer-events-none" preserveAspectRatio="none">
-                    <path d="M 0 0 L 1440 0 L 1440 140 C 1360 160, 1310 110, 1260 110 C 1120 110, 960 345, 720 345 C 480 345, 320 110, 180 110 C 130 110, 80 160, 0 140 Z" fill="#3C2415"/>
-                </svg>
-
-                {{-- Subtle Ambient Warm Bakery Glow Behind Cake --}}
-                <div id="account-desktop-glow" class="pointer-events-none absolute left-1/2 top-[100px] sm:top-[105px] lg:top-[110px] xl:top-[115px] -translate-x-1/2 -translate-y-1/2 w-[460px] sm:w-[520px] lg:w-[580px] xl:w-[640px] h-[280px] sm:h-[320px] lg:h-[360px] xl:h-[390px] rounded-full blur-3xl opacity-70 z-10"
-                     style="background: radial-gradient(circle, rgba(255, 230, 150, 0.45) 0%, rgba(220, 100, 50, 0.22) 42%, rgba(60, 36, 21, 0) 72%);">
-                </div>
-
-                {{-- Prominent Centerpiece: Big Vintage Strawberry Celebration Cake --}}
-                <div id="account-desktop-hero-cake" class="absolute left-1/2 -top-2 sm:-top-3 lg:-top-4 xl:-top-5 -translate-x-1/2 pointer-events-none select-none z-20 flex flex-col items-center">
-                    <img src="{{ asset('images/decor/vintage-strawberry-cake.png') }}" alt="Artisanal Daisy Strawberry Celebration Cake"
-                         class="w-[230px] sm:w-[260px] lg:w-[290px] xl:w-[310px] h-auto object-contain filter drop-shadow-[0_22px_28px_rgba(20,10,5,0.72)] drop-shadow-[0_8px_14px_rgba(20,10,5,0.52)]">
-                </div>
-
-                {{-- Compact Cute Rotating "MEMBER CLUB" Stamp Badge Nested Deep in the Melting Scoop --}}
-                <div id="account-desktop-stamp" class="absolute left-1/2 bottom-5 sm:bottom-6 lg:bottom-7 xl:bottom-8 -translate-x-1/2 z-30">
-                    <button type="button"
-                            onclick="document.getElementById('account-showcase-content').scrollIntoView({ behavior: 'smooth' })"
-                            class="relative w-14 h-14 sm:w-15 sm:h-15 lg:w-16 lg:h-16 flex items-center justify-center group focus:outline-none transition-transform hover:scale-105 active:scale-95 cursor-pointer pointer-events-auto"
-                            title="Scroll down to account details">
-                        <div class="absolute inset-0 rounded-full bg-[#FAF5E8] border-2 border-[#3C2415]/20 shadow-lg group-hover:border-[#8E1E26]/40 transition-colors"></div>
-
-                        {{-- Rotating Circular Text --}}
-                        <svg class="w-11 h-11 sm:w-12 sm:h-12 lg:w-13 lg:h-13 animate-[spin_14s_linear_infinite]" viewBox="0 0 100 100">
-                            <path id="circlePathDesktopAccount" d="M 50, 50 m -37, 0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" fill="none" />
-                            <text class="text-[9px] font-bold tracking-[0.22em] uppercase fill-[#3C2415]">
-                                <textPath href="#circlePathDesktopAccount" startOffset="0%">
-                                    DAISY BAKERY • MEMBER CLUB •
-                                </textPath>
-                            </text>
-                        </svg>
-
-                        {{-- Daisy Bakery Mini Duck Icon in Stamp Center --}}
-                        <div class="relative z-10 w-6 h-6 flex items-center justify-center">
-                            <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Daisy Bakery Duck" class="w-4.5 h-4.5 object-contain">
-                        </div>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        {{-- 2. FLOATING STRAWBERRIES & ACCOUNT SHOWCASE --}}
-        <section id="account-desktop-showcase" class="relative w-full bg-[#FAF5E8] overflow-hidden">
-            {{-- Strawberry Keyframe Styles --}}
-            <style>
-                @keyframes floatStrawberry {
-                    0%, 100% {
-                        transform: translateY(0px) rotate(var(--rot, 0deg));
-                    }
-                    50% {
-                        transform: translateY(-8px) rotate(calc(var(--rot, 0deg) + 3deg));
-                    }
-                }
-                .desktop-floating-strawberry {
-                    animation: floatStrawberry var(--duration, 4s) ease-in-out infinite;
-                    will-change: transform;
-                }
-            </style>
-
-            {{-- 2D Floating Strawberries in Outer Gutters --}}
-            <div class="desktop-floating-strawberry hidden xl:block absolute left-8 xl:left-12 2xl:left-20 top-12 pointer-events-none select-none z-0"
-                 aria-hidden="true" style="width: 48px; height: 64px; --rot: -10deg; --duration: 4.2s;">
-                <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain select-none">
-            </div>
-            <div class="desktop-floating-strawberry hidden xl:block absolute right-8 xl:left-auto xl:right-12 2xl:right-20 top-20 pointer-events-none select-none z-0"
-                 aria-hidden="true" style="width: 44px; height: 58px; --rot: 14deg; --duration: 3.8s;">
-                <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain select-none">
-            </div>
-            <div class="desktop-floating-strawberry hidden xl:block absolute left-10 xl:left-14 2xl:left-24 top-1/3 pointer-events-none select-none z-0"
-                 aria-hidden="true" style="width: 42px; height: 56px; --rot: 18deg; --duration: 4.8s;">
-                <img src="{{ asset('images/decor/strawberry-3.svg') }}" alt="" class="w-full h-full object-contain select-none">
-            </div>
-            <div class="desktop-floating-strawberry hidden xl:block absolute right-10 xl:left-auto xl:right-14 2xl:right-24 top-1/2 pointer-events-none select-none z-0"
-                 aria-hidden="true" style="width: 44px; height: 58px; --rot: -14deg; --duration: 4.4s;">
-                <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain select-none">
-            </div>
-            <div class="desktop-floating-strawberry hidden xl:block absolute left-9 xl:left-13 2xl:left-22 top-2/3 pointer-events-none select-none z-0"
-                 aria-hidden="true" style="width: 46px; height: 60px; --rot: -12deg; --duration: 5.0s;">
-                <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain select-none">
-            </div>
-
-            <div id="account-showcase-content" class="relative max-w-5xl 2xl:max-w-6xl mx-auto px-6 pt-10 pb-24 z-10 space-y-10">
+        {{-- ACCOUNT SHOWCASE --}}
+        <section id="account-desktop-showcase" class="relative w-full bg-[#FAF5E8]">
+            <div id="account-showcase-content" class="relative max-w-5xl 2xl:max-w-6xl mx-auto px-6 pt-2 pb-24 z-10 space-y-10">
 
                 @auth('member')
                     @php
@@ -313,10 +182,6 @@
                                     </div>
 
                                     <div class="pt-2 flex flex-wrap items-center gap-3">
-                                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-white/80 border border-[#3C2415]/15 text-xs text-[#3C2415]">
-                                            <span class="font-semibold text-[#3C2415]/70">Member Code:</span>
-                                            <span class="font-mono font-bold tracking-wider text-[#8E1E26]">{{ $member->kode_member }}</span>
-                                        </div>
                                         <span class="text-[11px] text-[#3C2415]/60 font-medium">
                                             Member since {{ $member->created_at->format('d F Y') }}
                                         </span>

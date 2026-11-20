@@ -11,6 +11,7 @@ use App\Http\Controllers\KategoriProdukController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\BahanBakuController;
 use App\Http\Controllers\ProduksiController;
+use App\Http\Controllers\KurangProduksiController;
 use App\Http\Controllers\BundlingController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\DashboardController;
@@ -206,14 +207,16 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
     });
 
     // Produk
-    Route::middleware('permission:lihat_produk')->group(function () {
-        Route::get('/produk', [ProdukController::class, 'index'])->name('produk.index');
-        Route::get('/produk/{produk}', [ProdukController::class, 'show'])->name('produk.show');
-    });
-
+    // Catatan urutan: /produk/create harus terdaftar SEBELUM /produk/{produk}, kalau tidak "create"
+    // dianggap sebagai ID produk dan halaman Tambah Produk tidak bisa dibuka.
     Route::middleware('permission:tambah_produk')->group(function () {
         Route::get('/produk/create', [ProdukController::class, 'create'])->name('produk.create');
         Route::post('/produk', [ProdukController::class, 'store'])->name('produk.store');
+    });
+
+    Route::middleware('permission:lihat_produk')->group(function () {
+        Route::get('/produk', [ProdukController::class, 'index'])->name('produk.index');
+        Route::get('/produk/{produk}', [ProdukController::class, 'show'])->whereNumber('produk')->name('produk.show');
     });
 
     Route::middleware('permission:edit_produk')->group(function () {
@@ -245,6 +248,20 @@ use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
 
     Route::resource('produksi', ProduksiController::class)
         ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
+
+    // Kurang Produksi: form pengurangan stok (kadaluarsa, rusak, dll) + riwayat + export Excel
+    Route::get('/kurang-produksi', [KurangProduksiController::class, 'index'])
+        ->name('kurang-produksi.index')
+        ->middleware('permission:lihat_produksi|tambah_produksi|edit_produksi|hapus_produksi');
+    Route::get('/kurang-produksi/create', [KurangProduksiController::class, 'create'])
+        ->name('kurang-produksi.create')
+        ->middleware('permission:tambah_produksi');
+    Route::post('/kurang-produksi', [KurangProduksiController::class, 'store'])
+        ->name('kurang-produksi.store')
+        ->middleware('permission:tambah_produksi');
+    Route::get('/kurang-produksi/excel', [KurangProduksiController::class, 'excel'])
+        ->name('kurang-produksi.excel')
+        ->middleware('permission:lihat_laporan');
 
     Route::patch('/bundling/{bundling}/toggle-status', [BundlingController::class, 'toggleStatus'])
         ->name('bundling.toggle-status')
