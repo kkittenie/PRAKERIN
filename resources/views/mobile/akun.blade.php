@@ -258,7 +258,12 @@
             <div id="account-showcase-content" class="relative max-w-5xl 2xl:max-w-6xl mx-auto px-6 pt-10 pb-24 z-10 space-y-10">
 
                 @auth('member')
-                    @php $member = auth('member')->user(); @endphp
+                    @php
+                        $member = auth('member')->user();
+                        $programAktif = \App\Models\StampProgram::aktifSekarang();
+                        $memberStamp = $programAktif ? $member->stamps()->where('stamp_program_id', $programAktif->id)->first() : null;
+                        $jumlahStampMember = $memberStamp ? (int) $memberStamp->jumlah_stamp : 0;
+                    @endphp
 
                     {{-- VIP MEMBER IDENTITY HERO CARD --}}
                     <div class="relative overflow-hidden rounded-[32px] bg-[#F5ECE3] p-8 border border-[#3C2415]/15 shadow-sm transition hover:shadow-md">
@@ -407,11 +412,11 @@
                             </div>
                             <p class="text-xs font-bold uppercase tracking-wider text-[#3C2415]/70">Collected Stamps</p>
                             <p class="mt-1 font-display font-black text-3xl sm:text-4xl text-[#3C2415]">
-                                {{ $member->stamps()->count() }} <span class="text-base font-bold text-[#3C2415]/60">STAMPS</span>
+                                {{ $jumlahStampMember }} <span class="text-base font-bold text-[#3C2415]/60">STAMPS</span>
                             </p>
                             <div class="mt-4 pt-3 border-t border-[#3C2415]/10 flex items-center justify-between">
                                 <span class="text-xs text-[#3C2415]/60">Unlock free pastries</span>
-                                <a href="{{ route('member.stamps.index') }}"
+                                <a href="{{ route('member.reward.index', ['tab' => 'stamp']) }}"
                                    onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                    class="text-xs font-bold text-[#8E1E26] hover:underline flex items-center gap-1">
                                     View Stamp Card &rarr;
@@ -481,7 +486,7 @@
                             </a>
 
                             {{-- 3. Stamp Program --}}
-                            <a href="{{ route('member.stamps.index') }}"
+                            <a href="{{ route('member.reward.index', ['tab' => 'stamp']) }}"
                                onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                class="group flex flex-col justify-between rounded-[28px] bg-[#F5ECE3] p-6 border border-[#3C2415]/15 shadow-sm transition hover:border-[#8E1E26]/40 hover:shadow-md hover:-translate-y-0.5">
                                 <div>
@@ -507,7 +512,7 @@
                                     </p>
                                 </div>
                                 <div class="mt-4 pt-3 border-t border-[#3C2415]/10 text-xs font-bold text-[#8E1E26]">
-                                    Stamp Collection &rarr;
+                                    View {{ $jumlahStampMember }}/{{ $programAktif ? $programAktif->jumlah_stamp_dibutuhkan : 5 }} Stamps &rarr;
                                 </div>
                             </a>
 

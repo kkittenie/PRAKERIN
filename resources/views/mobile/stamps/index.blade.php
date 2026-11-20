@@ -2,6 +2,12 @@
 
 @section('content')
 
+    <script id="desktop-redirect">
+        if (window.innerWidth >= 1024) {
+            window.location.replace("{{ route('member.reward.index', ['tab' => 'stamp']) }}");
+        }
+    </script>
+
     <h1 class="text-center text-lg font-extrabold text-gray-900">Vouchers</h1>
 
     @if (\App\Models\PengaturanMember::adaAturanAktif())
