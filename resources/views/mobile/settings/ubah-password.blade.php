@@ -297,12 +297,12 @@
 
             {{-- Top Navigation & Metadata Bar --}}
             <div class="flex items-center justify-between border-b border-[#3C2415]/10 pb-5">
-                <a href="{{ route('member.settings.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+                <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
                    class="inline-flex items-center gap-2 text-xs font-bold text-[#3C2415]/75 hover:text-[#8E1E26] transition">
                     <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
                         <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span>Back to Settings</span>
+                    <span>Back to Account</span>
                 </a>
             </div>
 

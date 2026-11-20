@@ -105,7 +105,7 @@ class SettingsController extends Controller
                 'password' => Hash::make($data['password_baru']),
             ]);
 
-            return redirect()->route('member.settings.index')->with(
+            return redirect()->route('member.akun')->with(
                 'success',
                 $belumPunyaPassword
                     ? 'Password created successfully.'
