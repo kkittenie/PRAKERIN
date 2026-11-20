@@ -76,15 +76,18 @@ def strip_desktop_only_sections(rel_path: str, text: str) -> str:
     if rel_path == 'riwayat/index.blade.php':
         pattern = re.compile(r'<div[^>]*class="[^"]*hidden lg:block[^"]*"[^>]*>.*?(?=\{\{-- Bottom sheet: Detail Transaksi)', flags=re.DOTALL)
         return pattern.sub("", text)
-    if rel_path in ['akun.blade.php', 'profil.blade.php', 'settings/index.blade.php', 'settings/ubah-password.blade.php']:
+    if rel_path in ['akun.blade.php', 'profil.blade.php', 'settings/index.blade.php', 'settings/ubah-password.blade.php', 'notifikasi/index.blade.php']:
         pattern = re.compile(r'\n\s*\{\{--\s*=+\s*--\}\}\s*\{\{--\s*DESKTOP VIEW.*?@endsection', flags=re.DOTALL)
         return pattern.sub("\n@endsection", text)
     if rel_path == 'konten-statis.blade.php':
         pattern = re.compile(r'<div id="konten-desktop-root".*?@endsection', flags=re.DOTALL)
         return pattern.sub("@endsection", text)
     if rel_path == 'stamps/index.blade.php':
-        pattern = re.compile(r'<script id="desktop-redirect">.*?</script>', flags=re.DOTALL)
-        return pattern.sub("", text)
+        text = re.sub(r'<script id="desktop-redirect">.*?</script>\s*', '', text, flags=re.DOTALL)
+        text = re.sub(r'<div class="lg:hidden">\s*', '', text)
+        text = re.sub(r'\s*</div>\s*(?=\s*{{-- Shared confirmation dialog|\s*{{-- =+ --}}\s*{{-- DESKTOP VIEW)', '', text)
+        pattern = re.compile(r'\n\s*\{\{--\s*=+\s*--\}\}\s*\{\{--\s*DESKTOP VIEW.*?@endsection', flags=re.DOTALL)
+        return pattern.sub("\n@endsection", text)
     if rel_path == 'layout.blade.php':
         # Strip desktop-only header and footer
         text = re.sub(r'<header class="hidden lg:flex.*?</header>', '', text, flags=re.DOTALL)

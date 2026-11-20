@@ -303,47 +303,120 @@ class NotificationHelper
 
         return match ($aksi) {
             'baru' => [
-                'Pesanan diterima',
-                "Pesanan {$kode} kamu sudah kami terima, selesaikan pembayaran ya.",
+                'Order Received',
+                "Your order {$kode} has been received. Please complete your payment.",
                 'info',
             ],
             'lunas' => [
-                'Pembayaran dikonfirmasi',
-                "Pembayaran pesanan {$kode} sudah dikonfirmasi toko. Pesanan kamu segera diproses.",
+                'Payment Confirmed',
+                "Payment for order {$kode} has been verified. We are preparing your order shortly.",
                 'success',
             ],
             'tolak_bukti' => [
-                'Bukti pembayaran ditolak',
-                ($transaksi->catatan_penolakan ?: 'Bukti pembayaran tidak valid') . ". Silakan upload ulang bukti pembayaran {$kode}.",
+                'Payment Receipt Rejected',
+                ($transaksi->catatan_penolakan ?: 'Payment receipt is invalid') . ". Please re-upload your payment receipt for {$kode}.",
                 'error',
             ],
             'diproses' => [
-                'Pesanan sedang diproses',
-                "Pesanan {$kode} kamu sedang disiapkan oleh toko.",
+                'Order in Preparation',
+                "Your order {$kode} is currently being baked and prepared by our kitchen.",
                 'info',
             ],
             'siap' => [
-                'Pesanan siap diambil!',
-                "Pesanan {$kode} sudah siap. Tunjukkan kode pickup " . ($transaksi->kode_pickup ?? '-') . " ke kasir ya.",
+                'Order Ready for Pickup!',
+                "Your order {$kode} is ready. Present pickup code " . ($transaksi->kode_pickup ?? '-') . " to the cashier.",
                 'success',
             ],
             'batal' => [
-                'Pesanan dibatalkan',
-                "Pesanan {$kode} dibatalkan oleh toko. Alasan: " . ($transaksi->alasan_pembatalan ?: '-') . ". Hubungi customer service untuk pengembalian dana.",
+                'Order Cancelled',
+                "Order {$kode} was cancelled by the store. Reason: " . ($transaksi->alasan_pembatalan ?: '-') . ". Contact customer service for refund assistance.",
                 'error',
             ],
             'batal_otomatis' => [
-                'Pesanan dibatalkan otomatis',
-                "Pesanan {$kode} dibatalkan otomatis karena belum ada konfirmasi pembayaran dalam " . Transaksi::BATAS_BAYAR_MENIT . " menit. Stok & voucher sudah dikembalikan, kamu bisa memesan lagi kapan saja.",
+                'Order Automatically Cancelled',
+                "Order {$kode} was cancelled automatically due to payment expiration within " . Transaksi::BATAS_BAYAR_MENIT . " minutes. Reserved items & vouchers have been restored.",
                 'error',
             ],
             'selesai' => [
-                'Pesanan selesai',
-                "Pesanan {$kode} sudah kamu ambil. Terima kasih sudah belanja di Saisho!",
+                'Order Completed',
+                "Order {$kode} has been collected. Thank you for baking with Daisy Bakery!",
                 'success',
             ],
             default => null,
         };
+    }
+
+    public static function translateTitle(?string $title): string
+    {
+        if (! $title) return '';
+        return match (trim($title)) {
+            'Pesanan diterima' => 'Order Received',
+            'Pembayaran dikonfirmasi' => 'Payment Confirmed',
+            'Bukti pembayaran ditolak' => 'Payment Receipt Rejected',
+            'Pesanan sedang diproses' => 'Order in Preparation',
+            'Pesanan siap diambil!', 'Pesanan siap diambil' => 'Order Ready for Pickup!',
+            'Pesanan dibatalkan' => 'Order Cancelled',
+            'Pesanan dibatalkan otomatis' => 'Order Automatically Cancelled',
+            'Pesanan selesai' => 'Order Completed',
+            'Stamp baru diperoleh' => 'New Stamp Earned',
+            'Hadiah stamp berhasil ditukar' => 'Stamp Reward Redeemed',
+            'Hadiah Stamp Masuk ke Keranjang' => 'Stamp Reward Added to Cart',
+            'Penukaran Stamp Berhasil' => 'Stamp Redemption Successful',
+            'Pesanan Dibatalkan - Hadiah Stamp Siap Diambil' => 'Order Cancelled - Stamp Reward Restored',
+            default => $title,
+        };
+    }
+
+    public static function translateDesc(?string $desc): string
+    {
+        if (! $desc) return '';
+        $desc = trim($desc);
+
+        if (preg_match('/Pesanan\s+([A-Z0-9\-]+)\s+kamu sudah kami terima,\s*selesaikan pembayaran ya\./i', $desc, $m)) {
+            return "Your order {$m[1]} has been received. Please complete your payment.";
+        }
+
+        if (preg_match('/Pesanan\s+([A-Z0-9\-]+)\s+dibatalkan otomatis karena belum ada konfirmasi pembayaran dalam\s+(\d+)\s+menit\..*/i', $desc, $m)) {
+            return "Order {$m[1]} was automatically cancelled due to payment expiration within {$m[2]} minutes. Reserved items & vouchers have been restored.";
+        }
+
+        if (preg_match('/Pembayaran pesanan\s+([A-Z0-9\-]+)\s+sudah dikonfirmasi toko\..*/i', $desc, $m)) {
+            return "Payment for order {$m[1]} has been confirmed. Your artisanal bakes are being prepared shortly.";
+        }
+
+        if (preg_match('/Pesanan\s+([A-Z0-9\-]+)\s+kamu sedang disiapkan oleh toko\./i', $desc, $m)) {
+            return "Your order {$m[1]} is currently being baked and prepared fresh by our kitchen.";
+        }
+
+        if (preg_match('/Pesanan\s+([A-Z0-9\-]+)\s+sudah siap\.\s*Tunjukkan kode pickup\s+([^\s]+)\s+ke kasir ya\./i', $desc, $m)) {
+            return "Your order {$m[1]} is ready for collection! Present pickup code {$m[2]} to the cashier.";
+        }
+
+        if (preg_match('/Pesanan\s+([A-Z0-9\-]+)\s+dibatalkan oleh toko\.\s*Alasan:\s*([^.]+)\..*/i', $desc, $m)) {
+            return "Order {$m[1]} was cancelled by the bakery. Reason: {$m[2]}. Please contact our concierge for refund.";
+        }
+
+        if (preg_match('/Pesanan\s+([A-Z0-9\-]+)\s+sudah kamu ambil\..*/i', $desc, $m)) {
+            return "Order {$m[1]} has been collected. Thank you for baking with Daisy Bakery!";
+        }
+
+        if (preg_match('/(.+)\.\s*Silakan upload ulang bukti pembayaran\s+([A-Z0-9\-]+)\./i', $desc, $m)) {
+            return "{$m[1]}. Please re-upload your payment receipt for {$m[2]}.";
+        }
+
+        if (preg_match('/Hadiah\s+(.+)\s+siap dipesan via aplikasi\.\s*Silakan selesaikan checkout\./i', $desc, $m)) {
+            return "Reward {$m[1]} is ready to order via app. Please proceed to checkout.";
+        }
+
+        if (preg_match('/Kamu berhasil menukar stamp dengan\s+(.+)\.\s*Kode:\s*([^\s]+)/i', $desc, $m)) {
+            return "You successfully redeemed stamps for {$m[1]}. Redemption Code: {$m[2]}";
+        }
+
+        if (preg_match('/Pesanan\s+#?([A-Z0-9\-]+)\s+(.+)\.\s*Hadiah\s+(.+)\s*\(Kode:\s*([^)]+)\)\s+siap diambil kembali via aplikasi atau kasir\./i', $desc, $m)) {
+            return "Order #{$m[1]} was cancelled. Reward {$m[3]} (Code: {$m[4]}) has been restored and is ready to claim.";
+        }
+
+        return $desc;
     }
 
     private static function getIconHtml(string $iconType): string

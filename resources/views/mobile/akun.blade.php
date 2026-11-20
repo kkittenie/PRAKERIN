@@ -107,12 +107,105 @@
     {{-- DESKTOP VIEW (>= 1024px) - BESPOKE FRENCH BAKERY MEMBER HUB (NO HERO SECTION) --}}
     {{-- VIP Member Card, Loyalty Overview, and Bento Navigation. --}}
     {{-- ========================================== --}}
-    <div id="account-desktop-root" class="hidden lg:block w-full bg-[#FAF5E8] min-h-screen text-[#3C2415]">
+    <div id="account-desktop-root" class="relative hidden lg:block w-full bg-[#FAF5E8] min-h-screen text-[#3C2415] overflow-hidden">
+
+        <style>
+            @keyframes floatStrawberry {
+                0%, 100% {
+                    transform: translateY(0px) rotate(var(--rot, 0deg));
+                }
+                50% {
+                    transform: translateY(-8px) rotate(calc(var(--rot, 0deg) + 3deg));
+                }
+            }
+            .desktop-floating-strawberry {
+                animation: floatStrawberry var(--duration, 4s) ease-in-out infinite;
+                will-change: transform;
+            }
+        </style>
+
+        {{-- 2D Floating Strawberries in Outer Gutters --}}
+        {{-- Left gutter strawberries (Top to Bottom) --}}
+        <div class="desktop-floating-strawberry hidden lg:block absolute left-2 xl:left-6 2xl:left-12 top-8 pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 44px; height: 58px; --rot: -14deg; --duration: 4.2s;">
+            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute left-4 xl:left-10 2xl:left-16 top-48 pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 36px; height: 48px; --rot: 10deg; --duration: 5.1s;">
+            <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute left-2 xl:left-5 2xl:left-11 top-96 pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 46px; height: 60px; --rot: -6deg; --duration: 4.6s;">
+            <img src="{{ asset('images/decor/strawberry-3.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute left-4 xl:left-9 2xl:left-16 top-[32%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 40px; height: 52px; --rot: 15deg; --duration: 4.9s;">
+            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute left-2 xl:left-6 2xl:left-12 top-[46%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 48px; height: 64px; --rot: -12deg; --duration: 4.4s;">
+            <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute left-5 xl:left-10 2xl:left-18 top-[60%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 38px; height: 50px; --rot: 8deg; --duration: 5.3s;">
+            <img src="{{ asset('images/decor/strawberry-3.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute left-3 xl:left-7 2xl:left-14 top-[72%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 46px; height: 60px; --rot: -10deg; --duration: 4.7s;">
+            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute left-5 xl:left-11 2xl:left-18 top-[84%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 42px; height: 56px; --rot: 14deg; --duration: 4.5s;">
+            <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute left-2 xl:left-6 2xl:left-12 top-[94%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 46px; height: 62px; --rot: -8deg; --duration: 5.0s;">
+            <img src="{{ asset('images/decor/strawberry-3.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+
+        {{-- Right gutter strawberries (Top to Bottom) --}}
+        <div class="desktop-floating-strawberry hidden lg:block absolute right-2 xl:right-6 2xl:right-12 top-12 pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 42px; height: 56px; --rot: 12deg; --duration: 3.9s;">
+            <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute right-4 xl:right-9 2xl:right-16 top-56 pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 48px; height: 64px; --rot: -8deg; --duration: 4.8s;">
+            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute right-2 xl:right-5 2xl:right-11 top-104 pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 38px; height: 50px; --rot: 16deg; --duration: 5.2s;">
+            <img src="{{ asset('images/decor/strawberry-3.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute right-5 xl:right-10 2xl:right-18 top-[35%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 46px; height: 60px; --rot: -14deg; --duration: 4.3s;">
+            <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute right-2 xl:right-6 2xl:right-12 top-[49%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 42px; height: 56px; --rot: 10deg; --duration: 4.7s;">
+            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute right-4 xl:right-9 2xl:right-16 top-[63%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 48px; height: 64px; --rot: -6deg; --duration: 5.0s;">
+            <img src="{{ asset('images/decor/strawberry-3.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute right-2 xl:right-6 2xl:right-12 top-[75%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 38px; height: 50px; --rot: 12deg; --duration: 4.6s;">
+            <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute right-5 xl:right-10 2xl:right-18 top-[86%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 44px; height: 58px; --rot: -12deg; --duration: 4.4s;">
+            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
+        <div class="desktop-floating-strawberry hidden lg:block absolute right-3 xl:right-7 2xl:right-14 top-[95%] pointer-events-none select-none z-0"
+             aria-hidden="true" style="width: 46px; height: 62px; --rot: 14deg; --duration: 4.9s;">
+            <img src="{{ asset('images/decor/strawberry-3.svg') }}" alt="" class="w-full h-full object-contain select-none">
+        </div>
 
         {{-- Clean Desktop Account Hub Header (NO HERO SECTION) --}}
-        <div class="max-w-5xl 2xl:max-w-6xl mx-auto px-6 pt-10 pb-4 space-y-2">
+        <div class="relative z-10 max-w-5xl 2xl:max-w-6xl mx-auto px-6 pt-10 pb-4 space-y-2">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3C2415]/5 border border-[#3C2415]/10 text-xs font-bold uppercase tracking-wider text-[#8E1E26]">
-                DAISY MEMBER CLUB
+                <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-3.5 h-3.5 object-contain inline-block">
+                <span>DAISY MEMBER CLUB</span>
             </div>
             <h1 class="font-display font-black text-3xl sm:text-4xl uppercase tracking-tight text-[#3C2415]">
                 Account & Profile
@@ -136,8 +229,11 @@
 
                     {{-- VIP MEMBER IDENTITY HERO CARD --}}
                     <div class="relative overflow-hidden rounded-[32px] bg-[#F5ECE3] p-8 border border-[#3C2415]/15 shadow-sm transition hover:shadow-md">
-                        {{-- Background Warm Glow Effect --}}
+                        {{-- Background Warm Glow Effect & Strawberry Illustration --}}
                         <div class="pointer-events-none absolute -right-20 -top-20 w-80 h-80 rounded-full bg-radial from-[#8E1E26]/10 to-transparent blur-2xl"></div>
+                        <div class="pointer-events-none absolute right-8 -top-3 w-14 h-18 opacity-80 select-none rotate-12 transition-transform duration-300 hover:rotate-18">
+                            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain filter drop-shadow-xs">
+                        </div>
 
                         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                             {{-- Profile Avatar & Personal Info --}}
@@ -153,6 +249,9 @@
                                                 </svg>
                                             </span>
                                         @endif
+                                    </span>
+                                    <span class="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-white border border-[#3C2415]/15 shadow-sm p-1">
+                                        <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain">
                                     </span>
                                 </div>
 
@@ -214,14 +313,18 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                         {{-- Total Points Card --}}
                         <div class="relative overflow-hidden rounded-[28px] bg-[#F5ECE3] p-6 border border-[#3C2415]/15 shadow-sm transition hover:shadow-md">
+                            <div class="pointer-events-none absolute -right-6 -bottom-6 w-24 h-24 opacity-10 select-none rotate-12">
+                                <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain">
+                            </div>
                             <div class="flex items-center justify-between mb-4">
                                 <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#3C2415] text-[#FAF5E8] shadow-xs">
                                     <svg viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
                                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                                     </svg>
                                 </span>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-[#8E1E26] bg-[#8E1E26]/10 px-3 py-1 rounded-full">
-                                    Loyalty Balance
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-[#8E1E26] bg-[#8E1E26]/10 px-3 py-1 rounded-full flex items-center gap-1.5">
+                                    <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-3 h-3 object-contain">
+                                    <span>Loyalty Balance</span>
                                 </span>
                             </div>
                             <p class="text-xs font-bold uppercase tracking-wider text-[#3C2415]/70">Available Points</p>
@@ -240,12 +343,16 @@
 
                         {{-- Collected Stamps Card --}}
                         <div class="relative overflow-hidden rounded-[28px] bg-[#F5ECE3] p-6 border border-[#3C2415]/15 shadow-sm transition hover:shadow-md">
+                            <div class="pointer-events-none absolute -right-6 -bottom-6 w-24 h-24 opacity-10 select-none -rotate-12">
+                                <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain">
+                            </div>
                             <div class="flex items-center justify-between mb-4">
                                 <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white border border-[#3C2415]/15 shadow-xs">
                                     <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Stamp Card" class="w-6 h-6 object-contain">
                                 </span>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-[#3C2415] bg-[#3C2415]/10 px-3 py-1 rounded-full">
-                                    Stamp Program
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-[#3C2415] bg-[#3C2415]/10 px-3 py-1 rounded-full flex items-center gap-1.5">
+                                    <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-3 h-3 object-contain">
+                                    <span>Stamp Program</span>
                                 </span>
                             </div>
                             <p class="text-xs font-bold uppercase tracking-wider text-[#3C2415]/70">Collected Stamps</p>
@@ -267,6 +374,10 @@
                     <div>
                         <div class="flex items-center justify-between mb-4">
                             <div>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#8E1E26]/10 text-[10px] font-black uppercase tracking-wider text-[#8E1E26] mb-1.5">
+                                    <img src="{{ asset('images/decor/strawberry-3.svg') }}" alt="" class="w-3 h-3 object-contain">
+                                    <span>DAISY BAKERY HUB</span>
+                                </div>
                                 <h3 class="font-display font-black text-xl uppercase tracking-tight text-[#3C2415]">Account Services</h3>
                                 <p class="text-xs text-[#3C2415]/70">Quick access to orders, loyalty cards, and store policies.</p>
                             </div>
@@ -471,13 +582,19 @@
                     </div>
 
                     {{-- SIGN OUT BAR --}}
-                    <div class="rounded-[28px] bg-[#F5ECE3] p-6 border border-[#3C2415]/15 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div class="space-y-0.5 text-center sm:text-left">
-                            <p class="text-xs font-bold text-[#3C2415]">Signed in as <span class="text-[#8E1E26]">{{ $member->nama }}</span> ({{ $member->email ?? $member->no_hp }})</p>
+                    <div class="relative overflow-hidden rounded-[28px] bg-[#F5ECE3] p-6 border border-[#3C2415]/15 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="pointer-events-none absolute -right-6 -bottom-6 w-28 h-28 opacity-10 select-none rotate-12">
+                            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain">
+                        </div>
+                        <div class="relative z-10 space-y-0.5 text-center sm:text-left">
+                            <p class="text-xs font-bold text-[#3C2415] flex items-center gap-1.5 justify-center sm:justify-start">
+                                <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-3.5 h-3.5 object-contain inline-block">
+                                <span>Signed in as <span class="text-[#8E1E26]">{{ $member->nama }}</span> ({{ $member->email ?? $member->no_hp }})</span>
+                            </p>
                             <p class="text-[11px] text-[#3C2415]/60">You can safely sign out of your account on this device at any time.</p>
                         </div>
 
-                        <form method="POST" action="{{ route('member.logout') }}">
+                        <form method="POST" action="{{ route('member.logout') }}" class="relative z-10">
                             @csrf
                             <button type="submit"
                                     class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-red-50 hover:bg-red-600 hover:text-white border border-red-200 text-red-700 font-bold text-xs uppercase tracking-wider transition shadow-xs active:scale-95 cursor-pointer">
@@ -489,6 +606,27 @@
                                 <span>Sign Out</span>
                             </button>
                         </form>
+                    </div>
+
+                    {{-- Decorative Bottom Strawberry Accent Cluster --}}
+                    <div class="relative pt-6 pb-2 flex items-center justify-center gap-4 sm:gap-6 pointer-events-none select-none z-10">
+                        <div class="desktop-floating-strawberry" style="width: 36px; height: 48px; --rot: -14deg; --duration: 4.8s;">
+                            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain filter drop-shadow-xs">
+                        </div>
+                        <div class="desktop-floating-strawberry" style="width: 44px; height: 58px; --rot: 8deg; --duration: 4.2s;">
+                            <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain filter drop-shadow-xs">
+                        </div>
+                        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#8E1E26]/10 border border-[#8E1E26]/20 text-[#8E1E26] text-[11px] font-black uppercase tracking-wider shadow-xs">
+                            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-3.5 h-3.5 object-contain">
+                            <span>DAISY BAKERY • ARTISAN BAKED WITH LOVE</span>
+                            <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-3.5 h-3.5 object-contain">
+                        </div>
+                        <div class="desktop-floating-strawberry" style="width: 44px; height: 58px; --rot: -10deg; --duration: 4.5s;">
+                            <img src="{{ asset('images/decor/strawberry-3.svg') }}" alt="" class="w-full h-full object-contain filter drop-shadow-xs">
+                        </div>
+                        <div class="desktop-floating-strawberry" style="width: 36px; height: 48px; --rot: 12deg; --duration: 5.0s;">
+                            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain filter drop-shadow-xs">
+                        </div>
                     </div>
 
                 @else
@@ -560,6 +698,16 @@
                         </a>
                     </div>
                 @endauth
+
+                {{-- Bottom Corner Accent Strawberries --}}
+                <div class="desktop-floating-strawberry hidden lg:block absolute left-4 xl:left-12 2xl:left-20 bottom-8 pointer-events-none select-none z-0"
+                     aria-hidden="true" style="width: 52px; height: 68px; --rot: -12deg; --duration: 4.3s;">
+                    <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain filter drop-shadow-xs">
+                </div>
+                <div class="desktop-floating-strawberry hidden lg:block absolute right-4 xl:right-12 2xl:right-20 bottom-8 pointer-events-none select-none z-0"
+                     aria-hidden="true" style="width: 52px; height: 68px; --rot: 14deg; --duration: 4.1s;">
+                    <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain filter drop-shadow-xs">
+                </div>
 
             </div>
         </section>

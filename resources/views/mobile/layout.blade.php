@@ -330,7 +330,7 @@
 
                     {{-- Notification Bell Dropdown Button --}}
                     <div class="relative" x-data="{ open: false }">
-                        <button type="button" @click="open = !open" @click.outside="open = false"
+                        <button type="button" id="btn-bell-dropdown" aria-label="Notifications" @click="open = !open" @click.outside="open = false"
                                 class="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-800 transition shadow-sm lg:rounded-lg lg:border-cocoa-200/50 lg:bg-cream-100 lg:text-cocoa-700 lg:hover:border-burgundy-300 lg:hover:text-burgundy-600 lg:shadow-contact-xs">
                             <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             @if ($unreadNotifCount > 0)
@@ -367,7 +367,9 @@
                             <div class="mt-3 max-h-80 overflow-y-auto space-y-2">
                                 @forelse ($memberNotifikasis as $notif)
                                     @php
-                                        $targetUrl = $notif->url ?: route('member.notifikasi.index');
+                                        $targetUrl = \App\Support\NotificationHelper::normalizeUrl($notif->url ?: route('member.notifikasi.index'));
+                                        $translatedTitle = \App\Support\NotificationHelper::translateTitle($notif->title);
+                                        $translatedDesc = \App\Support\NotificationHelper::translateDesc($notif->desc);
                                     @endphp
                                     <a href="{{ $targetUrl }}"
                                        onclick="event.preventDefault(); tandaiNotifDibacaNavbar({{ $notif->id }}, '{{ $targetUrl }}');"
@@ -383,12 +385,12 @@
                                         </span>
                                         <div class="min-w-0 flex-1">
                                             <div class="flex items-center justify-between gap-1">
-                                                <p class="truncate text-xs font-bold text-gray-900 lg:text-java-900">{{ $notif->title }}</p>
+                                                <p class="truncate text-xs font-bold text-gray-900 lg:text-java-900">{{ $translatedTitle }}</p>
                                                 @unless($notif->is_read)
                                                     <span class="h-2 w-2 shrink-0 rounded-full bg-brand-800 lg:bg-burgundy-500"></span>
                                                 @endunless
                                             </div>
-                                            <p class="mt-0.5 text-[11px] leading-snug text-gray-600 line-clamp-2 lg:text-cocoa-700">{{ $notif->desc }}</p>
+                                            <p class="mt-0.5 text-[11px] leading-snug text-gray-600 line-clamp-2 lg:text-cocoa-700">{{ $translatedDesc }}</p>
                                             <span class="mt-1 block text-[10px] text-gray-400 font-medium lg:text-cocoa-400">{{ $notif->created_at->diffForHumans() }}</span>
                                         </div>
                                     </a>
@@ -433,7 +435,7 @@
              muncul dobel. --}}
         @if ((session('success') || session('error') || $errors->any()) && ! request()->routeIs('member.pesanan.show'))
             <div id="flash-toast"
-                 class="toast-flash fixed top-4 left-1/2 z-50 flex w-[calc(100%-2.5rem)] max-w-md items-center justify-between gap-3 rounded-2xl px-4 py-3 text-xs font-semibold shadow-xl border
+                 class="toast-flash fixed top-4 lg:top-24 left-1/2 z-50 flex w-[calc(100%-2.5rem)] max-w-md items-center justify-between gap-3 rounded-2xl px-4 py-3 text-xs font-semibold shadow-xl border
                  {{ session('success') ? 'bg-emerald-50 text-emerald-900 border-emerald-200' : 'bg-red-50 text-red-900 border-red-200' }}">
                 <div class="flex items-center gap-2.5 min-w-0">
                     @if (session('success'))
@@ -450,7 +452,7 @@
         @endif
 
         {{-- Main Page Content --}}
-        <main class="flex flex-1 flex-col {{ request()->routeIs('member.profil') ? '' : 'px-5 sm:px-8 md:px-10' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-6' }} {{ (request()->routeIs('member.beranda') || request()->routeIs('member.menu') || request()->routeIs('member.produk.show') || request()->routeIs('member.checkout.index') || request()->routeIs('member.pesanan.*') || request()->routeIs('member.reward*') || request()->routeIs('member.stamps*') || request()->routeIs('member.riwayat*') || request()->routeIs('member.akun*') || request()->routeIs('member.profil*') || request()->routeIs('member.settings*') || request()->routeIs('member.konten*')) ? 'lg:w-full lg:max-w-none lg:px-0 lg:pt-0 lg:pb-0' : 'lg:mx-auto lg:w-full lg:max-w-7xl lg:px-12 lg:pb-12' }}">
+        <main class="flex flex-1 flex-col {{ request()->routeIs('member.profil') ? '' : 'px-5 sm:px-8 md:px-10' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-6' }} {{ (request()->routeIs('member.beranda') || request()->routeIs('member.menu') || request()->routeIs('member.produk.show') || request()->routeIs('member.checkout.index') || request()->routeIs('member.pesanan.*') || request()->routeIs('member.reward*') || request()->routeIs('member.stamps*') || request()->routeIs('member.riwayat*') || request()->routeIs('member.akun*') || request()->routeIs('member.profil*') || request()->routeIs('member.settings*') || request()->routeIs('member.konten*') || request()->routeIs('member.notifikasi*')) ? 'lg:w-full lg:max-w-none lg:px-0 lg:pt-0 lg:pb-0' : 'lg:mx-auto lg:w-full lg:max-w-7xl lg:px-12 lg:pb-12' }}">
             @yield('content')
         </main>
 
