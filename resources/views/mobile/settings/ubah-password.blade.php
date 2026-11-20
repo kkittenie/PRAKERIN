@@ -220,9 +220,9 @@
 
 
     {{-- ========================================== --}}
-    {{-- DESKTOP VIEW (>= 1024px) - REDESIGNED CARD --}}
+    {{-- DESKTOP VIEW (>= 1024px) - FRENCH BAKERY PASSWORD HUB --}}
     {{-- ========================================== --}}
-    <div class="hidden lg:block lg:max-w-xl lg:mx-auto lg:my-6 lg:bg-white lg:rounded-3xl lg:border lg:border-gray-200/80 lg:shadow-xl lg:p-8"
+    <div class="hidden lg:block lg:max-w-xl lg:mx-auto lg:my-10 bg-[#F5ECE3] rounded-[32px] border border-[#3C2415]/15 shadow-sm p-8 text-[#3C2415]"
         x-data="{
             step: {{ $mulaiStep2 ? 2 : 1 }},
             tanpaPasswordLama: @js($langsungBuat),
@@ -259,7 +259,7 @@
                 this.errorLama = '';
 
                 if (!this.passwordLama) {
-                    this.errorLama = 'Masukkan password lama kamu.';
+                    this.errorLama = 'Please enter your current password.';
                     return;
                 }
 
@@ -276,7 +276,7 @@
                 })
                     .then(async response => {
                         const data = await response.json();
-                        if (!response.ok) throw new Error(data.message || 'Password lama salah.');
+                        if (!response.ok) throw new Error(data.message || 'Incorrect current password.');
                         return data;
                     })
                     .then(data => {
@@ -284,54 +284,54 @@
                         if (data.success) {
                             this.gotoStep(2, 'next');
                         } else {
-                            this.errorLama = data.message || 'Password lama salah.';
+                            this.errorLama = data.message || 'Incorrect current password.';
                         }
                     })
                     .catch(error => {
                         this.memverifikasi = false;
-                        this.errorLama = error.message || 'Terjadi kesalahan.';
+                        this.errorLama = error.message || 'An error occurred. Please try again.';
                     });
             }
         }">
 
         {{-- Desktop Header Bar --}}
-        <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
+        <div class="flex items-center justify-between border-b border-[#3C2415]/10 pb-5 mb-6">
             <button type="button"
                 @click="if (step === 2 && !tanpaPasswordLama) { gotoStep(1, 'back'); } else { window.location.href = '{{ route('member.settings.index') }}'; }"
-                class="inline-flex items-center gap-2 text-xs font-extrabold text-gray-600 hover:text-brand-800 transition">
+                class="inline-flex items-center gap-2 text-xs font-extrabold text-[#3C2415]/75 hover:text-[#8E1E26] transition cursor-pointer">
                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Kembali ke Pengaturan
+                Back to Settings
             </button>
-            <h1 class="text-sm font-extrabold uppercase tracking-wider text-brand-800">{{ $langsungBuat ? 'Buat Kata Sandi' : 'Ubah Kata Sandi' }}</h1>
+            <h1 class="text-xs font-extrabold uppercase tracking-widest text-[#8E1E26]">{{ $langsungBuat ? 'Create Password' : 'Change Password' }}</h1>
         </div>
 
         @unless ($langsungBuat)
         {{-- Step Indicator Bar --}}
         <div class="space-y-1.5">
-            <div class="flex items-center justify-between text-xs font-bold text-gray-600">
-                <span :class="step >= 1 ? 'text-brand-800' : 'text-gray-400'">1. Verifikasi Password Lama</span>
-                <span :class="step >= 2 ? 'text-brand-800' : 'text-gray-400'">2. Buat Password Baru</span>
+            <div class="flex items-center justify-between text-xs font-bold text-[#3C2415]/75">
+                <span :class="step >= 1 ? 'text-[#8E1E26]' : 'text-[#3C2415]/40'">1. Verify Current Password</span>
+                <span :class="step >= 2 ? 'text-[#8E1E26]' : 'text-[#3C2415]/40'">2. Set New Password</span>
             </div>
             <div class="flex items-center gap-2">
-                <span class="h-2 flex-1 rounded-full transition-colors duration-300" :class="step >= 1 ? 'bg-brand-800' : 'bg-gray-200'"></span>
-                <span class="h-2 flex-1 rounded-full transition-colors duration-300" :class="step >= 2 ? 'bg-brand-800' : 'bg-gray-200'"></span>
+                <span class="h-2 flex-1 rounded-full transition-colors duration-300" :class="step >= 1 ? 'bg-[#8E1E26]' : 'bg-[#3C2415]/10'"></span>
+                <span class="h-2 flex-1 rounded-full transition-colors duration-300" :class="step >= 2 ? 'bg-[#8E1E26]' : 'bg-[#3C2415]/10'"></span>
             </div>
         </div>
         @endunless
 
-        {{-- ==================== STEP 1: PASSWORD LAMA ==================== --}}
+        {{-- ==================== STEP 1: CURRENT PASSWORD ==================== --}}
         <div x-ref="stepDesk1" class="mt-7 {{ $mulaiStep2 ? 'hidden' : '' }}">
-            <p class="text-xs text-gray-500 font-medium">Masukkan password lama kamu untuk melanjutkan proses perubahan password.</p>
+            <p class="text-xs text-[#3C2415]/75 font-medium">Enter your current password to proceed with updating your password.</p>
 
             <div class="mt-5">
-                <label for="password_lama_desk" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Password Lama</label>
+                <label for="password_lama_desk" class="block text-xs font-bold uppercase tracking-wider text-[#3C2415]/75 mb-1.5">Current Password</label>
                 <div class="relative">
                     <input :type="lihatPw.lama ? 'text' : 'password'" id="password_lama_desk" x-model="passwordLama"
                         @keyup.enter="verifikasiPasswordLama()"
-                        placeholder="Masukkan password lama"
-                        class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 pr-11 text-sm font-medium text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-4 focus:ring-brand-800/10 shadow-xs">
+                        placeholder="Enter your current password"
+                        class="w-full rounded-2xl border border-[#3C2415]/20 bg-white px-4 py-3.5 pr-11 text-sm font-medium text-[#3C2415] outline-none transition placeholder:text-[#3C2415]/30 focus:border-[#8E1E26] focus:ring-4 focus:ring-[#8E1E26]/10 shadow-xs">
                     <button type="button" @click="lihatPw.lama = ! lihatPw.lama" tabindex="-1"
-                        class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
+                        class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#3C2415]/40 hover:text-[#3C2415]">
                         <svg x-show="! lihatPw.lama" viewBox="0 0 24 24" fill="none" class="h-5 w-5">
                             <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                             <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
@@ -347,14 +347,14 @@
 
             <div class="mt-7 flex justify-end">
                 <button type="button" @click="verifikasiPasswordLama()" :disabled="memverifikasi"
-                    class="rounded-xl bg-brand-800 px-8 py-3.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-md hover:bg-brand-900 transition active:scale-95 disabled:opacity-60">
-                    <span x-show="!memverifikasi">Lanjutkan &rarr;</span>
-                    <span x-show="memverifikasi" x-cloak>Memeriksa...</span>
+                    class="rounded-xl bg-[#3C2415] hover:bg-[#8E1E26] px-8 py-3.5 text-xs font-extrabold uppercase tracking-wider text-[#FAF5E8] shadow-md transition active:scale-95 disabled:opacity-60 cursor-pointer">
+                    <span x-show="!memverifikasi">Continue &rarr;</span>
+                    <span x-show="memverifikasi" x-cloak>Checking...</span>
                 </button>
             </div>
         </div>
 
-        {{-- ==================== STEP 2: PASSWORD BARU ==================== --}}
+        {{-- ==================== STEP 2: NEW PASSWORD ==================== --}}
         <div x-ref="stepDesk2" class="mt-7 {{ $mulaiStep2 ? '' : 'hidden' }}">
 
             <form method="POST" action="{{ route('member.settings.ubah-password.update') }}" class="mt-5 space-y-4"
@@ -365,13 +365,13 @@
                 @endunless
 
                 <div>
-                    <label for="password_baru_desk" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Password Baru</label>
+                    <label for="password_baru_desk" class="block text-xs font-bold uppercase tracking-wider text-[#3C2415]/75 mb-1.5">New Password</label>
                     <div class="relative">
                         <input :type="lihatPw.baru ? 'text' : 'password'" name="password_baru" id="password_baru_desk"
-                            placeholder="Masukkan password baru"
-                            class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 pr-11 text-sm font-medium text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-4 focus:ring-brand-800/10 shadow-xs">
+                            placeholder="Enter new password"
+                            class="w-full rounded-2xl border border-[#3C2415]/20 bg-white px-4 py-3.5 pr-11 text-sm font-medium text-[#3C2415] outline-none transition placeholder:text-[#3C2415]/30 focus:border-[#8E1E26] focus:ring-4 focus:ring-[#8E1E26]/10 shadow-xs">
                         <button type="button" @click="lihatPw.baru = ! lihatPw.baru" tabindex="-1"
-                            class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
+                            class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#3C2415]/40 hover:text-[#3C2415]">
                             <svg x-show="! lihatPw.baru" viewBox="0 0 24 24" fill="none" class="h-5 w-5">
                                 <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                                 <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
@@ -388,13 +388,13 @@
                 </div>
 
                 <div>
-                    <label for="password_baru_confirmation_desk" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Ulangi Password Baru</label>
+                    <label for="password_baru_confirmation_desk" class="block text-xs font-bold uppercase tracking-wider text-[#3C2415]/75 mb-1.5">Confirm New Password</label>
                     <div class="relative">
                         <input :type="lihatPw.konfirmasi ? 'text' : 'password'" name="password_baru_confirmation" id="password_baru_confirmation_desk"
-                            placeholder="Ketik ulang password baru"
-                            class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 pr-11 text-sm font-medium text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-4 focus:ring-brand-800/10 shadow-xs">
+                            placeholder="Retype new password"
+                            class="w-full rounded-2xl border border-[#3C2415]/20 bg-white px-4 py-3.5 pr-11 text-sm font-medium text-[#3C2415] outline-none transition placeholder:text-[#3C2415]/30 focus:border-[#8E1E26] focus:ring-4 focus:ring-[#8E1E26]/10 shadow-xs">
                         <button type="button" @click="lihatPw.konfirmasi = ! lihatPw.konfirmasi" tabindex="-1"
-                            class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
+                            class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#3C2415]/40 hover:text-[#3C2415]">
                             <svg x-show="! lihatPw.konfirmasi" viewBox="0 0 24 24" fill="none" class="h-5 w-5">
                                 <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                                 <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
@@ -413,9 +413,9 @@
 
                 <div class="pt-3 flex justify-end">
                     <button type="submit" :disabled="menyimpan"
-                        class="rounded-xl bg-brand-800 px-8 py-3.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-md hover:bg-brand-900 transition active:scale-95 disabled:opacity-60">
-                        <span x-show="!menyimpan">Simpan Password Baru</span>
-                        <span x-show="menyimpan" x-cloak>Menyimpan...</span>
+                        class="rounded-xl bg-[#3C2415] hover:bg-[#8E1E26] px-8 py-3.5 text-xs font-extrabold uppercase tracking-wider text-[#FAF5E8] shadow-md transition active:scale-95 disabled:opacity-60 cursor-pointer">
+                        <span x-show="!menyimpan">Save New Password</span>
+                        <span x-show="menyimpan" x-cloak>Saving...</span>
                     </button>
                 </div>
             </form>

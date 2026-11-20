@@ -39,36 +39,36 @@
     </div>
 
     {{-- ========================================== --}}
-    {{-- DESKTOP VIEW (>= 1024px) - REDESIGNED CARD --}}
+    {{-- DESKTOP VIEW (>= 1024px) - FRENCH BAKERY SETTINGS HUB --}}
     {{-- ========================================== --}}
-    <div class="hidden lg:block lg:max-w-2xl lg:mx-auto lg:my-6 lg:bg-white lg:rounded-3xl lg:border lg:border-gray-200/80 lg:shadow-xl lg:p-8">
+    <div class="hidden lg:block lg:max-w-2xl lg:mx-auto lg:my-10 bg-[#F5ECE3] rounded-[32px] border border-[#3C2415]/15 shadow-sm p-8 text-[#3C2415]">
         {{-- Desktop Header Bar --}}
-        <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
+        <div class="flex items-center justify-between border-b border-[#3C2415]/10 pb-5 mb-6">
             <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-                class="inline-flex items-center gap-2 text-xs font-extrabold text-gray-600 hover:text-brand-800 transition">
+                class="inline-flex items-center gap-2 text-xs font-extrabold text-[#3C2415]/75 hover:text-[#8E1E26] transition">
                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Kembali ke Akun Saya
+                Back to Account
             </a>
-            <h1 class="text-sm font-extrabold uppercase tracking-wider text-brand-800">Pengaturan Akun</h1>
+            <h1 class="text-xs font-extrabold uppercase tracking-widest text-[#8E1E26]">Account Settings</h1>
         </div>
 
-        <div class="space-y-3">
+        <div class="space-y-4">
             <a href="{{ route('member.settings.ubah-password') }}"
                 onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                class="group flex items-center justify-between rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs transition hover:border-brand-300 hover:shadow-md hover:text-brand-800 active:scale-[0.99]">
+                class="group flex items-center justify-between rounded-2xl border border-[#3C2415]/15 bg-white p-5 shadow-xs transition hover:border-[#8E1E26]/40 hover:shadow-md hover:text-[#8E1E26] active:scale-[0.99]">
                 <div class="flex items-center gap-4">
-                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-800 group-hover:bg-brand-800 group-hover:text-white transition shadow-xs">
+                    <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#3C2415] text-[#FAF5E8] group-hover:bg-[#8E1E26] transition shadow-xs">
                         <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5">
                             <rect x="4" y="10" width="16" height="10" rx="2" stroke="currentColor" stroke-width="2" />
                             <path d="M8 10V7a4 4 0 1 1 8 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
                     </span>
                     <div>
-                        <span class="block text-sm font-extrabold text-gray-900 group-hover:text-brand-800 transition">Ubah Kata Sandi</span>
-                        <span class="text-xs text-gray-500">Perbarui kata sandi untuk menjaga keamanan akun Anda</span>
+                        <span class="block text-sm font-extrabold text-[#3C2415] group-hover:text-[#8E1E26] transition">Change Password</span>
+                        <span class="text-xs text-[#3C2415]/65">Update your password to keep your member account secure</span>
                     </div>
                 </div>
-                <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 text-gray-400 group-hover:text-brand-800 transition transform group-hover:translate-x-0.5">
+                <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 text-[#3C2415]/40 group-hover:text-[#8E1E26] transition transform group-hover:translate-x-0.5">
                     <path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             </a>

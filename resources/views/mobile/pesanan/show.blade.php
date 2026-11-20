@@ -819,12 +819,16 @@
                         {{-- Alerts --}}
                         @if (session('success'))
                             @php
-                                $suksesMsg = session('success');
+                                $suksesMsg = trim((string) session('success'));
                                 $mapSukses = [
                                     'Bukti pembayaran dikonfirmasi. Menunggu verifikasi dari toko.' => 'Payment receipt confirmed. Waiting for store verification.',
+                                    'Bukti pembayaran dikonfirmasi. Menunggu verifikasi dari toko' => 'Payment receipt confirmed. Waiting for store verification.',
                                     'Pesanan berhasil dibuat! Kami akan proses pesananmu segera.' => 'Order placed successfully! We will prepare your order shortly.',
+                                    'Pesanan berhasil dibuat! Tunjukkan kode pickup ke kasir saat mengambil.' => 'Order placed successfully! Present your pickup code to cashier when collecting.',
                                     'Bukti pembayaran berhasil diupload.' => 'Payment receipt uploaded successfully.',
+                                    'Bukti pembayaran berhasil diupload' => 'Payment receipt uploaded successfully.',
                                     'Batas waktu pembayaran habis, pesanan dibatalkan otomatis.' => 'Payment time limit has expired, order was automatically cancelled.',
+                                    'Batas waktu pembayaran sudah habis, pesanan dibatalkan otomatis.' => 'Payment time limit has expired, order was automatically cancelled.',
                                 ];
                                 $suksesMsg = $mapSukses[$suksesMsg] ?? $suksesMsg;
                             @endphp
@@ -836,8 +840,21 @@
                             </div>
                         @endif
                         @if (session('error'))
+                            @php
+                                $errMsg = trim((string) session('error'));
+                                $mapError = [
+                                    'Batas waktu pembayaran sudah habis, pesanan dibatalkan otomatis.' => 'Payment time limit has expired, order was automatically cancelled.',
+                                    'Batas waktu pembayaran habis, pesanan dibatalkan otomatis.' => 'Payment time limit has expired, order was automatically cancelled.',
+                                    'Pesanan ini sudah dibatalkan, tidak bisa upload bukti pembayaran.' => 'This order has already been cancelled, cannot upload payment receipt.',
+                                    'Bukti pembayaran sudah dikonfirmasi, tidak bisa diubah lagi.' => 'Payment receipt has already been confirmed and cannot be modified.',
+                                    'Bukti pembayaran sudah dikonfirmasi sebelumnya.' => 'Payment receipt has already been confirmed.',
+                                    'Upload bukti pembayaran dulu sebelum konfirmasi.' => 'Please upload your payment receipt before confirming.',
+                                    'Pesanan ini sudah dibatalkan.' => 'This order has already been cancelled.',
+                                ];
+                                $errMsg = $mapError[$errMsg] ?? $errMsg;
+                            @endphp
                             <div class="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold">
-                                {{ session('error') }}
+                                {{ $errMsg }}
                             </div>
                         @endif
                         @error('bukti_pembayaran')

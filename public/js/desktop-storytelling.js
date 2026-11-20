@@ -830,12 +830,99 @@
     }
 
     /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     * ACT XIII: ACCOUNT HUB MELTING HERO CANOPY ENTRANCE & PARALLAX
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    const accountHero = document.querySelector('#account-desktop-hero');
+    if (accountHero) {
+      const accountEntrance = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+      // 1. Header Canopy Slide Down
+      accountEntrance.fromTo(accountHero,
+        { y: -50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.9 },
+        0
+      );
+
+      // 2. Narrative Titles Fade Up
+      const accNarrative = accountHero.querySelectorAll('h1, p, .inline-flex');
+      if (accNarrative.length) {
+        accountEntrance.fromTo(accNarrative,
+          { y: 40, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.85, stagger: 0.08, ease: 'power2.out' },
+          0.15
+        );
+      }
+
+      // 3. Centerpiece Cake Spring Bounce & Scrub Parallax
+      const accCake = document.querySelector('#account-desktop-hero-cake');
+      const accGlow = document.querySelector('#account-desktop-glow');
+      if (accCake) {
+        accountEntrance.fromTo(accCake,
+          { y: 60, scale: 0.85, opacity: 0 },
+          { y: 0, scale: 1, opacity: 1, duration: 1.1, ease: 'back.out(1.4)' },
+          0.3
+        );
+
+        if (accGlow) {
+          accountEntrance.fromTo(accGlow,
+            { scale: 0.7, opacity: 0 },
+            { scale: 1, opacity: 0.65, duration: 1.2 },
+            0.2
+          );
+        }
+
+        gsap.to(accCake, {
+          y: -40,
+          scale: 0.96,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: accountHero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1.2
+          }
+        });
+      }
+
+      // 4. Rotating Stamp Pop-in & Parallax
+      const accStamp = document.querySelector('#account-desktop-stamp');
+      if (accStamp) {
+        accountEntrance.fromTo(accStamp,
+          { scale: 0.4, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.8, ease: 'back.out(2)' },
+          0.45
+        );
+
+        gsap.to(accStamp, {
+          y: 20,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: accountHero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1.2
+          }
+        });
+      }
+
+      // 5. Account Showcase Content Fade Up
+      const accContent = document.querySelectorAll('#account-showcase-content > div');
+      if (accContent.length) {
+        accountEntrance.fromTo(accContent,
+          { y: 35, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power2.out' },
+          0.55
+        );
+      }
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
      * ACT IX: WHIMSICAL FLOATING BAKERY OBJECTS & 2D STRAWBERRY SCRUB
      * Slides strawberries vertically and tilts them smoothly on scroll
      * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     document.querySelectorAll('.desktop-floating-strawberry').forEach((sb, index) => {
       // Skip hero strawberries which have their own entrance
-      if (sb.closest('#taste-desktop-hero') || sb.closest('#menu-desktop-hero') || sb.closest('#vouchers-desktop-hero') || sb.closest('#activity-desktop-hero')) return;
+      if (sb.closest('#taste-desktop-hero') || sb.closest('#menu-desktop-hero') || sb.closest('#vouchers-desktop-hero') || sb.closest('#activity-desktop-hero') || sb.closest('#account-desktop-hero')) return;
 
       const direction = index % 2 === 0 ? 1 : -1;
       const travel = direction * (90 + (index * 25) % 60);
