@@ -67,22 +67,11 @@
                     </svg>
                     <span>Back to Account</span>
                 </a>
-
-                <div class="flex items-center gap-3 text-xs">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8E1E26]/10 text-[#8E1E26] font-bold uppercase tracking-wider text-[11px]">
-                        DAISY BAKERY STORE INFO
-                    </span>
-                    <span class="text-[#3C2415]/40">&bull;</span>
-                    <span class="text-[#3C2415]/60 font-medium">Effective November 2026</span>
-                </div>
             </div>
 
             {{-- Clean Page Header (NO HERO SECTION) --}}
             <div class="space-y-2">
                 @if ($slug === 'help-center')
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3C2415]/5 border border-[#3C2415]/10 text-xs font-bold uppercase tracking-wider text-[#8E1E26]">
-                        CUSTOMER SUPPORT & FAQ
-                    </div>
                     <h1 class="font-display font-black text-3xl sm:text-4xl uppercase tracking-tight text-[#3C2415]">
                         Help Center & Store Support
                     </h1>
@@ -90,9 +79,6 @@
                         Find answers to common questions about fresh daily orders, store pickup, digital stamp collection, and member privileges.
                     </p>
                 @elseif ($slug === 'terms-conditions')
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3C2415]/5 border border-[#3C2415]/10 text-xs font-bold uppercase tracking-wider text-[#8E1E26]">
-                        TERMS OF SERVICE
-                    </div>
                     <h1 class="font-display font-black text-3xl sm:text-4xl uppercase tracking-tight text-[#3C2415]">
                         Terms & Conditions
                     </h1>
@@ -100,9 +86,6 @@
                         Please review our operational terms, order fulfillment policies, and membership guidelines governing purchases at Daisy Bakery.
                     </p>
                 @else
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3C2415]/5 border border-[#3C2415]/10 text-xs font-bold uppercase tracking-wider text-[#8E1E26]">
-                        PRIVACY & DATA POLICY
-                    </div>
                     <h1 class="font-display font-black text-3xl sm:text-4xl uppercase tracking-tight text-[#3C2415]">
                         Privacy Policy
                     </h1>
@@ -133,22 +116,7 @@
                                 Need personal assistance with celebration cakes, bulk orders, urgent allergen checks, or pickup schedule changes? Our concierge is ready to assist.
                             </p>
 
-                            <div class="space-y-2.5 text-xs text-[#3C2415]/80 pt-2 border-t border-[#3C2415]/10">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-[#3C2415]/60">Operational Hours:</span>
-                                    <span class="font-bold">07:00 – 21:00 WIB</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-[#3C2415]/60">Response Time:</span>
-                                    <span class="font-bold text-[#8E1E26]">&lt; 5 Minutes</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-[#3C2415]/60">Bakery Kitchen:</span>
-                                    <span class="font-bold">Daisy Jakarta</span>
-                                </div>
-                            </div>
-
-                            <a href="https://wa.me/6281313365554" target="_blank"
+                            <a href="https://wa.me/62882000768044" target="_blank"
                                class="flex items-center justify-center gap-2.5 w-full py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white text-xs font-bold uppercase tracking-wider shadow-sm transition active:scale-95">
                                 <svg viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
                                     <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.81 9.81 0 0 0 12.04 2zm5.8 14.16c-.24.68-1.2 1.25-1.95 1.41-.51.11-1.18.2-3.43-.74-2.88-1.19-4.73-4.13-4.88-4.32-.14-.19-1.18-1.57-1.18-3 0-1.43.75-2.14 1.02-2.43.24-.26.63-.38.84-.38.21 0 .42 0 .6.01.19.01.45-.07.7.53.26.63.89 2.17.97 2.33.08.16.13.35.03.56-.1.21-.16.34-.31.52-.16.18-.33.4-.47.54-.15.15-.31.31-.13.62.18.31.8 1.32 1.72 2.14 1.18 1.05 2.18 1.38 2.49 1.53.31.16.5.13.68-.08.19-.21.79-.92 1-.1.24.18.24.31.4.52 1.32.21.21 2.22.42 2.51.52.29.1.47.16.53.27.06.11.06.63-.18 1.31z"/>

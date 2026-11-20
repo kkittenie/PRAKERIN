@@ -76,18 +76,9 @@ def strip_desktop_only_sections(rel_path: str, text: str) -> str:
     if rel_path == 'riwayat/index.blade.php':
         pattern = re.compile(r'<div[^>]*class="[^"]*hidden lg:block[^"]*"[^>]*>.*?(?=\{\{-- Bottom sheet: Detail Transaksi)', flags=re.DOTALL)
         return pattern.sub("", text)
-    if rel_path == 'akun.blade.php':
-        pattern = re.compile(r'\{\{--\s*=+.*?DESKTOP VIEW.*?@endsection', flags=re.DOTALL)
-        return pattern.sub("@endsection", text)
-    if rel_path == 'profil.blade.php':
-        pattern = re.compile(r'\{\{--\s*=+.*?DESKTOP VIEW.*?@endsection', flags=re.DOTALL)
-        return pattern.sub("@endsection", text)
-    if rel_path == 'settings/index.blade.php':
-        pattern = re.compile(r'\{\{--\s*=+.*?DESKTOP VIEW.*?@endsection', flags=re.DOTALL)
-        return pattern.sub("@endsection", text)
-    if rel_path == 'settings/ubah-password.blade.php':
-        pattern = re.compile(r'<div[^>]*class="[^"]*hidden lg:block[^"]*"[^>]*>.*?(?=@endsection)', flags=re.DOTALL)
-        return pattern.sub("", text)
+    if rel_path in ['akun.blade.php', 'profil.blade.php', 'settings/index.blade.php', 'settings/ubah-password.blade.php']:
+        pattern = re.compile(r'\n\s*\{\{--\s*=+\s*--\}\}\s*\{\{--\s*DESKTOP VIEW.*?@endsection', flags=re.DOTALL)
+        return pattern.sub("\n@endsection", text)
     if rel_path == 'konten-statis.blade.php':
         pattern = re.compile(r'<div id="konten-desktop-root".*?@endsection', flags=re.DOTALL)
         return pattern.sub("@endsection", text)

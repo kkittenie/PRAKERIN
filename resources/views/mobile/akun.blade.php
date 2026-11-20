@@ -154,9 +154,6 @@
                                             </span>
                                         @endif
                                     </span>
-                                    <span class="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#8E1E26] text-white shadow-xs" title="Verified Member">
-                                        <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                    </span>
                                 </div>
 
                                 <div class="min-w-0 flex-1 space-y-1">
@@ -237,30 +234,6 @@
                                    onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                    class="text-xs font-bold text-[#8E1E26] hover:underline flex items-center gap-1">
                                     Redeem Rewards &rarr;
-                                </a>
-                            </div>
-                        </div>
-
-                        {{-- Active Vouchers Card --}}
-                        <div class="relative overflow-hidden rounded-[28px] bg-[#F5ECE3] p-6 border border-[#3C2415]/15 shadow-sm transition hover:shadow-md">
-                            <div class="flex items-center justify-between mb-4">
-                                <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#8E1E26] text-white shadow-xs">
-                                    @include('mobile.components.icon-ticket', ['class' => 'h-5 w-5'])
-                                </span>
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-[#3C2415] bg-[#3C2415]/10 px-3 py-1 rounded-full">
-                                    Special Privileges
-                                </span>
-                            </div>
-                            <p class="text-xs font-bold uppercase tracking-wider text-[#3C2415]/70">My Vouchers</p>
-                            <p class="mt-1 font-display font-black text-3xl sm:text-4xl text-[#3C2415]">
-                                {{ $member->vouchers()->count() }} <span class="text-base font-bold text-[#3C2415]/60">SAVED</span>
-                            </p>
-                            <div class="mt-4 pt-3 border-t border-[#3C2415]/10 flex items-center justify-between">
-                                <span class="text-xs text-[#3C2415]/60">Discounts & gift coupons</span>
-                                <a href="{{ route('member.reward.index') }}"
-                                   onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                                   class="text-xs font-bold text-[#8E1E26] hover:underline flex items-center gap-1">
-                                    Browse Catalog &rarr;
                                 </a>
                             </div>
                         </div>
@@ -347,37 +320,6 @@
                                 </div>
                                 <div class="mt-4 pt-3 border-t border-[#3C2415]/10 text-xs font-bold text-[#8E1E26]">
                                     Browse Vouchers &rarr;
-                                </div>
-                            </a>
-
-                            {{-- 3. Stamp Program --}}
-                            <a href="{{ route('member.reward.index', ['tab' => 'stamp']) }}"
-                               onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                               class="group flex flex-col justify-between rounded-[28px] bg-[#F5ECE3] p-6 border border-[#3C2415]/15 shadow-sm transition hover:border-[#8E1E26]/40 hover:shadow-md hover:-translate-y-0.5">
-                                <div>
-                                    <div class="flex items-center justify-between mb-4">
-                                        <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#3C2415] text-[#FAF5E8] shadow-xs group-hover:bg-[#8E1E26] transition-colors">
-                                            <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                                                <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
-                                                <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
-                                                <circle cx="15.5" cy="8.5" r="1.5" fill="currentColor"/>
-                                                <circle cx="8.5" cy="15.5" r="1.5" fill="currentColor"/>
-                                                <circle cx="15.5" cy="15.5" r="1.5" fill="currentColor"/>
-                                            </svg>
-                                        </span>
-                                        <span class="text-[#3C2415]/40 group-hover:text-[#8E1E26] transition-colors">
-                                            <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                        </span>
-                                    </div>
-                                    <h4 class="font-display font-bold text-base uppercase tracking-tight text-[#3C2415] group-hover:text-[#8E1E26] transition-colors">
-                                        Stamp Rewards
-                                    </h4>
-                                    <p class="mt-1.5 text-xs text-[#3C2415]/70 leading-relaxed">
-                                        Collect digital stamps with your routine coffee and bakery pickups to claim tasty rewards.
-                                    </p>
-                                </div>
-                                <div class="mt-4 pt-3 border-t border-[#3C2415]/10 text-xs font-bold text-[#8E1E26]">
-                                    View {{ $jumlahStampMember }}/{{ $programAktif ? $programAktif->jumlah_stamp_dibutuhkan : 5 }} Stamps &rarr;
                                 </div>
                             </a>
 
@@ -491,7 +433,7 @@
                                 $pesanWaDesk = "Hello Daisy Bakery, I am " . $member->nama . " (Member: " . $member->kode_member . "). I would like to inquire about bakery services and pre-orders. Thank you!";
                             @endphp
                             <div class="mt-5">
-                                <a href="https://wa.me/6281313365554?text={{ urlencode($pesanWaDesk) }}" target="_blank" rel="noopener"
+                                <a href="https://wa.me/62882000768044?text={{ urlencode($pesanWaDesk) }}" target="_blank" rel="noopener"
                                    class="inline-flex items-center justify-center gap-2 w-full py-3 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider shadow-xs transition active:scale-95">
                                     <span>Chat with Bakery Concierge</span>
                                     <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -519,7 +461,7 @@
                             </div>
 
                             <div class="mt-5">
-                                <a href="https://www.instagram.com/saishobakery?igsh=bTcyMDNibmNleGIz" target="_blank" rel="noopener"
+                                <a href="https://www.instagram.com/safiralmr?igsh=bTcyMDNibmNleGIz" target="_blank" rel="noopener"
                                    class="inline-flex items-center justify-center gap-2 w-full py-3 px-5 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 hover:opacity-95 text-white text-xs font-bold uppercase tracking-wider shadow-xs transition active:scale-95">
                                     <span>Follow @daisybakery</span>
                                     <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="m9 18 6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>

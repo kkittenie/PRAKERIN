@@ -425,19 +425,6 @@
                             class="w-full cursor-not-allowed rounded-2xl border border-gray-100 bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-400">
                     </div>
                 </div>
-
-                {{-- Desktop Danger Zone Card (>=1024px) --}}
-                <div class="flex items-center justify-between gap-4 mt-8 rounded-2xl border border-red-100 bg-red-50/50 p-5">
-                    <div class="space-y-0.5">
-                        <h4 class="text-xs font-extrabold text-red-900 uppercase tracking-wide">Danger Zone</h4>
-                        <p class="text-xs text-red-700">Menghapus akun akan menghapus riwayat transaksi dan poin reward secara permanen.</p>
-                    </div>
-                    <button type="button"
-                        @click.stop="modalHapusAkunTerbuka = true"
-                        class="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-extrabold text-red-700 border border-red-200 shadow-xs hover:bg-red-600 hover:text-white hover:border-red-600 transition active:scale-95">
-                        Hapus Akun
-                    </button>
-                </div>
             </div>
 
             {{-- Desktop Save Button Bar (Inside Card Footer) --}}

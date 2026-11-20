@@ -304,21 +304,10 @@
                     </svg>
                     <span>Back to Settings</span>
                 </a>
-
-                <div class="flex items-center gap-3 text-xs">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8E1E26]/10 text-[#8E1E26] font-bold uppercase tracking-wider text-[11px]">
-                        SECURITY & CREDENTIALS
-                    </span>
-                    <span class="text-[#3C2415]/40">&bull;</span>
-                    <span class="text-[#3C2415]/60 font-medium">Bcrypt Encrypted</span>
-                </div>
             </div>
 
             {{-- Clean Page Header (NO HERO SECTION) --}}
             <div class="space-y-2">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3C2415]/5 border border-[#3C2415]/10 text-xs font-bold uppercase tracking-wider text-[#8E1E26]">
-                    ACCOUNT SECURITY
-                </div>
                 <h1 class="font-display font-black text-3xl sm:text-4xl uppercase tracking-tight text-[#3C2415]">
                     {{ $langsungBuat ? 'Create Password' : 'Change Password' }}
                 </h1>
@@ -331,46 +320,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {{-- Left Column: Security Tips & Recommendations --}}
                 <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
-                    <div class="rounded-[28px] bg-[#F5ECE3] p-6 border border-[#3C2415]/15 shadow-sm space-y-4">
-                        <div class="flex items-center gap-3">
-                            <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#3C2415] text-[#FAF5E8] shadow-xs">
-                                <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                                    <rect x="4" y="10" width="16" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
-                                    <path d="M8 10V7a4 4 0 1 1 8 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                            </span>
-                            <div>
-                                <h3 class="font-display font-bold text-sm uppercase tracking-tight text-[#3C2415]">Password Standards</h3>
-                                <p class="text-[11px] text-[#8E1E26] font-semibold">Account Safeguards</p>
-                            </div>
-                        </div>
-
-                        <div class="space-y-2.5 text-xs text-[#3C2415]/80 pt-2 border-t border-[#3C2415]/10">
-                            <div class="flex items-start gap-2.5">
-                                <span class="text-[#8E1E26] font-bold">✓</span>
-                                <span>Minimum 8 characters in length</span>
-                            </div>
-                            <div class="flex items-start gap-2.5">
-                                <span class="text-[#8E1E26] font-bold">✓</span>
-                                <span>Combine upper & lower case letters</span>
-                            </div>
-                            <div class="flex items-start gap-2.5">
-                                <span class="text-[#8E1E26] font-bold">✓</span>
-                                <span>Include at least one number or symbol</span>
-                            </div>
-                            <div class="flex items-start gap-2.5">
-                                <span class="text-[#8E1E26] font-bold">✓</span>
-                                <span>Avoid repeating simple words or birthdays</span>
-                            </div>
-                        </div>
-
-                        <div class="pt-3 border-t border-[#3C2415]/10">
-                            <p class="text-[11px] text-[#3C2415]/65 leading-relaxed">
-                                Our staff will never request your password via phone, email, or WhatsApp.
-                            </p>
-                        </div>
-                    </div>
-
+                    
                     {{-- Concierge Help Box --}}
                     <div class="rounded-2xl bg-white p-5 border border-[#3C2415]/10 shadow-xs space-y-2">
                         <div class="text-xs font-bold text-[#3C2415] uppercase tracking-wide">Forgot Current Password?</div>
