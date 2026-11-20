@@ -178,22 +178,38 @@
             dialog.sheet {
                 inset: 0 !important;
                 margin: auto !important;
-                max-width: 520px !important;
+                max-width: 490px !important;
                 max-height: 85vh !important;
                 width: calc(100% - 2rem) !important;
                 height: fit-content !important;
-                border-radius: 1rem !important;
+                border-radius: 28px !important;
                 transform: scale(0.94) !important;
                 opacity: 0;
                 transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease;
-                box-shadow: 0 4px 16px -2px rgba(35, 24, 21, 0.12), 0 2px 4px -1px rgba(35, 24, 21, 0.06) !important;
-                border: 1px solid rgba(74, 46, 39, 0.12) !important;
-                background-color: var(--color-surface-card, #fefdf6) !important;
+                box-shadow: 0 25px 50px -12px rgba(60, 36, 21, 0.28) !important;
+                border: 1px solid rgba(60, 36, 21, 0.15) !important;
+                background-color: #FAF5E8 !important;
                 overflow: hidden !important;
             }
             dialog.sheet[data-open="true"] {
                 transform: scale(1) !important;
                 opacity: 1;
+            }
+            dialog.sheet[data-open="true"]::backdrop {
+                background: rgba(60, 36, 21, 0.45) !important;
+                backdrop-filter: blur(4px) !important;
+                -webkit-backdrop-filter: blur(4px) !important;
+            }
+            dialog.modal-center {
+                border-radius: 28px !important;
+                border: 1px solid rgba(60, 36, 21, 0.15) !important;
+                background-color: #FAF5E8 !important;
+                box-shadow: 0 25px 50px -12px rgba(60, 36, 21, 0.28) !important;
+            }
+            dialog.modal-center[data-open="true"]::backdrop {
+                background: rgba(60, 36, 21, 0.45) !important;
+                backdrop-filter: blur(4px) !important;
+                -webkit-backdrop-filter: blur(4px) !important;
             }
             /* Hide mobile-only checkout header bar on desktop since top desktop navbar is present */
             .checkout-sticky-header {
@@ -230,7 +246,7 @@
         @endphp
 
         {{-- Desktop Navigation Header (Active only on lg: screens >= 1024px) --}}
-        <header class="hidden lg:flex relative sticky top-0 z-40 w-full items-center justify-between border-b border-[rgba(74,46,39,0.08)] bg-[#FAF5E8]/95 px-8 lg:px-12 py-3 backdrop-blur-md">
+        <header class="hidden lg:flex relative sticky top-0 z-40 w-full items-center justify-between border-b border-[rgba(74,46,39,0.08)] bg-[#FAF5E8]/95 text-[#3A221B] px-8 lg:px-12 py-3 backdrop-blur-md">
             {{-- Left column placeholder --}}
             <div class="w-12 h-6"></div>
 
@@ -434,7 +450,7 @@
         @endif
 
         {{-- Main Page Content --}}
-        <main class="flex flex-1 flex-col {{ request()->routeIs('member.profil') ? '' : 'px-5 sm:px-8 md:px-10' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-6' }} {{ request()->routeIs('member.beranda') ? 'lg:w-full lg:max-w-none lg:px-0 lg:pt-0 lg:pb-0' : 'lg:mx-auto lg:w-full lg:max-w-7xl lg:px-12' }} {{ request()->routeIs('member.profil') ? 'lg:pt-6 lg:pb-12' : (request()->routeIs('member.beranda') ? '' : 'lg:pb-12') }}">
+        <main class="flex flex-1 flex-col {{ request()->routeIs('member.profil') ? '' : 'px-5 sm:px-8 md:px-10' }} {{ request()->routeIs('member.beranda') ? '' : 'pt-6' }} {{ request()->routeIs('member.profil') ? 'pb-4' : 'pb-6' }} {{ (request()->routeIs('member.beranda') || request()->routeIs('member.menu') || request()->routeIs('member.produk.show') || request()->routeIs('member.checkout.index') || request()->routeIs('member.pesanan.*') || request()->routeIs('member.reward*') || request()->routeIs('member.stamps*') || request()->routeIs('member.riwayat*')) ? 'lg:w-full lg:max-w-none lg:px-0 lg:pt-0 lg:pb-0' : 'lg:mx-auto lg:w-full lg:max-w-7xl lg:px-12' }} {{ request()->routeIs('member.profil') ? 'lg:pt-6 lg:pb-12' : ((request()->routeIs('member.beranda') || request()->routeIs('member.menu') || request()->routeIs('member.produk.show') || request()->routeIs('member.checkout.index') || request()->routeIs('member.pesanan.*') || request()->routeIs('member.reward*') || request()->routeIs('member.stamps*') || request()->routeIs('member.riwayat*')) ? '' : 'lg:pb-12') }}">
             @yield('content')
         </main>
 
@@ -588,19 +604,25 @@
         </footer>
 
         {{-- Login Required Dialog Modal for Guests --}}
-        <dialog id="modal-login-required" class="modal-center fixed inset-0 m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 shadow-2xl border-0 sm:max-w-md md:max-w-lg lg:rounded-lg lg:border lg:border-[rgba(74,46,39,0.12)] lg:bg-cream-50 lg:shadow-contact-md">
-            <div class="p-6 text-center">
-                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-800 lg:rounded-xl lg:bg-burgundy-50 lg:text-burgundy-600">
-                    <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 15v2m0 4h.01M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Zm2 0V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <dialog id="modal-login-required" class="modal-center fixed inset-0 m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 shadow-2xl border-0 sm:max-w-md md:max-w-lg lg:rounded-[28px] lg:border lg:border-[#3C2415]/15 lg:bg-[#FAF5E8] lg:shadow-2xl">
+            <div class="p-6 text-center lg:p-8">
+                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-800 lg:h-14 lg:w-14 lg:rounded-full lg:bg-[#8E1E26]/10 lg:text-[#8E1E26]">
+                    <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6 lg:h-7 lg:w-7"><path d="M12 15v2m0 4h.01M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Zm2 0V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </div>
-                <h3 class="mt-4 text-base font-bold text-gray-900 lg:font-display lg:text-xl lg:font-semibold lg:text-java-900">Login Diperlukan</h3>
-                <p id="login-required-msg" class="mt-2 text-xs leading-relaxed text-gray-500 lg:text-cocoa-700">Silakan masuk atau daftar akun Saisho untuk mengakses fitur ini.</p>
-                <div class="mt-6 flex flex-col gap-2">
-                    <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="w-full rounded-2xl bg-brand-800 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-900 lg:rounded-lg lg:bg-burgundy-500 lg:hover:bg-burgundy-600 lg:text-cream-50 lg:shadow-warm-xs">
-                        Login Sekarang
+                <h3 class="mt-4 text-base font-bold text-gray-900 lg:font-display lg:text-2xl lg:font-black lg:text-[#3C2415] lg:tracking-tight">
+                    Sign In Required
+                </h3>
+                <p id="login-required-msg" class="mt-2 text-xs leading-relaxed text-gray-500 lg:text-[#7C6558] lg:text-sm">
+                    Please sign in or create an account to order fresh bakes.
+                </p>
+                <div class="mt-6 flex flex-col gap-2.5">
+                    <a href="{{ route('member.login') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                       class="w-full rounded-2xl bg-brand-800 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-900 lg:rounded-full lg:bg-[#3C2415] lg:hover:bg-[#4E2F1B] lg:py-3.5 lg:text-xs lg:font-black lg:uppercase lg:tracking-widest lg:shadow-md">
+                        Sign In Now
                     </a>
-                    <button type="button" onclick="closeSheet('modal-login-required')" class="py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 lg:text-cocoa-600 lg:hover:text-java-900">
-                        Nanti Saja
+                    <button type="button" onclick="closeSheet('modal-login-required')"
+                            class="py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 lg:text-[#7C6558] lg:hover:text-[#3C2415] cursor-pointer">
+                        Maybe Later
                     </button>
                 </div>
             </div>
@@ -608,43 +630,53 @@
 
         {{-- Sheet konfirmasi "Ditambahkan ke Keranjang" (fore-app style) --}}
         <dialog id="sheet-tambah-keranjang"
-            class="sheet fixed inset-x-0 bottom-0 top-auto m-0 mx-auto max-h-[88vh] w-full max-w-md rounded-t-3xl border-0 p-0 shadow-2xl sm:max-w-xl md:max-w-2xl lg:rounded-lg lg:border lg:border-[rgba(74,46,39,0.12)] lg:bg-cream-50 lg:shadow-contact-md">
+            class="sheet fixed inset-x-0 bottom-0 top-auto m-0 mx-auto max-h-[88vh] w-full max-w-md rounded-t-3xl border-0 p-0 shadow-2xl sm:max-w-xl md:max-w-2xl bg-[#FAF5E8] lg:rounded-[28px] lg:border lg:border-[#3C2415]/15 lg:bg-[#FAF5E8] lg:shadow-2xl">
 
-            <div class="flex max-h-[88vh] flex-col">
+            <div class="flex max-h-[88vh] flex-col relative bg-[#FAF5E8] rounded-t-3xl lg:rounded-[28px]">
+
+                {{-- Close button for desktop --}}
+                <button type="button" onclick="closeSheet('sheet-tambah-keranjang')"
+                    aria-label="Close"
+                    class="hidden lg:flex absolute top-5 right-5 z-10 h-8 w-8 items-center justify-center rounded-full bg-[#3C2415]/5 hover:bg-[#3C2415]/10 text-[#3C2415] transition-colors cursor-pointer">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
 
                 {{-- Handle --}}
-                <div class="flex shrink-0 justify-center pb-1 pt-3">
+                <div class="flex shrink-0 justify-center pb-1 pt-3 lg:hidden">
                     <span class="h-1 w-10 rounded-full bg-gray-200"></span>
                 </div>
 
-                <div class="overflow-y-auto px-5 pb-2 pt-2">
+                <div class="overflow-y-auto px-5 pb-2 pt-2 lg:px-8 lg:pt-8 lg:pb-3">
 
-                    <h3 class="text-center text-sm font-extrabold text-brand-700 lg:font-display lg:text-lg lg:font-semibold lg:text-java-900">
-                        Pilihan Menarik Lainnya
+                    <h3 class="text-center font-display text-lg font-black text-[#3C2415] lg:text-2xl lg:tracking-tight">
+                        Added to Cart!
                     </h3>
 
                     {{-- Kartu item yang baru ditambahkan --}}
-                    <div class="mt-4 flex items-center gap-3 rounded-2xl border border-gray-100 p-3 lg:rounded-xl lg:border-cocoa-200/50 lg:bg-cream-100">
-                        <div class="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-50 lg:bg-cream-200/50">
+                    <div class="mt-4 flex items-center gap-3 rounded-2xl border border-[#3C2415]/10 bg-[#F5ECE3] p-3.5 lg:mt-5 lg:gap-4 lg:rounded-[22px] lg:p-4">
+                        <div class="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white/70 shadow-xs lg:h-18 lg:w-18 lg:rounded-2xl flex items-center justify-center">
                             <img id="tk-item-foto" src="" alt="" class="hidden h-full w-full object-cover">
                             <div id="tk-item-foto-fallback"
-                                class="flex h-full w-full items-center justify-center text-brand-200">
+                                class="flex h-full w-full items-center justify-center text-[#3C2415]/30">
                                 @include('mobile.components.icon-cup', ['class' => 'h-7 w-7'])
                             </div>
                         </div>
                         <div class="min-w-0 flex-1">
                             <div class="flex items-start justify-between gap-2">
-                                <p id="tk-item-nama" class="truncate text-sm font-bold text-gray-900 lg:text-java-900"></p>
+                                <p id="tk-item-nama" class="truncate font-display text-sm font-bold text-[#3C2415] lg:text-base"></p>
                                 <span id="tk-item-jumlah"
-                                    class="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full border border-gray-200 px-1.5 text-[11px] font-bold text-gray-600 lg:border-cocoa-300 lg:text-cocoa-700 lg:lining-nums lg:tabular-nums"></span>
+                                    class="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-[#3C2415] text-[#FAF5E8] font-mono px-2 py-0.5 text-xs font-bold"></span>
                             </div>
-                            <p id="tk-item-varian" class="mt-0.5 text-xs text-gray-400 lg:text-cocoa-500"></p>
-                            <p class="mt-1 flex items-center gap-1 text-xs font-bold text-brand-700 lg:text-status-success">
+                            <p id="tk-item-varian" class="mt-0.5 text-xs text-[#7C6558]"></p>
+                            <p class="mt-1 flex items-center gap-1.5 text-xs font-bold text-[#2E6F40]">
                                 <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5">
                                     <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="3"
                                         stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
-                                Berhasil ditambahkan ke keranjang!
+                                <span>Successfully added to your cart!</span>
                             </p>
                         </div>
                     </div>
@@ -654,15 +686,18 @@
                 </div>
 
                 {{-- Aksi --}}
-                <div class="shrink-0 border-t border-gray-100 px-5 pb-5 pt-3 lg:border-cocoa-100"
+                <div class="shrink-0 border-t border-[#3C2415]/10 px-5 pb-5 pt-3 lg:px-8 lg:pb-8 lg:pt-5"
                     style="padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));">
                     <button type="button" id="tk-btn-lihat-keranjang" onclick="lihatKeranjangDariSheet()"
-                        class="w-full rounded-2xl bg-brand-800 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99] lg:rounded-lg lg:bg-burgundy-500 lg:hover:bg-burgundy-600 lg:text-cream-50 lg:shadow-contact-xs">
-                        Lihat Keranjang
+                        class="w-full rounded-full bg-[#3C2415] hover:bg-[#4E2F1B] py-3.5 lg:py-4 text-xs font-black uppercase tracking-widest text-[#FAF5E8] shadow-md flex items-center justify-center gap-2 cursor-pointer transition active:scale-[0.99]">
+                        <span>View Cart</span>
+                        <svg class="h-3.5 w-3.5 text-[#EACE80]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m9 18 6-6-6-6"/>
+                        </svg>
                     </button>
                     <button type="button" onclick="tambahItemLainDariSheet()"
-                        class="mt-2 w-full rounded-2xl border border-brand-800 py-3 text-sm font-bold text-brand-800 transition active:scale-[0.99] lg:rounded-lg lg:border-cocoa-300 lg:text-cocoa-700 lg:hover:bg-cream-100">
-                        Tambah Item Lain
+                        class="mt-2.5 lg:mt-3 w-full rounded-full border border-[#3C2415]/20 hover:border-[#3C2415] text-[#3C2415] hover:bg-[#3C2415]/5 py-3 lg:py-3.5 text-xs font-bold uppercase tracking-widest cursor-pointer flex items-center justify-center transition active:scale-[0.99]">
+                        <span>Continue Shopping</span>
                     </button>
                 </div>
 
@@ -676,19 +711,19 @@
          Panggil dari JS: appAlert('pesan', 'Judul opsional')
          atau dari Alpine/HTML: $dispatch('app-alert', { message: '...', title: '...' })
          Pakai <dialog> + showModal() supaya tetap muncul di atas bottom sheet yang sedang terbuka. --}}
-    <dialog x-data="{ judul: 'Perhatian', pesan: '' }"
+    <dialog x-data="{ judul: 'Notice', pesan: '' }"
             x-ref="dlg"
-            x-on:app-alert.window="judul = $event.detail.title || 'Perhatian'; pesan = $event.detail.message || ''; if (! $refs.dlg.open) $refs.dlg.showModal()"
+            x-on:app-alert.window="judul = $event.detail.title || 'Notice'; pesan = $event.detail.message || ''; if (! $refs.dlg.open) $refs.dlg.showModal()"
             x-on:click.self="$refs.dlg.close()"
-            class="m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl border-0 bg-white p-0 shadow-2xl backdrop:bg-black/40 lg:rounded-lg lg:border lg:border-[rgba(74,46,39,0.12)] lg:bg-cream-50 lg:shadow-contact-md">
-        <div class="p-6 text-center">
-            <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-800 lg:bg-burgundy-50 lg:text-burgundy-600">
-                <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            class="m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl border-0 bg-white p-0 shadow-2xl backdrop:bg-black/40 lg:rounded-[28px] lg:border lg:border-[#3C2415]/15 lg:bg-[#FAF5E8] lg:shadow-2xl">
+        <div class="p-6 text-center lg:p-8">
+            <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-800 lg:h-14 lg:w-14 lg:bg-[#8E1E26]/10 lg:text-[#8E1E26]">
+                <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6 lg:h-7 lg:w-7"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </span>
-            <h3 class="mt-3 text-base font-bold text-gray-900 lg:font-display lg:text-xl lg:font-semibold lg:text-java-900" x-text="judul"></h3>
-            <p class="mt-1.5 text-sm leading-relaxed text-gray-500 lg:text-cocoa-700" x-text="pesan"></p>
+            <h3 class="mt-3 text-base font-bold text-gray-900 lg:font-display lg:text-xl lg:font-bold lg:text-[#3C2415]" x-text="judul"></h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-gray-500 lg:text-[#7C6558]" x-text="pesan"></p>
             <button type="button" x-on:click="$refs.dlg.close()"
-                    class="mt-5 w-full rounded-2xl bg-[#5a3c27] py-3 text-xs font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] cursor-pointer lg:rounded-lg lg:bg-burgundy-500 lg:hover:bg-burgundy-600 lg:text-cream-50 lg:shadow-contact-xs">
+                    class="mt-5 w-full rounded-2xl bg-[#5a3c27] py-3 text-xs font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] cursor-pointer lg:rounded-full lg:bg-[#3C2415] lg:hover:bg-[#4E2F1B] lg:py-3.5 lg:uppercase lg:tracking-wider">
                 OK
             </button>
         </div>
@@ -700,7 +735,7 @@
         };
         window.tampilkanAlert = window.appAlert;
         window.alert = function (message) {
-            window.appAlert(message, 'Perhatian');
+            window.appAlert(message, 'Notice');
         };
 
         let __tkCheckoutUrl = null;
@@ -728,13 +763,13 @@
                 const data = await res.json();
 
                 if (!data.success) {
-                    appAlert((data.message) || 'Gagal menambahkan ke keranjang.');
+                    appAlert((data.message) || 'Failed to add item to cart.');
                     return;
                 }
 
                 tampilkanSheetTambahKeranjang(data);
             } catch (e) {
-                appAlert('Terjadi kesalahan, coba lagi.');
+                appAlert('Something went wrong. Please try again.');
             } finally {
                 if (btn) btn.disabled = false;
             }
@@ -781,7 +816,7 @@
         }
 
         function bukaModalLoginRequired(namaFitur) {
-            document.getElementById('login-required-msg').innerText = 'Silakan masuk atau daftar akun Saisho untuk mengakses fitur ' + namaFitur + '.';
+            document.getElementById('login-required-msg').innerText = 'Please sign in or create a Daisy Bakery account to access ' + namaFitur + '.';
             openSheet('modal-login-required');
         }
         function openSheet(id) {

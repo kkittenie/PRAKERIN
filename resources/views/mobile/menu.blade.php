@@ -21,7 +21,7 @@
 
     <script type="application/json" id="menu-search-index">{!! json_encode($searchIndex ?? []) !!}</script>
 
-    <div x-data="{
+    <div class="lg:hidden" x-data="{
             search: '',
             activeKategori: 'semua',
             kategoriDropdown: false,
@@ -428,6 +428,611 @@
         <p x-show="adaProdukTampil()" class="mt-6 pb-5 text-center text-[11px] text-gray-400">Tap menu untuk lihat detail &amp; pesan</p>
         </div>
         </div>
+    </div>
+    </div>
+
+    {{-- ════════════════════════════════════════════════════════════════
+         DESKTOP VIEW (>= 1024px) — BESPOKE VINTAGE MENU SHOWCASE
+         Matches reference: Deep Cocoa Curved Hero Canopy with Golden Swirls,
+         Rotating "Discover More" Badge, Scallop Category Badges,
+         and 3-Column Soft Biscuit Product Cards
+         ════════════════════════════════════════════════════════════════ --}}
+    @php
+        $scallopColors = [
+            '#EACE80', // Daisy Gold
+            '#E5A1B0', // Soft Rose Pink
+            '#D4A574', // Warm Biscuit
+            '#C2D2E3', // Cerulean Blue
+            '#C9D6B8', // Sage Pistachio
+            '#E3A9A0', // Peach
+        ];
+    @endphp
+
+    <div class="hidden lg:block w-full bg-[#FAF5E8]"
+         x-data="{
+             desktopTab: 'all',
+             searchDesktop: '',
+             menuIndex: (() => {
+                 try {
+                     const el = document.getElementById('menu-search-index');
+                     return el ? JSON.parse(el.textContent) : [];
+                 } catch(e) {
+                     return [];
+                 }
+             })(),
+             isSearching() {
+                 return this.searchDesktop.trim().length > 0;
+             },
+             matchesSearch(name) {
+                 if (!this.isSearching()) return true;
+                 return name.toLowerCase().includes(this.searchDesktop.toLowerCase().trim());
+             },
+             cocokKategori(kategoriId) {
+                 if (!this.isSearching()) return true;
+                 const q = this.searchDesktop.toLowerCase().trim();
+                 return this.menuIndex.some(item => String(item.kategori) === String(kategoriId) && item.nama.includes(q));
+             },
+             hasMatchingProducts() {
+                 if (!this.menuIndex || this.menuIndex.length === 0) return false;
+                 const q = this.searchDesktop.toLowerCase().trim();
+                 return this.menuIndex.some(item => {
+                     const matchesCat = (this.desktopTab === 'all' || String(item.kategori) === String(this.desktopTab));
+                     const matchesQuery = !this.isSearching() || item.nama.includes(q);
+                     return matchesCat && matchesQuery;
+                 });
+             }
+         }">
+
+        {{-- 1. DEEP COCOA MELTING HERO CANOPY --}}
+        <section id="menu-desktop-hero" class="relative w-full text-[#FAF5E8] overflow-visible">
+            {{-- Top Dark Cocoa Banner (Navbar & Narrative) --}}
+            <div class="relative w-full bg-[#3C2415] pt-10 pb-8 sm:pb-9 lg:pb-10 xl:pb-12 text-center overflow-hidden">
+                {{-- Background Line Art Bakery Doodles (Cake on Left, Croissant on Right) --}}
+                <div class="pointer-events-none absolute inset-0 opacity-18 select-none overflow-hidden">
+                    {{-- Left Tiered Celebration Cake Line Art Doodle --}}
+                    <svg class="absolute -left-6 lg:left-2 2xl:left-8 top-6 w-72 lg:w-80 h-72 lg:h-80 text-white" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        {{-- Cake Stand Pedestal --}}
+                        <path d="M 40 160 Q 100 172 160 160 Q 100 178 40 160 Z"/>
+                        <path d="M 85 167 L 76 186 L 124 186 L 115 167"/>
+                        <path d="M 70 186 Q 100 190 130 186"/>
+                        {{-- Bottom Tier Base & Scallop Frosting --}}
+                        <path d="M 46 124 L 46 154 Q 100 168 154 154 L 154 124"/>
+                        <path d="M 46 124 Q 100 138 154 124 Q 100 110 46 124 Z"/>
+                        <path d="M 46 154 Q 55 160 64 156 Q 73 162 82 158 Q 91 163 100 163 Q 109 163 118 158 Q 127 162 136 156 Q 145 160 154 154"/>
+                        {{-- Top Tier Base & Dripping Glaze --}}
+                        <path d="M 68 84 L 68 116 Q 100 128 132 116 L 132 84"/>
+                        <path d="M 68 84 Q 100 96 132 84 Q 100 72 68 84 Z"/>
+                        <path d="M 68 88 Q 75 100 82 92 Q 89 103 96 94 Q 104 105 111 94 Q 118 102 125 92 Q 129 98 132 88"/>
+                        {{-- Top Cake Decorations (Candle, Flame & Cherries) --}}
+                        <path d="M 98 62 L 98 78 L 102 78 L 102 62 Z"/>
+                        <path d="M 100 52 Q 95 58 100 62 Q 105 58 100 52 Z"/>
+                        <circle cx="82" cy="74" r="7"/>
+                        <path d="M 82 67 Q 87 56 93 58"/>
+                        <circle cx="118" cy="74" r="7"/>
+                        <path d="M 118 67 Q 123 56 129 58"/>
+                        {{-- Sparkles --}}
+                        <path d="M 32 65 L 34 73 L 42 75 L 34 77 L 32 85 L 30 77 L 22 75 L 30 73 Z"/>
+                        <path d="M 168 62 L 170 68 L 176 70 L 170 72 L 168 78 L 166 72 L 160 70 L 166 68 Z"/>
+                    </svg>
+
+                    {{-- Right Authentic Curved Crescent Croissant Line Art Doodle --}}
+                    <svg class="absolute -right-6 lg:right-2 2xl:right-8 top-6 w-72 lg:w-80 h-72 lg:h-80 text-white" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        {{-- Crescent Body Outer Silhouette --}}
+                        <path d="M 32 132 C 22 96 46 54 96 46 C 146 38 178 76 170 126 C 156 112 140 102 120 98 C 96 94 70 102 48 120 C 38 125 34 130 32 132 Z"/>
+                        {{-- Main Central Rolled Segment --}}
+                        <path d="M 76 50 C 85 74 87 102 76 128 C 92 120 108 120 122 126 C 130 102 128 74 118 48"/>
+                        {{-- Flaky Inner Arches --}}
+                        <path d="M 58 60 C 66 82 68 105 58 126"/>
+                        <path d="M 98 47 C 104 70 105 95 98 122"/>
+                        <path d="M 138 60 C 144 82 142 105 134 124"/>
+                        {{-- Rolled Crescent Horn Tips --}}
+                        <path d="M 32 132 C 28 138 30 144 36 142 C 42 140 46 134 48 126"/>
+                        <path d="M 170 126 C 174 133 172 139 166 139 C 160 139 155 133 151 125"/>
+                        {{-- Crust Score Marks --}}
+                        <path d="M 86 68 Q 92 84 86 98"/>
+                        <path d="M 108 66 Q 114 84 108 97"/>
+                        {{-- Fresh Oven Steam Aromas --}}
+                        <path d="M 85 32 Q 91 22 85 12"/>
+                        <path d="M 105 28 Q 111 18 105 8"/>
+                        <path d="M 125 34 Q 131 24 125 14"/>
+                    </svg>
+                </div>
+
+                {{-- Centered Title & Narrative --}}
+                <div class="relative z-10 max-w-4xl mx-auto px-6 text-center">
+                    <h1 class="font-display font-black text-5xl lg:text-6xl xl:text-7xl uppercase tracking-tight text-[#FAF5E8] flex items-center justify-center gap-3.5 drop-shadow-md">
+                        <span>OUR</span>
+                        <span class="text-[#8E1E26]">FRESH MENU</span>
+                    </h1>
+
+                    <p class="mt-4 font-ui text-sm sm:text-base text-[#FAF5E8]/75 max-w-xl mx-auto leading-relaxed">
+                        Explore our signature vintage celebration cakes, golden flaky croissants, and wholesome artisan sourdough baked with honest ingredients.
+                    </p>
+                </div>
+            </div>
+
+            {{-- Organic Melting Canopy Bottom SVG on Cream Background with Big Cake & Stamp Nested Inside --}}
+            <div class="relative w-full bg-[#FAF5E8] overflow-visible select-none z-20 -mt-1">
+                <svg viewBox="0 0 1440 360" fill="none" class="w-full h-64 sm:h-72 lg:h-[350px] xl:h-[380px] block pointer-events-none" preserveAspectRatio="none">
+                    <path d="M 0 0 L 1440 0 L 1440 140 C 1360 160, 1310 110, 1260 110 C 1120 110, 960 345, 720 345 C 480 345, 320 110, 180 110 C 130 110, 80 160, 0 140 Z" fill="#3C2415"/>
+                </svg>
+
+                {{-- Subtle Ambient Warm Bakery Glow Behind Cake --}}
+                <div id="menu-desktop-glow" class="pointer-events-none absolute left-1/2 top-[100px] sm:top-[105px] lg:top-[110px] xl:top-[115px] -translate-x-1/2 -translate-y-1/2 w-[460px] sm:w-[520px] lg:w-[580px] xl:w-[640px] h-[280px] sm:h-[320px] lg:h-[360px] xl:h-[390px] rounded-full blur-3xl opacity-70 z-10"
+                     style="background: radial-gradient(circle, rgba(255, 230, 150, 0.45) 0%, rgba(220, 100, 50, 0.22) 42%, rgba(60, 36, 21, 0) 72%);">
+                </div>
+
+                {{-- Prominent Centerpiece: Big Vintage Strawberry Celebration Cake (Generously Scaled, Clear from Narrative) --}}
+                <div id="menu-desktop-hero-cake" class="absolute left-1/2 -top-2 sm:-top-3 lg:-top-4 xl:-top-5 -translate-x-1/2 pointer-events-none select-none z-20 flex flex-col items-center">
+                    <img src="{{ asset('images/decor/vintage-strawberry-cake.png') }}" alt="Artisanal Daisy Strawberry Celebration Cake"
+                         class="w-[230px] sm:w-[260px] lg:w-[290px] xl:w-[310px] h-auto object-contain filter drop-shadow-[0_22px_28px_rgba(20,10,5,0.72)] drop-shadow-[0_8px_14px_rgba(20,10,5,0.52)]">
+                </div>
+
+                {{-- Compact Cute Rotating "DISCOVER MORE" Stamp Badge Nested Deep in the Melting Scoop (No Cake Collision) --}}
+                <div id="menu-desktop-stamp" class="absolute left-1/2 bottom-5 sm:bottom-6 lg:bottom-7 xl:bottom-8 -translate-x-1/2 z-30">
+                    <button type="button"
+                            @click="document.getElementById('menu-showcase-content').scrollIntoView({ behavior: 'smooth' })"
+                            class="relative w-14 h-14 sm:w-15 sm:h-15 lg:w-16 lg:h-16 flex items-center justify-center group focus:outline-none transition-transform hover:scale-105 active:scale-95 cursor-pointer pointer-events-auto"
+                            title="Scroll down to menu">
+                        <div class="absolute inset-0 rounded-full bg-[#FAF5E8] border-2 border-[#3C2415]/20 shadow-lg group-hover:border-[#8E1E26]/40 transition-colors"></div>
+                        
+                        {{-- Rotating Circular Text --}}
+                        <svg class="w-11 h-11 sm:w-12 sm:h-12 lg:w-13 lg:h-13 animate-[spin_14s_linear_infinite]" viewBox="0 0 100 100">
+                            <path id="circlePathDesktopMenu" d="M 50, 50 m -37, 0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" fill="none" />
+                            <text class="text-[9px] font-bold tracking-[0.24em] uppercase fill-[#3C2415]">
+                                <textPath href="#circlePathDesktopMenu" startOffset="0%">
+                                    DISCOVER MORE • DISCOVER MORE •
+                                </textPath>
+                            </text>
+                        </svg>
+
+                        {{-- Centered Arrow --}}
+                        <div class="absolute flex items-center justify-center text-[#8E1E26] group-hover:translate-y-0.5 transition-transform duration-200">
+                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 5v14M5 12l7 7 7-7"/>
+                            </svg>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        {{-- 2. CATEGORY FILTER TABS (SCALLOP BADGES), SEARCH & SHOWCASE --}}
+        <section id="menu-desktop-showcase" class="relative w-full bg-[#FAF5E8] overflow-hidden">
+            {{-- Strawberry Keyframe Styles (Consistent with Beranda) --}}
+            <style>
+                @keyframes floatStrawberry {
+                    0%, 100% {
+                        transform: translateY(0px) rotate(var(--rot, 0deg));
+                    }
+                    50% {
+                        transform: translateY(-8px) rotate(calc(var(--rot, 0deg) + 3deg));
+                    }
+                }
+                .desktop-floating-strawberry {
+                    animation: floatStrawberry var(--duration, 4s) ease-in-out infinite;
+                    will-change: transform;
+                }
+            </style>
+
+            {{-- 2D Floating Strawberries in Outer Gutters (Positioned Elegantly Away From Screen Edges) --}}
+            <div class="desktop-floating-strawberry hidden xl:block absolute left-8 xl:left-12 2xl:left-20 top-12 pointer-events-none select-none z-0"
+                 aria-hidden="true" style="width: 48px; height: 64px; --rot: -10deg; --duration: 4.2s;">
+                <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain select-none">
+            </div>
+            <div class="desktop-floating-strawberry hidden xl:block absolute right-8 xl:left-auto xl:right-12 2xl:right-20 top-20 pointer-events-none select-none z-0"
+                 aria-hidden="true" style="width: 44px; height: 58px; --rot: 14deg; --duration: 3.8s;">
+                <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain select-none">
+            </div>
+            <div class="desktop-floating-strawberry hidden xl:block absolute left-10 xl:left-14 2xl:left-24 top-1/4 pointer-events-none select-none z-0"
+                 aria-hidden="true" style="width: 42px; height: 56px; --rot: 18deg; --duration: 4.8s;">
+                <img src="{{ asset('images/decor/strawberry-3.svg') }}" alt="" class="w-full h-full object-contain select-none">
+            </div>
+            <div class="desktop-floating-strawberry hidden xl:block absolute right-10 xl:left-auto xl:right-14 2xl:right-24 top-1/3 pointer-events-none select-none z-0"
+                 aria-hidden="true" style="width: 44px; height: 58px; --rot: -14deg; --duration: 4.4s;">
+                <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain select-none">
+            </div>
+            <div class="desktop-floating-strawberry hidden xl:block absolute left-9 xl:left-13 2xl:left-22 top-1/2 pointer-events-none select-none z-0"
+                 aria-hidden="true" style="width: 46px; height: 60px; --rot: -12deg; --duration: 5.0s;">
+                <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain select-none">
+            </div>
+            <div class="desktop-floating-strawberry hidden xl:block absolute right-9 xl:left-auto xl:right-13 2xl:right-22 top-2/3 pointer-events-none select-none z-0"
+                 aria-hidden="true" style="width: 48px; height: 64px; --rot: 12deg; --duration: 4.1s;">
+                <img src="{{ asset('images/decor/strawberry-3.svg') }}" alt="" class="w-full h-full object-contain select-none">
+            </div>
+            <div class="desktop-floating-strawberry hidden xl:block absolute left-8 xl:left-12 2xl:left-20 bottom-24 pointer-events-none select-none z-0"
+                 aria-hidden="true" style="width: 44px; height: 58px; --rot: 8deg; --duration: 4.6s;">
+                <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-full h-full object-contain select-none">
+            </div>
+            <div class="desktop-floating-strawberry hidden xl:block absolute right-8 xl:left-auto xl:right-12 2xl:right-20 bottom-16 pointer-events-none select-none z-0"
+                 aria-hidden="true" style="width: 46px; height: 60px; --rot: -16deg; --duration: 4.3s;">
+                <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-full h-full object-contain select-none">
+            </div>
+
+            <div id="menu-showcase-content" class="relative max-w-5xl 2xl:max-w-6xl mx-auto px-6 pt-10 pb-24 z-10">
+
+            {{-- Category Scallop Badges (Dynamically Populated from Database $kategoris) --}}
+            <div id="menu-scallop-tabs" class="flex flex-wrap items-center justify-center gap-6 sm:gap-8 lg:gap-10">
+                {{-- TAB: ALL --}}
+                <button type="button"
+                        @click="desktopTab = 'all'"
+                        class="group flex flex-col items-center transition-transform hover:scale-105 active:scale-95 focus:outline-none cursor-pointer">
+                    <div class="relative w-16 h-16 sm:w-18 sm:h-18 lg:w-20 lg:h-20 flex items-center justify-center">
+                        <svg class="absolute inset-0 w-full h-full transition-all duration-300 filter drop-shadow-xs"
+                             :class="desktopTab === 'all' ? 'text-[#8E1E26] scale-105 rotate-6' : 'text-[#FAF5E8] stroke-2 stroke-[#3C2415]/20 group-hover:rotate-12'"
+                             viewBox="0 0 100 100" fill="currentColor">
+                            <path d="M50 0 C58 0 60 12 68 15 C76 18 84 14 89 21 C94 28 88 36 91 44 C94 52 100 58 98 66 C96 74 86 78 81 85 C76 92 74 100 66 100 C58 100 54 90 46 90 C38 90 32 98 25 95 C18 92 18 80 13 74 C8 68 0 62 0 54 C0 46 10 42 12 34 C14 26 8 18 15 13 C22 8 30 14 38 11 C46 8 48 0 50 0 Z" />
+                        </svg>
+                        <div class="relative z-10 w-11 h-11 sm:w-12 sm:h-12 lg:w-13 lg:h-13 rounded-full bg-[#3C2415]/10 flex items-center justify-center overflow-hidden">
+                            <img src="{{ asset('images/decor/vintage-strawberry-cake.png') }}" alt="All Menu" class="w-10 h-10 object-contain">
+                        </div>
+                    </div>
+                    <span class="mt-2.5 font-display text-xs sm:text-sm font-black tracking-wider uppercase transition-colors"
+                          :class="desktopTab === 'all' ? 'text-[#8E1E26] underline decoration-2 underline-offset-4' : 'text-[#3C2415] group-hover:text-[#8E1E26]'">
+                        ALL
+                    </span>
+                </button>
+
+                {{-- DYNAMIC TABS FOR EACH DATABASE CATEGORY --}}
+                @foreach ($kategoris as $index => $kategori)
+                    @php
+                        $tabColor = $scallopColors[$index % count($scallopColors)];
+                        $catIcon = $kategori->produk->firstWhere('foto', '!=', null)?->foto;
+                    @endphp
+                    <button type="button"
+                            @click="desktopTab = '{{ $kategori->id }}'"
+                            class="group flex flex-col items-center transition-transform hover:scale-105 active:scale-95 focus:outline-none cursor-pointer">
+                        <div class="relative w-16 h-16 sm:w-18 sm:h-18 lg:w-20 lg:h-20 flex items-center justify-center">
+                            <svg class="absolute inset-0 w-full h-full transition-all duration-300 filter drop-shadow-xs"
+                                 :class="desktopTab == '{{ $kategori->id }}' ? 'scale-105 rotate-6' : 'stroke-2 stroke-[#3C2415]/15 group-hover:rotate-12'"
+                                 :style="desktopTab == '{{ $kategori->id }}' ? 'color: {{ $tabColor }}' : 'color: #F5ECE3'"
+                                 viewBox="0 0 100 100" fill="currentColor">
+                                <path d="M50 0 C58 0 60 12 68 15 C76 18 84 14 89 21 C94 28 88 36 91 44 C94 52 100 58 98 66 C96 74 86 78 81 85 C76 92 74 100 66 100 C58 100 54 90 46 90 C38 90 32 98 25 95 C18 92 18 80 13 74 C8 68 0 62 0 54 C0 46 10 42 12 34 C14 26 8 18 15 13 C22 8 30 14 38 11 C46 8 48 0 50 0 Z" />
+                            </svg>
+                            <div class="relative z-10 w-11 h-11 sm:w-12 sm:h-12 lg:w-13 lg:h-13 rounded-full overflow-hidden shadow-xs flex items-center justify-center bg-white/60">
+                                @if ($catIcon)
+                                    <img src="{{ asset('storage/' . $catIcon) }}" alt="{{ $kategori->nama_kategori }}" class="w-full h-full object-cover">
+                                @else
+                                    <img src="{{ asset('images/decor/vintage-strawberry-cake.png') }}" alt="{{ $kategori->nama_kategori }}" class="w-9 h-9 object-contain">
+                                @endif
+                            </div>
+                        </div>
+                        <span class="mt-2.5 font-display text-xs sm:text-sm font-black tracking-wider uppercase transition-colors"
+                              :class="desktopTab == '{{ $kategori->id }}' ? 'text-[#8E1E26] underline decoration-2 underline-offset-4' : 'text-[#3C2415] group-hover:text-[#8E1E26]'">
+                            {{ $kategori->nama_kategori }}
+                        </span>
+                    </button>
+                @endforeach
+            </div>
+
+            {{-- Vintage Biscuit Search Input --}}
+            <div id="menu-desktop-search" class="mt-10 max-w-md mx-auto">
+                <div class="flex items-center gap-3 rounded-full bg-[#F5ECE3] border border-[#3C2415]/15 px-5 py-2.5 shadow-xs focus-within:border-[#8E1E26] focus-within:ring-2 focus-within:ring-[#8E1E26]/20 transition-all">
+                    <svg class="h-4.5 w-4.5 shrink-0 text-[#3C2415]/50" viewBox="0 0 24 24" fill="none">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <input type="text" x-model="searchDesktop" placeholder="Search fresh breads, pastries, cakes..."
+                           class="w-full border-0 bg-transparent p-0 text-xs sm:text-sm font-medium text-[#3C2415] placeholder:text-[#3C2415]/40 focus:outline-none focus:ring-0">
+                    <button type="button" x-show="searchDesktop.length > 0" @click="searchDesktop = ''" class="text-[#3C2415]/40 hover:text-[#3C2415]">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            {{-- DYNAMIC CATEGORY SECTIONS (FROM DATABASE $kategoris) --}}
+            <div class="mt-16 space-y-20">
+                @foreach ($kategoris as $kategori)
+                    @php
+                        $kategoriBundling = $daftarBundling->where('kategori_id', $kategori->id);
+                        $kategoriPromoEvent = $daftarPromoEvent->where('kategori_id', $kategori->id);
+                        $hasItems = $kategori->produk->isNotEmpty() || $kategoriBundling->isNotEmpty() || $kategoriPromoEvent->isNotEmpty();
+                    @endphp
+
+                    @if ($hasItems)
+                        <div x-show="(desktopTab === 'all' || desktopTab == '{{ $kategori->id }}') && cocokKategori('{{ $kategori->id }}')"
+                             class="menu-category-section space-y-8">
+                            <h2 class="font-display font-black text-3xl lg:text-4xl uppercase tracking-wider text-[#3C2415] text-center">
+                                {{ $kategori->nama_kategori }}
+                            </h2>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10">
+                                {{-- 1. Regular Category Products --}}
+                                @foreach ($kategori->produk as $produk)
+                                    @php
+                                        $hargaAsli = $produk->harga_tampil_asli;
+                                        $hargaFinal = $produk->harga_tampil_final;
+                                        $adaPromo = $produk->ada_promo_tampil;
+                                        $habis = $produk->habis_tampil;
+                                    @endphp
+                                    <div x-show="matchesSearch('{{ addslashes($produk->nama_produk) }}')"
+                                         data-produk-id="{{ $produk->id }}"
+                                         class="rounded-[32px] bg-[#F5ECE3] p-7 transition-shadow duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-md">
+                                        
+                                        <a href="{{ route('member.produk.show', $produk) }}"
+                                           onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                           class="block group/card">
+                                            <div class="relative h-56 w-full overflow-hidden rounded-2xl mb-4 bg-white/40 shadow-xs flex items-center justify-center">
+                                                @if ($produk->foto)
+                                                    <img src="{{ asset('storage/' . $produk->foto) }}" alt="{{ $produk->nama_produk }}"
+                                                         class="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none"
+                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                @endif
+                                                <div class="{{ $produk->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-[#3C2415]/20">
+                                                    @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
+                                                </div>
+
+                                                <span data-promo-badge class="absolute left-2.5 top-2.5 rounded-full bg-[#8E1E26] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm"
+                                                      style="{{ $adaPromo ? '' : 'display:none' }}">Promo</span>
+                                                @if ($habis)
+                                                    <span class="absolute left-2.5 bottom-2.5 rounded-full bg-[#3C2415]/85 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-xs">Sold Out</span>
+                                                @endif
+                                            </div>
+
+                                            <p class="text-[11px] font-semibold text-[#9C8C80] uppercase tracking-wider mb-1">{{ $kategori->nama_kategori }}</p>
+                                            <h3 class="font-display font-bold text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">{{ $produk->nama_produk }}</h3>
+                                        </a>
+
+                                        <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p data-harga-asli class="truncate text-xs text-[#9C8C80] line-through font-sans" style="{{ $adaPromo ? '' : 'display:none' }}">
+                                                    Rp {{ number_format($hargaAsli, 0, ',', '.') }}
+                                                </p>
+                                                <p data-harga-final class="truncate text-base lg:text-lg font-extrabold text-[#3C2415] font-sans">
+                                                    Rp {{ number_format($hargaFinal, 0, ',', '.') }}
+                                                </p>
+                                            </div>
+
+                                            <a href="{{ route('member.produk.show', $produk) }}"
+                                               onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                               class="group/btn inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
+                                                <span>SHOP</span>
+                                                <span class="inline-block transition-transform duration-200 group-hover/btn:rotate-90 text-sm leading-none font-bold">+</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endforeach
+
+                                {{-- 2. Category Bundling Items (If any) --}}
+                                @foreach ($kategoriBundling as $bundling)
+                                    <div x-show="matchesSearch('{{ addslashes($bundling->nama_bundling) }}')"
+                                         class="rounded-[32px] bg-[#F5ECE3] p-7 transition-shadow duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-md">
+                                        <a href="{{ route('member.bundling.show', $bundling) }}"
+                                           onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                           class="block group/card">
+                                            <div class="relative h-56 w-full overflow-hidden rounded-2xl mb-4 bg-white/40 shadow-xs flex items-center justify-center">
+                                                @if ($bundling->foto)
+                                                    <img src="{{ asset('storage/' . $bundling->foto) }}" alt="{{ $bundling->nama_bundling }}"
+                                                         class="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                                @else
+                                                    <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
+                                                        @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
+                                                    </div>
+                                                @endif
+                                                <span class="absolute left-2.5 top-2.5 rounded-full bg-[#8E1E26] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                                                    Value Bundle
+                                                </span>
+                                            </div>
+                                            <p class="text-[11px] font-semibold text-[#9C8C80] uppercase tracking-wider mb-1">BUNDLING</p>
+                                            <h3 class="font-display font-bold text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">{{ $bundling->nama_bundling }}</h3>
+                                        </a>
+
+                                        <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between gap-3">
+                                            <div class="min-w-0">
+                                                @if ($bundling->harga_asli > $bundling->harga_bundling)
+                                                    <p class="truncate text-xs text-[#9C8C80] line-through font-sans">
+                                                        Rp {{ number_format($bundling->harga_asli, 0, ',', '.') }}
+                                                    </p>
+                                                @endif
+                                                <p class="truncate text-base lg:text-lg font-extrabold text-[#3C2415] font-sans">
+                                                    Rp {{ number_format($bundling->harga_bundling, 0, ',', '.') }}
+                                                </p>
+                                            </div>
+
+                                            <a href="{{ route('member.bundling.show', $bundling) }}"
+                                               onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                               class="group/btn inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
+                                                <span>SHOP</span>
+                                                <span class="inline-block transition-transform duration-200 group-hover/btn:rotate-90 text-sm leading-none font-bold">+</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endforeach
+
+                                {{-- 3. Category Promo Event Items (If any) --}}
+                                @foreach ($kategoriPromoEvent as $promoEvent)
+                                    <div x-show="matchesSearch('{{ addslashes($promoEvent->nama_event) }}')"
+                                         class="rounded-[32px] bg-[#F5ECE3] p-7 transition-shadow duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-md">
+                                        <a href="{{ route('member.promo-event.show', $promoEvent) }}"
+                                           onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                           class="block group/card">
+                                            <div class="relative h-56 w-full overflow-hidden rounded-2xl mb-4 bg-white/40 shadow-xs flex items-center justify-center">
+                                                @if ($promoEvent->produk && $promoEvent->produk->foto)
+                                                    <img src="{{ asset('storage/' . $promoEvent->produk->foto) }}" alt="{{ $promoEvent->nama_event }}"
+                                                         class="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                                @else
+                                                    <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
+                                                        @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
+                                                    </div>
+                                                @endif
+                                                <span class="absolute left-2.5 top-2.5 rounded-full bg-[#8E1E26] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                                                    Special Event
+                                                </span>
+                                            </div>
+                                            <p class="text-[11px] font-semibold text-[#9C8C80] uppercase tracking-wider mb-1">PROMO EVENT</p>
+                                            <h3 class="font-display font-bold text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">{{ $promoEvent->nama_event }}</h3>
+                                        </a>
+
+                                        <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p class="truncate text-base lg:text-lg font-extrabold text-[#3C2415] font-sans">
+                                                    Rp {{ number_format($promoEvent->harga_diskon ?? 0, 0, ',', '.') }}
+                                                </p>
+                                            </div>
+
+                                            <a href="{{ route('member.promo-event.show', $promoEvent) }}"
+                                               onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                               class="group/btn inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
+                                                <span>SHOP</span>
+                                                <span class="inline-block transition-transform duration-200 group-hover/btn:rotate-90 text-sm leading-none font-bold">+</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
+
+                {{-- Bundling / Promo Event without Category (Displayed under 'Menu Lainnya' on ALL tab) --}}
+                @php
+                    $desktopBundlingLainnya = $daftarBundling->whereNull('kategori_id');
+                    $desktopPromoEventLainnya = $daftarPromoEvent->whereNull('kategori_id');
+                @endphp
+                @if ($desktopBundlingLainnya->isNotEmpty() || $desktopPromoEventLainnya->isNotEmpty())
+                    <div x-show="desktopTab === 'all' && cocokKategori('lainnya')"
+                         class="menu-category-section space-y-8">
+                        <h2 class="font-display font-black text-3xl lg:text-4xl uppercase tracking-wider text-[#3C2415] text-center">
+                            MORE SPECIALS
+                        </h2>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10">
+                            @foreach ($desktopBundlingLainnya as $bundling)
+                                <div x-show="matchesSearch('{{ addslashes($bundling->nama_bundling) }}')"
+                                     class="rounded-[32px] bg-[#F5ECE3] p-7 transition-shadow duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-md">
+                                    <a href="{{ route('member.bundling.show', $bundling) }}"
+                                       onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                       class="block group/card">
+                                        <div class="relative h-56 w-full overflow-hidden rounded-2xl mb-4 bg-white/40 shadow-xs flex items-center justify-center">
+                                            @if ($bundling->foto)
+                                                <img src="{{ asset('storage/' . $bundling->foto) }}" alt="{{ $bundling->nama_bundling }}"
+                                                     class="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                            @else
+                                                <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
+                                                    @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
+                                                </div>
+                                            @endif
+                                            <span class="absolute left-2.5 top-2.5 rounded-full bg-[#8E1E26] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                                                Value Bundle
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] font-semibold text-[#9C8C80] uppercase tracking-wider mb-1">BUNDLING</p>
+                                        <h3 class="font-display font-bold text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">{{ $bundling->nama_bundling }}</h3>
+                                    </a>
+
+                                    <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between gap-3">
+                                        <div class="min-w-0">
+                                            @if ($bundling->harga_asli > $bundling->harga_bundling)
+                                                <p class="truncate text-xs text-[#9C8C80] line-through font-sans">
+                                                    Rp {{ number_format($bundling->harga_asli, 0, ',', '.') }}
+                                                </p>
+                                            @endif
+                                            <p class="truncate text-base lg:text-lg font-extrabold text-[#3C2415] font-sans">
+                                                Rp {{ number_format($bundling->harga_bundling, 0, ',', '.') }}
+                                            </p>
+                                        </div>
+
+                                        <a href="{{ route('member.bundling.show', $bundling) }}"
+                                           onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                           class="group/btn inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
+                                            <span>SHOP</span>
+                                            <span class="inline-block transition-transform duration-200 group-hover/btn:rotate-90 text-sm leading-none font-bold">+</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+
+                            @foreach ($desktopPromoEventLainnya as $promoEvent)
+                                <div x-show="matchesSearch('{{ addslashes($promoEvent->nama_event) }}')"
+                                     class="rounded-[32px] bg-[#F5ECE3] p-7 transition-shadow duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-md">
+                                    <a href="{{ route('member.promo-event.show', $promoEvent) }}"
+                                       onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                       class="block group/card">
+                                        <div class="relative h-56 w-full overflow-hidden rounded-2xl mb-4 bg-white/40 shadow-xs flex items-center justify-center">
+                                            @if ($promoEvent->produk && $promoEvent->produk->foto)
+                                                <img src="{{ asset('storage/' . $promoEvent->produk->foto) }}" alt="{{ $promoEvent->nama_event }}"
+                                                     class="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                            @else
+                                                <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
+                                                    @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
+                                                </div>
+                                            @endif
+                                            <span class="absolute left-2.5 top-2.5 rounded-full bg-[#8E1E26] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                                                Special Event
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] font-semibold text-[#9C8C80] uppercase tracking-wider mb-1">PROMO EVENT</p>
+                                        <h3 class="font-display font-bold text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">{{ $promoEvent->nama_event }}</h3>
+                                    </a>
+
+                                    <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <p class="truncate text-base lg:text-lg font-extrabold text-[#3C2415] font-sans">
+                                                Rp {{ number_format($promoEvent->harga_diskon ?? 0, 0, ',', '.') }}
+                                            </p>
+                                        </div>
+
+                                        <a href="{{ route('member.promo-event.show', $promoEvent) }}"
+                                           onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                           class="group/btn inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
+                                            <span>SHOP</span>
+                                            <span class="inline-block transition-transform duration-200 group-hover/btn:rotate-90 text-sm leading-none font-bold">+</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Empty State: Displayed when no products match the search query --}}
+                <div x-show="!hasMatchingProducts()"
+                     x-cloak
+                     class="py-16 px-6 text-center max-w-xl mx-auto">
+                    <div class="relative mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[#F5ECE3] border-2 border-[#3C2415]/10 shadow-sm text-[#8E1E26]">
+                        {{-- Daisy Bakery Scalloped Badge / Search Icon --}}
+                        <svg class="h-10 w-10 text-[#3C2415]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            <line x1="8" y1="11" x2="14" y2="11" stroke="#8E1E26" stroke-width="2.5"></line>
+                        </svg>
+                    </div>
+
+                    <h3 class="font-display font-black text-2xl lg:text-3xl text-[#3C2415] tracking-wide mb-3">
+                        No Products Found
+                    </h3>
+
+                    <p class="font-sans text-sm lg:text-base text-[#7C6558] font-medium leading-relaxed max-w-md mx-auto mb-8">
+                        <template x-if="isSearching() && desktopTab !== 'all'">
+                            <span>We couldn’t find any treats matching <span class="font-bold text-[#8E1E26]" x-text="'“' + searchDesktop + '”'"></span> in this category. Try exploring all categories or searching with a different keyword.</span>
+                        </template>
+                        <template x-if="isSearching() && desktopTab === 'all'">
+                            <span>Sorry, we couldn’t find any freshly baked goods matching <span class="font-bold text-[#8E1E26]" x-text="'“' + searchDesktop + '”'"></span>. Try a different keyword or browse our full menu.</span>
+                        </template>
+                        <template x-if="!isSearching()">
+                            <span>There are no menu items available in this category at the moment.</span>
+                        </template>
+                    </p>
+
+                    <div class="flex items-center justify-center gap-3">
+                        <button type="button"
+                                @click="searchDesktop = ''; desktopTab = 'all'"
+                                class="group inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#3C2415] hover:bg-[#4E2F1B] text-white text-xs font-black uppercase tracking-widest transition-all duration-200 active:scale-95 shadow-md">
+                            <span>VIEW ALL MENU</span>
+                            <svg class="h-3.5 w-3.5 text-[#EACE80] transition-transform duration-200 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m9 18 6-6-6-6"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+        {{-- ━━━━ GSAP 3 & SCROLLTRIGGER INTERACTIVE STORYTELLING ENGINE (DESKTOP >= 1024px) ━━━━ --}}
+        <script src="{{ asset('vendor/gsap/gsap.min.js') }}"></script>
+        <script src="{{ asset('vendor/gsap/ScrollTrigger.min.js') }}"></script>
+        <script src="{{ asset('js/desktop-storytelling.js') }}"></script>
     </div>
 
     @include('mobile.components.floating-cart')

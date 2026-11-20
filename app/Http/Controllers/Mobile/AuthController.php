@@ -55,7 +55,7 @@ class AuthController extends Controller
             $request->validate([
                 'no_hp' => ['required', 'string', 'max:20'],
             ], [
-                'no_hp.required' => 'Nomor HP wajib diisi.',
+                'no_hp.required' => 'Phone number is required.',
             ]);
 
             $noHp = $this->normalizeNoHp($request->no_hp);
@@ -63,7 +63,7 @@ class AuthController extends Controller
             if (Member::where('no_hp', $noHp)->exists()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Nomor HP ini sudah terdaftar. Silakan masuk.'
+                    'message' => 'This phone number is already registered. Please sign in.'
                 ], 422);
             }
 
@@ -82,7 +82,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Kode OTP berhasil dikirim ke nomor ' . $noHp,
+                'message' => 'OTP code sent successfully to ' . $noHp,
                 'otp' => $otp,
                 'no_hp' => $noHp
             ]);
@@ -101,8 +101,8 @@ class AuthController extends Controller
                 'no_hp' => ['required', 'string', 'max:20'],
                 'otp' => ['required', 'string', 'size:6'],
             ], [
-                'no_hp.required' => 'Nomor HP wajib diisi.',
-                'otp.required' => 'Kode OTP wajib diisi.',
+                'no_hp.required' => 'Phone number is required.',
+                'otp.required' => 'OTP code is required.',
             ]);
 
             $noHp = $this->normalizeNoHp($request->no_hp);
@@ -116,14 +116,14 @@ class AuthController extends Controller
             if (!$otpVerification) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kode OTP salah.',
+                    'message' => 'Invalid OTP code.',
                 ], 422);
             }
 
             if ($otpVerification->isExpired()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kode OTP sudah kadaluarsa. Silakan minta OTP baru.',
+                    'message' => 'OTP code has expired. Please request a new OTP.',
                 ], 422);
             }
 
@@ -131,7 +131,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Kode OTP valid.',
+                'message' => 'OTP code is valid.',
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -155,16 +155,16 @@ class AuthController extends Controller
                 'password' => ['required', 'confirmed', Password::min(6)],
                 'otp' => ['required', 'string'],
             ], [
-                'nama.required' => 'Nama wajib diisi.',
-                'username.required' => 'Username wajib diisi.',
-                'username.min' => 'Username minimal 3 karakter.',
-                'username.regex' => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi).',
-                'username.unique' => 'Username ini sudah dipakai. Coba username lain.',
-                'no_hp.required' => 'Nomor HP wajib diisi.',
-                'no_hp.unique' => 'Nomor HP ini sudah terdaftar. Coba masuk saja.',
-                'password.required' => 'Buat kata sandi dulu ya.',
-                'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
-                'otp.required' => 'Kode OTP wajib diisi.',
+                'nama.required' => 'Name is required.',
+                'username.required' => 'Username is required.',
+                'username.min' => 'Username must be at least 3 characters.',
+                'username.regex' => 'Username may only contain letters, numbers, dots, and underscores.',
+                'username.unique' => 'This username is already taken. Please choose another.',
+                'no_hp.required' => 'Phone number is required.',
+                'no_hp.unique' => 'This phone number is already registered. Please sign in.',
+                'password.required' => 'Please create a password.',
+                'password.confirmed' => 'Password confirmation does not match.',
+                'otp.required' => 'OTP code is required.',
             ]);
 
             $noHp = $this->normalizeNoHp($data['no_hp']);
@@ -176,7 +176,7 @@ class AuthController extends Controller
                 ->first();
 
             if (!$otpVerification || $otpVerification->isExpired()) {
-                return back()->withErrors(['otp' => 'Kode OTP tidak valid atau sudah kadaluarsa.'])->withInput();
+                return back()->withErrors(['otp' => 'OTP code is invalid or has expired.'])->withInput();
             }
 
             $member = Member::create([
@@ -195,7 +195,7 @@ class AuthController extends Controller
             Auth::guard('member')->login($member);
             $request->session()->regenerate();
 
-            return redirect()->route('member.beranda')->with('success', 'Selamat datang, ' . $member->nama . '!');
+            return redirect()->route('member.beranda')->with('success', 'Welcome, ' . $member->nama . '!');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -231,8 +231,8 @@ class AuthController extends Controller
                 'identifier' => ['required', 'string'],
                 'password' => ['required', 'string'],
             ], [
-                'identifier.required' => 'Username atau nomor HP wajib diisi.',
-                'password.required' => 'Masukkan kata sandi.',
+                'identifier.required' => 'Username or phone number is required.',
+                'password.required' => 'Please enter your password.',
             ]);
 
             $identifier = trim($data['identifier']);
@@ -242,7 +242,7 @@ class AuthController extends Controller
                 $seconds = RateLimiter::availableIn($throttleKey);
 
                 return back()
-                    ->withErrors(['identifier' => "Terlalu banyak percobaan gagal. Coba lagi dalam {$seconds} detik."])
+                    ->withErrors(['identifier' => "Too many failed attempts. Please try again in {$seconds} seconds."])
                     ->onlyInput('identifier');
             }
 
@@ -271,7 +271,7 @@ class AuthController extends Controller
             RateLimiter::hit($throttleKey, 60);
 
             return back()
-                ->withErrors(['identifier' => 'Username/nomor HP atau kata sandi salah.'])
+                ->withErrors(['identifier' => 'Incorrect username/phone number or password.'])
                 ->onlyInput('identifier');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -283,7 +283,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         $intendedUrl = $request->session()->pull('url.intended');
-        $sapaan = 'Berhasil masuk. Selamat datang kembali, ' . Auth::guard('member')->user()->nama . '!';
+        $sapaan = 'Signed in successfully. Welcome back, ' . Auth::guard('member')->user()->nama . '!';
 
         if ($intendedUrl && str_starts_with(parse_url($intendedUrl, PHP_URL_PATH) ?? '', '/mobile')) {
             return redirect()->to($intendedUrl)->with('success', $sapaan);

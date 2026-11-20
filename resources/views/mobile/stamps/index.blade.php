@@ -6,7 +6,7 @@
 
     @if (\App\Models\PengaturanMember::adaAturanAktif())
         <div class="mt-3 flex items-center justify-center gap-1.5 rounded-2xl border border-gray-100 bg-brand-25 py-2.5 text-xs text-gray-500">
-            Poin kamu saat ini:
+            Your current points:
             <span class="font-bold text-brand-800">{{ number_format($member->poin, 0, ',', '.') }}</span>
         </div>
     @endif
@@ -14,7 +14,7 @@
     {{-- Same tab bar as the voucher catalog, so Stamp reads as a tab, not a separate page --}}
     <div class="mt-5 grid grid-cols-3 border-b border-gray-100">
         @foreach ([
-            ['label' => 'Semua', 'href' => route('member.reward.index'), 'active' => false],
+            ['label' => 'All', 'href' => route('member.reward.index'), 'active' => false],
             ['label' => 'Voucher', 'href' => route('member.reward.index', ['tab' => 'voucher']), 'active' => false],
             ['label' => 'Stamp', 'href' => route('member.stamps.index'), 'active' => true],
         ] as $tab)
@@ -36,8 +36,8 @@
     @if (! $program)
 
         @include('mobile.components.empty-state', [
-            'title' => 'Belum Ada Program Stamp',
-            'description' => 'Sabar ya, program kumpulin stamp bakal dibuka lagi nanti.',
+            'title' => 'No Active Stamp Program',
+            'description' => 'Stay tuned, the next stamp collection program will be available soon.',
             'icon' => 'icon-cake',
             'iconBg' => 'bg-orange-50',
             'iconColor' => 'text-orange-500',
@@ -62,7 +62,7 @@
              data-penuh="{{ $penuh ? '1' : '0' }}">
             <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                    <p class="text-[11px] font-semibold uppercase tracking-wide text-white/60">Program Stamp</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-white/60">Stamp Program</p>
                     <p class="mt-0.5 truncate text-base font-extrabold">{{ $program->nama_program }}</p>
                     @if ($program->deskripsi)
                         <p class="mt-1 text-xs leading-relaxed text-white/75 whitespace-pre-line">{{ $program->deskripsi }}</p>
@@ -74,7 +74,7 @@
             </div>
 
             <p class="mt-4 text-[11px] text-white/70">
-                Setiap transaksi dengan total bayar min. Rp{{ number_format($program->minimal_pembelian, 0, ',', '.') }} (setelah diskon) = 1 stamp
+                Every order with min. spend Rp{{ number_format($program->minimal_pembelian, 0, ',', '.') }} (after discounts) = 1 stamp
             </p>
 
             {{-- Stamp dots pop in one by one (staggered) as they load, so a filled
@@ -98,18 +98,18 @@
             </div>
 
             <div class="mt-4 flex items-center justify-between border-t border-white/15 pt-3">
-                <p class="text-xs font-bold text-white">{{ $current }}/{{ $target }} stamp</p>
+                <p class="text-xs font-bold text-white">{{ $current }}/{{ $target }} stamps</p>
                 @if ($penuh)
-                    <p class="text-xs font-bold text-white">Stamp penuh, yuk tukar! 🎉</p>
+                    <p class="text-xs font-bold text-white">Card complete! Redeem your treat! 🎉</p>
                 @else
-                    <p class="text-xs text-white/75">{{ $target - $current }} stamp lagi untuk tukar hadiah</p>
+                    <p class="text-xs text-white/75">{{ $target - $current }} more stamp(s) needed to redeem</p>
                 @endif
             </div>
         </div>
 
         @if ($kuotaHabis)
             <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-700">
-                Kuota penukaran program stamp ini sudah habis untuk saat ini.
+                Redemption quota for this stamp program is currently reached.
             </div>
         @endif
 
@@ -119,10 +119,10 @@
                 <div class="flex items-center justify-between">
                     <h2 class="text-sm font-bold text-gray-900 flex items-center gap-1.5">
                         <span class="text-base">🎁</span>
-                        <span>Hadiah Stamp Siap Diambil</span>
+                        <span>Stamp Rewards Ready for Pickup</span>
                     </h2>
                     <span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
-                        {{ $rewardAktif->count() }} Siap
+                        {{ $rewardAktif->count() }} Ready
                     </span>
                 </div>
 
@@ -142,12 +142,12 @@
                             </span>
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-start justify-between gap-2">
-                                    <p class="truncate text-sm font-extrabold text-gray-900">{{ $reward->jumlah ?: 1 }}x {{ $produkHadiah ? $reward->nama_tampil : 'Produk Hadiah' }}</p>
+                                    <p class="truncate text-sm font-extrabold text-gray-900">{{ $reward->jumlah ?: 1 }}x {{ $produkHadiah ? $reward->nama_tampil : 'Reward Item' }}</p>
                                     <span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                                        Menunggu Diambil
+                                        Ready for Pickup
                                     </span>
                                 </div>
-                                <p class="mt-0.5 text-[11px] text-gray-500 font-mono tracking-wider font-semibold">Kode: {{ $reward->kode_redeem }}</p>
+                                <p class="mt-0.5 text-[11px] text-gray-500 font-mono tracking-wider font-semibold">Code: {{ $reward->kode_redeem }}</p>
                             </div>
                         </div>
 
@@ -158,7 +158,7 @@
                                 @csrf
                                 <button type="submit"
                                     class="w-full sm:w-auto rounded-xl bg-[#5a3c27] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#4a3020] active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
-                                    <span>Ambil sekarang</span>
+                                    <span>Claim now</span>
                                     <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5">
                                         <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
@@ -172,8 +172,8 @@
 
         {{-- Section header --}}
         <div class="mt-6 flex items-center justify-between">
-            <h2 class="text-sm font-bold text-gray-900">Tukar Hadiah</h2>
-            <span class="text-xs text-gray-400">{{ $program->hadiah->count() }} pilihan</span>
+            <h2 class="text-sm font-bold text-gray-900">Redeem Rewards</h2>
+            <span class="text-xs text-gray-400">{{ $program->hadiah->count() }} options</span>
         </div>
 
         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 space-y-0">
@@ -197,11 +197,11 @@
                     </span>
 
                     <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-bold text-gray-900">{{ $hadiah->jumlah }}x {{ $produk ? $hadiah->nama_tampil : 'Produk tidak tersedia' }}</p>
+                        <p class="truncate text-sm font-bold text-gray-900">{{ $hadiah->jumlah }}x {{ $produk ? $hadiah->nama_tampil : 'Product unavailable' }}</p>
                         @if ($stokHabis)
-                            <p class="text-xs font-semibold text-red-500">Stok hadiah ini sedang habis</p>
+                            <p class="text-xs font-semibold text-red-500">Reward out of stock</p>
                         @else
-                            <p class="text-xs text-gray-400">Gratis dengan stamp penuh</p>
+                            <p class="text-xs text-gray-400">Free with completed stamp card</p>
                         @endif
                     </div>
 
@@ -213,17 +213,17 @@
                             data-nama-produk="{{ $hadiah->nama_tampil }}"
                             onclick="bukaKonfirmasiTukarStampFromBtn(this)"
                         @elseif ($stokHabis)
-                            x-on:click="$dispatch('app-alert', { title: 'Stok habis', message: @js('Maaf, stok hadiah ini sedang habis. Coba pilih hadiah lain atau kembali lagi nanti.') })"
+                            x-on:click="$dispatch('app-alert', { title: 'Out of stock', message: @js('Sorry, this reward is currently out of stock. Please choose another reward or check back later.') })"
                         @else
-                            x-on:click="$dispatch('app-alert', { title: 'Stamp belum cukup', message: @js('Stamp kamu belum cukup ('.$current.'/'.$target.' stamp terkumpul). Kumpulkan '.($target - $current).' stamp lagi untuk menukar hadiah ini!') })"
+                            x-on:click="$dispatch('app-alert', { title: 'Not enough stamps', message: @js('You do not have enough stamps yet ('.$current.'/'.$target.' collected). Collect '.($target - $current).' more stamp(s) to redeem this reward!') })"
                         @endif
                         class="shrink-0 rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer {{ $bisaTukarHadiah ? 'bg-[#5a3c27] text-white hover:bg-[#4a3020] active:scale-95' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}">
-                        Tukar
+                        Redeem
                     </button>
                 </div>
             @empty
                 <div class="rounded-2xl border border-gray-100 bg-white p-6 text-center">
-                    <p class="text-sm font-semibold text-gray-500">Belum ada hadiah untuk program ini.</p>
+                    <p class="text-sm font-semibold text-gray-500">No rewards available yet for this program.</p>
                 </div>
             @endforelse
         </div>

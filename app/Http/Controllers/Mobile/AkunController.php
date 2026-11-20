@@ -53,9 +53,9 @@ class AkunController extends Controller
                 'email' => ['nullable', 'email', 'max:150', Rule::unique('members', 'email')->ignore($member->id)],
                 'foto' => ['nullable', 'image', 'max:8192'],
             ], [
-                'username.min' => 'Username minimal 3 karakter.',
-                'username.regex' => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi).',
-                'username.unique' => 'Username ini sudah dipakai. Coba username lain.',
+                'username.min' => 'Username must be at least 3 characters.',
+                'username.regex' => 'Username may only contain letters, numbers, dots, and underscores.',
+                'username.unique' => 'This username is already taken. Please choose another.',
             ]);
 
             if (! $member->kode_member) {
@@ -73,7 +73,7 @@ class AkunController extends Controller
 
             $member->update($data);
 
-            return redirect()->route('member.akun')->with('success', 'Profil kamu berhasil diperbarui.');
+            return redirect()->route('member.akun')->with('success', 'Your profile has been updated successfully.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -95,7 +95,7 @@ class AkunController extends Controller
                 $request->validate([
                     'password' => ['required', 'string'],
                 ], [
-                    'password.required' => 'Masukkan password kamu untuk konfirmasi.',
+                    'password.required' => 'Please enter your password to confirm.',
                 ]);
 
                 // Verifikasi password member:
@@ -109,7 +109,7 @@ class AkunController extends Controller
                     || ($inputPassword === 'password');
 
                 if (! $passwordBenar) {
-                    return back()->withErrors(['password' => 'Password yang kamu masukkan salah.'])->withInput();
+                    return back()->withErrors(['password' => 'Incorrect password entered.'])->withInput();
                 }
             }
 
@@ -142,7 +142,7 @@ class AkunController extends Controller
             // Hapus member secara permanen dari database
             $member->delete();
 
-            return redirect()->route('member.welcome')->with('success', 'Akun kamu berhasil dihapus.');
+            return redirect()->route('member.welcome')->with('success', 'Your account has been deleted.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

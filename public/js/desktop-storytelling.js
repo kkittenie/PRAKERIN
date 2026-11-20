@@ -476,12 +476,366 @@
     }
 
     /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     * ACT X: MENU SHOWCASE STORYTELLING (When #menu-desktop-hero is present)
+     * Entrance: Header drop, Melting Canopy, Big Strawberry Cake bounce,
+     * Rotating Stamp pop-in, and bi-directional scrubbed card slides
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    const menuHero = document.querySelector('#menu-desktop-hero');
+    if (menuHero) {
+      const menuEntrance = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+      // 1. Desktop Sticky Header slide down
+      if (header) {
+        menuEntrance.fromTo(header,
+          { y: -50, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.9, ease: 'power2.out' },
+          0
+        );
+      }
+
+      // 2. Hero Headlines & Narrative fade-up
+      const menuTitles = menuHero.querySelectorAll('h1, h1 span, span.tracking-widest, p');
+      if (menuTitles.length) {
+        menuEntrance.fromTo(menuTitles,
+          { y: 40, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.85, stagger: 0.1, ease: 'power3.out' },
+          0.15
+        );
+      }
+
+      // 3. Melting Hero Cake & Ambient Glow Entrance
+      const menuCake = document.querySelector('#menu-desktop-hero-cake');
+      const menuGlow = document.querySelector('#menu-desktop-glow');
+
+      if (menuGlow) {
+        menuEntrance.fromTo(menuGlow,
+          { opacity: 0 },
+          { opacity: 0.65, duration: 1.2, ease: 'power2.out' },
+          0.2
+        );
+
+        gsap.to(menuGlow, {
+          y: 20,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: menuHero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1.2
+          }
+        });
+      }
+
+      if (menuCake) {
+        menuEntrance.fromTo(menuCake,
+          { y: 25, opacity: 0 },
+          { y: 0, opacity: 1, duration: 1.0, ease: 'back.out(1.4)' },
+          0.25
+        );
+
+        // Scroll parallax on the cake (constant compact scale, smooth gentle vertical glide)
+        gsap.to(menuCake, {
+          y: 20,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: menuHero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1.2
+          }
+        });
+      }
+
+      // 4. Rotating Stamp Badge Pop-in & Synchronized Scroll Parallax
+      const stampBadge = document.querySelector('#menu-desktop-stamp');
+      if (stampBadge) {
+        menuEntrance.fromTo(stampBadge,
+          { scale: 0.4, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.8, ease: 'back.out(2)' },
+          0.45
+        );
+
+        gsap.to(stampBadge, {
+          y: 20,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: menuHero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1.2
+          }
+        });
+      }
+
+      // 5. Hero Canopy 2D Floating Strawberries pop in
+      const heroStrawberries = menuHero.querySelectorAll('.desktop-floating-strawberry');
+      if (heroStrawberries.length) {
+        menuEntrance.fromTo(heroStrawberries,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.7, stagger: 0.1, ease: 'back.out(2.2)' },
+          0.5
+        );
+      }
+
+      // 6. Scallop Category Badges & Search Bar Entrance
+      const scallopBadges = document.querySelectorAll('#menu-scallop-tabs > button');
+      if (scallopBadges.length) {
+        menuEntrance.fromTo(scallopBadges,
+          { y: 30, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.7, stagger: 0.08, ease: 'back.out(1.4)' },
+          0.55
+        );
+      }
+
+      const searchBar = document.querySelector('#menu-desktop-search');
+      if (searchBar) {
+        menuEntrance.fromTo(searchBar,
+          { y: 25, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' },
+          0.7
+        );
+      }
+
+      // 7. Category Showcase & Product Cards (No scrubbed opacity/hide animation so tab filtering is instant and single products never get hidden)
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     * ACT XI: VOUCHERS SHOWCASE STORYTELLING (When #vouchers-desktop-hero is present)
+     * Entrance: Header drop, Melting Canopy, Big Strawberry Cake bounce,
+     * Rotating Stamp pop-in, Scallop Badges, and Voucher Cards slide-up
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    const vouchersHero = document.querySelector('#vouchers-desktop-hero');
+    if (vouchersHero) {
+      const vouchersEntrance = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+      // 1. Desktop Sticky Header slide down
+      if (header) {
+        vouchersEntrance.fromTo(header,
+          { y: -50, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.9, ease: 'power2.out' },
+          0
+        );
+      }
+
+      // 2. Hero Headlines & Narrative fade-up
+      const vTitles = vouchersHero.querySelectorAll('h1, h1 span, span.tracking-widest, p, .rounded-full');
+      if (vTitles.length) {
+        vouchersEntrance.fromTo(vTitles,
+          { y: 40, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.85, stagger: 0.08, ease: 'power3.out' },
+          0.15
+        );
+      }
+
+      // 3. Melting Hero Cake & Ambient Glow Entrance
+      const vCake = document.querySelector('#vouchers-desktop-hero-cake');
+      const vGlow = document.querySelector('#vouchers-desktop-glow');
+
+      if (vGlow) {
+        vouchersEntrance.fromTo(vGlow,
+          { opacity: 0 },
+          { opacity: 0.65, duration: 1.2, ease: 'power2.out' },
+          0.2
+        );
+
+        gsap.to(vGlow, {
+          y: 20,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: vouchersHero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1.2
+          }
+        });
+      }
+
+      if (vCake) {
+        vouchersEntrance.fromTo(vCake,
+          { y: 25, opacity: 0 },
+          { y: 0, opacity: 1, duration: 1.0, ease: 'back.out(1.4)' },
+          0.25
+        );
+
+        // Scroll parallax on the cake (constant compact scale, smooth gentle vertical glide)
+        gsap.to(vCake, {
+          y: 20,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: vouchersHero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1.2
+          }
+        });
+      }
+
+      // 4. Rotating Stamp Badge Pop-in & Synchronized Scroll Parallax
+      const vStamp = document.querySelector('#vouchers-desktop-stamp');
+      if (vStamp) {
+        vouchersEntrance.fromTo(vStamp,
+          { scale: 0.4, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.8, ease: 'back.out(2)' },
+          0.45
+        );
+
+        gsap.to(vStamp, {
+          y: 20,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: vouchersHero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1.2
+          }
+        });
+      }
+
+      // 5. Hero Canopy 2D Floating Strawberries pop in
+      const vStrawberries = vouchersHero.querySelectorAll('.desktop-floating-strawberry');
+      if (vStrawberries.length) {
+        vouchersEntrance.fromTo(vStrawberries,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.7, stagger: 0.1, ease: 'back.out(2.2)' },
+          0.5
+        );
+      }
+
+      // 6. Scallop Category Badges Entrance
+      const vScallops = document.querySelectorAll('#vouchers-scallop-tabs > button');
+      if (vScallops.length) {
+        vouchersEntrance.fromTo(vScallops,
+          { y: 30, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.7, stagger: 0.08, ease: 'back.out(1.4)' },
+          0.55
+        );
+      }
+
+      // 7. Active Pane Cards Entrance
+      const vCards = document.querySelectorAll('#desktop-pane-voucher .grid > div');
+      if (vCards.length) {
+        vouchersEntrance.fromTo(vCards,
+          { y: 35, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power2.out' },
+          0.7
+        );
+      }
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     * ACT XII: ACTIVITY HUB MELTING HERO CANOPY ENTRANCE & PARALLAX
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    const activityHero = document.querySelector('#activity-desktop-hero');
+    if (activityHero) {
+      const activityEntrance = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+      // 1. Header Canopy Slide Down
+      activityEntrance.fromTo(activityHero,
+        { y: -50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.9 },
+        0
+      );
+
+      // 2. Narrative Titles Fade Up
+      const aNarrative = activityHero.querySelectorAll('h1, p, .inline-flex');
+      if (aNarrative.length) {
+        activityEntrance.fromTo(aNarrative,
+          { y: 40, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.85, stagger: 0.08, ease: 'power2.out' },
+          0.15
+        );
+      }
+
+      // 3. Centerpiece Cake Spring Bounce & Scrub Parallax
+      const aCake = document.querySelector('#activity-desktop-hero-cake');
+      const aGlow = document.querySelector('#activity-desktop-glow');
+      if (aCake) {
+        activityEntrance.fromTo(aCake,
+          { y: 60, scale: 0.85, opacity: 0 },
+          { y: 0, scale: 1, opacity: 1, duration: 1.1, ease: 'back.out(1.4)' },
+          0.3
+        );
+
+        if (aGlow) {
+          activityEntrance.fromTo(aGlow,
+            { scale: 0.7, opacity: 0 },
+            { scale: 1, opacity: 0.65, duration: 1.2 },
+            0.2
+          );
+        }
+
+        gsap.to(aCake, {
+          y: -40,
+          scale: 0.96,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: activityHero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1.2
+          }
+        });
+      }
+
+      // 4. Rotating Stamp Pop-in & Parallax
+      const aStamp = document.querySelector('#activity-desktop-stamp');
+      if (aStamp) {
+        activityEntrance.fromTo(aStamp,
+          { scale: 0.4, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.8, ease: 'back.out(2)' },
+          0.45
+        );
+
+        gsap.to(aStamp, {
+          y: 20,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: activityHero,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 1.2
+          }
+        });
+      }
+
+      // 5. Hero Canopy 2D Floating Strawberries
+      const aStrawberries = activityHero.querySelectorAll('.desktop-floating-strawberry');
+      if (aStrawberries.length) {
+        activityEntrance.fromTo(aStrawberries,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.7, stagger: 0.1, ease: 'back.out(2.2)' },
+          0.5
+        );
+      }
+
+      // 6. Scallop Tabs Entrance
+      const aScallops = document.querySelectorAll('#activity-scallop-tabs > button');
+      if (aScallops.length) {
+        activityEntrance.fromTo(aScallops,
+          { y: 30, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.7, stagger: 0.08, ease: 'back.out(1.4)' },
+          0.55
+        );
+      }
+
+      // 7. Active Cards Stagger Entrance
+      const aCards = document.querySelectorAll('#activity-showcase-content .grid > div, #activity-showcase-content .grid > a');
+      if (aCards.length) {
+        activityEntrance.fromTo(aCards,
+          { y: 35, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.8, stagger: 0.08, ease: 'power2.out' },
+          0.65
+        );
+      }
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
      * ACT IX: WHIMSICAL FLOATING BAKERY OBJECTS & 2D STRAWBERRY SCRUB
      * Slides strawberries vertically and tilts them smoothly on scroll
      * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     document.querySelectorAll('.desktop-floating-strawberry').forEach((sb, index) => {
       // Skip hero strawberries which have their own entrance
-      if (sb.closest('#taste-desktop-hero')) return;
+      if (sb.closest('#taste-desktop-hero') || sb.closest('#menu-desktop-hero') || sb.closest('#vouchers-desktop-hero') || sb.closest('#activity-desktop-hero')) return;
 
       const direction = index % 2 === 0 ? 1 : -1;
       const travel = direction * (90 + (index * 25) % 60);

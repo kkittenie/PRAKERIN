@@ -277,29 +277,34 @@
             }
 
             // ─── Desktop filter tabs ───
-            let desktopCurrent = Math.max(0, tabs.indexOf(requested));
+            const desktopTabs = ['voucher', 'stamp', 'guide'];
+            let desktopCurrent = Math.max(0, desktopTabs.indexOf(requested));
             let desktopStampLoaded = false;
 
             window.switchDesktopTab = function (name) {
-                const idx = tabs.indexOf(name);
+                const idx = desktopTabs.indexOf(name);
                 if (idx === -1) return;
                 desktopCurrent = idx;
 
-                document.querySelectorAll('.desktop-filter-tab').forEach(btn => {
-                    const isActive = btn.dataset.desktopTab === name;
-                    btn.classList.toggle('bg-brand-800', isActive);
-                    btn.classList.toggle('text-white', isActive);
-                    btn.classList.toggle('shadow-sm', isActive);
-                    btn.classList.toggle('font-extrabold', isActive);
-                    btn.classList.toggle('font-bold', !isActive);
-                    btn.classList.toggle('bg-transparent', !isActive);
-                    btn.classList.toggle('text-gray-600', !isActive);
-                    btn.classList.toggle('hover:text-gray-900', !isActive);
-                });
+                const root = document.getElementById('vouchers-desktop-root');
+                if (root && window.Alpine) {
+                    try {
+                        const data = Alpine.$data(root);
+                        if (data && 'desktopTab' in data) {
+                            data.desktopTab = name;
+                        }
+                    } catch (e) {}
+                }
 
-                document.querySelectorAll('.desktop-pane').forEach(pane => pane.classList.add('hidden'));
+                document.querySelectorAll('.desktop-pane').forEach(pane => {
+                    pane.classList.add('hidden');
+                    pane.style.display = 'none';
+                });
                 const target = document.getElementById('desktop-pane-' + name);
-                if (target) target.classList.remove('hidden');
+                if (target) {
+                    target.classList.remove('hidden');
+                    target.style.display = 'block';
+                }
 
                 if (name === 'stamp' && !desktopStampLoaded) {
                     loadDesktopStampPane();
@@ -322,20 +327,22 @@
                             updateDesktopStampTeaser(doc);
                             animateDesktopStampDots();
                         } else if (target) {
-                            target.innerHTML = '<p class="flex-1 py-10 text-center text-xs text-gray-400">Gagal memuat stamp, coba lagi ya.</p>';
+                            target.innerHTML = '<p class="flex-1 py-10 text-center text-xs text-[#3C2415]/60">Failed to load stamp program, please try again.</p>';
                         }
                     })
                     .catch(() => {
                         desktopStampLoaded = false;
                         const target = document.getElementById('desktop-stamp-pane-content');
-                        if (target) target.innerHTML = '<p class="flex-1 py-10 text-center text-xs text-gray-400">Gagal memuat stamp, coba lagi ya.</p>';
+                        if (target) target.innerHTML = '<p class="flex-1 py-10 text-center text-xs text-[#3C2415]/60">Failed to load stamp program, please try again.</p>';
                     });
             }
 
             function animateDesktopStampDots() {
-                const container = document.getElementById('desktop-stamp-pane-content');
+                const container = document.getElementById('desktop-pane-stamp') || document.getElementById('desktop-stamp-pane-content');
                 if (!container) return;
-                container.querySelectorAll('.stamp-dot-fill:not(.stamp-pop)').forEach(dot => dot.classList.add('stamp-pop'));
+                container.querySelectorAll('.stamp-dot-fill:not(.stamp-pop), .stamp-pop').forEach((dot, idx) => {
+                    dot.style.animationDelay = (idx * 0.08) + 's';
+                });
             }
 
             function updateDesktopStampTeaser(docOrEl) {
@@ -349,8 +356,8 @@
                 const penuh = data.dataset.penuh === '1';
                 document.getElementById('desktop-stamp-teaser-title').textContent = nama;
                 document.getElementById('desktop-stamp-teaser-subtitle').textContent = penuh
-                    ? 'Stamp penuh, yuk tukar! 🎉'
-                    : `${cur}/${tgt} stamp terkumpul`;
+                    ? 'Card Complete! Redeem your free treat 🎉'
+                    : `${cur}/${tgt} stamps collected`;
             }
 
             function loadStampPane(shouldAnimate = false) {
@@ -413,7 +420,7 @@
                 loadDesktopStampPane();
             }
 
-            if (requested && tabs.indexOf(requested) > 0) {
+            if (requested && desktopTabs.indexOf(requested) > 0) {
                 switchDesktopTab(requested);
             }
         })();
@@ -428,8 +435,8 @@
             <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-800">
                 @include('mobile.components.icon-gift', ['class' => 'h-7 w-7'])
             </span>
-            <h3 class="mt-3 text-base font-bold text-gray-900">Tukar hadiah <span id="konfirmasi-tukar-stamp-nama"></span>?</h3>
-            <p class="mt-1 text-xs text-gray-500">Stamp kamu yang sudah terkumpul akan ditukarkan dengan hadiah ini.</p>
+            <h3 class="mt-3 text-base font-bold text-gray-900">Redeem <span id="konfirmasi-tukar-stamp-nama"></span>?</h3>
+            <p class="mt-1 text-xs text-gray-500">Your collected stamps will be redeemed for this artisan treat.</p>
 
             <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-6 pb-2">
                 @csrf
@@ -440,11 +447,11 @@
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button" onclick="closeSheet('konfirmasi-tukar-stamp')"
                         class="w-full rounded-2xl border border-gray-200 bg-white py-3 text-xs font-bold text-gray-600 hover:bg-gray-50 active:scale-[0.99] cursor-pointer">
-                        Batal
+                        Cancel
                     </button>
                     <button type="submit"
                         class="w-full rounded-2xl bg-[#5a3c27] py-3 text-xs font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] cursor-pointer">
-                        Ya, Tukar
+                        Yes, Redeem
                     </button>
                 </div>
             </form>

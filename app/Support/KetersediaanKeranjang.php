@@ -41,7 +41,7 @@ class KetersediaanKeranjang
             if (! empty($item['bundling_id'])) {
                 $bundling = Bundling::with('items.produk', 'items.detailProduk')->find($item['bundling_id']);
                 if (! $bundling) {
-                    $pesan[] = 'Bundling di keranjang sudah tidak tersedia.';
+                    $pesan[] = 'Bundling package in your cart is no longer available.';
                     continue;
                 }
 
@@ -52,7 +52,7 @@ class KetersediaanKeranjang
 
                 $sudah = $bundling->isBebas() ? 0 : (int) ($terpakaiBundling[$bundling->id] ?? 0);
                 if ($sudah + $jumlah > $maks) {
-                    $pesan[] = self::susunPesan($bundling->nama_bundling, max(0, $maks - $sudah), $jumlah, 'paket');
+                    $pesan[] = self::susunPesan($bundling->nama_bundling, max(0, $maks - $sudah), $jumlah, 'packages');
                 }
                 $terpakaiBundling[$bundling->id] = $sudah + $jumlah;
                 continue;
@@ -61,14 +61,14 @@ class KetersediaanKeranjang
             if (! empty($item['promo_event_id'])) {
                 $promoEvent = PromoProdukEvent::find($item['promo_event_id']);
                 if (! $promoEvent) {
-                    $pesan[] = 'Promo event di keranjang sudah tidak tersedia.';
+                    $pesan[] = 'Promo event in your cart is no longer available.';
                     continue;
                 }
 
                 $sudah = (int) ($terpakaiPromoEvent[$promoEvent->id] ?? 0);
                 $sisa = max(0, (int) $promoEvent->stok_tersedia - $sudah);
                 if ($sisa < $jumlah) {
-                    $pesan[] = self::susunPesan($promoEvent->nama_event, $sisa, $jumlah, 'paket');
+                    $pesan[] = self::susunPesan($promoEvent->nama_event, $sisa, $jumlah, 'packages');
                 }
                 $terpakaiPromoEvent[$promoEvent->id] = $sudah + $jumlah;
                 continue;
@@ -76,7 +76,7 @@ class KetersediaanKeranjang
 
             $produk = Produk::find($item['produk_id'] ?? null);
             if (! $produk) {
-                $pesan[] = 'Ada produk di keranjang yang sudah tidak tersedia.';
+                $pesan[] = 'A product in your cart is no longer available.';
                 continue;
             }
 
@@ -124,9 +124,9 @@ class KetersediaanKeranjang
     private static function susunPesan(string $nama, int $sisa, int $diminta, string $satuan): string
     {
         if ($sisa <= 0) {
-            return "{$nama} stoknya sudah habis.";
+            return "{$nama} is out of stock.";
         }
 
-        return "{$nama} stoknya tinggal {$sisa} {$satuan}, sedangkan di keranjang {$diminta} {$satuan}.";
+        return "Only {$sisa} {$satuan} of {$nama} remaining, but you have {$diminta} in your cart.";
     }
 }

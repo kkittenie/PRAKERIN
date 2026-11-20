@@ -106,7 +106,7 @@
 
                     // Gambar gagal dimuat (404 / file QRIS belum ada di server)
                     if (!img.complete || img.naturalWidth === 0) {
-                        this.showToast('Gambar QR belum bisa dimuat. Hubungi admin toko.', 'error');
+                        this.showToast('QR code image could not be loaded. Please contact store admin.', 'error');
                         return;
                     }
 
@@ -128,9 +128,9 @@
                             const result = window.Android.saveQr(dataUrl, filename);
                             this.downloading = false;
                             if (result === 'false') {
-                                this.showToast('Gagal download QR, coba lagi.', 'error');
+                                this.showToast('Failed to download QR code, please try again.', 'error');
                             } else {
-                                this.showToast('QR berhasil didownload!', 'success');
+                                this.showToast('QR code downloaded successfully!', 'success');
                             }
                             return;
                         }
@@ -139,7 +139,7 @@
                         this.downloading = false;
 
                         if (!blob) {
-                            this.showToast('Gagal download QR, coba lagi.', 'error');
+                            this.showToast('Failed to download QR code, please try again.', 'error');
                             return;
                         }
 
@@ -155,11 +155,11 @@
                         document.body.removeChild(link);
                         setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
 
-                        this.showToast('QR berhasil didownload!', 'success');
+                        this.showToast('QR code downloaded successfully!', 'success');
                     } catch (err) {
                         this.downloading = false;
                         console.error('Download QR error:', err);
-                        this.showToast('Gagal download QR, coba lagi.', 'error');
+                        this.showToast('Failed to download QR code, please try again.', 'error');
                     }
                 },
             };

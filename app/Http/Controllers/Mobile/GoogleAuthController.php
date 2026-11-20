@@ -178,7 +178,7 @@ class GoogleAuthController extends Controller
 
         if (! $g) {
             return redirect()->route('member.login')
-                ->withErrors(['identifier' => 'Sesi pendaftaran Google berakhir. Silakan coba lagi.']);
+                ->withErrors(['identifier' => 'Google registration session expired. Please try again.']);
         }
 
         $data = $request->validate([
@@ -186,18 +186,18 @@ class GoogleAuthController extends Controller
             'username' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-zA-Z0-9_.]+$/', 'unique:members,username'],
             'no_hp'    => ['required', 'string', 'max:20'],
         ], [
-            'nama.required'     => 'Nama wajib diisi.',
-            'username.required' => 'Username wajib diisi.',
-            'username.min'      => 'Username minimal 3 karakter.',
-            'username.regex'    => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi).',
-            'username.unique'   => 'Username ini sudah dipakai. Coba username lain.',
-            'no_hp.required'    => 'Nomor HP wajib diisi.',
+            'nama.required'     => 'Name is required.',
+            'username.required' => 'Username is required.',
+            'username.min'      => 'Username must be at least 3 characters.',
+            'username.regex'    => 'Username may only contain letters, numbers, dots, and underscores.',
+            'username.unique'   => 'This username is already taken. Please choose another.',
+            'no_hp.required'    => 'Phone number is required.',
         ]);
 
         $noHp = Member::normalizeNoHp($data['no_hp']);
 
         if (Member::where('no_hp', $noHp)->exists()) {
-            return back()->withErrors(['no_hp' => 'Nomor HP ini sudah terdaftar. Gunakan nomor lain atau langsung masuk.'])->withInput();
+            return back()->withErrors(['no_hp' => 'This phone number is already registered. Please sign in or use another number.'])->withInput();
         }
 
         // Nomor HP format lokal (diawali angka 0, contoh: 088xxxx) dijadikan password awal member
@@ -229,7 +229,7 @@ class GoogleAuthController extends Controller
 
         $request->session()->forget(self::SESSION_KEY);
 
-        return $this->loginMember($request, $member, 'Selamat datang, ' . $member->nama . '! Akun kamu berhasil didaftarkan.');
+        return $this->loginMember($request, $member, 'Welcome, ' . $member->nama . '! Your account has been registered successfully.');
     }
 
     /** Batalkan pendaftaran Google (tombol "Batal"). */
@@ -248,7 +248,7 @@ class GoogleAuthController extends Controller
         if (strlen($username) < 3 || strlen($username) > 50 || ! preg_match('/^[a-zA-Z0-9_.]+$/', $username)) {
             return response()->json([
                 'available' => false,
-                'message'   => 'Minimal 3 karakter; hanya huruf, angka, titik, dan underscore.',
+                'message'   => 'At least 3 characters; letters, numbers, dots, and underscores only.',
             ]);
         }
 
@@ -256,7 +256,7 @@ class GoogleAuthController extends Controller
 
         return response()->json([
             'available' => $tersedia,
-            'message'   => $tersedia ? 'Username tersedia.' : 'Username ini sudah dipakai.',
+            'message'   => $tersedia ? 'Username is available.' : 'This username is already taken.',
         ]);
     }
 
@@ -266,7 +266,7 @@ class GoogleAuthController extends Controller
         $request->session()->regenerate();
 
         return redirect()->intended(route('member.beranda'))
-            ->with('success', $pesan ?? 'Berhasil masuk. Selamat datang kembali, ' . $member->nama . '!');
+            ->with('success', $pesan ?? 'Signed in successfully. Welcome back, ' . $member->nama . '!');
     }
 
     private function sarankanUsername(string $email, string $nama): string

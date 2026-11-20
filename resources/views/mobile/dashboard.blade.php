@@ -474,10 +474,11 @@
 
                                 <div class="flex flex-col items-end gap-2.5">
                                     <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);"
-                                       class="group inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-ui text-sm font-bold shadow-md transition hover:scale-105 active:scale-95"
-                                       style="background-color: var(--color-cocoa-500); color: #FAF5E8;">
-                                        Explore Cakes & Menu
-                                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                       class="group inline-flex items-center gap-3 rounded-full px-7 py-3.5 font-ui text-xs font-black tracking-widest uppercase shadow-md transition-all duration-200 hover:scale-105 active:scale-95 bg-[#3C2415] hover:bg-[#4E2F1B] text-white">
+                                        <span>Explore Cakes & Menu</span>
+                                        <svg class="w-4 h-4 text-[#EACE80] transition-transform duration-200 group-hover:translate-x-1.5" viewBox="0 0 24 24" fill="none">
+                                            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
                                     </a>
 
                                     @guest('member')
@@ -729,10 +730,11 @@
                 {{-- Button: View All Menu --}}
                 <div class="mt-10 text-center desktop-reveal">
                     <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);"
-                       class="group inline-flex items-center gap-2 rounded-full px-8 py-3.5 font-ui text-xs font-bold tracking-wider uppercase shadow-md transition hover:scale-105 active:scale-95"
-                       style="background-color: #3A221B; color: #FAF5E8;">
-                        VIEW ALL CAKES & MENU
-                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1.5"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                       class="group inline-flex items-center gap-3 rounded-full px-8 py-3.5 font-ui text-xs font-black tracking-widest uppercase shadow-md transition-all duration-200 hover:scale-105 active:scale-95 bg-[#3C2415] hover:bg-[#4E2F1B] text-white">
+                        <span>VIEW ALL CAKES & MENU</span>
+                        <svg class="w-4 h-4 text-[#EACE80] transition-transform duration-200 group-hover:translate-x-1.5" viewBox="0 0 24 24" fill="none">
+                            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
                     </a>
                 </div>
             </div>
@@ -761,18 +763,11 @@
 
                     {{-- Composition Grid --}}
                     <div class="mt-8 lg:mt-12 grid grid-cols-12 gap-6 lg:gap-8 items-center">
-                        {{-- Left / Center Chef Duck Mascot --}}
+                        {{-- Left Chef Duck Mascot (Fills card smoothly without looking pasted over) --}}
                         <div class="col-span-12 sm:col-span-5 lg:col-span-4 relative group">
-                            <div class="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/10 flex items-center justify-center p-6"
-                                 style="background-color: #FAF5E8;">
+                            <div class="relative w-full aspect-[2/3] rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-[#301A14]">
                                 <img src="{{ asset('images/decor/chef-duck.png') }}" alt="Daisy Chef Duck"
-                                     class="w-full h-full object-contain filter drop-shadow-md select-none transition-transform duration-500 group-hover:scale-108">
-                            </div>
-
-                            {{-- Floating Cake Slice in front --}}
-                            <div class="absolute -bottom-6 -left-6 w-36 sm:w-44 z-10 pointer-events-none filter drop-shadow-2xl transition-transform duration-500 group-hover:-translate-y-2 group-hover:-rotate-6">
-                                <img src="{{ asset('storage/produk/SSH-CK001/strawberry-cheese-tart.jpeg') }}" alt=""
-                                     class="w-full h-auto rounded-2xl object-contain -rotate-12 border-2 border-[#FAF5E8]">
+                                     class="w-full h-full object-cover select-none transition-transform duration-500 group-hover:scale-105">
                             </div>
                         </div>
 
@@ -787,7 +782,7 @@
 
                             <div class="grid grid-cols-2 gap-4">
                                 <div class="rounded-2xl overflow-hidden aspect-[4/3] border border-white/10 shadow-md group">
-                                    <img src="{{ asset('images/cards/bakery-art-interior.jpg') }}" alt="Daisy Bakery Store" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108">
+                                    <img src="{{ asset('images/cards/bakery-art-interior.jpg') }}" alt="Daisy Bakery" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108">
                                 </div>
                                 <div class="rounded-2xl overflow-hidden aspect-[4/3] border border-white/10 shadow-md group">
                                     <img src="{{ asset('storage/produk/SSH-DN004/blueberry-danish.jpeg') }}" alt="Fresh Bakes" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108">
@@ -853,9 +848,11 @@
 
                                 {{-- Action Button (Animation on Button Only) --}}
                                 <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);"
-                                   class="group inline-flex items-center gap-2 rounded-full px-7 py-3 font-ui text-xs font-bold uppercase tracking-wider shadow-md transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-[#8E1E26] text-[#FAF5E8] bg-[#3A221B]">
+                                   class="group inline-flex items-center gap-3 rounded-full px-7 py-3 font-ui text-xs font-black tracking-widest uppercase shadow-md transition-all duration-200 hover:scale-105 active:scale-95 bg-[#3C2415] hover:bg-[#4E2F1B] text-white">
                                     <span>SHOP NOW</span>
-                                    <span class="transition-transform duration-200 group-hover:translate-x-1">→</span>
+                                    <svg class="w-4 h-4 text-[#EACE80] transition-transform duration-200 group-hover:translate-x-1.5" viewBox="0 0 24 24" fill="none">
+                                        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
                                 </a>
                             </div>
                         </div>
@@ -899,9 +896,11 @@
 
                                 {{-- Action Button (Animation on Button Only) --}}
                                 <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);"
-                                   class="group inline-flex items-center gap-2 rounded-full px-7 py-3 font-ui text-xs font-bold uppercase tracking-wider shadow-md transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-[#8E1E26] text-[#FAF5E8] bg-[#3A221B]">
+                                   class="group inline-flex items-center gap-3 rounded-full px-7 py-3 font-ui text-xs font-black tracking-widest uppercase shadow-md transition-all duration-200 hover:scale-105 active:scale-95 bg-[#3C2415] hover:bg-[#4E2F1B] text-white">
                                     <span>SHOP NOW</span>
-                                    <span class="transition-transform duration-200 group-hover:translate-x-1">→</span>
+                                    <svg class="w-4 h-4 text-[#EACE80] transition-transform duration-200 group-hover:translate-x-1.5" viewBox="0 0 24 24" fill="none">
+                                        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
                                 </a>
                             </div>
                         </div>
@@ -975,14 +974,14 @@
                          class="absolute inset-0 w-full h-full object-cover filter blur-[8px] brightness-[0.80] contrast-[1.05] scale-110 pointer-events-none select-none">
                     <div class="absolute inset-0 bg-[#231815]/25 pointer-events-none"></div>
 
-                    {{-- The Pinned Canvas Paper Note Asset --}}
-                    <div class="relative z-10 w-full max-w-[460px] sm:max-w-[500px] aspect-[736/920] flex items-center justify-center transition-transform duration-300 hover:scale-[1.01]">
+                    {{-- The Pinned Canvas Paper Note Asset (Shifted so the white paper is dead center in the card & text matches) --}}
+                    <div class="relative z-10 w-full max-w-[460px] sm:max-w-[500px] aspect-[1240/1269] flex items-center justify-center -translate-x-4 sm:-translate-x-5 transition-transform duration-300 hover:scale-[1.01]">
                         {{-- Background Image: Pinned Canvas Paper Note --}}
                         <img src="{{ asset('images/decor/pinned-canvas-note.png') }}" alt="Store Location & Hours Note"
                              class="absolute inset-0 w-full h-full object-contain filter drop-shadow-[0_24px_32px_rgba(0,0,0,0.45)] pointer-events-none select-none">
 
-                        {{-- Text Overlay on Canvas Paper Area --}}
-                        <div class="relative z-10 w-[72%] max-w-[340px] pt-14 sm:pt-16 pb-8 pl-5 pr-3 text-center select-none text-[#3A221B] space-y-2">
+                        {{-- Text Overlay Centered Directly on the White Paper Canvas Area --}}
+                        <div class="relative z-10 w-[74%] max-w-[340px] translate-x-[4%] pt-16 sm:pt-20 pb-8 px-4 text-center select-none text-[#3A221B] space-y-2">
                             <p class="font-ui text-xs font-semibold tracking-wide text-[#8E1E26]">
                                 We are waiting for your visit
                             </p>
@@ -1004,15 +1003,15 @@
                             <div class="pt-1.5 space-y-1.5 text-left font-ui text-[11px] sm:text-xs text-[#3A221B]">
                                 <div class="flex items-start justify-between gap-2 pt-1 border-t border-[#3A221B]/20">
                                     <span class="font-black uppercase tracking-wider text-[#8E1E26] shrink-0">FLAGSHIP</span>
-                                    <span class="text-right text-[#3A221B] font-semibold">Jl. Cendrawasih 42, Bandung</span>
+                                    <span class="text-right text-[#3A221B] font-semibold">Jl. Jalan 40, Cirebon</span>
                                 </div>
                                 <div class="flex items-start justify-between gap-2 pt-1 border-t border-[#3A221B]/20">
                                     <span class="font-black uppercase tracking-wider text-[#8E1E26] shrink-0">CAFE</span>
-                                    <span class="text-right text-[#3A221B] font-semibold">Daisy Sweet House, Jl. Riau</span>
+                                    <span class="text-right text-[#3A221B] font-semibold">Daisy Sweet House, Jl. Jalan</span>
                                 </div>
                                 <div class="flex items-start justify-between gap-2 pt-1 border-t border-[#3A221B]/20">
                                     <span class="font-black uppercase tracking-wider text-[#8E1E26] shrink-0">WHATSAPP</span>
-                                    <span class="text-right text-[#3A221B] font-bold lining-nums tabular-nums">+62 812-3456-7890</span>
+                                    <span class="text-right text-[#3A221B] font-bold lining-nums tabular-nums">+62 8820-0007-68044</span>
                                 </div>
                             </div>
 
@@ -1067,10 +1066,11 @@
 
                         <div class="mt-8">
                             <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);"
-                               class="group inline-flex items-center gap-2 rounded-full px-8 py-3.5 font-ui text-xs font-bold uppercase tracking-wider shadow-md transition hover:scale-105 active:scale-95 group-hover:bg-[#8E1E26]"
-                               style="background-color: #3A221B; color: #FAF5E8;">
-                                SHOP CAKES NOW
-                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1.5"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                               class="group inline-flex items-center gap-3 rounded-full px-8 py-3.5 font-ui text-xs font-black tracking-widest uppercase shadow-md transition-all duration-200 hover:scale-105 active:scale-95 bg-[#3C2415] hover:bg-[#4E2F1B] text-white">
+                                <span>SHOP CAKES NOW</span>
+                                <svg class="w-4 h-4 text-[#EACE80] transition-transform duration-200 group-hover:translate-x-1.5" viewBox="0 0 24 24" fill="none">
+                                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
                             </a>
                         </div>
                     </div>

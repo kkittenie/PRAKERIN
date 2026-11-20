@@ -676,9 +676,9 @@
          Panggil dari JS: appAlert('pesan', 'Judul opsional')
          atau dari Alpine/HTML: $dispatch('app-alert', { message: '...', title: '...' })
          Pakai <dialog> + showModal() supaya tetap muncul di atas bottom sheet yang sedang terbuka. --}}
-    <dialog x-data="{ judul: 'Perhatian', pesan: '' }"
+    <dialog x-data="{ judul: 'Notice', pesan: '' }"
             x-ref="dlg"
-            x-on:app-alert.window="judul = $event.detail.title || 'Perhatian'; pesan = $event.detail.message || ''; if (! $refs.dlg.open) $refs.dlg.showModal()"
+            x-on:app-alert.window="judul = $event.detail.title || 'Notice'; pesan = $event.detail.message || ''; if (! $refs.dlg.open) $refs.dlg.showModal()"
             x-on:click.self="$refs.dlg.close()"
             class="m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl border-0 bg-white p-0 shadow-2xl backdrop:bg-black/40">
         <div class="p-6 text-center">
@@ -700,7 +700,7 @@
         };
         window.tampilkanAlert = window.appAlert;
         window.alert = function (message) {
-            window.appAlert(message, 'Perhatian');
+            window.appAlert(message, 'Notice');
         };
 
         let __tkCheckoutUrl = null;
@@ -728,13 +728,13 @@
                 const data = await res.json();
 
                 if (!data.success) {
-                    appAlert((data.message) || 'Gagal menambahkan ke keranjang.');
+                    appAlert((data.message) || 'Failed to add item to cart.');
                     return;
                 }
 
                 tampilkanSheetTambahKeranjang(data);
             } catch (e) {
-                appAlert('Terjadi kesalahan, coba lagi.');
+                appAlert('Something went wrong. Please try again.');
             } finally {
                 if (btn) btn.disabled = false;
             }
@@ -781,7 +781,7 @@
         }
 
         function bukaModalLoginRequired(namaFitur) {
-            document.getElementById('login-required-msg').innerText = 'Silakan masuk atau daftar akun Saisho untuk mengakses fitur ' + namaFitur + '.';
+            document.getElementById('login-required-msg').innerText = 'Please sign in or create a Daisy Bakery account to access ' + namaFitur + '.';
             openSheet('modal-login-required');
         }
         function openSheet(id) {

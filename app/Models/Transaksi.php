@@ -117,7 +117,7 @@ class Transaksi extends Model
     /** Alasan pembatalan yang dicatat saat pesanan dibatalkan otomatis karena telat bayar. */
     public static function alasanKedaluwarsaBayar(): string
     {
-        return 'Melebihi batas waktu pembayaran (' . self::BATAS_BAYAR_MENIT . ' menit), dibatalkan otomatis oleh sistem.';
+        return 'Exceeded payment time limit (' . self::BATAS_BAYAR_MENIT . ' minutes), automatically cancelled by the system.';
     }
 
     /** Pesanan member yang sudah lewat batas waktu bayar tanpa bukti pembayaran. */

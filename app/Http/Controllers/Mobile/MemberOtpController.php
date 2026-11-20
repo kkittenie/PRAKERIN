@@ -28,7 +28,7 @@ class MemberOtpController extends Controller
             if (!$member) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Nomor HP belum terdaftar sebagai member.',
+                    'message' => 'Phone number is not registered as a member.',
                 ], 404);
             }
 
@@ -55,7 +55,7 @@ class MemberOtpController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'OTP berhasil dibuat. Silakan cek kode OTP di database.',
+                'message' => 'OTP code generated successfully. Please check your OTP code.',
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -87,7 +87,7 @@ class MemberOtpController extends Controller
             if (!$otpVerification) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kode OTP salah.',
+                    'message' => 'Invalid OTP code.',
                 ], 422);
             }
 
@@ -95,7 +95,7 @@ class MemberOtpController extends Controller
             if ($otpVerification->isExpired()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kode OTP sudah expired. Silakan minta OTP baru.',
+                    'message' => 'OTP code has expired. Please request a new OTP.',
                 ], 422);
             }
 
@@ -105,7 +105,7 @@ class MemberOtpController extends Controller
             if (!$member) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Member tidak ditemukan.',
+                    'message' => 'Member not found.',
                 ], 404);
             }
 
@@ -119,7 +119,7 @@ class MemberOtpController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Login berhasil.',
+                'message' => 'Sign in successful.',
                 'member' => [
                     'id' => $member->id,
                     'nama' => $member->nama,
@@ -142,7 +142,7 @@ class MemberOtpController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Logout berhasil.',
+                'message' => 'Signed out successfully.',
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

@@ -51,10 +51,40 @@ def strip_desktop_only_sections(rel_path: str, text: str) -> str:
     if rel_path == 'dashboard.blade.php':
         pattern = re.compile(r'\{\{--\s*═+\s*DESKTOP VIEW.*?@include\(\'mobile\.components\.floating-cart\'\)', flags=re.DOTALL)
         return pattern.sub("@include('mobile.components.floating-cart')", text)
+    if rel_path == 'menu.blade.php':
+        pattern = re.compile(r'\{\{--\s*═+\s*DESKTOP VIEW.*?@include\(\'mobile\.components\.floating-cart\'\)', flags=re.DOTALL)
+        text = pattern.sub("@include('mobile.components.floating-cart')", text)
+        return text
+    if rel_path == 'produk/show.blade.php':
+        pattern = re.compile(r'\{\{--\s*═+\s*DESKTOP VIEW.*?@endsection', flags=re.DOTALL)
+        return pattern.sub("@endsection", text)
+    if rel_path == 'checkout/index.blade.php':
+        pattern = re.compile(r'\{\{--\s*═+\s*DESKTOP VIEW.*?@endsection', flags=re.DOTALL)
+        return pattern.sub("@endsection", text)
+    if rel_path == 'pesanan/show.blade.php':
+        pattern = re.compile(r'\{\{--\s*═+\s*DESKTOP VIEW.*?\{\{--\s*═+\s*END DESKTOP VIEW\s*═+\s*--\}\}', flags=re.DOTALL)
+        return pattern.sub("", text)
+    if rel_path == 'pesanan/cara-pembayaran.blade.php':
+        pattern = re.compile(r'\{\{--\s*═+\s*DESKTOP VIEW.*?\{\{--\s*═+\s*END DESKTOP VIEW\s*═+\s*--\}\}', flags=re.DOTALL)
+        return pattern.sub("", text)
+    if rel_path == 'rewards/index.blade.php':
+        pattern = re.compile(r'\{\{--\s*═+\s*DESKTOP LAYOUT.*?\{\{--\s*═+\s*SHARED SCRIPTS\s*═+\s*--\}\}', flags=re.DOTALL)
+        return pattern.sub("{{-- ═══════════════════════════════════════════════════════════════════════\n         SHARED SCRIPTS\n         ═══════════════════════════════════════════════════════════════════════ --}}", text)
+    if rel_path == 'rewards/show.blade.php':
+        pattern = re.compile(r'<div class="hidden lg:block.*?(?=\{\{-- Bottom Sheet)', flags=re.DOTALL)
+        return pattern.sub("", text)
+    if rel_path == 'riwayat/index.blade.php':
+        pattern = re.compile(r'<div[^>]*class="[^"]*hidden lg:block[^"]*"[^>]*>.*?(?=\{\{-- Bottom sheet: Detail Transaksi)', flags=re.DOTALL)
+        return pattern.sub("", text)
     if rel_path == 'layout.blade.php':
         # Strip desktop-only header and footer
         text = re.sub(r'<header class="hidden lg:flex.*?</header>', '', text, flags=re.DOTALL)
         text = re.sub(r'<footer class="hidden lg:block.*?</footer>', '', text, flags=re.DOTALL)
+        # Strip desktop-only elements inside dialogs/sheets
+        text = re.sub(r'<button[^>]*class="[^"]*hidden lg:flex[^"]*"[^>]*>.*?</button>', '', text, flags=re.DOTALL)
+        text = re.sub(r'<svg[^>]*class="[^"]*hidden lg:block[^"]*"[^>]*>.*?</svg>', '', text, flags=re.DOTALL)
+        text = re.sub(r'<span class="hidden lg:inline">.*?</span>', '', text, flags=re.DOTALL)
+        text = re.sub(r'<span class="lg:hidden">(.*?)</span>', r'\1', text, flags=re.DOTALL)
         return text
     return text
 

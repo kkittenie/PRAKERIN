@@ -58,10 +58,10 @@ class KeranjangController extends Controller
                 if ($request->wantsJson()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Varian yang dipilih sedang nonaktif atau tidak tersedia.',
+                        'message' => 'The selected variant is inactive or unavailable.',
                     ], 422);
                 }
-                return back()->with('error', 'Varian yang dipilih sedang nonaktif atau tidak tersedia.');
+                return back()->with('error', 'The selected variant is inactive or unavailable.');
             }
 
             $varianBersama = null;
@@ -162,7 +162,7 @@ class KeranjangController extends Controller
                 'jumlah' => $validated['jumlah'],
             ]);
 
-            $pesan = "{$produk->nama_produk} ditambahkan ke keranjang.";
+            $pesan = "{$produk->nama_produk} added to cart.";
 
             if ($request->wantsJson()) {
                 return response()->json([
@@ -242,7 +242,7 @@ class KeranjangController extends Controller
                 'rincian_bundling' => $rincianBundling,
             ]);
 
-            $pesan = "{$bundling->nama_bundling} ditambahkan ke keranjang.";
+            $pesan = "{$bundling->nama_bundling} added to cart.";
 
             if ($request->wantsJson()) {
                 return response()->json([
@@ -306,7 +306,7 @@ class KeranjangController extends Controller
                 'jumlah' => $validated['jumlah'],
             ]);
 
-            $pesan = "{$promoEvent->nama_event} ditambahkan ke keranjang.";
+            $pesan = "{$promoEvent->nama_event} added to cart.";
 
             if ($request->wantsJson()) {
                 return response()->json([
@@ -355,7 +355,7 @@ class KeranjangController extends Controller
 
             if (! MemberCart::cariItem($itemId)) {
                 return redirect()->route('member.produk.show', $produk)
-                    ->with('error', 'Item keranjang tidak ditemukan, mungkin sudah dihapus.');
+                    ->with('error', 'Cart item not found, it may have been removed.');
             }
 
             $produkVarian = null;
@@ -375,7 +375,7 @@ class KeranjangController extends Controller
             }
 
             if ($produk->detailProduks()->exists() && !$produkVarian) {
-                return back()->with('error', 'Varian yang dipilih sedang nonaktif atau tidak tersedia.');
+                return back()->with('error', 'The selected variant is inactive or unavailable.');
             }
 
             $varianBersama = null;
@@ -475,7 +475,7 @@ class KeranjangController extends Controller
 
             return redirect()
                 ->route('member.checkout.index')
-                ->with('success', "{$produk->nama_produk} diperbarui.");
+                ->with('success', "{$produk->nama_produk} updated.");
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -507,7 +507,7 @@ class KeranjangController extends Controller
 
             if (! MemberCart::cariItem($itemId)) {
                 return redirect()->route('member.bundling.show', $bundling)
-                    ->with('error', 'Item keranjang tidak ditemukan, mungkin sudah dihapus.');
+                    ->with('error', 'Cart item not found, it may have been removed.');
             }
 
             // Bundling bebas: total pilihan harus pas dengan total isi, dan hanya boleh
@@ -535,7 +535,7 @@ class KeranjangController extends Controller
 
             return redirect()
                 ->route('member.checkout.index')
-                ->with('success', "{$bundling->nama_bundling} diperbarui.");
+                ->with('success', "{$bundling->nama_bundling} updated.");
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -555,7 +555,7 @@ class KeranjangController extends Controller
 
             if (! MemberCart::cariItem($itemId)) {
                 return redirect()->route('member.promo-event.show', $promoEvent)
-                    ->with('error', 'Item keranjang tidak ditemukan, mungkin sudah dihapus.');
+                    ->with('error', 'Cart item not found, it may have been removed.');
             }
 
             $pesanStok = $this->pesanStokPromoEvent($promoEvent, (int) $validated['jumlah'], $itemId);
@@ -577,7 +577,7 @@ class KeranjangController extends Controller
 
             return redirect()
                 ->route('member.checkout.index')
-                ->with('success', "{$promoEvent->nama_event} diperbarui.");
+                ->with('success', "{$promoEvent->nama_event} updated.");
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -595,7 +595,7 @@ class KeranjangController extends Controller
                 if ($validated['jumlah'] <= 0) {
                     Session::forget(CheckoutController::SESSION_STAMP_REDEMPTION_KEY);
                     MemberCart::hapus($itemId);
-                    return back()->with('success', 'Hadiah stamp dilepas dari keranjang.');
+                    return back()->with('success', 'Stamp reward removed from cart.');
                 }
                 // Reward stamp quantity cannot be increased
                 return back();
@@ -634,7 +634,7 @@ class KeranjangController extends Controller
             MemberCart::ubahJumlah($itemId, $validated['jumlah']);
 
             if (MemberCart::isEmpty()) {
-                return redirect()->route('member.menu')->with('info', 'Item dihapus. Keranjang kamu sekarang kosong.');
+                return redirect()->route('member.menu')->with('info', 'Item removed. Your cart is now empty.');
             }
 
             return back();
@@ -654,10 +654,10 @@ class KeranjangController extends Controller
             MemberCart::hapus($itemId);
 
             if (MemberCart::isEmpty()) {
-                return redirect()->route('member.menu')->with('info', 'Item dihapus. Keranjang kamu sekarang kosong.');
+                return redirect()->route('member.menu')->with('info', 'Item removed. Your cart is now empty.');
             }
 
-            return back()->with('success', 'Item dihapus dari keranjang.');
+            return back()->with('success', 'Item removed from cart.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -706,7 +706,7 @@ class KeranjangController extends Controller
         $stok = max(0, $stok);
 
         if ($stok <= 0) {
-            return "Stok {$nama} sedang habis.";
+            return "{$nama} is out of stock.";
         }
 
         if ($sudahDiKeranjang + $jumlah <= $stok) {
@@ -714,13 +714,13 @@ class KeranjangController extends Controller
         }
 
         if ($sudahDiKeranjang >= $stok) {
-            return "Stok tidak mencukupi. Sisa stok {$stok} {$satuan} dan semuanya sudah ada di keranjang kamu.";
+            return "Insufficient stock. Only {$stok} {$satuan} available and all are already in your cart.";
         }
 
-        $pesan = "Stok tidak mencukupi. Sisa stok {$stok} {$satuan}";
+        $pesan = "Insufficient stock. Only {$stok} {$satuan} available";
 
         return $sudahDiKeranjang > 0
-            ? "{$pesan}, {$sudahDiKeranjang} {$satuan} sudah ada di keranjang kamu."
+            ? "{$pesan}, {$sudahDiKeranjang} {$satuan} already in your cart."
             : "{$pesan}.";
     }
 
