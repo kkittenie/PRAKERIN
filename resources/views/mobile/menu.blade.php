@@ -74,7 +74,7 @@
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 -translate-y-2"
              class="pointer-events-none absolute inset-x-0 top-0 z-50 lg:hidden" x-ref="compactHeader">
-            <div class="bg-white px-5 pb-4 pt-3 shadow-sm sm:px-8 md:px-10">
+            <div class="bg-[#FAF5E8] px-5 pb-4 pt-3 shadow-md border-b border-[#3C2415]/10 sm:px-8 md:px-10">
                 <div class="mx-auto flex max-w-screen-xl items-start gap-3">
                     <a href="{{ route('member.beranda') }}"
                        onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
@@ -109,13 +109,18 @@
              x-transition:leave-end="opacity-0"
              class="relative -mx-5 sm:-mx-8 md:-mx-10 -mt-6 overflow-hidden rounded-b-[22px] bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-5 pb-8 pt-4 text-white lg:hidden">
 
-            <div class="relative flex items-center justify-center">
+            <div class="relative flex items-center justify-center gap-2.5">
                 <a href="{{ route('member.beranda') }}"
                    onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
                    class="absolute left-0 flex h-8 w-8 items-center justify-center rounded-full text-white transition active:bg-white/10">
                     <span class="rotate-180">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4'])</span>
                 </a>
-                <h1 class="text-theme-sm font-bold text-white">Saisho Cake & Bakery</h1>
+                <div class="flex items-center justify-center gap-2.5">
+                    <span class="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full bg-[#FAF5E8] p-1.5 shadow-xs border border-white/25">
+                        <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Daisy Mascot" class="h-full w-full object-contain">
+                    </span>
+                    <img src="{{ asset('images/logo/logo-wordmark-light.svg') }}" alt="Daisy Bakery" class="h-7 w-auto object-contain">
+                </div>
             </div>
 
             {{-- Rotating tagline --}}
@@ -144,16 +149,13 @@
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 -translate-y-1"
              class="relative z-10 -mt-8 lg:hidden">
-            <div class="flex items-center gap-3 rounded-3xl border border-white/10 bg-white px-4 py-4 shadow-lg shadow-black/20">
-                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-800">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
-                        <path d="M4 10.5V20a1 1 0 0 0 1 1h4v-5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5h4a1 1 0 0 0 1-1v-9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M2.5 10 12 3l9.5 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+            <div class="flex items-center gap-3 rounded-3xl border border-[#3C2415]/10 bg-[#FAF5E8] px-4 py-3.5 shadow-md shadow-[#3C2415]/10">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white p-2 border border-[#3C2415]/10 shadow-xs">
+                    <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Daisy Mascot" class="h-full w-full object-contain">
                 </span>
                 <div class="min-w-0 flex-1">
-                    <p class="text-sm font-bold leading-tight text-gray-900">{{ $storeNama }}</p>
-                    <p class="mt-0.5 text-[14px] leading-snug text-gray-400">{{ $storeAlamat }}</p>
+                    <h4 class="font-display font-bold text-base text-[#3A221B] leading-tight">Daisy Bakery</h4>
+                    <p class="mt-1 text-[13px] font-medium leading-snug text-[#706864]">{{ $storeAlamat }}</p>
                 </div>
             </div>
         </div>
@@ -172,10 +174,10 @@
                             ✨ Freshly Baked Daily
                         </span>
                         <h1 class="mt-2.5 text-2xl lg:text-3xl font-black tracking-tight leading-tight">
-                            Pesan Online & Ambil di Outlet
+                            Order Online & In-Store Pickup
                         </h1>
                         <p class="mt-1.5 text-xs lg:text-sm text-brand-100 font-medium leading-relaxed">
-                            Nikmati kelezatan donat, kue spesial, dan pastry pilihan dari Saisho Bakery.
+                            Savor our handcrafted cakes, artisanal breads, and signature pastries freshly baked each morning.
                         </p>
                     </div>
 
@@ -189,7 +191,7 @@
                                 </svg>
                             </span>
                             <div class="min-w-0">
-                                <p class="text-xs font-extrabold text-white truncate">{{ $storeNama }}</p>
+                                <h4 class="font-display font-bold text-sm text-white leading-tight">Daisy Bakery</h4>
                                 <p class="text-[11px] text-white/80 truncate mt-0.5 font-medium">{{ $storeAlamat }}</p>
                             </div>
                         </div>
@@ -204,13 +206,13 @@
                         <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
                         <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
-                    <input type="text" x-model="search" placeholder="Cari roti, cake, kopi, atau promo..."
+                    <input type="text" x-model="search" placeholder="Search cakes, pastries, breads, or promotions..."
                            class="w-full border-0 bg-transparent p-0 text-xs font-semibold text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0">
                     <button type="button" x-show="search.length > 0" @click="search = ''" class="text-gray-400 hover:text-gray-600">
                         <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                     </button>
                 </div>
-                <span class="text-xs font-semibold text-gray-400">Pilih kategori di sebelah kiri untuk menyaring menu</span>
+                <span class="text-xs font-semibold text-gray-400">Select a category on the left to filter the menu</span>
             </div>
         </div>
 
@@ -224,7 +226,7 @@
                         <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
                         <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
-                    <input type="text" x-model="search" placeholder="Cari menu..."
+                    <input type="text" x-model="search" placeholder="Search menu..."
                            class="w-full border-0 bg-transparent p-0 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0">
                 </div>
 
@@ -251,7 +253,7 @@
                         <button type="button" @click="activeKategori = 'semua'; kategoriDropdown = false"
                                 :class="activeKategori === 'semua' ? 'bg-brand-50 text-brand-800' : 'text-gray-600'"
                                 class="flex w-full items-center justify-between px-4 py-2.5 text-left text-xs font-bold transition hover:bg-gray-50">
-                            Semua Menu
+                            All Items
                             <svg x-show="activeKategori === 'semua'" class="h-3.5 w-3.5 text-brand-800" viewBox="0 0 24 24" fill="none">
                                 <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
@@ -276,12 +278,12 @@
         <div class="lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start">
             {{-- Desktop Sticky Sidebar Navigation --}}
             <aside class="hidden lg:block lg:col-span-3 xl:col-span-2 sticky top-[310px] space-y-1">
-                <p class="px-3 pb-2 text-[11px] font-extrabold uppercase tracking-wider text-gray-400">Kategori</p>
+                <p class="px-3 pb-2 text-[11px] font-extrabold uppercase tracking-wider text-gray-400">Categories</p>
                 
                 <button type="button" @click="activeKategori = 'semua'"
                         :class="activeKategori === 'semua' ? 'bg-brand-50 text-brand-800 font-extrabold' : 'text-gray-600 hover:bg-gray-50 font-semibold'"
                         class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs transition">
-                    <span>Semua Menu</span>
+                    <span>All Items</span>
                     <span class="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500" :class="activeKategori === 'semua' ? 'bg-brand-100 text-brand-700' : ''">{{ count($searchIndex) }}</span>
                 </button>
 
@@ -319,7 +321,7 @@
             <div x-show="(activeKategori === 'semua' || activeKategori === '{{ $kategori->id }}') && cocokKategori('{{ $kategori->id }}')" class="mt-6 first:mt-2">
                 <div class="flex items-center justify-between">
                     <h2 class="text-sm font-bold text-gray-900">{{ $kategori->nama_kategori }}</h2>
-                    <span class="text-[11px] text-gray-400">{{ $kategori->produk->count() + $daftarBundling->where('kategori_id', $kategori->id)->count() + $daftarPromoEvent->where('kategori_id', $kategori->id)->count() }} item</span>
+                    <span class="text-[11px] text-gray-400">{{ $kategori->produk->count() + $daftarBundling->where('kategori_id', $kategori->id)->count() + $daftarPromoEvent->where('kategori_id', $kategori->id)->count() }} items</span>
                 </div>
                 <div class="mt-1 border-t border-dashed border-gray-100"></div>
 
@@ -344,9 +346,9 @@
                                 <div class="{{ $produk->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
                                     @include('mobile.components.icon-cup', ['class' => 'h-10 w-10'])
                                 </div>
-                                <span data-promo-badge class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm" style="{{ $adaPromo ? '' : 'display:none' }}">Promo</span>
+                                <span data-promo-badge class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm" style="{{ $adaPromo ? '' : 'display:none' }}">Special</span>
                                 @if ($habis)
-                                    <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Stok Habis</span>
+                                    <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Sold Out</span>
                                 @endif
                             </div>
 
@@ -389,8 +391,8 @@
         @if ($bundlingTanpaKategori->isNotEmpty() || $promoEventTanpaKategori->isNotEmpty())
             <div x-show="activeKategori === 'semua' && cocokKategori('lainnya')" class="mt-6 first:mt-2">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-sm font-bold text-gray-900">Menu Lainnya</h2>
-                    <span class="text-[11px] text-gray-400">{{ $bundlingTanpaKategori->count() + $promoEventTanpaKategori->count() }} item</span>
+                    <h2 class="text-sm font-bold text-gray-900">Other Delights</h2>
+                    <span class="text-[11px] text-gray-400">{{ $bundlingTanpaKategori->count() + $promoEventTanpaKategori->count() }} items</span>
                 </div>
                 <div class="mt-1 border-t border-dashed border-gray-100"></div>
 
@@ -407,7 +409,7 @@
 
         @if (count($searchIndex) === 0)
             <div class="mt-8 rounded-2xl border border-gray-100 bg-white p-6 text-center text-xs font-medium text-gray-400">
-                Belum ada menu tersedia saat ini.
+                No menu items available at the moment.
             </div>
         @endif
 
@@ -420,12 +422,12 @@
                         <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </span>
-                <p class="mt-3 text-sm font-bold text-gray-700">Produk tidak ditemukan</p>
-                <p class="mt-1 text-xs text-gray-400">Coba kata kunci lain atau pilih kategori berbeda.</p>
+                <p class="mt-3 text-sm font-bold text-gray-700">No products found</p>
+                <p class="mt-1 text-xs text-gray-400">Try a different keyword or select another category.</p>
             </div>
         @endif
 
-        <p x-show="adaProdukTampil()" class="mt-6 pb-5 text-center text-[11px] text-gray-400">Tap menu untuk lihat detail &amp; pesan</p>
+        <p x-show="adaProdukTampil()" class="mt-6 pb-5 text-center text-[11px] text-gray-400">Tap any item to view details &amp; customize</p>
         </div>
         </div>
     </div>
@@ -488,55 +490,7 @@
             {{-- Top Dark Cocoa Banner (Navbar & Narrative) --}}
             <div class="relative w-full bg-[#3C2415] pt-10 pb-8 sm:pb-9 lg:pb-10 xl:pb-12 text-center overflow-hidden">
                 {{-- Background Line Art Bakery Doodles (Cake on Left, Croissant on Right) --}}
-                <div class="pointer-events-none absolute inset-0 opacity-18 select-none overflow-hidden">
-                    {{-- Left Tiered Celebration Cake Line Art Doodle --}}
-                    <svg class="absolute -left-6 lg:left-2 2xl:left-8 top-6 w-72 lg:w-80 h-72 lg:h-80 text-white" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        {{-- Cake Stand Pedestal --}}
-                        <path d="M 40 160 Q 100 172 160 160 Q 100 178 40 160 Z"/>
-                        <path d="M 85 167 L 76 186 L 124 186 L 115 167"/>
-                        <path d="M 70 186 Q 100 190 130 186"/>
-                        {{-- Bottom Tier Base & Scallop Frosting --}}
-                        <path d="M 46 124 L 46 154 Q 100 168 154 154 L 154 124"/>
-                        <path d="M 46 124 Q 100 138 154 124 Q 100 110 46 124 Z"/>
-                        <path d="M 46 154 Q 55 160 64 156 Q 73 162 82 158 Q 91 163 100 163 Q 109 163 118 158 Q 127 162 136 156 Q 145 160 154 154"/>
-                        {{-- Top Tier Base & Dripping Glaze --}}
-                        <path d="M 68 84 L 68 116 Q 100 128 132 116 L 132 84"/>
-                        <path d="M 68 84 Q 100 96 132 84 Q 100 72 68 84 Z"/>
-                        <path d="M 68 88 Q 75 100 82 92 Q 89 103 96 94 Q 104 105 111 94 Q 118 102 125 92 Q 129 98 132 88"/>
-                        {{-- Top Cake Decorations (Candle, Flame & Cherries) --}}
-                        <path d="M 98 62 L 98 78 L 102 78 L 102 62 Z"/>
-                        <path d="M 100 52 Q 95 58 100 62 Q 105 58 100 52 Z"/>
-                        <circle cx="82" cy="74" r="7"/>
-                        <path d="M 82 67 Q 87 56 93 58"/>
-                        <circle cx="118" cy="74" r="7"/>
-                        <path d="M 118 67 Q 123 56 129 58"/>
-                        {{-- Sparkles --}}
-                        <path d="M 32 65 L 34 73 L 42 75 L 34 77 L 32 85 L 30 77 L 22 75 L 30 73 Z"/>
-                        <path d="M 168 62 L 170 68 L 176 70 L 170 72 L 168 78 L 166 72 L 160 70 L 166 68 Z"/>
-                    </svg>
-
-                    {{-- Right Authentic Curved Crescent Croissant Line Art Doodle --}}
-                    <svg class="absolute -right-6 lg:right-2 2xl:right-8 top-6 w-72 lg:w-80 h-72 lg:h-80 text-white" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        {{-- Crescent Body Outer Silhouette --}}
-                        <path d="M 32 132 C 22 96 46 54 96 46 C 146 38 178 76 170 126 C 156 112 140 102 120 98 C 96 94 70 102 48 120 C 38 125 34 130 32 132 Z"/>
-                        {{-- Main Central Rolled Segment --}}
-                        <path d="M 76 50 C 85 74 87 102 76 128 C 92 120 108 120 122 126 C 130 102 128 74 118 48"/>
-                        {{-- Flaky Inner Arches --}}
-                        <path d="M 58 60 C 66 82 68 105 58 126"/>
-                        <path d="M 98 47 C 104 70 105 95 98 122"/>
-                        <path d="M 138 60 C 144 82 142 105 134 124"/>
-                        {{-- Rolled Crescent Horn Tips --}}
-                        <path d="M 32 132 C 28 138 30 144 36 142 C 42 140 46 134 48 126"/>
-                        <path d="M 170 126 C 174 133 172 139 166 139 C 160 139 155 133 151 125"/>
-                        {{-- Crust Score Marks --}}
-                        <path d="M 86 68 Q 92 84 86 98"/>
-                        <path d="M 108 66 Q 114 84 108 97"/>
-                        {{-- Fresh Oven Steam Aromas --}}
-                        <path d="M 85 32 Q 91 22 85 12"/>
-                        <path d="M 105 28 Q 111 18 105 8"/>
-                        <path d="M 125 34 Q 131 24 125 14"/>
-                    </svg>
-                </div>
+                @include('mobile.components.hero-bakery-doodles')
 
                 {{-- Centered Title & Narrative --}}
                 <div class="relative z-10 max-w-4xl mx-auto px-6 text-center">

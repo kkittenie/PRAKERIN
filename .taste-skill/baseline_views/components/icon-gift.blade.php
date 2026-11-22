@@ -1,2 +1,11 @@
 @props(['class' => 'h-5 w-5'])
-<svg viewBox="0 0 24 24" fill="none" class="{{ $class }}"><rect x="4" y="9.5" width="16" height="10" rx="1.3" stroke="currentColor" stroke-width="1.7"/><path d="M4 9.5h16v3H4v-3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 9.5V19.5" stroke="currentColor" stroke-width="1.7"/><path d="M12 9.5c0-2 -1.6-4-3.6-4S6 7 8 8.7c.9.7 2.4.8 4 .8Zm0 0c0-2 1.6-4 3.6-4S18 7 16 8.7c-.9.7-2.4.8-4 .8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+{{-- Daisy Bakery - Artisanal Pastry Gift Box Tied with Ribbon Bow --}}
+<svg viewBox="0 0 24 24" fill="none" class="{{ $class }}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="4" y="10" width="16" height="10" rx="2"/>
+    <path d="M3 10h18v-2a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v2z"/>
+    <path d="M12 7v13"/>
+    <path d="M12 7c-1.8-1.5-4-3-4.5-1.5s1.5 3 4.5 1.5z"/>
+    <path d="M12 7c1.8-1.5 4-3 4.5-1.5s-1.5 3-4.5 1.5z"/>
+    <circle cx="12" cy="7" r="0.9" fill="currentColor"/>
+    <path d="M10.5 7.5L8.5 11M13.5 7.5L15.5 11" stroke-width="1.6"/>
+</svg>

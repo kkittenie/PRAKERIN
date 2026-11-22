@@ -44,8 +44,8 @@
                         </svg>
                     @endif
                 </div>
-                <p class="text-sm font-semibold text-gray-500">Konten belum tersedia</p>
-                <p class="mt-1 text-xs text-gray-400">Halaman ini sedang dalam proses pengisian.</p>
+                <p class="text-sm font-semibold text-gray-500">Content not available yet</p>
+                <p class="mt-1 text-xs text-gray-400">This page is currently being prepared.</p>
             </div>
         @endif
     </div>
@@ -126,7 +126,7 @@
                         </div>
 
                         {{-- Quick Info Biscuit Box --}}
-                        <div class="rounded-2xl bg-white p-5 border border-[#3C2415]/10 shadow-xs space-y-2">
+                        <div class="rounded-2xl bg-[#FDFBF7] p-5 border border-[#3C2415]/10 shadow-xs space-y-2">
                             <h3 class="font-display font-bold text-xs uppercase tracking-wider text-[#3C2415]">In-Store Cashier Help</h3>
                             <p class="text-[11px] text-[#3C2415]/70 leading-relaxed">
                                 You can also show your digital member QR or telephone number directly to our barista or cashier when visiting our bakery.
@@ -223,7 +223,7 @@
                         </div>
 
                         {{-- Quality Promise Callout --}}
-                        <div class="rounded-2xl bg-white p-5 border border-[#3C2415]/10 shadow-xs space-y-2">
+                        <div class="rounded-2xl bg-[#FDFBF7] p-5 border border-[#3C2415]/10 shadow-xs space-y-2">
                             <div class="flex items-center gap-2 text-xs font-bold text-[#8E1E26] uppercase">
                                 <span>★ Artisan Quality Guarantee</span>
                             </div>
@@ -304,7 +304,7 @@
                         </div>
 
                         {{-- Privacy Commitment Callout --}}
-                        <div class="rounded-2xl bg-white p-5 border border-[#3C2415]/10 shadow-xs space-y-2">
+                        <div class="rounded-2xl bg-[#FDFBF7] p-5 border border-[#3C2415]/10 shadow-xs space-y-2">
                             <div class="flex items-center gap-2 text-xs font-bold text-[#8E1E26] uppercase">
                                 <span>🔒 Zero Ad-Tracking Guarantee</span>
                             </div>

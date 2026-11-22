@@ -56,7 +56,7 @@
         @endphp
 
         {{-- Punch-card progress --}}
-        <div class="mt-5 overflow-hidden rounded-3xl bg-gradient-to-br from-[#5a3c27] to-[#8b5e3c] p-5 text-white shadow-sm {{ $penuh ? 'stamp-card-penuh' : '' }}"
+        <div class="mt-5 overflow-hidden rounded-3xl bg-gradient-to-br from-[#3C2415] to-[#5A3825] p-5 text-white shadow-sm {{ $penuh ? 'stamp-card-penuh' : '' }}"
              id="stamp-program-data"
              data-nama-program="{{ $program->nama_program }}"
              data-current="{{ $current }}"
@@ -70,7 +70,7 @@
                         <p class="mt-1 text-xs leading-relaxed text-white/75 whitespace-pre-line">{{ $program->deskripsi }}</p>
                     @endif
                 </div>
-                <span class="stamp-badge-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 p-2">
+                <span class="stamp-badge-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FAF5E8] p-2 shadow-xs border border-white/20">
                     <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
                 </span>
             </div>
@@ -87,7 +87,7 @@
                         $terisi = $i <= $current;
                     @endphp
                     <span
-                        class="flex aspect-square items-center justify-center overflow-hidden rounded-full {{ $terisi ? 'stamp-dot-fill bg-white text-brand-800 shadow-sm' : 'border-2 border-dashed border-white/35 text-white/35' }}"
+                        class="flex aspect-square items-center justify-center overflow-hidden rounded-full {{ $terisi ? 'stamp-dot-fill bg-[#FAF5E8] text-brand-800 shadow-sm' : 'border-2 border-dashed border-white/35 text-white/35' }}"
                         @if ($terisi) style="animation-delay: {{ ($i - 1) * 0.09 }}s" @endif
                     >
                         @if ($terisi)
@@ -187,8 +187,8 @@
                     $stokHabis = !is_null($hadiah->stok_tersedia) && $hadiah->stok_tersedia < $hadiah->jumlah;
                     $bisaTukarHadiah = $bisaTukar && $produk && ! $stokHabis;
                 @endphp
-                <div class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm {{ ! $bisaTukarHadiah ? 'opacity-60' : '' }}">
-                    <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-brand-50">
+                <div class="flex items-center gap-3 rounded-2xl border border-[#3C2415]/10 bg-[#FDFBF7] p-3 shadow-xs {{ ! $bisaTukarHadiah ? 'opacity-60' : '' }}">
+                    <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#FAF5E8] border border-[#3C2415]/10">
                         @if ($fotoHadiah)
                             <img src="{{ asset('storage/'.$fotoHadiah) }}" alt="{{ $produk->nama_produk }}" class="h-full w-full object-cover">
                         @elseif ($isCroissant)
@@ -224,7 +224,7 @@
                     </button>
                 </div>
             @empty
-                <div class="rounded-2xl border border-gray-100 bg-white p-6 text-center">
+                <div class="rounded-2xl border border-[#3C2415]/10 bg-[#FDFBF7] p-6 text-center">
                     <p class="text-sm font-semibold text-gray-500">No rewards available yet for this program.</p>
                 </div>
             @endforelse
@@ -245,8 +245,8 @@
             <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-800">
                 @include('mobile.components.icon-gift', ['class' => 'h-7 w-7'])
             </span>
-            <h3 class="mt-3 text-base font-bold text-gray-900">Tukar hadiah <span id="konfirmasi-tukar-stamp-nama"></span>?</h3>
-            <p class="mt-1 text-xs text-gray-500">Stamp kamu yang sudah terkumpul akan ditukarkan dengan hadiah ini.</p>
+            <h3 class="mt-3 text-base font-bold text-gray-900">Redeem reward <span id="konfirmasi-tukar-stamp-nama"></span>?</h3>
+            <p class="mt-1 text-xs text-gray-500">Your collected stamps will be exchanged for this treat.</p>
 
             <form method="POST" action="{{ route('member.stamps.redeem') }}" class="mt-6 pb-2">
                 @csrf
@@ -256,12 +256,12 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button" onclick="closeSheet('konfirmasi-tukar-stamp')"
-                        class="w-full rounded-2xl border border-gray-200 bg-white py-3 text-xs font-bold text-gray-600 hover:bg-gray-50 active:scale-[0.99] cursor-pointer">
-                        Batal
+                        class="w-full rounded-2xl border border-[#3C2415]/15 bg-[#FAF5E8] py-3 text-xs font-bold text-[#3C2415] hover:bg-[#3C2415]/5 active:scale-[0.99] cursor-pointer">
+                        Cancel
                     </button>
                     <button type="submit"
-                        class="w-full rounded-2xl bg-[#5a3c27] py-3 text-xs font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] cursor-pointer">
-                        Ya, Tukar
+                        class="w-full rounded-2xl bg-[#3C2415] py-3 text-xs font-bold text-white shadow-md hover:bg-[#2D1B10] active:scale-[0.99] cursor-pointer">
+                        Confirm & Redeem
                     </button>
                 </div>
             </form>
@@ -411,9 +411,6 @@
 
                     <div class="relative z-10 flex flex-wrap items-start justify-between gap-6 pb-8 border-b border-[#FAF5E8]/15">
                         <div class="space-y-2 max-w-xl">
-                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF5E8]/15 border border-[#FAF5E8]/20 text-[10px] font-black uppercase tracking-wider text-amber-200">
-                                <span>★ DAISY STAMP CLUB</span>
-                            </div>
                             <h2 class="font-display font-black text-2xl lg:text-3xl text-[#FAF5E8] tracking-tight">
                                 @if(str_contains(strtolower($program->nama_program), 'kumpulkan 5 stamp'))
                                     Collect 5 Stamps, Get Free Pastry!

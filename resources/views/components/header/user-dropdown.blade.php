@@ -1,3 +1,10 @@
+@php
+    $authUser = auth()->user();
+    $roleLabel = method_exists($authUser, 'getRoleNames') && $authUser->getRoleNames()->isNotEmpty()
+        ? ucwords(str_replace(['_', '-'], ' ', $authUser->getRoleNames()->first()))
+        : 'Staff';
+@endphp
+
 <div class="relative" x-data="{
     dropdownOpen: false,
     toggleDropdown() {
@@ -7,80 +14,74 @@
         this.dropdownOpen = false;
     }
 }" @click.away="closeDropdown()">
-    <!-- User Button -->
-    <button class="flex items-center text-gray-700 dark:text-gray-300" @click.prevent="toggleDropdown()" type="button">
-        <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=a0704a&color=ffffff" alt="{{ auth()->user()->name }}" />
+    <button
+        class="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-full bg-[#FFFDF9] border border-[#3C2415]/15 hover:border-[#8E1E26]/35 hover:bg-white transition dark:bg-[#241A16] dark:border-white/10 dark:hover:bg-[#2E211C]"
+        @click.prevent="toggleDropdown()" type="button">
+        <span class="overflow-hidden rounded-full h-9 w-9 ring-2 ring-[#EACE80]/60 shrink-0">
+            <img src="https://ui-avatars.com/api/?name={{ urlencode($authUser->name) }}&background=8e1e26&color=faf5e8&bold=true"
+                alt="{{ $authUser->name }}" class="w-full h-full object-cover" />
         </span>
 
-        <span class="block mr-1 font-medium text-theme-sm text-gray-800 dark:text-gray-200">{{ auth()->user()->name }}</span>
+        <span class="hidden sm:flex flex-col items-start text-left leading-tight mr-0.5">
+            <span class="font-bold text-[13px] text-[#3A221B] dark:text-[#FAF5E8] max-w-[140px] truncate">{{ $authUser->name }}</span>
+            <span class="text-[11px] font-semibold text-[#8E1E26] dark:text-[#EACE80]">{{ $roleLabel }}</span>
+        </span>
 
-        <!-- Chevron Icon -->
-        <svg class="w-5 h-5 transition-transform duration-200 text-gray-500 dark:text-gray-400" :class="{ 'rotate-180': dropdownOpen }" fill="none"
-            stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        <svg class="w-4 h-4 transition-transform duration-200 text-[#8E1E26] dark:text-[#EACE80] shrink-0"
+            :class="{ 'rotate-180': dropdownOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 9l-7 7-7-7"></path>
         </svg>
     </button>
 
-    <!-- Dropdown Start -->
-    <div x-show="dropdownOpen" x-transition:enter="transition ease-out duration-100"
-        x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100"
-        x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100"
+    <div x-show="dropdownOpen" x-cloak x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="transform opacity-0 scale-95 -translate-y-1"
+        x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-100"
+        x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
-        class="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 shadow-theme-lg z-50"
-        style="display: none;">
-        <!-- User Info -->
-        <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
-            <span class="block font-medium text-gray-800 dark:text-white text-theme-sm">{{ auth()->user()->name }}</span>
-            <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">{{ auth()->user()->email ?? auth()->user()->username }}</span>
+        class="absolute right-0 mt-3 flex w-[270px] flex-col rounded-2xl border border-[#3C2415]/15 dark:border-white/10 bg-[#FFFDF9] dark:bg-[#241A16] p-3 shadow-[0_18px_36px_-10px_rgba(58,34,27,0.22)] z-50">
+
+        <div class="relative overflow-hidden rounded-xl bg-[#FAF5E8] dark:bg-[#2E211C] px-3.5 py-3 border border-[#3C2415]/10 dark:border-white/10">
+            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt=""
+                class="pointer-events-none absolute -right-2 -bottom-2 w-12 h-12 opacity-20">
+            <div class="relative flex items-center gap-3">
+                <img src="https://ui-avatars.com/api/?name={{ urlencode($authUser->name) }}&background=8e1e26&color=faf5e8&bold=true"
+                    alt="{{ $authUser->name }}" class="w-10 h-10 rounded-full ring-2 ring-white dark:ring-[#241A16] shrink-0" />
+                <div class="min-w-0">
+                    <span class="block font-display font-bold text-[#3A221B] dark:text-[#FAF5E8] text-sm truncate">{{ $authUser->name }}</span>
+                    <span class="mt-0.5 block text-xs text-[#7D6A60] dark:text-[#C5B5A8] truncate">{{ $authUser->email ?? '@' . $authUser->username }}</span>
+                </div>
+            </div>
         </div>
 
-        <!-- Menu Items -->
-        <ul class="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">
-            @php
-            $menuItems = [
-            [
-            'text' => 'Edit profil',
-            'icon' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" clip-rule="evenodd"
-                    d="M12 3.5C7.30558 3.5 3.5 7.30558 3.5 12C3.5 14.1526 4.3002 16.1184 5.61936 17.616C6.17279 15.3096 8.24852 13.5955 10.7246 13.5955H13.2746C15.7509 13.5955 17.8268 15.31 18.38 17.6167C19.6996 16.119 20.5 14.153 20.5 12C20.5 7.30558 16.6944 3.5 12 3.5ZM17.0246 18.8566V18.8455C17.0246 16.7744 15.3457 15.0955 13.2746 15.0955H10.7246C8.65354 15.0955 6.97461 16.7744 6.97461 18.8455V18.856C8.38223 19.8895 10.1198 20.5 12 20.5C13.8798 20.5 15.6171 19.8898 17.0246 18.8566ZM2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12ZM11.9991 7.25C10.8847 7.25 9.98126 8.15342 9.98126 9.26784C9.98126 10.3823 10.8847 11.2857 11.9991 11.2857C13.1135 11.2857 14.0169 10.3823 14.0169 9.26784C14.0169 8.15342 13.1135 7.25 11.9991 7.25ZM8.48126 9.26784C8.48126 7.32499 10.0563 5.75 11.9991 5.75C13.9419 5.75 15.5169 7.32499 15.5169 9.26784C15.5169 11.2107 13.9419 12.7857 11.9991 12.7857C10.0563 12.7857 8.48126 11.2107 8.48126 9.26784Z"
-                    fill="currentColor" />
-            </svg>',
-            'path' => route('profile.edit')
-            ],
-            ];
-            @endphp
-
-            @foreach ($menuItems as $item)
+        <ul class="flex flex-col gap-1 pt-3 pb-2.5 border-b border-[#3C2415]/10 dark:border-white/10">
             <li>
-                <a href="{{ $item['path'] }}"
-                    class="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 dark:text-gray-300 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-gray-200">
-                    <span class="text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300">
-                        {!! $item['icon'] !!}
+                <a href="{{ route('profile.edit') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 font-semibold text-[#3A221B] dark:text-[#FAF5E8] rounded-xl group text-sm hover:bg-[#FCEEEF] hover:text-[#8E1E26] dark:hover:bg-white/5 dark:hover:text-[#EACE80] transition">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-[#FAF5E8] dark:bg-[#2E211C] text-[#8E1E26] dark:text-[#EACE80] group-hover:bg-white dark:group-hover:bg-[#3A221B] transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
                     </span>
-                    {{ $item['text'] }}
+                    Profil Saya
                 </a>
             </li>
-            @endforeach
         </ul>
 
-        <!-- Sign Out -->
-        <!-- Sign Out -->
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit"
-                class="flex items-center w-full gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+                class="flex items-center w-full gap-3 px-3 py-2.5 mt-2 font-semibold text-[#8E1E26] dark:text-[#F09A9E] rounded-xl group text-sm hover:bg-[#FCEEEF] dark:hover:bg-[#8E1E26]/20 transition"
                 @click="closeDropdown()">
-                <span class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-[#FCEEEF] dark:bg-[#8E1E26]/20 text-[#8E1E26] dark:text-[#F09A9E]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
                         </path>
                     </svg>
                 </span>
-                Sign out
+                Keluar
             </button>
         </form>
     </div>
-    <!-- Dropdown End -->
 </div>

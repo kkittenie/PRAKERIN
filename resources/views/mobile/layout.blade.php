@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full">
+<html lang="en" class="h-full">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#5a3c27">
+    <meta name="theme-color" content="#FAF5E8">
     <title>{{ $title ?? 'Member' }} &middot; {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
@@ -152,9 +152,10 @@
             position: sticky;
             top: 0;
             z-index: 30;
-            background: rgba(255, 255, 255, 0.96);
+            background: rgba(250, 245, 232, 0.96);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(74, 46, 39, 0.08);
         }
 
         @media (orientation: landscape) {
@@ -225,9 +226,12 @@
         }
     </style>
 </head>
-<body class="h-full overflow-x-hidden bg-gray-50 font-outfit text-gray-800 antialiased flex flex-col lg:bg-surface-base lg:text-text-primary lg:font-ui">
+<body class="h-full overflow-x-hidden bg-[#FAF5E8] font-ui text-[#231815] antialiased flex flex-col lg:bg-surface-base lg:text-text-primary lg:font-ui">
 
-    <div id="app-card" class="mx-auto flex flex-1 w-full max-w-none 2xl:max-w-6xl flex-col bg-white sm:border-x sm:border-gray-200/80 lg:max-w-none lg:border-x-0 2xl:max-w-none lg:bg-surface-base">
+    {{-- Wavy Liquid Loading Reveal Animation --}}
+    <x-common.wave-loader subtitle="Freshly Baked Everyday" />
+
+    <div id="app-card" class="mx-auto flex flex-1 w-full max-w-none 2xl:max-w-6xl flex-col bg-[#FAF5E8] sm:border-x sm:border-[rgba(74,46,39,0.12)] lg:max-w-none lg:border-x-0 2xl:max-w-none lg:bg-surface-base">
 
         @php
             $activeHome = request()->routeIs('member.beranda');
@@ -271,16 +275,16 @@
                     <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="{{ config('app.name', 'Daisy Bakery') }}" class="h-10 lg:h-11 w-auto object-contain">
                 </a>
 
-                {{-- 4. Vouchers --}}
+                {{-- 4. Rewards --}}
                 @auth('member')
                     <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 1);"
                        class="font-ui text-xs lg:text-[13px] font-bold tracking-[0.14em] uppercase transition hover:text-[#8E1E26] {{ $activeVoucher ? 'text-[#8E1E26]' : 'text-[#3A221B]' }}">
-                        Vouchers
+                        Rewards
                     </a>
                 @else
                     <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                        class="font-ui text-xs lg:text-[13px] font-bold tracking-[0.14em] uppercase transition hover:text-[#8E1E26] text-[#3A221B]">
-                        Vouchers
+                        Rewards
                     </a>
                 @endauth
 
@@ -458,66 +462,66 @@
 
         {{-- Fore App Style Bottom Navigation (Mobile Only) --}}
         @unless(request()->routeIs('member.profil') || request()->routeIs('member.produk.show') || request()->routeIs('member.checkout.index'))
-        <nav class="sticky bottom-0 z-30 w-full bg-white/95 backdrop-blur-md border-t border-gray-200/80 px-4 sm:px-8 py-2 lg:hidden">
+        <nav class="sticky bottom-0 z-30 w-full bg-[#FAF5E8]/95 backdrop-blur-md border-t border-[rgba(74,46,39,0.12)] px-4 sm:px-8 py-2 lg:hidden font-ui">
             <div class="grid grid-cols-5 items-end gap-1 text-center">
 
                 {{-- Home / Beranda --}}
-                <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 0);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeHome ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
-                    <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeHome ? 'bg-brand-50 text-brand-800' : '' }}">
-                        <svg viewBox="0 0 24 24" fill="{{ $activeHome ? 'currentColor' : 'none' }}" class="h-5 w-5"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-9.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <a href="{{ route('member.beranda') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 0);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeHome ? 'text-[#8E1E26]' : 'text-[#706864] hover:text-[#3A221B]' }}">
+                    <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeHome ? 'bg-[#8E1E26]/10 text-[#8E1E26]' : '' }}">
+                        @include('mobile.components.icon-home', ['class' => 'h-5 w-5'])
                     </span>
                     Home
                 </a>
 
-                {{-- Vouchers / Reward --}}
+                {{-- Rewards --}}
                 @auth('member')
-                    <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 1);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeVoucher ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
-                        <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeVoucher ? 'bg-brand-50 text-brand-800' : '' }}">
-                            <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M15 5v14M9 5v14M4 10a2 2 0 0 0 0 4M20 10a2 2 0 0 1 0 4M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 1);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeVoucher ? 'text-[#8E1E26]' : 'text-[#706864] hover:text-[#3A221B]' }}">
+                        <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeVoucher ? 'bg-[#8E1E26]/10 text-[#8E1E26]' : '' }}">
+                            @include('mobile.components.icon-ticket', ['class' => 'h-5 w-5'])
                         </span>
-                        Vouchers
+                        Rewards
                     </a>
                 @else
-                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold text-gray-400 hover:text-gray-600">
+                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold text-[#706864] hover:text-[#3A221B]">
                         <span class="flex h-7 w-7 items-center justify-center">
-                            <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M15 5v14M9 5v14M4 10a2 2 0 0 0 0 4M20 10a2 2 0 0 1 0 4M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            @include('mobile.components.icon-ticket', ['class' => 'h-5 w-5'])
                         </span>
-                        Vouchers
+                        Rewards
                     </a>
                 @endauth
 
                 {{-- Pesan / Pick Up (highlighted, center) --}}
-                <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);" class="relative flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeMenu ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
-                    <span class="flex h-8 w-8 items-center justify-center rounded-full {{ $activeMenu ? 'bg-brand-50 text-brand-800' : '' }}">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 10a4 4 0 0 1-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);" class="relative flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeMenu ? 'text-[#8E1E26]' : 'text-[#706864] hover:text-[#3A221B]' }}">
+                    <span class="flex h-8 w-8 items-center justify-center rounded-full {{ $activeMenu ? 'bg-[#8E1E26]/10 text-[#8E1E26]' : '' }}">
+                        @include('mobile.components.icon-shopping-bag', ['class' => 'h-5.5 w-5.5'])
                     </span>
-                    Pesan
+                    Order
                 </a>
 
                 {{-- Your Order / Riwayat --}}
                 @auth('member')
-                    <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 3);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeOrder ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
-                        <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeOrder ? 'bg-brand-50 text-brand-800' : '' }}">
-                            <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 3);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeOrder ? 'text-[#8E1E26]' : 'text-[#706864] hover:text-[#3A221B]' }}">
+                        <span class="flex h-7 w-7 items-center justify-center rounded-full {{ $activeOrder ? 'bg-[#8E1E26]/10 text-[#8E1E26]' : '' }}">
+                            @include('mobile.components.icon-receipt-check', ['class' => 'h-5 w-5'])
                         </span>
                         Activity
                     </a>
                 @else
-                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold text-gray-400 hover:text-gray-600">
+                    <a href="{{ route('member.welcome') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold text-[#706864] hover:text-[#3A221B]">
                         <span class="flex h-7 w-7 items-center justify-center">
-                            <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            @include('mobile.components.icon-receipt-check', ['class' => 'h-5 w-5'])
                         </span>
                         Activity
                     </a>
                 @endauth
 
                 {{-- Account / Akun --}}
-                <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 4);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeAccount ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
-                    <span class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full {{ $activeAccount ? 'bg-brand-50 text-brand-800' : '' }}">
+                <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 4);" class="flex flex-col items-center gap-1 rounded-xl py-1 text-[11px] font-bold transition {{ $activeAccount ? 'text-[#8E1E26]' : 'text-[#706864] hover:text-[#3A221B]' }}">
+                    <span class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full {{ $activeAccount ? 'bg-[#8E1E26]/10 text-[#8E1E26]' : '' }}">
                         @if (auth('member')->check() && auth('member')->user()->foto)
                             <img src="{{ asset('storage/' . auth('member')->user()->foto) }}" alt="{{ auth('member')->user()->nama }}" class="h-full w-full object-cover">
                         @else
-                            <svg viewBox="0 0 24 24" fill="{{ $activeAccount ? 'currentColor' : 'none' }}" class="h-5 w-5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            @include('mobile.components.icon-user', ['class' => 'h-5 w-5'])
                         @endif
                     </span>
                     Account
@@ -540,6 +544,10 @@
                         <p class="text-xs leading-relaxed text-stone-400 max-w-sm lg:text-cream-300/70">
                             Serving artisan breads, specialty cakes, and high-quality coffee baked fresh every day to accompany your special moments.
                         </p>
+                        <div class="text-xs text-cream-300/80 space-y-1.5 pt-1">
+                            <p class="flex items-center gap-2"><span class="text-rose-300">📍</span> Jl. Jalan 40, Cirebon</p>
+                            <p class="flex items-center gap-2"><span class="text-emerald-400">💬</span> WhatsApp: <a href="https://wa.me/62882000768044" target="_blank" class="underline hover:text-white">+62 882-0007-68044</a></p>
+                        </div>
                     </div>
 
                     {{-- Column 2: Quick Links (2 cols) --}}
@@ -588,7 +596,7 @@
                         <div>
                             <h4 class="text-[11px] font-extrabold uppercase tracking-wider text-stone-400 mb-2 lg:text-cream-300/60 lg:font-ui">Follow Us</h4>
                             <div class="flex items-center gap-2">
-                                <a href="https://www.instagram.com/saishobakery?igsh=bTcyMDNibmNleGIz" class="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-stone-300 hover:bg-brand-400 hover:text-stone-900 transition border border-white/5 lg:rounded-lg lg:border-cocoa-700/60 lg:bg-cocoa-800/50 lg:text-cream-200 lg:hover:bg-burgundy-600 lg:hover:text-cream-50 lg:hover:border-burgundy-500">
+                                <a href="https://www.instagram.com/safiralmr?igsh=bTcyMDNibmNleGIz" target="_blank" rel="noopener" class="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-stone-300 hover:bg-brand-400 hover:text-stone-900 transition border border-white/5 lg:rounded-lg lg:border-cocoa-700/60 lg:bg-cocoa-800/50 lg:text-cream-200 lg:hover:bg-burgundy-600 lg:hover:text-cream-50 lg:hover:border-burgundy-500">
                                     <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                                 </a>
                             </div>

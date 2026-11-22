@@ -1,3 +1,8 @@
 @props(['class' => 'h-5 w-5'])
-{{-- Donat: adonan bulat, icing bergelombang, lubang tengah, dan taburan --}}
-<svg viewBox="0 0 24 24" fill="none" class="{{ $class }}"><circle cx="12" cy="12" r="9.8" stroke="currentColor" stroke-width="1.5"/><path d="M14.37 6.27 A2.7 2.7 0 0 1 17.73 9.63 A2.7 2.7 0 0 1 17.73 14.37 A2.7 2.7 0 0 1 14.37 17.73 A2.7 2.7 0 0 1 9.63 17.73 A2.7 2.7 0 0 1 6.27 14.37 A2.7 2.7 0 0 1 6.27 9.63 A2.7 2.7 0 0 1 9.63 6.27 A2.7 2.7 0 0 1 14.37 6.27z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.4" stroke="currentColor" stroke-width="1.5"/><path d="M13.93 8.06 l1.04 -0.60M16.58 11.05 l0.60 1.04M14.51 15.83 l1.16 -0.31M9.47 16.06 l0.92 0.77M6.79 13.31 l0.77 -0.92M8.04 8.40 l1.13 0.41" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+{{-- Daisy Bakery - Artisanal Glazed Donut --}}
+<svg viewBox="0 0 24 24" fill="none" class="{{ $class }}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <circle cx="12" cy="12" r="3.2"/>
+    <path d="M5.5 10c.8 1.2 2 .8 2.8.3 1.2-.8 2-.2 2.7.7.8 1.1 2 1.2 3 0 .8-.9 1.8-1 2.8-.2.9.7 2 .8 2.7-.3.8-1.2 1.5.3 1.5 1.5"/>
+    <path d="M8 7.5l1 .5M16 8l-1 1M7 16l1.2-.5M15.5 16l1 .8" stroke-width="1.5"/>
+</svg>

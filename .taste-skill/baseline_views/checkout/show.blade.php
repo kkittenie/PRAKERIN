@@ -1,10 +1,10 @@
-@extends('mobile.layout', ['title' => 'Status Pesanan'])
+@extends('mobile.layout', ['title' => 'Order Status'])
 
 @php
     $steps = [
-        \App\Models\Transaksi::STATUS_DIPROSES => 'Diproses',
+        \App\Models\Transaksi::STATUS_DIPROSES => 'Preparing',
         \App\Models\Transaksi::STATUS_SIAP_DIAMBIL => 'Ready for Pickup',
-        \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => 'Sudah Diambil',
+        \App\Models\Transaksi::STATUS_SUDAH_DIAMBIL => 'Completed',
     ];
     $urutan = array_keys($steps);
     $statusSekarang = $transaksi->status_pesanan;
@@ -22,7 +22,7 @@
                class="absolute left-0 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition active:bg-gray-50">
                 <span class="rotate-180">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4'])</span>
             </a>
-            <h1 class="text-sm font-bold text-gray-900">Status Pesanan</h1>
+            <h1 class="text-sm font-bold text-gray-900">Order Status</h1>
         </div>
 
         <div class="lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start lg:mt-6">
@@ -31,9 +31,9 @@
                 {{-- Kode pickup — besar, buat ditunjukkan ke kasir --}}
                 <div class="mt-6 lg:mt-0 rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 p-6 text-center text-white">
                     @if ($dibatalkan)
-                        <p class="text-xs font-bold uppercase tracking-wide text-white/70">Pesanan Dibatalkan</p>
+                        <p class="text-xs font-bold uppercase tracking-wide text-white/70">Order Cancelled</p>
                     @else
-                        <p class="text-xs font-bold uppercase tracking-wide text-white/70">Tunjukkan kode ini ke kasir</p>
+                        <p class="text-xs font-bold uppercase tracking-wide text-white/70">Present this pickup code to cashier</p>
                         <p class="mt-2 text-4xl font-extrabold tracking-[0.3em]">{{ $transaksi->kode_pickup }}</p>
                     @endif
                     <p class="mt-3 text-[11px] text-white/60">{{ $transaksi->kode_transaksi }}</p>
@@ -65,11 +65,11 @@
 
                     <p class="mt-4 text-center text-xs font-semibold text-gray-500">
                         @if ($statusSekarang === \App\Models\Transaksi::STATUS_DIPROSES)
-                            Pesanan kamu sedang disiapkan oleh toko.
+                            Your order is being freshly prepared in our bakery kitchen.
                         @elseif ($statusSekarang === \App\Models\Transaksi::STATUS_SIAP_DIAMBIL)
-                            Pesanan sudah siap! Silakan ambil di kasir.
+                            Your order is ready! Please collect at the counter.
                         @else
-                            Pesanan sudah kamu ambil. Terima kasih!
+                            Order collected. Thank you for baking with Daisy Bakery!
                         @endif
                     </p>
                 @endunless
@@ -77,7 +77,7 @@
 
             {{-- Detail pesanan --}}
             <div class="mt-6 lg:mt-0 lg:col-span-6">
-            <h2 class="text-sm font-bold text-gray-900">Detail Pesanan</h2>
+            <h2 class="text-sm font-bold text-gray-900">Order Details</h2>
             <div class="mt-2 divide-y divide-gray-100 rounded-2xl border border-gray-100">
                 @foreach ($transaksi->detailTransaksi as $detail)
                     <div class="flex items-center justify-between p-3">
@@ -122,7 +122,7 @@
                     @endforeach
                 @elseif ($transaksi->diskon > 0)
                     <div class="flex justify-between text-xs text-gray-500">
-                        <span>Diskon</span>
+                        <span>Discount</span>
                         <span class="font-semibold text-red-500">- Rp {{ number_format($transaksi->diskon, 0, ',', '.') }}</span>
                     </div>
                 @endif
@@ -131,8 +131,8 @@
                     <span class="font-extrabold text-gray-900">Rp {{ number_format($transaksi->total_bayar, 0, ',', '.') }}</span>
                 </div>
                 <div class="!mt-2 flex justify-between text-[11px] text-gray-400">
-                    <span>Status Pembayaran</span>
-                    <span class="font-semibold {{ $transaksi->status_pembayaran === 'Lunas' ? 'text-green-600' : 'text-amber-600' }}">{{ $transaksi->status_pembayaran }}</span>
+                    <span>Payment Status</span>
+                    <span class="font-semibold {{ $transaksi->status_pembayaran === 'Lunas' ? 'text-green-600' : 'text-amber-600' }}">{{ $transaksi->status_pembayaran === 'Lunas' ? 'Paid' : 'Unpaid' }}</span>
                 </div>
             </div>
         </div>

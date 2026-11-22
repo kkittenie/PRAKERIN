@@ -23,7 +23,7 @@
             </span>
             <span class="min-w-0 text-left">
                 <span class="block text-xs font-bold leading-tight">Your Cart</span>
-                <span class="block text-[11px] leading-tight text-white/70">{{ $cartJumlah }} item</span>
+                <span class="block text-[11px] leading-tight text-white/70">{{ $cartJumlah }} {{ $cartJumlah > 1 ? 'items' : 'item' }}</span>
             </span>
         </span>
         <span class="flex shrink-0 items-center gap-1.5 text-sm font-extrabold">

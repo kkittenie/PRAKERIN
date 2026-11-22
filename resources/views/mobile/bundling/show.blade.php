@@ -71,12 +71,12 @@
 
                     get pesanStokTidakCukup() {
                         if (!this.stokTidakCukup) return '';
-                        let pesan = 'Stok tidak mencukupi. Sisa stok ' + this.maksPaket + ' paket';
+                        let pesan = 'Insufficient stock. Only ' + this.maksPaket + ' package(s) available';
                         if (this.terpakai >= this.maksPaket) {
-                            return pesan + ' dan semuanya sudah ada di keranjang kamu.';
+                            return pesan + ' and all are already in your cart.';
                         }
                         return this.terpakai > 0
-                            ? pesan + ', ' + this.terpakai + ' paket sudah ada di keranjang kamu.'
+                            ? pesan + ', ' + this.terpakai + ' package(s) already in your cart.'
                             : pesan + '.';
                     },
 
@@ -85,8 +85,8 @@
                     },
 
                     get labelTidakBisa() {
-                        if (this.habis) return 'Stok Habis';
-                        if (this.stokTidakCukup) return 'Stok Tidak Cukup';
+                        if (this.habis) return 'Sold Out';
+                        if (this.stokTidakCukup) return 'Out of Stock';
                         return '';
                     },
                     isKhusus: {{ $isKhusus ? 'true' : 'false' }},
@@ -154,7 +154,7 @@
                 <a href="{{ $sedangUbah ? route('member.checkout.index') : route('member.menu') }}"
                     onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
                     class="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow-md transition active:scale-95 active:bg-gray-50"
-                    aria-label="Kembali">
+                    aria-label="Back">
                     <span class="rotate-180">
                         @include('mobile.components.icon-chevron-right', ['class' => 'h-5 w-5'])
                     </span>
@@ -166,7 +166,7 @@
 
                 @if ($habis)
                     <span class="absolute left-4 bottom-4 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
-                        Stok Habis
+                        Sold Out
                     </span>
                 @endif
 
@@ -175,7 +175,7 @@
             {{-- Nama, kategori, harga --}}
             <div class="pt-1">
                 <p class="text-[11px] font-bold uppercase tracking-wide text-brand-700">
-                    Paket Bundling {{ $isKhusus ? 'Pilih Sendiri' : '' }}
+                    Bundling Package {{ $isKhusus ? '(Custom Selection)' : '' }}
                 </p>
 
                 <h2 class="mt-1 text-lg lg:text-xl font-extrabold leading-snug text-gray-900">
@@ -196,7 +196,7 @@
 
             @if ($bundling->deskripsi)
                 <div class="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-gray-50/50 lg:p-4">
-                    <h3 class="hidden lg:block text-xs font-bold text-gray-900 mb-1">Deskripsi Paket</h3>
+                    <h3 class="hidden lg:block text-xs font-bold text-gray-900 mb-1">Package Details</h3>
                     <p class="text-xs leading-relaxed text-gray-500 lg:text-gray-600 whitespace-pre-line">
                         {{ $bundling->deskripsi }}
                     </p>
@@ -206,7 +206,7 @@
             @if ($habis)
                 <div class="flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">
                     @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
-                    <p class="text-[11px] font-semibold leading-relaxed">Produk sedang diproduksi
+                    <p class="text-[11px] font-semibold leading-relaxed">Currently being freshly baked
                     </p>
                 </div>
             @endif
@@ -217,10 +217,10 @@
                     <div class="flex items-center justify-between rounded-xl bg-amber-50 p-3 text-amber-900 border border-amber-200">
                         <div>
                             <h3 class="text-xs font-bold">
-                                Pilih Isi Bundling
+                                Choose Bundle Items
                             </h3>
                             <p class="text-[11px] text-amber-700">
-                                {{ $adaRasaDiBundling ? 'Pilih rasa' : 'Pilih isi' }}, total <strong class="font-extrabold">{{ $targetQtyKhusus }} pcs</strong> dari daftar di bawah
+                                {{ $adaRasaDiBundling ? 'Select flavor' : 'Select items' }}, total <strong class="font-extrabold">{{ $targetQtyKhusus }} pcs</strong> from the list below
                             </p>
                         </div>
                         <div class="text-right">
@@ -231,8 +231,8 @@
                     </div>
 
                     <div x-show="totalVarianTerpilih !== targetQtyKhusus" class="mt-2 text-[11px] font-medium text-amber-700">
-                        <span x-show="totalVarianTerpilih < targetQtyKhusus">Pilih <strong x-text="sisaPilihan"></strong> pcs lagi.</span>
-                        <span x-show="totalVarianTerpilih > targetQtyKhusus" class="text-red-600">Pilihan melebihi total isi bundling!</span>
+                        <span x-show="totalVarianTerpilih < targetQtyKhusus">Select <strong x-text="sisaPilihan"></strong> more pcs.</span>
+                        <span x-show="totalVarianTerpilih > targetQtyKhusus" class="text-red-600">Selection exceeds bundle capacity!</span>
                     </div>
 
                     <div class="mt-3 space-y-3">
@@ -251,7 +251,7 @@
                                                         @endif
                                                     </div>
                                                     @if ($opsi['stok'] <= 0)
-                                                        <p class="text-[10px] font-semibold text-amber-600">Diproduksi dulu</p>
+                                                        <p class="text-[10px] font-semibold text-amber-600">Baking soon</p>
                                                     @endif
                                                 </div>
 
@@ -276,13 +276,13 @@
                                             <div x-show="(varianQty['{{ $opsi['kunci'] }}'] || 0) > 0" x-transition class="mt-2">
                                                 <input type="text"
                                                        x-model="varianCatatan['{{ $opsi['kunci'] }}']"
-                                                       placeholder="Catatan untuk {{ $kelompok['produk'] }} (opsional)"
+                                                       placeholder="Notes for {{ $kelompok['produk'] }} (optional)"
                                                        maxlength="255"
                                                        class="w-full rounded-xl border border-gray-200 px-3 py-1.5 text-[11px] text-gray-700 placeholder:text-gray-400 focus:border-brand-700 focus:outline-none">
                                             </div>
                                         </div>
                                     @empty
-                                        <p class="py-2.5 text-[11px] font-medium text-gray-400">{{ $kelompok['produk'] }}: belum tersedia untuk pilihan ini.</p>
+                                        <p class="py-2.5 text-[11px] font-medium text-gray-400">{{ $kelompok['produk'] }}: unavailable for this selection.</p>
                                     @endforelse
                                 </div>
                             @else
@@ -295,7 +295,7 @@
                                         </span>
                                     @endif
                                     @if ($kelompok['ada_rasa'])
-                                        <span class="text-[10px] font-semibold text-gray-400">· pilih rasa</span>
+                                        <span class="text-[10px] font-semibold text-gray-400">· choose flavor</span>
                                     @endif
                                 </div>
 
@@ -306,11 +306,11 @@
                                                 <div class="min-w-0 flex-1 pr-2">
                                                     @if ($opsi['ada_rasa'])
                                                         <span class="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-amber-800">
-                                                            Rasa: {{ $opsi['rasa'] }}
+                                                            Flavor: {{ $opsi['rasa'] }}
                                                         </span>
                                                     @endif
                                                     @if ($opsi['stok'] <= 0)
-                                                        <span class="ml-1 text-[10px] font-semibold text-amber-600">Diproduksi dulu</span>
+                                                        <span class="ml-1 text-[10px] font-semibold text-amber-600">Baking soon</span>
                                                     @endif
                                                 </div>
 
@@ -336,13 +336,13 @@
                                             <div x-show="(varianQty['{{ $opsi['kunci'] }}'] || 0) > 0" x-transition class="mt-1">
                                                 <input type="text"
                                                        x-model="varianCatatan['{{ $opsi['kunci'] }}']"
-                                                       placeholder="Catatan untuk {{ $kelompok['produk'] }}{{ $opsi['ada_rasa'] ? ' '.$opsi['rasa'] : '' }} (opsional)"
+                                                       placeholder="Notes for {{ $kelompok['produk'] }}{{ $opsi['ada_rasa'] ? ' '.$opsi['rasa'] : '' }} (optional)"
                                                        maxlength="255"
                                                        class="w-full rounded-xl border border-gray-200 px-3 py-1.5 text-[11px] text-gray-700 placeholder:text-gray-400 focus:border-brand-700 focus:outline-none">
                                             </div>
                                         </div>
                                     @empty
-                                        <p class="p-3.5 text-[11px] font-medium text-gray-400">Belum ada rasa yang tersedia untuk pilihan ini.</p>
+                                        <p class="p-3.5 text-[11px] font-medium text-gray-400">No flavors available for this selection.</p>
                                     @endforelse
                                 </div>
                             </div>
@@ -353,7 +353,7 @@
                 @else
 
                     <h3 class="text-xs font-bold text-gray-900">
-                        Isi Paket
+                        Package Contents
                     </h3>
 
                     <div class="mt-2 divide-y divide-gray-100 rounded-2xl border border-gray-100 bg-white">
@@ -370,7 +370,7 @@
                             @endphp
                             <div class="flex items-center justify-between p-3">
                                 <div class="min-w-0 flex-1 pr-2">
-                                    <p class="text-xs font-semibold text-gray-800">{{ $bundlingItem->produk->nama_produk ?? 'Produk tidak ditemukan' }}</p>
+                                    <p class="text-xs font-semibold text-gray-800">{{ $bundlingItem->produk->nama_produk ?? 'Product not found' }}</p>
                                     @if ($ukuran || $rasa)
                                         <div class="mt-0.5 flex flex-wrap items-center gap-1">
                                             @if ($ukuran)
@@ -380,7 +380,7 @@
                                             @endif
                                             @if ($rasa)
                                                 <span class="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
-                                                    Rasa: {{ $rasa }}
+                                                    Flavor: {{ $rasa }}
                                                 </span>
                                             @endif
                                         </div>
@@ -396,20 +396,20 @@
 
             <div>
                 <h3 class="text-xs font-bold text-gray-900">
-                    Catatan Pesanan
+                    Order Notes
                     <span class="font-medium text-gray-400">
-                        (opsional)
+                        (optional)
                     </span>
                 </h3>
 
-                <textarea x-model="catatan" rows="2" maxlength="255" placeholder="Contoh: kurangi manis, dll."
+                <textarea x-model="catatan" rows="2" maxlength="255" placeholder="e.g. Less sweet, extra napkins, etc."
                     class="mt-2 w-full resize-none rounded-2xl border border-gray-200 p-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700"></textarea>
             </div>
 
             {{-- Spacer pas di bawah kolom catatan agar scroll pas sampai batas kolom catatan --}}
             <div class="h-24 lg:hidden" aria-hidden="true"></div>
 
-            <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 lg:static lg:w-full lg:border-t-0 lg:px-0 lg:pt-4 lg:shadow-none">
+            <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-[#3C2415]/10 bg-[#FAF5E8]/95 backdrop-blur-md px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 lg:static lg:w-full lg:border-t-0 lg:px-0 lg:pt-4 lg:shadow-none">
 
             {{-- Pesan kalau jumlah paket yang diminta melebihi sisa stok --}}
             <template x-if="stokTidakCukup">
@@ -442,7 +442,7 @@
                             <div class="flex shrink-0 items-center gap-1.5 rounded-full bg-white">
                                 <button type="button" @click="kurangiJumlah()"
                                     class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-brand-800 text-brand-800 transition active:scale-90"
-                                    aria-label="Kurangi jumlah">
+                                    aria-label="Decrease quantity">
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                         <path d="M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
                                     </svg>
@@ -453,7 +453,7 @@
 
                                 <button type="button" @click="tambahJumlah()"
                                     class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm transition active:scale-90"
-                                    aria-label="Tambah jumlah">
+                                    aria-label="Increase quantity">
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
                                             stroke-linecap="round" />
@@ -464,7 +464,7 @@
                             <button type="submit"
                                 :disabled="tidakBisaPesan || !bisaSimpan"
                                 class="flex min-w-0 flex-1 items-center justify-center rounded-full bg-brand-800 px-6 py-4 text-sm font-bold text-white shadow-sm transition active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
-                                x-text="tidakBisaPesan ? labelTidakBisa : (bisaSimpan ? ('Update – Rp ' + total.toLocaleString('id-ID')) : 'Lengkapi Pilihan Dulu')">
+                                x-text="tidakBisaPesan ? labelTidakBisa : (bisaSimpan ? ('Update – Rp ' + total.toLocaleString('id-ID')) : 'Complete Selection First')">
                             </button>
 
                         </div>
@@ -494,7 +494,7 @@
                         <div class="flex shrink-0 items-center gap-1.5 rounded-full bg-white">
                             <button type="button" @click="kurangiJumlah()"
                                 class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-brand-800 text-brand-800 transition active:scale-90"
-                                aria-label="Kurangi jumlah">
+                                aria-label="Decrease quantity">
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                     <path d="M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
                                 </svg>
@@ -505,7 +505,7 @@
 
                             <button type="button" @click="tambahJumlah()"
                                 class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm transition active:scale-90"
-                                aria-label="Tambah jumlah">
+                                aria-label="Increase quantity">
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                     <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
                                         stroke-linecap="round" />
@@ -516,7 +516,7 @@
                         <button type="submit"
                             :disabled="tidakBisaPesan || !bisaSimpan"
                             class="flex min-w-0 flex-1 lg:max-w-[260px] items-center justify-between rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed">
-                            <span x-text="tidakBisaPesan ? labelTidakBisa : (bisaSimpan ? 'Add' : 'Lengkapi Pilihan Dulu')"></span>
+                            <span x-text="tidakBisaPesan ? labelTidakBisa : (bisaSimpan ? 'Add' : 'Complete Selection First')"></span>
                             <span x-show="!tidakBisaPesan" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                         </button>
 
@@ -528,9 +528,9 @@
 
             @else
 
-                <button type="button" onclick="bukaModalLoginRequired('Pesan')"
+                <button type="button" onclick="bukaModalLoginRequired('Ordering')"
                     class="flex w-full items-center justify-between rounded-2xl bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
-                    <span>Login untuk Pesan</span>
+                    <span>Sign In to Order</span>
                     <span x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                 </button>
 

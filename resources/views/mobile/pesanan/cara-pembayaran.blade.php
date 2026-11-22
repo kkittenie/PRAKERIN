@@ -1,4 +1,4 @@
-@extends('mobile.layout', ['title' => 'Cara Pembayaran'])
+@extends('mobile.layout', ['title' => 'Payment Instructions'])
 
 @section('content')
 
@@ -7,21 +7,21 @@
             position: sticky;
             top: 0;
             z-index: 40;
-            background: rgba(255, 255, 255, 0.96);
+            background: rgba(250, 245, 232, 0.96);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
         }
     </style>
 
     <div
-        class="checkout-sticky-header relative -mx-5 -mt-6 flex h-14 items-center justify-center border-b border-gray-100 px-5 sm:-mx-8 md:-mx-10 lg:hidden">
+        class="checkout-sticky-header relative -mx-5 -mt-6 flex h-14 items-center justify-center border-b border-[#3C2415]/10 px-5 sm:-mx-8 md:-mx-10 lg:hidden">
         <a href="{{ route('member.pesanan.show', $transaksi) }}"
            onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-           class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100">
+           class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full border border-[#3C2415]/20 bg-white text-[#3A221B] shadow-xs active:scale-95 transition">
             <span class="rotate-180">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4'])</span>
         </a>
 
-        <h1 class="text-sm font-bold text-gray-900">Payment Instructions</h1>
+        <h1 class="text-sm font-extrabold text-[#3A221B] font-display">Payment Instructions</h1>
     </div>
 
     <div

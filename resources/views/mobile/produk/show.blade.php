@@ -238,7 +238,7 @@
                 <a href="{{ $sedangUbah ? route('member.checkout.index') : route('member.menu') }}"
                     onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
                     class="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow-md transition active:scale-95 active:bg-gray-50"
-                    aria-label="Kembali">
+                    aria-label="Back">
                     <span class="rotate-180">
                         @include('mobile.components.icon-chevron-right', ['class' => 'h-5 w-5'])
                     </span>
@@ -255,7 +255,7 @@
                 {{-- Badge stok habis (sama seperti di bundling) --}}
                 <span x-show="tampilBadgeHabis" x-cloak
                     class="absolute left-4 bottom-4 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
-                    Stok Habis
+                    Sold Out
                 </span>
 
             </div>
@@ -303,9 +303,9 @@
                         'class' => 'h-4 w-4 shrink-0'
                     ])
                     <p class="text-[11px] font-semibold">
-                        Kamu berpotensi dapat
+                        You'll earn
                         <span x-text="poinDidapat"></span>
-                        Saisho Points dari pesanan ini
+                        Daisy Points from this order
                     </p>
                 </div>
             </template>
@@ -316,7 +316,7 @@
 
             @if ($produk->deskripsi)
                 <div class="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-gray-50/50 lg:p-4">
-                    <h3 class="hidden lg:block text-xs font-bold text-gray-900 mb-1">Deskripsi Produk</h3>
+                    <h3 class="hidden lg:block text-xs font-bold text-gray-900 mb-1">Product Description</h3>
                     <p class="text-xs leading-relaxed text-gray-500 lg:text-gray-600 whitespace-pre-line">
                         {{ $produk->deskripsi }}
                     </p>
@@ -327,7 +327,7 @@
                 <div class="flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800">
                     @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
                     <p class="text-[11px] font-semibold leading-relaxed">
-                        Produk sedang diproduksi.
+                        Product is being freshly baked.
                     </p>
                 </div>
             </template>
@@ -336,7 +336,7 @@
                 <template x-if="opsiUkuran && opsiUkuran.length > 0">
                     <div>
                         <h3 class="text-xs font-bold text-gray-900">
-                            Pilihan Ukuran
+                            Choose Size
                         </h3>
 
                         <div class="mt-2 grid grid-cols-2 gap-2">
@@ -363,7 +363,7 @@
                 <template x-if="opsiVariasi && opsiVariasi.length > 0">
                     <div>
                         <h3 class="text-xs font-bold text-gray-900">
-                            Pilihan Variasi
+                            Choose Variation
                         </h3>
 
                         <div class="mt-2 grid grid-cols-2 gap-2">
@@ -390,12 +390,12 @@
                 @if ($produk->punya_ukuran)
                     <div>
                         <h3 class="text-xs font-bold text-gray-900">
-                            Pilihan Ukuran
+                            Choose Size
                         </h3>
 
                         <template x-if="!daftarUkuran || daftarUkuran.length === 0">
                             <p class="mt-2 text-[11px] italic text-gray-400">
-                                Belum ada ukuran aktif untuk produk ini.
+                                No active sizes available for this product.
                             </p>
                         </template>
 
@@ -424,12 +424,12 @@
                 @if ($produk->punya_varian_rasa)
                     <div>
                         <h3 class="text-xs font-bold text-gray-900">
-                            Pilihan Varian Rasa
+                            Choose Flavor
                         </h3>
 
                         <template x-if="!daftarVarianRasa || daftarVarianRasa.length === 0">
                             <p class="mt-2 text-[11px] italic text-gray-400">
-                                Belum ada varian rasa aktif untuk produk ini.
+                                No active flavors available for this product.
                             </p>
                         </template>
 
@@ -453,13 +453,13 @@
 
             <div>
                 <h3 class="text-xs font-bold text-gray-900">
-                    Catatan
+                    Order Notes
                     <span class="font-medium text-gray-400">
-                        (opsional)
+                        (optional)
                     </span>
                 </h3>
 
-                <textarea x-model="catatan" rows="2" maxlength="255" placeholder="Contoh: kurangi manis, dll."
+                <textarea x-model="catatan" rows="2" maxlength="255" placeholder="e.g. Less sweet, extra napkins, etc."
                     class="mt-2 w-full resize-none rounded-2xl border border-gray-200 p-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700"></textarea>
 
             </div>
@@ -467,7 +467,7 @@
             {{-- Spacer pas di bawah kolom catatan agar scroll pas sampai batas kolom catatan --}}
             <div class="h-24 lg:hidden" aria-hidden="true"></div>
 
-            <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 lg:static lg:w-full lg:border-t-0 lg:px-0 lg:pt-4 lg:shadow-none">
+            <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-[#3C2415]/10 bg-[#FAF5E8]/95 backdrop-blur-md px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 lg:static lg:w-full lg:border-t-0 lg:px-0 lg:pt-4 lg:shadow-none">
 
             {{-- Pesan kalau jumlah yang diminta melebihi sisa stok --}}
             <template x-if="stokTidakCukup">
@@ -498,7 +498,7 @@
 
                                     <button type="button" @click="kurangiJumlah()"
                                         class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-brand-800 text-brand-800 transition active:scale-90"
-                                        aria-label="Kurangi jumlah">
+                                        aria-label="Decrease quantity">
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                             <path d="M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
                                         </svg>
@@ -509,7 +509,7 @@
 
                                     <button type="button" @click="tambahJumlah()"
                                         class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm transition active:scale-90"
-                                        aria-label="Tambah jumlah">
+                                        aria-label="Increase quantity">
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                             <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
                                                 stroke-linecap="round" />
@@ -557,7 +557,7 @@
                                 {{-- Minus --}}
                                 <button type="button" @click="kurangiJumlah()"
                                     class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-brand-800 text-brand-800 transition active:scale-90"
-                                    aria-label="Kurangi jumlah">
+                                    aria-label="Decrease quantity">
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                         <path d="M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
                                     </svg>
@@ -570,7 +570,7 @@
                                 {{-- Plus --}}
                                 <button type="button" @click="tambahJumlah()"
                                     class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm transition active:scale-90"
-                                    aria-label="Tambah jumlah">
+                                    aria-label="Increase quantity">
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
                                             stroke-linecap="round" />
@@ -602,10 +602,10 @@
             @else
 
             {{-- Belum login --}}
-            <button type="button" onclick="bukaModalLoginRequired('Pesan')"
+            <button type="button" onclick="bukaModalLoginRequired('Ordering')"
                 class="flex w-full items-center justify-between rounded-2xl bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
                 <span>
-                    Login untuk Pesan
+                    Sign In to Order
                 </span>
 
                 <span x-text="'Rp ' + total.toLocaleString('id-ID')"></span>

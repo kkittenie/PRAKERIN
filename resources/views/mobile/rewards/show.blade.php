@@ -1,4 +1,4 @@
-@extends('mobile.layout', ['title' => 'Detail Voucher'])
+@extends('mobile.layout', ['title' => 'Voucher Details'])
 
 @php
     $tersedia = $voucher->tersedia ?? true;
@@ -7,14 +7,31 @@
     $batas = $voucher->batas_penggunaan_per_member ?: 1;
     $icon = 'icon-ticket';
 
-    $potonganLabel = '';
-    if ($voucher->jenis_potongan === 'nominal') {
-        $potonganLabel = 'Diskon Rp' . number_format($voucher->nominal_potongan, 0, ',', '.');
-    } else {
-        $potonganLabel = 'Diskon ' . rtrim(rtrim(number_format($voucher->persentase, 2, ',', '.'), '0'), ',') . '%';
-        if ($voucher->maksimal_potongan) {
-            $potonganLabel .= ' (Maks Rp' . number_format($voucher->maksimal_potongan, 0, ',', '.') . ')';
+    $nom = (float) ($voucher->nominal_potongan ?? 0);
+    $persen = (float) ($voucher->persentase ?? 0);
+
+    // Fallback if nominal/persen 0 in DB
+    if ($nom <= 0 && $persen <= 0) {
+        $textSearch = ($voucher->nama ?? '') . ' ' . ($voucher->deskripsi ?? '');
+        if (preg_match('/(\d+[\.,]?\d*)\s*%/i', $textSearch, $pm)) {
+            $persen = (float) str_replace(',', '.', $pm[1]);
+        } elseif (preg_match('/(?:Rp|IDR)?\s*([0-9]+(?:\.[0-9]{3})+)/i', $textSearch, $nm)) {
+            $nom = (float) str_replace('.', '', $nm[1]);
+        } elseif (preg_match('/(?:Rp|IDR)?\s*([0-9]+)/i', $textSearch, $nm)) {
+            $nom = (float) $nm[1];
         }
+    }
+
+    $potonganLabel = '';
+    if ($persen > 0) {
+        $potonganLabel = rtrim(rtrim(number_format($persen, 1, '.', ''), '0'), '.') . '% OFF';
+        if ($voucher->maksimal_potongan) {
+            $potonganLabel .= ' (Max Rp' . number_format($voucher->maksimal_potongan, 0, ',', '.') . ')';
+        }
+    } elseif ($nom > 0) {
+        $potonganLabel = 'Rp ' . number_format($nom, 0, ',', '.') . ' OFF';
+    } else {
+        $potonganLabel = 'Special Discount';
     }
 
 
@@ -34,102 +51,152 @@
     {{-- ========================================== --}}
     <div class="lg:hidden">
         {{-- Header --}}
-        <div class="relative -mx-5 sm:mx-0 -mt-6 flex items-center justify-center border-b border-gray-100 px-5 py-4 sm:rounded-t-3xl">
+        <div class="relative -mx-5 sm:mx-0 -mt-6 flex items-center justify-between border-b border-[#3C2415]/10 px-5 py-4 bg-[#FAF5E8]/95 backdrop-blur-md">
             <a href="{{ route('member.reward.index') }}"
                onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-               class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100">
+               class="flex h-8 w-8 items-center justify-center rounded-full border border-[#3C2415]/20 bg-white text-[#3A221B] shadow-xs active:scale-95 transition">
                 <span class="rotate-180">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4'])</span>
             </a>
-            <h1 class="text-theme-sm font-bold text-gray-900">Detail Voucher</h1>
+            <h1 class="text-sm font-extrabold text-[#3A221B] font-display">Voucher Details</h1>
+            <span class="w-8"></span>
         </div>
 
-        {{-- Hero image --}}
-        <div class="relative -mx-5 sm:mx-0 h-36 overflow-hidden bg-gradient-to-br from-brand-100 to-brand-200 md:h-48 sm:rounded-2xl">
+        {{-- Hero Image (From Database) --}}
+        <div class="relative -mx-5 sm:mx-0 h-40 sm:h-48 overflow-hidden bg-gradient-to-br from-[#FAF4ED] to-[#F5ECE3] sm:rounded-2xl border-b border-[#3C2415]/10">
             @if ($voucher->gambar)
                 <img src="{{ asset('storage/' . $voucher->gambar) }}" alt="{{ $voucher->nama }}" class="h-full w-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-white/10"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"></div>
             @else
-                <span class="absolute -left-6 -top-6 h-28 w-28 rounded-full bg-white/40"></span>
-                <span class="absolute -right-8 top-8 h-20 w-20 rounded-full bg-white/30"></span>
-                <span class="relative mx-auto flex h-full w-full items-center justify-center">
-                    <span class="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/70 shadow-sm text-brand-700">
-                        @include('mobile.components.icon-ticket', ['class' => 'h-9 w-9'])
-                    </span>
+                <span class="pointer-events-none absolute -right-5 -bottom-5 h-28 w-28 opacity-15 select-none rotate-12">
+                    <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="h-full w-full object-contain">
                 </span>
+                <span class="pointer-events-none absolute -left-4 -top-4 h-24 w-24 opacity-15 select-none -rotate-12">
+                    <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="h-full w-full object-contain">
+                </span>
+                <div class="relative mx-auto flex h-full w-full items-center justify-center p-6 text-center">
+                    <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/95 text-[#8E1E26] shadow-xs border border-[#3C2415]/10">
+                        @include('mobile.components.icon-ticket', ['class' => 'h-7 w-7'])
+                    </span>
+                </div>
             @endif
         </div>
 
-        {{-- Title & details --}}
-        <div class="pt-5 space-y-4">
-            <div>
-                <div class="flex items-center justify-between gap-2">
-                    <h2 class="text-theme-lg font-bold leading-tight text-gray-900">{{ $voucher->nama }}</h2>
-                    @if($tersedia)
-                        <span class="shrink-0 px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700">
-                            Aktif
-                        </span>
-                    @else
-                        <span class="shrink-0 px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-600">
-                            {{ $alasan ?: 'Nonaktif' }}
-                        </span>
-                    @endif
+        {{-- Title, details & status --}}
+        <div class="mt-3 space-y-4">
+            <div class="rounded-3xl border border-[#3C2415]/10 bg-[#FFFDF9] p-5 shadow-xs">
+                <div class="flex items-center justify-between gap-3">
+                    <span class="text-xs font-bold text-[#8A6B63]">
+                        {{ $sisaJatah }} of {{ $batas }} left
+                    </span>
                 </div>
-                <p class="mt-2 text-theme-sm leading-relaxed text-gray-500 whitespace-pre-line">
-                    {{ $voucher->deskripsi ?: 'Gunakan voucher diskon ini saat checkout atau di kasir outlet.' }}
+                <h2 class="mt-3 font-display text-lg font-black text-[#3A221B] leading-snug">{{ $voucher->nama }}</h2>
+                <p class="mt-1.5 text-xs text-[#706864] leading-relaxed">
+                    {{ $voucher->deskripsi ?: 'Enjoy this handcrafted reward voucher when ordering freshly baked cakes, breads, or pastries.' }}
                 </p>
             </div>
 
-            <div class="border-t border-dashed border-gray-200"></div>
-
-            {{-- Info Potongan & Sisa Kuota --}}
-            <div class="grid grid-cols-2 divide-x divide-gray-100 rounded-2xl border border-gray-100 bg-white">
-                <div class="px-4 py-3">
-                    <p class="text-theme-xs text-gray-400">Nilai Potongan</p>
-                    <p class="mt-0.5 text-theme-sm font-bold text-brand-800">{{ $potonganLabel }}</p>
+            {{-- Info Bento: Potongan & Min Spend --}}
+            <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-2xl border border-[#3C2415]/10 bg-[#FAF4ED] p-4 text-left shadow-xs">
+                    <span class="text-[10.5px] font-bold uppercase tracking-wider text-[#8A6B63]">Discount Value</span>
+                    <p class="mt-1 font-display text-base font-black text-[#8E1E26]">{{ $potonganLabel }}</p>
                 </div>
-                <div class="px-4 py-3">
-                    <p class="text-theme-xs text-gray-400">Sisa Pemakaian</p>
-                    <p class="mt-0.5 text-theme-sm font-bold {{ $sisaJatah > 0 ? 'text-gray-800' : 'text-red-500' }}">
-                        {{ $sisaJatah }} dari {{ $batas }} kali
+                <div class="rounded-2xl border border-[#3C2415]/10 bg-[#FAF4ED] p-4 text-left shadow-xs">
+                    <span class="text-[10.5px] font-bold uppercase tracking-wider text-[#8A6B63]">Minimum Spend</span>
+                    <p class="mt-1 font-display text-base font-black text-[#3A221B]">
+                        {{ $voucher->min_pembelian > 0 ? 'Rp' . number_format($voucher->min_pembelian, 0, ',', '.') : 'No Minimum' }}
                     </p>
                 </div>
             </div>
 
-            {{-- Min Transaksi --}}
-            <div class="grid grid-cols-2 divide-x divide-gray-100 rounded-2xl border border-gray-100 bg-white">
-                <div class="px-4 py-3">
-                    <p class="text-theme-xs text-gray-400">Min. Transaksi</p>
-                    <p class="mt-0.5 text-theme-sm font-bold text-gray-800">
-                        {{ $voucher->min_pembelian > 0 ? 'Rp' . number_format($voucher->min_pembelian, 0, ',', '.') : 'Tanpa Minimum' }}
-                    </p>
+            {{-- Applicable Menu Preview Slider (Mobile: slideable carousel when > 3 items) --}}
+            @if ($eligibleProduk->count() > 3)
+                <div class="rounded-3xl border border-[#3C2415]/10 bg-[#FFFDF9] p-4 shadow-xs"
+                     x-data="{
+                         scrollRail(dir) {
+                             const el = this.$refs.mobileRail;
+                             if (!el) return;
+                             el.scrollBy({ left: dir * 210, behavior: 'smooth' });
+                         }
+                     }">
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-[#FCEEEF] text-[#8E1E26] shrink-0">
+                                @include('mobile.components.icon-bread', ['class' => 'h-3.5 w-3.5'])
+                            </span>
+                            <h3 class="font-display text-xs font-black uppercase tracking-wider text-[#3A221B] truncate">
+                                Applicable Menu ({{ $eligibleProduk->count() }})
+                            </h3>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button type="button" @click="scrollRail(-1)" aria-label="Previous items"
+                                    class="flex h-7 w-7 items-center justify-center rounded-full border border-[#3C2415]/15 bg-[#FAF5E8] text-[#3A221B] active:scale-95 transition">
+                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
+                            </button>
+                            <button type="button" @click="scrollRail(1)" aria-label="Next items"
+                                    class="flex h-7 w-7 items-center justify-center rounded-full border border-[#3C2415]/15 bg-[#FAF5E8] text-[#3A221B] active:scale-95 transition">
+                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div x-ref="mobileRail" class="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1">
+                        @foreach ($eligibleProduk as $prod)
+                            <a href="{{ route('member.produk.show', $prod['id']) }}"
+                               onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                               class="snap-start shrink-0 w-[142px] rounded-2xl border border-[#3C2415]/10 bg-[#FAF4ED] p-2.5 flex flex-col justify-between transition active:scale-[0.98]">
+                                <div class="aspect-square w-full rounded-xl bg-[#3C2415]/5 overflow-hidden flex items-center justify-center mb-2">
+                                    @if ($prod['foto'])
+                                        <img src="{{ $prod['foto'] }}" alt="{{ $prod['nama'] }}" class="w-full h-full object-cover">
+                                    @else
+                                        <img src="{{ asset('images/decor/vintage-strawberry-cake.png') }}" alt="{{ $prod['nama'] }}" class="w-16 h-16 object-contain">
+                                    @endif
+                                </div>
+                                <div>
+                                    <p class="text-[9.5px] font-bold uppercase tracking-wider text-[#8E1E26] truncate">{{ $prod['kategori'] }}</p>
+                                    <p class="font-display text-xs font-extrabold text-[#3A221B] line-clamp-2 leading-snug mt-0.5">{{ $prod['nama'] }}</p>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
                 </div>
-            </div>
+            @endif
 
             {{-- Expandable rows --}}
-            <div class="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-100 bg-white">
+            <div class="divide-y divide-[#3C2415]/10 overflow-hidden rounded-2xl border border-[#3C2415]/10 bg-[#FFFDF9] shadow-xs">
                 <button type="button" onclick="openSheet('sheet-menu-berlaku')"
-                        class="flex w-full items-center justify-between px-4 py-3.5 text-left">
-                    <span class="text-theme-sm font-bold text-gray-800">Menu yang Berlaku ({{ $eligibleProduk->count() }} Produk)</span>
-                    @include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4 text-gray-300'])
+                        class="flex w-full items-center justify-between px-4 py-3.5 text-left hover:bg-[#FAF5E8]/50 transition">
+                    <div class="flex items-center gap-2.5">
+                        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-[#FAF4ED] text-[#8E1E26]">
+                            @include('mobile.components.icon-bread', ['class' => 'h-4 w-4'])
+                        </span>
+                        <span class="text-xs font-bold text-[#3A221B]">Applicable Items ({{ $eligibleProduk->count() }} Products)</span>
+                    </div>
+                    @include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4 text-[#706864]'])
                 </button>
                 <button type="button" onclick="openSheet('sheet-cara-pakai')"
-                        class="flex w-full items-center justify-between px-4 py-3.5 text-left">
-                    <span class="text-theme-sm font-bold text-gray-800">Cara Penggunaan</span>
-                    @include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4 text-gray-300'])
+                        class="flex w-full items-center justify-between px-4 py-3.5 text-left hover:bg-[#FAF5E8]/50 transition">
+                    <div class="flex items-center gap-2.5">
+                        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-[#FAF4ED] text-[#8E1E26]">
+                            @include('mobile.components.icon-ticket', ['class' => 'h-4 w-4'])
+                        </span>
+                        <span class="text-xs font-bold text-[#3A221B]">How to Use</span>
+                    </div>
+                    @include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4 text-[#706864]'])
                 </button>
             </div>
 
             {{-- Tombol Pakai Sekarang --}}
-            <div class="pt-2">
+            <div class="pt-2 pb-6">
                 @if($tersedia)
                     <a href="{{ route('member.menu') }}"
                        onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                       class="block w-full text-center rounded-full bg-brand-700 py-3.5 text-theme-sm font-semibold text-white shadow-theme-md active:bg-brand-800">
-                        Pesan Menu & Gunakan Voucher
+                       class="block w-full text-center rounded-2xl bg-[#3A221B] hover:bg-[#4E2F26] active:bg-[#2C1811] py-4 text-xs font-bold uppercase tracking-wider text-[#FAF5E8] shadow-md transition">
+                        Order Menu & Apply Voucher
                     </a>
                 @else
-                    <button disabled class="w-full rounded-full bg-gray-200 py-3.5 text-theme-sm font-semibold text-gray-500">
-                        Voucher Tidak Dapat Digunakan ({{ $alasan ?: 'Nonaktif' }})
+                    <button disabled class="w-full rounded-2xl bg-[#E5D7C6] py-4 text-xs font-bold uppercase tracking-wider text-[#706864] cursor-not-allowed">
+                        Voucher Cannot Be Used ({{ $alasan ?: 'Unavailable' }})
                     </button>
                 @endif
             </div>
@@ -364,32 +431,134 @@
         <div class="max-w-6xl mx-auto mt-24 pt-16 border-t border-[#3C2415]/10 text-center relative z-10">
 
             @if ($eligibleProduk->isNotEmpty())
-                <h2 class="font-display font-black text-3xl lg:text-4xl text-[#3C2415] uppercase tracking-wider mb-12">
-                    ELIGIBLE BAKERY ITEMS ({{ $eligibleProduk->count() }})
-                </h2>
+                @php $useSlider = $eligibleProduk->count() > 3; @endphp
+                <div @if($useSlider)
+                     x-data="{
+                         canPrev: false,
+                         canNext: true,
+                         activePage: 0,
+                         totalPages: {{ (int) ceil($eligibleProduk->count() / 3) }},
+                         init() {
+                             this.$nextTick(() => this.updateState());
+                         },
+                         updateState() {
+                             const el = this.$refs.sliderTrack;
+                             if (!el) return;
+                             const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+                             this.canPrev = el.scrollLeft > 8;
+                             this.canNext = el.scrollLeft < maxScroll - 8;
+                             if (maxScroll > 0) {
+                                 const progress = el.scrollLeft / maxScroll;
+                                 this.activePage = Math.min(this.totalPages - 1, Math.round(progress * (this.totalPages - 1)));
+                             }
+                         },
+                         slide(dir) {
+                             const el = this.$refs.sliderTrack;
+                             if (!el) return;
+                             const step = el.clientWidth * 0.92;
+                             el.scrollBy({ left: dir * step, behavior: 'smooth' });
+                         },
+                         goToPage(idx) {
+                             const el = this.$refs.sliderTrack;
+                             if (!el) return;
+                             const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+                             const target = this.totalPages > 1 ? (idx / (this.totalPages - 1)) * maxScroll : 0;
+                             el.scrollTo({ left: target, behavior: 'smooth' });
+                         }
+                     }"
+                     @endif>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-                    @foreach ($eligibleProduk->take(3) as $prod)
-                        <div class="group rounded-[32px] bg-[#F5ECE3] p-7 text-left border border-[#3C2415]/10 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
-                            <div class="aspect-square w-full rounded-[24px] bg-[#3C2415]/5 overflow-hidden flex items-center justify-center mb-5">
-                                @if ($prod['foto'])
-                                    <img src="{{ $prod['foto'] }}" alt="{{ $prod['nama'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                                @else
-                                    <img src="{{ asset('images/decor/vintage-strawberry-cake.png') }}" alt="{{ $prod['nama'] }}" class="w-28 h-28 object-contain">
-                                @endif
-                            </div>
-                            <div>
-                                <span class="text-[10px] font-display font-bold uppercase tracking-wider text-[#8E1E26]">{{ $prod['kategori'] }}</span>
-                                <h3 class="font-display font-black text-lg text-[#3C2415] mt-1">{{ $prod['nama'] }}</h3>
-                            </div>
-                            <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between">
-                                <a href="{{ route('member.produk.show', $prod['id']) }}"
-                                   class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-white text-[11px] font-bold uppercase tracking-wider transition-colors">
-                                    <span>View Item</span> &rarr;
-                                </a>
-                            </div>
+                    <div class="flex flex-col sm:flex-row items-center {{ $useSlider ? 'justify-between' : 'justify-center' }} gap-4 mb-10">
+                        <div class="{{ $useSlider ? 'text-left' : 'text-center' }}">
+                            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-[#8E1E26] mb-1.5">
+                                <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-3.5 h-3.5">
+                                <span>Applicable Menu</span>
+                            </span>
+                            <h2 class="font-display font-black text-3xl lg:text-4xl text-[#3C2415] uppercase tracking-wider">
+                                ELIGIBLE BAKERY ITEMS ({{ $eligibleProduk->count() }})
+                            </h2>
                         </div>
-                    @endforeach
+
+                        @if ($useSlider)
+                            <div class="flex items-center gap-2.5 shrink-0">
+                                <button type="button" @click="slide(-1)" :disabled="!canPrev"
+                                        aria-label="Slide previous items"
+                                        class="flex h-11 w-11 items-center justify-center rounded-full border border-[#3C2415]/18 bg-[#FFFDF9] text-[#3C2415] shadow-xs transition hover:bg-[#8E1E26] hover:text-[#FAF5E8] hover:border-[#8E1E26] disabled:opacity-35 disabled:hover:bg-[#FFFDF9] disabled:hover:text-[#3C2415] disabled:cursor-not-allowed cursor-pointer">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
+                                </button>
+                                <button type="button" @click="slide(1)" :disabled="!canNext"
+                                        aria-label="Slide next items"
+                                        class="flex h-11 w-11 items-center justify-center rounded-full border border-[#3C2415]/18 bg-[#FFFDF9] text-[#3C2415] shadow-xs transition hover:bg-[#8E1E26] hover:text-[#FAF5E8] hover:border-[#8E1E26] disabled:opacity-35 disabled:hover:bg-[#FFFDF9] disabled:hover:text-[#3C2415] disabled:cursor-not-allowed cursor-pointer">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg>
+                                </button>
+                            </div>
+                        @endif
+                    </div>
+
+                    @if ($useSlider)
+                        <div x-ref="sliderTrack"
+                             @scroll.passive="updateState()"
+                             @resize.window="updateState()"
+                             class="flex gap-6 lg:gap-8 overflow-x-auto scroll-smooth snap-x snap-mandatory no-scrollbar pb-3 -mx-1 px-1">
+                            @foreach ($eligibleProduk as $prod)
+                                <div class="snap-start shrink-0 w-[calc((100%-3rem)/3)] lg:w-[calc((100%-4rem)/3)] min-w-[290px] group rounded-[32px] bg-[#F5ECE3] p-7 text-left border border-[#3C2415]/10 shadow-xs flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all">
+                                    <div class="aspect-square w-full rounded-[24px] bg-[#3C2415]/5 overflow-hidden flex items-center justify-center mb-5">
+                                        @if ($prod['foto'])
+                                            <img src="{{ $prod['foto'] }}" alt="{{ $prod['nama'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                        @else
+                                            <img src="{{ asset('images/decor/vintage-strawberry-cake.png') }}" alt="{{ $prod['nama'] }}" class="w-28 h-28 object-contain">
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <span class="text-[10px] font-display font-bold uppercase tracking-wider text-[#8E1E26]">{{ $prod['kategori'] }}</span>
+                                        <h3 class="font-display font-black text-lg text-[#3C2415] mt-1 line-clamp-2">{{ $prod['nama'] }}</h3>
+                                    </div>
+                                    <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between">
+                                        <a href="{{ route('member.produk.show', $prod['id']) }}"
+                                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-white text-[11px] font-bold uppercase tracking-wider transition-colors">
+                                            <span>View Item</span> &rarr;
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- Slider Pagination Dots --}}
+                        <div class="mt-6 flex items-center justify-center gap-2">
+                            <template x-for="dotIdx in totalPages" :key="dotIdx">
+                                <button type="button"
+                                        @click="goToPage(dotIdx - 1)"
+                                        :aria-label="'Slide ' + dotIdx"
+                                        class="h-2.5 rounded-full transition-all duration-300 cursor-pointer"
+                                        :class="activePage === (dotIdx - 1) ? 'w-8 bg-[#8E1E26]' : 'w-2.5 bg-[#3C2415]/20 hover:bg-[#3C2415]/40'">
+                                </button>
+                            </template>
+                        </div>
+                    @else
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+                            @foreach ($eligibleProduk as $prod)
+                                <div class="group rounded-[32px] bg-[#F5ECE3] p-7 text-left border border-[#3C2415]/10 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
+                                    <div class="aspect-square w-full rounded-[24px] bg-[#3C2415]/5 overflow-hidden flex items-center justify-center mb-5">
+                                        @if ($prod['foto'])
+                                            <img src="{{ $prod['foto'] }}" alt="{{ $prod['nama'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                        @else
+                                            <img src="{{ asset('images/decor/vintage-strawberry-cake.png') }}" alt="{{ $prod['nama'] }}" class="w-28 h-28 object-contain">
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <span class="text-[10px] font-display font-bold uppercase tracking-wider text-[#8E1E26]">{{ $prod['kategori'] }}</span>
+                                        <h3 class="font-display font-black text-lg text-[#3C2415] mt-1">{{ $prod['nama'] }}</h3>
+                                    </div>
+                                    <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between">
+                                        <a href="{{ route('member.produk.show', $prod['id']) }}"
+                                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-white text-[11px] font-bold uppercase tracking-wider transition-colors">
+                                            <span>View Item</span> &rarr;
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             @else
                 <h2 class="font-display font-black text-3xl lg:text-4xl text-[#3C2415] uppercase tracking-wider mb-12">
@@ -444,7 +613,7 @@
                 <span class="h-1 w-10 rounded-full bg-gray-200"></span>
             </div>
             <div class="overflow-y-auto px-6 pb-2 pt-3">
-                <h3 class="text-center text-theme-md font-bold text-brand-700">Menu yang Berlaku</h3>
+                <h3 class="text-center text-theme-md font-bold text-brand-700">Applicable Items</h3>
                 <div class="mt-4 space-y-2">
                     @foreach ($eligibleProduk as $prod)
                         <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/50">
@@ -466,7 +635,7 @@
             <div class="shrink-0 px-6 pb-6 pt-4">
                 <button type="button" onclick="closeSheet('sheet-menu-berlaku')"
                         class="w-full rounded-full bg-brand-700 py-3.5 text-theme-sm font-semibold text-white active:bg-brand-800">
-                    Tutup
+                    Close
                 </button>
             </div>
         </div>
@@ -479,19 +648,19 @@
                 <span class="h-1 w-10 rounded-full bg-gray-200"></span>
             </div>
             <div class="overflow-y-auto px-6 pb-2 pt-3">
-                <h3 class="text-center text-theme-md font-bold text-brand-700">Cara Penggunaan Voucher</h3>
+                <h3 class="text-center text-theme-md font-bold text-brand-700">How to Redeem Voucher</h3>
                 <div class="mt-4 text-theme-sm leading-relaxed text-gray-700">
                     <ol class="list-decimal space-y-2.5 pl-4">
-                        <li><strong>Pemesanan Pickup di Aplikasi:</strong> Masuk ke halaman Menu, pilih menu favoritmu, lalu buka Checkout. Pilih voucher ini di bagian Voucher untuk mendapatkan potongan otomatis.</li>
-                        <li><strong>Pemesanan di Outlet (Kasir):</strong> Sebutkan nama atau nomor HP member kamu saat bertransaksi di kasir. Kasir akan langsung menerapkan voucher yang berhak kamu gunakan.</li>
-                        <li>Setiap transaksi hanya dapat menggunakan maksimal 1 voucher.</li>
+                        <li><strong>Online Pickup Order:</strong> Head to the Menu page, select your desired bakes, and open Checkout. Select this voucher in the Voucher section to automatically apply your savings.</li>
+                        <li><strong>In-Store Counter Order:</strong> Simply mention your member name or mobile phone number to our bakery cashier. The discount will be applied directly to your bill.</li>
+                        <li>Maximum 1 voucher applies per single checkout.</li>
                     </ol>
                 </div>
             </div>
             <div class="shrink-0 px-6 pb-6 pt-4">
                 <button type="button" onclick="closeSheet('sheet-cara-pakai')"
                         class="w-full rounded-full bg-brand-700 py-3.5 text-theme-sm font-semibold text-white active:bg-brand-800">
-                    Mengerti
+                    Got It
                 </button>
             </div>
         </div>

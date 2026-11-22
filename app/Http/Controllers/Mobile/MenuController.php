@@ -83,9 +83,9 @@ class MenuController extends Controller
                 'totalProduk' => $totalProduk,
                 'daftarBundling' => $daftarBundling,
                 'daftarPromoEvent' => $daftarPromoEvent,
-                'waCs' => '6282000768044',
-                'storeNama' => 'Saisho Cake & Bakery',
-                'storeAlamat' => 'Jl. Kamboja No. 1 Tuparev, Cirebon',
+                'waCs' => '62882000768044',
+                'storeNama' => 'Daisy Bakery',
+                'storeAlamat' => 'Jl. Jalan 40, Cirebon',
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

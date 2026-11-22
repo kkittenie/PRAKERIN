@@ -6,8 +6,8 @@
     <div x-data="rekapProduk()" class="space-y-6">
         {{-- Filter Card (persis seperti Histori Transaksi) --}}
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-800 p-6">
-            <div class="flex flex-col lg:flex-row lg:items-end gap-4">
-                <div class="flex-1">
+            <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-4 flex-wrap">
+                <div class="min-w-[220px] flex-1">
                     <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-1">Rekap Produk</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Lihat rekapitulasi produksi dan penjualan per produk.</p>
                 </div>
@@ -19,7 +19,7 @@
                                       this.tanggalSelesai = this.tanggalMulai;
                                   }
                               }
-                          }" class="flex flex-col md:flex-row items-stretch md:items-end gap-3 w-full md:w-auto flex-wrap">
+                          }" class="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5 w-full xl:w-auto flex-wrap min-w-0">
                     <div class="flex-1 md:flex-initial">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Kategori</label>
                         <select name="kategori_id" class="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm">

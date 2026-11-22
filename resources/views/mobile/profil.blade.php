@@ -77,13 +77,15 @@
 
         <div class="-mt-6 flex flex-none items-center justify-between px-5 pt-6">
             <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-                class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-brand-800 text-brand-800">
+                class="flex h-8 w-8 items-center justify-center rounded-full border border-[#3C2415]/20 bg-white text-[#3A221B] shadow-xs hover:bg-[#FAF5E8] active:scale-95 transition">
                 <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
-                    <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                    <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round" />
                 </svg>
             </a>
-            <h1 class="text-base font-extrabold text-brand-800">My Account</h1>
+            <div class="flex items-center gap-1.5">
+                <h1 class="text-base font-extrabold text-[#3A221B]">My Account</h1>
+            </div>
             <span class="w-8"></span>
         </div>
 
@@ -96,16 +98,27 @@
             @csrf
 
             <div class="flex-none">
-                <div class="relative bg-gray-50 px-5 pb-16 pt-4">
-                    <div class="flex justify-center">
-                        <span class="rounded-full bg-gray-100 px-4 py-1.5 text-xs font-medium text-gray-600">
-                            Member since: {{ $member->created_at->translatedFormat('d F Y') }}
+                <div class="relative bg-[#FAF4ED] border-b border-[#3C2415]/10 px-5 pb-16 pt-4">
+                    {{-- Strawberry Watermarks in Top Banner (clipped safely inside banner) --}}
+                    <div class="pointer-events-none absolute inset-0 overflow-hidden">
+                        <span class="absolute -right-3 -top-3 h-24 w-24 opacity-20 select-none rotate-12">
+                            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="h-full w-full object-contain">
+                        </span>
+                        <span class="absolute -left-3 -bottom-2 h-20 w-20 opacity-15 select-none -rotate-12">
+                            <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="h-full w-full object-contain">
                         </span>
                     </div>
 
-                    <div class="absolute left-1/2 top-full h-24 w-24 -translate-x-1/2 -translate-y-1/2">
+                    <div class="relative z-10 flex justify-center">
+                        <span class="inline-flex items-center gap-1.5 rounded-full border border-[#3C2415]/10 bg-white/90 px-3.5 py-1 text-xs font-semibold text-[#706864] shadow-xs">
+                            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="h-3.5 w-3.5 object-contain">
+                            <span>Member since: {{ $member->created_at->translatedFormat('d F Y') }}</span>
+                        </span>
+                    </div>
+
+                    <div class="absolute left-1/2 top-full h-24 w-24 -translate-x-1/2 -translate-y-1/2 z-20">
                         <div class="relative h-full w-full">
-                            <span class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-gray-200 ring-4 ring-white">
+                            <span class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-gray-200 ring-4 ring-white shadow-md">
                                 {{-- Preview foto hasil crop --}}
                                 <img x-show="fotoPreview" x-cloak :src="fotoPreview" alt="Preview"
                                     class="h-full w-full object-cover">
@@ -122,9 +135,10 @@
                                     @endif
                                 </span>
                             </span>
+                            {{-- Pencil icon moved down (-bottom-2.5) so it doesn't collide/overlap over the face/pfp --}}
                             <label for="foto-trigger-mob"
-                                class="absolute -bottom-1 left-1/2 flex h-9 w-9 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border-2 border-brand-800 bg-white text-brand-800 active:scale-95">
-                                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4 pointer-events-none">
+                                class="absolute -bottom-2.5 left-1/2 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-full border-2 border-[#3A221B] bg-white text-[#3A221B] shadow-md hover:bg-[#FAF5E8] active:scale-95 transition z-30">
+                                <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5 pointer-events-none">
                                     <path d="m16.5 3.5 4 4L8 20l-4.5 1L4.5 16.5 16.5 3.5Z" stroke="currentColor"
                                         stroke-width="1.8" stroke-linejoin="round" />
                                 </svg>
@@ -138,43 +152,47 @@
                         </div>
                     </div>
                 </div>
-                <div class="h-12"></div>
+                <div class="h-14"></div>
             </div>
 
             <div class="flex-1 overflow-y-auto">
                 <div class="px-5">
                     @php $kelengkapan = $member->kelengkapan_profil; @endphp
                     <div class="px-0.5 pt-6 text-center">
-                        <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                            <div class="h-full rounded-full bg-brand-800 transition-all"
+                        <div class="flex items-center justify-between mb-1.5 px-0.5">
+                            <span class="text-[11px] font-bold text-[#706864]">Profile Details</span>
+                            <span class="text-[11px] font-bold text-[#3A221B]">{{ $kelengkapan }}%</span>
+                        </div>
+                        <div class="h-1.5 w-full overflow-hidden rounded-full bg-[#EADDCD]">
+                            <div class="h-full rounded-full bg-[#5A3825] transition-all"
                                 style="width: {{ $kelengkapan }}%"></div>
                         </div>
                     </div>
 
                     <div class="mt-7 grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
                         <div>
-                            <label for="nama-mob" class="text-xs font-semibold text-gray-500">Nama</label>
+                            <label for="nama-mob" class="text-xs font-semibold text-[#706864]">Full Name</label>
                             <input type="text" name="nama" id="nama-mob" value="{{ old('nama', $member->nama) }}"
-                                class="mt-1.5 w-full rounded-xl border border-brand-100 bg-brand-25 px-4 py-3 text-sm font-bold uppercase tracking-wide text-brand-800 outline-none transition focus:border-brand-800 focus:ring-2 focus:ring-brand-800/10">
+                                class="mt-1.5 w-full rounded-xl border border-[#3C2415]/15 bg-white px-4 py-3 text-sm font-bold uppercase tracking-wide text-[#3A221B] outline-none transition focus:border-[#3A221B] focus:ring-2 focus:ring-[#3A221B]/10">
                             @error('nama')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label for="username-mob" class="text-xs font-semibold text-gray-500">Username</label>
+                            <label for="username-mob" class="text-xs font-semibold text-[#706864]">Username</label>
                             <input type="text" name="username" id="username-mob"
-                                value="{{ old('username', $member->username) }}" placeholder="Buat username kamu"
+                                value="{{ old('username', $member->username) }}" placeholder="Enter your username"
                                 oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()"
-                                class="mt-1.5 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                                class="mt-1.5 w-full rounded-xl border border-[#3C2415]/15 bg-white px-4 py-3 text-sm text-[#3A221B] outline-none transition placeholder:text-gray-400 focus:border-[#3A221B] focus:ring-2 focus:ring-[#3A221B]/10">
                             @error('username')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label for="email-mob" class="text-xs font-semibold text-gray-500">Email</label>
+                            <label for="email-mob" class="text-xs font-semibold text-[#706864]">Email</label>
                             <input type="email" name="email" id="email-mob" value="{{ old('email', $member->email) }}"
-                                placeholder="Masukkan email kamu"
-                                class="mt-1.5 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
+                                placeholder="Enter your email address"
+                                class="mt-1.5 w-full rounded-xl border border-[#3C2415]/15 bg-white px-4 py-3 text-sm text-[#3A221B] outline-none transition placeholder:text-gray-400 focus:border-[#3A221B] focus:ring-2 focus:ring-[#3A221B]/10">
                             @error('email')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
@@ -187,32 +205,14 @@
                     </div>
                 </div>
 
-                <div class="mt-8 bg-gray-50 px-5 py-3">
-                    <span class="text-xs font-bold tracking-wide text-gray-500">OTHERS</span>
-                </div>
-
-                <div class="px-5">
-                    <button type="button"
-                        @click.stop="modalHapusAkunTerbuka = true"
-                        class="mt-5 flex items-center gap-2 text-sm font-bold text-red-700">
-                        <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
-                            <path
-                                d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7h12Z"
-                                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                        </svg>
-                        DELETE ACCOUNT
-                    </button>
-                </div>
-
                 <div class="h-24"></div>
             </div>
 
-            <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-none border-t border-gray-100 bg-white 2xl:max-w-6xl"
-                style="padding-bottom: env(safe-area-inset-bottom);">
+            <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-none border-t border-[#3C2415]/10 bg-[#FAF5E8] p-3 sm:p-4 2xl:max-w-6xl"
+                style="padding-bottom: max(env(safe-area-inset-bottom), 12px);">
                 <button type="submit"
-                    class="block w-full bg-brand-800 py-4 text-sm font-bold uppercase tracking-wide text-white">
-                    Save
+                    class="block w-full rounded-2xl bg-[#3A221B] hover:bg-[#4E2F26] active:bg-[#2C1811] py-3.5 text-sm font-bold uppercase tracking-wider text-[#FAF5E8] shadow-md transition">
+                    Save Changes
                 </button>
             </div>
 
@@ -224,8 +224,8 @@
                     <div @click.away="batalCrop()"
                         class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
                         <div class="p-4 border-b border-gray-100">
-                            <h3 class="font-extrabold text-gray-900 text-sm">Crop Foto Profil</h3>
-                            <p class="text-xs text-gray-500 mt-0.5">Atur area foto yang ingin ditampilkan</p>
+                            <h3 class="font-extrabold text-gray-900 text-sm">Crop Profile Picture</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Adjust the photo area you wish to display</p>
                         </div>
                         <div class="bg-gray-100" style="max-height: 50vh; overflow: hidden;">
                             <img x-ref="cropImage" src="" alt="Crop" style="display: block; max-width: 100%; max-height: 50vh;">
@@ -233,66 +233,17 @@
                         <div class="p-4 border-t border-gray-100 flex justify-end gap-3">
                             <button type="button" @click="batalCrop()"
                                 class="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-xl transition text-gray-700">
-                                Batal
+                                Cancel
                             </button>
                             <button type="button" @click="terapkanCrop()"
-                                class="px-4 py-2.5 bg-brand-800 hover:bg-brand-900 text-white font-bold text-xs rounded-xl transition shadow-sm">
-                                Terapkan
+                                class="px-4 py-2.5 bg-[#3A221B] hover:bg-[#4E2F26] text-white font-bold text-xs rounded-xl transition shadow-sm">
+                                Apply
                             </button>
                         </div>
                     </div>
                 </div>
             </template>
         </form>
-
-        <div x-show="modalHapusAkunTerbuka" x-cloak x-transition
-            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
-            <div @click.away="if (!menghapusAkun) { modalHapusAkunTerbuka = false; passwordHapus = ''; errorPassword = ''; }"
-                class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden border border-gray-100">
-                <form method="POST" action="{{ route('member.profil.hapus-akun') }}"
-                    @submit="if (punyaPassword && passwordHapus.trim() === '') { errorPassword = 'Masukkan password kamu untuk konfirmasi.'; $event.preventDefault(); return; } menghapusAkun = true;">
-                    @csrf
-                    @method('DELETE')
-                    <div class="p-6 text-center">
-                        <div class="w-14 h-14 bg-red-100 text-red-600 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
-                            ⚠
-                        </div>
-                        <h3 class="font-extrabold text-gray-900 text-base">Hapus Akun?</h3>
-                        <p class="text-xs text-gray-500 mt-2">
-                            Yakin ingin menghapus akun kamu? Tindakan ini tidak bisa dibatalkan.
-                        </p>
-                        <template x-if="punyaPassword">
-                            <div class="mt-4 text-left">
-                                <label class="block text-xs font-bold text-gray-700 mb-1">Konfirmasi Password</label>
-                                <div class="relative">
-                                    <input x-model="passwordHapus"
-                                        name="password"
-                                        :type="lihatPassword ? 'text' : 'password'"
-                                        placeholder="Masukkan password kamu"
-                                        :class="errorPassword ? 'border-red-400 focus:ring-red-400/20' : 'border-gray-200 focus:ring-brand-800/10'"
-                                        class="w-full rounded-xl border bg-gray-50 px-4 py-2.5 pr-10 text-sm text-gray-800 outline-none transition focus:border-brand-800 focus:ring-2">
-                                    <button type="button" @click="lihatPassword = !lihatPassword"
-                                        class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 transition">
-                                        <svg x-show="!lihatPassword" viewBox="0 0 24 24" fill="none" class="h-4 w-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                        <svg x-show="lihatPassword" x-cloak viewBox="0 0 24 24" fill="none" class="h-4 w-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                                    </button>
-                                </div>
-                                <p x-show="errorPassword" x-text="errorPassword" class="mt-1 text-xs text-red-600 font-semibold"></p>
-                            </div>
-                        </template>
-                    </div>
-                    <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-center gap-3">
-                        <button type="button" @click="modalHapusAkunTerbuka = false; passwordHapus = ''; errorPassword = '';" :disabled="menghapusAkun"
-                            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-lg transition text-gray-700 disabled:opacity-50">Batal</button>
-                        <button type="submit" :disabled="menghapusAkun"
-                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg transition shadow-xs disabled:opacity-50">
-                            <span x-show="!menghapusAkun">Hapus</span>
-                            <span x-show="menghapusAkun" x-cloak>Menghapus...</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
     </div>
 
 
@@ -494,59 +445,6 @@
                     </div>
                 </template>
             </form>
-
-            {{-- Delete Account Modal --}}
-            <div x-show="modalHapusAkunTerbuka" x-cloak x-transition
-                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[99999] p-4">
-                <div @click.away="if (!menghapusAkun) { modalHapusAkunTerbuka = false; passwordHapus = ''; errorPassword = ''; }"
-                     class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100">
-                    <form method="POST" action="{{ route('member.profil.hapus-akun') }}"
-                          @submit="if (punyaPassword && passwordHapus.trim() === '') { errorPassword = 'Enter your password to confirm.'; $event.preventDefault(); return; } menghapusAkun = true;">
-                        @csrf
-                        @method('DELETE')
-                        <div class="p-6 text-center space-y-2">
-                            <div class="w-14 h-14 bg-red-100 text-red-600 font-bold flex items-center justify-center rounded-2xl text-2xl mx-auto mb-3">
-                                ⚠
-                            </div>
-                            <h3 class="font-extrabold text-gray-900 text-base">Delete Account?</h3>
-                            <p class="text-xs text-gray-500 leading-relaxed">
-                                Are you sure you want to delete your account? This action is permanent and cannot be undone.
-                            </p>
-                            <template x-if="punyaPassword">
-                                <div class="mt-4 text-left">
-                                    <label class="block text-xs font-bold text-gray-700 mb-1">Confirm Password</label>
-                                    <div class="relative">
-                                        <input x-model="passwordHapus"
-                                               name="password"
-                                               :type="lihatPassword ? 'text' : 'password'"
-                                               placeholder="Enter your password"
-                                               :class="errorPassword ? 'border-red-400 focus:ring-red-400/20' : 'border-gray-200 focus:ring-brand-800/10'"
-                                               class="w-full rounded-xl border bg-gray-50 px-4 py-2.5 pr-10 text-sm text-gray-800 outline-none transition focus:border-brand-800 focus:ring-2">
-                                        <button type="button" @click="lihatPassword = !lihatPassword"
-                                                class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600 transition">
-                                            <svg x-show="!lihatPassword" viewBox="0 0 24 24" fill="none" class="h-4 w-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                            <svg x-show="lihatPassword" x-cloak viewBox="0 0 24 24" fill="none" class="h-4 w-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                                        </button>
-                                    </div>
-                                    <p x-show="errorPassword" x-text="errorPassword" class="mt-1 text-xs text-red-600 font-semibold"></p>
-                                </div>
-                            </template>
-                        </div>
-                        <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-center gap-3">
-                            <button type="button" @click="modalHapusAkunTerbuka = false; passwordHapus = ''; errorPassword = '';" :disabled="menghapusAkun"
-                                    class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 font-bold text-xs rounded-xl transition text-gray-700 disabled:opacity-50 cursor-pointer">
-                                Cancel
-                            </button>
-                            <button type="submit" :disabled="menghapusAkun"
-                                    class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition shadow-xs disabled:opacity-50 cursor-pointer">
-                                <span x-show="!menghapusAkun">Yes, Delete Account</span>
-                                <span x-show="menghapusAkun" x-cloak>Deleting...</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
         </div>
     </div>
 

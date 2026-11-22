@@ -21,7 +21,7 @@
         <div class="mt-6 space-y-3">
             <a href="{{ route('member.settings.ubah-password') }}"
                 onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                class="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-4 text-sm font-medium text-gray-800 shadow-xs transition active:scale-[0.99] hover:text-brand-800">
+                class="flex items-center justify-between rounded-2xl border border-[#3C2415]/10 bg-[#FDFBF7] p-4 text-sm font-medium text-gray-800 shadow-xs transition active:scale-[0.99] hover:text-brand-800">
                 <div class="flex items-center gap-3">
                     <span class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-25 text-brand-800">
                         <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
@@ -118,7 +118,7 @@
                         <p class="text-xs text-[#3C2415]/70 leading-relaxed">
                             Have questions or trouble accessing your account? Our concierge is ready to help.
                         </p>
-                        <a href="https://wa.me/6281313365554" target="_blank"
+                        <a href="https://wa.me/62882000768044" target="_blank"
                            class="inline-flex items-center gap-1.5 text-xs font-bold text-[#8E1E26] hover:underline pt-2">
                             Contact Bakery Concierge &rarr;
                         </a>

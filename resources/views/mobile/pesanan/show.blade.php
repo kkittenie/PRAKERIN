@@ -1,4 +1,4 @@
-@extends('mobile.layout', ['title' => 'Status Pesanan'])
+@extends('mobile.layout', ['title' => 'Order Status'])
 
 @php
     $detailRingkas = ($detailRingkas ?? $transaksi->detailTransaksi ?? $transaksi->detail ?? collect())
@@ -97,7 +97,7 @@
                class="absolute left-0 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition active:bg-gray-50">
                 <span class="rotate-180">@include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4'])</span>
             </a>
-            <h1 class="text-sm font-bold text-gray-900">Status Pesanan</h1>
+            <h1 class="text-sm font-bold text-gray-900">Order Status</h1>
         </div>
 
         <div class="lg:hidden">
@@ -106,20 +106,20 @@
             <div>
                 @if ($dibatalkan)
                     <div class="mt-6 lg:mt-0 rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-                        <p class="text-xs font-bold text-red-600">Pesanan Dibatalkan</p>
+                        <p class="text-xs font-bold text-red-600">Order Cancelled</p>
                         <p class="mt-1 text-[11px] text-red-400">{{ $transaksi->kode_transaksi }}</p>
                         @if ($transaksi->alasan_pembatalan)
                             <p class="mt-3 text-[11px] text-red-600 whitespace-pre-line">
-                                <span class="font-bold">Alasan:</span> {{ $transaksi->alasan_pembatalan }}
+                                <span class="font-bold">Reason:</span> {{ $transaksi->alasan_pembatalan }}
                             </p>
                         @endif
                         {{-- Info refund cuma relevan kalau member sudah bayar / upload bukti --}}
                         @if ($lunas || $transaksi->bukti_pembayaran)
                             @php
-                                $pesanCs = "Halo Saisho, pesanan {$transaksi->kode_transaksi} saya dibatalkan. Saya ingin menanyakan pengembalian dana.";
+                                $pesanCs = "Halo Daisy Bakery, order {$transaksi->kode_transaksi} was cancelled. I would like to inquire about refund.";
                             @endphp
                             <p class="mt-2 text-[11px] font-medium text-red-500">
-                                Hubungi <a href="https://wa.me/6281313365554?text={{ urlencode($pesanCs) }}" target="_blank" rel="noopener" class="font-bold">customer service</a> untuk pengembalian dana.
+                                Contact <a href="https://wa.me/62882000768044?text={{ urlencode($pesanCs) }}" target="_blank" rel="noopener" class="font-bold">customer service</a> for refund inquiries.
                             </p>
                         @endif
                     </div>
@@ -127,7 +127,7 @@
 
                 @if (! $dibatalkan && $transaksi->status_pesanan === \App\Models\Transaksi::STATUS_SIAP_DIAMBIL && $transaksi->kode_pickup)
                     <div class="mt-6 lg:mt-0 rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 p-6 text-center text-white">
-                        <p class="text-xs font-bold uppercase tracking-wide text-white/70">Tunjukkan kode ini ke kasir</p>
+                        <p class="text-xs font-bold uppercase tracking-wide text-white/70">Present this pickup code to cashier</p>
                         <p class="mt-2 text-4xl font-extrabold tracking-[0.3em]">{{ $transaksi->kode_pickup }}</p>
                         <p class="mt-3 text-[11px] text-white/60">{{ $transaksi->kode_transaksi }}</p>
                     </div>
@@ -184,7 +184,7 @@
                 @endunless
 
                 <div class="mt-6">
-                    <h2 class="text-sm font-bold text-gray-900">Detail Pesanan</h2>
+                    <h2 class="text-sm font-bold text-gray-900">Order Details</h2>
                     <div class="mt-2 divide-y divide-gray-100 rounded-2xl border border-gray-100">
                         @foreach ($detailRingkas as $detail)
                             <div class="flex items-center justify-between p-3">
@@ -232,7 +232,7 @@
                             @endforeach
                         @elseif ($transaksi->diskon > 0)
                             <div class="flex justify-between text-xs text-gray-500">
-                                <span>Diskon</span>
+                                <span>Discount</span>
                                 <span class="font-semibold text-red-500">- Rp {{ number_format($transaksi->diskon, 0, ',', '.') }}</span>
                             </div>
                         @endif
@@ -241,8 +241,8 @@
                             <span class="font-extrabold text-gray-900">Rp {{ number_format($transaksi->total_bayar, 0, ',', '.') }}</span>
                         </div>
                         <div class="!mt-2 flex justify-between text-[11px] text-gray-400">
-                            <span>Status Pembayaran</span>
-                            <span class="font-semibold {{ $transaksi->status_pembayaran === 'Lunas' ? 'text-green-600' : 'text-amber-600' }}">{{ $transaksi->status_pembayaran }}</span>
+                            <span>Payment Status</span>
+                            <span class="font-semibold {{ $transaksi->status_pembayaran === 'Lunas' ? 'text-green-600' : 'text-amber-600' }}">{{ $transaksi->status_pembayaran === 'Lunas' ? 'Paid' : 'Unpaid' }}</span>
                         </div>
                     </div>
                 </div>
@@ -329,9 +329,9 @@
                     <div class="mt-2 flex items-start gap-2 rounded-2xl border border-red-100 bg-red-50 p-3">
                         <svg viewBox="0 0 24 24" fill="none" class="mt-1 h-4 w-4 shrink-0 text-red-500"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L14.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         <div class="text-[11px] text-red-600">
-                            <span class="font-bold">Bukti pembayaran ditolak:</span>
+                            <span class="font-bold">Payment receipt rejected:</span>
                             <div class="whitespace-pre-line mt-0.5">{{ $transaksi->catatan_penolakan }}</div>
-                            <div class="mt-1 font-medium">Silakan upload ulang bukti pembayaran yang benar.</div>
+                            <div class="mt-1 font-medium">Please re-upload a valid payment receipt.</div>
                         </div>
                     </div>
                 @endif
@@ -448,11 +448,11 @@
             </div>
         @elseif ($transaksi->bukti_pembayaran)
             <div class="mt-4">
-                <h2 class="text-sm font-bold text-gray-900">Bukti Pembayaran</h2>
+                <h2 class="text-sm font-bold text-gray-900">Payment Receipt</h2>
 
                 <button type="button" onclick="openSheet('modal-bukti-pembayaran')"
                         class="group relative mt-2 h-20 w-20 overflow-hidden rounded-2xl border border-gray-100">
-                    <img src="{{ asset('storage/' . $transaksi->bukti_pembayaran) }}" alt="Bukti pembayaran"
+                    <img src="{{ asset('storage/' . $transaksi->bukti_pembayaran) }}" alt="Payment receipt"
                          class="h-full w-full object-cover">
                     <span class="absolute inset-0 flex items-center justify-center bg-black/0 transition group-active:bg-black/30">
                         <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5 text-white opacity-0 transition group-active:opacity-100">
@@ -471,7 +471,7 @@
             <dialog id="modal-bukti-pembayaran" class="modal-center fixed inset-0 m-auto w-[calc(100%-2.5rem)] max-w-sm rounded-3xl p-0 shadow-2xl border-0 sm:max-w-md md:max-w-lg">
                 <div class="p-4">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-sm font-bold text-gray-900">Bukti Pembayaran</h3>
+                        <h3 class="text-sm font-bold text-gray-900">Payment Receipt</h3>
                         <button type="button" onclick="closeSheet('modal-bukti-pembayaran')"
                                 class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-50 hover:text-gray-600">
                             <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -536,7 +536,7 @@
                         $pesanCs = "Halo Daisy Bakery, pesanan {$transaksi->kode_transaksi} saya dibatalkan. Saya ingin menanyakan pengembalian dana.";
                     @endphp
                     <p class="mt-4 text-xs font-medium text-[#3C2415]/70">
-                        Need assistance? Contact our <a href="https://wa.me/6281313365554?text={{ urlencode($pesanCs) }}" target="_blank" rel="noopener" class="font-bold text-[#8E1E26] underline">Customer Support via WhatsApp</a>.
+                        Need assistance? Contact our <a href="https://wa.me/62882000768044?text={{ urlencode($pesanCs) }}" target="_blank" rel="noopener" class="font-bold text-[#8E1E26] underline">Customer Support via WhatsApp</a>.
                     </p>
                 @endif
             </div>

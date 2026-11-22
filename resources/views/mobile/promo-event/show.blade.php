@@ -22,12 +22,12 @@
 
                     get pesanStokTidakCukup() {
                         if (!this.stokTidakCukup) return '';
-                        let pesan = 'Stok tidak mencukupi. Sisa stok ' + this.stokTersedia + ' paket';
+                        let pesan = 'Insufficient stock. Only ' + this.stokTersedia + ' package(s) available';
                         if (this.terpakai >= this.stokTersedia) {
-                            return pesan + ' dan semuanya sudah ada di keranjang kamu.';
+                            return pesan + ' and all are already in your cart.';
                         }
                         return this.terpakai > 0
-                            ? pesan + ', ' + this.terpakai + ' paket sudah ada di keranjang kamu.'
+                            ? pesan + ', ' + this.terpakai + ' package(s) already in your cart.'
                             : pesan + '.';
                     },
 
@@ -36,8 +36,8 @@
                     },
 
                     get labelTidakBisa() {
-                        if (this.habis) return 'Stok Habis';
-                        if (this.stokTidakCukup) return 'Stok Tidak Cukup';
+                        if (this.habis) return 'Sold Out';
+                        if (this.stokTidakCukup) return 'Out of Stock';
                         return '';
                     },
 
@@ -95,7 +95,7 @@
                 <a href="{{ $sedangUbah ? route('member.checkout.index') : route('member.menu') }}"
                     onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
                     class="absolute left-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow-md transition active:scale-95 active:bg-gray-50"
-                    aria-label="Kembali">
+                    aria-label="Back">
                     <span class="rotate-180">
                         @include('mobile.components.icon-chevron-right', ['class' => 'h-5 w-5'])
                     </span>
@@ -106,7 +106,7 @@
                 </span>
 
                 <span x-show="habis" x-cloak class="absolute left-4 bottom-4 rounded-full bg-gray-900/80 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
-                    Stok Habis
+                    Sold Out
                 </span>
 
             </div>
@@ -139,13 +139,13 @@
             <div x-show="berakhir" x-cloak class="flex items-start gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-rose-800 border border-rose-100">
                 @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
                 <p class="text-[11px] font-semibold leading-relaxed">
-                    Yah, promo event ini baru saja berakhir. Yuk cek menu lain yang masih tersedia.
+                    This promo event has ended. Please check out our other delicious items!
                 </p>
             </div>
 
             @if ($promoEvent->produk && $promoEvent->produk->deskripsi)
                 <div class="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-gray-50/50 lg:p-4">
-                    <h3 class="hidden lg:block text-xs font-bold text-gray-900 mb-1">Deskripsi Produk</h3>
+                    <h3 class="hidden lg:block text-xs font-bold text-gray-900 mb-1">Product Description</h3>
                     <p class="text-xs leading-relaxed text-gray-500 lg:text-gray-600 whitespace-pre-line">
                         {{ $promoEvent->produk->deskripsi }}
                     </p>
@@ -155,26 +155,26 @@
             <div x-show="habis" x-cloak class="flex items-start gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-amber-800 border border-amber-100">
                 @include('mobile.components.icon-clock', ['class' => 'h-4 w-4 shrink-0 mt-0.5'])
                 <p class="text-[11px] font-semibold leading-relaxed">
-                    Produk sedang diproduksi.
+                    Product is being freshly baked.
                 </p>
             </div>
 
             <div>
                 <h3 class="text-xs font-bold text-gray-900">
-                    Catatan
+                    Order Notes
                     <span class="font-medium text-gray-400">
-                        (opsional)
+                        (optional)
                     </span>
                 </h3>
 
-                <textarea x-model="catatan" rows="2" maxlength="255" placeholder="Contoh: kurangi manis, dll."
+                <textarea x-model="catatan" rows="2" maxlength="255" placeholder="e.g. Less sweet, extra napkins, etc."
                     class="mt-2 w-full resize-none rounded-2xl border border-gray-200 p-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700"></textarea>
             </div>
 
             {{-- Spacer pas di bawah kolom catatan agar scroll pas sampai batas kolom catatan --}}
             <div class="h-24 lg:hidden" aria-hidden="true"></div>
 
-            <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-gray-100 bg-white px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 lg:static lg:w-full lg:border-t-0 lg:px-0 lg:pt-2 lg:shadow-none">
+            <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full border-t border-[#3C2415]/10 bg-[#FAF5E8]/95 backdrop-blur-md px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] sm:px-8 md:px-10 lg:static lg:w-full lg:border-t-0 lg:px-0 lg:pt-2 lg:shadow-none">
 
             {{-- Pesan kalau jumlah yang diminta melebihi sisa stok --}}
             <template x-if="stokTidakCukup">
@@ -198,7 +198,7 @@
                             <div class="flex shrink-0 items-center gap-1.5 rounded-full bg-white">
                                 <button type="button" @click="kurangiJumlah()"
                                     class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-brand-800 text-brand-800 transition active:scale-90"
-                                    aria-label="Kurangi jumlah">
+                                    aria-label="Decrease quantity">
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                         <path d="M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
                                     </svg>
@@ -209,7 +209,7 @@
 
                                 <button type="button" @click="tambahJumlah()"
                                     class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm transition active:scale-90"
-                                    aria-label="Tambah jumlah">
+                                    aria-label="Increase quantity">
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
                                             stroke-linecap="round" />
@@ -220,7 +220,7 @@
                             <button type="submit" :disabled="tidakBisaPesan"
                                 :class="tidakBisaPesan ? 'opacity-50 cursor-not-allowed' : ''"
                                 class="flex min-w-0 flex-1 lg:max-w-[260px] items-center justify-center rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]"
-                                x-text="berakhir ? 'Promo sudah berakhir' : (tidakBisaPesan ? labelTidakBisa : ('Update – Rp ' + total.toLocaleString('id-ID')))">
+                                x-text="berakhir ? 'Promo has ended' : (tidakBisaPesan ? labelTidakBisa : ('Update – Rp ' + total.toLocaleString('id-ID')))">
                             </button>
 
                         </div>
@@ -242,7 +242,7 @@
                         <div class="flex shrink-0 items-center gap-1.5 rounded-full bg-white">
                             <button type="button" @click="kurangiJumlah()"
                                 class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-brand-800 text-brand-800 transition active:scale-90"
-                                aria-label="Kurangi jumlah">
+                                aria-label="Decrease quantity">
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                     <path d="M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
                                 </svg>
@@ -253,7 +253,7 @@
 
                             <button type="button" @click="tambahJumlah()"
                                 class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-800 text-white shadow-sm transition active:scale-90"
-                                aria-label="Tambah jumlah">
+                                aria-label="Increase quantity">
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                     <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5"
                                         stroke-linecap="round" />
@@ -264,7 +264,7 @@
                         <button type="submit" :disabled="tidakBisaPesan"
                             :class="tidakBisaPesan ? 'opacity-50 cursor-not-allowed' : ''"
                             class="flex min-w-0 flex-1 lg:max-w-[260px] items-center justify-between rounded-full bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
-                            <span x-text="berakhir ? 'Promo berakhir' : (tidakBisaPesan ? labelTidakBisa : 'Add')"></span>
+                            <span x-text="berakhir ? 'Promo ended' : (tidakBisaPesan ? labelTidakBisa : 'Add')"></span>
                             <span x-show="!tidakBisaPesan" x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                         </button>
                     </div>
@@ -275,9 +275,9 @@
 
             @else
 
-                <button type="button" onclick="bukaModalLoginRequired('Pesan')"
+                <button type="button" onclick="bukaModalLoginRequired('Ordering')"
                     class="flex w-full items-center justify-between rounded-2xl bg-brand-800 px-6 py-3.5 text-sm font-bold text-white shadow-sm transition active:scale-[0.99]">
-                    <span>Login untuk Pesan</span>
+                    <span>Sign In to Order</span>
                     <span x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
                 </button>
 

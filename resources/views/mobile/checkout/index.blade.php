@@ -7,12 +7,12 @@
             display: none !important;
         }
 
-        /* Sticky checkout header */
+        /* Sticky checkout header (matches warm cream canvas #FAF5E8) */
         .checkout-sticky-header {
             position: sticky;
             top: 0;
             z-index: 40;
-            background: rgba(255, 255, 255, 0.96);
+            background: rgba(250, 245, 232, 0.96);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
         }
@@ -42,15 +42,15 @@
         }
     }">
         <div
-            class="checkout-sticky-header relative -mx-5 -mt-6 flex h-14 items-center justify-center border-b border-gray-100 px-5 sm:-mx-8 md:-mx-10 lg:-mx-12 lg:hidden">
+            class="checkout-sticky-header relative -mx-5 -mt-6 flex h-14 items-center justify-center border-b border-[#3C2415]/10 px-5 sm:-mx-8 md:-mx-10 lg:-mx-12 lg:hidden">
             <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
-                class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-600 transition active:bg-gray-100 lg:hidden">
+                class="absolute left-5 flex h-8 w-8 items-center justify-center rounded-full border border-[#3C2415]/20 bg-white text-[#3A221B] shadow-xs active:scale-95 transition lg:hidden">
                 <span class="rotate-180">
                     @include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4'])
                 </span>
             </a>
 
-            <h1 class="text-sm font-bold text-gray-900">
+            <h1 class="text-sm font-extrabold text-[#3A221B] font-display">
                 Checkout
             </h1>
         </div>
@@ -59,20 +59,31 @@
 
             <div class="lg:col-span-7 space-y-5">
 
-                <div class="mt-5 flex items-center gap-3 rounded-2xl bg-brand-50 p-3.5 lg:mt-0">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-brand-800 shadow-xs">
-                        @include('mobile.components.icon-home', ['class' => 'h-5 w-5'])
+                {{-- Top Pick Up Store Hero Card (Dark Chocolate & Strawberry Patisserie Theme) --}}
+                <div class="mt-5 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#3C2415] to-[#5A3825] p-4 text-white shadow-md lg:mt-0 select-none">
+                    {{-- Strawberry watermark in background --}}
+                    <span class="pointer-events-none absolute -right-3 -bottom-3 h-20 w-20 opacity-15 select-none rotate-12">
+                        <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="h-full w-full object-contain">
                     </span>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-[10px] font-bold uppercase tracking-wide text-brand-700">
-                            Pick Up di
-                        </p>
-                        <p class="truncate text-xs font-bold text-gray-900">
-                            {{ $storeNama }}
-                        </p>
-                        <p class="truncate text-[11px] text-gray-500">
-                            {{ $storeAlamat }}
-                        </p>
+
+                    <div class="relative z-10 flex items-center gap-3.5">
+                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FAF5E8] p-2 text-[#3C2415] shadow-xs border border-white/20">
+                            <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Daisy Bakery" class="h-full w-full object-contain">
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="h-3.5 w-3.5 object-contain">
+                                <span class="text-[10px] font-black uppercase tracking-wider text-[#FFCAD4]">
+                                    Pick Up At
+                                </span>
+                            </div>
+                            <p class="truncate text-sm font-extrabold text-[#FAF5E8]">
+                                {{ $storeNama }}
+                            </p>
+                            <p class="truncate text-xs text-[#FAF5E8]/80 font-medium">
+                                {{ $storeAlamat }}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -80,14 +91,14 @@
                      keranjang dan saat checkout, jadi dicek ulang tiap halaman ini dibuka. --}}
                 @if (! empty($peringatanStok))
                     <div class="rounded-2xl border border-red-200 bg-red-50 p-3.5">
-                        <p class="text-xs font-bold text-red-700">Stok ada yang berubah</p>
+                        <p class="text-xs font-bold text-red-700">Stock changes detected</p>
                         <ul class="mt-1.5 list-disc space-y-0.5 pl-4 text-[11px] text-red-700">
                             @foreach ($peringatanStok as $pesanStok)
                                 <li>{{ $pesanStok }}</li>
                             @endforeach
                         </ul>
                         <p class="mt-1.5 text-[11px] text-red-600">
-                            Ubah jumlah atau hapus item tersebut dari keranjang, lalu checkout lagi.
+                            Please adjust the quantity or remove affected items from your cart, then checkout again.
                         </p>
                     </div>
                 @endif
@@ -114,7 +125,7 @@
                                 @if (!empty($item['is_reward_stamp']))
                                     <div class="mb-1">
                                         <span class="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800">
-                                            🎁 Hadiah Stamp (Gratis)
+                                            🎁 Stamp Treat (Free)
                                         </span>
                                     </div>
                                 @endif
@@ -417,14 +428,14 @@
         <div class="mt-5">
 
             <p class="text-xs font-bold text-gray-900">
-                Catatan untuk Pesanan (opsional)
+                Order Notes (optional)
             </p>
 
 
             <form id="form-checkout" method="POST" action="{{ route('member.checkout.store') }}">
                 @csrf
 
-                <textarea name="catatan" rows="2" maxlength="255" placeholder="Contoh: tolong pisah kemasan, dll."
+                <textarea name="catatan" rows="2" maxlength="255" placeholder="e.g. Please separate packaging, special candle request, etc."
                     class="mt-2 w-full resize-none rounded-2xl border border-gray-200 p-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700"></textarea>
 
             </form>
@@ -441,7 +452,7 @@
         <div class="mt-5 lg:mt-0">
 
             <p class="text-xs font-bold text-gray-900">
-                Voucher Diskon
+                Vouchers & Savings
             </p>
 
             @php
@@ -467,11 +478,11 @@
                                 </p>
                                 @if ($diskonVoucher > 0)
                                     <p class="mt-0.5 text-[11px] font-semibold text-brand-700">
-                                        Hemat Rp {{ number_format($diskonVoucher, 0, ',', '.') }} 🎉
+                                        Save Rp {{ number_format($diskonVoucher, 0, ',', '.') }} 🎉
                                     </p>
                                 @else
                                     <p class="mt-0.5 text-[11px] font-semibold text-amber-700">
-                                        Syarat belum terpenuhi
+                                        Terms not met
                                     </p>
                                 @endif
                             </div>
@@ -483,12 +494,12 @@
                                 @csrf
                                 <input type="hidden" name="voucher_id" value="">
                                 <button type="submit" class="shrink-0 rounded-full border border-gray-300 bg-white px-2.5 py-1.5 text-[10px] font-bold text-gray-500 transition active:scale-95">
-                                    Hapus
+                                    Remove
                                 </button>
                             </form>
                             <button type="button" onclick="openSheet('modal-pilih-voucher')"
                                 class="shrink-0 rounded-full border border-brand-800 bg-white px-3.5 py-1.5 text-[11px] font-bold text-brand-800 transition active:scale-95">
-                                Ganti
+                                Change
                             </button>
                         </div>
 
@@ -512,10 +523,10 @@
 
                             <div class="min-w-0">
                                 <p class="text-[11px] font-bold text-gray-500">
-                                    1 voucher terbaik untukmu
+                                    Best voucher for your order
                                 </p>
                                 <p class="truncate text-xs font-bold text-brand-700">
-                                    Hemat Rp {{ number_format($vtDiskon, 0, ',', '.') }} 🎉
+                                    Save Rp {{ number_format($vtDiskon, 0, ',', '.') }} 🎉
                                 </p>
                             </div>
 
@@ -526,7 +537,7 @@
                             <input type="hidden" name="voucher_id" value="{{ $vtVoucher->id }}">
                             <button type="submit"
                                 class="shrink-0 rounded-full border border-brand-800 px-5 py-1.5 text-[11px] font-bold text-brand-800 transition active:scale-95">
-                                Pakai
+                                Apply
                             </button>
                         </form>
 
@@ -541,9 +552,9 @@
 
                     <span class="text-[11px] font-semibold text-gray-600">
                         @if ($voucherAktif->count() > 0)
-                            Lihat voucher lainnya ({{ $voucherAktif->count() }})
+                            View more vouchers ({{ $voucherAktif->count() }})
                         @else
-                            Belum ada voucher aktif
+                            No active vouchers
                         @endif
                     </span>
 
@@ -563,7 +574,7 @@
         @if (!empty($stampRedemptionsAktif) && $stampRedemptionsAktif->isNotEmpty())
             <div class="mt-4">
                 <p class="text-xs font-bold text-gray-900">
-                    Hadiah Stamp
+                    Stamp Treats
                 </p>
 
                 <div class="mt-2 overflow-hidden rounded-2xl border border-amber-200/90 bg-amber-50/40 shadow-xs">
@@ -575,16 +586,16 @@
                                 </span>
                                 <div class="min-w-0">
                                     <p class="truncate text-xs font-bold text-gray-900">
-                                        {{ $stampRedemptionDipilih->jumlah ?: 1 }}x {{ $stampRedemptionDipilih->produk?->nama_produk ?? 'Produk Hadiah' }}
+                                        {{ $stampRedemptionDipilih->jumlah ?: 1 }}x {{ $stampRedemptionDipilih->produk?->nama_produk ?? 'Reward Item' }}
                                     </p>
                                     <p class="mt-0.5 text-[11px] font-semibold text-emerald-700">
-                                        Gratis dari Stamp 🎉
+                                        Free with Stamp 🎉
                                     </p>
                                 </div>
                             </div>
                             <button type="button" onclick="openSheet('modal-pilih-reward-stamp')"
                                 class="shrink-0 rounded-full border border-brand-800 bg-white px-3.5 py-1.5 text-[11px] font-bold text-brand-800 transition active:scale-95 cursor-pointer">
-                                Ganti
+                                Change
                             </button>
                         </div>
                     @else
@@ -596,15 +607,15 @@
                                 </span>
                                 <div class="min-w-0">
                                     <p class="text-xs font-bold text-gray-900">
-                                        {{ $stampRedemptionsAktif->count() }} Hadiah Stamp Siap Diambil
+                                        {{ $stampRedemptionsAktif->count() }} Stamp Rewards Available
                                     </p>
                                     <p class="mt-0.5 text-[11px] text-gray-500">
-                                        Gunakan gratis pada pesanan ini
+                                        Redeem for free on this order
                                     </p>
                                 </div>
                             </div>
                             <span class="rounded-full bg-brand-800 px-3 py-1 text-[11px] font-bold text-white shadow-xs">
-                                Pakai
+                                Apply
                             </span>
                         </button>
                     @endif
@@ -633,7 +644,7 @@
                 <div class="shrink-0 px-6 pt-3">
 
                     <h3 class="text-center text-sm font-bold text-brand-700">
-                        Pilih Voucher
+                        Select Voucher
                     </h3>
 
                 </div>
@@ -671,11 +682,11 @@
                                 <div>
 
                                     <span class="block text-xs font-bold text-gray-900">
-                                        Tanpa Voucher
+                                        No Voucher
                                     </span>
 
                                     <span class="mt-0.5 block text-[11px] text-gray-400">
-                                        Tidak menggunakan voucher
+                                        Do not apply any voucher
                                     </span>
 
                                 </div>
@@ -708,11 +719,11 @@
 
                                 if ($reward) {
                                     if ($reward->jenis_potongan === 'nominal') {
-                                        $potonganLabel = 'Potongan Rp ' . number_format($reward->nominal_potongan, 0, ',', '.');
+                                        $potonganLabel = 'Rp ' . number_format($reward->nominal_potongan, 0, ',', '.') . ' OFF';
                                     } else {
-                                        $potonganLabel = 'Diskon ' . rtrim(rtrim(number_format($reward->persentase, 1, ',', '.'), '0'), ',') . '%';
+                                        $potonganLabel = rtrim(rtrim(number_format($reward->persentase, 1, ',', '.'), '0'), ',') . '% OFF';
                                         if (!is_null($reward->maksimal_potongan)) {
-                                            $potonganLabel .= ' (maks Rp ' . number_format($reward->maksimal_potongan, 0, ',', '.') . ')';
+                                            $potonganLabel .= ' (max Rp ' . number_format($reward->maksimal_potongan, 0, ',', '.') . ')';
                                         }
                                     }
                                 }
@@ -720,7 +731,7 @@
                                 $minBelanja = (float) ($reward->min_pembelian ?? 0);
                                 $voucherTerpilih = $voucherDipilih && $voucherDipilih->id === $voucher->id;
                                 $sisaPakai = max(0, ($voucher->batas_penggunaan_per_member ?: 1) - $voucher->jumlahPemakaianMember($member->id));
-                                $kelayakan = $voucher->kelayakan ?? ['layak' => false, 'pesan' => 'Syarat belum terpenuhi', 'diskon' => 0];
+                                $kelayakan = $voucher->kelayakan ?? ['layak' => false, 'pesan' => 'Terms not met', 'diskon' => 0];
                                 $bisaDipakai = (bool) ($kelayakan['layak'] ?? false);
                             @endphp
 
@@ -744,7 +755,7 @@
                                             </span>
 
                                             <span class="mt-0.5 block text-[11px] text-gray-400">
-                                                Sisa: {{ $sisaPakai }}x · Berlaku s/d {{ $voucher->tanggal_selesai ? $voucher->tanggal_selesai->format('d/m/Y') : 'Seterusnya' }}
+                                                Remaining: {{ $sisaPakai }}x · Valid until {{ $voucher->tanggal_selesai ? $voucher->tanggal_selesai->format('d/m/Y') : 'Ongoing' }}
                                             </span>
 
                                             @if ($potonganLabel)
@@ -755,13 +766,13 @@
 
                                             @if ($minBelanja > 0)
                                                 <span class="block text-[11px] text-gray-400">
-                                                    Min. belanja Rp {{ number_format($minBelanja, 0, ',', '.') }}
+                                                    Min. spend Rp {{ number_format($minBelanja, 0, ',', '.') }}
                                                 </span>
                                             @endif
 
                                             @if (!empty($kelayakan['diskon']) && $kelayakan['diskon'] > 0)
                                                 <span class="mt-1.5 inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                                                    Hemat Rp {{ number_format($kelayakan['diskon'], 0, ',', '.') }}
+                                                    Save Rp {{ number_format($kelayakan['diskon'], 0, ',', '.') }}
                                                 </span>
                                             @endif
                                         </span>
@@ -776,7 +787,7 @@
                                         </span>
                                     @else
                                         <span class="ml-3 shrink-0 rounded-full border border-brand-800 bg-white px-3 py-1 text-[11px] font-bold text-brand-800">
-                                            Pakai
+                                            Apply
                                         </span>
                                     @endif
 
@@ -798,7 +809,7 @@
                                             </span>
 
                                             <span class="mt-0.5 block text-[11px] text-gray-400">
-                                                Sisa: {{ $sisaPakai }}x · Berlaku s/d {{ $voucher->tanggal_selesai ? $voucher->tanggal_selesai->format('d/m/Y') : 'Seterusnya' }}
+                                                Remaining: {{ $sisaPakai }}x · Valid until {{ $voucher->tanggal_selesai ? $voucher->tanggal_selesai->format('d/m/Y') : 'Ongoing' }}
                                             </span>
 
                                             @if ($potonganLabel)
@@ -809,7 +820,7 @@
 
                                             @if ($minBelanja > 0)
                                                 <span class="block text-[11px] text-gray-400">
-                                                    Min. belanja Rp {{ number_format($minBelanja, 0, ',', '.') }}
+                                                    Min. spend Rp {{ number_format($minBelanja, 0, ',', '.') }}
                                                 </span>
                                             @endif
 
@@ -824,7 +835,7 @@
                                     </div>
 
                                     <span class="ml-2 shrink-0 rounded-full bg-gray-200/90 px-2.5 py-1 text-[10px] font-semibold text-gray-500">
-                                        Tidak Berlaku
+                                        Unavailable
                                     </span>
 
                                 </div>
@@ -844,11 +855,11 @@
                                 </span>
 
                                 <p class="mt-3 text-xs font-semibold text-gray-500">
-                                    Belum ada voucher aktif
+                                    No active vouchers
                                 </p>
 
                                 <p class="mt-1 text-[11px] text-gray-400">
-                                    Voucher yang tersedia akan muncul di sini.
+                                    Available vouchers will appear here.
                                 </p>
 
                             </div>
@@ -861,11 +872,11 @@
 
 
                 {{-- Tombol tutup --}}
-                <div class="shrink-0 bg-white px-6 pb-6 pt-4">
+                <div class="shrink-0 bg-[#FAF5E8] px-6 pb-6 pt-4">
 
                     <button type="button" onclick="closeSheet('modal-pilih-voucher')"
                         class="w-full rounded-full bg-brand-700 py-3.5 text-xs font-semibold text-white transition active:bg-brand-800">
-                        Mengerti
+                        Got It
                     </button>
 
                 </div>
@@ -887,10 +898,10 @@
 
                     <div class="shrink-0 px-6 pt-3">
                         <h3 class="text-center text-sm font-bold text-brand-800">
-                            Pilih Hadiah Stamp
+                            Select Stamp Treat
                         </h3>
                         <p class="text-center text-[11px] text-gray-500 mt-0.5">
-                            Pilih hadiah stamp untuk diambil gratis bersamaan pesanan pickup ini.
+                            Select a stamp treat to collect for free with this pickup order.
                         </p>
                     </div>
 
@@ -907,8 +918,8 @@
                                         ✕
                                     </span>
                                     <div>
-                                        <span class="block text-xs font-bold text-gray-900">Tanpa Hadiah Stamp</span>
-                                        <span class="block text-[11px] text-gray-500">Ambil hadiah stamp di waktu lain</span>
+                                        <span class="block text-xs font-bold text-gray-900">No Stamp Treat</span>
+                                        <span class="block text-[11px] text-gray-500">Collect stamp treat at another time</span>
                                     </div>
                                 </div>
                                 <span class="h-5 w-5 rounded-full border-2 flex items-center justify-center {{ !$stampRedemptionDipilih ? 'border-brand-800 bg-brand-800' : 'border-gray-300' }}">
@@ -933,10 +944,10 @@
                                         </span>
                                         <div class="min-w-0">
                                             <p class="truncate text-xs font-bold text-gray-900">
-                                                {{ $redemption->jumlah ?: 1 }}x {{ $produkR?->nama_produk ?? 'Hadiah Stamp' }}
+                                                {{ $redemption->jumlah ?: 1 }}x {{ $produkR?->nama_produk ?? 'Stamp Treat' }}
                                             </p>
                                             <p class="text-[11px] font-semibold text-emerald-700 mt-0.5">
-                                                Gratis · Kode: {{ $redemption->kode_redeem }}
+                                                Free · Code: {{ $redemption->kode_redeem }}
                                             </p>
                                         </div>
                                     </div>
@@ -953,7 +964,7 @@
                     <div class="shrink-0 border-t border-gray-100 p-4">
                         <button type="button" onclick="closeSheet('modal-pilih-reward-stamp')"
                             class="w-full rounded-full bg-gray-100 py-3 text-xs font-semibold text-gray-700 hover:bg-gray-200 cursor-pointer">
-                            Tutup
+                            Close
                         </button>
                     </div>
                 </div>
@@ -967,7 +978,7 @@
         <div class="mt-5">
 
             <h2 class="text-sm font-bold text-gray-900">
-                Rincian Pembayaran
+                Payment Summary
             </h2>
 
             <div class="mt-2 space-y-2">
@@ -1024,7 +1035,7 @@
                     <div class="flex justify-between text-xs text-gray-500">
 
                         <span>
-                            Pajak
+                            Tax
                             ({{ rtrim(rtrim(number_format($pajakPersen, 1, ',', '.'), '0'), ',') }}%)
                         </span>
 
@@ -1040,7 +1051,7 @@
                 <div class="flex justify-between border-t border-dashed border-gray-200 pt-2 text-sm">
 
                     <span class="font-bold text-gray-900">
-                        Total Pembayaran
+                        Total Due
                     </span>
 
                     <span class="font-extrabold text-gray-900">
@@ -1063,8 +1074,8 @@
                     </span>
 
                     <p class="text-[11px] font-semibold text-amber-800">
-                        Kamu berpotensi dapat
-                        <span class="font-extrabold text-brand-700">{{ $poinPotensial }} Saisho Points</span>
+                        You'll earn approx.
+                        <span class="font-extrabold text-brand-700">{{ $poinPotensial }} Daisy Points</span>
                     </p>
 
                 </div>
@@ -1075,11 +1086,11 @@
             <div class="mt-4">
 
                 <p class="text-xs font-bold text-gray-900">
-                    Kebijakan Pembatalan
+                    Cancellation Policy
                 </p>
 
                 <p class="mt-1 text-[11px] leading-relaxed text-gray-400">
-                    Pesanan tidak bisa dibatalkan atau diubah lagi setelah dibuat. Upload bukti dan konfirmasi pembayaran maksimal {{ \App\Models\Transaksi::BATAS_BAYAR_MENIT }} menit setelah pesanan dibuat, kalau tidak pesanan dibatalkan otomatis dan stok dikembalikan. Datang ke kasir sesuai kode pickup untuk mengambil pesanan kamu.
+                    Orders cannot be modified once placed. Please upload your payment receipt and confirm payment within {{ \App\Models\Transaksi::BATAS_BAYAR_MENIT }} minutes, otherwise the order will be automatically cancelled. Present your pickup code at the counter to collect your order.
                 </p>
 
             </div>
@@ -1123,19 +1134,19 @@
                             <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </div>
-                    <h3 class="font-extrabold text-gray-900 text-sm">Hapus dari Keranjang?</h3>
+                    <h3 class="font-extrabold text-gray-900 text-sm">Remove from Cart?</h3>
                     <p class="text-xs text-gray-500 mt-1 leading-relaxed">
-                        Yakin ingin menghapus <span class="font-bold text-gray-800" x-text="itemHapusNama"></span> dari keranjang?
+                        Are you sure you want to remove <span class="font-bold text-gray-800" x-text="itemHapusNama"></span> from your cart?
                     </p>
                 </div>
                 <div class="bg-gray-50/80 px-4 py-3 border-t border-gray-100 flex items-center justify-end gap-2">
                     <button type="button" @click="modalHapusTerbuka = false"
                         class="flex-1 py-2.5 px-3 bg-white hover:bg-gray-100 font-bold text-xs rounded-xl transition text-gray-700 border border-gray-200 active:scale-[0.98]">
-                        Batal
+                        Cancel
                     </button>
                     <button type="button" @click="eksekusiHapus()"
                         class="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition shadow-xs active:scale-[0.98]">
-                        Hapus
+                        Remove
                     </button>
                 </div>
             </div>
@@ -1144,7 +1155,7 @@
     </div>
 
     <div class="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-none
-                       border-t border-gray-100 bg-white/95 px-5 py-4
+                       border-t border-[#3C2415]/10 bg-[#FAF5E8]/95 px-5 py-4
                        backdrop-blur sm:px-8 sm:pb-6
                        md:px-10
                        2xl:max-w-6xl

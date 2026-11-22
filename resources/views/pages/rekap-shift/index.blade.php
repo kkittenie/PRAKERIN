@@ -67,31 +67,41 @@
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Kasir</label>
                         <input type="hidden" name="kasir" :value="pilih">
                         <button type="button" @click="buka = !buka; if (buka) $nextTick(() => $refs.cari.focus())"
-                                class="w-full flex items-center justify-between gap-2 px-3 py-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-lg text-sm text-left">
-                            <span class="truncate" x-text="label"></span>
-                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                :aria-expanded="buka.toString()"
+                                class="daisy-select-trigger">
+                            <span class="daisy-select-label">
+                                <span x-show="pilih !== ''" class="daisy-select-dot"></span>
+                                <span class="truncate" x-text="label"></span>
+                            </span>
+                            <svg class="daisy-select-chevron" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="buka" x-cloak x-transition.opacity
-                             class="absolute z-20 mt-1 w-full min-w-[12rem] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
-                            <div class="p-2">
+                             class="absolute left-0 z-40 mt-1.5 w-full min-w-[13rem] bg-[#FFFDF9] dark:bg-[#241A16] border border-[#3C2415]/15 dark:border-white/14 rounded-2xl shadow-[0_18px_40px_-10px_rgba(58,34,27,0.22)] p-1.5">
+                            <div class="daisy-select-search-box">
                                 <input x-ref="cari" x-model="cari" type="text" placeholder="Cari kasir..."
                                        @keydown.enter.prevent="if (hasil.length) ambil(String(hasil[0].id))"
-                                       class="w-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white rounded-md text-sm">
+                                       class="daisy-select-search">
                             </div>
-                            <ul class="max-h-56 overflow-y-auto pb-1 text-sm text-gray-700 dark:text-gray-300">
+                            <ul class="daisy-select-list custom-scrollbar">
                                 <li x-show="!cari">
                                     <button type="button" @click="ambil('')"
-                                            :class="pilih === '' ? 'font-semibold text-amber-600' : ''"
-                                            class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800">Semua Kasir</button>
+                                            :class="pilih === '' ? 'is-selected' : ''"
+                                            class="daisy-select-option">
+                                        <span class="truncate">Semua Kasir</span>
+                                        <svg x-show="pilih === ''" class="daisy-select-option-check" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    </button>
                                 </li>
                                 <template x-for="k in hasil" :key="k.id">
                                     <li>
-                                        <button type="button" @click="ambil(String(k.id))" x-text="k.nama"
-                                                :class="String(k.id) === pilih ? 'font-semibold text-amber-600' : ''"
-                                                class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800"></button>
+                                        <button type="button" @click="ambil(String(k.id))"
+                                                :class="String(k.id) === pilih ? 'is-selected' : ''"
+                                                class="daisy-select-option">
+                                            <span class="truncate" x-text="k.nama"></span>
+                                            <svg x-show="String(k.id) === pilih" class="daisy-select-option-check" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                        </button>
                                     </li>
                                 </template>
-                                <li x-show="cari && hasil.length === 0" class="px-3 py-2 text-gray-400">Tidak ada yang cocok</li>
+                                <li x-show="cari && hasil.length === 0" class="daisy-select-empty">Tidak ada yang cocok</li>
                             </ul>
                         </div>
                     </div>

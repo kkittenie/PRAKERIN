@@ -141,7 +141,8 @@
             <div class="px-6 pt-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                        <span>🏆 Produk Terlaris</span>
+                        <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-5 h-5 shrink-0">
+                        <span>Produk Terlaris</span>
                         <span id="badgePeriodeTerlaris" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">
                             Hari Ini
                         </span>
@@ -401,6 +402,7 @@ $(document).ready(function() {
     });
     $('#btnResetTahunIniTerlaris').on('click', function() {
         $('#filter_tahun_terlaris').val(thisYearStr);
+        window.DaisyCustomSelect?.sync('#filter_tahun_terlaris');
         updateLabelPeriode();
         if (dtTerlaris) dtTerlaris.ajax.reload();
     });
@@ -427,17 +429,17 @@ document.addEventListener('DOMContentLoaded', function () {
             chart: {
                 type: 'area',
                 height: 350,
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: '"DM Sans", sans-serif',
                 toolbar: { show: false },
                 zoom: { enabled: false },
             },
-            colors: ['#94a3b8', '#10b981'],
+            colors: ['#3A221B', '#8E1E26'],
             fill: {
                 type: 'gradient',
                 gradient: {
                     shadeIntensity: 1,
-                    opacityFrom: 0.35,
-                    opacityTo: 0.05,
+                    opacityFrom: 0.30,
+                    opacityTo: 0.04,
                     stops: [0, 100],
                 },
             },
@@ -452,10 +454,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 fontSize: '13px',
                 fontWeight: 600,
                 labels: {
-                    colors: isDark ? '#d1d5db' : '#374151',
+                    colors: isDark ? '#E8DDD2' : '#3A221B',
                 },
                 markers: {
-                    radius: 3,
+                    radius: 99,
                 },
             },
             xaxis: {
@@ -464,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 axisTicks: { show: false },
                 labels: {
                     style: {
-                        colors: '#9ca3af',
+                        colors: isDark ? '#B9A79B' : '#7D6A60',
                         fontSize: '12px',
                     }
                 }
@@ -479,7 +481,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         return prefix + abs;
                     },
                     style: {
-                        colors: '#9ca3af',
+                        colors: isDark ? '#B9A79B' : '#7D6A60',
                         fontSize: '12px',
                     }
                 }
@@ -493,12 +495,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             },
             grid: {
-                borderColor: isDark ? '#1e293b' : '#f3f4f6',
+                borderColor: isDark ? 'rgba(250,245,232,0.08)' : '#EDE3D2',
                 strokeDashArray: 4,
             },
             markers: {
                 size: 4,
-                strokeColors: isDark ? '#0f172a' : '#fff',
+                strokeColors: isDark ? '#241A16' : '#FFFDF9',
                 strokeWidth: 2,
                 hover: { sizeOffset: 3 },
             },

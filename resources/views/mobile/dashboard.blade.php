@@ -1,4 +1,4 @@
-@extends('mobile.layout', ['title' => 'Beranda'])
+@extends('mobile.layout', ['title' => 'Home'])
 
 @php
     $waCs = '6282000768044';
@@ -59,7 +59,7 @@
                             @foreach ($promoBanners as $banner)
                                 <div class="relative h-full w-full shrink-0 flex-none">
                                     @if (! empty($banner['gambar']))
-                                        <img src="{{ asset($banner['gambar']) }}" alt="Promo Saisho" class="absolute inset-0 h-full w-full object-cover object-center">
+                                        <img src="{{ asset($banner['gambar']) }}" alt="Promo Daisy Bakery" class="absolute inset-0 h-full w-full object-cover object-center">
                                     @else
                                         <div class="absolute inset-0 bg-gradient-to-br {{ $banner['gradient'] }}"></div>
                                     @endif
@@ -173,7 +173,7 @@
                         </svg>
 
                         <p class="text-lg font-extrabold text-gray-900">Hi {{ explode(' ', $member->nama)[0] }}!</p>
-                        <p class="mt-0.5 text-xs text-gray-400">Terima kasih sudah jadi pelanggan setia Saisho.</p>
+                        <p class="mt-0.5 text-xs text-gray-400">Thank you for being a cherished Daisy Bakery member.</p>
 
                         @if ($poinAktif || $tierAktif)
                         <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-dashed border-gray-100 pt-4">
@@ -183,7 +183,7 @@
                                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-50 p-1 text-brand-700">
                                     <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
                                 </span>
-                                {{ number_format($member->poin, 0, ',', '.') }} Poin
+                                {{ number_format($member->poin, 0, ',', '.') }} Points
                             </button>
                             @endif
                             @if ($tierAktif)
@@ -206,8 +206,8 @@
                                 @include('mobile.components.icon-gift', ['class' => 'h-5 w-5'])
                             </span>
                             <span class="min-w-0">
-                                <span class="block truncate text-xs font-bold text-gray-900">Voucher</span>
-                                <span class="block truncate text-[11px] text-gray-400">Lihat katalog</span>
+                                <span class="block truncate text-xs font-bold text-gray-900">Vouchers</span>
+                                <span class="block truncate text-[11px] text-gray-400">Explore rewards</span>
                             </span>
                         </a>
                         <a href="{{ route('member.riwayat') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white/95 backdrop-blur-lg p-4 shadow-sm transition hover:border-brand-200 hover:shadow-md">
@@ -215,8 +215,8 @@
                                 @include('mobile.components.icon-clock', ['class' => 'h-5 w-5'])
                             </span>
                             <span class="min-w-0">
-                                <span class="block truncate text-xs font-bold text-gray-900">Riwayat</span>
-                                <span class="block truncate text-[11px] text-gray-400">Order & Stamp</span>
+                                <span class="block truncate text-xs font-bold text-gray-900">Activity</span>
+                                <span class="block truncate text-[11px] text-gray-400">Orders & stamps</span>
                             </span>
                         </a>
                     </div>
@@ -236,7 +236,7 @@
                                         @include('mobile.components.icon-cake', ['class' => 'h-5 w-5'])
                                     </span>
                                     <div class="min-w-0">
-                                        <p class="text-[11px] font-semibold uppercase tracking-wide text-white/60">Program Stamp</p>
+                                        <p class="text-[11px] font-semibold uppercase tracking-wide text-white/60">Daisy Stamp Club</p>
                                         <p class="truncate text-sm font-extrabold">{{ $program->nama_program }}</p>
                                     </div>
                                 </div>
@@ -260,24 +260,27 @@
 
                             <p class="mt-3 text-xs font-semibold {{ $stampPenuh ? 'text-white' : 'text-white/75' }}">
                                 @if ($stampPenuh)
-                                    Stamp penuh, yuk tukar! 🎉
+                                    Stamp card complete, redeem now! 🎉
                                 @else
-                                    {{ $stampCurrent }}/{{ $stampTarget }} stamp &middot; {{ $stampTarget - $stampCurrent }} lagi untuk tukar hadiah
+                                    {{ $stampCurrent }}/{{ $stampTarget }} stamps &middot; {{ $stampTarget - $stampCurrent }} more to treat
                                 @endif
                             </p>
                         </a>
                     @endisset
                 @else
                     {{-- Guest Welcome Card --}}
-                    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#5a3c27] via-[#704b30] to-[#8b5e3c] p-6 text-white shadow-lg">
-                        <h2 class="mt-2 text-xl font-extrabold tracking-tight">Selamat Datang di Saisho!</h2>
-                        <p class="mt-1 text-xs text-brand-100 leading-relaxed">Nikmati aneka kue, roti & minuman segar spesial. Login sekarang untuk {{ $poinAktif ? 'kumpulkan poin & voucher gratis' : 'dapatkan voucher gratis' }}.</p>
+                    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#3A221B] via-[#4D2E24] to-[#5A3A28] p-6 text-white shadow-lg">
+                        <div class="flex items-center mb-2">
+                            <img src="{{ asset('images/logo/logo-horizontal-light.svg') }}" alt="Daisy Bakery" class="h-8 w-auto object-contain">
+                        </div>
+                        <h2 class="text-xl font-extrabold tracking-tight">Welcome to Daisy Bakery!</h2>
+                        <p class="mt-1 text-xs text-brand-100 leading-relaxed">Handcrafted celebration cakes, daily sourdough & fresh viennoiseries. Sign in now to {{ $poinAktif ? 'collect points & unlock member perks' : 'unlock exclusive member perks' }}.</p>
                         <div class="mt-5 flex items-center gap-3">
                             <a href="{{ route('member.login') }}" class="rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-brand-800 shadow-sm hover:bg-brand-50">
-                                Masuk ke Akun
+                                Sign In
                             </a>
                             <a href="{{ route('member.register') }}" class="rounded-xl border border-white/40 px-4 py-2.5 text-xs font-bold text-white backdrop-blur hover:bg-white/10">
-                                Daftar Sekarang
+                                Join Now
                             </a>
                         </div>
                     </div>
@@ -287,9 +290,9 @@
 
         {{-- Produk pilihan --}}
         <div class="mt-7 lg:mt-10 flex items-center justify-between scroll-fade-up delay-100">
-            <h2 class="text-sm lg:text-base font-bold text-gray-900">Produk Pilihan</h2>
+            <h2 class="text-sm lg:text-base font-bold text-gray-900">Featured Bakes</h2>
             <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-1 text-xs font-bold text-brand-800 hover:underline">
-                Lihat semua
+                View all
                 @include('mobile.components.icon-chevron-right', ['class' => 'h-3.5 w-3.5'])
             </a>
         </div>
@@ -316,9 +319,9 @@
                         <div class="{{ $produk->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
                             @include('mobile.components.icon-cup', ['class' => 'h-10 w-10'])
                         </div>
-                        <span data-promo-badge class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm" style="{{ $adaPromo ? '' : 'display:none' }}">Promo</span>
+                        <span data-promo-badge class="absolute left-2 top-2 rounded-full bg-orange-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-sm" style="{{ $adaPromo ? '' : 'display:none' }}">Special</span>
                         @if ($habis)
-                            <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Stok Habis</span>
+                            <span class="absolute left-2 bottom-2 rounded-full bg-gray-900/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Sold Out</span>
                         @endif
                     </div>
 
@@ -336,7 +339,7 @@
                                     @endphp
                                     <p class="truncate text-xs font-extrabold text-gray-900">
                                         @if($daftarHarga->isEmpty())
-                                            <span class="text-gray-400 italic font-normal text-[10px]">Segera hadir</span>
+                                            <span class="text-gray-400 italic font-normal text-[10px]">Coming soon</span>
                                         @elseif($hargaMin == $hargaMax)
                                             Rp {{ number_format($hargaMin, 0, ',', '.') }}
                                         @else
@@ -359,22 +362,22 @@
                 </a>
             @empty
                 <div class="col-span-full rounded-2xl border border-gray-100 bg-white p-5 text-center text-xs font-medium text-gray-400">
-                    Belum ada produk tersedia saat ini.
+                    No products available at the moment.
                 </div>
             @endforelse
         </div>
 
         {{-- Reward unggulan --}}
         <div class="mt-7 lg:mt-10 flex items-center justify-between scroll-fade-up delay-100">
-            <h2 class="text-sm lg:text-base font-bold text-gray-900">Spesial Katalog Reward</h2>
+            <h2 class="text-sm lg:text-base font-bold text-gray-900">Special Reward Catalog</h2>
             @auth('member')
                 <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'forward');" class="flex items-center gap-1 text-xs font-bold text-brand-800 hover:underline">
-                    Lihat semua
+                    View all
                     @include('mobile.components.icon-chevron-right', ['class' => 'h-3.5 w-3.5'])
                 </a>
             @else
                 <a href="{{ route('member.welcome') }}" class="flex items-center gap-1 text-xs font-bold text-brand-800 hover:underline">
-                    Lihat semua
+                    View all
                     @include('mobile.components.icon-chevron-right', ['class' => 'h-3.5 w-3.5'])
                 </a>
             @endauth
@@ -385,7 +388,7 @@
                 @include('mobile.components.reward-card', ['voucher' => $reward, 'member' => $member])
             @empty
                 <div class="rounded-2xl border border-gray-100 bg-white p-5 text-center text-xs font-medium text-gray-400">
-                    Belum ada reward tersedia saat ini.
+                    No rewards available at the moment.
                 </div>
             @endforelse
         </div>
@@ -461,7 +464,7 @@
 
                             {{-- Center Column: The 3D Cake Centerpiece (No text underneath, ample bottom clearance) --}}
                             <div class="col-span-6 flex flex-col items-center justify-center hero-enter">
-                                <div id="desktop-hero-3d-wrapper" class="relative w-full h-[420px] lg:h-[460px] flex items-center justify-center select-none pb-4">
+                                <div id="desktop-hero-3d-wrapper" class="relative w-full h-[440px] lg:h-[480px] flex items-center justify-center select-none">
                                     <canvas id="desktop-hero-3d-canvas" class="w-full h-full block touch-none cursor-grab active:cursor-grabbing"></canvas>
                                 </div>
                             </div>
@@ -985,9 +988,9 @@
                             <p class="font-ui text-xs font-semibold tracking-wide text-[#8E1E26]">
                                 We are waiting for your visit
                             </p>
-                            <h3 class="font-display text-2xl sm:text-[28px] font-extrabold uppercase tracking-tight text-[#3A221B] leading-tight">
-                                Daisy Bakery Store
-                            </h3>
+                            <div class="flex flex-col items-center justify-center gap-1.5">
+                                <span class="font-display text-sm font-black uppercase tracking-wider text-[#3A221B]">Daisy Bakery Store</span>
+                            </div>
 
                             {{-- Hours Box --}}
                             <div class="pt-2 border-t border-dashed border-[#3A221B]/30">
@@ -1017,9 +1020,8 @@
 
                             {{-- Bottom Brand Mark --}}
                             <div class="pt-2 flex items-center justify-between border-t border-dashed border-[#3A221B]/30">
-                                <div class="flex items-center gap-1.5">
-                                    <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Daisy" class="w-5 h-5 object-contain">
-                                    <span class="font-display font-extrabold text-xs uppercase tracking-wider text-[#3A221B]">Daisy Bakery</span>
+                                <div class="flex items-center">
+                                    <img src="{{ asset('images/logo/logo-horizontal.svg') }}" alt="Daisy Bakery" class="h-7 w-auto object-contain">
                                 </div>
                                 <span class="font-ui text-[10px] font-bold text-[#8E1E26] uppercase">Fresh Daily</span>
                             </div>
@@ -1299,25 +1301,25 @@
                 <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 p-2 text-brand-700">
                     <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
                 </span>
-                <h3 class="mt-3 text-center text-theme-md font-bold text-brand-700">Poin Kamu</h3>
+                <h3 class="mt-3 text-center text-theme-md font-bold text-brand-700">Your Daisy Points</h3>
                 <p class="mt-1 text-center text-theme-sm text-gray-500">
-                    Saat ini kamu punya <span class="font-bold text-gray-800">{{ number_format($member->poin ?? 0, 0, ',', '.') }} poin</span>
+                    You currently have <span class="font-bold text-gray-800">{{ number_format($member->poin ?? 0, 0, ',', '.') }} points</span>
                 </p>
                 <div class="mt-4 text-theme-sm leading-relaxed text-gray-700">
                     <ol class="list-decimal space-y-2 pl-4">
-                        <li>Poin didapat otomatis setiap transaksi selesai, sesuai aturan perolehan poin yang berlaku saat itu (menyesuaikan jumlah belanja).</li>
-                        <li>Poin bisa ditukar dengan voucher diskon atau produk gratis di halaman Tukar Poin.</li>
-                        <li>Poin tidak hangus selama akun member kamu tetap aktif.</li>
+                        <li>Points are earned automatically with every completed transaction based on the active member tier rules.</li>
+                        <li>Points can be redeemed for exclusive discount vouchers and complimentary bakery treats in the Rewards catalog.</li>
+                        <li>Points never expire as long as your membership account remains active.</li>
                     </ol>
                 </div>
             </div>
             <div class="shrink-0 px-6 pb-6 pt-4">
                 <a href="{{ route('member.reward.index') }}" onclick="event.preventDefault(); closeSheet('sheet-info-poin'); setTimeout(() => animateNavigate('{{ route('member.reward.index') }}', 'forward'), 150);"
                    class="block w-full rounded-full bg-brand-700 py-3.5 text-center text-theme-sm font-semibold text-white active:bg-brand-800">
-                    Tukar Poin Sekarang
+                    Redeem Points Now
                 </a>
                 <button type="button" onclick="closeSheet('sheet-info-poin')" class="mt-1 w-full rounded-full py-3 text-theme-sm font-medium text-gray-500">
-                    Tutup
+                    Close
                 </button>
             </div>
         </div>
@@ -1339,7 +1341,7 @@
 
                 @if ($progresTier)
                     <p class="mt-1 text-center text-theme-sm text-gray-500">
-                        Rp {{ number_format($progresTier['transaksi_dibutuhkan'], 0, ',', '.') }} transaksi lagi menuju Tier {{ $progresTier['tier_berikutnya'] }}
+                        Spend Rp {{ number_format($progresTier['transaksi_dibutuhkan'], 0, ',', '.') }} more to unlock Tier {{ $progresTier['tier_berikutnya'] }}
                     </p>
                     <div class="mt-3">
                         <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
@@ -1347,12 +1349,12 @@
                         </div>
                     </div>
                 @else
-                    <p class="mt-1 text-center text-theme-sm text-gray-500">Kamu sudah berada di tier tertinggi ✨</p>
+                    <p class="mt-1 text-center text-theme-sm text-gray-500">You have reached the highest tier ✨</p>
                 @endif
 
                 <div class="mt-5 text-theme-sm leading-relaxed text-gray-700">
-                    <p class="font-bold text-gray-800">Kenapa perlu naik tier?</p>
-                    <p class="mt-1 text-gray-500">Semakin tinggi tier kamu, semakin banyak keuntungan dan promo eksklusif yang bisa kamu nikmati di Saisho.</p>
+                    <p class="font-bold text-gray-800">Why level up your tier?</p>
+                    <p class="mt-1 text-gray-500">The higher your tier, the more exclusive savings, complimentary bakery perks, and VIP privileges you unlock at Daisy Bakery.</p>
                 </div>
 
                 @if (isset($semuaTier) && $semuaTier->isNotEmpty())
@@ -1377,7 +1379,7 @@
             <div class="shrink-0 px-6 pb-6 pt-4">
                 <button type="button" onclick="closeSheet('sheet-info-tier')"
                         class="w-full rounded-full bg-brand-700 py-3.5 text-theme-sm font-semibold text-white active:bg-brand-800">
-                    Mengerti
+                    Got It
                 </button>
             </div>
         </div>

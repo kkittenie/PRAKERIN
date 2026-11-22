@@ -252,8 +252,9 @@
         <div class="col-span-12 xl:col-span-7">
             <div class="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] px-4 pb-3 pt-4 sm:px-6">
                 <div class="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">🏆 Produk Terlaris</h3>
+                    <div class="flex items-center gap-2">
+                        <img src="{{ asset('images/decor/strawberry-2.svg') }}" alt="" class="w-5 h-5 shrink-0">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Produk Terlaris</h3>
                     </div>
                     <a href="{{ route('laporan-penjualan') }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-850 px-4 py-2.5 text-theme-sm font-medium text-gray-700 dark:text-gray-300 shadow-theme-xs hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-white transition">
                         Lihat Laporan
@@ -347,9 +348,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 name: 'Penjualan',
                 data: @json($penjualanBulanan),
             }],
-            colors: ['#a0704a'],
+            colors: ['#8E1E26'],
             chart: {
-                fontFamily: 'Outfit, sans-serif',
+                fontFamily: '"DM Sans", sans-serif',
                 type: 'bar',
                 height: 180,
                 toolbar: { show: false },
@@ -357,8 +358,8 @@ document.addEventListener('DOMContentLoaded', function () {
             plotOptions: {
                 bar: {
                     horizontal: false,
-                    columnWidth: '39%',
-                    borderRadius: 5,
+                    columnWidth: '42%',
+                    borderRadius: 6,
                     borderRadiusApplication: 'end',
                 },
             },
@@ -368,16 +369,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 categories: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
                 axisBorder: { show: false },
                 axisTicks: { show: false },
+                labels: { style: { colors: '#7D6A60', fontSize: '12px' } },
             },
             legend: {
                 show: true,
                 position: 'top',
                 horizontalAlign: 'left',
-                fontFamily: 'Outfit',
+                fontFamily: '"DM Sans", sans-serif',
                 markers: { radius: 99 },
             },
             yaxis: {
                 labels: {
+                    style: { colors: '#7D6A60', fontSize: '12px' },
                     formatter: function (val) {
                         if (val >= 1000000) return 'Rp ' + (val / 1000000).toFixed(1) + ' jt';
                         if (val >= 1000) return 'Rp ' + (val / 1000).toFixed(0) + ' rb';
@@ -385,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             },
-            grid: { yaxis: { lines: { show: true } } },
+            grid: { borderColor: '#EDE3D2', strokeDashArray: 4, yaxis: { lines: { show: true } } },
             fill: { opacity: 1 },
             tooltip: {
                 y: {
@@ -402,9 +405,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (typeof ApexCharts !== 'undefined' && document.querySelector('#chartTargetBulanan')) {
         const gaugeChart = new ApexCharts(document.querySelector('#chartTargetBulanan'), {
             series: [{{ $pencapaianTarget }}],
-            colors: ['#a0704a'],
+            colors: ['#8E1E26'],
             chart: {
-                fontFamily: 'Outfit, sans-serif',
+                fontFamily: '"DM Sans", sans-serif',
                 type: 'radialBar',
                 height: 195,
                 sparkline: { enabled: true },
@@ -414,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     startAngle: -120,
                     endAngle: 120,
                     track: {
-                        background: '#e6e0da',
+                        background: '#EFE5D6',
                         strokeWidth: '97%',
                         margin: 5,
                     },
@@ -425,6 +428,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             offsetY: -2,
                             fontSize: '22px',
                             fontWeight: 'bold',
+                            color: '#3A221B',
                             formatter: function (val) { return val + '%'; },
                         },
                     },
@@ -434,11 +438,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 type: 'gradient',
                 gradient: {
                     shade: 'dark',
-                    shadeIntensity: 0.15,
+                    shadeIntensity: 0.12,
+                    gradientToColors: ['#3A221B'],
                     inverseColors: false,
                     opacityFrom: 1,
                     opacityTo: 1,
-                    stops: [0, 50, 65, 91],
+                    stops: [0, 65, 100],
                 },
             },
             stroke: { lineCap: 'round' },
@@ -461,20 +466,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     data: @json($dataTransaksiHarian),
                 },
             ],
-            colors: ['#a0704a', '#10b981'],
+            colors: ['#8E1E26', '#2C5835'],
             chart: {
-                fontFamily: 'Outfit, sans-serif',
+                fontFamily: '"DM Sans", sans-serif',
                 height: 310,
                 toolbar: { show: false },
                 zoom: { enabled: false },
             },
-            stroke: { width: [2, 2], curve: 'smooth' },
+            stroke: { width: [2.5, 2.5], curve: 'smooth' },
             fill: {
                 type: ['gradient', 'solid'],
                 gradient: {
                     shadeIntensity: 1,
-                    opacityFrom: 0.4,
-                    opacityTo: 0.05,
+                    opacityFrom: 0.32,
+                    opacityTo: 0.04,
                     stops: [0, 100],
                 },
             },
@@ -484,26 +489,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 axisBorder: { show: false },
                 axisTicks: { show: false },
                 labels: {
-                    style: { colors: '#9ca3af', fontSize: '12px' },
+                    style: { colors: '#7D6A60', fontSize: '12px' },
                 },
             },
             yaxis: [
                 {
-                    title: { text: 'Pendapatan', style: { fontSize: '12px', color: '#a39789' } },
+                    title: { text: 'Pendapatan', style: { fontSize: '12px', color: '#7D6A60' } },
                     labels: {
                         formatter: function (val) {
                             if (val >= 1000000) return 'Rp ' + (val / 1000000).toFixed(1) + ' jt';
                             if (val >= 1000) return 'Rp ' + (val / 1000).toFixed(0) + ' rb';
                             return 'Rp ' + val;
                         },
-                        style: { colors: '#a39789', fontSize: '12px' },
+                        style: { colors: '#7D6A60', fontSize: '12px' },
                     },
                 },
                 {
                     opposite: true,
-                    title: { text: 'Transaksi', style: { fontSize: '12px', color: '#a39789' } },
+                    title: { text: 'Transaksi', style: { fontSize: '12px', color: '#7D6A60' } },
                     labels: {
-                        style: { colors: '#a39789', fontSize: '12px' },
+                        style: { colors: '#7D6A60', fontSize: '12px' },
                     },
                 },
             ],
@@ -511,10 +516,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 show: true,
                 position: 'top',
                 horizontalAlign: 'left',
-                fontFamily: 'Outfit',
+                fontFamily: '"DM Sans", sans-serif',
                 markers: { radius: 99 },
             },
-            grid: { borderColor: '#f3efeb', strokeDashArray: 4 },
+            grid: { borderColor: '#EDE3D2', strokeDashArray: 4 },
             tooltip: {
                 shared: true,
                 y: {

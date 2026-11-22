@@ -33,7 +33,7 @@
 
     <div class="relative flex items-start justify-between">
         <div>
-            <p class="text-theme-xs font-medium uppercase tracking-widest text-white/60">Kartu Member</p>
+            <p class="text-theme-xs font-medium uppercase tracking-widest text-white/60">Member Card</p>
             <p class="mt-0.5 text-theme-sm font-semibold">{{ $member->nama }}</p>
         </div>
         @if ($tierAktif)
@@ -48,7 +48,7 @@
         @if ($poinAktif)
             <div>
                 <p class="text-title-sm font-bold leading-none tabular-nums">{{ number_format($member->poin, 0, ',', '.') }}</p>
-                <p class="mt-1 text-theme-xs text-white/60">poin tersedia</p>
+                <p class="mt-1 text-theme-xs text-white/60">points available</p>
             </div>
         @endif
         <p class="ml-auto font-mono text-theme-sm tracking-[0.2em] text-white/70">{{ $nomorSamar }}</p>
@@ -61,9 +61,9 @@
             <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/15">
                 <div class="h-full rounded-full bg-white" style="width: {{ $progres['persen'] }}%"></div>
             </div>
-            <p class="mt-1.5 text-[11px] text-white/60">Rp {{ number_format($progres['transaksi_dibutuhkan'], 0, ',', '.') }} transaksi lagi menuju {{ $progres['tier_berikutnya'] }}</p>
+            <p class="mt-1.5 text-[11px] text-white/60">Rp {{ number_format($progres['transaksi_dibutuhkan'], 0, ',', '.') }} spend needed to unlock {{ $progres['tier_berikutnya'] }}</p>
         </div>
     @else
-        <p class="relative mt-5 text-[11px] text-white/60">Kamu sudah di tier tertinggi ✨</p>
+        <p class="relative mt-5 text-[11px] text-white/60">You've achieved our highest tier ✨</p>
     @endif
 </div>

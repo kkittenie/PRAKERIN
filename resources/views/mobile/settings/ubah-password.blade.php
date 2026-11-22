@@ -69,7 +69,7 @@
                 this.errorLama = '';
 
                 if (!this.passwordLama) {
-                    this.errorLama = 'Masukkan password lama kamu.';
+                    this.errorLama = 'Please enter your current password.';
                     return;
                 }
 
@@ -86,7 +86,7 @@
                 })
                     .then(async response => {
                         const data = await response.json();
-                        if (!response.ok) throw new Error(data.message || 'Password lama salah.');
+                        if (!response.ok) throw new Error(data.message || 'Incorrect current password.');
                         return data;
                     })
                     .then(data => {
@@ -94,12 +94,12 @@
                         if (data.success) {
                             this.gotoStep(2, 'next');
                         } else {
-                            this.errorLama = data.message || 'Password lama salah.';
+                            this.errorLama = data.message || 'Incorrect current password.';
                         }
                     })
                     .catch(error => {
                         this.memverifikasi = false;
-                        this.errorLama = error.message || 'Terjadi kesalahan.';
+                        this.errorLama = error.message || 'An error occurred. Please try again.';
                     });
             }
         }">
@@ -113,7 +113,7 @@
                         stroke-linejoin="round" />
                 </svg>
             </button>
-            <h1 class="text-base font-extrabold text-brand-800">{{ $langsungBuat ? 'Buat Password' : 'Change Password' }}</h1>
+            <h1 class="text-base font-extrabold text-brand-800">{{ $langsungBuat ? 'Create Password' : 'Change Password' }}</h1>
             <span class="w-8"></span>
         </div>
 
@@ -125,10 +125,10 @@
         @endunless
 
         <div x-ref="step1" class="mt-7 {{ $mulaiStep2 ? 'hidden' : '' }}">
-            <p class="text-sm text-gray-500">Masukkan password lama kamu untuk melanjutkan.</p>
+            <p class="text-sm text-gray-500">Enter your current password to continue.</p>
 
             <div class="mt-5">
-                <label for="password_lama" class="text-xs font-semibold text-gray-500">Password Lama</label>
+                <label for="password_lama" class="text-xs font-semibold text-gray-500">Current Password</label>
                 <div class="relative mt-1.5">
                     <input :type="lihatPw.lama ? 'text' : 'password'" id="password_lama" x-model="passwordLama"
                         @keyup.enter="verifikasiPasswordLama()"
@@ -151,7 +151,7 @@
             <button type="button" @click="verifikasiPasswordLama()" :disabled="memverifikasi"
                 class="mt-7 w-full rounded-lg bg-brand-800 py-4 text-sm font-bold uppercase tracking-wide text-white disabled:opacity-60">
                 <span x-show="!memverifikasi">Continue</span>
-                <span x-show="memverifikasi" x-cloak>Memeriksa...</span>
+                <span x-show="memverifikasi" x-cloak>Verifying...</span>
             </button>
         </div>
 
@@ -165,7 +165,7 @@
                 @endunless
 
                 <div>
-                    <label for="password_baru" class="text-xs font-semibold text-gray-500">Password Baru</label>
+                    <label for="password_baru" class="text-xs font-semibold text-gray-500">New Password</label>
                     <div class="relative mt-1.5">
                         <input :type="lihatPw.baru ? 'text' : 'password'" name="password_baru" id="password_baru"
                             class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
@@ -187,7 +187,7 @@
                 </div>
 
                 <div>
-                    <label for="password_baru_confirmation" class="text-xs font-semibold text-gray-500">Ulangi Password Baru</label>
+                    <label for="password_baru_confirmation" class="text-xs font-semibold text-gray-500">Confirm New Password</label>
                     <div class="relative mt-1.5">
                         <input :type="lihatPw.konfirmasi ? 'text' : 'password'" name="password_baru_confirmation" id="password_baru_confirmation"
                             class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
@@ -212,7 +212,7 @@
                 <button type="submit" :disabled="menyimpan"
                     class="w-full rounded-lg bg-brand-800 py-4 text-sm font-bold uppercase tracking-wide text-white disabled:opacity-60">
                     <span x-show="!menyimpan">Save New Password</span>
-                    <span x-show="menyimpan" x-cloak>Menyimpan...</span>
+                    <span x-show="menyimpan" x-cloak>Saving...</span>
                 </button>
             </form>
         </div>
@@ -327,7 +327,7 @@
                         <p class="text-[11px] text-[#3C2415]/70 leading-relaxed">
                             If you no longer recall your current password, contact our Bakery Concierge for identity verification and recovery.
                         </p>
-                        <a href="https://wa.me/6281313365554" target="_blank"
+                        <a href="https://wa.me/62882000768044" target="_blank"
                            class="inline-flex items-center gap-1.5 text-xs font-bold text-[#8E1E26] hover:underline pt-1">
                             Contact Concierge &rarr;
                         </a>

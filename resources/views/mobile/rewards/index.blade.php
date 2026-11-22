@@ -1,4 +1,4 @@
-@extends('mobile.layout', ['title' => 'Voucher Saya'])
+@extends('mobile.layout', ['title' => 'My Vouchers'])
 
 @section('content')
 
@@ -7,12 +7,12 @@
          ═══════════════════════════════════════════════════════════════════════ --}}
     <div class="lg:hidden">
         <div class="page-sticky-header -mx-5 -mt-6 px-5 pb-3 pt-6 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10">
-            <h1 class="text-center text-lg font-extrabold text-gray-900">Voucher Saya</h1>
+            <h1 class="text-center text-lg font-extrabold text-gray-900">My Vouchers</h1>
         </div>
 
         {{-- Fore-style underline tabs --}}
         <div class="relative mt-3 grid grid-cols-2 border-b border-gray-100">
-            @foreach (['voucher' => 'Voucher Saya', 'stamp' => 'Stamp'] as $key => $label)
+            @foreach (['voucher' => 'My Vouchers', 'stamp' => 'Stamp Card'] as $key => $label)
                 <button type="button" data-tab="{{ $key }}" onclick="switchVoucherTab('{{ $key }}')"
                         class="voucher-tab relative pb-3 text-center text-[13px] font-bold transition {{ $key === 'voucher' ? 'text-brand-800' : 'text-gray-400 hover:text-gray-600' }}">
                     {{ $label }}
@@ -28,15 +28,15 @@
             <div id="voucher-tab-track" class="flex flex-1 transition-transform duration-300 ease-out">
 
                 {{-- Pane: Voucher Saya --}}
-                <div class="voucher-tab-pane flex shrink-0 flex-col bg-white pt-5" data-pane-index="0">
+                <div class="voucher-tab-pane flex shrink-0 flex-col bg-transparent pt-5" data-pane-index="0">
                     <button type="button" id="stamp-teaser-card" onclick="switchVoucherTab('stamp')"
-                            class="mb-4 flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-[#5a3c27] to-[#8b5e3c] p-4 text-left text-white shadow-sm transition active:scale-[0.99]">
-                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 p-2">
+                            class="mb-4 flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-br from-[#3C2415] to-[#5A3825] p-4 text-left text-white shadow-sm transition active:scale-[0.99]">
+                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FAF5E8] p-2 shadow-xs border border-white/20">
                             <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="" class="h-full w-full object-contain">
                         </span>
                         <div class="min-w-0 flex-1">
-                            <p id="stamp-teaser-title" class="truncate text-sm font-extrabold">Program Stamp</p>
-                            <p id="stamp-teaser-subtitle" class="mt-0.5 text-[11px] text-white/75">Kumpulin stamp, dapatkan hadiah gratis</p>
+                            <p id="stamp-teaser-title" class="truncate text-sm font-extrabold">Daisy Stamp Club</p>
+                            <p id="stamp-teaser-subtitle" class="mt-0.5 text-[11px] text-white/75">Collect stamps with every order for free treats</p>
                         </div>
                         <span class="shrink-0 text-white/60">
                             @include('mobile.components.icon-chevron-right', ['class' => 'h-4 w-4'])
@@ -44,16 +44,16 @@
                     </button>
 
                     <div class="flex items-center justify-between">
-                        <h2 class="text-sm font-bold text-gray-900">Daftar Voucher</h2>
-                        <span class="text-xs text-gray-400">{{ $vouchers->count() }} voucher</span>
+                        <h2 class="text-sm font-bold text-gray-900">Available Vouchers</h2>
+                        <span class="text-xs text-gray-400">{{ $vouchers->count() }} {{ $vouchers->count() > 1 ? 'vouchers' : 'voucher' }}</span>
                     </div>
                     <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 space-y-0">
                         @forelse ($vouchers as $voucher)
                             @include('mobile.components.reward-card', ['voucher' => $voucher, 'member' => $member])
                         @empty
                             @include('mobile.components.empty-state', [
-                                'title' => 'Belum Ada Voucher',
-                                'description' => 'Voucher yang tersedia untuk kamu akan otomatis muncul di sini.',
+                                'title' => 'No Vouchers Available',
+                                'description' => 'Exclusive member vouchers will automatically appear here.',
                                 'icon' => 'icon-ticket',
                                 'iconBg' => 'bg-brand-50',
                                 'iconColor' => 'text-brand-800',
@@ -63,14 +63,14 @@
                 </div>
 
                 {{-- Pane: Stamp --}}
-                <div class="voucher-tab-pane flex shrink-0 flex-col bg-white" data-pane-index="1">
+                <div class="voucher-tab-pane flex shrink-0 flex-col bg-transparent" data-pane-index="1">
                     <div id="stamp-pane-content" class="flex flex-1 flex-col">
                         <div class="flex flex-1 flex-col items-center justify-center py-10 text-center">
                             <svg class="h-6 w-6 animate-spin text-gray-300" viewBox="0 0 24 24" fill="none">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity=".25"/>
                                 <path d="M22 12a10 10 0 0 0-10-10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
                             </svg>
-                            <p class="mt-3 text-xs text-gray-400">Memuat stamp...</p>
+                            <p class="mt-3 text-xs text-gray-400">Loading stamps...</p>
                         </div>
                     </div>
                 </div>
@@ -94,44 +94,7 @@
             {{-- Top Dark Cocoa Banner (Navbar & Narrative) --}}
             <div class="relative w-full bg-[#3C2415] pt-10 pb-8 sm:pb-9 lg:pb-10 xl:pb-12 text-center overflow-hidden">
                 {{-- Background Line Art Bakery Doodles (Cake on Left, Croissant on Right) --}}
-                <div class="pointer-events-none absolute inset-0 opacity-18 select-none overflow-hidden">
-                    {{-- Left Tiered Celebration Cake Line Art Doodle --}}
-                    <svg class="absolute -left-6 lg:left-2 2xl:left-8 top-6 w-72 lg:w-80 h-72 lg:h-80 text-white" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M 40 160 Q 100 172 160 160 Q 100 178 40 160 Z"/>
-                        <path d="M 85 167 L 76 186 L 124 186 L 115 167"/>
-                        <path d="M 70 186 Q 100 190 130 186"/>
-                        <path d="M 46 124 L 46 154 Q 100 168 154 154 L 154 124"/>
-                        <path d="M 46 124 Q 100 138 154 124 Q 100 110 46 124 Z"/>
-                        <path d="M 46 154 Q 55 160 64 156 Q 73 162 82 158 Q 91 163 100 163 Q 109 163 118 158 Q 127 162 136 156 Q 145 160 154 154"/>
-                        <path d="M 68 84 L 68 116 Q 100 128 132 116 L 132 84"/>
-                        <path d="M 68 84 Q 100 96 132 84 Q 100 72 68 84 Z"/>
-                        <path d="M 68 88 Q 75 100 82 92 Q 89 103 96 94 Q 104 105 111 94 Q 118 102 125 92 Q 129 98 132 88"/>
-                        <path d="M 98 62 L 98 78 L 102 78 L 102 62 Z"/>
-                        <path d="M 100 52 Q 95 58 100 62 Q 105 58 100 52 Z"/>
-                        <circle cx="82" cy="74" r="7"/>
-                        <path d="M 82 67 Q 87 56 93 58"/>
-                        <circle cx="118" cy="74" r="7"/>
-                        <path d="M 118 67 Q 123 56 129 58"/>
-                        <path d="M 32 65 L 34 73 L 42 75 L 34 77 L 32 85 L 30 77 L 22 75 L 30 73 Z"/>
-                        <path d="M 168 62 L 170 68 L 176 70 L 170 72 L 168 78 L 166 72 L 160 70 L 166 68 Z"/>
-                    </svg>
-
-                    {{-- Right Authentic Curved Crescent Croissant Line Art Doodle --}}
-                    <svg class="absolute -right-6 lg:right-2 2xl:right-8 top-6 w-72 lg:w-80 h-72 lg:h-80 text-white" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M 32 132 C 22 96 46 54 96 46 C 146 38 178 76 170 126 C 156 112 140 102 120 98 C 96 94 70 102 48 120 C 38 125 34 130 32 132 Z"/>
-                        <path d="M 76 50 C 85 74 87 102 76 128 C 92 120 108 120 122 126 C 130 102 128 74 118 48"/>
-                        <path d="M 58 60 C 66 82 68 105 58 126"/>
-                        <path d="M 98 47 C 104 70 105 95 98 122"/>
-                        <path d="M 138 60 C 144 82 142 105 134 124"/>
-                        <path d="M 32 132 C 28 138 30 144 36 142 C 42 140 46 134 48 126"/>
-                        <path d="M 170 126 C 174 133 172 139 166 139 C 160 139 155 133 151 125"/>
-                        <path d="M 86 68 Q 92 84 86 98"/>
-                        <path d="M 108 66 Q 114 84 108 97"/>
-                        <path d="M 85 32 Q 91 22 85 12"/>
-                        <path d="M 105 28 Q 111 18 105 8"/>
-                        <path d="M 125 34 Q 131 24 125 14"/>
-                    </svg>
-                </div>
+                @include('mobile.components.hero-bakery-doodles')
 
                 {{-- Centered Title & Narrative --}}
                 <div class="relative z-10 max-w-4xl mx-auto px-6 text-center">
@@ -464,10 +427,7 @@
 
                             <div class="relative z-10 flex flex-wrap items-start justify-between gap-6 pb-8 border-b border-[#FAF5E8]/15">
                                 <div class="space-y-2 max-w-xl">
-                                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF5E8]/15 border border-[#FAF5E8]/20 text-[10px] font-black uppercase tracking-wider text-amber-200">
-                                        <span>★ DAISY STAMP CLUB</span>
-                                    </div>
-                                    <h2 class="font-display font-black text-2xl lg:text-3xl text-[#FAF5E8] tracking-tight">
+=                                    <h2 class="font-display font-black text-2xl lg:text-3xl text-[#FAF5E8] tracking-tight">
                                         {{ $program->nama_program }}
                                     </h2>
                                     <p class="text-xs sm:text-sm text-[#FAF5E8]/80 font-medium leading-relaxed">
@@ -896,8 +856,8 @@
                 const penuh = data.dataset.penuh === '1';
                 document.getElementById('stamp-teaser-title').textContent = nama;
                 document.getElementById('stamp-teaser-subtitle').textContent = penuh
-                    ? 'Stamp penuh, yuk tukar! 🎉'
-                    : `${cur}/${tgt} stamp terkumpul`;
+                    ? 'Card completed, redeem your treat! 🎉'
+                    : `${cur}/${tgt} stamps collected`;
             }
 
             if (!desktopStampLoaded && document.getElementById('desktop-stamp-sidebar')) {
@@ -930,11 +890,11 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button" onclick="closeSheet('konfirmasi-tukar-stamp')"
-                        class="w-full rounded-2xl border border-gray-200 bg-white py-3 text-xs font-bold text-gray-600 hover:bg-gray-50 active:scale-[0.99] cursor-pointer">
+                        class="w-full rounded-2xl border border-[#3C2415]/15 bg-[#FAF5E8] py-3 text-xs font-bold text-[#3C2415] hover:bg-[#3C2415]/5 active:scale-[0.99] cursor-pointer">
                         Cancel
                     </button>
                     <button type="submit"
-                        class="w-full rounded-2xl bg-[#5a3c27] py-3 text-xs font-bold text-white shadow-md hover:bg-[#4a3020] active:scale-[0.99] cursor-pointer">
+                        class="w-full rounded-2xl bg-[#3C2415] py-3 text-xs font-bold text-white shadow-md hover:bg-[#2D1B10] active:scale-[0.99] cursor-pointer">
                         Yes, Redeem
                     </button>
                 </div>
