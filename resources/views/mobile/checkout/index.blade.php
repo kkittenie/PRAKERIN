@@ -216,12 +216,12 @@
                             </div>
 
                             {{-- Product image --}}
-                            <div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-gray-50">
+                            <div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-gray-50 flex items-center justify-center p-1">
 
                                 @if ($item['foto'])
 
                                     <img src="{{ asset('storage/' . $item['foto']) }}" alt="{{ $item['nama_produk'] }}"
-                                        class="h-full w-full object-cover">
+                                        class="h-full w-full object-contain">
 
                                 @else
 
@@ -1266,10 +1266,10 @@
                         <div class="rounded-[28px] bg-[#F5ECE3] border border-[#3C2415]/10 p-6 transition-all duration-200 hover:shadow-sm">
                             <div class="flex items-start gap-5">
                                 {{-- Thumbnail --}}
-                                <div class="h-24 w-24 shrink-0 rounded-2xl overflow-hidden bg-white/70 border border-[#3C2415]/10 flex items-center justify-center relative shadow-xs">
+                                <div class="h-24 w-24 shrink-0 rounded-2xl overflow-hidden bg-white/80 border border-[#3C2415]/10 flex items-center justify-center relative shadow-xs p-2">
                                     @if ($item['foto'])
                                         <img src="{{ asset('storage/' . $item['foto']) }}" alt="{{ $item['nama_produk'] }}"
-                                             class="h-full w-full object-cover select-none pointer-events-none">
+                                             class="h-full w-full object-contain filter drop-shadow-xs select-none pointer-events-none transition-transform duration-200 hover:scale-105">
                                     @else
                                         <div class="text-[#3C2415]/20">
                                             @include('mobile.components.icon-cup', ['class' => 'h-10 w-10'])
@@ -1422,6 +1422,33 @@
 
             {{-- RIGHT COLUMN: Pickup Store, Vouchers, Payment Summary (5 cols) --}}
             <div class="lg:col-span-5 lg:sticky lg:top-24 space-y-6">
+
+                {{-- Top Pick Up Store Card (Daisy Bakery Vintage Patisserie Theme) --}}
+                <div class="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#3C2415] to-[#5A3825] p-5 text-white shadow-sm select-none">
+                    <span class="pointer-events-none absolute -right-3 -bottom-3 h-24 w-24 opacity-15 select-none rotate-12">
+                        <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="h-full w-full object-contain">
+                    </span>
+
+                    <div class="relative z-10 flex items-center gap-3.5">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#FAF5E8] p-2.5 text-[#3C2415] shadow-xs border border-white/20">
+                            <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Daisy Bakery" class="h-full w-full object-contain">
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="h-3.5 w-3.5 object-contain">
+                                <span class="text-[10px] font-black uppercase tracking-wider text-[#FFCAD4]">
+                                    Pick Up At
+                                </span>
+                            </div>
+                            <p class="truncate text-sm font-extrabold text-[#FAF5E8]">
+                                {{ $storeNama }}
+                            </p>
+                            <p class="truncate text-xs text-[#FAF5E8]/80 font-medium">
+                                {{ $storeAlamat }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
                 
                 {{-- Vouchers & Discounts --}}
                 <div class="rounded-[28px] bg-[#F5ECE3] border border-[#3C2415]/10 p-6 space-y-3.5">
@@ -1788,4 +1815,33 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            ['form-checkout', 'form-checkout-desktop'].forEach(function (formId) {
+                const form = document.getElementById(formId);
+                if (!form) return;
+
+                form.addEventListener('submit', function (e) {
+                    if (form.dataset.submitting === 'true') {
+                        e.preventDefault();
+                        return false;
+                    }
+                    form.dataset.submitting = 'true';
+
+                    setTimeout(function () {
+                        const btns = document.querySelectorAll('button[form="' + formId + '"]');
+                        btns.forEach(function (btn) {
+                            btn.disabled = true;
+                            btn.classList.add('opacity-75', 'cursor-wait');
+                            const span = btn.querySelector('span');
+                            if (span) {
+                                span.textContent = 'Processing Order...';
+                            }
+                        });
+                    }, 50);
+                });
+            });
+        });
+    </script>
 @endsection

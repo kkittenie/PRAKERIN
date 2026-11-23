@@ -611,7 +611,7 @@
                             <div>
                                 <span class="text-[10px] font-bold uppercase tracking-widest text-amber-200 block">STORE &amp; OVEN HOURS</span>
                                 <h4 class="font-display font-bold text-lg text-white mt-0.5">Daisy Bakery Store Bandung</h4>
-                                <p class="text-xs text-[#FAF5E8]/70 mt-0.5">Jl. Cendrawasih 42, Bandung &bull; Open Daily 06:00 – 20:00 WIB</p>
+                                <p class="text-xs text-[#FAF5E8]/70 mt-0.5">Jl. Jalan 40, Cirebon &bull; Open Daily 06:00 – 20:00 WIB</p>
                             </div>
                         </div>
 

@@ -41,6 +41,18 @@ class CheckoutController extends Controller
             }
 
             if (MemberCart::isEmpty()) {
+                if ($member) {
+                    $pesananTerbaru = Transaksi::where('member_id', $member->id)
+                        ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP)
+                        ->where('created_at', '>=', now()->subSeconds(30))
+                        ->latest()
+                        ->first();
+
+                    if ($pesananTerbaru) {
+                        return redirect()->route('member.pesanan.show', $pesananTerbaru);
+                    }
+                }
+
                 return redirect()->route('member.menu')->with('error', 'Your cart is still empty.');
             }
 
@@ -271,6 +283,18 @@ class CheckoutController extends Controller
             }
 
             if (MemberCart::isEmpty()) {
+                if ($member) {
+                    $pesananTerbaru = Transaksi::where('member_id', $member->id)
+                        ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP)
+                        ->where('created_at', '>=', now()->subSeconds(30))
+                        ->latest()
+                        ->first();
+
+                    if ($pesananTerbaru) {
+                        return redirect()->route('member.pesanan.show', $pesananTerbaru);
+                    }
+                }
+
                 return redirect()->route('member.menu')->with('error', 'Your cart is still empty.');
             }
 

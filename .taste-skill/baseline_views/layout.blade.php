@@ -460,7 +460,6 @@
             @yield('content')
         </main>
 
-        {{-- Fore App Style Bottom Navigation (Mobile Only) --}}
         @unless(request()->routeIs('member.profil') || request()->routeIs('member.produk.show') || request()->routeIs('member.checkout.index'))
         <nav class="sticky bottom-0 z-30 w-full bg-[#FAF5E8]/95 backdrop-blur-md border-t border-[rgba(74,46,39,0.12)] px-4 sm:px-8 py-2 lg:hidden font-ui">
             <div class="grid grid-cols-5 items-end gap-1 text-center">

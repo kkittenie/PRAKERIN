@@ -2,6 +2,19 @@
     'subtitle' => 'Freshly Baked Everyday',
 ])
 
+{{-- Cek secara instan sebelum render DOM: lewati animasi jika hanya reload / aksi di halaman yang sama --}}
+<script>
+    (function () {
+        try {
+            var curr = window.location.pathname;
+            var last = sessionStorage.getItem('daisy_nav_page');
+            if (last && last === curr) {
+                document.write('<style>#daisy-wave-loader{display:none!important;pointer-events:none!important;visibility:hidden!important;}</style>');
+            }
+        } catch (e) {}
+    })();
+</script>
+
 <div id="daisy-wave-loader"
      class="daisy-wave-loader"
      aria-hidden="true"
@@ -41,6 +54,18 @@
         const loader = document.getElementById('daisy-wave-loader');
         if (!loader || loader.dataset.bound === '1') return;
         loader.dataset.bound = '1';
+
+        const curr = window.location.pathname;
+        const last = sessionStorage.getItem('daisy_nav_page');
+        sessionStorage.setItem('daisy_nav_page', curr);
+
+        // Hanya jalankan animasi wave loader jika PINDAH HALAMAN (pathname berbeda).
+        // Jika tetap di halaman yang sama (upload bukti, konfirmasi, aksi form back, reload), langsung selesai tanpa animasi.
+        if (last && last === curr) {
+            loader.classList.add('is-done');
+            loader.style.display = 'none';
+            return;
+        }
 
         const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         let drained = false;

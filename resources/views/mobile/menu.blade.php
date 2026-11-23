@@ -750,42 +750,78 @@
                                 {{-- 2. Category Bundling Items (If any) --}}
                                 @foreach ($kategoriBundling as $bundling)
                                     <div x-show="matchesSearch('{{ addslashes($bundling->nama_bundling) }}')"
-                                         class="rounded-[32px] bg-[#F5ECE3] p-7 transition-shadow duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-md">
+                                         class="rounded-[32px] bg-[#F5ECE3] border border-[#3C2415]/10 p-7 transition-all duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-lg hover:-translate-y-1">
                                         <a href="{{ route('member.bundling.show', $bundling) }}"
                                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                            class="block group/card">
-                                            <div class="relative h-56 w-full mb-4 flex items-center justify-center">
+                                            <div class="relative h-56 w-full mb-4 rounded-2xl bg-white/50 border border-[#3C2415]/5 flex items-center justify-center p-4 overflow-hidden">
                                                 @if ($bundling->foto)
                                                     <img src="{{ asset('storage/' . $bundling->foto) }}" alt="{{ $bundling->nama_bundling }}"
-                                                         class="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                                         class="max-h-full max-w-full object-contain filter drop-shadow-md transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
                                                 @else
                                                     <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
                                                         @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
                                                     </div>
                                                 @endif
-                                                <span class="absolute left-2.5 top-2.5 rounded-full bg-[#8E1E26] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                                                    Value Bundle
+
+                                                <span class="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#8E1E26] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+                                                    <span>🎁</span> Value Bundle
                                                 </span>
+
+                                                @if ($bundling->harga_asli > $bundling->harga)
+                                                    <span class="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#2E6F40] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs">
+                                                        Save {{ $bundling->hemat_persen }}%
+                                                    </span>
+                                                @endif
+
+                                                @if ($bundling->perlu_diproduksi)
+                                                    <span class="absolute left-3 bottom-3 rounded-full bg-[#3C2415]/85 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-xs">
+                                                        Sold Out
+                                                    </span>
+                                                @endif
                                             </div>
-                                            <p class="text-[11px] font-semibold text-[#9C8C80] uppercase tracking-wider mb-1">BUNDLING</p>
-                                            <h3 class="font-display font-bold text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">{{ $bundling->nama_bundling }}</h3>
+
+                                            <div class="flex items-center justify-between gap-2 mb-1">
+                                                <span class="text-[11px] font-black text-[#8E1E26] uppercase tracking-wider">
+                                                    BUNDLING • {{ $bundling->jumlah_produk }} PCS
+                                                </span>
+                                                @if ($bundling->items->isNotEmpty())
+                                                    <span class="text-[10px] text-[#7C6558] font-bold">
+                                                        {{ $bundling->items->count() }} Varieties
+                                                    </span>
+                                                @endif
+                                            </div>
+
+                                            <h3 class="font-display font-black text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">
+                                                {{ $bundling->nama_bundling }}
+                                            </h3>
+
+                                            @if ($bundling->items->isNotEmpty())
+                                                <p class="text-xs text-[#7C6558] mt-1.5 line-clamp-1 italic">
+                                                    Includes: {{ $bundling->items->map(fn($it) => ($it->qty > 1 ? $it->qty . 'x ' : '') . ($it->produk?->nama_produk ?? 'Bake'))->take(2)->join(', ') }}{{ $bundling->items->count() > 2 ? ' +' . ($bundling->items->count() - 2) . ' more' : '' }}
+                                                </p>
+                                            @elseif ($bundling->deskripsi)
+                                                <p class="text-xs text-[#7C6558] mt-1.5 line-clamp-2">
+                                                    {{ $bundling->deskripsi }}
+                                                </p>
+                                            @endif
                                         </a>
 
                                         <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between gap-3">
                                             <div class="min-w-0">
-                                                @if ($bundling->harga_asli > $bundling->harga_bundling)
+                                                @if ($bundling->harga_asli > $bundling->harga)
                                                     <p class="truncate text-xs text-[#9C8C80] line-through font-sans">
                                                         Rp {{ number_format($bundling->harga_asli, 0, ',', '.') }}
                                                     </p>
                                                 @endif
-                                                <p class="truncate text-base lg:text-lg font-extrabold text-[#3C2415] font-sans">
-                                                    Rp {{ number_format($bundling->harga_bundling, 0, ',', '.') }}
+                                                <p class="truncate text-base lg:text-xl font-display font-black text-[#3C2415]">
+                                                    Rp {{ number_format($bundling->harga, 0, ',', '.') }}
                                                 </p>
                                             </div>
 
                                             <a href="{{ route('member.bundling.show', $bundling) }}"
                                                onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                                               class="group/btn inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
+                                               class="group/btn inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
                                                 <span>SHOP</span>
                                                 <span class="inline-block transition-transform duration-200 group-hover/btn:rotate-90 text-sm leading-none font-bold">+</span>
                                             </a>
@@ -796,37 +832,72 @@
                                 {{-- 3. Category Promo Event Items (If any) --}}
                                 @foreach ($kategoriPromoEvent as $promoEvent)
                                     <div x-show="matchesSearch('{{ addslashes($promoEvent->nama_event) }}')"
-                                         class="rounded-[32px] bg-[#F5ECE3] p-7 transition-shadow duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-md">
+                                         class="rounded-[32px] bg-[#F5ECE3] border border-[#3C2415]/10 p-7 transition-all duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-lg hover:-translate-y-1">
                                         <a href="{{ route('member.promo-event.show', $promoEvent) }}"
                                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                            class="block group/card">
-                                            <div class="relative h-56 w-full mb-4 flex items-center justify-center">
-                                                @if ($promoEvent->produk && $promoEvent->produk->foto)
-                                                    <img src="{{ asset('storage/' . $promoEvent->produk->foto) }}" alt="{{ $promoEvent->nama_event }}"
-                                                         class="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                            <div class="relative h-56 w-full mb-4 rounded-2xl bg-white/50 border border-[#3C2415]/5 flex items-center justify-center p-4 overflow-hidden">
+                                                @if ($promoEvent->foto)
+                                                    <img src="{{ asset('storage/' . $promoEvent->foto) }}" alt="{{ $promoEvent->nama_event }}"
+                                                         class="max-h-full max-w-full object-contain filter drop-shadow-md transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
                                                 @else
                                                     <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
                                                         @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
                                                     </div>
                                                 @endif
-                                                <span class="absolute left-2.5 top-2.5 rounded-full bg-[#8E1E26] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                                                    Special Event
+
+                                                <span class="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#8E1E26] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+                                                    <span>★</span> Special Event
                                                 </span>
+
+                                                @if ($promoEvent->harga_asli > $promoEvent->harga_event)
+                                                    <span class="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#2E6F40] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs">
+                                                        Save {{ $promoEvent->hemat_persen }}%
+                                                    </span>
+                                                @endif
+
+                                                @if ($promoEvent->perlu_diproduksi)
+                                                    <span class="absolute left-3 bottom-3 rounded-full bg-[#3C2415]/85 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-xs">
+                                                        Sold Out
+                                                    </span>
+                                                @endif
                                             </div>
-                                            <p class="text-[11px] font-semibold text-[#9C8C80] uppercase tracking-wider mb-1">PROMO EVENT</p>
-                                            <h3 class="font-display font-bold text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">{{ $promoEvent->nama_event }}</h3>
+
+                                            <div class="flex items-center justify-between gap-2 mb-1">
+                                                <span class="text-[11px] font-black text-[#8E1E26] uppercase tracking-wider">
+                                                    EVENT PROMO • {{ $promoEvent->isi_event }} PCS PACK
+                                                </span>
+                                                @if ($promoEvent->produk)
+                                                    <span class="text-[10px] text-[#7C6558] font-bold truncate max-w-[120px]">
+                                                        {{ $promoEvent->produk->nama_produk }}
+                                                    </span>
+                                                @endif
+                                            </div>
+
+                                            <h3 class="font-display font-black text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">
+                                                {{ $promoEvent->nama_event }}
+                                            </h3>
+
+                                            <p class="text-xs text-[#7C6558] mt-1.5 line-clamp-1 italic">
+                                                Special pack of {{ $promoEvent->isi_event }}x {{ $promoEvent->produk?->nama_produk ?? 'Fresh Bake' }}
+                                            </p>
                                         </a>
 
                                         <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between gap-3">
                                             <div class="min-w-0">
-                                                <p class="truncate text-base lg:text-lg font-extrabold text-[#3C2415] font-sans">
-                                                    Rp {{ number_format($promoEvent->harga_diskon ?? 0, 0, ',', '.') }}
+                                                @if ($promoEvent->harga_asli > $promoEvent->harga_event)
+                                                    <p class="truncate text-xs text-[#9C8C80] line-through font-sans">
+                                                        Rp {{ number_format($promoEvent->harga_asli, 0, ',', '.') }}
+                                                    </p>
+                                                @endif
+                                                <p class="truncate text-base lg:text-xl font-display font-black text-[#3C2415]">
+                                                    Rp {{ number_format($promoEvent->harga_event, 0, ',', '.') }}
                                                 </p>
                                             </div>
 
                                             <a href="{{ route('member.promo-event.show', $promoEvent) }}"
                                                onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                                               class="group/btn inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
+                                               class="group/btn inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
                                                 <span>SHOP</span>
                                                 <span class="inline-block transition-transform duration-200 group-hover/btn:rotate-90 text-sm leading-none font-bold">+</span>
                                             </a>
@@ -853,42 +924,78 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10">
                             @foreach ($desktopBundlingLainnya as $bundling)
                                 <div x-show="matchesSearch('{{ addslashes($bundling->nama_bundling) }}')"
-                                     class="rounded-[32px] bg-[#F5ECE3] p-7 transition-shadow duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-md">
+                                     class="rounded-[32px] bg-[#F5ECE3] border border-[#3C2415]/10 p-7 transition-all duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-lg hover:-translate-y-1">
                                     <a href="{{ route('member.bundling.show', $bundling) }}"
                                        onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                        class="block group/card">
-                                        <div class="relative h-56 w-full mb-4 flex items-center justify-center">
+                                        <div class="relative h-56 w-full mb-4 rounded-2xl bg-white/50 border border-[#3C2415]/5 flex items-center justify-center p-4 overflow-hidden">
                                             @if ($bundling->foto)
                                                 <img src="{{ asset('storage/' . $bundling->foto) }}" alt="{{ $bundling->nama_bundling }}"
-                                                     class="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                                     class="max-h-full max-w-full object-contain filter drop-shadow-md transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
                                             @else
                                                 <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
                                                     @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
                                                 </div>
                                             @endif
-                                            <span class="absolute left-2.5 top-2.5 rounded-full bg-[#8E1E26] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                                                Value Bundle
+
+                                            <span class="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#8E1E26] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+                                                <span>🎁</span> Value Bundle
                                             </span>
+
+                                            @if ($bundling->harga_asli > $bundling->harga)
+                                                <span class="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#2E6F40] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs">
+                                                    Save {{ $bundling->hemat_persen }}%
+                                                </span>
+                                            @endif
+
+                                            @if ($bundling->perlu_diproduksi)
+                                                <span class="absolute left-3 bottom-3 rounded-full bg-[#3C2415]/85 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-xs">
+                                                    Sold Out
+                                                </span>
+                                            @endif
                                         </div>
-                                        <p class="text-[11px] font-semibold text-[#9C8C80] uppercase tracking-wider mb-1">BUNDLING</p>
-                                        <h3 class="font-display font-bold text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">{{ $bundling->nama_bundling }}</h3>
+
+                                        <div class="flex items-center justify-between gap-2 mb-1">
+                                            <span class="text-[11px] font-black text-[#8E1E26] uppercase tracking-wider">
+                                                BUNDLING • {{ $bundling->jumlah_produk }} PCS
+                                            </span>
+                                            @if ($bundling->items->isNotEmpty())
+                                                <span class="text-[10px] text-[#7C6558] font-bold">
+                                                    {{ $bundling->items->count() }} Varieties
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        <h3 class="font-display font-black text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">
+                                            {{ $bundling->nama_bundling }}
+                                        </h3>
+
+                                        @if ($bundling->items->isNotEmpty())
+                                            <p class="text-xs text-[#7C6558] mt-1.5 line-clamp-1 italic">
+                                                Includes: {{ $bundling->items->map(fn($it) => ($it->qty > 1 ? $it->qty . 'x ' : '') . ($it->produk?->nama_produk ?? 'Bake'))->take(2)->join(', ') }}{{ $bundling->items->count() > 2 ? ' +' . ($bundling->items->count() - 2) . ' more' : '' }}
+                                            </p>
+                                        @elseif ($bundling->deskripsi)
+                                            <p class="text-xs text-[#7C6558] mt-1.5 line-clamp-2">
+                                                {{ $bundling->deskripsi }}
+                                            </p>
+                                        @endif
                                     </a>
 
                                     <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between gap-3">
                                         <div class="min-w-0">
-                                            @if ($bundling->harga_asli > $bundling->harga_bundling)
+                                            @if ($bundling->harga_asli > $bundling->harga)
                                                 <p class="truncate text-xs text-[#9C8C80] line-through font-sans">
                                                     Rp {{ number_format($bundling->harga_asli, 0, ',', '.') }}
                                                 </p>
                                             @endif
-                                            <p class="truncate text-base lg:text-lg font-extrabold text-[#3C2415] font-sans">
-                                                Rp {{ number_format($bundling->harga_bundling, 0, ',', '.') }}
+                                            <p class="truncate text-base lg:text-xl font-display font-black text-[#3C2415]">
+                                                Rp {{ number_format($bundling->harga, 0, ',', '.') }}
                                             </p>
                                         </div>
 
                                         <a href="{{ route('member.bundling.show', $bundling) }}"
                                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                                           class="group/btn inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
+                                           class="group/btn inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
                                             <span>SHOP</span>
                                             <span class="inline-block transition-transform duration-200 group-hover/btn:rotate-90 text-sm leading-none font-bold">+</span>
                                         </a>
@@ -898,35 +1005,78 @@
 
                             @foreach ($desktopPromoEventLainnya as $promoEvent)
                                 <div x-show="matchesSearch('{{ addslashes($promoEvent->nama_event) }}')"
-                                     class="rounded-[32px] bg-[#F5ECE3] p-7 transition-shadow duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-md">
+                                     class="rounded-[32px] bg-[#F5ECE3] border border-[#3C2415]/10 p-7 transition-all duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-lg hover:-translate-y-1">
                                     <a href="{{ route('member.promo-event.show', $promoEvent) }}"
                                        onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                        class="block group/card">
-                                        <div class="relative h-56 w-full mb-4 flex items-center justify-center">
-                                            @if ($promoEvent->produk && $promoEvent->produk->foto)
-                                                <img src="{{ asset('storage/' . $promoEvent->produk->foto) }}" alt="{{ $promoEvent->nama_event }}"
-                                                     class="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                        <div class="relative h-56 w-full mb-4 rounded-2xl bg-white/50 border border-[#3C2415]/5 flex items-center justify-center p-4 overflow-hidden">
+                                            @if ($promoEvent->foto)
+                                                <img src="{{ asset('storage/' . $promoEvent->foto) }}" alt="{{ $promoEvent->nama_event }}"
+                                                     class="max-h-full max-w-full object-contain filter drop-shadow-md transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
                                             @else
                                                 <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
                                                     @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
                                                 </div>
                                             @endif
-                                            <span class="absolute left-2.5 top-2.5 rounded-full bg-[#8E1E26] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                                                Special Event
+
+                                            <span class="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#8E1E26] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+                                                <span>★</span> Special Event
                                             </span>
+
+                                            @if ($promoEvent->harga_asli > $promoEvent->harga_event)
+                                                <span class="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#2E6F40] px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs">
+                                                    Save {{ $promoEvent->hemat_persen }}%
+                                                </span>
+                                            @endif
+
+                                            @if ($promoEvent->perlu_diproduksi)
+                                                <span class="absolute left-3 bottom-3 rounded-full bg-[#3C2415]/85 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-xs">
+                                                    Sold Out
+                                                </span>
+                                            @endif
                                         </div>
-                                        <p class="text-[11px] font-semibold text-[#9C8C80] uppercase tracking-wider mb-1">PROMO EVENT</p>
-                                        <h3 class="font-display font-bold text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">{{ $promoEvent->nama_event }}</h3>
+
+                                        <div class="flex items-center justify-between gap-2 mb-1">
+                                            <span class="text-[11px] font-black text-[#8E1E26] uppercase tracking-wider">
+                                                EVENT PROMO • {{ $promoEvent->isi_event }} PCS PACK
+                                            </span>
+                                            @if ($promoEvent->produk)
+                                                <span class="text-[10px] text-[#7C6558] font-bold truncate max-w-[120px]">
+                                                    {{ $promoEvent->produk->nama_produk }}
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        <h3 class="font-display font-black text-lg lg:text-xl text-[#3C2415] leading-snug line-clamp-2">
+                                            {{ $promoEvent->nama_event }}
+                                        </h3>
+
+                                        <p class="text-xs text-[#7C6558] mt-1.5 line-clamp-1 italic">
+                                            Special pack of {{ $promoEvent->isi_event }}x {{ $promoEvent->produk?->nama_produk ?? 'Fresh Bake' }}
+                                        </p>
                                     </a>
 
                                     <div class="mt-6 pt-4 border-t border-[#3C2415]/10 flex items-center justify-between gap-3">
                                         <div class="min-w-0">
-                                            <p class="truncate text-base lg:text-lg font-extrabold text-[#3C2415] font-sans">
-                                                Rp {{ number_format($promoEvent->harga_diskon ?? 0, 0, ',', '.') }}
+                                            @if ($promoEvent->harga_asli > $promoEvent->harga_event)
+                                                <p class="truncate text-xs text-[#9C8C80] line-through font-sans">
+                                                    Rp {{ number_format($promoEvent->harga_asli, 0, ',', '.') }}
+                                                </p>
+                                            @endif
+                                            <p class="truncate text-base lg:text-xl font-display font-black text-[#3C2415]">
+                                                Rp {{ number_format($promoEvent->harga_event, 0, ',', '.') }}
                                             </p>
                                         </div>
 
                                         <a href="{{ route('member.promo-event.show', $promoEvent) }}"
+                                           onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
+                                           class="group/btn inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
+                                            <span>SHOP</span>
+                                            <span class="inline-block transition-transform duration-200 group-hover/btn:rotate-90 text-sm leading-none font-bold">+</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
                                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                            class="group/btn inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
                                             <span>SHOP</span>

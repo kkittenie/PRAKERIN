@@ -141,13 +141,13 @@
         <div class="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
             <div class="relative -mx-5 -mt-6 aspect-square w-auto overflow-hidden bg-gray-50 sm:-mx-8 md:-mx-10 lg:mx-0 lg:mt-0 lg:rounded-2xl lg:aspect-square lg:w-full">
 
-                @if ($bundling->gambar)
-                    <img src="{{ asset('storage/' . $bundling->gambar) }}" alt="{{ $bundling->nama_bundling }}"
-                        class="h-full w-full object-cover"
+                @if ($bundling->foto)
+                    <img src="{{ asset('storage/' . $bundling->foto) }}" alt="{{ $bundling->nama_bundling }}"
+                        class="max-h-full max-w-full object-contain filter drop-shadow-md"
                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 @endif
 
-                <div class="{{ $bundling->gambar ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
+                <div class="{{ $bundling->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
                     @include('mobile.components.icon-cup', ['class' => 'h-20 w-20'])
                 </div>
 

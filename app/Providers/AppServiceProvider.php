@@ -30,6 +30,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (is_dir(resource_path('views/admin')) && !file_exists(resource_path('views/pages'))) {
+            @symlink('admin', resource_path('views/pages'));
+        }
+
         URL::forceRootUrl(config('app.url'));
 
         RedirectIfAuthenticated::redirectUsing(function ($request) {

@@ -55,7 +55,7 @@ def strip_desktop_only_sections(rel_path: str, text: str) -> str:
         pattern = re.compile(r'\{\{--\s*═+\s*DESKTOP VIEW.*?@include\(\'mobile\.components\.floating-cart\'\)', flags=re.DOTALL)
         text = pattern.sub("@include('mobile.components.floating-cart')", text)
         return text
-    if rel_path == 'produk/show.blade.php':
+    if rel_path in ['produk/show.blade.php', 'bundling/show.blade.php', 'promo-event/show.blade.php']:
         pattern = re.compile(r'\{\{--\s*═+\s*DESKTOP VIEW.*?@endsection', flags=re.DOTALL)
         return pattern.sub("@endsection", text)
     if rel_path == 'checkout/index.blade.php':

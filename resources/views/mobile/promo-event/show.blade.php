@@ -76,7 +76,10 @@
                             })
                             .catch(() => {});
                     }
-                }" x-init="setInterval(() => cekStatusPromoEvent(), 10000)" class="relative lg:max-w-5xl lg:mx-auto lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
+                }" x-init="setInterval(() => cekStatusPromoEvent(), 10000)" class="relative w-full">
+
+        {{-- ━━━━ MOBILE / TABLET VIEW (< 1024px) ━━━━ --}}
+        <div class="lg:hidden relative">
 
         {{-- Left column: 1:1 photo + info (nama, harga, deskripsi) --}}
         <div class="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
@@ -286,5 +289,215 @@
         </div>
 
     </div>
+    </div>
 
+    {{-- ════════════════════════════════════════════════════════════════
+         DESKTOP VIEW (>= 1024px) — DAISY BAKERY BESPOKE PROMO SHOWCASE
+         2-Column Showcase Hero with Dark Cocoa Photo Box, Specs Biscuit Table,
+         and Special Event Pricing
+         ════════════════════════════════════════════════════════════════ --}}
+    <div class="hidden lg:block w-full bg-[#FAF5E8] py-10 px-8 lg:px-12 xl:px-16 min-h-screen">
+        {{-- Breadcrumb back link --}}
+        <div class="max-w-6xl mx-auto mb-8">
+            <a href="{{ $sedangUbah ? route('member.checkout.index') : route('member.menu') }}"
+               onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+               class="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#3C2415]/60 hover:text-[#8E1E26] transition-colors">
+                <svg class="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m15 18-6-6 6-6"/>
+                </svg>
+                <span>Back to {{ $sedangUbah ? 'Checkout' : 'Menu' }}</span>
+            </a>
+        </div>
+
+        {{-- Main 2-Column Showcase Hero --}}
+        <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 xl:gap-16 items-start">
+            {{-- Left: Dark Cocoa Photo Box --}}
+            <div class="lg:col-span-6">
+                <div class="aspect-square w-full rounded-[36px] bg-[#3C2415] p-10 lg:p-14 flex items-center justify-center relative overflow-hidden shadow-xl">
+                    @if ($promoEvent->foto)
+                        <img src="{{ asset('storage/' . $promoEvent->foto) }}" alt="{{ $promoEvent->nama_event }}"
+                             class="max-h-full max-w-full object-contain filter drop-shadow-[0_16px_28px_rgba(0,0,0,0.45)] transition-transform duration-500 hover:scale-105 select-none pointer-events-none">
+                    @else
+                        <div class="flex h-full w-full items-center justify-center text-[#FAF5E8]/20">
+                            @include('mobile.components.icon-cake', ['class' => 'h-28 w-28'])
+                        </div>
+                    @endif
+
+                    {{-- Badges on Photo --}}
+                    <span class="absolute left-6 top-6 inline-flex items-center gap-1.5 rounded-full bg-[#8E1E26] px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-sm">
+                        <span>✨</span> Promo Event
+                    </span>
+
+                    @if ($promoEvent->hemat_persen > 0)
+                        <span class="absolute right-6 top-6 inline-flex items-center rounded-full bg-[#2E6F40] px-3.5 py-1 text-xs font-bold text-white shadow-sm">
+                            Save {{ $promoEvent->hemat_persen }}%
+                        </span>
+                    @endif
+
+                    <span x-show="habis" x-cloak
+                          class="absolute left-6 bottom-6 rounded-full bg-[#3C2415]/90 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-xs">
+                        Sold Out
+                    </span>
+                </div>
+            </div>
+
+            {{-- Right: Promo Details, Specs, Price & CTA --}}
+            <div class="lg:col-span-6 flex flex-col justify-between">
+                @if (Auth::guard('member')->check())
+                    @if ($sedangUbah)
+                        <form method="POST" action="{{ route('member.keranjang.perbarui-promo-event', $itemEdit['id']) }}">
+                            @csrf
+                            @method('PATCH')
+                            <input type="hidden" name="promo_event_id" value="{{ $promoEvent->id }}">
+                            <input type="hidden" name="jumlah" :value="jumlah">
+                            <input type="hidden" name="catatan" :value="catatan">
+                    @else
+                        <form method="POST" action="{{ route('member.keranjang.tambah-promo-event', $promoEvent) }}"
+                              onsubmit="event.preventDefault(); if (!this.dataset.berakhir || this.dataset.berakhir !== 'true') kirimTambahKeranjang(this);"
+                              x-effect="$el.dataset.berakhir = berakhir">
+                            @csrf
+                            <input type="hidden" name="jumlah" :value="jumlah">
+                            <input type="hidden" name="catatan" :value="catatan">
+                    @endif
+                @endif
+
+                {{-- Category Badge --}}
+                <div>
+                    <div class="inline-flex items-center px-3 py-1 rounded-md bg-[#FCE8BD] text-[#3C2415] font-display font-black text-xs tracking-wider uppercase mb-3">
+                        SPECIAL PROMO EVENT
+                    </div>
+
+                    {{-- Event Title --}}
+                    <h1 class="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-[#3C2415] tracking-tight leading-tight mb-2">
+                        {{ $promoEvent->nama_event }}
+                    </h1>
+
+                    {{-- Product Name Subtitle --}}
+                    <p class="font-display font-bold text-base text-[#8E1E26] mb-4">
+                        {{ $promoEvent->produk->nama_produk ?? '' }}
+                        @if ($ukuranEvent = $promoEvent->ukuranTunggalUntukProduksi())
+                            <span class="text-xs bg-[#F5ECE3] border border-[#3C2415]/10 px-2 py-0.5 rounded text-[#3C2415] ml-1">{{ $ukuranEvent }}</span>
+                        @endif
+                    </p>
+
+                    {{-- Description --}}
+                    @if ($promoEvent->produk && $promoEvent->produk->deskripsi)
+                        <p class="font-sans text-sm lg:text-base text-[#7C6558] leading-relaxed mb-6 whitespace-pre-line">
+                            {{ $promoEvent->produk->deskripsi }}
+                        </p>
+                    @endif
+                </div>
+
+                {{-- Banner: Promo Ended Notice --}}
+                <div x-show="berakhir" x-cloak class="flex items-start gap-2.5 rounded-2xl bg-rose-50 border border-rose-200/70 p-4 text-rose-900 mb-6">
+                    @include('mobile.components.icon-clock', ['class' => 'h-5 w-5 shrink-0 mt-0.5 text-rose-700'])
+                    <p class="text-xs font-semibold leading-relaxed">
+                        This promotional event has concluded. Please check out our other freshly baked selections!
+                    </p>
+                </div>
+
+                {{-- Status Sold Out / Freshly Baked Banner --}}
+                <div x-show="habis" x-cloak class="flex items-start gap-2.5 rounded-2xl bg-amber-50 border border-amber-200/70 p-4 text-amber-900 mb-6">
+                    @include('mobile.components.icon-clock', ['class' => 'h-5 w-5 shrink-0 mt-0.5 text-amber-700'])
+                    <p class="text-xs font-semibold leading-relaxed">
+                        Product is being freshly baked in our kitchen. Available again shortly!
+                    </p>
+                </div>
+
+                {{-- Price & CTA Row --}}
+                <div class="flex flex-wrap items-center justify-between gap-4 py-5 border-y border-[#3C2415]/10 mb-6">
+                    <div class="flex items-baseline gap-2">
+                        @if ($promoEvent->harga_asli > $promoEvent->harga_event)
+                            <span class="text-sm text-[#9C8C80] line-through font-sans">
+                                Rp {{ number_format($promoEvent->harga_asli, 0, ',', '.') }}
+                            </span>
+                        @endif
+                        <span class="font-display font-black text-3xl xl:text-4xl text-[#3C2415]" x-text="'Rp ' + Math.round(hargaSatuan).toLocaleString('id-ID')">
+                            Rp {{ number_format($promoEvent->harga_event, 0, ',', '.') }}
+                        </span>
+                        <span class="font-sans text-xs text-[#9C8C80] font-bold uppercase tracking-wider">/ package</span>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        {{-- Quantity Stepper --}}
+                        <div class="flex items-center gap-1.5 rounded-full bg-[#F5ECE3] border border-[#3C2415]/15 p-1 shadow-xs">
+                            <button type="button" @click="kurangiJumlah()"
+                                    class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#3C2415] hover:bg-[#3C2415] hover:text-white transition active:scale-90 text-base font-bold shadow-xs cursor-pointer">
+                                &minus;
+                            </button>
+                            <span class="w-8 text-center font-display font-black text-base text-[#3C2415]" x-text="jumlah"></span>
+                            <button type="button" @click="tambahJumlah()"
+                                    class="flex h-9 w-9 items-center justify-center rounded-full bg-[#3C2415] text-[#FAF5E8] hover:bg-[#8E1E26] transition active:scale-90 text-base font-bold shadow-xs cursor-pointer">
+                                &plus;
+                            </button>
+                        </div>
+
+                        {{-- Action Button --}}
+                        @if (Auth::guard('member')->check())
+                            <button type="submit"
+                                    :disabled="tidakBisaPesan"
+                                    :class="tidakBisaPesan ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-[#3C2415] hover:bg-[#4E2F1B] active:scale-95 cursor-pointer'"
+                                    class="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full text-white font-black text-xs uppercase tracking-widest transition-all duration-200 shadow-md">
+                                <span x-text="berakhir ? 'PROMO ENDED' : (tidakBisaPesan ? labelTidakBisa : '{{ $sedangUbah ? 'UPDATE ORDER' : 'ADD TO CART' }}')"></span>
+                                <svg class="h-3.5 w-3.5 text-[#EACE80] transition-transform duration-200 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m9 18 6-6-6-6"/>
+                                </svg>
+                            </button>
+                        @else
+                            <button type="button" onclick="bukaModalLoginRequired('Ordering')"
+                                    class="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-[#3C2415] hover:bg-[#4E2F1B] text-white font-black text-xs uppercase tracking-widest transition-all duration-200 active:scale-95 shadow-md cursor-pointer">
+                                <span>LOGIN TO ORDER</span>
+                                <svg class="h-3.5 w-3.5 text-[#EACE80] transition-transform duration-200 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m9 18 6-6-6-6"/>
+                                </svg>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Stock warning message --}}
+                <template x-if="stokTidakCukup">
+                    <p class="mb-4 text-xs font-bold text-red-600" x-text="pesanStokTidakCukup"></p>
+                </template>
+
+                {{-- Order Notes (Optional) --}}
+                <div class="mb-6">
+                    <label class="block font-display font-bold text-xs uppercase tracking-wider text-[#3C2415] mb-2">
+                        Order Notes <span class="font-sans font-normal text-[#9C8C80] normal-case">(optional)</span>
+                    </label>
+                    <input type="text" x-model="catatan" maxlength="255" placeholder="Special requests, packaging instructions, etc."
+                           class="w-full rounded-2xl bg-[#F5ECE3] border border-[#3C2415]/15 px-4 py-2.5 text-xs text-[#3C2415] placeholder:text-[#9C8C80] focus:border-[#8E1E26] focus:ring-1 focus:ring-[#8E1E26] focus:outline-none transition">
+                </div>
+
+                @if (Auth::guard('member')->check())
+                    </form>
+                @endif
+
+                {{-- Promo Specs Card (Biscuit Box) --}}
+                <div class="rounded-[24px] bg-[#F5ECE3] p-6 border border-[#3C2415]/10 space-y-3.5 text-xs">
+                    <div class="flex items-center justify-between pb-3 border-b border-[#3C2415]/10">
+                        <span class="font-display font-bold uppercase tracking-wider text-[#3C2415]">Promo Event</span>
+                        <span class="font-medium text-[#7C6558]">{{ $promoEvent->nama_event }}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between pb-3 border-b border-[#3C2415]/10">
+                        <span class="font-display font-bold uppercase tracking-wider text-[#3C2415]">Base Product</span>
+                        <span class="font-medium text-[#7C6558]">{{ $promoEvent->produk->nama_produk ?? 'Special Bakery' }}</span>
+                    </div>
+
+                    @if ($promoEvent->harga_asli > $promoEvent->harga_event)
+                        <div class="flex items-center justify-between pb-3 border-b border-[#3C2415]/10">
+                            <span class="font-display font-bold uppercase tracking-wider text-[#3C2415]">Event Discount</span>
+                            <span class="font-bold text-[#2E6F40]">Save Rp {{ number_format($promoEvent->hemat_nominal, 0, ',', '.') }} ({{ $promoEvent->hemat_persen }}%)</span>
+                        </div>
+                    @endif
+
+                    <div class="flex items-center justify-between pt-0.5">
+                        <span class="font-display font-bold uppercase tracking-wider text-[#3C2415]">Stock Availability</span>
+                        <span class="font-medium text-[#7C6558]" x-text="habis ? 'Sold Out' : (stokTersedia > 0 ? stokTersedia + ' packages available' : 'Available for Order')"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection

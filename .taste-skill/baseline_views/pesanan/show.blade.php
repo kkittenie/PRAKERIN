@@ -736,7 +736,7 @@
                     <div class="min-w-0 flex-1">
                         <span class="text-[10px] font-bold uppercase tracking-widest text-[#3C2415]/50 block">STORE PICKUP LOCATION</span>
                         <h4 class="font-display font-bold text-base text-[#3C2415] mt-0.5">Daisy Bakery Store</h4>
-                        <p class="text-xs text-[#3C2415]/70 mt-0.5">Jl. Cendrawasih 42, Bandung · Kitchen Open 06:00 – 20:00 WIB</p>
+                        <p class="text-xs text-[#3C2415]/70 mt-0.5">Jl. Jalan 40, Cirebon · Kitchen Open 06:00 – 20:00 WIB</p>
                     </div>
                 </div>
             </div>

@@ -233,7 +233,7 @@ class KeranjangController extends Controller
             MemberCart::tambah([
                 'bundling_id' => $bundling->id,
                 'nama_produk' => $bundling->nama_bundling,
-                'foto' => $bundling->gambar,
+                'foto' => $bundling->foto,
                 'harga_satuan' => (float) $bundling->harga,
                 'ukuran' => null,
                 'catatan' => $validated['catatan'] ?? null,
@@ -250,7 +250,7 @@ class KeranjangController extends Controller
                     'message' => $pesan,
                     'item' => [
                         'nama' => $bundling->nama_bundling,
-                        'foto_url' => $bundling->gambar ? asset('storage/' . $bundling->gambar) : null,
+                        'foto_url' => $bundling->foto ? asset('storage/' . $bundling->foto) : null,
                         'ukuran' => null,
                         'jumlah' => (int) $validated['jumlah'],
                     ],
@@ -524,7 +524,7 @@ class KeranjangController extends Controller
             MemberCart::perbarui($itemId, [
                 'bundling_id' => $bundling->id,
                 'nama_produk' => $bundling->nama_bundling,
-                'foto' => $bundling->gambar,
+                'foto' => $bundling->foto,
                 'harga_satuan' => (float) $bundling->harga,
                 'ukuran' => null,
                 'catatan' => $validated['catatan'] ?? null,

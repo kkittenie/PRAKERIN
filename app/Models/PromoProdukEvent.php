@@ -33,6 +33,11 @@ class PromoProdukEvent extends Model
     protected $appends = [
         'stok_tersedia',
         'perlu_diproduksi',
+        'foto',
+        'harga_diskon',
+        'harga_asli',
+        'hemat_nominal',
+        'hemat_persen',
     ];
 
     public function produk()
@@ -228,5 +233,52 @@ class PromoProdukEvent extends Model
     public function getPerluDiproduksiAttribute(): bool
     {
         return $this->stok_tersedia <= 0;
+    }
+
+    /**
+     * Foto promo event (dari produk utama).
+     */
+    public function getFotoAttribute(): ?string
+    {
+        return $this->produk?->foto;
+    }
+
+    /**
+     * Alias harga diskon / event untuk kompabilitas view.
+     */
+    public function getHargaDiskonAttribute(): float
+    {
+        return (float) $this->harga_event;
+    }
+
+    /**
+     * Harga normal jika produk dibeli satuan dengan jumlah isi event.
+     */
+    public function getHargaAsliAttribute(): float
+    {
+        $hargaSatuan = (float) ($this->produk?->harga_jual ?? 0);
+        $qty = max(1, (int) ($this->isi_event ?: 1));
+
+        return $hargaSatuan * $qty;
+    }
+
+    /**
+     * Nominal penghematan promo event dibanding harga normal.
+     */
+    public function getHematNominalAttribute(): float
+    {
+        return max(0, $this->harga_asli - (float) $this->harga_event);
+    }
+
+    /**
+     * Persentase penghematan promo event.
+     */
+    public function getHematPersenAttribute(): int
+    {
+        if ($this->harga_asli <= 0) {
+            return 0;
+        }
+
+        return (int) round(($this->hemat_nominal / $this->harga_asli) * 100);
     }
 }
