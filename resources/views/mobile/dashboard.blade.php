@@ -311,10 +311,10 @@
                    onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                    class="block"
                    @unless($produk->punya_ukuran) data-produk-id="{{ $produk->id }}" @endunless>
-                    <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
+                    <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-[#FAF5E8] flex items-center justify-center p-2.5">
                         @if ($produk->foto)
                             <img src="{{ asset('storage/' . $produk->foto) }}" alt="{{ $produk->nama_produk }}"
-                                 class="h-full w-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                 class="max-h-full max-w-full object-contain filter drop-shadow-xs" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         @endif
                         <div class="{{ $produk->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
                             @include('mobile.components.icon-cup', ['class' => 'h-10 w-10'])
@@ -634,52 +634,44 @@
                     </h2>
                 </div>
 
-                {{-- 3 Category Badges with flower/scalloped icons (All 3 with clear playful scalloped frames) --}}
-                <div class="mt-8 flex items-center justify-center gap-10 sm:gap-14 desktop-reveal">
-                    {{-- 1. CAKES & TARTS --}}
-                    <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);"
-                       class="group flex flex-col items-center transition hover:scale-110 active:scale-95">
-                        <div class="relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center">
-                            <svg class="absolute inset-0 w-full h-full text-[#E08D79] transition-transform group-hover:rotate-12 duration-300 filter drop-shadow-xs" viewBox="0 0 100 100" fill="currentColor">
-                                <path d="M50 0 C58 0 60 12 68 15 C76 18 84 14 89 21 C94 28 88 36 91 44 C94 52 100 58 98 66 C96 74 86 78 81 85 C76 92 74 100 66 100 C58 100 54 90 46 90 C38 90 32 98 25 95 C18 92 18 80 13 74 C8 68 0 62 0 54 C0 46 10 42 12 34 C14 26 8 18 15 13 C22 8 30 14 38 11 C46 8 48 0 50 0 Z" />
-                            </svg>
-                            <img src="{{ asset('storage/produk/SSH-CK001/strawberry-cheese-tart.jpeg') }}" alt="Cakes & Tarts"
-                                 class="relative z-10 w-11 h-11 sm:w-13 sm:h-13 rounded-full object-cover shadow-sm">
-                        </div>
-                        <span class="mt-2.5 font-ui text-xs font-black tracking-wider uppercase text-[#8E1E26] group-hover:underline">
-                            CAKES & TARTS
-                        </span>
-                    </a>
-
-                    {{-- 2. PASTRIES --}}
-                    <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);"
-                       class="group flex flex-col items-center transition hover:scale-110 active:scale-95">
-                        <div class="relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center">
-                            <svg class="absolute inset-0 w-full h-full text-[#EACE80] transition-transform group-hover:rotate-12 duration-300 filter drop-shadow-xs" viewBox="0 0 100 100" fill="currentColor">
-                                <path d="M50 0 C58 0 60 12 68 15 C76 18 84 14 89 21 C94 28 88 36 91 44 C94 52 100 58 98 66 C96 74 86 78 81 85 C76 92 74 100 66 100 C58 100 54 90 46 90 C38 90 32 98 25 95 C18 92 18 80 13 74 C8 68 0 62 0 54 C0 46 10 42 12 34 C14 26 8 18 15 13 C22 8 30 14 38 11 C46 8 48 0 50 0 Z" />
-                            </svg>
-                            <img src="{{ asset('storage/produk/SSH-CR001/butter-croissant.jpeg') }}" alt="Pastries"
-                                 class="relative z-10 w-11 h-11 sm:w-13 sm:h-13 rounded-full object-cover shadow-sm">
-                        </div>
-                        <span class="mt-2.5 font-ui text-xs font-black tracking-wider uppercase text-[#745B3F] group-hover:underline">
-                            PASTRIES
-                        </span>
-                    </a>
-
-                    {{-- 3. SWEETS --}}
-                    <a href="{{ route('member.menu') }}" onclick="event.preventDefault(); animateNavigateTab(this.href, 2);"
-                       class="group flex flex-col items-center transition hover:scale-110 active:scale-95">
-                        <div class="relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center">
-                            <svg class="absolute inset-0 w-full h-full text-[#E5A1B0] transition-transform group-hover:rotate-12 duration-300 filter drop-shadow-xs" viewBox="0 0 100 100" fill="currentColor">
-                                <path d="M50 0 C58 0 60 12 68 15 C76 18 84 14 89 21 C94 28 88 36 91 44 C94 52 100 58 98 66 C96 74 86 78 81 85 C76 92 74 100 66 100 C58 100 54 90 46 90 C38 90 32 98 25 95 C18 92 18 80 13 74 C8 68 0 62 0 54 C0 46 10 42 12 34 C14 26 8 18 15 13 C22 8 30 14 38 11 C46 8 48 0 50 0 Z" />
-                            </svg>
-                            <img src="{{ asset('storage/produk/SSH-DN004/blueberry-danish.jpeg') }}" alt="Sweets"
-                                 class="relative z-10 w-11 h-11 sm:w-13 sm:h-13 rounded-full object-cover shadow-sm">
-                        </div>
-                        <span class="mt-2.5 font-ui text-xs font-black tracking-wider uppercase text-[#8E1E26] group-hover:underline">
-                            SWEETS
-                        </span>
-                    </a>
+                {{-- Category Badges with flower/scalloped icons (Dynamically Populated from Database $kategoris) --}}
+                @php
+                    $scallopColors = [
+                        ['bg' => '#E08D79', 'text' => '#8E1E26'],
+                        ['bg' => '#EACE80', 'text' => '#745B3F'],
+                        ['bg' => '#E5A1B0', 'text' => '#8E1E26'],
+                        ['bg' => '#D4A373', 'text' => '#3A221B'],
+                    ];
+                    $daftarKategori = $kategoris ?? \App\Models\KategoriProduk::with(['produk' => fn ($q) => $q->where('status_aktif', true)->dijualSatuan()])->get();
+                @endphp
+                <div class="mt-8 flex flex-wrap items-center justify-center gap-8 sm:gap-12 desktop-reveal">
+                    @foreach ($daftarKategori as $index => $kategori)
+                        @php
+                            $color = $scallopColors[$index % count($scallopColors)];
+                            $catIcon = $kategori->produk->firstWhere('foto', '!=', null)?->foto;
+                        @endphp
+                        <a href="{{ route('member.menu', ['kategori' => $kategori->id]) }}"
+                           class="group flex flex-col items-center transition hover:scale-110 active:scale-95">
+                            <div class="relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center">
+                                <svg class="absolute inset-0 w-full h-full transition-transform group-hover:rotate-12 duration-300 filter drop-shadow-xs"
+                                     style="color: {{ $color['bg'] }};" viewBox="0 0 100 100" fill="currentColor">
+                                    <path d="M50 0 C58 0 60 12 68 15 C76 18 84 14 89 21 C94 28 88 36 91 44 C94 52 100 58 98 66 C96 74 86 78 81 85 C76 92 74 100 66 100 C58 100 54 90 46 90 C38 90 32 98 25 95 C18 92 18 80 13 74 C8 68 0 62 0 54 C0 46 10 42 12 34 C14 26 8 18 15 13 C22 8 30 14 38 11 C46 8 48 0 50 0 Z" />
+                                </svg>
+                                @if ($catIcon)
+                                    <img src="{{ asset('storage/' . $catIcon) }}" alt="{{ $kategori->nama_kategori }}"
+                                         class="relative z-10 w-11 h-11 sm:w-13 sm:h-13 object-contain drop-shadow-xs select-none pointer-events-none">
+                                @else
+                                    <div class="relative z-10 w-11 h-11 sm:w-13 sm:h-13 rounded-full flex items-center justify-center text-[#3A221B]/40">
+                                        @include('mobile.components.icon-cake', ['class' => 'w-6 h-6'])
+                                    </div>
+                                @endif
+                            </div>
+                            <span class="mt-2.5 font-ui text-[11px] sm:text-xs font-black tracking-wider uppercase group-hover:underline text-center max-w-[120px] leading-tight"
+                                  style="color: {{ $color['text'] }};">
+                                {{ $kategori->nama_kategori }}
+                            </span>
+                        </a>
+                    @endforeach
                 </div>
 
                 {{-- 3 Featured Product Cards (With delightful hover lift & zoom animations) --}}
@@ -694,14 +686,15 @@
                         <div class="group relative flex flex-col justify-between rounded-3xl overflow-hidden shadow-sm select-none desktop-reveal"
                              style="background-color: #F7F2E7; border: 1.5px solid rgba(74, 46, 39, 0.08);">
 
-                            {{-- Full-bleed rounded top image (Card is static on hover) --}}
-                            <div class="relative w-full aspect-[4/3] overflow-hidden bg-stone-100 rounded-t-3xl">
+                            {{-- Rounded top image container with gentle padding & object-contain (Transparent cake fits beautifully without cutoff) --}}
+                            <div class="relative w-full aspect-[4/3] overflow-hidden rounded-t-3xl flex items-center justify-center p-6">
                                 @if ($item->foto)
                                     <img src="{{ asset('storage/' . $item->foto) }}" alt="{{ $item->nama_produk }}"
-                                         class="w-full h-full object-cover">
+                                         class="max-h-full max-w-full object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-105">
                                 @else
-                                    <img src="{{ asset('storage/produk/SSH-CK001/strawberry-cheese-tart.jpeg') }}" alt=""
-                                         class="w-full h-full object-cover">
+                                    <div class="w-full h-full flex items-center justify-center text-[#3C2415]/20">
+                                        @include('mobile.components.icon-cake', ['class' => 'w-12 h-12'])
+                                    </div>
                                 @endif
                             </div>
 
@@ -788,7 +781,7 @@
                                     <img src="{{ asset('images/cards/bakery-art-interior.jpg') }}" alt="Daisy Bakery" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108">
                                 </div>
                                 <div class="rounded-2xl overflow-hidden aspect-[4/3] border border-white/10 shadow-md group">
-                                    <img src="{{ asset('storage/produk/SSH-DN004/blueberry-danish.jpeg') }}" alt="Fresh Bakes" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108">
+                                    <img src="{{ asset('images/cards/bakery-cafe-interior.jpg') }}" alt="Fresh Bakes" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108">
                                 </div>
                             </div>
                         </div>

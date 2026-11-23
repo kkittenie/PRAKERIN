@@ -3,10 +3,10 @@
                        x-show="'{{ addslashes(strtolower($promoEvent->nama_event)) }}'.includes(search.toLowerCase())"
                        data-promo-event-id="{{ $promoEvent->id }}"
                        class="block">
-                        <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
+                        <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-[#FAF5E8] flex items-center justify-center p-2.5">
                             @if ($promoEvent->produk && $promoEvent->produk->foto)
                                 <img src="{{ asset('storage/' . $promoEvent->produk->foto) }}" alt="{{ $promoEvent->nama_event }}"
-                                     class="h-full w-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                     class="max-h-full max-w-full object-contain filter drop-shadow-xs" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                             @endif
                             <div class="{{ ($promoEvent->produk && $promoEvent->produk->foto) ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
                                 @include('mobile.components.icon-cake', ['class' => 'h-10 w-10'])

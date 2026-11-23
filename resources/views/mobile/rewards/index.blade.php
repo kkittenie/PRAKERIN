@@ -510,9 +510,9 @@
                                     @endphp
                                     <div class="rounded-[32px] bg-[#F5ECE3] p-7 transition-all duration-300 relative flex flex-col justify-between shadow-[0_4px_20px_rgba(74,46,39,0.04)] hover:shadow-xl hover:-translate-y-1 border border-[#3C2415]/10">
                                         <div>
-                                            <div class="relative h-52 w-full overflow-hidden rounded-2xl mb-4 bg-white/40 shadow-xs flex items-center justify-center">
+                                            <div class="relative h-52 w-full mb-4 flex items-center justify-center">
                                                 @if ($foto)
-                                                    <img src="{{ asset('storage/' . $foto) }}" alt="{{ $namaProduk }}" class="w-full h-full object-cover">
+                                                    <img src="{{ asset('storage/' . $foto) }}" alt="{{ $namaProduk }}" class="max-h-full max-w-full object-contain mix-blend-multiply">
                                                 @else
                                                     <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
                                                         @include('mobile.components.icon-cake', ['class' => 'h-16 w-16'])
@@ -556,7 +556,7 @@
                 </div>
 
                 {{-- ═══════════════════════════════════════════════════════════
-                     PANE 3: HOW TO USE & BAKERY GUIDE
+                     PANE 3: HOW TO USE DAISY BAKERY GUIDE
                      ═══════════════════════════════════════════════════════════ --}}
                 <div id="desktop-pane-guide"
                      x-show="desktopTab === 'guide'"

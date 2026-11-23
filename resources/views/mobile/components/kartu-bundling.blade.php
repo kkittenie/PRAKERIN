@@ -2,10 +2,10 @@
                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                            x-show="'{{ addslashes(strtolower($bundling->nama_bundling)) }}'.includes(search.toLowerCase())"
                            class="block">
-                            <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
+                            <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-[#FAF5E8] flex items-center justify-center p-2.5">
                                 @if ($bundling->gambar)
                                     <img src="{{ asset('storage/' . $bundling->gambar) }}" alt="{{ $bundling->nama_bundling }}"
-                                         class="h-full w-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                         class="max-h-full max-w-full object-contain filter drop-shadow-xs" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                 @endif
                                 <div class="{{ $bundling->gambar ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
                                     @include('mobile.components.icon-cup', ['class' => 'h-10 w-10'])

@@ -223,11 +223,11 @@
 
         {{-- Left column: 1:1 photo + info (nama, harga, deskripsi) --}}
         <div class="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
-            <div class="relative -mx-5 -mt-6 aspect-square w-auto overflow-hidden bg-gray-50 sm:-mx-8 md:-mx-10 lg:mx-0 lg:mt-0 lg:rounded-2xl lg:aspect-square lg:w-full">
+            <div class="relative -mx-5 -mt-6 aspect-square w-auto overflow-hidden bg-[#FAF5E8] flex items-center justify-center p-6 sm:-mx-8 md:-mx-10 lg:mx-0 lg:mt-0 lg:rounded-2xl lg:aspect-square lg:w-full">
 
                 <template x-if="fotoTampil">
                     <img :src="fotoTampil" alt="{{ $produk->nama_produk }}"
-                        class="h-full w-full object-cover">
+                        class="max-h-full max-w-full object-contain filter drop-shadow-md">
                 </template>
 
                 <div x-show="!fotoTampil" class="flex h-full w-full items-center justify-center text-brand-200">

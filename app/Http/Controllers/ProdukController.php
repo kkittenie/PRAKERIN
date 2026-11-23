@@ -7,6 +7,7 @@ use App\Models\KategoriProduk;
 use App\Models\Produk;
 use App\Models\VarianProduk;
 use App\Support\ActivityLogHelper;
+use App\Support\ImageCompressHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -148,8 +149,11 @@ class ProdukController extends Controller
             $this->pastikanBarisValid($baris);
             $this->pastikanVarianValid($varian, $baris);
 
+            $kodeUtama = $baris->first()['kode'] ?? null;
+            $folderProduk = $this->folderFotoProduk($kodeUtama);
+
             if ($request->hasFile('foto')) {
-                $validated['foto'] = $request->file('foto')->store('produk', 'public');
+                $validated['foto'] = ImageCompressHelper::compressAndStore($request->file('foto'), $folderProduk);
             }
 
             $global = $request->input('mode_stok') === 'global';
@@ -266,13 +270,25 @@ class ProdukController extends Controller
             $this->pastikanVarianValid($varian, $baris, $produk);
 
             $fotoLama = $produk->foto;
+            $kodeUtama = $baris->first()['kode'] ?? $produk->kode_produk;
+            $folderProduk = $this->folderFotoProduk($kodeUtama);
 
             if ($request->hasFile('foto')) {
                 if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
                     Storage::disk('public')->delete($produk->foto);
+                    $this->hapusFolderKosong(dirname($produk->foto));
                 }
 
-                $validated['foto'] = $request->file('foto')->store('produk', 'public');
+                $validated['foto'] = ImageCompressHelper::compressAndStore($request->file('foto'), $folderProduk);
+            } elseif ($produk->foto && $kodeUtama) {
+                // Jika kode berubah tanpa upload foto baru, pindahkan foto ke folder kode yang baru
+                $folderBaru = $folderProduk;
+                if (dirname($produk->foto) !== $folderBaru && Storage::disk('public')->exists($produk->foto)) {
+                    $pathBaru = $folderBaru . '/' . basename($produk->foto);
+                    Storage::disk('public')->move($produk->foto, $pathBaru);
+                    $this->hapusFolderKosong(dirname($produk->foto));
+                    $validated['foto'] = $pathBaru;
+                }
             }
 
             $global = $request->input('mode_stok') === 'global';
@@ -327,6 +343,7 @@ class ProdukController extends Controller
             DB::transaction(function () use ($produk) {
                 if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
                     Storage::disk('public')->delete($produk->foto);
+                    $this->hapusFolderKosong(dirname($produk->foto));
                 }
 
                 foreach ($produk->detailProduks as $detail) {
@@ -373,7 +390,7 @@ class ProdukController extends Controller
             'deskripsi' => 'nullable|string|max:1000',
             'dijual_satuan' => 'required|boolean',
             'status_aktif' => 'nullable|boolean',
-            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
             'mode_stok' => 'nullable|in:global,varian',
 
             'detail_baris' => 'required|array|min:1',
@@ -386,7 +403,7 @@ class ProdukController extends Controller
             'detail_baris.*.stok' => 'nullable|integer|min:0',
             'detail_baris.*.stok_minimum' => 'nullable|integer|min:0',
             'detail_baris.*.status_aktif' => 'nullable|boolean',
-            'detail_baris.*.foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'detail_baris.*.foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
 
             'varian_baris' => 'nullable|array',
             'varian_baris.*.id' => 'nullable|integer',
@@ -396,8 +413,11 @@ class ProdukController extends Controller
             'varian_baris.*.harga_modal' => 'nullable|numeric|min:0',
             'varian_baris.*.harga_jual' => 'nullable|numeric|min:0',
             'varian_baris.*.status_aktif' => 'nullable|boolean',
-            'varian_baris.*.foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'varian_baris.*.foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:15360',
         ], [
+            'foto.image' => 'Foto produk harus berupa file gambar.',
+            'foto.mimes' => 'Format foto produk harus berupa JPG, PNG, atau WebP.',
+            'foto.max' => 'Ukuran foto produk maksimal 15 MB.',
             'detail_baris.required' => 'Tambahkan minimal 1 detail produk.',
             'detail_baris.min' => 'Tambahkan minimal 1 detail produk.',
             'detail_baris.*.kode.required' => 'Kode detail produk wajib diisi.',
@@ -405,12 +425,14 @@ class ProdukController extends Controller
             'detail_baris.*.harga_modal.required' => 'Harga modal wajib diisi.',
             'detail_baris.*.harga_jual.required' => 'Harga jual wajib diisi.',
             'detail_baris.*.foto.image' => 'Foto detail produk harus berupa gambar.',
-            'detail_baris.*.foto.max' => 'Foto detail produk maksimal 2 MB.',
+            'detail_baris.*.foto.mimes' => 'Format foto detail harus berupa JPG, PNG, atau WebP.',
+            'detail_baris.*.foto.max' => 'Foto detail produk maksimal 15 MB.',
             'varian_baris.*.kode.max' => 'Kode varian maksimal 60 karakter.',
             'varian_baris.*.harga_jual.numeric' => 'Harga jual varian harus berupa angka.',
             'varian_baris.*.harga_modal.numeric' => 'Harga modal varian harus berupa angka.',
             'varian_baris.*.foto.image' => 'Foto varian harus berupa gambar.',
-            'varian_baris.*.foto.max' => 'Foto varian maksimal 2 MB.',
+            'varian_baris.*.foto.mimes' => 'Format foto varian harus berupa JPG, PNG, atau WebP.',
+            'varian_baris.*.foto.max' => 'Foto varian maksimal 15 MB.',
         ]);
 
         unset($validated['detail_baris'], $validated['varian_baris'], $validated['mode_stok']);
@@ -537,7 +559,7 @@ class ProdukController extends Controller
             $foto = $detail?->foto;
             if ($b['file']) {
                 $this->hapusFotoDetail($foto);
-                $foto = $b['file']->store($this->folderFotoDetail($b['kode']), 'public');
+                $foto = ImageCompressHelper::compressAndStore($b['file'], $this->folderFotoDetail($b['kode']));
             } elseif ($foto) {
                 // Kode berubah -> foto ikut pindah ke folder kode yang baru.
                 $foto = $this->pindahkanFotoDetail($foto, $b['kode']);
@@ -697,7 +719,7 @@ class ProdukController extends Controller
             $foto = $model?->foto;
             if ($v['file']) {
                 $this->hapusFotoDetail($foto);
-                $foto = $v['file']->store($this->folderFotoDetail($kode), 'public');
+                $foto = ImageCompressHelper::compressAndStore($v['file'], $this->folderFotoDetail($kode));
             } elseif ($foto) {
                 $foto = $this->pindahkanFotoDetail($foto, $kode);
             }
@@ -798,6 +820,14 @@ class ProdukController extends Controller
         return self::FOTO_DETAIL_PATH . '/' . ($aman !== '' ? $aman : 'tanpa-kode');
     }
 
+    /** Folder foto untuk produk utama, mis. produk/SSH-CC001 (karakter aneh diganti "-"). */
+    private function folderFotoProduk(?string $kode): string
+    {
+        $aman = $kode ? trim(preg_replace('/[^A-Za-z0-9_-]+/', '-', $kode), '-') : '';
+
+        return 'produk' . ($aman !== '' ? '/' . $aman : '');
+    }
+
     /**
      * True kalau foto ini milik satu detail saja (ada di subfolder kode atau folder lama per produk).
      * File lepas langsung di varian-rasa/ adalah file bersama dari master lama, jadi tidak boleh dihapus/dipindah.
@@ -847,7 +877,7 @@ class ProdukController extends Controller
 
     private function hapusFolderKosong(string $folder): void
     {
-        if (! in_array($folder, [self::FOTO_DETAIL_PATH, self::FOTO_DETAIL_PATH_LAMA, '.', ''], true)
+        if (! in_array($folder, [self::FOTO_DETAIL_PATH, self::FOTO_DETAIL_PATH_LAMA, 'produk', '.', ''], true)
             && empty(Storage::disk('public')->allFiles($folder))) {
             Storage::disk('public')->deleteDirectory($folder);
         }

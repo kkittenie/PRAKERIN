@@ -338,10 +338,10 @@
                            x-show="'{{ addslashes(strtolower($produk->nama_produk)) }}'.includes(search.toLowerCase())"
                            data-produk-id="{{ $produk->id }}"
                            class="block">
-                            <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50">
+                            <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-[#FAF5E8] flex items-center justify-center p-2.5">
                                 @if ($produk->foto)
                                     <img src="{{ asset('storage/' . $produk->foto) }}" alt="{{ $produk->nama_produk }}"
-                                         class="h-full w-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                         class="max-h-full max-w-full object-contain filter drop-shadow-xs" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                 @endif
                                 <div class="{{ $produk->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-brand-200">
                                     @include('mobile.components.icon-cup', ['class' => 'h-10 w-10'])
@@ -452,7 +452,7 @@
 
     <div class="hidden lg:block w-full bg-[#FAF5E8]"
          x-data="{
-             desktopTab: 'all',
+             desktopTab: (new URLSearchParams(window.location.search)).get('kategori') || 'all',
              searchDesktop: '',
              menuIndex: (() => {
                  try {
@@ -706,10 +706,10 @@
                                         <a href="{{ route('member.produk.show', $produk) }}"
                                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                            class="block group/card">
-                                            <div class="relative h-56 w-full overflow-hidden rounded-2xl mb-4 bg-white/40 shadow-xs flex items-center justify-center">
+                                            <div class="relative h-56 w-full mb-4 flex items-center justify-center">
                                                 @if ($produk->foto)
                                                     <img src="{{ asset('storage/' . $produk->foto) }}" alt="{{ $produk->nama_produk }}"
-                                                         class="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none"
+                                                         class="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none"
                                                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                                 @endif
                                                 <div class="{{ $produk->foto ? 'hidden' : 'flex' }} h-full w-full items-center justify-center text-[#3C2415]/20">
@@ -754,10 +754,10 @@
                                         <a href="{{ route('member.bundling.show', $bundling) }}"
                                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                            class="block group/card">
-                                            <div class="relative h-56 w-full overflow-hidden rounded-2xl mb-4 bg-white/40 shadow-xs flex items-center justify-center">
+                                            <div class="relative h-56 w-full mb-4 flex items-center justify-center">
                                                 @if ($bundling->foto)
                                                     <img src="{{ asset('storage/' . $bundling->foto) }}" alt="{{ $bundling->nama_bundling }}"
-                                                         class="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                                         class="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
                                                 @else
                                                     <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
                                                         @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
@@ -800,10 +800,10 @@
                                         <a href="{{ route('member.promo-event.show', $promoEvent) }}"
                                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                            class="block group/card">
-                                            <div class="relative h-56 w-full overflow-hidden rounded-2xl mb-4 bg-white/40 shadow-xs flex items-center justify-center">
+                                            <div class="relative h-56 w-full mb-4 flex items-center justify-center">
                                                 @if ($promoEvent->produk && $promoEvent->produk->foto)
                                                     <img src="{{ asset('storage/' . $promoEvent->produk->foto) }}" alt="{{ $promoEvent->nama_event }}"
-                                                         class="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                                         class="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
                                                 @else
                                                     <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
                                                         @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
@@ -857,10 +857,10 @@
                                     <a href="{{ route('member.bundling.show', $bundling) }}"
                                        onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                        class="block group/card">
-                                        <div class="relative h-56 w-full overflow-hidden rounded-2xl mb-4 bg-white/40 shadow-xs flex items-center justify-center">
+                                        <div class="relative h-56 w-full mb-4 flex items-center justify-center">
                                             @if ($bundling->foto)
                                                 <img src="{{ asset('storage/' . $bundling->foto) }}" alt="{{ $bundling->nama_bundling }}"
-                                                     class="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                                     class="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
                                             @else
                                                 <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
                                                     @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
@@ -902,10 +902,10 @@
                                     <a href="{{ route('member.promo-event.show', $promoEvent) }}"
                                        onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                        class="block group/card">
-                                        <div class="relative h-56 w-full overflow-hidden rounded-2xl mb-4 bg-white/40 shadow-xs flex items-center justify-center">
+                                        <div class="relative h-56 w-full mb-4 flex items-center justify-center">
                                             @if ($promoEvent->produk && $promoEvent->produk->foto)
                                                 <img src="{{ asset('storage/' . $promoEvent->produk->foto) }}" alt="{{ $promoEvent->nama_event }}"
-                                                     class="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
+                                                     class="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover/card:scale-105 select-none pointer-events-none">
                                             @else
                                                 <div class="flex h-full w-full items-center justify-center text-[#3C2415]/20">
                                                     @include('mobile.components.icon-cup', ['class' => 'h-16 w-16'])
