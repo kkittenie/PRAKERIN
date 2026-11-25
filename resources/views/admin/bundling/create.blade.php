@@ -7,7 +7,7 @@
 <div class="space-y-6">
 
 <x-common.component-card title="Informasi Bundling">
-    @include('pages.bundling.partials.form', ['bundling' => null, 'isiTersimpan' => []])
+    @include('admin.bundling.partials.form', ['bundling' => null, 'isiTersimpan' => []])
 </x-common.component-card>
 
 </div>

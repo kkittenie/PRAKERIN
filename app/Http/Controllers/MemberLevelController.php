@@ -18,10 +18,10 @@ class MemberLevelController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('nama_level_html', fn($item) => view('pages.member-level.partials.nama', compact('item'))->render())
-                    ->addColumn('minimal_transaksi_html', fn($item) => view('pages.member-level.partials.minimal_transaksi', compact('item'))->render())
-                    ->addColumn('status_html', fn($item) => view('pages.member-level.partials.status', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.member-level.partials.aksi', compact('item'))->render())
+                    ->addColumn('nama_level_html', fn($item) => view('admin.member-level.partials.nama', compact('item'))->render())
+                    ->addColumn('minimal_transaksi_html', fn($item) => view('admin.member-level.partials.minimal_transaksi', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('admin.member-level.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.member-level.partials.aksi', compact('item'))->render())
                     ->rawColumns(['nama_level_html', 'minimal_transaksi_html', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -34,7 +34,7 @@ class MemberLevelController extends Controller
             }
         }
 
-        return view('pages.member-level.index', [
+        return view('admin.member-level.index', [
             'title' => 'Aturan Naik Level',
         ]);
     }
@@ -42,7 +42,7 @@ class MemberLevelController extends Controller
     public function create()
     {
         try {
-            return view('pages.member-level.create', [
+            return view('admin.member-level.create', [
                 'title' => 'Tambah Badge Membership',
             ]);
         } catch (\Throwable $e) {
@@ -77,7 +77,7 @@ class MemberLevelController extends Controller
     public function edit(MemberLevel $memberLevel)
     {
         try {
-            return view('pages.member-level.edit', [
+            return view('admin.member-level.edit', [
                 'title' => 'Edit Level Membership',
                 'level' => $memberLevel,
             ]);

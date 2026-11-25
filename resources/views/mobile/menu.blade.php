@@ -171,7 +171,7 @@
                 <div class="relative z-10 flex items-center justify-between gap-8">
                     <div class="max-w-xl">
                         <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1 text-xs font-bold text-white backdrop-blur-md">
-                            ✨ Freshly Baked Daily
+                            Freshly Baked Daily
                         </span>
                         <h1 class="mt-2.5 text-2xl lg:text-3xl font-black tracking-tight leading-tight">
                             Order Online & In-Store Pickup
@@ -765,7 +765,7 @@
                                                 @endif
 
                                                 <span class="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#8E1E26] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
-                                                    <span>🎁</span> Value Bundle
+                                                    Value Bundle
                                                 </span>
 
                                                 @if ($bundling->harga_asli > $bundling->harga)
@@ -939,7 +939,7 @@
                                             @endif
 
                                             <span class="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#8E1E26] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
-                                                <span>🎁</span> Value Bundle
+                                                Value Bundle
                                             </span>
 
                                             @if ($bundling->harga_asli > $bundling->harga)
@@ -1071,14 +1071,6 @@
                                         <a href="{{ route('member.promo-event.show', $promoEvent) }}"
                                            onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
                                            class="group/btn inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
-                                            <span>SHOP</span>
-                                            <span class="inline-block transition-transform duration-200 group-hover/btn:rotate-90 text-sm leading-none font-bold">+</span>
-                                        </a>
-                                    </div>
-                                </div>
-                            @endforeach
-                                           onclick="event.preventDefault(); animateNavigate(this.href, 'forward');"
-                                           class="group/btn inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#3C2415] hover:bg-[#8E1E26] text-[#FAF5E8] text-xs font-bold transition-all duration-200 active:scale-95 shadow-xs">
                                             <span>SHOP</span>
                                             <span class="inline-block transition-transform duration-200 group-hover/btn:rotate-90 text-sm leading-none font-bold">+</span>
                                         </a>

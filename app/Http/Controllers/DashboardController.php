@@ -135,7 +135,7 @@ class DashboardController extends Controller
             $lowStockBahan = \App\Models\BahanBaku::whereColumn('stok', '<=', 'stok_minimum')
                 ->get();
 
-            return view('pages.dashboard.beranda', [
+            return view('admin.dashboard.beranda', [
                 'title' => 'Rekap Penjualan',
                 'pendapatanHariIni' => $pendapatanHariIni,
                 'transaksiHariIni' => $transaksiHariIni,

@@ -8,7 +8,7 @@
     <x-common.component-card title="Form Tambah Slide Welcome">
         <form action="{{ route('welcome-slide.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
-            @include('pages.welcome-slide.partials.form', ['slide' => null])
+            @include('admin.welcome-slide.partials.form', ['slide' => null])
 
             <div class="mt-8 flex justify-end gap-3">
                 <a href="{{ route('welcome-slide.index') }}" class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Batal</a>
@@ -18,6 +18,6 @@
     </x-common.component-card>
 </div>
 
-@include('pages.welcome-slide.partials.crop-modal')
+@include('admin.welcome-slide.partials.crop-modal')
 
 @endsection

@@ -100,7 +100,7 @@
     </form>
 
     <!-- Modal Permission -->
-    @include('pages.roles.partials.permission-modal')
+    @include('admin.roles.partials.permission-modal')
 </div>
 @endsection
 

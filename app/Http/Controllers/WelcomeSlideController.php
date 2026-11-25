@@ -21,14 +21,14 @@ class WelcomeSlideController extends Controller
                 $query = WelcomeSlide::query();
 
                 return DataTables::of($query)
-                    ->addColumn('kode_html', fn ($item) => view('pages.welcome-slide.partials.kode', compact('item'))->render())
-                    ->addColumn('gambar_html', fn ($item) => view('pages.welcome-slide.partials.gambar', compact('item'))->render())
-                    ->editColumn('judul', fn ($item) => view('pages.welcome-slide.partials.judul', compact('item'))->render())
+                    ->addColumn('kode_html', fn ($item) => view('admin.welcome-slide.partials.kode', compact('item'))->render())
+                    ->addColumn('gambar_html', fn ($item) => view('admin.welcome-slide.partials.gambar', compact('item'))->render())
+                    ->editColumn('judul', fn ($item) => view('admin.welcome-slide.partials.judul', compact('item'))->render())
                     ->filterColumn('judul', function ($q, $keyword) {
                         $q->where(fn ($w) => $w->where('judul', 'like', "%{$keyword}%")->orWhere('deskripsi', 'like', "%{$keyword}%"));
                     })
-                    ->addColumn('status_html', fn ($item) => view('pages.welcome-slide.partials.status', compact('item'))->render())
-                    ->addColumn('aksi', fn ($item) => view('pages.welcome-slide.partials.aksi', compact('item'))->render())
+                    ->addColumn('status_html', fn ($item) => view('admin.welcome-slide.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn ($item) => view('admin.welcome-slide.partials.aksi', compact('item'))->render())
                     ->rawColumns(['kode_html', 'gambar_html', 'judul', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -42,7 +42,7 @@ class WelcomeSlideController extends Controller
         }
 
         try {
-            return view('pages.welcome-slide.index');
+            return view('admin.welcome-slide.index');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -51,7 +51,7 @@ class WelcomeSlideController extends Controller
     public function create()
     {
         try {
-            return view('pages.welcome-slide.create');
+            return view('admin.welcome-slide.create');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -87,7 +87,7 @@ class WelcomeSlideController extends Controller
     public function edit(WelcomeSlide $welcomeSlide)
     {
         try {
-            return view('pages.welcome-slide.edit', ['slide' => $welcomeSlide]);
+            return view('admin.welcome-slide.edit', ['slide' => $welcomeSlide]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

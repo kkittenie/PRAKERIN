@@ -25,8 +25,8 @@ class PegawaiController extends Controller
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
                     ->editColumn('tanggal_masuk', fn($item) => \Carbon\Carbon::parse($item->tanggal_masuk)->format('d-m-Y'))
-                    ->addColumn('status_html', fn($item) => view('pages.pegawai.partials.status', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.pegawai.partials.aksi', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('admin.pegawai.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.pegawai.partials.aksi', compact('item'))->render())
                     ->orderColumn('status_html', function ($query, $order) {
                         $query->orderBy('status_aktif', $order);
                     })
@@ -55,7 +55,7 @@ class PegawaiController extends Controller
             }
         }
 
-        return view('pages.pegawai.index');
+        return view('admin.pegawai.index');
     }
 
     /**
@@ -65,7 +65,7 @@ class PegawaiController extends Controller
     {
         try {
             $roles = Role::orderBy('name')->pluck('name');
-            return view('pages.pegawai.create', compact('roles'));
+            return view('admin.pegawai.create', compact('roles'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -139,7 +139,7 @@ class PegawaiController extends Controller
         try {
             $pegawai->load('user');
             $roles = Role::orderBy('name')->pluck('name');
-            return view('pages.pegawai.edit', compact('pegawai', 'roles'));
+            return view('admin.pegawai.edit', compact('pegawai', 'roles'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

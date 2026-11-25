@@ -29,9 +29,9 @@ class StampProgramController extends Controller
                     ->editColumn('minimal_pembelian', fn ($item) => 'Rp ' . number_format($item->minimal_pembelian, 0, ',', '.'))
                     ->editColumn('jumlah_stamp_dibutuhkan', fn ($item) => $item->jumlah_stamp_dibutuhkan . ' stamp')
                     ->addColumn('hadiah_html', fn ($item) => $item->hadiah_count . ' produk')
-                    ->addColumn('redeem_html', fn ($item) => view('pages.stamp-program.partials.redeem', compact('item'))->render())
-                    ->addColumn('status_html', fn ($item) => view('pages.stamp-program.partials.status', compact('item'))->render())
-                    ->addColumn('aksi', fn ($item) => view('pages.stamp-program.partials.aksi', compact('item'))->render())
+                    ->addColumn('redeem_html', fn ($item) => view('admin.stamp-program.partials.redeem', compact('item'))->render())
+                    ->addColumn('status_html', fn ($item) => view('admin.stamp-program.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn ($item) => view('admin.stamp-program.partials.aksi', compact('item'))->render())
                     ->orderColumn('redeem_html', function ($query, $order) {
                         $query->orderBy('maksimal_redeem', $order)->orderBy('jumlah_redeem', $order);
                     })
@@ -47,7 +47,7 @@ class StampProgramController extends Controller
             }
         }
 
-        return view('pages.stamp-program.index', [
+        return view('admin.stamp-program.index', [
             'title' => 'Reward Stamp',
         ]);
     }
@@ -57,7 +57,7 @@ class StampProgramController extends Controller
         try {
             $produks = $this->produkUntukForm();
 
-            return view('pages.stamp-program.create', [
+            return view('admin.stamp-program.create', [
                 'title' => 'Tambah Reward Stamp',
                 'produks' => $produks,
             ]);
@@ -107,7 +107,7 @@ class StampProgramController extends Controller
         try {
             $stampProgram->load(['hadiah.produk', 'hadiah.detailProduk', 'redemptions']);
 
-            return view('pages.stamp-program.show', [
+            return view('admin.stamp-program.show', [
                 'title' => 'Detail Reward Stamp',
                 'program' => $stampProgram,
             ]);
@@ -132,7 +132,7 @@ class StampProgramController extends Controller
                 ];
             });
 
-            return view('pages.stamp-program.edit', [
+            return view('admin.stamp-program.edit', [
                 'title' => 'Edit Reward Stamp',
                 'program' => $stampProgram,
                 'produks' => $produks,

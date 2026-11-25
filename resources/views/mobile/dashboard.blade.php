@@ -781,7 +781,7 @@
                                     <img src="{{ asset('images/cards/bakery-art-interior.jpg') }}" alt="Daisy Bakery" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108">
                                 </div>
                                 <div class="rounded-2xl overflow-hidden aspect-[4/3] border border-white/10 shadow-md group">
-                                    <img src="{{ asset('images/cards/bakery-cafe-interior.jpg') }}" alt="Fresh Bakes" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108">
+                                    <img src="{{ asset('images/cards/bakery-address.png') }}" alt="Fresh Bakes" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108">
                                 </div>
                             </div>
                         </div>
@@ -1342,7 +1342,7 @@
                         </div>
                     </div>
                 @else
-                    <p class="mt-1 text-center text-theme-sm text-gray-500">You have reached the highest tier ✨</p>
+                    <p class="mt-1 text-center text-theme-sm text-gray-500">You have reached the highest tier!</p>
                 @endif
 
                 <div class="mt-5 text-theme-sm leading-relaxed text-gray-700">

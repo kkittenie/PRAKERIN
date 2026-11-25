@@ -648,4 +648,4 @@
     }
 </script>
 
-@include('pages.produk.partials.crop-modal')
+@include('admin.produk.partials.crop-modal')

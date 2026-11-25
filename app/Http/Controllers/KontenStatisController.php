@@ -19,7 +19,7 @@ class KontenStatisController extends Controller
     {
         try {
             $kontenList = KontenStatis::whereIn('slug', array_keys($this->slugDiizinkan))->get()->keyBy('slug');
-            return view('pages.konten-statis.index', compact('kontenList'));
+            return view('admin.konten-statis.index', compact('kontenList'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -39,7 +39,7 @@ class KontenStatisController extends Controller
 
             $judul = $this->slugDiizinkan[$slug];
 
-            return view('pages.konten-statis.edit', compact('konten', 'judul', 'slug'));
+            return view('admin.konten-statis.edit', compact('konten', 'judul', 'slug'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

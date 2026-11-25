@@ -195,7 +195,7 @@
                                 <td class="px-4 py-3 text-right"><p class="font-semibold">{{ $rp($r['member_app']['nominal']) }}</p><p class="text-xs text-gray-400">{{ $r['member_app']['jumlah'] }}x</p></td>
                                 <td class="px-4 py-3 text-right">{{ $rp($r['uang_diharapkan']) }}</td>
                                 <td class="px-4 py-3 text-right">{{ $s->uang_akhir !== null ? $rp($s->uang_akhir) : '-' }}</td>
-                                <td class="px-4 py-3">@include('pages.shift-kasir.partials.badge-selisih', ['shift' => $s])</td>
+                                <td class="px-4 py-3">@include('admin.shift-kasir.partials.badge-selisih', ['shift' => $s])</td>
                                 <td class="px-4 py-3">
                                     @if ($s->sedangBerjalan())
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400">

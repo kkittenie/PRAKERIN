@@ -278,7 +278,7 @@ class TransaksiKasirController extends Controller
             $daftarMember = \App\Models\Member::orderBy('nama')->get();
             $pengaturanPajak = PengaturanPajak::getAktif();
 
-            return view('pages.transaksi.indeks', [
+            return view('admin.transaksi.indeks', [
                 'title' => 'Transaksi Kasir',
                 'daftarProduk' => $daftarProduk,
                 'daftarKategori' => $daftarKategori,
@@ -1707,7 +1707,7 @@ class TransaksiKasirController extends Controller
                 && strtolower(trim((string) $transaksi->status_pembayaran)) === 'lunas'
                 && strtolower(trim((string) $transaksi->metode_pembayaran)) === 'tunai';
 
-            return view('pages.transaksi.cetak', [
+            return view('admin.transaksi.cetak', [
                 'transaksi' => $transaksi,
                 'jenis' => $jenis,
                 'bukaLaci' => $bukaLaci,

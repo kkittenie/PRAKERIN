@@ -17,8 +17,8 @@ class RoleController extends Controller
                 $query = Role::with('permissions')->withCount('permissions');
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
-                    ->addColumn('permission_html', fn ($item) => view('pages.roles.partials.permission', ['item' => $item, 'totalPermissions' => $totalPermissions])->render())
-                    ->addColumn('aksi', fn ($item) => view('pages.roles.partials.aksi', compact('item'))->render())
+                    ->addColumn('permission_html', fn ($item) => view('admin.roles.partials.permission', ['item' => $item, 'totalPermissions' => $totalPermissions])->render())
+                    ->addColumn('aksi', fn ($item) => view('admin.roles.partials.aksi', compact('item'))->render())
                     ->rawColumns(['permission_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -34,7 +34,7 @@ class RoleController extends Controller
         $modules = self::daftarModulPermissions();
         $allPermissions = Permission::orderBy('name')->get();
 
-        return view('pages.roles.index', [
+        return view('admin.roles.index', [
             'title' => 'Kelola Role',
             'modules' => $modules,
             'allPermissions' => $allPermissions,
@@ -225,7 +225,7 @@ class RoleController extends Controller
             $modules = self::daftarModulPermissions();
             $allPermissions = Permission::orderBy('name')->get();
 
-            return view('pages.roles.create', [
+            return view('admin.roles.create', [
                 'title' => 'Tambah Role',
                 'modules' => $modules,
                 'allPermissions' => $allPermissions,
@@ -292,7 +292,7 @@ class RoleController extends Controller
             $allPermissions = Permission::orderBy('name')->get();
             $rolePermissions = $role->permissions->pluck('name')->toArray();
 
-            return view('pages.roles.edit', [
+            return view('admin.roles.edit', [
                 'title' => 'Edit Role',
                 'role' => $role,
                 'modules' => $modules,

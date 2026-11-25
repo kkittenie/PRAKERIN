@@ -17,9 +17,9 @@ class KategoriProdukController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->editColumn('nama_kategori', fn($item) => view('pages.kategori-produk.partials.nama', compact('item'))->render())
-                    ->addColumn('produk_count_html', fn($item) => view('pages.kategori-produk.partials.produk_count', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.kategori-produk.partials.aksi', compact('item'))->render())
+                    ->editColumn('nama_kategori', fn($item) => view('admin.kategori-produk.partials.nama', compact('item'))->render())
+                    ->addColumn('produk_count_html', fn($item) => view('admin.kategori-produk.partials.produk_count', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.kategori-produk.partials.aksi', compact('item'))->render())
                     ->rawColumns(['nama_kategori', 'produk_count_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -32,13 +32,13 @@ class KategoriProdukController extends Controller
             }
         }
 
-        return view('pages.kategori-produk.index');
+        return view('admin.kategori-produk.index');
     }
 
     public function create()
     {
         try {
-            return view('pages.kategori-produk.create');
+            return view('admin.kategori-produk.create');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -77,7 +77,7 @@ class KategoriProdukController extends Controller
     public function edit(KategoriProduk $kategori_produk)
     {
         try {
-            return view('pages.kategori-produk.edit', compact('kategori_produk'));
+            return view('admin.kategori-produk.edit', compact('kategori_produk'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

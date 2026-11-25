@@ -18,14 +18,14 @@ class PromoController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('nama_promo_html', fn($item) => view('pages.promo.partials.nama', compact('item'))->render())
-                    ->addColumn('diskon_html', fn($item) => view('pages.promo.partials.diskon', compact('item'))->render())
-                    ->addColumn('min_pembelian_html', fn($item) => view('pages.promo.partials.min_pembelian', compact('item'))->render())
-                    ->addColumn('mulai_berlaku_html', fn($item) => view('pages.promo.partials.mulai_berlaku', compact('item'))->render())
-                    ->addColumn('selesai_berlaku_html', fn($item) => view('pages.promo.partials.selesai_berlaku', compact('item'))->render())
-                    ->addColumn('jumlah_produk_html', fn($item) => view('pages.promo.partials.jumlah_produk', compact('item'))->render())
-                    ->addColumn('status_html', fn($item) => view('pages.promo.partials.status', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.promo.partials.aksi', compact('item'))->render())
+                    ->addColumn('nama_promo_html', fn($item) => view('admin.promo.partials.nama', compact('item'))->render())
+                    ->addColumn('diskon_html', fn($item) => view('admin.promo.partials.diskon', compact('item'))->render())
+                    ->addColumn('min_pembelian_html', fn($item) => view('admin.promo.partials.min_pembelian', compact('item'))->render())
+                    ->addColumn('mulai_berlaku_html', fn($item) => view('admin.promo.partials.mulai_berlaku', compact('item'))->render())
+                    ->addColumn('selesai_berlaku_html', fn($item) => view('admin.promo.partials.selesai_berlaku', compact('item'))->render())
+                    ->addColumn('jumlah_produk_html', fn($item) => view('admin.promo.partials.jumlah_produk', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('admin.promo.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.promo.partials.aksi', compact('item'))->render())
                     ->rawColumns(['nama_promo_html', 'diskon_html', 'selesai_berlaku_html', 'jumlah_produk_html', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -38,14 +38,14 @@ class PromoController extends Controller
             }
         }
 
-        return view('pages.promo.index');
+        return view('admin.promo.index');
     }
 
     public function lihat($id)
     {
         try {
             $promo = Promo::with(['produks.kategori', 'detailProduks'])->findOrFail($id);
-            return view('pages.promo.show', compact('promo'));
+            return view('admin.promo.show', compact('promo'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -59,7 +59,7 @@ class PromoController extends Controller
                 ->orderBy('nama_produk', 'asc')
                 ->get();
             $produkData = $this->dataProdukUntukForm($produks);
-            return view('pages.promo.create', compact('produks', 'produkData'));
+            return view('admin.promo.create', compact('produks', 'produkData'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -279,7 +279,7 @@ class PromoController extends Controller
             $selectedUkuranPerProduk = $namaPerProduk('ukuran', 'ukurans');
             $selectedRasaPerProduk = $namaPerProduk('variasi', 'rasas');
 
-            return view('pages.promo.edit', compact('promo', 'produks', 'produkData', 'selectedProduks', 'selectedUkuranPerProduk', 'selectedRasaPerProduk'));
+            return view('admin.promo.edit', compact('promo', 'produks', 'produkData', 'selectedProduks', 'selectedUkuranPerProduk', 'selectedRasaPerProduk'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

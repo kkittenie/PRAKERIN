@@ -118,7 +118,7 @@
                 </div>
 
                 {{-- Detail Produk (kode, ukuran, variasi, harga, stok per baris) --}}
-                @include('pages.produk.partials.form-varian', [
+                @include('admin.produk.partials.form-varian', [
                     'detailBaris' => $detailBaris,
                     'varianBaris' => $varianBaris ?? [],
                     'fotoUtamaUrl' => $fotoUtamaUrl ?? null,

@@ -63,14 +63,14 @@ class PesananPickupController extends Controller
             try {
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('kode_html', fn ($item) => view('pages.pesanan-pickup.partials.kode', compact('item'))->render())
-                    ->addColumn('kode_pesanan_html', fn ($item) => view('pages.pesanan-pickup.partials.kode-pesanan', compact('item'))->render())
-                    ->addColumn('pembeli_html', fn ($item) => view('pages.pesanan-pickup.partials.pembeli', compact('item'))->render())
+                    ->addColumn('kode_html', fn ($item) => view('admin.pesanan-pickup.partials.kode', compact('item'))->render())
+                    ->addColumn('kode_pesanan_html', fn ($item) => view('admin.pesanan-pickup.partials.kode-pesanan', compact('item'))->render())
+                    ->addColumn('pembeli_html', fn ($item) => view('admin.pesanan-pickup.partials.pembeli', compact('item'))->render())
                     ->editColumn('total_bayar', fn ($item) => 'Rp ' . number_format($item->total_bayar, 0, ',', '.'))
                     ->editColumn('created_at', fn ($item) => $item->created_at->translatedFormat('d M Y, H:i'))
-                    ->addColumn('status_pesanan_html', fn ($item) => view('pages.pesanan-pickup.partials.status-pesanan', compact('item'))->render())
-                    ->addColumn('status_pembayaran_html', fn ($item) => view('pages.pesanan-pickup.partials.status-pembayaran', compact('item'))->render())
-                    ->addColumn('aksi', fn ($item) => view('pages.pesanan-pickup.partials.aksi', compact('item'))->render())
+                    ->addColumn('status_pesanan_html', fn ($item) => view('admin.pesanan-pickup.partials.status-pesanan', compact('item'))->render())
+                    ->addColumn('status_pembayaran_html', fn ($item) => view('admin.pesanan-pickup.partials.status-pembayaran', compact('item'))->render())
+                    ->addColumn('aksi', fn ($item) => view('admin.pesanan-pickup.partials.aksi', compact('item'))->render())
                     ->rawColumns(['kode_html', 'kode_pesanan_html', 'pembeli_html', 'status_pesanan_html', 'status_pembayaran_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -84,7 +84,7 @@ class PesananPickupController extends Controller
         }
 
         try {
-            return view('pages.pesanan-pickup.index', [
+            return view('admin.pesanan-pickup.index', [
                 'statusPesananFilter' => $statusPesanan,
                 'statusPembayaranFilter' => $statusPembayaran,
             ]);

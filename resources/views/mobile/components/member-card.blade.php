@@ -64,6 +64,6 @@
             <p class="mt-1.5 text-[11px] text-white/60">Rp {{ number_format($progres['transaksi_dibutuhkan'], 0, ',', '.') }} spend needed to unlock {{ $progres['tier_berikutnya'] }}</p>
         </div>
     @else
-        <p class="relative mt-5 text-[11px] text-white/60">You've achieved our highest tier ✨</p>
+        <p class="relative mt-5 text-[11px] text-white/60">You've achieved our highest tier!</p>
     @endif
 </div>

@@ -25,13 +25,13 @@ class BannerController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('kode_html', fn($item) => view('pages.banner.partials.kode', compact('item'))->render())
-                    ->addColumn('gambar_html', fn($item) => view('pages.banner.partials.gambar', compact('item'))->render())
-                    ->editColumn('judul', fn($item) => view('pages.banner.partials.judul', compact('item'))->render())
-                    ->addColumn('urutan_html', fn($item) => view('pages.banner.partials.urutan', compact('item'))->render())
-                    ->addColumn('status_html', fn($item) => view('pages.banner.partials.status', compact('item'))->render())
-                    ->addColumn('periode_html', fn($item) => view('pages.banner.partials.periode', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.banner.partials.aksi', compact('item'))->render())
+                    ->addColumn('kode_html', fn($item) => view('admin.banner.partials.kode', compact('item'))->render())
+                    ->addColumn('gambar_html', fn($item) => view('admin.banner.partials.gambar', compact('item'))->render())
+                    ->editColumn('judul', fn($item) => view('admin.banner.partials.judul', compact('item'))->render())
+                    ->addColumn('urutan_html', fn($item) => view('admin.banner.partials.urutan', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('admin.banner.partials.status', compact('item'))->render())
+                    ->addColumn('periode_html', fn($item) => view('admin.banner.partials.periode', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.banner.partials.aksi', compact('item'))->render())
                     ->rawColumns(['kode_html', 'gambar_html', 'judul', 'urutan_html', 'status_html', 'periode_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -44,13 +44,13 @@ class BannerController extends Controller
             }
         }
 
-        return view('pages.banner.index');
+        return view('admin.banner.index');
     }
 
     public function create()
     {
         try {
-            return view('pages.banner.create');
+            return view('admin.banner.create');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -119,7 +119,7 @@ class BannerController extends Controller
     public function edit(Banner $banner)
     {
         try {
-            return view('pages.banner.edit', compact('banner'));
+            return view('admin.banner.edit', compact('banner'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

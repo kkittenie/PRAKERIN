@@ -35,7 +35,7 @@ class ActivityLogController extends Controller
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->editColumn('created_at', fn($item) => $item->created_at->format('d M Y H:i'))
                     ->editColumn('causer_nama', fn($item) => e($item->causer_nama))
-                    ->addColumn('causer_role_html', fn($item) => view('pages.activity.partials.role', compact('item'))->render())
+                    ->addColumn('causer_role_html', fn($item) => view('admin.activity.partials.role', compact('item'))->render())
                     ->editColumn('description', fn($item) => e($item->description))
                     ->orderColumn('causer_role_html', function ($query, $order) {
                         $query->orderBy('causer_role', $order)
@@ -64,6 +64,6 @@ class ActivityLogController extends Controller
             }
         }
 
-        return view('pages.activity.index');
+        return view('admin.activity.index');
     }
 }

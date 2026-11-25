@@ -106,12 +106,12 @@ class RiwayatRedeemController extends Controller
                                 });
                         });
                     })
-                    ->addColumn('kode_html', fn ($item) => view('pages.riwayat-redeem.partials.kode', compact('item'))->render())
-                    ->addColumn('member_html', fn ($item) => view('pages.riwayat-redeem.partials.member', compact('item'))->render())
-                    ->addColumn('reward_html', fn ($item) => view('pages.riwayat-redeem.partials.reward', compact('item'))->render())
+                    ->addColumn('kode_html', fn ($item) => view('admin.riwayat-redeem.partials.kode', compact('item'))->render())
+                    ->addColumn('member_html', fn ($item) => view('admin.riwayat-redeem.partials.member', compact('item'))->render())
+                    ->addColumn('reward_html', fn ($item) => view('admin.riwayat-redeem.partials.reward', compact('item'))->render())
                     ->editColumn('poin_terpakai', fn ($item) => '-' . number_format($item->poin_terpakai, 0, ',', '.'))
                     ->editColumn('created_at', fn ($item) => $item->created_at->translatedFormat('d M Y, H:i'))
-                    ->addColumn('status_html', fn ($item) => view('pages.riwayat-redeem.partials.status', compact('item'))->render())
+                    ->addColumn('status_html', fn ($item) => view('admin.riwayat-redeem.partials.status', compact('item'))->render())
                     ->rawColumns(['kode_html', 'member_html', 'reward_html', 'status_html'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -131,7 +131,7 @@ class RiwayatRedeemController extends Controller
             'selesai' => PenukaranPoin::whereHas('reward', fn ($r) => $r->where('jenis', '!=', 'voucher'))->where('status', 'selesai')->count(),
         ];
 
-        return view('pages.riwayat-redeem.index', [
+        return view('admin.riwayat-redeem.index', [
             'title' => 'Riwayat Penggunaan Voucher & Reward',
             'ringkasan' => $ringkasan,
             'tipeAktif' => $tipe,

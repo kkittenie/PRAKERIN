@@ -19,8 +19,8 @@ class PengaturanPajakController extends Controller
                     ->addIndexColumn()
                     ->editColumn('persentase', fn ($item) => rtrim(rtrim(number_format($item->persentase, 2, ',', '.'), '0'), ',') . '%')
                     ->editColumn('catatan', fn ($item) => $item->catatan ?? '-')
-                    ->addColumn('status_html', fn ($item) => view('pages.pengaturan-pajak.partials.status', compact('item'))->render())
-                    ->addColumn('aksi', fn ($item) => view('pages.pengaturan-pajak.partials.aksi', compact('item'))->render())
+                    ->addColumn('status_html', fn ($item) => view('admin.pengaturan-pajak.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn ($item) => view('admin.pengaturan-pajak.partials.aksi', compact('item'))->render())
                     ->rawColumns(['status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -33,13 +33,13 @@ class PengaturanPajakController extends Controller
             }
         }
 
-        return view('pages.pengaturan-pajak.index');
+        return view('admin.pengaturan-pajak.index');
     }
 
     public function create()
     {
         try {
-            return view('pages.pengaturan-pajak.create');
+            return view('admin.pengaturan-pajak.create');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -90,7 +90,7 @@ class PengaturanPajakController extends Controller
     {
         try {
             $pajak = PengaturanPajak::findOrFail($id);
-            return view('pages.pengaturan-pajak.edit', compact('pajak'));
+            return view('admin.pengaturan-pajak.edit', compact('pajak'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

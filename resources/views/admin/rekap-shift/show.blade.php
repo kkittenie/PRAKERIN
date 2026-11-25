@@ -79,7 +79,7 @@
                     <div class="flex justify-between text-gray-600 dark:text-gray-300"><dt>Uang laci akhir (input kasir)</dt><dd class="font-semibold">{{ $shift->uang_akhir !== null ? $rp($shift->uang_akhir) : 'Belum diinput' }}</dd></div>
                     <div class="flex justify-between items-center border-t border-gray-100 dark:border-gray-800 pt-3 text-gray-800 dark:text-white">
                         <dt class="font-semibold">Selisih</dt>
-                        <dd>@include('pages.shift-kasir.partials.badge-selisih', ['shift' => $shift])</dd>
+                        <dd>@include('admin.shift-kasir.partials.badge-selisih', ['shift' => $shift])</dd>
                     </div>
                 </dl>
             </div>

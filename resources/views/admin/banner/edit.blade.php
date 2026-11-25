@@ -143,6 +143,6 @@
 
 </div>
 
-@include('pages.banner.partials.crop-modal')
+@include('admin.banner.partials.crop-modal')
 
 @endsection

@@ -61,14 +61,14 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse ($pesananMobileTerbaru as $item)
                             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                                <td class="py-3 pr-4 whitespace-nowrap">@include('pages.pesanan-pickup.partials.kode', ['item' => $item])</td>
-                                <td class="py-3 pr-4 whitespace-nowrap text-center">@include('pages.pesanan-pickup.partials.kode-pesanan', ['item' => $item])</td>
+                                <td class="py-3 pr-4 whitespace-nowrap">@include('admin.pesanan-pickup.partials.kode', ['item' => $item])</td>
+                                <td class="py-3 pr-4 whitespace-nowrap text-center">@include('admin.pesanan-pickup.partials.kode-pesanan', ['item' => $item])</td>
                                 <td class="py-3 pr-4 whitespace-nowrap">
                                     <span class="block font-semibold text-gray-800 dark:text-white text-sm">{{ $item->nama_pembeli ?: 'Pelanggan' }}</span>
                                     <span class="block text-xs text-gray-400">{{ $item->member->no_hp ?? '-' }}</span>
                                 </td>
-                                <td class="py-3 pr-4 whitespace-nowrap text-center">@include('pages.pesanan-pickup.partials.status-pesanan', ['item' => $item])</td>
-                                <td class="py-3 pr-4 whitespace-nowrap text-center">@include('pages.pesanan-pickup.partials.status-pembayaran', ['item' => $item])</td>
+                                <td class="py-3 pr-4 whitespace-nowrap text-center">@include('admin.pesanan-pickup.partials.status-pesanan', ['item' => $item])</td>
+                                <td class="py-3 pr-4 whitespace-nowrap text-center">@include('admin.pesanan-pickup.partials.status-pembayaran', ['item' => $item])</td>
                                 <td class="py-3 pr-4 whitespace-nowrap text-right font-semibold text-gray-800 dark:text-gray-200">Rp {{ number_format($item->total_bayar, 0, ',', '.') }}</td>
                                 <td class="py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">{{ $item->created_at->translatedFormat('d M Y, H:i') }}</td>
                             </tr>

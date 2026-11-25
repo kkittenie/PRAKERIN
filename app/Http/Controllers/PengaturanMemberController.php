@@ -53,12 +53,12 @@ class PengaturanMemberController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('belanja_html', fn($item) => view('pages.pengaturan-member.partials.belanja', compact('item'))->render())
-                    ->addColumn('poin_html', fn($item) => view('pages.pengaturan-member.partials.poin', compact('item'))->render())
-                    ->addColumn('mulai_html', fn($item) => view('pages.pengaturan-member.partials.mulai', compact('item'))->render())
-                    ->addColumn('selesai_html', fn($item) => view('pages.pengaturan-member.partials.selesai', compact('item'))->render())
-                    ->addColumn('status_html', fn($item) => view('pages.pengaturan-member.partials.status', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.pengaturan-member.partials.aksi', compact('item'))->render())
+                    ->addColumn('belanja_html', fn($item) => view('admin.pengaturan-member.partials.belanja', compact('item'))->render())
+                    ->addColumn('poin_html', fn($item) => view('admin.pengaturan-member.partials.poin', compact('item'))->render())
+                    ->addColumn('mulai_html', fn($item) => view('admin.pengaturan-member.partials.mulai', compact('item'))->render())
+                    ->addColumn('selesai_html', fn($item) => view('admin.pengaturan-member.partials.selesai', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('admin.pengaturan-member.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.pengaturan-member.partials.aksi', compact('item'))->render())
                     ->rawColumns(['belanja_html', 'poin_html', 'mulai_html', 'selesai_html', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -71,13 +71,13 @@ class PengaturanMemberController extends Controller
             }
         }
 
-        return view('pages.pengaturan-member.index');
+        return view('admin.pengaturan-member.index');
     }
 
     public function create()
     {
         try {
-            return view('pages.pengaturan-member.create');
+            return view('admin.pengaturan-member.create');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -133,7 +133,7 @@ class PengaturanMemberController extends Controller
     {
         try {
             $pengaturanMember = PengaturanMember::findOrFail($id);
-            return view('pages.pengaturan-member.edit', compact('pengaturanMember'));
+            return view('admin.pengaturan-member.edit', compact('pengaturanMember'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

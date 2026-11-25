@@ -325,7 +325,7 @@
 
                     {{-- Badges on Photo --}}
                     <span class="absolute left-6 top-6 inline-flex items-center gap-1.5 rounded-full bg-[#8E1E26] px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-sm">
-                        <span>✨</span> Promo Event
+                        Promo Event
                     </span>
 
                     @if ($promoEvent->hemat_persen > 0)

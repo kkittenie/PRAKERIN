@@ -89,7 +89,7 @@
              tiap ada siaran real-time, tanpa reload seluruh halaman (lihat
              dengarkanPembaruanRealtime() di bawah). --}}
         <div id="tabel-pesanan-wrapper" class="rounded-2xl transition-shadow duration-700">
-            @include('pages.pesanan-pickup._tabel')
+            @include('admin.pesanan-pickup._tabel')
         </div>
 
         <!-- ========== MODAL DETAIL ========== -->

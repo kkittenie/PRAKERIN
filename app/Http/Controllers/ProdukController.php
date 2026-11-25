@@ -70,15 +70,15 @@ class ProdukController extends Controller
                             $order
                         );
                     })
-                    ->addColumn('foto', fn($item) => view('pages.produk.partials.foto', compact('item'))->render())
-                    ->editColumn('nama_produk', fn($item) => view('pages.produk.partials.nama', compact('item'))->render())
-                    ->addColumn('kode_html', fn($item) => view('pages.produk.partials.kode', compact('item'))->render())
-                    ->addColumn('varian_rasa_html', fn($item) => view('pages.produk.partials.varian_rasa', compact('item'))->render())
-                    ->addColumn('harga_jual_html', fn($item) => view('pages.produk.partials.harga', compact('item'))->render())
-                    ->addColumn('stok_html', fn($item) => view('pages.produk.partials.stok', compact('item'))->render())
-                    ->addColumn('status_html', fn($item) => view('pages.produk.partials.status', compact('item'))->render())
-                    ->addColumn('ketersediaan_html', fn($item) => view('pages.produk.partials.ketersediaan', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.produk.partials.aksi', compact('item'))->render())
+                    ->addColumn('foto', fn($item) => view('admin.produk.partials.foto', compact('item'))->render())
+                    ->editColumn('nama_produk', fn($item) => view('admin.produk.partials.nama', compact('item'))->render())
+                    ->addColumn('kode_html', fn($item) => view('admin.produk.partials.kode', compact('item'))->render())
+                    ->addColumn('varian_rasa_html', fn($item) => view('admin.produk.partials.varian_rasa', compact('item'))->render())
+                    ->addColumn('harga_jual_html', fn($item) => view('admin.produk.partials.harga', compact('item'))->render())
+                    ->addColumn('stok_html', fn($item) => view('admin.produk.partials.stok', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('admin.produk.partials.status', compact('item'))->render())
+                    ->addColumn('ketersediaan_html', fn($item) => view('admin.produk.partials.ketersediaan', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.produk.partials.aksi', compact('item'))->render())
                     ->rawColumns(['foto', 'nama_produk', 'kode_html', 'varian_rasa_html', 'harga_jual_html', 'stok_html', 'status_html', 'ketersediaan_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -93,7 +93,7 @@ class ProdukController extends Controller
 
         $kategori = KategoriProduk::orderBy('nama_kategori')->get();
 
-        return view('pages.produk.index', compact('kategori'));
+        return view('admin.produk.index', compact('kategori'));
     }
 
     public function toggleStatus(Produk $produk)
@@ -119,7 +119,7 @@ class ProdukController extends Controller
             $detailBaris = $this->barisDariOld(old('detail_baris', []));
             $varianBaris = $this->varianDariOld(old('varian_baris', []));
 
-            return view('pages.produk.create', compact('kategori', 'detailBaris', 'varianBaris'));
+            return view('admin.produk.create', compact('kategori', 'detailBaris', 'varianBaris'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -194,7 +194,7 @@ class ProdukController extends Controller
         try {
             $produk->load(['kategori', 'detailProduks', 'varianProduks']);
 
-            return view('pages.produk.show', compact('produk'));
+            return view('admin.produk.show', compact('produk'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -239,7 +239,7 @@ class ProdukController extends Controller
                 ? asset('storage/' . $produk->foto)
                 : $produk->detailProduks->first(fn (DetailProduk $d) => $d->foto)?->foto_url;
 
-            return view('pages.produk.edit', compact('produk', 'kategori', 'detailBaris', 'varianBaris', 'fotoUtamaUrl'));
+            return view('admin.produk.edit', compact('produk', 'kategori', 'detailBaris', 'varianBaris', 'fotoUtamaUrl'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

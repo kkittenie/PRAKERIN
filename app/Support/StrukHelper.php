@@ -6,7 +6,7 @@ use App\Models\Transaksi;
 use Illuminate\Support\Collection;
 
 /**
- * Kumpulan logika kecil untuk isi struk/tiket cetak (resources/views/pages/transaksi/cetak.blade.php).
+ * Kumpulan logika kecil untuk isi struk/tiket cetak (resources/views/admin/transaksi/cetak.blade.php).
  *
  * Dipisah dari view supaya aturan yang sama dipakai persis sama oleh tampilan HTML
  * dan teks yang dikirim ke printer Bluetooth, jadi keduanya tidak bisa beda isi.
