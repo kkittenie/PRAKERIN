@@ -16,20 +16,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias([
-            'role' => RoleMiddleware::class,
-            'permission' => PermissionMiddleware::class,
-            'role_or_permission' => RoleOrPermissionMiddleware::class,
-        ]);
-    })
-    ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias([
-            'role' => RoleMiddleware::class,
-            'permission' => PermissionMiddleware::class,
-            'role_or_permission' => RoleOrPermissionMiddleware::class,
+        $middleware->web(replace: [
+            \Illuminate\Session\Middleware\StartSession::class => \App\Http\Middleware\StartSession::class,
         ]);
 
         $middleware->alias([
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
             'shift.kasir' => \App\Http\Middleware\PastikanShiftKasirAktif::class,
         ]);
 
@@ -58,6 +52,8 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
-            return back()->with('error', 'Sesi kamu sudah kadaluwarsa. Silakan coba klik/kirim lagi.');
+            return back()
+                ->withInput($request->except(['password', 'password_confirmation', 'pin', 'token', '_token']))
+                ->with('error', 'Sesi kamu sudah kadaluwarsa. Silakan coba klik/kirim lagi.');
         });
     })->create();

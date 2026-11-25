@@ -70,7 +70,7 @@
     </div>
 
     <div>
-        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Urutan <span class="text-red-500">*</span></label>
+        <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Urutan</label>
         <input type="number" min="0" name="urutan" value="{{ old('urutan', $slide?->urutan ?? 0) }}"
             class="h-12 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
         <small class="text-gray-400">Angka lebih kecil tampil lebih dulu.</small>
@@ -79,12 +79,14 @@
 
     <div>
         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-        <label class="flex h-12 cursor-pointer items-center gap-3">
+        <div class="flex items-center gap-3 h-12">
             <input type="hidden" name="status_aktif" value="0">
-            <input type="checkbox" name="status_aktif" value="1"
-                class="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                {{ old('status_aktif', $slide ? ($slide->status_aktif ? '1' : '0') : '1') == '1' ? 'checked' : '' }}>
-            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Tampilkan di halaman welcome</span>
-        </label>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" name="status_aktif" value="1" class="sr-only peer"
+                    {{ old('status_aktif', $slide ? ($slide->status_aktif ? '1' : '0') : '1') == '1' ? 'checked' : '' }}>
+                <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
+                <span class="ml-3 text-sm font-semibold text-gray-800 dark:text-gray-200">Tampilkan di halaman welcome</span>
+            </label>
+        </div>
     </div>
 </div>

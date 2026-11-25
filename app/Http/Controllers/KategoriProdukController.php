@@ -20,6 +20,16 @@ class KategoriProdukController extends Controller
                     ->editColumn('nama_kategori', fn($item) => view('admin.kategori-produk.partials.nama', compact('item'))->render())
                     ->addColumn('produk_count_html', fn($item) => view('admin.kategori-produk.partials.produk_count', compact('item'))->render())
                     ->addColumn('aksi', fn($item) => view('admin.kategori-produk.partials.aksi', compact('item'))->render())
+                    ->orderColumn('produk_count', function ($query, $order) {
+                        $query->orderBy('produk_count', $order);
+                    })
+                    ->filter(function ($query) use ($request) {
+                        $search = trim((string) $request->input('search.value', ''));
+
+                        if ($search !== '') {
+                            $query->where('nama_kategori', 'like', "%{$search}%");
+                        }
+                    }, true)
                     ->rawColumns(['nama_kategori', 'produk_count_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {

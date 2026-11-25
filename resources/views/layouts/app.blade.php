@@ -584,16 +584,20 @@
 
     @if (session('success') || session('error'))
         <div x-data="{ show: false }" x-init="
-                show = true;
-                setTimeout(() => show = false, 3500);
-            " x-show="show" x-transition:enter="transition ease-out duration-300"
+                $nextTick(() => { show = true; });
+                setTimeout(() => show = false, 4000);
+            " x-show="show" x-cloak x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="translate-y-4 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
             x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-y-0 opacity-100"
-            x-transition:leave-end="translate-y-4 opacity-0" class="fixed top-5 right-5 z-99999">
+            x-transition:leave-end="translate-y-4 opacity-0" class="fixed top-5 right-5 z-[99999] max-w-[calc(100vw-2.5rem)]">
             <div
                 class="text-[#FAF5E8] px-5 py-3.5 rounded-2xl shadow-xl border flex items-center gap-3 min-w-[280px] {{ session('success') ? 'bg-[#2C5835] border-[#2C5835]/30' : 'bg-[#8E1E26] border-[#8E1E26]/30' }}">
-                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-white/15 font-bold text-sm">{{ session('success') ? '✓' : '!' }}</span>
-                <span class="text-sm font-semibold">{{ session('success') ?? session('error') }}</span>
+                <span class="flex items-center justify-center w-6 h-6 shrink-0 rounded-full bg-white/15 font-bold text-sm">{{ session('success') ? '✓' : '!' }}</span>
+                <span class="text-sm font-semibold flex-1">{{ session('success') ?? session('error') }}</span>
+                <button type="button" @click="show = false" aria-label="Tutup"
+                    class="ml-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white/75 hover:bg-white/15 hover:text-white transition cursor-pointer">
+                    &times;
+                </button>
             </div>
         </div>
     @endif
@@ -645,19 +649,15 @@
         </div>
     </div>
 
-    {{-- Daisy Custom Dropdown Engine (upgrades all admin filter, page-size & toolbar dropdowns) --}}
+    {{-- Daisy Custom Searchable Dropdown Engine (upgrades all admin dropdowns with Daisy Bakery theme + search) --}}
     <script>
         (function () {
             const FILTER_SELECTORS = [
-                '.sdt-pagesize select',
                 'form[method="GET"] select',
                 'form[method="get"] select',
                 '#filterForm select',
                 '#filterPesananPickup select',
-                'select[id^="filter_"]',
-                'select[x-model="itemsPerPage"]',
-                'select[x-model="selectedPrinter"]',
-                'select[data-daisy-select]'
+                'select[id^="filter_"]'
             ].join(', ');
 
             const instances = new WeakMap();
@@ -667,9 +667,9 @@
                 if (!select || select.tagName !== 'SELECT') return false;
                 if (select.multiple) return false;
                 if (select.hasAttribute('data-native-select')) return false;
-                if (select.classList.contains('input-varian-produk')) return false;
                 if (select.closest('template')) return false;
-                return select.matches(FILTER_SELECTORS);
+                if (select.classList.contains('daisy-select-native-hidden')) return false;
+                return true;
             }
 
             function closeActive() {
@@ -683,8 +683,16 @@
                     select.closest('.sdt-pagesize') && !select.id.startsWith('filter_')
                 ) || select.getAttribute('x-model') === 'itemsPerPage' || select.id === 'filter_tahun_terlaris' || select.name === 'tahun';
 
+                const isFilter = !isCompact && select.matches(FILTER_SELECTORS);
+
+                const isFormSelect = !isCompact && !isFilter && (
+                    select.classList.contains('h-12') ||
+                    select.classList.contains('py-3') ||
+                    !!select.closest('form:not([method="GET"]):not([method="get"])')
+                );
+
                 const isFullWidth = select.classList.contains('w-full') || (
-                    select.closest('form[method="GET"], form[method="get"], #filterForm, #filterPesananPickup') && !isCompact
+                    (isFilter || isFormSelect) && !isCompact
                 );
 
                 const wrap = document.createElement('div');
@@ -698,7 +706,9 @@
 
                 const trigger = document.createElement('button');
                 trigger.type = 'button';
-                trigger.className = 'daisy-select-trigger' + (isCompact ? ' is-compact' : '');
+                trigger.className = 'daisy-select-trigger' +
+                    (isCompact ? ' is-compact' : '') +
+                    (isFormSelect ? ' is-form' : '');
                 trigger.setAttribute('aria-haspopup', 'listbox');
                 trigger.setAttribute('aria-expanded', 'false');
 
@@ -724,20 +734,23 @@
                 let isOpen = false;
 
                 function getOptions() {
-                    return Array.from(select.options).map((opt, idx) => ({
-                        index: idx,
-                        value: opt.value,
-                        label: (opt.textContent || '').trim(),
-                        disabled: opt.disabled,
-                        selected: opt.selected
-                    }));
+                    return Array.from(select.options)
+                        .filter((opt) => !opt.hidden && opt.style.display !== 'none')
+                        .map((opt, idx) => ({
+                            index: idx,
+                            value: opt.value,
+                            label: (opt.textContent || '').trim(),
+                            disabled: opt.disabled,
+                            selected: opt.selected
+                        }));
                 }
 
                 function updateTrigger() {
                     const opts = getOptions();
-                    const selected = opts.find(o => o.value === select.value) || opts[select.selectedIndex] || opts[0];
+                    const selected = opts.find(o => o.value === select.value) || opts.find(o => o.selected) || opts[0];
                     const text = selected ? selected.label : 'Pilih...';
-                    const isFiltered = !isCompact && selected && selected.index > 0 && selected.value !== '' && selected.value !== 'semua';
+                    const isPlaceholder = !isCompact && (!selected || selected.value === '');
+                    const isFiltered = isFilter && selected && selected.index > 0 && selected.value !== '' && selected.value !== 'semua';
 
                     labelSpan.innerHTML = '';
                     if (isFiltered) {
@@ -750,6 +763,7 @@
                     txt.textContent = text;
                     labelSpan.appendChild(txt);
 
+                    trigger.classList.toggle('is-placeholder', isPlaceholder);
                     trigger.disabled = !!select.disabled;
                 }
 
@@ -757,15 +771,15 @@
                     if (!portal) return;
                     const rect = trigger.getBoundingClientRect();
                     const margin = 10;
-                    const desiredWidth = Math.max(rect.width, isCompact ? 118 : 230);
+                    const desiredWidth = Math.max(rect.width, isCompact ? 176 : 240);
                     const maxW = Math.min(desiredWidth, window.innerWidth - margin * 2);
 
                     portal.style.width = maxW + 'px';
-                    const portalHeight = Math.min(portal.offsetHeight || 260, 310);
+                    const portalHeight = Math.min(portal.offsetHeight || 280, 320);
 
                     const spaceBelow = window.innerHeight - rect.bottom - margin;
                     const spaceAbove = rect.top - margin;
-                    const openAbove = spaceBelow < Math.min(portalHeight, 210) && spaceAbove > spaceBelow;
+                    const openAbove = spaceBelow < Math.min(portalHeight, 220) && spaceAbove > spaceBelow;
 
                     let left = rect.left;
                     if (left + maxW > window.innerWidth - margin) {
@@ -840,6 +854,7 @@
                 function chooseValue(newValue) {
                     const changed = select.value !== newValue;
                     select.value = newValue;
+                    trigger.classList.remove('is-invalid');
                     updateTrigger();
                     close();
                     trigger.focus();
@@ -861,30 +876,40 @@
                     portal.addEventListener('mousedown', (e) => e.stopPropagation());
                     portal.addEventListener('click', (e) => e.stopPropagation());
 
-                    const opts = getOptions();
-                    if (opts.length >= 8) {
-                        const sBox = document.createElement('div');
-                        sBox.className = 'daisy-select-search-box';
-                        searchInput = document.createElement('input');
-                        searchInput.type = 'text';
-                        searchInput.className = 'daisy-select-search';
-                        searchInput.placeholder = 'Cari pilihan...';
-                        searchInput.addEventListener('input', () => {
-                            highlightedIndex = 0;
-                            renderOptions(searchInput.value);
-                        });
-                        searchInput.addEventListener('keydown', handleKeydown);
-                        sBox.appendChild(searchInput);
-                        portal.appendChild(sBox);
-                    } else {
-                        searchInput = null;
-                    }
+                    const sBox = document.createElement('div');
+                    sBox.className = 'daisy-select-search-box';
+                    const sWrap = document.createElement('div');
+                    sWrap.className = 'daisy-select-search-wrap';
+                    const sIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    sIcon.setAttribute('viewBox', '0 0 24 24');
+                    sIcon.setAttribute('fill', 'none');
+                    sIcon.setAttribute('stroke', 'currentColor');
+                    sIcon.setAttribute('stroke-width', '2');
+                    sIcon.classList.add('daisy-select-search-icon');
+                    sIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35m2.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/>';
+
+                    searchInput = document.createElement('input');
+                    searchInput.type = 'text';
+                    searchInput.className = 'daisy-select-search';
+                    searchInput.placeholder = isCompact ? 'Cari...' : 'Cari pilihan...';
+                    searchInput.setAttribute('autocomplete', 'off');
+                    searchInput.addEventListener('input', () => {
+                        highlightedIndex = 0;
+                        renderOptions(searchInput.value);
+                    });
+                    searchInput.addEventListener('keydown', handleKeydown);
+
+                    sWrap.appendChild(sIcon);
+                    sWrap.appendChild(searchInput);
+                    sBox.appendChild(sWrap);
+                    portal.appendChild(sBox);
 
                     listEl = document.createElement('ul');
                     listEl.className = 'daisy-select-list custom-scrollbar';
                     listEl.setAttribute('role', 'listbox');
                     portal.appendChild(listEl);
 
+                    const opts = getOptions();
                     highlightedIndex = opts.findIndex(o => o.value === select.value);
                     renderOptions('');
 
@@ -952,8 +977,19 @@
                 });
                 trigger.addEventListener('keydown', handleKeydown);
 
-                select.addEventListener('change', updateTrigger);
+                select.addEventListener('change', () => {
+                    trigger.classList.remove('is-invalid');
+                    updateTrigger();
+                });
                 select.addEventListener('input', updateTrigger);
+                select.addEventListener('invalid', () => {
+                    trigger.classList.add('is-invalid');
+                    trigger.focus();
+                    trigger.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+                if (select.form) {
+                    select.form.addEventListener('reset', () => setTimeout(updateTrigger, 0));
+                }
 
                 const desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
                 if (desc && desc.set && desc.get) {
@@ -975,6 +1011,7 @@
                 optObserver.observe(select, { childList: true, subtree: true, attributes: true, characterData: true });
 
                 updateTrigger();
+                setTimeout(updateTrigger, 60);
 
                 const api = { select, wrap, trigger, open, close, sync: updateTrigger, position: positionPortal };
                 instances.set(select, api);
@@ -983,7 +1020,7 @@
 
             function enhanceAll(root = document) {
                 if (!root || !root.querySelectorAll) return;
-                root.querySelectorAll(FILTER_SELECTORS).forEach((el) => {
+                root.querySelectorAll('select').forEach((el) => {
                     if (isEligible(el)) createDaisySelect(el);
                 });
             }

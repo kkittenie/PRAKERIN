@@ -256,6 +256,12 @@ class ProduksiController extends Controller
     public function store(Request $request)
     {
         try {
+            // Beberapa browser / WebView mengirim input type="time" dengan detik (H:i:s).
+            // Normalisasi ke format H:i supaya validasi date_format:H:i tidak pernah gagal.
+            if ($request->filled('jam_produksi') && preg_match('/^\d{2}:\d{2}:\d{2}$/', (string) $request->jam_produksi)) {
+                $request->merge(['jam_produksi' => substr((string) $request->jam_produksi, 0, 5)]);
+            }
+
             if ($request->has('produk_items') && is_array($request->produk_items)) {
                 return $this->simpanProduksiBanyak($request);
             }

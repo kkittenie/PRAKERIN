@@ -8,6 +8,17 @@
 
 <x-common.component-card title="Form Produksi">
 
+@if ($errors->any())
+    <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+        <p class="font-bold">Mohon lengkapi atau perbaiki data produksi berikut:</p>
+        <ul class="mt-1 list-disc space-y-0.5 pl-5 text-xs">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <form action="{{ route('produksi.store') }}" method="POST" id="formProduksi">
 
 @csrf
@@ -91,6 +102,8 @@
                     id="kadaluarsa_jam"
                     name="kadaluarsa_jam"
                     min="1"
+                    step="1"
+                    inputmode="numeric"
                     placeholder="Contoh: 24"
                     value="{{ old('kadaluarsa_jam') }}"
                     class="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-3 focus:border-brand-500 focus:ring-brand-500">
@@ -98,7 +111,7 @@
             </div>
 
             <p id="peringatanKadaluarsaJam" class="hidden text-xs text-red-600 mt-1">
-                Jam kadaluwarsa harus diisi (lebih dari 0).
+                Jam kadaluwarsa harus diisi bilangan bulat minimal 1 jam.
             </p>
 
             <p id="infoWaktuKadaluarsa" class="hidden text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -445,9 +458,10 @@ function cekKadaluarsaTanggal() {
 
 function cekKadaluarsaJam() {
     if (!tipeJam.checked) return true;
-    const nilaiJam = parseFloat(fieldKadaluarsaJam.value);
+    const rawVal = String(fieldKadaluarsaJam.value ?? '').trim();
+    const nilaiJam = Number(rawVal);
 
-    if (!fieldKadaluarsaJam.value || isNaN(nilaiJam) || nilaiJam <= 0) {
+    if (!rawVal || isNaN(nilaiJam) || nilaiJam < 1 || !Number.isInteger(nilaiJam)) {
         peringatanKadaluarsaJam.classList.remove('hidden');
         fieldKadaluarsaJam.classList.add('border-red-500');
         infoWaktuKadaluarsa.classList.add('hidden');
@@ -458,7 +472,8 @@ function cekKadaluarsaJam() {
     fieldKadaluarsaJam.classList.remove('border-red-500');
 
     if (fieldTanggalProduksi.value && fieldJamProduksi.value) {
-        const mulai = new Date(`${fieldTanggalProduksi.value}T${fieldJamProduksi.value}`);
+        const jamBersih = String(fieldJamProduksi.value).slice(0, 5);
+        const mulai = new Date(`${fieldTanggalProduksi.value}T${jamBersih}:00`);
         if (!isNaN(mulai.getTime())) {
             mulai.setHours(mulai.getHours() + nilaiJam);
             const pad = (n) => String(n).padStart(2, '0');
@@ -470,14 +485,22 @@ function cekKadaluarsaJam() {
     return true;
 }
 
+const sinkronKadaluarsa = () => {
+    cekKadaluarsaTanggal();
+    cekKadaluarsaJam();
+    hitungTotalSemua();
+};
+
 tipeTanggal.addEventListener('change', toggleKadaluarsa);
 tipeJam.addEventListener('change', toggleKadaluarsa);
-fieldKadaluarsaTanggal.addEventListener('input', cekKadaluarsaTanggal);
-fieldTanggalProduksi.addEventListener('input', () => { cekKadaluarsaTanggal(); cekKadaluarsaJam(); });
-fieldKadaluarsaJam.addEventListener('input', cekKadaluarsaJam);
-fieldJamProduksi.addEventListener('input', cekKadaluarsaJam);
-toggleKadaluarsa();
-cekKadaluarsaJam();
+fieldKadaluarsaTanggal.addEventListener('input', sinkronKadaluarsa);
+fieldKadaluarsaTanggal.addEventListener('change', sinkronKadaluarsa);
+fieldTanggalProduksi.addEventListener('input', sinkronKadaluarsa);
+fieldTanggalProduksi.addEventListener('change', sinkronKadaluarsa);
+fieldKadaluarsaJam.addEventListener('input', sinkronKadaluarsa);
+fieldKadaluarsaJam.addEventListener('change', sinkronKadaluarsa);
+fieldJamProduksi.addEventListener('input', sinkronKadaluarsa);
+fieldJamProduksi.addEventListener('change', sinkronKadaluarsa);
 
 
 /* ==========================================================================
@@ -912,6 +935,10 @@ if (Array.isArray(oldProdukItems) && oldProdukItems.length > 0) {
 } else {
     tambahBarisProduk();
 }
+
+toggleKadaluarsa();
+cekKadaluarsaJam();
+hitungTotalSemua();
 
 // Form Submit Handler
 const formProduksi = document.getElementById('formProduksi');

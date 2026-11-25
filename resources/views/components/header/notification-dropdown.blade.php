@@ -8,17 +8,51 @@
     dropdownOpen: false,
     notifyingCount: {{ $notifyingCount }},
     notifications: {{ json_encode($initialNotifications) }},
+    pollAbort: null,
+    pollTimer: null,
 
     init() {
-        this.fetchNotifications();
-        setInterval(() => this.fetchNotifications(), 5000);
+        this.pollTimer = setInterval(() => {
+            if (!document.hidden) {
+                this.fetchNotifications();
+            }
+        }, 10000);
+
+        const stopPolling = () => {
+            if (this.pollTimer) {
+                clearInterval(this.pollTimer);
+                this.pollTimer = null;
+            }
+            if (this.pollAbort) {
+                this.pollAbort.abort();
+                this.pollAbort = null;
+            }
+        };
+
+        window.addEventListener('beforeunload', stopPolling);
+        document.addEventListener('submit', () => {
+            if (this.pollAbort) {
+                this.pollAbort.abort();
+                this.pollAbort = null;
+            }
+        }, true);
     },
 
     fetchNotifications() {
-        fetch('{{ route('notifications.unread-json') }}')
-            .then(res => res.json())
+        if (this.pollAbort) {
+            this.pollAbort.abort();
+        }
+        this.pollAbort = new AbortController();
+        fetch('{{ route('notifications.unread-json') }}', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            signal: this.pollAbort.signal
+        })
+            .then(res => res.ok ? res.json() : null)
             .then(data => {
-                if (data.status === 'success') {
+                if (data && data.status === 'success') {
                     this.notifyingCount = data.unread_count;
                     this.notifications = data.notifications;
                 }

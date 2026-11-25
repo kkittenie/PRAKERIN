@@ -67,6 +67,8 @@ class ActivityLogHelper
             abort(500, $message);
         }
 
-        return back()->with('error', $message);
+        return back()
+            ->withInput(request()->except(['password', 'password_confirmation', 'pin', 'token', '_token']))
+            ->with('error', $message);
     }
 }

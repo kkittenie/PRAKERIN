@@ -64,7 +64,7 @@ class QrisController extends Controller
     public function store(Request $request)
     {
         try {
-            $data = $request->validate($this->aturan(true));
+            $data = $request->validate($this->aturan(true), $this->pesanValidasi());
 
             $qris = DB::transaction(function () use ($request, $data) {
                 // Dibuat dulu supaya dapat id, lalu kode (QRS001, dst) dibentuk dari id
@@ -112,7 +112,7 @@ class QrisController extends Controller
     public function update(Request $request, QrisImage $qris)
     {
         try {
-            $data = $request->validate($this->aturan(false));
+            $data = $request->validate($this->aturan(false), $this->pesanValidasi());
 
             DB::transaction(function () use ($request, $data, $qris) {
                 $perubahan = ['nama' => $data['nama']];
@@ -192,6 +192,18 @@ class QrisController extends Controller
             'nama' => 'required|string|max:100',
             'gambar' => ($wajibGambar ? 'required' : 'nullable') . '|image|mimes:jpg,jpeg,png,webp|max:2048',
             'status_aktif' => 'required|boolean',
+        ];
+    }
+
+    private function pesanValidasi(): array
+    {
+        return [
+            'nama.required' => 'Nama QRIS wajib diisi.',
+            'nama.max' => 'Nama QRIS maksimal 100 karakter.',
+            'gambar.required' => 'Gambar QRIS wajib diunggah.',
+            'gambar.image' => 'File yang diunggah harus berupa gambar.',
+            'gambar.mimes' => 'Format gambar QRIS harus JPG, JPEG, PNG, atau WebP.',
+            'gambar.max' => 'Ukuran gambar QRIS maksimal 2MB.',
         ];
     }
 

@@ -135,7 +135,8 @@
                 </a>
 
                 <button
-                    class="rounded-lg bg-brand-500 px-5 py-2 text-white hover:bg-brand-600">
+                    type="submit"
+                    class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 transition shadow-xs">
 
                     Simpan Produk
 
@@ -148,6 +149,8 @@
     </x-common.component-card>
 
 </div>
+
+@include('admin.produk.partials.crop-modal')
 
     <script>
 
