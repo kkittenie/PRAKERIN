@@ -127,6 +127,7 @@
                 </a>
 
                 <button
+                    type="submit"
                     class="rounded-lg bg-brand-500 px-5 py-2 text-white hover:bg-brand-600">
 
                     Simpan Bahan Baku
@@ -216,6 +217,8 @@ document.getElementById('btnSimpanSatuan').addEventListener('click', function ()
         option.dataset.tipe = json.data.tipe;
         option.selected = true;
         select.appendChild(option);
+        select.value = String(json.data.id);
+        window.DaisyCustomSelect?.sync(select);
 
         document.getElementById('inputSatuanBaru').value = '';
         document.getElementById('formTambahSatuan').classList.add('hidden');

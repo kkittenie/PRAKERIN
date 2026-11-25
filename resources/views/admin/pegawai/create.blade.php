@@ -8,7 +8,18 @@
 
     <x-common.component-card title="Form Tambah Pegawai">
 
-        <form action="{{ route('pegawai.store') }}" method="POST">
+        @if ($errors->any())
+            <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+                <p class="font-bold">Mohon lengkapi atau perbaiki data berikut:</p>
+                <ul class="mt-1 list-disc space-y-0.5 pl-5 text-xs">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form id="formPegawai" action="{{ route('pegawai.store') }}" method="POST" novalidate>
 
             @csrf
 
@@ -16,76 +27,91 @@
 
                 {{-- Nama Pegawai --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Nama Pegawai <span class="text-red-500">*</span>
                     </label>
 
-                    <input type="text" name="nama" value="{{ old('nama') }}"
-                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
+                    <input type="text" name="nama" value="{{ old('nama') }}" required maxlength="100"
+                        placeholder="Masukkan nama lengkap pegawai"
+                        class="h-12 w-full rounded-lg border {{ $errors->has('nama') ? 'border-red-500' : 'border-gray-300 dark:border-gray-700' }} bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:ring-brand-500">
 
                     @error('nama')
-                    <small class="text-red-500">{{ $message }}</small>
+                        <small class="mt-1 block text-red-500">{{ $message }}</small>
                     @enderror
+                    <small class="mt-1 hidden text-red-500" data-error-for="nama"></small>
                 </div>
 
                 {{-- Nomor HP --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Nomor HP <span class="text-red-500">*</span>
                     </label>
 
-                    <input type="tel" name="no_hp" value="{{ old('no_hp') }}"
-                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
+                    <input type="tel" name="no_hp" value="{{ old('no_hp') }}" required maxlength="20"
+                        placeholder="Contoh: 081234567890"
+                        class="h-12 w-full rounded-lg border {{ $errors->has('no_hp') ? 'border-red-500' : 'border-gray-300 dark:border-gray-700' }} bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:ring-brand-500">
 
                     @error('no_hp')
-                    <small class="text-red-500">{{ $message }}</small>
+                        <small class="mt-1 block text-red-500">{{ $message }}</small>
                     @enderror
+                    <small class="mt-1 hidden text-red-500" data-error-for="no_hp"></small>
                 </div>
 
                 {{-- Username --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Username <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="username" value="{{ old('username') }}"
-                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
-                    @error('username')<small class="text-red-500">{{ $message }}</small>@enderror
+                    <input type="text" name="username" value="{{ old('username') }}" required maxlength="255"
+                        placeholder="Username untuk login"
+                        class="h-12 w-full rounded-lg border {{ $errors->has('username') ? 'border-red-500' : 'border-gray-300 dark:border-gray-700' }} bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:ring-brand-500">
+                    @error('username')
+                        <small class="mt-1 block text-red-500">{{ $message }}</small>
+                    @enderror
+                    <small class="mt-1 hidden text-red-500" data-error-for="username"></small>
                 </div>
 
                 {{-- Email --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Email <span class="text-red-500">*</span>
                     </label>
-                    <input type="email" name="email" value="{{ old('email') }}"
-                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
-                    @error('email')<small class="text-red-500">{{ $message }}</small>@enderror
+                    <input type="email" name="email" value="{{ old('email') }}" required maxlength="255"
+                        placeholder="contoh@email.com"
+                        class="h-12 w-full rounded-lg border {{ $errors->has('email') ? 'border-red-500' : 'border-gray-300 dark:border-gray-700' }} bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:ring-brand-500">
+                    @error('email')
+                        <small class="mt-1 block text-red-500">{{ $message }}</small>
+                    @enderror
+                    <small class="mt-1 hidden text-red-500" data-error-for="email"></small>
                 </div>
 
                 {{-- Password --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Password  <span class="text-red-500">*</span>
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Password <span class="text-red-500">*</span>
                     </label>
-                    <input type="password" name="password"
-                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
-                    @error('password')<small class="text-red-500">{{ $message }}</small>@enderror
+                    <input type="password" name="password" required minlength="6"
+                        placeholder="Minimal 6 karakter"
+                        class="h-12 w-full rounded-lg border {{ $errors->has('password') ? 'border-red-500' : 'border-gray-300 dark:border-gray-700' }} bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:ring-brand-500">
+                    @error('password')
+                        <small class="mt-1 block text-red-500">{{ $message }}</small>
+                    @enderror
+                    <small class="mt-1 hidden text-red-500" data-error-for="password"></small>
                 </div>
 
                 {{-- Jabatan --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Jabatan <span class="text-red-500">*</span>
                     </label>
 
-                    <select name="jabatan"
-                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900">
+                    <select name="jabatan" required
+                        class="h-12 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:bg-gray-800">
 
-                        <option value="" class="dark:bg-gray-900">Pilih Jabatan</option>
+                        <option value="">Pilih Jabatan</option>
 
                         @foreach ($roles as $role)
-                            <option value="{{ $role }}" {{ old('jabatan')==$role ? 'selected' : '' }}
-                                class="dark:bg-gray-900">
+                            <option value="{{ $role }}" {{ old('jabatan') == $role ? 'selected' : '' }}>
                                 {{ $role }}
                             </option>
                         @endforeach
@@ -93,60 +119,63 @@
                     </select>
 
                     @error('jabatan')
-                    <small class="text-red-500">{{ $message }}</small>
+                        <small class="mt-1 block text-red-500">{{ $message }}</small>
                     @enderror
+                    <small class="mt-1 hidden text-red-500" data-error-for="jabatan"></small>
                 </div>
 
                 {{-- Tanggal Masuk --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Tanggal Masuk <span class="text-red-500">*</span>
                     </label>
 
-                    <input type="date" name="tanggal_masuk" value="{{ old('tanggal_masuk') }}" max="{{ date('Y-m-d') }}"
-                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">
+                    <input type="date" name="tanggal_masuk" value="{{ old('tanggal_masuk') }}" max="{{ date('Y-m-d') }}" required
+                        class="h-12 w-full rounded-lg border {{ $errors->has('tanggal_masuk') ? 'border-red-500' : 'border-gray-300 dark:border-gray-700' }} bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:ring-brand-500">
 
                     @error('tanggal_masuk')
-                    <small class="text-red-500">{{ $message }}</small>
+                        <small class="mt-1 block text-red-500">{{ $message }}</small>
                     @enderror
-                </div>
-
-                {{-- Alamat --}}
-                <div class="md:col-span-2">
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        Alamat <span class="text-red-500">*</span>
-                    </label>
-
-                    <textarea name="alamat" rows="3"
-                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-850 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('alamat') }}</textarea>
-
-                    @error('alamat')
-                    <small class="text-red-500">{{ $message }}</small>
-                    @enderror
+                    <small class="mt-1 hidden text-red-500" data-error-for="tanggal_masuk"></small>
                 </div>
 
                 {{-- Status --}}
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Status Aktif
                     </label>
 
                     <select name="status_aktif"
-                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-855 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white/90 dark:bg-gray-900">
+                        class="h-12 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:text-white dark:bg-gray-800">
 
-                        <option value="1" {{ old('status_aktif')=='1' ? 'selected' : '' }} class="dark:bg-gray-900">
+                        <option value="1" {{ (string) old('status_aktif', '1') === '1' ? 'selected' : '' }}>
                             Aktif
                         </option>
 
-                        <option value="0" {{ old('status_aktif')=='0' ? 'selected' : '' }} class="dark:bg-gray-900">
+                        <option value="0" {{ (string) old('status_aktif', '1') === '0' ? 'selected' : '' }}>
                             Tidak Aktif
                         </option>
 
                     </select>
 
                     @error('status_aktif')
-                    <small class="text-red-500">{{ $message }}</small>
+                        <small class="mt-1 block text-red-500">{{ $message }}</small>
                     @enderror
+                </div>
+
+                {{-- Alamat --}}
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Alamat <span class="text-red-500">*</span>
+                    </label>
+
+                    <textarea name="alamat" rows="3" required placeholder="Masukkan alamat lengkap pegawai"
+                        class="w-full rounded-lg border {{ $errors->has('alamat') ? 'border-red-500' : 'border-gray-300 dark:border-gray-700' }} bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:ring-brand-500">{{ old('alamat') }}</textarea>
+
+                    @error('alamat')
+                        <small class="mt-1 block text-red-500">{{ $message }}</small>
+                    @enderror
+                    <small class="mt-1 hidden text-red-500" data-error-for="alamat"></small>
                 </div>
 
             </div>
@@ -154,17 +183,13 @@
             <div class="mt-8 flex justify-end gap-3">
 
                 <a href="{{ route('pegawai.index') }}"
-                    class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-750 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
-
+                    class="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
                     Batal
-
                 </a>
 
                 <button type="submit"
                     class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600">
-
                     Simpan Pegawai
-
                 </button>
 
             </div>
@@ -174,5 +199,80 @@
     </x-common.component-card>
 
 </div>
+
+@push('scripts')
+<script>
+    (function () {
+        const form = document.getElementById('formPegawai');
+        if (!form) return;
+
+        const aturan = [
+            { name: 'nama', pesan: 'Nama pegawai wajib diisi.' },
+            { name: 'no_hp', pesan: 'Nomor HP wajib diisi.', pattern: /^[0-9+\-\s()]+$/, pesanPattern: 'Format nomor HP tidak valid.' },
+            { name: 'username', pesan: 'Username wajib diisi.' },
+            { name: 'email', pesan: 'Email wajib diisi.', email: true, pesanEmail: 'Format email tidak valid.' },
+            { name: 'password', pesan: 'Password wajib diisi.', minLen: 6, pesanMin: 'Password minimal 6 karakter.' },
+            { name: 'jabatan', pesan: 'Jabatan wajib dipilih.' },
+            { name: 'tanggal_masuk', pesan: 'Tanggal masuk wajib diisi.' },
+            { name: 'alamat', pesan: 'Alamat wajib diisi.' },
+        ];
+
+        function setFieldError(name, message) {
+            const el = form.querySelector(`[name="${name}"]`);
+            const errEl = form.querySelector(`[data-error-for="${name}"]`);
+            if (errEl) {
+                errEl.textContent = message || '';
+                errEl.classList.toggle('hidden', !message);
+            }
+            if (el) {
+                el.classList.toggle('border-red-500', !!message);
+                const trigger = el.closest('.daisy-select-wrap')?.querySelector('.daisy-select-trigger');
+                if (trigger) trigger.classList.toggle('is-invalid', !!message);
+            }
+        }
+
+        aturan.forEach(({ name }) => {
+            const el = form.querySelector(`[name="${name}"]`);
+            if (!el) return;
+            const clear = () => setFieldError(name, '');
+            el.addEventListener('input', clear);
+            el.addEventListener('change', clear);
+        });
+
+        form.addEventListener('submit', function (e) {
+            let pertamaGagal = null;
+
+            aturan.forEach((r) => {
+                const el = form.querySelector(`[name="${r.name}"]`);
+                if (!el) return;
+                const val = String(el.value || '').trim();
+                let msg = '';
+
+                if (!val) {
+                    msg = r.pesan;
+                } else if (r.minLen && val.length < r.minLen) {
+                    msg = r.pesanMin;
+                } else if (r.pattern && !r.pattern.test(val)) {
+                    msg = r.pesanPattern;
+                } else if (r.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+                    msg = r.pesanEmail;
+                }
+
+                setFieldError(r.name, msg);
+                if (msg && !pertamaGagal) {
+                    pertamaGagal = el;
+                }
+            });
+
+            if (pertamaGagal) {
+                e.preventDefault();
+                const target = pertamaGagal.closest('.daisy-select-wrap')?.querySelector('.daisy-select-trigger') || pertamaGagal;
+                target.focus();
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    })();
+</script>
+@endpush
 
 @endsection

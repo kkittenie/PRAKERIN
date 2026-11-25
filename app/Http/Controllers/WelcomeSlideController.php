@@ -61,6 +61,7 @@ class WelcomeSlideController extends Controller
     {
         try {
             $data = $request->validate($this->aturan(true));
+            $data['urutan'] = (int) ($data['urutan'] ?? 0);
             unset($data['gambar']);
 
             // Dibuat dulu supaya dapat id, lalu kode (WLS001, dst) dibentuk dari id
@@ -97,6 +98,7 @@ class WelcomeSlideController extends Controller
     {
         try {
             $data = $request->validate($this->aturan(false));
+            $data['urutan'] = (int) ($data['urutan'] ?? 0);
 
             if ($request->hasFile('gambar')) {
                 $kode = $welcomeSlide->kode_slide;
@@ -153,7 +155,7 @@ class WelcomeSlideController extends Controller
             'judul' => 'required|string|max:150',
             'deskripsi' => 'nullable|string|max:255',
             'gambar' => ($wajibGambar ? 'required' : 'nullable') . '|image|mimes:jpg,jpeg,png,webp|max:4096',
-            'urutan' => 'required|integer|min:0',
+            'urutan' => 'nullable|integer|min:0',
             'status_aktif' => 'required|boolean',
         ];
     }

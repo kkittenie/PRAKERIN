@@ -647,5 +647,3 @@
         };
     }
 </script>
-
-@include('admin.produk.partials.crop-modal')

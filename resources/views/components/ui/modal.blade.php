@@ -26,7 +26,7 @@
     </div>
 
     <!-- Modal Content -->
-    <div @click.stop class="relative w-full rounded-3xl bg-white {{ $attributes->get('class') }}"
+    <div @click.stop class="relative w-full rounded-3xl bg-white dark:bg-[#241A16] border border-gray-200/80 dark:border-white/10 shadow-2xl {{ $attributes->get('class') }}"
         x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95"
         x-transition:enter-end="opacity-100 transform scale-100" x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100 transform scale-100"
@@ -34,8 +34,8 @@
 
         <!-- Close Button -->
         @if ($showCloseButton)
-            <button @click="open = false"
-                class="absolute right-3 top-3 z-999 flex h-9.5 w-9.5 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 sm:right-6 sm:top-6 sm:h-11 sm:w-11">
+            <button type="button" @click="open = false"
+                class="absolute right-3 top-3 z-999 flex h-9.5 w-9.5 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-300 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-white sm:right-5 sm:top-5 sm:h-10 sm:w-10 cursor-pointer">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
                     xmlns="http://www.w3.org/2000/svg">
                     <path fillRule="evenodd" clipRule="evenodd"

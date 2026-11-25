@@ -104,12 +104,15 @@
     {{-- Status --}}
     <div>
         <label class="{{ $labelClass }}">Status Bundling</label>
-        <label class="flex items-center gap-3 h-12 cursor-pointer">
+        <div class="flex items-center gap-3 h-12">
             <input type="hidden" name="status_aktif" value="0">
-            <input type="checkbox" name="status_aktif" value="1" class="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                {{ old('status_aktif', $editing ? (int) $bundling->status_aktif : '1') == '1' ? 'checked' : '' }}>
-            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Bundling Aktif</span>
-        </label>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" name="status_aktif" value="1" class="sr-only peer"
+                    {{ old('status_aktif', $editing ? (int) $bundling->status_aktif : '1') == '1' ? 'checked' : '' }}>
+                <div class="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all after:duration-200 peer-checked:after:translate-x-5"></div>
+                <span class="ml-3 text-sm font-semibold text-gray-800 dark:text-gray-200">Bundling Aktif</span>
+            </label>
+        </div>
         @error('status_aktif')
             <small class="text-red-500">{{ $message }}</small>
         @enderror

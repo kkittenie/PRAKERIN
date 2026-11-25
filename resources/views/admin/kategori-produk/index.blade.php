@@ -112,7 +112,7 @@
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'nama_kategori', name: 'nama_kategori' },
-                { data: 'produk_count_html', name: 'produk_count', className: 'text-center' },
+                { data: 'produk_count_html', name: 'produk_count', searchable: false, className: 'text-center' },
                 { data: 'aksi', name: 'aksi', orderable: false, searchable: false, className: 'text-right whitespace-nowrap' }
             ],
             emptyText: 'Belum ada kategori produk'

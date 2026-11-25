@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\ShiftKasirException;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Models\ShiftKasir;
 use App\Support\ActivityLogHelper;
@@ -73,7 +74,7 @@ class ShiftKasirController extends Controller
             $tujuan = auth()->user()->can('lihat_transaksi') ? route('transaksi.indeks') : route('shift.index');
 
             return redirect($tujuan)->with('success', $shift->labelShift() . ' dimulai dengan uang laci Rp ' . number_format($shift->modal_awal, 0, ',', '.') . '.');
-        } catch (\RuntimeException $e) {
+        } catch (ShiftKasirException $e) {
             return redirect()->route('shift.index')->with('error', $e->getMessage());
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -144,7 +145,7 @@ class ShiftKasirController extends Controller
                     ->first();
 
                 if (! $shift) {
-                    throw new \RuntimeException('Tidak ada shift yang sedang berjalan.');
+                    throw new ShiftKasirException('Tidak ada shift yang sedang berjalan.');
                 }
 
                 return $shift->tutup((float) $data['uang_akhir'], $data['catatan'] ?? null, $inputKasir);
@@ -171,7 +172,7 @@ class ShiftKasirController extends Controller
             }
 
             return redirect()->route('shift.index')->with('success', $pesan);
-        } catch (\RuntimeException $e) {
+        } catch (ShiftKasirException $e) {
             return redirect()->route('shift.index')->with('error', $e->getMessage());
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -204,7 +205,7 @@ class ShiftKasirController extends Controller
                 $baris = ShiftKasir::berjalan()->whereKey($shift->id)->lockForUpdate()->first();
 
                 if (! $baris) {
-                    throw new \RuntimeException('Shift ini sudah tidak berjalan (sudah ditutup).');
+                    throw new ShiftKasirException('Shift ini sudah tidak berjalan (sudah ditutup).');
                 }
 
                 $uangAkhir = ($data['uang_akhir'] ?? '') === '' ? null : (float) $data['uang_akhir'];
@@ -227,7 +228,7 @@ class ShiftKasirController extends Controller
 
             return redirect()->route('rekap-shift.show', $ditutup)
                 ->with('success', $ditutup->labelShift() . ' milik ' . $ditutup->nama_kasir . ' ditutup paksa.');
-        } catch (\RuntimeException $e) {
+        } catch (ShiftKasirException $e) {
             return back()->with('error', $e->getMessage());
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

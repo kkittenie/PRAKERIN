@@ -31,15 +31,18 @@ class PegawaiController extends Controller
                         $query->orderBy('status_aktif', $order);
                     })
                     ->filter(function ($query) use ($request) {
-                        // Override pencarian global supaya tetap bisa cari lewat
-                        // nama, jabatan, dan no_hp (seperti sebelumnya).
-                        $search = $request->input('search.value');
+                        $search = trim((string) $request->input('search.value', ''));
 
-                        if ($search) {
+                        if ($search !== '') {
                             $query->where(function ($q) use ($search) {
                                 $q->where('nama', 'like', "%{$search}%")
                                     ->orWhere('jabatan', 'like', "%{$search}%")
-                                    ->orWhere('no_hp', 'like', "%{$search}%");
+                                    ->orWhere('no_hp', 'like', "%{$search}%")
+                                    ->orWhere('alamat', 'like', "%{$search}%")
+                                    ->orWhereHas('user', function ($u) use ($search) {
+                                        $u->where('email', 'like', "%{$search}%")
+                                            ->orWhere('username', 'like', "%{$search}%");
+                                    });
                             });
                         }
                     }, true)
@@ -85,9 +88,9 @@ class PegawaiController extends Controller
                 'tanggal_masuk' => 'required|date',
                 'status_aktif' => 'required|boolean',
                 'username' => 'required|string|max:255|unique:users,username',
-                'email' => 'required|nullable|email|unique:users,email',
+                'email' => 'required|email|max:255|unique:users,email',
                 'password' => 'required|min:6',
-            ]);
+            ], $this->pesanValidasi());
 
             DB::transaction(function () use ($request) {
                 $user = User::create([
@@ -128,7 +131,12 @@ class PegawaiController extends Controller
      */
     public function show(Pegawai $pegawai)
     {
-        //
+        try {
+            $pegawai->load('user.roles');
+            return view('admin.pegawai.show', compact('pegawai'));
+        } catch (\Throwable $e) {
+            return ActivityLogHelper::handleException($e);
+        }
     }
 
     /**
@@ -159,9 +167,9 @@ class PegawaiController extends Controller
                 'tanggal_masuk' => 'required|date',
                 'status_aktif' => 'required|boolean',
                 'username' => 'required|string|max:255|unique:users,username,' . optional($pegawai->user)->id,
-                'email' => 'required|nullable|email|unique:users,email,' . optional($pegawai->user)->id,
+                'email' => 'required|email|max:255|unique:users,email,' . optional($pegawai->user)->id,
                 'password' => 'nullable|min:6',
-            ]);
+            ], $this->pesanValidasi());
 
             DB::transaction(function () use ($request, $pegawai) {
                 $pegawai->update([
@@ -176,12 +184,19 @@ class PegawaiController extends Controller
                 if ($pegawai->user) {
                     $pegawai->user->name = $request->nama;
                     $pegawai->user->username = $request->username;
+                    $pegawai->user->email = $request->email;
                     if ($request->filled('password')) {
                         $pegawai->user->password = Hash::make($request->password);
                     }
                     $pegawai->user->save();
                     $pegawai->user->syncRoles([$request->jabatan]);
                 }
+
+                activity()
+                    ->performedOn($pegawai)
+                    ->causedBy(auth()->user())
+                    ->withProperties(['nama' => $pegawai->nama, 'jabatan' => $pegawai->jabatan])
+                    ->log('memperbarui data pegawai');
             });
 
             return redirect()
@@ -206,5 +221,26 @@ class PegawaiController extends Controller
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
+    }
+
+    private function pesanValidasi(): array
+    {
+        return [
+            'nama.required' => 'Nama pegawai wajib diisi.',
+            'no_hp.required' => 'Nomor HP wajib diisi.',
+            'no_hp.regex' => 'Format nomor HP tidak valid (hanya angka, +, -, spasi, atau tanda kurung).',
+            'alamat.required' => 'Alamat wajib diisi.',
+            'jabatan.required' => 'Jabatan wajib dipilih.',
+            'jabatan.exists' => 'Jabatan yang dipilih tidak valid.',
+            'tanggal_masuk.required' => 'Tanggal masuk wajib diisi.',
+            'tanggal_masuk.date' => 'Format tanggal masuk tidak valid.',
+            'username.required' => 'Username wajib diisi.',
+            'username.unique' => 'Username sudah digunakan oleh akun lain.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah digunakan oleh akun lain.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal 6 karakter.',
+        ];
     }
 }

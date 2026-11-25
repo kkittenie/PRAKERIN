@@ -12,7 +12,7 @@
 
             <div class="mt-8 flex justify-end gap-3">
                 <a href="{{ route('welcome-slide.index') }}" class="rounded-lg border border-gray-300 dark:border-gray-700 px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Batal</a>
-                <button class="rounded-lg bg-brand-500 px-5 py-2 text-white hover:bg-brand-600">Simpan Slide</button>
+                <button type="submit" class="rounded-lg bg-brand-500 px-5 py-2 text-white hover:bg-brand-600">Simpan Slide</button>
             </div>
         </form>
     </x-common.component-card>

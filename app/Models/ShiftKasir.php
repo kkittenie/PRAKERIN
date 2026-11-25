@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Exceptions\ShiftKasirException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -182,10 +183,10 @@ class ShiftKasir extends Model
 
             if ($berjalan) {
                 if ((int) $berjalan->user_id === (int) $user->id) {
-                    throw new \RuntimeException('Anda masih punya shift yang berjalan. Tutup dulu sebelum membuka shift baru.');
+                    throw new ShiftKasirException('Anda masih punya shift yang berjalan. Tutup dulu sebelum membuka shift baru.');
                 }
 
-                throw new \RuntimeException(
+                throw new ShiftKasirException(
                     $berjalan->labelShift() . ' milik ' . $berjalan->nama_kasir . ' (mulai '
                     . $berjalan->mulai_pada->translatedFormat('d M H:i') . ') masih berjalan. '
                     . 'Hanya satu shift yang boleh berjalan. Minta ' . $berjalan->nama_kasir
