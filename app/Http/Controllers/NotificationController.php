@@ -19,7 +19,7 @@ class NotificationController extends Controller
         try {
             $notifications = NotificationHelper::getLiveNotifications(50);
 
-            return view('pages.notifications.index', [
+            return view('admin.notifications.index', [
                 'title' => 'Semua Notifikasi',
                 'notifications' => $notifications,
             ]);

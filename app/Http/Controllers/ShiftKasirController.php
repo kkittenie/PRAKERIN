@@ -28,7 +28,7 @@ class ShiftKasirController extends Controller
                 ->limit(5)
                 ->get();
 
-            return view('pages.shift-kasir.index', [
+            return view('admin.shift-kasir.index', [
                 'title' => 'Shift Kasir',
                 'shift' => $shift,
                 'saranModal' => $shift ? null : ShiftKasir::terakhirSelesai(),
@@ -90,7 +90,7 @@ class ShiftKasirController extends Controller
                 return redirect()->route('shift.index')->with('error', 'Tidak ada shift yang sedang berjalan.');
             }
 
-            return view('pages.shift-kasir.tutup', [
+            return view('admin.shift-kasir.tutup', [
                 'title' => 'Selesai Shift',
                 'shift' => $shift,
             ]);

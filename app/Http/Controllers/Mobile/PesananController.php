@@ -128,20 +128,23 @@ class PesananController extends Controller
             );
 
             if (PembatalanPesananPickup::batalkanJikaKedaluwarsa($transaksi)) {
-                return back()->with('error', 'Batas waktu pembayaran sudah habis, pesanan dibatalkan otomatis.');
+                return back()->with('error', 'Payment time limit has expired, order was automatically cancelled.');
             }
 
             if ($transaksi->status_pesanan === Transaksi::STATUS_DIBATALKAN) {
-                return back()->with('error', 'Pesanan ini sudah dibatalkan, tidak bisa upload bukti pembayaran.');
+                return back()->with('error', 'This order has already been cancelled, cannot upload payment receipt.');
             }
 
             if ($transaksi->bukti_dikonfirmasi_pada) {
-                return back()->with('error', 'Bukti pembayaran sudah dikonfirmasi, tidak bisa diubah lagi.');
+                return back()->with('error', 'Payment receipt has already been confirmed and cannot be modified.');
             }
 
             // Validasi: wajib gambar valid, tanpa batas ukuran MB.
             $request->validate([
                 'bukti_pembayaran' => 'required|image',
+            ], [
+                'bukti_pembayaran.required' => 'Please select a payment receipt image to upload.',
+                'bukti_pembayaran.image' => 'Payment receipt file must be a valid image (JPG, PNG).',
             ]);
 
             // Hapus bukti lama jika ada (sebelum simpan yang baru).
@@ -169,7 +172,7 @@ class PesananController extends Controller
 
             $transaksi->update(['bukti_pembayaran' => $filename]);
 
-            return back()->with('success', 'Bukti pembayaran berhasil diupload.');
+            return back()->with('success', 'Payment receipt uploaded successfully.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -193,19 +196,19 @@ class PesananController extends Controller
 
             // Waktu bayar sudah habis sebelum member sempat konfirmasi -> batalkan.
             if (PembatalanPesananPickup::batalkanJikaKedaluwarsa($transaksi)) {
-                return back()->with('error', 'Batas waktu pembayaran sudah habis, pesanan dibatalkan otomatis.');
+                return back()->with('error', 'Payment time limit has expired, order was automatically cancelled.');
             }
 
             if ($transaksi->status_pesanan === Transaksi::STATUS_DIBATALKAN) {
-                return back()->with('error', 'Pesanan ini sudah dibatalkan.');
+                return back()->with('error', 'This order has already been cancelled.');
             }
 
             if (! $transaksi->bukti_pembayaran) {
-                return back()->with('error', 'Upload bukti pembayaran dulu sebelum konfirmasi.');
+                return back()->with('error', 'Please upload your payment receipt before confirming.');
             }
 
             if ($transaksi->bukti_dikonfirmasi_pada) {
-                return back()->with('error', 'Bukti pembayaran sudah dikonfirmasi sebelumnya.');
+                return back()->with('error', 'Payment receipt has already been confirmed.');
             }
 
             $transaksi->update(['bukti_dikonfirmasi_pada' => now()]);
@@ -214,7 +217,7 @@ class PesananController extends Controller
             // update tanpa kasir perlu refresh manual.
             \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'update', 'bukti_dikonfirmasi')));
 
-            return back()->with('success', 'Bukti pembayaran dikonfirmasi. Menunggu verifikasi dari toko.');
+            return back()->with('success', 'Payment receipt confirmed. Waiting for store verification.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

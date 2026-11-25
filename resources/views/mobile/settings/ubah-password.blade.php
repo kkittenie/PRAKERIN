@@ -69,7 +69,7 @@
                 this.errorLama = '';
 
                 if (!this.passwordLama) {
-                    this.errorLama = 'Masukkan password lama kamu.';
+                    this.errorLama = 'Please enter your current password.';
                     return;
                 }
 
@@ -86,7 +86,7 @@
                 })
                     .then(async response => {
                         const data = await response.json();
-                        if (!response.ok) throw new Error(data.message || 'Password lama salah.');
+                        if (!response.ok) throw new Error(data.message || 'Incorrect current password.');
                         return data;
                     })
                     .then(data => {
@@ -94,12 +94,12 @@
                         if (data.success) {
                             this.gotoStep(2, 'next');
                         } else {
-                            this.errorLama = data.message || 'Password lama salah.';
+                            this.errorLama = data.message || 'Incorrect current password.';
                         }
                     })
                     .catch(error => {
                         this.memverifikasi = false;
-                        this.errorLama = error.message || 'Terjadi kesalahan.';
+                        this.errorLama = error.message || 'An error occurred. Please try again.';
                     });
             }
         }">
@@ -113,7 +113,7 @@
                         stroke-linejoin="round" />
                 </svg>
             </button>
-            <h1 class="text-base font-extrabold text-brand-800">{{ $langsungBuat ? 'Buat Password' : 'Change Password' }}</h1>
+            <h1 class="text-base font-extrabold text-brand-800">{{ $langsungBuat ? 'Create Password' : 'Change Password' }}</h1>
             <span class="w-8"></span>
         </div>
 
@@ -125,10 +125,10 @@
         @endunless
 
         <div x-ref="step1" class="mt-7 {{ $mulaiStep2 ? 'hidden' : '' }}">
-            <p class="text-sm text-gray-500">Masukkan password lama kamu untuk melanjutkan.</p>
+            <p class="text-sm text-gray-500">Enter your current password to continue.</p>
 
             <div class="mt-5">
-                <label for="password_lama" class="text-xs font-semibold text-gray-500">Password Lama</label>
+                <label for="password_lama" class="text-xs font-semibold text-gray-500">Current Password</label>
                 <div class="relative mt-1.5">
                     <input :type="lihatPw.lama ? 'text' : 'password'" id="password_lama" x-model="passwordLama"
                         @keyup.enter="verifikasiPasswordLama()"
@@ -151,7 +151,7 @@
             <button type="button" @click="verifikasiPasswordLama()" :disabled="memverifikasi"
                 class="mt-7 w-full rounded-lg bg-brand-800 py-4 text-sm font-bold uppercase tracking-wide text-white disabled:opacity-60">
                 <span x-show="!memverifikasi">Continue</span>
-                <span x-show="memverifikasi" x-cloak>Memeriksa...</span>
+                <span x-show="memverifikasi" x-cloak>Verifying...</span>
             </button>
         </div>
 
@@ -165,7 +165,7 @@
                 @endunless
 
                 <div>
-                    <label for="password_baru" class="text-xs font-semibold text-gray-500">Password Baru</label>
+                    <label for="password_baru" class="text-xs font-semibold text-gray-500">New Password</label>
                     <div class="relative mt-1.5">
                         <input :type="lihatPw.baru ? 'text' : 'password'" name="password_baru" id="password_baru"
                             class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
@@ -187,7 +187,7 @@
                 </div>
 
                 <div>
-                    <label for="password_baru_confirmation" class="text-xs font-semibold text-gray-500">Ulangi Password Baru</label>
+                    <label for="password_baru_confirmation" class="text-xs font-semibold text-gray-500">Confirm New Password</label>
                     <div class="relative mt-1.5">
                         <input :type="lihatPw.konfirmasi ? 'text' : 'password'" name="password_baru_confirmation" id="password_baru_confirmation"
                             class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-2 focus:ring-brand-800/10">
@@ -212,7 +212,7 @@
                 <button type="submit" :disabled="menyimpan"
                     class="w-full rounded-lg bg-brand-800 py-4 text-sm font-bold uppercase tracking-wide text-white disabled:opacity-60">
                     <span x-show="!menyimpan">Save New Password</span>
-                    <span x-show="menyimpan" x-cloak>Menyimpan...</span>
+                    <span x-show="menyimpan" x-cloak>Saving...</span>
                 </button>
             </form>
         </div>
@@ -220,9 +220,9 @@
 
 
     {{-- ========================================== --}}
-    {{-- DESKTOP VIEW (>= 1024px) - REDESIGNED CARD --}}
+    {{-- DESKTOP VIEW (>= 1024px) - FRENCH BAKERY PASSWORD HUB --}}
     {{-- ========================================== --}}
-    <div class="hidden lg:block lg:max-w-xl lg:mx-auto lg:my-6 lg:bg-white lg:rounded-3xl lg:border lg:border-gray-200/80 lg:shadow-xl lg:p-8"
+    <div id="password-desktop-root" class="hidden lg:block w-full bg-[#FAF5E8] min-h-[calc(100vh-140px)] text-[#3C2415] py-10 px-6 sm:px-8 lg:px-12"
         x-data="{
             step: {{ $mulaiStep2 ? 2 : 1 }},
             tanpaPasswordLama: @js($langsungBuat),
@@ -237,19 +237,19 @@
                 const toEl = this.$refs['stepDesk' + target];
 
                 if (dir === 'next') {
-                    fromEl.className = 'mt-7 step-exit-left';
+                    fromEl.className = 'step-exit-left';
                     setTimeout(() => {
                         fromEl.classList.add('hidden');
                         toEl.classList.remove('hidden');
-                        toEl.className = 'mt-7 step-enter-right';
+                        toEl.className = 'step-enter-right';
                         this.step = target;
                     }, 180);
                 } else {
-                    fromEl.className = 'mt-7 step-exit-right';
+                    fromEl.className = 'step-exit-right';
                     setTimeout(() => {
                         fromEl.classList.add('hidden');
                         toEl.classList.remove('hidden');
-                        toEl.className = 'mt-7 step-enter-left';
+                        toEl.className = 'step-enter-left';
                         this.step = target;
                     }, 180);
                 }
@@ -259,7 +259,7 @@
                 this.errorLama = '';
 
                 if (!this.passwordLama) {
-                    this.errorLama = 'Masukkan password lama kamu.';
+                    this.errorLama = 'Please enter your current password.';
                     return;
                 }
 
@@ -276,7 +276,7 @@
                 })
                     .then(async response => {
                         const data = await response.json();
-                        if (!response.ok) throw new Error(data.message || 'Password lama salah.');
+                        if (!response.ok) throw new Error(data.message || 'Incorrect current password.');
                         return data;
                     })
                     .then(data => {
@@ -284,141 +284,193 @@
                         if (data.success) {
                             this.gotoStep(2, 'next');
                         } else {
-                            this.errorLama = data.message || 'Password lama salah.';
+                            this.errorLama = data.message || 'Incorrect current password.';
                         }
                     })
                     .catch(error => {
                         this.memverifikasi = false;
-                        this.errorLama = error.message || 'Terjadi kesalahan.';
+                        this.errorLama = error.message || 'An error occurred. Please try again.';
                     });
             }
         }">
+        <div class="max-w-4xl mx-auto space-y-8">
 
-        {{-- Desktop Header Bar --}}
-        <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
-            <button type="button"
-                @click="if (step === 2 && !tanpaPasswordLama) { gotoStep(1, 'back'); } else { window.location.href = '{{ route('member.settings.index') }}'; }"
-                class="inline-flex items-center gap-2 text-xs font-extrabold text-gray-600 hover:text-brand-800 transition">
-                <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Kembali ke Pengaturan
-            </button>
-            <h1 class="text-sm font-extrabold uppercase tracking-wider text-brand-800">{{ $langsungBuat ? 'Buat Kata Sandi' : 'Ubah Kata Sandi' }}</h1>
-        </div>
-
-        @unless ($langsungBuat)
-        {{-- Step Indicator Bar --}}
-        <div class="space-y-1.5">
-            <div class="flex items-center justify-between text-xs font-bold text-gray-600">
-                <span :class="step >= 1 ? 'text-brand-800' : 'text-gray-400'">1. Verifikasi Password Lama</span>
-                <span :class="step >= 2 ? 'text-brand-800' : 'text-gray-400'">2. Buat Password Baru</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="h-2 flex-1 rounded-full transition-colors duration-300" :class="step >= 1 ? 'bg-brand-800' : 'bg-gray-200'"></span>
-                <span class="h-2 flex-1 rounded-full transition-colors duration-300" :class="step >= 2 ? 'bg-brand-800' : 'bg-gray-200'"></span>
-            </div>
-        </div>
-        @endunless
-
-        {{-- ==================== STEP 1: PASSWORD LAMA ==================== --}}
-        <div x-ref="stepDesk1" class="mt-7 {{ $mulaiStep2 ? 'hidden' : '' }}">
-            <p class="text-xs text-gray-500 font-medium">Masukkan password lama kamu untuk melanjutkan proses perubahan password.</p>
-
-            <div class="mt-5">
-                <label for="password_lama_desk" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Password Lama</label>
-                <div class="relative">
-                    <input :type="lihatPw.lama ? 'text' : 'password'" id="password_lama_desk" x-model="passwordLama"
-                        @keyup.enter="verifikasiPasswordLama()"
-                        placeholder="Masukkan password lama"
-                        class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 pr-11 text-sm font-medium text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-4 focus:ring-brand-800/10 shadow-xs">
-                    <button type="button" @click="lihatPw.lama = ! lihatPw.lama" tabindex="-1"
-                        class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
-                        <svg x-show="! lihatPw.lama" viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
-                        </svg>
-                        <svg x-show="lihatPw.lama" x-cloak viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                            <path d="M3 3l18 18M10.58 10.58a2 2 0 0 0 2.83 2.83M9.36 5.16A9.9 9.9 0 0 1 12 5c6.5 0 10 7 10 7a17.5 17.5 0 0 1-3.06 4.06M6.6 6.6C4.14 8.1 2 12 2 12a17.7 17.7 0 0 0 5.06 5.94A9.9 9.9 0 0 0 12 19"
-                                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                </div>
-                <p class="mt-1.5 text-xs font-semibold text-red-600" x-show="errorLama" x-text="errorLama" x-cloak></p>
+            {{-- Top Navigation & Metadata Bar --}}
+            <div class="flex items-center justify-between border-b border-[#3C2415]/10 pb-5">
+                <a href="{{ route('member.akun') }}" onclick="event.preventDefault(); animateNavigate(this.href, 'back');"
+                   class="inline-flex items-center gap-2 text-xs font-bold text-[#3C2415]/75 hover:text-[#8E1E26] transition">
+                    <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+                        <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Back to Account</span>
+                </a>
             </div>
 
-            <div class="mt-7 flex justify-end">
-                <button type="button" @click="verifikasiPasswordLama()" :disabled="memverifikasi"
-                    class="rounded-xl bg-brand-800 px-8 py-3.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-md hover:bg-brand-900 transition active:scale-95 disabled:opacity-60">
-                    <span x-show="!memverifikasi">Lanjutkan &rarr;</span>
-                    <span x-show="memverifikasi" x-cloak>Memeriksa...</span>
-                </button>
+            {{-- Clean Page Header (NO HERO SECTION) --}}
+            <div class="space-y-2">
+                <h1 class="font-display font-black text-3xl sm:text-4xl uppercase tracking-tight text-[#3C2415]">
+                    {{ $langsungBuat ? 'Create Password' : 'Change Password' }}
+                </h1>
+                <p class="text-sm text-[#3C2415]/75 max-w-2xl leading-relaxed">
+                    Update your secret password regularly to keep your member account, order history, and accumulated points secure.
+                </p>
             </div>
-        </div>
 
-        {{-- ==================== STEP 2: PASSWORD BARU ==================== --}}
-        <div x-ref="stepDesk2" class="mt-7 {{ $mulaiStep2 ? '' : 'hidden' }}">
-
-            <form method="POST" action="{{ route('member.settings.ubah-password.update') }}" class="mt-5 space-y-4"
-                @submit="menyimpan = true">
-                @csrf
-                @unless ($langsungBuat)
-                    <input type="hidden" name="password_lama" :value="passwordLama">
-                @endunless
-
-                <div>
-                    <label for="password_baru_desk" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Password Baru</label>
-                    <div class="relative">
-                        <input :type="lihatPw.baru ? 'text' : 'password'" name="password_baru" id="password_baru_desk"
-                            placeholder="Masukkan password baru"
-                            class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 pr-11 text-sm font-medium text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-4 focus:ring-brand-800/10 shadow-xs">
-                        <button type="button" @click="lihatPw.baru = ! lihatPw.baru" tabindex="-1"
-                            class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
-                            <svg x-show="! lihatPw.baru" viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
-                            </svg>
-                            <svg x-show="lihatPw.baru" x-cloak viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                                <path d="M3 3l18 18M10.58 10.58a2 2 0 0 0 2.83 2.83M9.36 5.16A9.9 9.9 0 0 1 12 5c6.5 0 10 7 10 7a17.5 17.5 0 0 1-3.06 4.06M6.6 6.6C4.14 8.1 2 12 2 12a17.7 17.7 0 0 0 5.06 5.94A9.9 9.9 0 0 0 12 19"
-                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                    </div>
-                    @error('password_baru')
-                        <p class="mt-1.5 text-xs font-semibold text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="password_baru_confirmation_desk" class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">Ulangi Password Baru</label>
-                    <div class="relative">
-                        <input :type="lihatPw.konfirmasi ? 'text' : 'password'" name="password_baru_confirmation" id="password_baru_confirmation_desk"
-                            placeholder="Ketik ulang password baru"
-                            class="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 pr-11 text-sm font-medium text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-brand-800 focus:bg-white focus:ring-4 focus:ring-brand-800/10 shadow-xs">
-                        <button type="button" @click="lihatPw.konfirmasi = ! lihatPw.konfirmasi" tabindex="-1"
-                            class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600">
-                            <svg x-show="! lihatPw.konfirmasi" viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
-                            </svg>
-                            <svg x-show="lihatPw.konfirmasi" x-cloak viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                                <path d="M3 3l18 18M10.58 10.58a2 2 0 0 0 2.83 2.83M9.36 5.16A9.9 9.9 0 0 1 12 5c6.5 0 10 7 10 7a17.5 17.5 0 0 1-3.06 4.06M6.6 6.6C4.14 8.1 2 12 2 12a17.7 17.7 0 0 0 5.06 5.94A9.9 9.9 0 0 0 12 19"
-                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
+            {{-- 2-Column Responsive Layout --}}
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {{-- Left Column: Security Tips & Recommendations --}}
+                <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+                    
+                    {{-- Concierge Help Box --}}
+                    <div class="rounded-2xl bg-white p-5 border border-[#3C2415]/10 shadow-xs space-y-2">
+                        <div class="text-xs font-bold text-[#3C2415] uppercase tracking-wide">Forgot Current Password?</div>
+                        <p class="text-[11px] text-[#3C2415]/70 leading-relaxed">
+                            If you no longer recall your current password, contact our Bakery Concierge for identity verification and recovery.
+                        </p>
+                        <a href="https://wa.me/62882000768044" target="_blank"
+                           class="inline-flex items-center gap-1.5 text-xs font-bold text-[#8E1E26] hover:underline pt-1">
+                            Contact Concierge &rarr;
+                        </a>
                     </div>
                 </div>
 
-                @error('password_lama')
-                    <p class="text-xs font-semibold text-red-600">{{ $message }}</p>
-                @enderror
+                {{-- Right Column: Step Form Card --}}
+                <div class="lg:col-span-7">
+                    <div class="rounded-[28px] bg-[#F5ECE3] p-8 border border-[#3C2415]/15 shadow-sm space-y-6">
+                        @unless ($langsungBuat)
+                            {{-- Step Indicator Bar --}}
+                            <div class="space-y-2 border-b border-[#3C2415]/10 pb-5">
+                                <div class="flex items-center justify-between text-xs font-bold">
+                                    <span :class="step >= 1 ? 'text-[#8E1E26]' : 'text-[#3C2415]/40'">1. Current Password</span>
+                                    <span :class="step >= 2 ? 'text-[#8E1E26]' : 'text-[#3C2415]/40'">2. New Password</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="h-1.5 flex-1 rounded-full transition-colors duration-300" :class="step >= 1 ? 'bg-[#8E1E26]' : 'bg-[#3C2415]/15'"></span>
+                                    <span class="h-1.5 flex-1 rounded-full transition-colors duration-300" :class="step >= 2 ? 'bg-[#8E1E26]' : 'bg-[#3C2415]/15'"></span>
+                                </div>
+                            </div>
+                        @endunless
 
-                <div class="pt-3 flex justify-end">
-                    <button type="submit" :disabled="menyimpan"
-                        class="rounded-xl bg-brand-800 px-8 py-3.5 text-xs font-extrabold uppercase tracking-wider text-white shadow-md hover:bg-brand-900 transition active:scale-95 disabled:opacity-60">
-                        <span x-show="!menyimpan">Simpan Password Baru</span>
-                        <span x-show="menyimpan" x-cloak>Menyimpan...</span>
-                    </button>
+                        {{-- ==================== STEP 1: CURRENT PASSWORD ==================== --}}
+                        <div x-ref="stepDesk1" class="{{ $mulaiStep2 ? 'hidden' : '' }} space-y-5">
+                            <div>
+                                <h3 class="font-display font-bold text-base text-[#3C2415]">Confirm Identity</h3>
+                                <p class="text-xs text-[#3C2415]/70 mt-0.5">Please provide your current password to continue.</p>
+                            </div>
+
+                            <div>
+                                <label for="password_lama_desk" class="block text-xs font-bold uppercase tracking-wider text-[#3C2415]/75 mb-2">Current Password</label>
+                                <div class="relative">
+                                    <input :type="lihatPw.lama ? 'text' : 'password'" id="password_lama_desk" x-model="passwordLama"
+                                        @keyup.enter="verifikasiPasswordLama()"
+                                        placeholder="Enter current password"
+                                        class="w-full rounded-2xl border border-[#3C2415]/20 bg-white px-4 py-3.5 pr-11 text-sm font-medium text-[#3C2415] outline-none transition placeholder:text-[#3C2415]/30 focus:border-[#8E1E26] focus:ring-4 focus:ring-[#8E1E26]/10 shadow-xs">
+                                    <button type="button" @click="lihatPw.lama = ! lihatPw.lama" tabindex="-1"
+                                        class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#3C2415]/40 hover:text-[#3C2415] cursor-pointer">
+                                        <svg x-show="! lihatPw.lama" viewBox="0 0 24 24" fill="none" class="h-5 w-5">
+                                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+                                        </svg>
+                                        <svg x-show="lihatPw.lama" x-cloak viewBox="0 0 24 24" fill="none" class="h-5 w-5">
+                                            <path d="M3 3l18 18M10.58 10.58a2 2 0 0 0 2.83 2.83M9.36 5.16A9.9 9.9 0 0 1 12 5c6.5 0 10 7 10 7a17.5 17.5 0 0 1-3.06 4.06M6.6 6.6C4.14 8.1 2 12 2 12a17.7 17.7 0 0 0 5.06 5.94A9.9 9.9 0 0 0 12 19"
+                                                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p class="mt-1.5 text-xs font-semibold text-red-600" x-show="errorLama" x-text="errorLama" x-cloak></p>
+                            </div>
+
+                            <div class="pt-4 border-t border-[#3C2415]/10 flex justify-end">
+                                <button type="button" @click="verifikasiPasswordLama()" :disabled="memverifikasi"
+                                    class="rounded-xl bg-[#3C2415] hover:bg-[#8E1E26] px-8 py-3.5 text-xs font-extrabold uppercase tracking-wider text-[#FAF5E8] shadow-md transition active:scale-95 disabled:opacity-60 cursor-pointer">
+                                    <span x-show="!memverifikasi">Continue &rarr;</span>
+                                    <span x-show="memverifikasi" x-cloak>Verifying...</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- ==================== STEP 2: NEW PASSWORD ==================== --}}
+                        <div x-ref="stepDesk2" class="{{ $mulaiStep2 ? '' : 'hidden' }}">
+                            <form method="POST" action="{{ route('member.settings.ubah-password.update') }}" class="space-y-5"
+                                @submit="menyimpan = true">
+                                @csrf
+                                @unless ($langsungBuat)
+                                    <input type="hidden" name="password_lama" :value="passwordLama">
+                                @endunless
+
+                                <div>
+                                    <h3 class="font-display font-bold text-base text-[#3C2415]">Set New Password</h3>
+                                    <p class="text-xs text-[#3C2415]/70 mt-0.5">Choose a secure password meeting all guidelines.</p>
+                                </div>
+
+                                <div>
+                                    <label for="password_baru_desk" class="block text-xs font-bold uppercase tracking-wider text-[#3C2415]/75 mb-2">New Password</label>
+                                    <div class="relative">
+                                        <input :type="lihatPw.baru ? 'text' : 'password'" name="password_baru" id="password_baru_desk"
+                                            placeholder="Enter new password"
+                                            class="w-full rounded-2xl border border-[#3C2415]/20 bg-white px-4 py-3.5 pr-11 text-sm font-medium text-[#3C2415] outline-none transition placeholder:text-[#3C2415]/30 focus:border-[#8E1E26] focus:ring-4 focus:ring-[#8E1E26]/10 shadow-xs">
+                                        <button type="button" @click="lihatPw.baru = ! lihatPw.baru" tabindex="-1"
+                                            class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#3C2415]/40 hover:text-[#3C2415] cursor-pointer">
+                                            <svg x-show="! lihatPw.baru" viewBox="0 0 24 24" fill="none" class="h-5 w-5">
+                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+                                            </svg>
+                                            <svg x-show="lihatPw.baru" x-cloak viewBox="0 0 24 24" fill="none" class="h-5 w-5">
+                                                <path d="M3 3l18 18M10.58 10.58a2 2 0 0 0 2.83 2.83M9.36 5.16A9.9 9.9 0 0 1 12 5c6.5 0 10 7 10 7a17.5 17.5 0 0 1-3.06 4.06M6.6 6.6C4.14 8.1 2 12 2 12a17.7 17.7 0 0 0 5.06 5.94A9.9 9.9 0 0 0 12 19"
+                                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    @error('password_baru')
+                                        <p class="mt-1.5 text-xs font-semibold text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                <div>
+                                    <label for="password_baru_confirmation_desk" class="block text-xs font-bold uppercase tracking-wider text-[#3C2415]/75 mb-2">Confirm New Password</label>
+                                    <div class="relative">
+                                        <input :type="lihatPw.konfirmasi ? 'text' : 'password'" name="password_baru_confirmation" id="password_baru_confirmation_desk"
+                                            placeholder="Retype new password"
+                                            class="w-full rounded-2xl border border-[#3C2415]/20 bg-white px-4 py-3.5 pr-11 text-sm font-medium text-[#3C2415] outline-none transition placeholder:text-[#3C2415]/30 focus:border-[#8E1E26] focus:ring-4 focus:ring-[#8E1E26]/10 shadow-xs">
+                                        <button type="button" @click="lihatPw.konfirmasi = ! lihatPw.konfirmasi" tabindex="-1"
+                                            class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#3C2415]/40 hover:text-[#3C2415] cursor-pointer">
+                                            <svg x-show="! lihatPw.konfirmasi" viewBox="0 0 24 24" fill="none" class="h-5 w-5">
+                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+                                            </svg>
+                                            <svg x-show="lihatPw.konfirmasi" x-cloak viewBox="0 0 24 24" fill="none" class="h-5 w-5">
+                                                <path d="M3 3l18 18M10.58 10.58a2 2 0 0 0 2.83 2.83M9.36 5.16A9.9 9.9 0 0 1 12 5c6.5 0 10 7 10 7a17.5 17.5 0 0 1-3.06 4.06M6.6 6.6C4.14 8.1 2 12 2 12a17.7 17.7 0 0 0 5.06 5.94A9.9 9.9 0 0 0 12 19"
+                                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                @error('password_lama')
+                                    <p class="text-xs font-semibold text-red-600">{{ $message }}</p>
+                                @enderror
+
+                                <div class="pt-4 border-t border-[#3C2415]/10 flex items-center justify-between">
+                                    @unless ($langsungBuat)
+                                        <button type="button" @click="gotoStep(1, 'back')"
+                                            class="text-xs font-bold text-[#3C2415]/75 hover:text-[#8E1E26] transition cursor-pointer">
+                                            &larr; Back to Step 1
+                                        </button>
+                                    @else
+                                        <span></span>
+                                    @endunless
+                                    <button type="submit" :disabled="menyimpan"
+                                        class="rounded-xl bg-[#3C2415] hover:bg-[#8E1E26] px-8 py-3.5 text-xs font-extrabold uppercase tracking-wider text-[#FAF5E8] shadow-md transition active:scale-95 disabled:opacity-60 cursor-pointer">
+                                        <span x-show="!menyimpan">Save New Password</span>
+                                        <span x-show="menyimpan" x-cloak>Saving...</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-            </form>
+            </div>
+
         </div>
     </div>
 

@@ -183,11 +183,11 @@ class ProduksiController extends Controller
                           ->orderBy('users.name', $order)
                           ->select('produksis.*');
                     })
-                    ->editColumn('tanggal', fn($item) => view('pages.produksi.partials.tanggal', compact('item'))->render())
-                    ->addColumn('produk_html', fn($item) => view('pages.produksi.partials.produk', compact('item'))->render())
-                    ->addColumn('hasil_html', fn($item) => view('pages.produksi.partials.hasil', compact('item'))->render())
-                    ->editColumn('keterangan', fn($item) => view('pages.produksi.partials.keterangan', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.produksi.partials.aksi', compact('item'))->render())
+                    ->editColumn('tanggal', fn($item) => view('admin.produksi.partials.tanggal', compact('item'))->render())
+                    ->addColumn('produk_html', fn($item) => view('admin.produksi.partials.produk', compact('item'))->render())
+                    ->addColumn('hasil_html', fn($item) => view('admin.produksi.partials.hasil', compact('item'))->render())
+                    ->editColumn('keterangan', fn($item) => view('admin.produksi.partials.keterangan', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.produksi.partials.aksi', compact('item'))->render())
                     ->setRowAttr([
                         'data-produksi-row' => 'true',
                         'data-kadaluarsa-waktu' => fn($item) => $item->kadaluarsa_waktu ? $item->kadaluarsa_waktu->toIso8601String() : '',
@@ -206,7 +206,7 @@ class ProduksiController extends Controller
                 });
 
             return view(
-                'pages.produksi.index',
+                'admin.produksi.index',
                 compact('search', 'status', 'periode', 'tanggalRef', 'produksiKadaluarsa')
             );
         } catch (\Throwable $e) {
@@ -247,7 +247,7 @@ class ProduksiController extends Controller
 
             $bahanBaku = BahanBaku::with('satuan')->orderBy('nama_bahan')->get();
 
-            return view('pages.produksi.create', compact('produk', 'bahanBaku'));
+            return view('admin.produksi.create', compact('produk', 'bahanBaku'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -664,7 +664,7 @@ class ProduksiController extends Controller
         try {
             $produksi->load(['produk', 'user', 'detailBahan.bahanBaku.satuan', 'produksiVarians']);
 
-            return view('pages.produksi.show', compact('produksi'));
+            return view('admin.produksi.show', compact('produksi'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -692,7 +692,7 @@ class ProduksiController extends Controller
 
             $totalLabel = (int) $labelItems->sum('jumlah');
 
-            return view('pages.produksi.label', compact('produksi', 'labelItems', 'totalLabel'));
+            return view('admin.produksi.label', compact('produksi', 'labelItems', 'totalLabel'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -709,7 +709,7 @@ class ProduksiController extends Controller
                 ->get();
 
             $pdf = Pdf::loadView(
-                'pages.produksi.pdf',
+                'admin.produksi.pdf',
                 compact('produksi', 'periode', 'tanggalRef')
             )->setPaper('a4', 'portrait');
 

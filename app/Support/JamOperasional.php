@@ -52,7 +52,7 @@ class JamOperasional
 
     public static function pesanTutup(): string
     {
-        return 'Maaf, toko sedang tutup. Pemesanan hanya bisa dilakukan pada jam operasional '
+        return 'Sorry, our bakery is currently closed. Orders can only be placed during operating hours '
             . self::buka() . ' - ' . self::tutup() . ' WIB.';
     }
 

@@ -1,9 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-  <g transform="translate(2.2 2.2) scale(0.817)" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M10.2 18H4.774a1.5 1.5 0 0 1-1.352-.97 11 11 0 0 1 .132-6.487"/>
-    <path d="M18 10.2V4.774a1.5 1.5 0 0 0-.97-1.352 11 11 0 0 0-6.486.132"/>
-    <path d="M18 5a4 3 0 0 1 4 3 2 2 0 0 1-2 2 10 10 0 0 0-5.139 1.42"/>
-    <path d="M5 18a3 4 0 0 0 3 4 2 2 0 0 0 2-2 10 10 0 0 1 1.42-5.14"/>
-    <path d="M8.709 2.554a10 10 0 0 0-6.155 6.155 1.5 1.5 0 0 0 .676 1.626l9.807 5.42a2 2 0 0 0 2.718-2.718l-5.42-9.807a1.5 1.5 0 0 0-1.626-.676"/>
-  </g>
+@props(['class' => 'h-5 w-5'])
+{{-- Daisy Bakery - Vintage Buttercream Tiered Cake with Cherries & Shell Frosting --}}
+<svg viewBox="0 0 24 24" fill="none" class="{{ $class }}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2.5 20.5h19"/>
+    <path d="M4.5 19.5v-6a1.5 1.5 0 0 1 1.5-1.5h12a1.5 1.5 0 0 1 1.5 1.5v6"/>
+    <path d="M4.5 14.5c1.2.8 2.3.8 3.5 0 1.2.8 2.3.8 3.5 0 1.2.8 2.3.8 3.5 0 1.2.8 2.3.8 3.5 0"/>
+    <path d="M7.5 12V7.5a1.5 1.5 0 0 1 1.5-1.5h6a1.5 1.5 0 0 1 1.5 1.5V12"/>
+    <circle cx="12" cy="3.5" r="1.3" fill="currentColor"/>
+    <circle cx="9" cy="4.5" r="0.9" fill="currentColor"/>
+    <circle cx="15" cy="4.5" r="0.9" fill="currentColor"/>
 </svg>

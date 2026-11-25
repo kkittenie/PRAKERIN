@@ -27,12 +27,12 @@ class RewardVoucherController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('kode_html', fn ($item) => view('pages.reward-voucher.partials.kode', compact('item'))->render())
-                    ->addColumn('voucher_html', fn ($item) => view('pages.reward-voucher.partials.voucher', compact('item'))->render())
-                    ->editColumn('deskripsi', fn ($item) => view('pages.reward-voucher.partials.deskripsi', compact('item'))->render())
-                    ->addColumn('target_html', fn ($item) => view('pages.reward-voucher.partials.target', compact('item'))->render())
-                    ->addColumn('status_html', fn ($item) => view('pages.reward-voucher.partials.status', compact('item'))->render())
-                    ->addColumn('aksi', fn ($item) => view('pages.reward-voucher.partials.aksi', compact('item'))->render())
+                    ->addColumn('kode_html', fn ($item) => view('admin.reward-voucher.partials.kode', compact('item'))->render())
+                    ->addColumn('voucher_html', fn ($item) => view('admin.reward-voucher.partials.voucher', compact('item'))->render())
+                    ->editColumn('deskripsi', fn ($item) => view('admin.reward-voucher.partials.deskripsi', compact('item'))->render())
+                    ->addColumn('target_html', fn ($item) => view('admin.reward-voucher.partials.target', compact('item'))->render())
+                    ->addColumn('status_html', fn ($item) => view('admin.reward-voucher.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn ($item) => view('admin.reward-voucher.partials.aksi', compact('item'))->render())
                     ->rawColumns(['kode_html', 'voucher_html', 'deskripsi', 'target_html', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -45,7 +45,7 @@ class RewardVoucherController extends Controller
             }
         }
 
-        return view('pages.reward-voucher.index', [
+        return view('admin.reward-voucher.index', [
             'title' => 'Reward Voucher',
         ]);
     }
@@ -59,7 +59,7 @@ class RewardVoucherController extends Controller
                 ->get();
             $members = Member::orderBy('nama', 'asc')->get();
 
-            return view('pages.reward-voucher.create', [
+            return view('admin.reward-voucher.create', [
                 'title' => 'Tambah Reward Voucher',
                 'produks' => $this->dataProdukUntukForm($produks),
                 'members' => $members,
@@ -76,7 +76,7 @@ class RewardVoucherController extends Controller
 
             $rewardVoucher->load(['produks.kategori', 'rewardProduks.detailProduk', 'rewardProduks.varianProduk', 'members', 'usages.member', 'usages.transaksi']);
 
-            return view('pages.reward-voucher.show', [
+            return view('admin.reward-voucher.show', [
                 'title' => 'Detail Reward Voucher',
                 'voucher' => $rewardVoucher,
                 'allMembers' => Member::orderBy('nama', 'asc')->get(),
@@ -178,7 +178,7 @@ class RewardVoucherController extends Controller
                 $rasaTerpilihPerProduk[$pid] = array_values(array_unique($list));
             }
 
-            return view('pages.reward-voucher.edit', [
+            return view('admin.reward-voucher.edit', [
                 'title' => 'Edit Reward Voucher',
                 'voucher' => $rewardVoucher,
                 'produks' => $this->dataProdukUntukForm($produks),

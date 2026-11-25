@@ -28,11 +28,11 @@ class QrisController extends Controller
 
                 return DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('kode_html', fn ($item) => view('pages.qris.partials.kode', compact('item'))->render())
-                    ->addColumn('gambar_html', fn ($item) => view('pages.qris.partials.gambar', compact('item'))->render())
-                    ->editColumn('nama', fn ($item) => view('pages.qris.partials.nama', compact('item'))->render())
-                    ->addColumn('status_html', fn ($item) => view('pages.qris.partials.status', compact('item'))->render())
-                    ->addColumn('aksi', fn ($item) => view('pages.qris.partials.aksi', compact('item'))->render())
+                    ->addColumn('kode_html', fn ($item) => view('admin.qris.partials.kode', compact('item'))->render())
+                    ->addColumn('gambar_html', fn ($item) => view('admin.qris.partials.gambar', compact('item'))->render())
+                    ->editColumn('nama', fn ($item) => view('admin.qris.partials.nama', compact('item'))->render())
+                    ->addColumn('status_html', fn ($item) => view('admin.qris.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn ($item) => view('admin.qris.partials.aksi', compact('item'))->render())
                     ->rawColumns(['kode_html', 'gambar_html', 'nama', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -46,7 +46,7 @@ class QrisController extends Controller
         }
 
         try {
-            return view('pages.qris.index');
+            return view('admin.qris.index');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -55,7 +55,7 @@ class QrisController extends Controller
     public function create()
     {
         try {
-            return view('pages.qris.create');
+            return view('admin.qris.create');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -103,7 +103,7 @@ class QrisController extends Controller
     public function edit(QrisImage $qris)
     {
         try {
-            return view('pages.qris.edit', compact('qris'));
+            return view('admin.qris.edit', compact('qris'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

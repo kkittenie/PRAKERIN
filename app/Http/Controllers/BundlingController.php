@@ -23,14 +23,14 @@ class BundlingController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($data)
                     ->addIndexColumn()
-                    ->addColumn('gambar_html', fn($item) => view('pages.bundling.partials.gambar', compact('item'))->render())
-                    ->addColumn('nama_bundling_html', fn($item) => view('pages.bundling.partials.nama', compact('item'))->render())
-                    ->editColumn('kode_bundling', fn($item) => view('pages.bundling.partials.kode', compact('item'))->render())
-                    ->addColumn('harga_html', fn($item) => view('pages.bundling.partials.harga', compact('item'))->render())
-                    ->addColumn('jumlah_produk_html', fn($item) => view('pages.bundling.partials.jumlah_produk', compact('item'))->render())
-                    ->addColumn('status_html', fn($item) => view('pages.bundling.partials.status', compact('item'))->render())
-                    ->addColumn('ketersediaan_html', fn($item) => view('pages.bundling.partials.ketersediaan', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.bundling.partials.aksi', compact('item'))->render())
+                    ->addColumn('gambar_html', fn($item) => view('admin.bundling.partials.gambar', compact('item'))->render())
+                    ->addColumn('nama_bundling_html', fn($item) => view('admin.bundling.partials.nama', compact('item'))->render())
+                    ->editColumn('kode_bundling', fn($item) => view('admin.bundling.partials.kode', compact('item'))->render())
+                    ->addColumn('harga_html', fn($item) => view('admin.bundling.partials.harga', compact('item'))->render())
+                    ->addColumn('jumlah_produk_html', fn($item) => view('admin.bundling.partials.jumlah_produk', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('admin.bundling.partials.status', compact('item'))->render())
+                    ->addColumn('ketersediaan_html', fn($item) => view('admin.bundling.partials.ketersediaan', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.bundling.partials.aksi', compact('item'))->render())
                     ->rawColumns(['gambar_html', 'nama_bundling_html', 'kode_bundling', 'harga_html', 'jumlah_produk_html', 'status_html', 'ketersediaan_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -43,7 +43,7 @@ class BundlingController extends Controller
             }
         }
 
-        return view('pages.bundling.index');
+        return view('admin.bundling.index');
     }
 
     public function create()
@@ -52,7 +52,7 @@ class BundlingController extends Controller
             $produkForm = $this->daftarProdukForm();
             $kategori = KategoriProduk::orderBy('nama_kategori')->get();
 
-            return view('pages.bundling.create', compact('produkForm', 'kategori'));
+            return view('admin.bundling.create', compact('produkForm', 'kategori'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -515,7 +515,7 @@ class BundlingController extends Controller
                 'items.produk.detailProduks',
             ]);
 
-            return view('pages.bundling.show', compact('bundling'));
+            return view('admin.bundling.show', compact('bundling'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -542,7 +542,7 @@ class BundlingController extends Controller
                 'qty' => $item->qty,
             ])->values()->all();
 
-            return view('pages.bundling.edit', compact('bundling', 'produkForm', 'isiTersimpan', 'kategori'));
+            return view('admin.bundling.edit', compact('bundling', 'produkForm', 'isiTersimpan', 'kategori'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

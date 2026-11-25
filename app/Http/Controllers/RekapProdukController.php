@@ -206,7 +206,7 @@ class RekapProdukController extends Controller
             // Daftar kategori untuk dropdown filter
             $kategoris = KategoriProduk::orderBy('nama_kategori')->get();
 
-            return view('pages.laporan.rekap-produk', [
+            return view('admin.laporan.rekap-produk', [
                 'title'            => 'Rekap Produk',
                 'tanggalMulai'     => $tanggalMulai,
                 'tanggalSelesai'   => $tanggalSelesai,

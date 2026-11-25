@@ -15,7 +15,7 @@ class ProfileController extends Controller
     public function edit(Request $request)
     {
         try {
-            return view('pages.profile-edit', [
+            return view('admin.profile-edit', [
                 'user' => $request->user(),
             ]);
         } catch (\Throwable $e) {

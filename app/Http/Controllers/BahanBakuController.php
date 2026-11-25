@@ -18,10 +18,10 @@ class BahanBakuController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->editColumn('nama_bahan', fn($item) => view('pages.bahan-baku.partials.nama', compact('item'))->render())
-                    ->addColumn('satuan_html', fn($item) => view('pages.bahan-baku.partials.satuan', compact('item'))->render())
-                    ->addColumn('stok_html', fn($item) => view('pages.bahan-baku.partials.stok', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.bahan-baku.partials.aksi', compact('item'))->render())
+                    ->editColumn('nama_bahan', fn($item) => view('admin.bahan-baku.partials.nama', compact('item'))->render())
+                    ->addColumn('satuan_html', fn($item) => view('admin.bahan-baku.partials.satuan', compact('item'))->render())
+                    ->addColumn('stok_html', fn($item) => view('admin.bahan-baku.partials.stok', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.bahan-baku.partials.aksi', compact('item'))->render())
                     ->rawColumns(['nama_bahan', 'satuan_html', 'stok_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -34,7 +34,7 @@ class BahanBakuController extends Controller
             }
         }
 
-        return view('pages.bahan-baku.index');
+        return view('admin.bahan-baku.index');
     }
 
     public function create()
@@ -43,7 +43,7 @@ class BahanBakuController extends Controller
             $satuan = Satuan::orderBy('nama')->get();
 
             return view(
-                'pages.bahan-baku.create',
+                'admin.bahan-baku.create',
                 compact('satuan')
             );
         } catch (\Throwable $e) {
@@ -101,7 +101,7 @@ class BahanBakuController extends Controller
             $satuan = Satuan::orderBy('nama')->get();
 
             return view(
-                'pages.bahan-baku.edit',
+                'admin.bahan-baku.edit',
                 compact('bahanBaku', 'satuan')
             );
         } catch (\Throwable $e) {

@@ -20,11 +20,11 @@ class UserController extends Controller
                 $query = User::with('roles');
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
-                    ->addColumn('role_html', fn($user) => view('pages.users.partials.role', ['item' => $user])->render())
-                    ->editColumn('name', fn($user) => view('pages.users.partials.name', ['item' => $user])->render())
-                    ->editColumn('username', fn($user) => view('pages.users.partials.username', ['item' => $user])->render())
-                    ->editColumn('email', fn($user) => view('pages.users.partials.email', ['item' => $user])->render())
-                    ->addColumn('aksi', fn($user) => view('pages.users.partials.aksi', ['item' => $user])->render())
+                    ->addColumn('role_html', fn($user) => view('admin.users.partials.role', ['item' => $user])->render())
+                    ->editColumn('name', fn($user) => view('admin.users.partials.name', ['item' => $user])->render())
+                    ->editColumn('username', fn($user) => view('admin.users.partials.username', ['item' => $user])->render())
+                    ->editColumn('email', fn($user) => view('admin.users.partials.email', ['item' => $user])->render())
+                    ->addColumn('aksi', fn($user) => view('admin.users.partials.aksi', ['item' => $user])->render())
                     ->orderColumn('roles.name', function ($query, $order) {
                         // 'roles.name' bukan kolom di tabel users, melainkan relasi
                         // many-to-many lewat model_has_roles (paket Spatie Permission).
@@ -55,7 +55,7 @@ class UserController extends Controller
         }
 
         try {
-            return view('pages.users.index', ['title' => 'Kelola Pengguna']);
+            return view('admin.users.index', ['title' => 'Kelola Pengguna']);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -68,7 +68,7 @@ class UserController extends Controller
     {
         try {
             $roles = Role::all();
-            return view('pages.users.create', ['title' => 'Tambah Pengguna', 'roles' => $roles]);
+            return view('admin.users.create', ['title' => 'Tambah Pengguna', 'roles' => $roles]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -130,7 +130,7 @@ class UserController extends Controller
             $roles = Role::all();
             $userRole = $user->roles->pluck('name')->first();
 
-            return view('pages.users.edit', [
+            return view('admin.users.edit', [
                 'title' => 'Edit Pengguna',
                 'user' => $user,
                 'roles' => $roles,

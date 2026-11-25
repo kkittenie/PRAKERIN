@@ -93,7 +93,7 @@ class RekapShiftController extends Controller
                 ->orderBy('nama_kasir')
                 ->get();
 
-            return view('pages.rekap-shift.index', [
+            return view('admin.rekap-shift.index', [
                 'title' => 'Rekap Shift',
                 'daftar' => $daftar,
                 'total' => $total,
@@ -118,7 +118,7 @@ class RekapShiftController extends Controller
                 ->paginate(25)
                 ->withQueryString();
 
-            return view('pages.rekap-shift.show', [
+            return view('admin.rekap-shift.show', [
                 'title' => 'Detail ' . $shift->labelShift(),
                 'shift' => $shift,
                 'ringkasan' => $shift->ringkasan(),

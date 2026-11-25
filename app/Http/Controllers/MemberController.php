@@ -23,14 +23,14 @@ class MemberController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('foto_html', fn($item) => view('pages.member.partials.foto', compact('item'))->render())
-                    ->addColumn('nama_html', fn($item) => view('pages.member.partials.nama', compact('item'))->render())
+                    ->addColumn('foto_html', fn($item) => view('admin.member.partials.foto', compact('item'))->render())
+                    ->addColumn('nama_html', fn($item) => view('admin.member.partials.nama', compact('item'))->render())
                     ->editColumn('kode_member', fn($item) => $item->kode_member ?: '-')
                     ->editColumn('username', fn($item) => $item->username ? '@' . $item->username : '-')
                     ->editColumn('email', fn($item) => $item->email ?: '-')
                     ->editColumn('poin', fn($item) => number_format($item->poin ?? 0, 0, ',', '.'))
-                    ->addColumn('level_html', fn($item) => view('pages.member.partials.level', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.member.partials.aksi', compact('item'))->render())
+                    ->addColumn('level_html', fn($item) => view('admin.member.partials.level', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.member.partials.aksi', compact('item'))->render())
                     ->orderColumn('level_html', function ($query, $order) {
                         // Level adalah hasil hitungan dari akumulasi transaksi lunas
                         $query->orderBy(
@@ -52,7 +52,7 @@ class MemberController extends Controller
             }
         }
 
-        return view('pages.member.index');
+        return view('admin.member.index');
     }
 
     /**
@@ -61,7 +61,7 @@ class MemberController extends Controller
     public function create()
     {
         try {
-            return view('pages.member.create', ['title' => 'Tambah Member']);
+            return view('admin.member.create', ['title' => 'Tambah Member']);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -157,7 +157,7 @@ class MemberController extends Controller
     public function edit(Member $member)
     {
         try {
-            return view('pages.member.edit', ['title' => 'Edit Member', 'member' => $member]);
+            return view('admin.member.edit', ['title' => 'Edit Member', 'member' => $member]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

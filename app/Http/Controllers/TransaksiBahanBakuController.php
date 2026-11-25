@@ -32,11 +32,11 @@ class TransaksiBahanBakuController extends Controller
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
                     ->editColumn('tanggal', fn($item) => \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y'))
-                    ->addColumn('bahan_baku_html', fn($item) => view('pages.transaksi-bahan-baku.partials.bahan-baku', compact('item'))->render())
-                    ->addColumn('jumlah_html', fn($item) => view('pages.transaksi-bahan-baku.partials.jumlah', compact('item'))->render())
-                    ->addColumn('total_harga_html', fn($item) => view('pages.transaksi-bahan-baku.partials.total-harga', compact('item'))->render())
+                    ->addColumn('bahan_baku_html', fn($item) => view('admin.transaksi-bahan-baku.partials.bahan-baku', compact('item'))->render())
+                    ->addColumn('jumlah_html', fn($item) => view('admin.transaksi-bahan-baku.partials.jumlah', compact('item'))->render())
+                    ->addColumn('total_harga_html', fn($item) => view('admin.transaksi-bahan-baku.partials.total-harga', compact('item'))->render())
                     ->editColumn('supplier', fn($item) => $item->supplier ?: '-')
-                    ->addColumn('aksi', fn($item) => view('pages.transaksi-bahan-baku.partials.aksi', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.transaksi-bahan-baku.partials.aksi', compact('item'))->render())
                     ->orderColumn('tanggal', function ($query, $order) {
                         // Sekunder sort by id, sama seperti perilaku lama
                         // (->latest('tanggal')->latest('id')).
@@ -73,7 +73,7 @@ class TransaksiBahanBakuController extends Controller
             }
         }
 
-        return view('pages.transaksi-bahan-baku.index');
+        return view('admin.transaksi-bahan-baku.index');
     }
 
     private function parseTanggal($value): ?\Carbon\Carbon
@@ -97,7 +97,7 @@ class TransaksiBahanBakuController extends Controller
             )->get();
 
             return view(
-                'pages.transaksi-bahan-baku.create',
+                'admin.transaksi-bahan-baku.create',
                 compact('bahanBaku')
             );
         } catch (\Throwable $e) {
@@ -225,7 +225,7 @@ class TransaksiBahanBakuController extends Controller
             ]);
 
             return view(
-                'pages.transaksi-bahan-baku.show',
+                'admin.transaksi-bahan-baku.show',
                 compact('transaksiBahanBaku')
             );
         } catch (\Throwable $e) {

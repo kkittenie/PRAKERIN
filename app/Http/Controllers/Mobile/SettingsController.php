@@ -42,7 +42,7 @@ class SettingsController extends Controller
             $request->validate([
                 'password_lama' => ['required', 'string'],
             ], [
-                'password_lama.required' => 'Masukkan password lama kamu.',
+                'password_lama.required' => 'Please enter your current password.',
             ]);
 
             $member = Auth::guard('member')->user();
@@ -50,20 +50,20 @@ class SettingsController extends Controller
             if (is_null($member->password)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Akun kamu belum punya password. Langsung buat password baru saja.',
+                    'message' => 'Your account does not have a password yet. Please create a new password directly.',
                 ], 422);
             }
 
             if (!Hash::check($request->password_lama, $member->password)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Password lama yang kamu masukkan salah.',
+                    'message' => 'The current password you entered is incorrect.',
                 ], 422);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Password lama terverifikasi.',
+                'message' => 'Current password verified.',
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -85,31 +85,31 @@ class SettingsController extends Controller
                 'password_baru' => ['required', 'confirmed', 'min:6'],
             ];
             $messages = [
-                'password_baru.required' => 'Masukkan password baru kamu.',
-                'password_baru.min' => 'Password baru minimal 6 karakter.',
-                'password_baru.confirmed' => 'Konfirmasi password baru tidak cocok.',
+                'password_baru.required' => 'Please enter your new password.',
+                'password_baru.min' => 'New password must be at least 6 characters.',
+                'password_baru.confirmed' => 'New password confirmation does not match.',
             ];
 
             if (!$belumPunyaPassword) {
                 $rules['password_lama'] = ['required', 'string'];
-                $messages['password_lama.required'] = 'Masukkan password lama kamu.';
+                $messages['password_lama.required'] = 'Please enter your current password.';
             }
 
             $data = $request->validate($rules, $messages);
 
             if (!$belumPunyaPassword && !Hash::check($data['password_lama'], $member->password)) {
-                return back()->withErrors(['password_lama' => 'Password lama yang kamu masukkan salah.']);
+                return back()->withErrors(['password_lama' => 'The current password you entered is incorrect.']);
             }
 
             $member->update([
                 'password' => Hash::make($data['password_baru']),
             ]);
 
-            return redirect()->route('member.settings.index')->with(
+            return redirect()->route('member.akun')->with(
                 'success',
                 $belumPunyaPassword
-                    ? 'Password berhasil dibuat.'
-                    : 'Password kamu berhasil diubah.'
+                    ? 'Password created successfully.'
+                    : 'Your password has been changed successfully.'
             );
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

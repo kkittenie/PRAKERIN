@@ -18,13 +18,13 @@ class PromoProdukEventController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('nama_event_html', fn($item) => view('pages.promo-event.partials.nama', compact('item'))->render())
+                    ->addColumn('nama_event_html', fn($item) => view('admin.promo-event.partials.nama', compact('item'))->render())
                     ->editColumn('produk.nama_produk', fn($item) => e(optional($item->produk)->nama_produk ?? '-'))
-                    ->addColumn('isi_html', fn($item) => view('pages.promo-event.partials.isi', compact('item'))->render())
-                    ->addColumn('harga_event_html', fn($item) => view('pages.promo-event.partials.harga', compact('item'))->render())
-                    ->addColumn('periode_html', fn($item) => view('pages.promo-event.partials.periode', compact('item'))->render())
-                    ->addColumn('status_html', fn($item) => view('pages.promo-event.partials.status', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.promo-event.partials.aksi', compact('item'))->render())
+                    ->addColumn('isi_html', fn($item) => view('admin.promo-event.partials.isi', compact('item'))->render())
+                    ->addColumn('harga_event_html', fn($item) => view('admin.promo-event.partials.harga', compact('item'))->render())
+                    ->addColumn('periode_html', fn($item) => view('admin.promo-event.partials.periode', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('admin.promo-event.partials.status', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.promo-event.partials.aksi', compact('item'))->render())
                     ->rawColumns(['nama_event_html', 'isi_html', 'harga_event_html', 'status_html', 'aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -37,14 +37,14 @@ class PromoProdukEventController extends Controller
             }
         }
 
-        return view('pages.promo-event.index');
+        return view('admin.promo-event.index');
     }
 
     public function lihat($id)
     {
         try {
             $promoEvent = PromoProdukEvent::with(['produk.detailProduks', 'detailProduks'])->findOrFail($id);
-            return view('pages.promo-event.show', compact('promoEvent'));
+            return view('admin.promo-event.show', compact('promoEvent'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -58,7 +58,7 @@ class PromoProdukEventController extends Controller
                 ->orderBy('nama_produk', 'asc')
                 ->get();
             $kategori = KategoriProduk::orderBy('nama_kategori')->get();
-            return view('pages.promo-event.create', compact('produks', 'kategori'));
+            return view('admin.promo-event.create', compact('produks', 'kategori'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -150,7 +150,7 @@ class PromoProdukEventController extends Controller
 
             $kategori = KategoriProduk::orderBy('nama_kategori')->get();
 
-            return view('pages.promo-event.edit', compact(
+            return view('admin.promo-event.edit', compact(
                 'promoEvent', 'produks', 'kategori', 'selectedNamaUkurans', 'selectedNamaRasas'
             ));
         } catch (\Throwable $e) {

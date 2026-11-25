@@ -151,8 +151,29 @@ class ProdukController extends Controller
                     && ($itemEdit === null || $item['id'] !== $itemEdit['id']))
                 ->sum('jumlah');
 
+            // 3 produk rekomendasi dari database untuk showcase detail produk ("A Little Taste of Everything We Bake")
+            $produkLainnya = Produk::dijualSatuan()
+                ->where('status_aktif', true)
+                ->where('id', '!=', $produk->id)
+                ->where('kategori_id', $produk->kategori_id)
+                ->with(['kategori', 'detailProduks'])
+                ->take(3)
+                ->get();
+
+            if ($produkLainnya->count() < 3) {
+                $tambahan = Produk::dijualSatuan()
+                    ->where('status_aktif', true)
+                    ->where('id', '!=', $produk->id)
+                    ->whereNotIn('id', $produkLainnya->pluck('id'))
+                    ->with(['kategori', 'detailProduks'])
+                    ->take(3 - $produkLainnya->count())
+                    ->get();
+                $produkLainnya = $produkLainnya->merge($tambahan);
+            }
+
             return view('mobile.produk.show', [
                 'produk' => $produk,
+                'produkLainnya' => $produkLainnya,
                 'habis' => $habis,
                 'pengaturan' => $pengaturan,
                 'itemEdit' => $itemEdit,

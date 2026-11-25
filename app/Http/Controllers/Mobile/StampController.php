@@ -186,12 +186,12 @@ class StampController extends Controller
             if ($result['metode'] === 'aplikasi') {
                 return redirect()
                     ->route('member.checkout.index')
-                    ->with('success', 'Hadiah stamp berhasil dimasukkan ke keranjang! Silakan selesaikan pesanan kamu.');
+                    ->with('success', 'Stamp reward added to cart! Please complete your checkout.');
             }
 
             return redirect()
                 ->route('member.reward.index', ['tab' => 'stamp'])
-                ->with('success', 'Berhasil ditukar! Tunjukkan kode ' . $result['redemption']->kode_redeem . ' ke kasir atau ambil via aplikasi.')
+                ->with('success', 'Redeemed successfully! Show code ' . $result['redemption']->kode_redeem . ' to the cashier or claim via app.')
                 ->with('redeem_code', $result['redemption']->kode_redeem);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
@@ -239,7 +239,7 @@ class StampController extends Controller
 
             return redirect()
                 ->route('member.checkout.index')
-                ->with('success', 'Hadiah stamp berhasil dimasukkan ke keranjang! Silakan selesaikan pesanan kamu.');
+                ->with('success', 'Stamp reward added to cart! Please complete your checkout.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

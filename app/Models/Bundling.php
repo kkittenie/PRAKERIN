@@ -38,6 +38,11 @@ class Bundling extends Model
     protected $appends = [
         'jumlah_produk',
         'perlu_diproduksi',
+        'foto',
+        'harga_asli',
+        'harga_bundling',
+        'hemat_nominal',
+        'hemat_persen',
     ];
 
     public function kategori()
@@ -340,5 +345,74 @@ class Bundling extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Foto display: prioritaskan gambar khusus bundling, fallback ke foto produk pertama.
+     */
+    public function getFotoAttribute(): ?string
+    {
+        if (!empty($this->gambar)) {
+            return $this->gambar;
+        }
+
+        $items = $this->relationLoaded('items')
+            ? $this->items
+            : $this->items()->with('produk')->get();
+
+        foreach ($items as $item) {
+            if ($item->produk && !empty($item->produk->foto)) {
+                return $item->produk->foto;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Harga asli total jika semua item di dalam paket dibeli secara satuan.
+     */
+    public function getHargaAsliAttribute(): float
+    {
+        $items = $this->relationLoaded('items')
+            ? $this->items
+            : $this->items()->with('produk')->get();
+
+        $total = 0.0;
+        foreach ($items as $item) {
+            $hargaSatuan = (float) ($item->produk?->harga_jual ?? 0);
+            $qty = max(1, (int) $item->qty);
+            $total += $hargaSatuan * $qty;
+        }
+
+        return $total;
+    }
+
+    /**
+     * Alias harga bundling untuk kompabilitas view.
+     */
+    public function getHargaBundlingAttribute(): float
+    {
+        return (float) $this->harga;
+    }
+
+    /**
+     * Nominal penghematan harga bundling dibanding beli satuan.
+     */
+    public function getHematNominalAttribute(): float
+    {
+        return max(0, $this->harga_asli - (float) $this->harga);
+    }
+
+    /**
+     * Persentase penghematan harga bundling.
+     */
+    public function getHematPersenAttribute(): int
+    {
+        if ($this->harga_asli <= 0) {
+            return 0;
+        }
+
+        return (int) round(($this->hemat_nominal / $this->harga_asli) * 100);
     }
 }

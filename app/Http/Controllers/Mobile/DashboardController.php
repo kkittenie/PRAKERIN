@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mobile;
 
 use App\Http\Controllers\Controller;
 use App\Models\Produk;
+use App\Models\KategoriProduk;
 use App\Models\RewardKatalog;
 use App\Models\Banner;
 use App\Models\MemberLevel;
@@ -53,10 +54,17 @@ class DashboardController extends Controller
                 ->take(4)
                 ->get();
 
+            $kategoris = KategoriProduk::with(['produk' => function ($q) {
+                $q->where('status_aktif', true)->dijualSatuan();
+            }])->whereHas('produk', function ($q) {
+                $q->where('status_aktif', true)->dijualSatuan();
+            })->orderBy('nama_kategori')->get();
+
             return view('mobile.dashboard', [
                 'member' => $member,
                 'rewardUnggulan' => $rewardUnggulan,
                 'produkPilihan' => $produkPilihan,
+                'kategoris' => $kategoris,
                 'promoBanners' => $this->promoBanners(),
                 'semuaTier' => MemberLevel::aktif()->get(),
             ]);

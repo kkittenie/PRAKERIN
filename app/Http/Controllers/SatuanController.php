@@ -33,7 +33,7 @@ class SatuanController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
                     ->addIndexColumn()
-                    ->addColumn('aksi', fn ($item) => view('pages.satuan.partials.aksi', compact('item'))->render())
+                    ->addColumn('aksi', fn ($item) => view('admin.satuan.partials.aksi', compact('item'))->render())
                     ->rawColumns(['aksi'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -46,13 +46,13 @@ class SatuanController extends Controller
             }
         }
 
-        return view('pages.satuan.index');
+        return view('admin.satuan.index');
     }
 
     public function create()
     {
         try {
-            return view('pages.satuan.create');
+            return view('admin.satuan.create');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -91,7 +91,7 @@ class SatuanController extends Controller
     public function edit(Satuan $satuan)
     {
         try {
-            return view('pages.satuan.edit', compact('satuan'));
+            return view('admin.satuan.edit', compact('satuan'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

@@ -21,14 +21,14 @@
                 <a href="/" class="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 border border-brand-200 text-brand-800 text-3xl shadow-sm mb-3">
                     🥐
                 </a>
-                <h1 class="text-xl font-extrabold text-brand-800 tracking-tight">Saisho Bakery POS</h1>
+                <h1 class="text-xl font-extrabold text-brand-800 tracking-tight">Daisy Bakery POS</h1>
                 <p class="text-xs text-gray-500 font-medium">Portal Admin & Kasir</p>
             </div>
 
             {{ $slot }}
         </div>
         
-        <p class="text-center text-xs text-gray-400 mt-6">&copy; {{ date('Y') }} Saisho Bakery. All rights reserved.</p>
+        <p class="text-center text-xs text-gray-400 mt-6">&copy; {{ date('Y') }} Daisy Bakery. All rights reserved.</p>
     </body>
 </html>
 

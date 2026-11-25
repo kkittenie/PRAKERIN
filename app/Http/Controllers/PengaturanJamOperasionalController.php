@@ -17,7 +17,7 @@ class PengaturanJamOperasionalController extends Controller
 
             $pengaturan = PengaturanJamOperasional::ambil();
 
-            return view('pages.pengaturan-jam-operasional.index', compact('pengaturan'));
+            return view('admin.pengaturan-jam-operasional.index', compact('pengaturan'));
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }

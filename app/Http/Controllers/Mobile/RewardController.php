@@ -39,10 +39,32 @@ class RewardController extends Controller
                     return $voucher;
                 });
 
+            // Data program stamp aktif untuk direct render di desktop view
+            $program = \App\Models\StampProgram::aktifSekarang();
+            $program?->load('hadiah.produk', 'hadiah.detailProduk');
+
+            $memberStamp = null;
+            if ($program) {
+                $memberStamp = \App\Models\MemberStamp::firstOrCreate(
+                    ['member_id' => $member->id, 'stamp_program_id' => $program->id],
+                    ['jumlah_stamp' => 0]
+                );
+            }
+
+            // Hadiah stamp yang sudah ditukar dan menunggu diambil
+            $rewardAktif = \App\Models\StampRedemption::with(['produk', 'detailProduk', 'stampProgram'])
+                ->where('member_id', $member->id)
+                ->where('status', 'menunggu_diambil')
+                ->latest()
+                ->get();
+
             return view('mobile.rewards.index', [
                 'member' => $member,
                 'vouchers' => $vouchers,
                 'jenisAktif' => $jenis,
+                'program' => $program,
+                'memberStamp' => $memberStamp,
+                'rewardAktif' => $rewardAktif,
             ]);
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);

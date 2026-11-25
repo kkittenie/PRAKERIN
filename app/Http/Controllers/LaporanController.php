@@ -52,14 +52,14 @@ class LaporanController extends Controller
                 $query = $buildQuery();
 
                 return \Yajra\DataTables\Facades\DataTables::of($query)
-                    ->addColumn('kode_transaksi_html', fn($item) => view('pages.laporan.partials.kode-transaksi', compact('item'))->render())
+                    ->addColumn('kode_transaksi_html', fn($item) => view('admin.laporan.partials.kode-transaksi', compact('item'))->render())
                     ->editColumn('created_at', fn($item) => $item->created_at->format('d M Y, H:i'))
-                    ->addColumn('status_html', fn($item) => view('pages.laporan.partials.status-pembayaran', compact('item'))->render())
+                    ->addColumn('status_html', fn($item) => view('admin.laporan.partials.status-pembayaran', compact('item'))->render())
                     ->editColumn('subtotal', fn($item) => 'Rp ' . number_format($item->subtotal, 0, ',', '.'))
                     ->editColumn('diskon', fn($item) => 'Rp ' . number_format($item->diskon, 0, ',', '.'))
                     ->editColumn('total_bayar', fn($item) => 'Rp ' . number_format($item->total_bayar, 0, ',', '.'))
-                    ->addColumn('metode_html', fn($item) => view('pages.laporan.partials.metode-pembayaran', compact('item'))->render())
-                    ->addColumn('aksi', fn($item) => view('pages.laporan.partials.aksi-histori', compact('item'))->render())
+                    ->addColumn('metode_html', fn($item) => view('admin.laporan.partials.metode-pembayaran', compact('item'))->render())
+                    ->addColumn('aksi', fn($item) => view('admin.laporan.partials.aksi-histori', compact('item'))->render())
                     ->orderColumn('kode_transaksi_html', function ($query, $order) {
                         $query->orderBy('kode_transaksi', $order);
                     })
@@ -93,7 +93,7 @@ class LaporanController extends Controller
             }
         }
 
-        return view('pages.laporan.histori-transaksi', [
+        return view('admin.laporan.histori-transaksi', [
             'title' => 'Histori Transaksi',
         ]);
     }
@@ -266,9 +266,9 @@ class LaporanController extends Controller
 
                 return \Yajra\DataTables\Facades\DataTables::of($produkTerlaris)
                     ->addIndexColumn()
-                    ->addColumn('total_terjual_html', fn($item) => view('pages.laporan.partials.total-terjual', compact('item'))->render())
-                    ->addColumn('total_pendapatan_html', fn($item) => view('pages.laporan.partials.total-pendapatan', compact('item'))->render())
-                    ->addColumn('laba_bersih_html', fn($item) => view('pages.laporan.partials.laba-bersih', compact('item'))->render())
+                    ->addColumn('total_terjual_html', fn($item) => view('admin.laporan.partials.total-terjual', compact('item'))->render())
+                    ->addColumn('total_pendapatan_html', fn($item) => view('admin.laporan.partials.total-pendapatan', compact('item'))->render())
+                    ->addColumn('laba_bersih_html', fn($item) => view('admin.laporan.partials.laba-bersih', compact('item'))->render())
                     ->rawColumns(['total_terjual_html', 'total_pendapatan_html', 'laba_bersih_html'])
                     ->make(true);
             } catch (\Throwable $e) {
@@ -428,7 +428,7 @@ class LaporanController extends Controller
 
             $title = 'Laporan Penjualan';
 
-            return view('pages.laporan.laporan-penjualan', [
+            return view('admin.laporan.laporan-penjualan', [
                 'title'          => $title,
                 'periode'        => $periode,
                 'tahun'          => $tahun,

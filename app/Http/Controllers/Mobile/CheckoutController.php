@@ -26,8 +26,8 @@ use App\Support\ActivityLogHelper;
 
 class CheckoutController extends Controller
 {
-    private const NAMA_TOKO = 'Saisho Cake & Bakery';
-    private const ALAMAT_TOKO = 'Jl. Kamboja No. 1 Tuparev, Cirebon';
+    private const NAMA_TOKO = 'Daisy Bakery Store';
+    private const ALAMAT_TOKO = 'Jl. Jalan 40, Cirebon';
     private const SESSION_VOUCHER_KEY = 'member_checkout_voucher_id';
     public const SESSION_STAMP_REDEMPTION_KEY = 'member_checkout_stamp_redemption_id';
 
@@ -41,7 +41,19 @@ class CheckoutController extends Controller
             }
 
             if (MemberCart::isEmpty()) {
-                return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
+                if ($member) {
+                    $pesananTerbaru = Transaksi::where('member_id', $member->id)
+                        ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP)
+                        ->where('created_at', '>=', now()->subSeconds(30))
+                        ->latest()
+                        ->first();
+
+                    if ($pesananTerbaru) {
+                        return redirect()->route('member.pesanan.show', $pesananTerbaru);
+                    }
+                }
+
+                return redirect()->route('member.menu')->with('error', 'Your cart is still empty.');
             }
 
             MemberCart::terapkanMinimalPembelian();
@@ -183,7 +195,7 @@ class CheckoutController extends Controller
 
             if (empty($validated['stamp_redemption_id'])) {
                 Session::forget(self::SESSION_STAMP_REDEMPTION_KEY);
-                return back()->with('success', 'Reward stamp berhasil dilepas dari keranjang.');
+                return back()->with('success', 'Reward stamp removed from cart.');
             }
 
             $member = Auth::guard('member')->user();
@@ -195,7 +207,7 @@ class CheckoutController extends Controller
 
             if (! $redemption || ! $redemption->produk) {
                 Session::forget(self::SESSION_STAMP_REDEMPTION_KEY);
-                return back()->with('error', 'Reward stamp tidak ditemukan atau sudah pernah diambil.');
+                return back()->with('error', 'Reward stamp not found or already redeemed.');
             }
 
             $detailHadiah = $redemption->detailProduk;
@@ -219,7 +231,7 @@ class CheckoutController extends Controller
 
             Session::put(self::SESSION_STAMP_REDEMPTION_KEY, $redemption->id);
 
-            return back()->with('success', 'Reward stamp berhasil ditambahkan ke keranjang.');
+            return back()->with('success', 'Reward stamp added to cart successfully.');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -234,14 +246,14 @@ class CheckoutController extends Controller
 
             if (empty($validated['voucher_id'])) {
                 Session::forget(self::SESSION_VOUCHER_KEY);
-                return back()->with('success', 'Voucher berhasil dilepas.');
+                return back()->with('success', 'Voucher removed successfully.');
             }
 
             $member = Auth::guard('member')->user();
             $voucher = RewardKatalog::with(['produks', 'rewardProduks'])->find($validated['voucher_id']);
 
             if (! $voucher || ! $voucher->berhakDigunakan($member)) {
-                return back()->with('error', 'Voucher tidak dapat digunakan atau batas penggunaan telah tercapai.');
+                return back()->with('error', 'Voucher cannot be used or usage limit has been reached.');
             }
 
             MemberCart::terapkanMinimalPembelian();
@@ -255,7 +267,7 @@ class CheckoutController extends Controller
 
             Session::put(self::SESSION_VOUCHER_KEY, (int) $validated['voucher_id']);
 
-            return back()->with('success', 'Voucher ' . ($voucher->nama ?? '') . ' berhasil diterapkan! 🎉');
+            return back()->with('success', 'Voucher ' . ($voucher->nama ?? '') . ' applied successfully! 🎉');
         } catch (\Throwable $e) {
             return ActivityLogHelper::handleException($e);
         }
@@ -271,7 +283,19 @@ class CheckoutController extends Controller
             }
 
             if (MemberCart::isEmpty()) {
-                return redirect()->route('member.menu')->with('error', 'Keranjang kamu masih kosong.');
+                if ($member) {
+                    $pesananTerbaru = Transaksi::where('member_id', $member->id)
+                        ->where('asal_pesanan', Transaksi::ASAL_MEMBER_APP)
+                        ->where('created_at', '>=', now()->subSeconds(30))
+                        ->latest()
+                        ->first();
+
+                    if ($pesananTerbaru) {
+                        return redirect()->route('member.pesanan.show', $pesananTerbaru);
+                    }
+                }
+
+                return redirect()->route('member.menu')->with('error', 'Your cart is still empty.');
             }
 
             $request->validate([
@@ -641,8 +665,7 @@ class CheckoutController extends Controller
                 \App\Support\BroadcastHelper::aman(fn () => event(new \App\Events\PesananPickupUpdated($transaksi, 'baru')));
 
                 return redirect()
-                    ->route('member.pesanan.show', $transaksi)
-                    ->with('success', 'Pesanan berhasil dibuat! Kami akan proses pesananmu segera.');
+                    ->route('member.pesanan.show', $transaksi);
             } catch (\DomainException $e) {
                 DB::rollBack();
 
@@ -1055,7 +1078,7 @@ class CheckoutController extends Controller
                 'alasan' => 'min_pembelian',
                 'min_pembelian' => $minBelanja,
                 'kurang' => $kurang,
-                'pesan' => 'Kurang Rp ' . number_format($kurang, 0, ',', '.') . ' lagi (Min. belanja Rp ' . number_format($minBelanja, 0, ',', '.') . ')',
+                'pesan' => 'Rp ' . number_format($kurang, 0, ',', '.') . ' more needed (Min. spend Rp ' . number_format($minBelanja, 0, ',', '.') . ')',
                 'diskon' => 0,
             ];
         }
@@ -1077,7 +1100,7 @@ class CheckoutController extends Controller
                     'alasan' => 'produk_tidak_cocok',
                     'min_pembelian' => $minBelanja,
                     'kurang' => 0,
-                    'pesan' => 'Hanya berlaku untuk produk/varian tertentu (belum ada di keranjang)',
+                    'pesan' => 'Only valid for selected products/variants (not in your cart)',
                     'diskon' => 0,
                 ];
             }
@@ -1090,7 +1113,7 @@ class CheckoutController extends Controller
                 'alasan' => 'diskon_nol',
                 'min_pembelian' => $minBelanja,
                 'kurang' => 0,
-                'pesan' => 'Voucher tidak dapat digunakan untuk pesanan saat ini',
+                'pesan' => 'Can\'t use voucher on this order',
                 'diskon' => 0,
             ];
         }

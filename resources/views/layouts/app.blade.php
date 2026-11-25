@@ -6,14 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Dashboard' }} | Saisho POS </title>
+    <title>{{ $title ?? 'Dashboard' }} | Daisy Bakery Admin</title>
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <!-- Alpine.js -->
-    {{--
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
 
     <!-- Theme Store -->
     <script>
@@ -21,9 +17,7 @@
             Alpine.store('theme', {
                 init() {
                     const savedTheme = localStorage.getItem('theme');
-                    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' :
-                        'light';
-                    this.theme = savedTheme || systemTheme;
+                    this.theme = savedTheme || 'light';
                     this.updateTheme();
                 },
                 theme: 'light',
@@ -36,29 +30,26 @@
                     const html = document.documentElement;
                     if (this.theme === 'dark') {
                         html.classList.add('dark');
-                        document.body?.classList.add('dark', 'bg-gray-900');
+                        document.body?.classList.add('dark');
                     } else {
                         html.classList.remove('dark');
-                        document.body?.classList.remove('dark', 'bg-gray-900');
+                        document.body?.classList.remove('dark');
                     }
                 }
             });
 
             Alpine.store('sidebar', {
-                // Initialize based on screen size
-                isExpanded: window.innerWidth >= 1280, // true for desktop, false for mobile
+                isExpanded: window.innerWidth >= 1280,
                 isMobileOpen: false,
                 isHovered: false,
 
                 toggleExpanded() {
                     this.isExpanded = !this.isExpanded;
-                    // When toggling desktop sidebar, ensure mobile menu is closed
                     this.isMobileOpen = false;
                 },
 
                 toggleMobileOpen() {
                     this.isMobileOpen = !this.isMobileOpen;
-                    // Don't modify isExpanded when toggling mobile menu
                 },
 
                 setMobileOpen(val) {
@@ -66,7 +57,6 @@
                 },
 
                 setHovered(val) {
-                    // Only allow hover effects on desktop when sidebar is collapsed
                     if (window.innerWidth >= 1280 && !this.isExpanded) {
                         this.isHovered = val;
                     }
@@ -75,12 +65,11 @@
         });
     </script>
 
-    <!-- Apply dark mode immediately to prevent flash -->
+    <!-- Apply saved theme immediately to prevent flash -->
     <script>
         (function () {
             const savedTheme = localStorage.getItem('theme');
-            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            const theme = savedTheme || systemTheme;
+            const theme = savedTheme || 'light';
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
             } else {
@@ -88,6 +77,7 @@
             }
         })();
     </script>
+
     <!-- Global Alert Helper (Alpine.js) -->
     <script>
         window.appAlert = function(message, title) {
@@ -114,7 +104,7 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Custom DataTables Styling -->
+    <!-- Custom DataTables Styling (Daisy Bakery Theme) -->
     <style>
         .dataTables_wrapper { font-family: inherit; }
         table.dataTable { border-collapse: collapse !important; border-spacing: 0 !important; width: 100% !important; }
@@ -133,7 +123,7 @@
         .sdt-toolbar-left { display: flex; flex-wrap: wrap; align-items: center; gap: 0.875rem; flex: 1; min-width: 0; }
         .sdt-toolbar-right { display: flex; align-items: center; gap: 0.875rem; flex-shrink: 0; }
         @media (max-width: 639px) {
-            .sdt-toolbar { flex-direction: column; align-items: stretch; }
+            .sdt-toolbar { flex-direction: column; align-items: stretch; padding: 1rem; }
             .sdt-toolbar-right { justify-content: stretch; }
             .sdt-toolbar-right > * { flex: 1; }
         }
@@ -141,66 +131,55 @@
         /* Search */
         .sdt-search { position: relative; width: 100%; max-width: 320px; }
         @media (max-width: 639px) { .sdt-search { max-width: 100%; } }
-        .sdt-search-icon { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
+        .sdt-search-icon { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: #8A766B; pointer-events: none; }
         .sdt-search-input {
-            width: 100%; height: 2.75rem; padding: 0 1rem 0 2.75rem;
-            border: 1px solid #d1d5db; border-radius: 0.75rem;
-            background: #fff; color: #111827; font-size: 0.9375rem;
+            width: 100%; height: 2.6rem; padding: 0 1rem 0 2.65rem;
+            border: 1px solid rgba(60, 36, 21, 0.18); border-radius: 0.875rem;
+            background: #FAF5E8; color: #231815; font-size: 0.875rem;
             outline: none; transition: all 150ms; font-weight: 500;
         }
-        .sdt-search-input::placeholder { color: #9ca3af; }
-        .sdt-search-input:focus { border-color: #b45309; box-shadow: 0 0 0 2px rgba(180,83,9,0.2); }
-        .dark .sdt-search-input { background: #111827; border-color: #374151; color: #f9fafb; }
-        .dark .sdt-search-input:focus { border-color: #d97706; box-shadow: 0 0 0 2px rgba(217,119,6,0.25); }
+        .sdt-search-input::placeholder { color: #9A877B; }
+        .sdt-search-input:focus { background: #FFFDF9; border-color: #8E1E26; box-shadow: 0 0 0 3px rgba(142, 30, 38, 0.14); }
+        .dark .sdt-search-input { background: #1A120F; border-color: rgba(250, 245, 232, 0.16); color: #FAF5E8; }
+        .dark .sdt-search-input:focus { border-color: #EACE80; box-shadow: 0 0 0 3px rgba(234, 206, 128, 0.16); }
 
-        /* Page Size */
+        /* Page Size & Inline Filter Wrapper */
         .sdt-pagesize {
             display: flex; align-items: center; gap: 0.5rem;
-            font-size: 0.875rem; color: #4b5563; font-weight: 500;
+            font-size: 0.8125rem; color: #6B574C; font-weight: 600;
         }
         .sdt-pagesize select {
-            height: 2.75rem; padding: 0 2.25rem 0 0.875rem;
-            border: 1px solid #d1d5db; border-radius: 0.75rem;
-            background: #fff; color: #111827; font-size: 0.875rem; font-weight: 600;
+            height: 2.6rem; padding: 0 2.25rem 0 0.875rem;
+            border: 1px solid rgba(60, 36, 21, 0.18); border-radius: 0.875rem;
+            background: #FFFDF9; color: #3A221B; font-size: 0.875rem; font-weight: 600;
             outline: none; cursor: pointer; transition: all 150ms;
-            appearance: auto;
         }
-        .sdt-pagesize select:focus { border-color: #b45309; box-shadow: 0 0 0 2px rgba(180,83,9,0.2); }
-        .dark .sdt-pagesize { color: #9ca3af; }
-        .dark .sdt-pagesize select { background: #111827; border-color: #374151; color: #f9fafb; }
+        .sdt-pagesize select:focus { border-color: #8E1E26; box-shadow: 0 0 0 3px rgba(142, 30, 38, 0.14); }
+        .dark .sdt-pagesize { color: #C5B5A8; }
+        .dark .sdt-pagesize select { background: #2E211C; border-color: rgba(250, 245, 232, 0.16); color: #FAF5E8; }
 
         /* ===== CUSTOM TABLE STYLES ===== */
         .sdt-table-wrap { overflow-x: auto; width: 100%; }
         .sdt-table { width: 100% !important; text-align: left; font-size: 0.875rem; }
         .sdt-table thead tr {
-            border-bottom: 2px solid #e5e7eb;
-            background: #f9fafb;
+            border-top: 1px solid rgba(60, 36, 21, 0.08);
+            border-bottom: 1.5px solid rgba(60, 36, 21, 0.12);
+            background: #F5EDE0;
         }
-        .dark .sdt-table thead tr { border-color: #374151; background: rgba(31,41,55,0.7); }
+        .dark .sdt-table thead tr { border-color: rgba(250, 245, 232, 0.10); background: #2E211C; }
         .sdt-table thead th {
-            padding: 0.75rem 0.875rem !important;
-            font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: #4b5563; white-space: nowrap; user-select: none;
+            padding: 0.825rem 0.9rem !important;
+            font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #5C4338; white-space: nowrap; user-select: none;
             position: relative;
         }
-        .dark .sdt-table thead th { color: #9ca3af; }
+        .dark .sdt-table thead th { color: #EACE80; }
 
-        /* Alignment synchronization */
-        .sdt-table thead th.text-right,
-        .sdt-table tbody td.text-right {
-            text-align: right !important;
-        }
-        .sdt-table thead th.text-center,
-        .sdt-table tbody td.text-center {
-            text-align: center !important;
-        }
-        .sdt-table thead th.text-left,
-        .sdt-table tbody td.text-left {
-            text-align: left !important;
-        }
+        .sdt-table thead th.text-right, .sdt-table tbody td.text-right { text-align: right !important; }
+        .sdt-table thead th.text-center, .sdt-table tbody td.text-center { text-align: center !important; }
+        .sdt-table thead th.text-left, .sdt-table tbody td.text-left { text-align: left !important; }
 
-        /* Reserve right padding for default DataTables sort indicators */
         table.dataTable thead th.sorting,
         table.dataTable thead th.sorting_asc,
         table.dataTable thead th.sorting_desc {
@@ -209,19 +188,19 @@
 
         /* Body rows */
         .sdt-table tbody tr {
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid rgba(60, 36, 21, 0.08);
             transition: background 150ms;
         }
-        .dark .sdt-table tbody tr { border-color: #1f2937; }
-        .sdt-table tbody tr:hover { background: rgba(180,83,9,0.03); }
-        .dark .sdt-table tbody tr:hover { background: rgba(217,119,6,0.05); }
+        .dark .sdt-table tbody tr { border-color: rgba(250, 245, 232, 0.07); }
+        .sdt-table tbody tr:hover { background: rgba(142, 30, 38, 0.035); }
+        .dark .sdt-table tbody tr:hover { background: rgba(234, 206, 128, 0.06); }
         .sdt-table tbody td {
-            padding: 0.75rem 0.875rem;
-            color: #1f2937;
+            padding: 0.825rem 0.9rem;
+            color: #231815;
             font-size: 0.875rem;
             vertical-align: middle;
         }
-        .dark .sdt-table tbody td { color: #e5e7eb; }
+        .dark .sdt-table tbody td { color: #F5EFE6; }
         .sdt-table tbody td img {
             width: 2.75rem !important;
             height: 2.75rem !important;
@@ -262,45 +241,39 @@
             left: 0.625rem !important;
             transform: translateY(-50%) !important;
             margin-top: 0 !important;
-            height: 1.25rem !important;
-            width: 1.25rem !important;
+            height: 1.3rem !important;
+            width: 1.3rem !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             border-radius: 9999px !important;
-            background-color: #b45309 !important;
-            color: #ffffff !important;
+            background-color: #8E1E26 !important;
+            color: #FAF5E8 !important;
             content: '+' !important;
             font-size: 0.875rem !important;
             font-weight: 800 !important;
             line-height: 1 !important;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.12) !important;
+            box-shadow: 0 2px 4px rgba(142, 30, 38, 0.25) !important;
             border: none !important;
             transition: all 150ms ease !important;
         }
         table.dataTable.dtr-inline.collapsed > tbody > tr.parent > td.dtr-control:before,
         table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control:before {
             content: '−' !important;
-            background-color: #4b5563 !important;
+            background-color: #3A221B !important;
         }
-        table.dataTable tbody tr.child {
-            background: #f9fafb !important;
-        }
-        .dark table.dataTable tbody tr.child {
-            background: rgba(17, 24, 39, 0.6) !important;
-        }
-        table.dataTable tbody tr.child td.child {
-            padding: 0.75rem 1rem 1rem 1rem !important;
-        }
+        table.dataTable tbody tr.child { background: #FAF5E8 !important; }
+        .dark table.dataTable tbody tr.child { background: rgba(26, 18, 15, 0.7) !important; }
+        table.dataTable tbody tr.child td.child { padding: 0.75rem 1rem 1rem 1rem !important; }
         table.dataTable tbody tr.child ul.dtr-details {
             display: grid !important;
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             gap: 0.75rem 1rem !important;
             padding: 0.875rem 1rem !important;
-            background: #ffffff !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 0.875rem !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+            background: #FFFDF9 !important;
+            border: 1px solid rgba(60, 36, 21, 0.14) !important;
+            border-radius: 1rem !important;
+            box-shadow: 0 2px 8px rgba(58, 34, 27, 0.05) !important;
             width: 100%;
         }
         @media (min-width: 640px) {
@@ -309,8 +282,8 @@
             }
         }
         .dark table.dataTable tbody tr.child ul.dtr-details {
-            background: #111827 !important;
-            border-color: #374151 !important;
+            background: #241A16 !important;
+            border-color: rgba(250, 245, 232, 0.12) !important;
             box-shadow: none !important;
         }
         table.dataTable tbody tr.child ul.dtr-details > li {
@@ -318,107 +291,91 @@
             flex-direction: column !important;
             align-items: flex-start !important;
             gap: 0.25rem !important;
-            border-bottom: 1px solid #f3f4f6 !important;
+            border-bottom: 1px solid rgba(60, 36, 21, 0.08) !important;
             padding-bottom: 0.5rem !important;
             min-width: 0;
             overflow: hidden;
         }
-        .dark table.dataTable tbody tr.child ul.dtr-details > li {
-            border-color: #1f2937 !important;
-        }
-        table.dataTable tbody tr.child ul.dtr-details > li:last-child {
-            border-bottom: none !important;
-        }
+        .dark table.dataTable tbody tr.child ul.dtr-details > li { border-color: rgba(250, 245, 232, 0.08) !important; }
+        table.dataTable tbody tr.child ul.dtr-details > li:last-child { border-bottom: none !important; }
         table.dataTable tbody tr.child span.dtr-title {
-            font-size: 0.75rem !important;
-            font-weight: 700 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.04em !important;
-            color: #6b7280 !important;
+            font-size: 0.7rem !important; font-weight: 700 !important;
+            text-transform: uppercase !important; letter-spacing: 0.05em !important;
+            color: #7D6A60 !important;
         }
-        .dark table.dataTable tbody tr.child span.dtr-title {
-            color: #9ca3af !important;
-        }
-        table.dataTable tbody tr.child span.dtr-data {
-            font-size: 0.875rem !important;
-            font-weight: 600 !important;
-            color: #111827 !important;
-        }
-        .dark table.dataTable tbody tr.child span.dtr-data {
-            color: #f9fafb !important;
-        }
+        .dark table.dataTable tbody tr.child span.dtr-title { color: #EACE80 !important; }
+        table.dataTable tbody tr.child span.dtr-data { font-size: 0.875rem !important; font-weight: 600 !important; color: #231815 !important; }
+        .dark table.dataTable tbody tr.child span.dtr-data { color: #FAF5E8 !important; }
 
         /* ===== CUSTOM FOOTER ===== */
         .sdt-footer {
             display: flex; flex-wrap: wrap; align-items: center;
             justify-content: space-between; gap: 1rem;
-            padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb;
+            padding: 1rem 1.5rem; border-top: 1px solid rgba(60, 36, 21, 0.10);
+            background: #FDF9F1;
         }
-        .dark .sdt-footer { border-color: #1f2937; }
+        .dark .sdt-footer { border-color: rgba(250, 245, 232, 0.08); background: #201713; }
         @media (max-width: 639px) {
-            .sdt-footer { flex-direction: column; align-items: center; text-align: center; }
+            .sdt-footer { flex-direction: column; align-items: center; text-align: center; padding: 1rem; }
         }
-        .sdt-info { font-size: 0.875rem; color: #4b5563; font-weight: 500; }
-        .dark .sdt-info { color: #9ca3af; }
+        .sdt-info { font-size: 0.8125rem; color: #6B574C; font-weight: 600; }
+        .dark .sdt-info { color: #B9A79B; }
 
         /* Pagination */
-        .sdt-pagination { display: flex; align-items: center; gap: 0.35rem; }
+        .sdt-pagination { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; justify-content: center; }
         .sdt-pagination button {
             display: inline-flex; align-items: center; justify-content: center;
             min-width: 2.25rem; height: 2.25rem; padding: 0 0.625rem;
-            font-size: 0.875rem; font-weight: 600;
-            border: 1px solid #d1d5db; border-radius: 0.5rem;
-            background: #fff; color: #374151; cursor: pointer;
+            font-size: 0.8125rem; font-weight: 700;
+            border: 1px solid rgba(60, 36, 21, 0.16); border-radius: 0.65rem;
+            background: #FFFDF9; color: #3A221B; cursor: pointer;
             transition: all 150ms;
         }
         .sdt-pagination button:hover:not(:disabled):not(.active) {
-            background: #fef3c7; border-color: #d97706; color: #92400e;
+            background: #FCEEEF; border-color: rgba(142, 30, 38, 0.45); color: #8E1E26;
         }
         .sdt-pagination button.active {
-            background: #b45309; border-color: #b45309; color: #fff; font-weight: 700;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            background: #8E1E26; border-color: #8E1E26; color: #FAF5E8; font-weight: 700;
+            box-shadow: 0 3px 8px -2px rgba(142, 30, 38, 0.45);
         }
-        .sdt-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
-        .dark .sdt-pagination button { background: #111827; border-color: #374151; color: #d1d5db; }
+        .sdt-pagination button:disabled { opacity: 0.38; cursor: not-allowed; }
+        .dark .sdt-pagination button { background: #2E211C; border-color: rgba(250, 245, 232, 0.15); color: #E8DDD2; }
         .dark .sdt-pagination button:hover:not(:disabled):not(.active) {
-            background: rgba(217,119,6,0.15); border-color: #d97706; color: #fbbf24;
+            background: rgba(142, 30, 38, 0.25); border-color: #EACE80; color: #EACE80;
         }
-        .dark .sdt-pagination button.active { background: #d97706; border-color: #d97706; color: #fff; }
+        .dark .sdt-pagination button.active { background: #8E1E26; border-color: #8E1E26; color: #FAF5E8; }
 
         /* ===== EMPTY STATE ===== */
         .sdt-empty { padding: 3.5rem 1.5rem; text-align: center; }
         .sdt-empty-icon {
             display: flex; align-items: center; justify-content: center;
             width: 4rem; height: 4rem; margin: 0 auto 1rem;
-            border-radius: 9999px; background: #f3f4f6; color: #9ca3af;
+            border-radius: 9999px; background: #FCEEEF; color: #8E1E26;
+            border: 1px solid rgba(142, 30, 38, 0.15);
         }
-        .dark .sdt-empty-icon { background: #1f2937; color: #6b7280; }
-        .sdt-empty-title { font-size: 1rem; font-weight: 700; color: #4b5563; margin-bottom: 0.25rem; }
-        .dark .sdt-empty-title { color: #9ca3af; }
-        .sdt-empty-desc { font-size: 0.875rem; color: #9ca3af; }
-        .dark .sdt-empty-desc { color: #6b7280; }
+        .dark .sdt-empty-icon { background: rgba(142, 30, 38, 0.2); color: #EACE80; border-color: rgba(234, 206, 128, 0.2); }
+        .sdt-empty-title { font-size: 1rem; font-weight: 700; color: #3A221B; margin-bottom: 0.25rem; }
+        .dark .sdt-empty-title { color: #FAF5E8; }
+        .sdt-empty-desc { font-size: 0.875rem; color: #8A766B; }
+        .dark .sdt-empty-desc { color: #A39287; }
 
         /* ===== LOADING STATE ===== */
-        .sdt-loading {
-            position: relative; min-height: 120px;
-        }
+        .sdt-loading { position: relative; min-height: 120px; }
         .sdt-loading::after {
             content: ''; position: absolute; inset: 0;
-            background: rgba(255,255,255,0.7);
+            background: rgba(250, 245, 232, 0.72);
             display: flex; align-items: center; justify-content: center;
-            z-index: 10; border-radius: 0.5rem;
+            z-index: 10; border-radius: 0.75rem;
         }
-        .dark .sdt-loading::after { background: rgba(17,24,39,0.7); }
+        .dark .sdt-loading::after { background: rgba(26, 18, 15, 0.72); }
     </style>
 
     <!-- Global DataTable initializer -->
     <script>
-        // Disable DataTables default browser alert popup modal for AJAX errors
         if (typeof $.fn.dataTable !== 'undefined') {
             $.fn.dataTable.ext.errMode = 'none';
         }
 
-        // Global jQuery AJAX setup with CSRF token and XMLHttpRequest header
         $.ajaxSetup({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
@@ -490,7 +447,6 @@
                 console.warn('DataTables error.dt handled quietly:', message);
             });
 
-            // Search binding with debounce
             if (searchInput.length) {
                 let searchTimer = null;
                 searchInput.off('input keyup search').on('input keyup search', function() {
@@ -502,7 +458,6 @@
                 });
             }
 
-            // Page size binding
             if (pageSizeSelect.length) {
                 pageSizeSelect.off('change').on('change', function() {
                     dt.page.len(parseInt(this.value)).draw();
@@ -563,7 +518,7 @@
 
 </head>
 
-<body x-data="{ 'loaded': true}" x-init="$store.sidebar.isExpanded = window.innerWidth >= 1280;
+<body class="admin-daisy-theme antialiased" x-data="{ 'loaded': true }" x-init="$store.sidebar.isExpanded = window.innerWidth >= 1280;
     const checkMobile = () => {
         if (window.innerWidth < 1280) {
             $store.sidebar.setMobileOpen(false);
@@ -575,15 +530,14 @@
     };
     window.addEventListener('resize', checkMobile);">
 
-    {{-- preloader --}}
+    {{-- Wavy Liquid Preloader --}}
     <x-common.preloader />
-    {{-- preloader end --}}
 
-    <div class="min-h-screen xl:flex">
+    <div class="min-h-screen xl:flex overflow-x-clip">
         @include('layouts.backdrop')
         @include('layouts.sidebar')
 
-        <div class="flex-1 min-w-0 transition-all duration-300 ease-in-out" :class="{
+        <div class="flex-1 min-w-0 min-h-screen flex flex-col transition-all duration-300 ease-in-out" :class="{
                 'xl:ml-[290px]': $store.sidebar.isExpanded || $store.sidebar.isHovered,
                 'xl:ml-[90px]': !$store.sidebar.isExpanded && !$store.sidebar.isHovered,
                 'ml-0': $store.sidebar.isMobileOpen
@@ -591,9 +545,39 @@
             <!-- app header start -->
             @include('layouts.app-header')
             <!-- app header end -->
-            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+
+            <main class="flex-1 min-w-0 max-w-full w-full p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 lg:p-7 overflow-x-hidden">
                 @yield('content')
-            </div>
+            </main>
+
+            <!-- Daisy Bakery Admin Footer -->
+            <footer class="mt-auto border-t border-[#3C2415]/10 dark:border-white/10 bg-[#FFFDF9]/80 dark:bg-[#201713]/90 backdrop-blur-xs">
+                <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-4 md:px-6 lg:px-7 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#7D6A60] dark:text-[#B9A79B]">
+                    <div class="flex items-center gap-2.5">
+                        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-[#FAF5E8] dark:bg-[#2E211C] border border-[#3C2415]/12 dark:border-white/10 p-1">
+                            <img src="{{ asset('images/logo/logo-icon.svg') }}" alt="Daisy Bakery" class="h-full w-full object-contain">
+                        </span>
+                        <div class="flex flex-wrap items-center gap-x-1.5">
+                            <span class="font-display font-bold text-[#3A221B] dark:text-[#FAF5E8]">Daisy Bakery</span>
+                            <span class="opacity-50">&middot;</span>
+                            <span>POS &amp; Store Management</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-semibold">
+                        <a href="{{ route('dashboard') }}" class="hover:text-[#8E1E26] dark:hover:text-[#EACE80] transition">Dashboard</a>
+                        @if (\Illuminate\Support\Facades\Route::has('transaksi.indeks'))
+                            <a href="{{ route('transaksi.indeks') }}" class="hover:text-[#8E1E26] dark:hover:text-[#EACE80] transition">Kasir POS</a>
+                        @endif
+                        <a href="{{ route('profile.edit') }}" class="hover:text-[#8E1E26] dark:hover:text-[#EACE80] transition">Profil Saya</a>
+                        <span class="hidden sm:inline opacity-35">|</span>
+                        <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#8A766B] dark:text-[#A39287]">
+                            <img src="{{ asset('images/decor/strawberry-1.svg') }}" alt="" class="w-3.5 h-3.5 opacity-85">
+                            &copy; {{ date('Y') }} Daisy Bakery
+                        </span>
+                    </div>
+                </div>
+            </footer>
         </div>
 
     </div>
@@ -601,20 +585,20 @@
     @if (session('success') || session('error'))
         <div x-data="{ show: false }" x-init="
                 show = true;
-                setTimeout(() => show = false, 3000);
+                setTimeout(() => show = false, 3500);
             " x-show="show" x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="translate-y-4 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
             x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-y-0 opacity-100"
             x-transition:leave-end="translate-y-4 opacity-0" class="fixed top-5 right-5 z-99999">
             <div
-                class="text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 min-w-[280px] {{ session('success') ? 'bg-green-600' : 'bg-red-600' }}">
-                <span class="font-semibold text-lg">{{ session('success') ? '✓' : '⚠' }}</span>
-                <span class="text-sm">{{ session('success') ?? session('error') }}</span>
+                class="text-[#FAF5E8] px-5 py-3.5 rounded-2xl shadow-xl border flex items-center gap-3 min-w-[280px] {{ session('success') ? 'bg-[#2C5835] border-[#2C5835]/30' : 'bg-[#8E1E26] border-[#8E1E26]/30' }}">
+                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-white/15 font-bold text-sm">{{ session('success') ? '✓' : '!' }}</span>
+                <span class="text-sm font-semibold">{{ session('success') ?? session('error') }}</span>
             </div>
         </div>
     @endif
 
-    {{-- Global Alert Modal (Alpine.js) - Pengganti alert() bawaan browser --}}
+    {{-- Global Alert Modal (Alpine.js) --}}
     <div x-data="{
             open: false,
             title: 'Perhatian',
@@ -632,7 +616,7 @@
          @keydown.escape.window="close()"
          x-show="open"
          x-cloak
-         class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+         class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-[#231815]/60 backdrop-blur-xs"
          style="display: none;"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 scale-95"
@@ -641,32 +625,414 @@
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95">
         <div @click.away="close()"
-             class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-800 transition-all text-center">
+             class="bg-[#FFFDF9] dark:bg-[#241A16] rounded-[24px] shadow-2xl w-full max-w-sm overflow-hidden border border-[#3C2415]/15 dark:border-white/10 transition-all text-center">
             <div class="p-6">
-                <div class="w-14 h-14 bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold flex items-center justify-center rounded-full text-2xl mx-auto mb-4">
+                <div class="w-14 h-14 bg-[#FCEEEF] dark:bg-[#8E1E26]/25 text-[#8E1E26] dark:text-[#EACE80] font-bold flex items-center justify-center rounded-2xl text-2xl mx-auto mb-4">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
                 </div>
-                <h3 class="font-bold text-gray-900 dark:text-white text-base" x-text="title"></h3>
-                <p class="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed" x-text="message"></p>
+                <h3 class="font-display font-bold text-[#3A221B] dark:text-[#FAF5E8] text-lg" x-text="title"></h3>
+                <p class="text-sm text-[#6B574C] dark:text-[#C5B5A8] mt-2 leading-relaxed" x-text="message"></p>
             </div>
-            <div class="bg-gray-50 dark:bg-gray-950 p-4 border-t border-gray-100 dark:border-gray-800 flex justify-center">
+            <div class="bg-[#FAF5E8] dark:bg-[#1A120F] p-4 border-t border-[#3C2415]/10 dark:border-white/10 flex justify-center">
                 <button type="button"
                         @click="close()"
-                        class="w-full py-2.5 px-5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm rounded-xl transition shadow-xs cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
+                        class="w-full py-2.5 px-5 bg-[#8E1E26] hover:bg-[#741A21] text-[#FAF5E8] font-bold text-sm rounded-xl transition shadow-xs cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#8E1E26] focus:ring-offset-2">
                     Mengerti
                 </button>
             </div>
         </div>
     </div>
 
+    {{-- Daisy Custom Dropdown Engine (upgrades all admin filter, page-size & toolbar dropdowns) --}}
+    <script>
+        (function () {
+            const FILTER_SELECTORS = [
+                '.sdt-pagesize select',
+                'form[method="GET"] select',
+                'form[method="get"] select',
+                '#filterForm select',
+                '#filterPesananPickup select',
+                'select[id^="filter_"]',
+                'select[x-model="itemsPerPage"]',
+                'select[x-model="selectedPrinter"]',
+                'select[data-daisy-select]'
+            ].join(', ');
+
+            const instances = new WeakMap();
+            let activeInstance = null;
+
+            function isEligible(select) {
+                if (!select || select.tagName !== 'SELECT') return false;
+                if (select.multiple) return false;
+                if (select.hasAttribute('data-native-select')) return false;
+                if (select.classList.contains('input-varian-produk')) return false;
+                if (select.closest('template')) return false;
+                return select.matches(FILTER_SELECTORS);
+            }
+
+            function closeActive() {
+                if (activeInstance) activeInstance.close();
+            }
+
+            function createDaisySelect(select) {
+                if (instances.has(select)) return instances.get(select);
+
+                const isCompact = !!(
+                    select.closest('.sdt-pagesize') && !select.id.startsWith('filter_')
+                ) || select.getAttribute('x-model') === 'itemsPerPage' || select.id === 'filter_tahun_terlaris' || select.name === 'tahun';
+
+                const isFullWidth = select.classList.contains('w-full') || (
+                    select.closest('form[method="GET"], form[method="get"], #filterForm, #filterPesananPickup') && !isCompact
+                );
+
+                const wrap = document.createElement('div');
+                wrap.className = 'daisy-select-wrap' + (isFullWidth ? ' daisy-select-full' : '');
+
+                select.parentNode.insertBefore(wrap, select);
+                wrap.appendChild(select);
+                select.classList.add('daisy-select-native-hidden');
+                select.setAttribute('tabindex', '-1');
+                select.setAttribute('aria-hidden', 'true');
+
+                const trigger = document.createElement('button');
+                trigger.type = 'button';
+                trigger.className = 'daisy-select-trigger' + (isCompact ? ' is-compact' : '');
+                trigger.setAttribute('aria-haspopup', 'listbox');
+                trigger.setAttribute('aria-expanded', 'false');
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'daisy-select-label';
+
+                const chevronSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                chevronSvg.setAttribute('viewBox', '0 0 24 24');
+                chevronSvg.setAttribute('fill', 'none');
+                chevronSvg.setAttribute('stroke', 'currentColor');
+                chevronSvg.setAttribute('stroke-width', '2.2');
+                chevronSvg.classList.add('daisy-select-chevron');
+                chevronSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>';
+
+                trigger.appendChild(labelSpan);
+                trigger.appendChild(chevronSvg);
+                wrap.appendChild(trigger);
+
+                let portal = null;
+                let searchInput = null;
+                let listEl = null;
+                let highlightedIndex = -1;
+                let isOpen = false;
+
+                function getOptions() {
+                    return Array.from(select.options).map((opt, idx) => ({
+                        index: idx,
+                        value: opt.value,
+                        label: (opt.textContent || '').trim(),
+                        disabled: opt.disabled,
+                        selected: opt.selected
+                    }));
+                }
+
+                function updateTrigger() {
+                    const opts = getOptions();
+                    const selected = opts.find(o => o.value === select.value) || opts[select.selectedIndex] || opts[0];
+                    const text = selected ? selected.label : 'Pilih...';
+                    const isFiltered = !isCompact && selected && selected.index > 0 && selected.value !== '' && selected.value !== 'semua';
+
+                    labelSpan.innerHTML = '';
+                    if (isFiltered) {
+                        const dot = document.createElement('span');
+                        dot.className = 'daisy-select-dot';
+                        labelSpan.appendChild(dot);
+                    }
+                    const txt = document.createElement('span');
+                    txt.className = 'truncate';
+                    txt.textContent = text;
+                    labelSpan.appendChild(txt);
+
+                    trigger.disabled = !!select.disabled;
+                }
+
+                function positionPortal() {
+                    if (!portal) return;
+                    const rect = trigger.getBoundingClientRect();
+                    const margin = 10;
+                    const desiredWidth = Math.max(rect.width, isCompact ? 118 : 230);
+                    const maxW = Math.min(desiredWidth, window.innerWidth - margin * 2);
+
+                    portal.style.width = maxW + 'px';
+                    const portalHeight = Math.min(portal.offsetHeight || 260, 310);
+
+                    const spaceBelow = window.innerHeight - rect.bottom - margin;
+                    const spaceAbove = rect.top - margin;
+                    const openAbove = spaceBelow < Math.min(portalHeight, 210) && spaceAbove > spaceBelow;
+
+                    let left = rect.left;
+                    if (left + maxW > window.innerWidth - margin) {
+                        left = Math.max(margin, rect.right - maxW);
+                    }
+                    left = Math.max(margin, left);
+
+                    portal.style.left = left + 'px';
+                    if (openAbove) {
+                        portal.classList.add('is-above');
+                        portal.style.top = Math.max(margin, rect.top - portal.offsetHeight - 6) + 'px';
+                    } else {
+                        portal.classList.remove('is-above');
+                        portal.style.top = (rect.bottom + 6) + 'px';
+                    }
+                }
+
+                function renderOptions(filterQuery = '') {
+                    if (!listEl) return;
+                    const q = filterQuery.trim().toLowerCase();
+                    const opts = getOptions().filter(o => !q || o.label.toLowerCase().includes(q));
+                    listEl.innerHTML = '';
+
+                    if (opts.length === 0) {
+                        const empty = document.createElement('li');
+                        empty.className = 'daisy-select-empty';
+                        empty.textContent = 'Tidak ada pilihan cocok';
+                        listEl.appendChild(empty);
+                        return;
+                    }
+
+                    opts.forEach((opt, renderIdx) => {
+                        const li = document.createElement('li');
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.role = 'option';
+                        btn.dataset.value = opt.value;
+                        const isSel = opt.value === select.value;
+                        btn.setAttribute('aria-selected', isSel ? 'true' : 'false');
+                        btn.disabled = opt.disabled;
+                        btn.className = 'daisy-select-option' +
+                            (isSel ? ' is-selected' : '') +
+                            (renderIdx === highlightedIndex ? ' is-highlighted' : '');
+
+                        const span = document.createElement('span');
+                        span.className = 'truncate';
+                        span.textContent = opt.label;
+                        btn.appendChild(span);
+
+                        if (isSel) {
+                            const check = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                            check.setAttribute('viewBox', '0 0 24 24');
+                            check.setAttribute('fill', 'none');
+                            check.setAttribute('stroke', 'currentColor');
+                            check.setAttribute('stroke-width', '2.5');
+                            check.classList.add('daisy-select-option-check');
+                            check.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>';
+                            btn.appendChild(check);
+                        }
+
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!opt.disabled) chooseValue(opt.value);
+                        });
+
+                        li.appendChild(btn);
+                        listEl.appendChild(li);
+                    });
+                }
+
+                function chooseValue(newValue) {
+                    const changed = select.value !== newValue;
+                    select.value = newValue;
+                    updateTrigger();
+                    close();
+                    trigger.focus();
+                    if (changed) {
+                        select.dispatchEvent(new Event('input', { bubbles: true }));
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+
+                function open() {
+                    if (select.disabled) return;
+                    if (activeInstance && activeInstance !== api) activeInstance.close();
+                    isOpen = true;
+                    activeInstance = api;
+                    trigger.setAttribute('aria-expanded', 'true');
+
+                    portal = document.createElement('div');
+                    portal.className = 'daisy-select-portal';
+                    portal.addEventListener('mousedown', (e) => e.stopPropagation());
+                    portal.addEventListener('click', (e) => e.stopPropagation());
+
+                    const opts = getOptions();
+                    if (opts.length >= 8) {
+                        const sBox = document.createElement('div');
+                        sBox.className = 'daisy-select-search-box';
+                        searchInput = document.createElement('input');
+                        searchInput.type = 'text';
+                        searchInput.className = 'daisy-select-search';
+                        searchInput.placeholder = 'Cari pilihan...';
+                        searchInput.addEventListener('input', () => {
+                            highlightedIndex = 0;
+                            renderOptions(searchInput.value);
+                        });
+                        searchInput.addEventListener('keydown', handleKeydown);
+                        sBox.appendChild(searchInput);
+                        portal.appendChild(sBox);
+                    } else {
+                        searchInput = null;
+                    }
+
+                    listEl = document.createElement('ul');
+                    listEl.className = 'daisy-select-list custom-scrollbar';
+                    listEl.setAttribute('role', 'listbox');
+                    portal.appendChild(listEl);
+
+                    highlightedIndex = opts.findIndex(o => o.value === select.value);
+                    renderOptions('');
+
+                    document.body.appendChild(portal);
+                    positionPortal();
+
+                    requestAnimationFrame(() => {
+                        if (!portal) return;
+                        positionPortal();
+                        portal.classList.add('is-open');
+                        const selectedEl = listEl.querySelector('.is-selected');
+                        if (selectedEl) selectedEl.scrollIntoView({ block: 'nearest' });
+                        if (searchInput) searchInput.focus();
+                    });
+                }
+
+                function close() {
+                    if (!isOpen) return;
+                    isOpen = false;
+                    trigger.setAttribute('aria-expanded', 'false');
+                    if (portal && portal.parentNode) portal.parentNode.removeChild(portal);
+                    portal = null;
+                    searchInput = null;
+                    listEl = null;
+                    if (activeInstance === api) activeInstance = null;
+                }
+
+                function handleKeydown(e) {
+                    if (!isOpen) {
+                        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            open();
+                        }
+                        return;
+                    }
+                    const items = listEl ? Array.from(listEl.querySelectorAll('.daisy-select-option:not(:disabled)')) : [];
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        close();
+                        trigger.focus();
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (items.length) {
+                            highlightedIndex = (highlightedIndex + 1) % items.length;
+                            items.forEach((el, i) => el.classList.toggle('is-highlighted', i === highlightedIndex));
+                            items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (items.length) {
+                            highlightedIndex = (highlightedIndex - 1 + items.length) % items.length;
+                            items.forEach((el, i) => el.classList.toggle('is-highlighted', i === highlightedIndex));
+                            items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+                        }
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (items[highlightedIndex]) chooseValue(items[highlightedIndex].dataset.value);
+                    }
+                }
+
+                trigger.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isOpen ? close() : open();
+                });
+                trigger.addEventListener('keydown', handleKeydown);
+
+                select.addEventListener('change', updateTrigger);
+                select.addEventListener('input', updateTrigger);
+
+                const desc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+                if (desc && desc.set && desc.get) {
+                    Object.defineProperty(select, 'value', {
+                        configurable: true,
+                        get() { return desc.get.call(this); },
+                        set(v) {
+                            desc.set.call(this, v);
+                            updateTrigger();
+                            if (isOpen) renderOptions(searchInput ? searchInput.value : '');
+                        }
+                    });
+                }
+
+                const optObserver = new MutationObserver(() => {
+                    updateTrigger();
+                    if (isOpen) renderOptions(searchInput ? searchInput.value : '');
+                });
+                optObserver.observe(select, { childList: true, subtree: true, attributes: true, characterData: true });
+
+                updateTrigger();
+
+                const api = { select, wrap, trigger, open, close, sync: updateTrigger, position: positionPortal };
+                instances.set(select, api);
+                return api;
+            }
+
+            function enhanceAll(root = document) {
+                if (!root || !root.querySelectorAll) return;
+                root.querySelectorAll(FILTER_SELECTORS).forEach((el) => {
+                    if (isEligible(el)) createDaisySelect(el);
+                });
+            }
+
+            document.addEventListener('click', () => closeActive());
+            window.addEventListener('resize', () => { if (activeInstance) activeInstance.position(); });
+            window.addEventListener('scroll', (e) => {
+                if (!activeInstance) return;
+                if (e.target && e.target.closest && e.target.closest('.daisy-select-portal')) return;
+                activeInstance.position();
+            }, true);
+
+            window.DaisyCustomSelect = {
+                enhanceAll,
+                sync(target) {
+                    const el = typeof target === 'string' ? document.querySelector(target) : target;
+                    if (el && instances.has(el)) instances.get(el).sync();
+                }
+            };
+
+            function boot() {
+                enhanceAll(document);
+                const domObserver = new MutationObserver((mutations) => {
+                    for (const m of mutations) {
+                        for (const node of m.addedNodes) {
+                            if (node.nodeType !== 1) continue;
+                            if (node.classList && node.classList.contains('daisy-select-portal')) continue;
+                            if (isEligible(node)) {
+                                createDaisySelect(node);
+                            } else if (node.querySelectorAll) {
+                                enhanceAll(node);
+                            }
+                        }
+                    }
+                });
+                domObserver.observe(document.body, { childList: true, subtree: true });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => setTimeout(boot, 0));
+            } else {
+                setTimeout(boot, 0);
+            }
+        })();
+    </script>
+
     @include('layouts.fcm-admin-register')
 
-    {{-- Pulihkan halaman terakhir setelah layar diputar (khusus aplikasi Android / WebView).
-         Saat layar dimiringkan, WebView dibuat ulang dan memuat URL awal (dashboard). Selama halaman aktif,
-         URL-nya dicatat berkala; kalau dashboard dibuka tanpa referrer (bukan hasil klik) tepat setelah
-         halaman lain masih aktif, user dikembalikan ke halaman tadi. --}}
+    {{-- Pulihkan halaman terakhir setelah layar diputar (khusus aplikasi Android / WebView). --}}
     <script>
         (function () {
             if (!window.Android) return;
@@ -693,7 +1059,6 @@
                 }
             } catch (e) {}
 
-            // Catat halaman yang sedang aktif (bukan dashboard) sebagai tujuan pemulihan
             const catat = () => {
                 try { localStorage.setItem(KUNCI, JSON.stringify({ u: location.href, t: Date.now() })); } catch (e) {}
             };
